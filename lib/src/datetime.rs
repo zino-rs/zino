@@ -5,7 +5,11 @@ use std::{
     str::FromStr,
     time::Duration,
 };
-use time::{error::Parse, format_description::well_known::Rfc3339, OffsetDateTime};
+use time::{
+    error::Parse,
+    format_description::well_known::{Rfc2822, Rfc3339},
+    OffsetDateTime, UtcOffset,
+};
 
 /// ISO 8601 combined date and time with local time zone.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -29,6 +33,20 @@ impl DateTime {
     #[inline]
     pub fn timestamp(&self) -> i64 {
         self.0.unix_timestamp()
+    }
+
+    /// Parses an RFC 2822 date and time.
+    #[inline]
+    pub fn parse_utc_str(s: &str) -> Result<Self, Parse> {
+        let datetime = OffsetDateTime::parse(s, &Rfc2822)?;
+        Ok(Self(datetime))
+    }
+
+    /// Returns an RFC 2822 date and time string.
+    #[inline]
+    pub fn to_utc_string(&self) -> String {
+        let datetime = self.0.to_offset(UtcOffset::UTC).format(&Rfc2822).unwrap();
+        format!("{} GMT", datetime.trim_end_matches(" +0000"))
     }
 }
 

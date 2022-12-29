@@ -7,7 +7,7 @@ mod mutation;
 mod query;
 mod schema;
 
-/// Reexports.
+// Reexports.
 pub use column::Column;
 pub use model::Model;
 pub use mutation::Mutation;
