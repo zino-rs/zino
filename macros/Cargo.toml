@@ -2,6 +2,10 @@
 name = "zino-derive"
 version = "0.1.1"
 edition = "2021"
+homepage = "https://github.com/photino/zino"
+repository = "https://github.com/photino/zino"
+documentation = "https://docs.rs/zino-derive"
+readme = "README.md"
 
 [lib]
 proc-macro = true
