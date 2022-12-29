@@ -17,3 +17,4 @@ proc-macro2 = { version = "1.0.47" }
 
 [dependencies.zino]
 path = "../lib"
+version = "0.1.1"
