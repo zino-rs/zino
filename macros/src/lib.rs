@@ -1,3 +1,5 @@
+#![feature(let_chains)]
+
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{parse_macro_input, Data, DeriveInput, Fields};
@@ -38,64 +40,62 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     let type_name_uppercase = type_name.to_ascii_uppercase();
     let mut primary_key = String::from("id");
     let mut columns = Vec::new();
-    if let Data::Struct(data) = input.data {
-        if let Fields::Named(fields) = data.fields {
-            for field in fields.named.into_iter() {
-                let name = field.ident.unwrap().to_string();
-                let mut type_name = parser::get_type_name(&field.ty);
-                if !type_name.is_empty() {
-                    let mut default_value = None;
-                    let mut not_null = false;
-                    let mut index_type = None;
-                    for attr in field.attrs.iter() {
-                        for (key, value) in parser::parse_attr(attr).into_iter() {
-                            if key == "type_name" {
-                                if let Some(value) = value {
-                                    type_name = value;
-                                }
-                            } else if key == "primary_key" {
-                                primary_key.clone_from(&name);
-                            } else if key == "not_null" {
-                                not_null = true;
-                            } else if key == "default" {
-                                default_value = value;
-                            } else if key == "index" {
-                                index_type = value;
+    if let Data::Struct(data) = input.data && let Fields::Named(fields) = data.fields {
+        for field in fields.named.into_iter() {
+            let name = field.ident.unwrap().to_string();
+            let mut type_name = parser::get_type_name(&field.ty);
+            if !type_name.is_empty() {
+                let mut default_value = None;
+                let mut not_null = false;
+                let mut index_type = None;
+                for attr in field.attrs.iter() {
+                    for (key, value) in parser::parse_attr(attr).into_iter() {
+                        if key == "type_name" {
+                            if let Some(value) = value {
+                                type_name = value;
                             }
+                        } else if key == "primary_key" {
+                            primary_key.clone_from(&name);
+                        } else if key == "not_null" {
+                            not_null = true;
+                        } else if key == "default" {
+                            default_value = value;
+                        } else if key == "index" {
+                            index_type = value;
                         }
                     }
-                    if type_name.starts_with("Option") {
-                        not_null = false;
-                    } else if type_name == "Uuid" {
-                        not_null = true;
-                    } else if INTEGER_TYPES.contains(&type_name.as_str()) {
-                        default_value = default_value.or_else(|| Some("0".to_string()));
-                    }
-                    let quote_value = match default_value {
-                        Some(value) => {
-                            if value.contains("::") {
-                                if let Some((type_name, type_fn)) = value.split_once("::") {
-                                    let type_name_ident = format_ident!("{}", type_name);
-                                    let type_fn_ident = format_ident!("{}", type_fn);
-                                    quote! { Some(<#type_name_ident>::#type_fn_ident()) }
-                                } else {
-                                    quote! { Some(#value) }
-                                }
+                }
+                if type_name.starts_with("Option") {
+                    not_null = false;
+                } else if type_name == "Uuid" {
+                    not_null = true;
+                } else if INTEGER_TYPES.contains(&type_name.as_str()) {
+                    default_value = default_value.or_else(|| Some("0".to_string()));
+                }
+                let quote_value = match default_value {
+                    Some(value) => {
+                        if value.contains("::") {
+                            if let Some((type_name, type_fn)) = value.split_once("::") {
+                                let type_name_ident = format_ident!("{}", type_name);
+                                let type_fn_ident = format_ident!("{}", type_fn);
+                                quote! { Some(<#type_name_ident>::#type_fn_ident()) }
                             } else {
                                 quote! { Some(#value) }
                             }
+                        } else {
+                            quote! { Some(#value) }
                         }
-                        None => quote! { None },
-                    };
-                    let quote_index = match index_type {
-                        Some(index) => quote! { Some(#index) },
-                        None => quote! { None },
-                    };
-                    let column = quote! {
-                        zino::Column::new(#name, #type_name, #quote_value, #not_null, #quote_index)
-                    };
-                    columns.push(column);
-                }
+                    }
+                    None => quote! { None },
+                };
+                let quote_index = match index_type {
+                    Some(index) => quote! { Some(#index) },
+                    None => quote! { None },
+                };
+                let column = quote! {
+                    zino::Column::new(#name, #type_name, #quote_value, #not_null, #quote_index)
+                };
+                columns.push(column);
             }
         }
     }
