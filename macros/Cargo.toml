@@ -1,7 +1,9 @@
 [package]
 name = "zino-derive"
+description = "Derived traits for Zino"
 version = "0.1.1"
 edition = "2021"
+license = "MIT"
 homepage = "https://github.com/photino/zino"
 repository = "https://github.com/photino/zino"
 documentation = "https://docs.rs/zino-derive"
