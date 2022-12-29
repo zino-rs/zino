@@ -1,0 +1,21 @@
+[package]
+name = "zino"
+description = "A minimal MVC framework"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+homepage = "https://github.com/photino/zino"
+repository = "https://github.com/photino/zino"
+documentation = "https://docs.rs/zino"
+readme = "README.md"
+
+[dependencies]
+async-trait = { version = "0.1.59" }
+futures = { version = "0.3.25" }
+serde = { version = "1.0.150", features = ["derive"] }
+serde_json = { version = "1.0.89" }
+sqlx = { version = "0.6.2", features = ["runtime-tokio-rustls", "postgres", "uuid", "time", "json"] }
+time = { version = "0.3.17", features = ["local-offset", "parsing", "serde"] }
+toml = { version = "0.5.10" }
+url = { version = "2.3.1" }
+uuid = { version = "1.2.2", features = ["serde", "v4"] }

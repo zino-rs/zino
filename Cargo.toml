@@ -1,12 +1,10 @@
-[package]
-name = "zino"
-description = "A minimal MVC framework"
-version = "0.1.0"
-edition = "2021"
-license = "MIT"
-homepage = "https://github.com/photino/zino"
-repository = "https://github.com/photino/zino"
-documentation = "https://docs.rs/zino"
-readme = "README.md"
+[workspace]
+members = [
+    "lib",
+    "macros",
+]
 
-[dependencies]
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"

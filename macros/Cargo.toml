@@ -1,0 +1,15 @@
+[package]
+name = "zino-derive"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = { version = "1.0.21" }
+syn = { version = "1.0.105", features = ["full", "extra-traits"] }
+proc-macro2 = { version = "1.0.47" }
+
+[dependencies.zino]
+path = "../lib"
