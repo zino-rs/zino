@@ -1,0 +1,19 @@
+[package]
+name = "axum-app"
+version = "0.2.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+axum = { version = "0.6.1" }
+serde_json = { version = "1.0.91" }
+
+[dependencies.zino]
+path = "../../../zino"
+features = ["axum-server"]
+
+[dependencies.zino-core]
+path = "../../../zino-core"
+
+[dependencies.zino-model]
+path = "../../../zino-model"

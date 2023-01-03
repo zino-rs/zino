@@ -1,0 +1,27 @@
+
+name = "data-cube"
+version = "1.0.2"
+
+[main]
+host = "127.0.0.1"
+port = 6080
+
+[[standby]]
+host = "127.0.0.1"
+port = 6081
+
+[[standby]]
+host = "127.0.0.1"
+port = 6082
+
+[database]
+type = "postgres"
+schema = "public"
+namespace = "dc"
+
+[[postgres]]
+host = "localhost"
+port = 5432
+user = "postgres"
+password = "postgres"
+database = "data_cube"

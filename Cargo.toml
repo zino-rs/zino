@@ -1,7 +1,10 @@
 [workspace]
 members = [
-    "lib",
-    "macros",
+    "zino-core",
+    "zino-derive",
+    "zino-model",
+    "zino",
+    "examples/axum-app/app",
 ]
 
 [profile.release]
