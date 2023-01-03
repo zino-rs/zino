@@ -1,2 +1,2 @@
-# zino
-A minimal MVC framework
+# zino-core
+Core types and traits for zino.
