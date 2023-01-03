@@ -15,7 +15,7 @@ use std::{
 use toml::value::Table;
 use zino_core::{CloudEvent, Context, Map, Rejection, RequestContext, State, Validation};
 
-/// An HTTP request extractor for axum.
+/// An HTTP request extractor for `axum`.
 pub struct AxumExtractor<T>(pub T);
 
 impl<T> Deref for AxumExtractor<T> {

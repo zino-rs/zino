@@ -1,2 +1,2 @@
 # zino
-A minimal MVC framework
+A minimal web framework.

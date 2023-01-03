@@ -8,11 +8,12 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields};
 
 mod parser;
 
-/// Integer types
-static INTEGER_TYPES: [&str; 6] = ["u64", "i64", "u32", "i32", "u16", "i16"];
-
+/// Derive the `Schema` trait.
 #[proc_macro_derive(Schema, attributes(schema))]
 pub fn schema_macro(item: TokenStream) -> TokenStream {
+    /// Integer types
+    const INTEGER_TYPES: [&str; 6] = ["u64", "i64", "u32", "i32", "u16", "i16"];
+
     // Input
     let input = parse_macro_input!(item as DeriveInput);
 

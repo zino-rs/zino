@@ -1,7 +1,7 @@
 use crate::{Model, Query, Rejection, Request, RequestContext, Response, Schema, User, Uuid};
 use serde_json::json;
 
-pub(crate) async fn new(mut req: Request) -> crate::Result {
+pub(crate) async fn new(mut req: Request) -> zino::Result {
     let mut user = User::new();
     let mut res = req.model_validation(&mut user).await?;
 
@@ -15,14 +15,14 @@ pub(crate) async fn new(mut req: Request) -> crate::Result {
     Ok(res.into())
 }
 
-pub(crate) async fn update(mut req: Request) -> crate::Result {
+pub(crate) async fn update(mut req: Request) -> zino::Result {
     let mut user = User::new();
     let validation = req.parse_body().await.map(|body| user.read_map(body))?;
     let res = Response::from(validation);
     Ok(res.into())
 }
 
-pub(crate) async fn list(req: Request) -> crate::Result {
+pub(crate) async fn list(req: Request) -> zino::Result {
     let mut query = Query::new();
     let mut res = req.query_validation(&mut query)?;
 
@@ -36,7 +36,7 @@ pub(crate) async fn list(req: Request) -> crate::Result {
     Ok(res.into())
 }
 
-pub(crate) async fn view(mut req: Request) -> crate::Result {
+pub(crate) async fn view(mut req: Request) -> zino::Result {
     let user_id = req.parse_params::<Uuid>().await?;
     let mut query = Query::new();
     let mut res = req.query_validation(&mut query)?;

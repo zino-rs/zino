@@ -1,2 +1,2 @@
 # zino-model
-Model types for zino
+Model types for zino.

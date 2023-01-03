@@ -1,2 +1,2 @@
 # zino-derive
-Derived traits for zino
+Derived traits for zino.

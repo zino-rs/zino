@@ -1,12 +1,18 @@
-use axum::{http::StatusCode, routing, Router, Server};
+use axum::{
+    body::{Bytes, Full},
+    http::{self, StatusCode},
+    routing, Router, Server,
+};
 use futures::future;
-use std::{collections::HashMap, env, io, path::Path, time::Instant};
+use std::{
+    collections::HashMap, convert::Infallible, env, io, net::SocketAddr, path::Path, time::Instant,
+};
 use tokio::runtime::Builder;
 use tower::layer;
 use tower_http::services::{ServeDir, ServeFile};
-use zino_core::{Application, State};
+use zino_core::{Application, Response, State};
 
-/// An HTTP server cluster for axum.
+/// An HTTP server cluster for `axum`.
 pub struct AxumCluster {
     /// Start time.
     start_time: Instant,
@@ -83,14 +89,21 @@ impl Application for AxumCluster {
                     for (path, route) in &routes {
                         app = app.nest(path, route.clone());
                     }
-                    app = app.route_layer(layer::layer_fn(
-                        crate::middleware::axum_context::ContextMiddleware::new,
-                    ));
+                    app = app
+                        .fallback_service(tower::service_fn(|_| async {
+                            let res = Response::new(StatusCode::NOT_FOUND);
+                            Ok::<http::Response<Full<Bytes>>, Infallible>(res.into())
+                        }))
+                        .layer(layer::layer_fn(
+                            crate::middleware::axum_context::ContextMiddleware::new,
+                        ));
 
                     let addr = listener
                         .parse()
+                        .inspect(|addr| println!("listen on {addr}"))
                         .unwrap_or_else(|_| panic!("invalid socket address: {listener}"));
-                    Server::bind(&addr).serve(app.into_make_service())
+                    Server::bind(&addr)
+                        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
                 });
                 for result in future::join_all(servers).await {
                     if let Err(err) = result {

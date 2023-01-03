@@ -6,7 +6,7 @@ use axum::{
 use std::collections::HashMap;
 
 pub(crate) fn init() -> HashMap<&'static str, Router> {
-    let mut parties = HashMap::new();
+    let mut routes = HashMap::new();
 
     // User controller.
     let controller = Router::new()
@@ -14,11 +14,11 @@ pub(crate) fn init() -> HashMap<&'static str, Router> {
         .route("/update", post(user::update))
         .route("/list", get(user::list))
         .route("/:id/view", get(user::view));
-    parties.insert("/user", controller);
+    routes.insert("/user", controller);
 
     // Stats controller.
     let controller = Router::new().route("/", get(stats::index));
-    parties.insert("/stats", controller);
+    routes.insert("/stats", controller);
 
-    parties
+    routes
 }

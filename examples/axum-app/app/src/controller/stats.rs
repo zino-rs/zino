@@ -1,7 +1,7 @@
 use crate::{Request, RequestContext, Response};
 use serde_json::json;
 
-pub(crate) async fn index(req: Request) -> crate::Result {
+pub(crate) async fn index(req: Request) -> zino::Result {
     let mut res = Response::default();
     res.set_data(json!({
         "method": "GET",
