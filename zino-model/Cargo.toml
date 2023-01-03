@@ -1,7 +1,13 @@
 [package]
 name = "zino-model"
+description = "Model types for zino."
 version = "0.2.0"
 edition = "2021"
+license = "MIT"
+homepage = "https://github.com/photino/zino"
+repository = "https://github.com/photino/zino"
+documentation = "https://docs.rs/zino-model"
+readme = "README.md"
 
 [dependencies]
 serde = { version = "1.0.152", features = ["derive"] }
