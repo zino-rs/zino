@@ -2,8 +2,11 @@
 name = "zino-core"
 description = "Core types and traits for zino."
 version = "0.2.1"
+rust-version = "1.68"
 edition = "2021"
 license = "MIT"
+categories = ["asynchronous", "network-programming", "web-programming::http-server"]
+keywords = ["http", "web", "framework"]
 homepage = "https://github.com/photino/zino"
 repository = "https://github.com/photino/zino"
 documentation = "https://docs.rs/zino-core"
@@ -24,8 +27,9 @@ serde = { version = "1.0.152", features = ["derive"] }
 serde_json = { version = "1.0.91" }
 sha-1 = { version = "0.10.1" }
 sha2 = { version = "0.10.6" }
-sqlx = { version = "0.6.2", features = ["runtime-tokio-rustls", "postgres", "uuid", "time", "json"] }
+sqlx = { version = "0.6.2", features = ["runtime-tokio-native-tls", "postgres", "uuid", "time", "json"] }
 time = { version = "0.3.17", features = ["local-offset", "parsing", "serde"] }
+tracing = { version = "0.1.37" }
 toml = { version = "0.5.10" }
 url = { version = "2.3.1" }
 uuid = { version = "1.2.2", features = ["serde", "v4"] }

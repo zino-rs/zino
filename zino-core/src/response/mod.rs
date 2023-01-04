@@ -254,7 +254,7 @@ impl<S: ResponseCode> Response<S> {
     ) {
         match Metric::new(name.into(), dur.into(), desc.into()) {
             Ok(entry) => self.server_timing.push(entry),
-            Err(err) => eprintln!("{err}"),
+            Err(err) => tracing::error!("{err}"),
         }
     }
 
@@ -336,14 +336,14 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
     fn from(mut response: Response<http::StatusCode>) -> Self {
         let mut res = match response.content_type {
             Some(ref content_type) => match serde_json::to_vec(&response.data) {
-                Ok(bytes) => {
-                    let mut res = http::Response::new(Full::from(bytes));
-                    res.headers_mut().insert(
+                Ok(bytes) => http::Response::builder()
+                    .status(response.status_code)
+                    .header(
                         header::CONTENT_TYPE,
                         HeaderValue::from_str(content_type.as_str()).unwrap(),
-                    );
-                    res
-                }
+                    )
+                    .body(Full::from(bytes))
+                    .unwrap(),
                 Err(err) => http::Response::builder()
                     .status(http::StatusCode::INTERNAL_SERVER_ERROR)
                     .header(header::CONTENT_TYPE, "text/plain")
@@ -352,15 +352,16 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
             },
             None => match serde_json::to_vec(&response) {
                 Ok(bytes) => {
-                    let mut res = http::Response::new(Full::from(bytes));
                     let content_type = if response.is_success() {
                         "application/json"
                     } else {
                         "application/problem+json"
                     };
-                    res.headers_mut()
-                        .insert(header::CONTENT_TYPE, HeaderValue::from_static(content_type));
-                    res
+                    http::Response::builder()
+                        .status(response.status_code)
+                        .header(header::CONTENT_TYPE, HeaderValue::from_static(content_type))
+                        .body(Full::from(bytes))
+                        .unwrap()
                 }
                 Err(err) => http::Response::builder()
                     .status(http::StatusCode::INTERNAL_SERVER_ERROR)

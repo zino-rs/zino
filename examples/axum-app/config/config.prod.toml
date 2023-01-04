@@ -25,3 +25,6 @@ port = 5432
 user = "postgres"
 password = "postgres"
 database = "data_cube"
+
+[tracing]
+filter = "warn,zino=info,zino_core=info"

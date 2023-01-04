@@ -45,7 +45,7 @@ impl State {
             .expect("fail to parse toml value");
         match config {
             Value::Table(table) => self.config = table,
-            _ => eprintln!("toml config file should be a table"),
+            _ => panic!("toml config file should be a table"),
         }
     }
 
@@ -142,6 +142,7 @@ pub(crate) static SHARED_STATE: LazyLock<State> = LazyLock::new(|| {
             app_env = arg.strip_prefix("--env=").unwrap().to_string();
         }
     }
+
     let mut state = State::new(app_env);
     state.load_config();
 
@@ -160,7 +161,7 @@ pub(crate) static SHARED_STATE: LazyLock<State> = LazyLock::new(|| {
                 .expect("the `postgres` field should be a table");
             match ConnectionPool::connect_lazy(postgres) {
                 Ok(pool) => pools.push(pool),
-                Err(err) => eprintln!("{err}"),
+                Err(err) => tracing::error!("{err}"),
             }
         }
     }

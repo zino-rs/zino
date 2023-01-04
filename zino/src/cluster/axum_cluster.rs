@@ -1,15 +1,25 @@
 use axum::{
     body::{Bytes, Full},
     http::{self, StatusCode},
-    routing, Router, Server,
+    middleware, routing, Router, Server,
 };
 use futures::future;
 use std::{
-    collections::HashMap, convert::Infallible, env, io, net::SocketAddr, path::Path, time::Instant,
+    collections::HashMap,
+    convert::Infallible,
+    env, io,
+    net::SocketAddr,
+    path::Path,
+    sync::{Arc, LazyLock},
+    time::Instant,
 };
 use tokio::runtime::Builder;
-use tower::layer;
-use tower_http::services::{ServeDir, ServeFile};
+use tower::ServiceBuilder;
+use tower_http::{
+    add_extension::AddExtensionLayer,
+    compression::CompressionLayer,
+    services::{ServeDir, ServeFile},
+};
 use zino_core::{Application, Response, State};
 
 /// An HTTP server cluster for `axum`.
@@ -76,7 +86,11 @@ impl Application for AxumCluster {
             .build()?
             .block_on(async {
                 let routes = self.routes;
-                let listeners = State::shared().listeners();
+                let shared_state = State::shared();
+                let app_env = shared_state.env();
+                tracing::info!("load config.{app_env}.toml");
+
+                let listeners = shared_state.listeners();
                 let servers = listeners.iter().map(|listener| {
                     let mut app = Router::new()
                         .route_service("/", serve_file_service.clone())
@@ -89,25 +103,38 @@ impl Application for AxumCluster {
                     for (path, route) in &routes {
                         app = app.nest(path, route.clone());
                     }
+
+                    let state = Arc::new(State::default());
                     app = app
                         .fallback_service(tower::service_fn(|_| async {
                             let res = Response::new(StatusCode::NOT_FOUND);
                             Ok::<http::Response<Full<Bytes>>, Infallible>(res.into())
                         }))
-                        .layer(layer::layer_fn(
-                            crate::middleware::axum_context::ContextMiddleware::new,
-                        ));
+                        .layer(
+                            ServiceBuilder::new()
+                                .layer(LazyLock::force(
+                                    &crate::middleware::tower_tracing::TRACING_MIDDLEWARE,
+                                ))
+                                .layer(LazyLock::force(
+                                    &crate::middleware::tower_cors::CORS_MIDDLEWARE,
+                                ))
+                                .layer(middleware::from_fn(
+                                    crate::middleware::axum_context::request_context,
+                                ))
+                                .layer(AddExtensionLayer::new(state))
+                                .layer(CompressionLayer::new()),
+                        );
 
                     let addr = listener
                         .parse()
-                        .inspect(|addr| println!("listen on {addr}"))
+                        .inspect(|addr| tracing::info!(env = app_env, "listen on {addr}"))
                         .unwrap_or_else(|_| panic!("invalid socket address: {listener}"));
                     Server::bind(&addr)
                         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
                 });
                 for result in future::join_all(servers).await {
                     if let Err(err) = result {
-                        eprintln!("server error: {err}");
+                        tracing::error!("server error: {err}");
                     }
                 }
             });

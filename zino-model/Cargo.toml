@@ -2,6 +2,7 @@
 name = "zino-model"
 description = "Model types for zino."
 version = "0.2.1"
+rust-version = "1.68"
 edition = "2021"
 license = "MIT"
 homepage = "https://github.com/photino/zino"

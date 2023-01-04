@@ -29,13 +29,13 @@ pub(crate) async fn websocket_handler(
                             if topic.filter(|&t| t != event_topic).is_none() {
                                 let message = Message::Text(data.to_string());
                                 if let Err(err) = socket.send(message).await {
-                                    eprintln!("{err}");
+                                    tracing::error!("{err}");
                                 }
                             }
                         }
                     }
                 }
-                Err(err) => eprintln!("{err}"),
+                Err(err) => tracing::error!("{err}"),
             }
         }
     })

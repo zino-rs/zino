@@ -2,8 +2,11 @@
 name = "zino"
 description = "A minimal web framework."
 version = "0.2.1"
+rust-version = "1.68"
 edition = "2021"
 license = "MIT"
+categories = ["asynchronous", "network-programming", "web-programming::http-server"]
+keywords = ["http", "web", "framework"]
 homepage = "https://github.com/photino/zino"
 repository = "https://github.com/photino/zino"
 documentation = "https://docs.rs/zino"
@@ -27,7 +30,9 @@ tokio = { version = "1.23.0", features = ["rt-multi-thread", "sync"], optional =
 tokio-stream = { version = "0.1.11", features = ["sync"], optional = true }
 toml = { version = "0.5.10" }
 tower = { version = "0.4.13", optional = true }
-tower-http = { version = "0.1.1", features = ["add-extension", "fs"], optional = true }
+tower-http = { version = "0.3.5", features = ["full"], optional = true }
+tracing = { version = "0.1.37" }
+tracing-subscriber = { version = "0.3.16", features = ["env-filter", "json", "local-time"] }
 
 [dependencies.zino-core]
 path = "../zino-core"
