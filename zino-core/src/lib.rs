@@ -3,6 +3,7 @@
 #![feature(async_fn_in_trait)]
 #![feature(iter_intersperse)]
 #![feature(once_cell)]
+#![feature(string_leak)]
 
 mod application;
 mod authentication;

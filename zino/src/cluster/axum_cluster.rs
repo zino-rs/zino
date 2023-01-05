@@ -1,7 +1,9 @@
 use axum::{
     body::{Bytes, Full},
+    error_handling::HandleErrorLayer,
+    extract::{rejection::LengthLimitError, DefaultBodyLimit},
     http::{self, StatusCode},
-    middleware, routing, Router, Server,
+    middleware, routing, BoxError, Router, Server,
 };
 use futures::future;
 use std::{
@@ -11,10 +13,13 @@ use std::{
     net::SocketAddr,
     path::Path,
     sync::{Arc, LazyLock},
-    time::Instant,
+    time::{Duration, Instant},
 };
 use tokio::runtime::Builder;
-use tower::ServiceBuilder;
+use tower::{
+    timeout::{error::Elapsed, TimeoutLayer},
+    ServiceBuilder,
+};
 use tower_http::{
     add_extension::AddExtensionLayer,
     compression::CompressionLayer,
@@ -121,8 +126,21 @@ impl Application for AxumCluster {
                                 .layer(middleware::from_fn(
                                     crate::middleware::axum_context::request_context,
                                 ))
+                                .layer(DefaultBodyLimit::disable())
                                 .layer(AddExtensionLayer::new(state))
-                                .layer(CompressionLayer::new()),
+                                .layer(CompressionLayer::new())
+                                .layer(HandleErrorLayer::new(|err: BoxError| async move {
+                                    let status_code = if err.is::<Elapsed>() {
+                                        StatusCode::REQUEST_TIMEOUT
+                                    } else if err.is::<LengthLimitError>() {
+                                        StatusCode::PAYLOAD_TOO_LARGE
+                                    } else {
+                                        StatusCode::INTERNAL_SERVER_ERROR
+                                    };
+                                    let res = Response::new(status_code);
+                                    Ok::<http::Response<Full<Bytes>>, Infallible>(res.into())
+                                }))
+                                .layer(TimeoutLayer::new(Duration::from_secs(10))),
                         );
 
                     let addr = listener

@@ -22,7 +22,7 @@ pub(crate) static TRACING_MIDDLEWARE: LazyLock<
     let mut env_filter = if is_dev {
         "sqlx=trace,tower_http=trace,zino=trace,zino_core=trace"
     } else {
-        "warn,tower_http=info,zino=info,zino_core=info"
+        "sqlx=warn,tower_http=info,zino=info,zino_core=info"
     };
     let mut display_target = is_dev;
     let mut display_filename = false;

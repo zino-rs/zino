@@ -1,6 +1,8 @@
 use crate::{DateTime, Map, Validation};
-use hmac::{Hmac, Mac};
-use sha1::Sha1;
+use hmac::{
+    digest::{FixedOutput, KeyInit, MacMarker, Update},
+    Mac,
+};
 use std::time::Duration;
 
 mod access_key;
@@ -11,7 +13,7 @@ pub use access_key::{AccessKeyId, SecretAccessKey};
 pub(crate) use security_token::ParseTokenError;
 pub use security_token::SecurityToken;
 
-/// HTTP signature using RFC 2104 HMAC-SHA1.
+/// HTTP signature using HMAC.
 pub struct Authentication {
     /// Service name.
     service_name: String,
@@ -49,7 +51,7 @@ impl Authentication {
             accept: None,
             content_md5: None,
             content_type: None,
-            date_header: ("Date".to_string(), DateTime::now()),
+            date_header: ("date".to_string(), DateTime::now()),
             expires: None,
             headers: Vec::new(),
             resource: String::new(),
@@ -74,25 +76,25 @@ impl Authentication {
         self.signature = signature;
     }
 
-    /// Sets the `Accept` header value.
+    /// Sets the `accept` header value.
     #[inline]
     pub fn set_accept(&mut self, accept: impl Into<Option<String>>) {
         self.accept = accept.into();
     }
 
-    /// Sets the `Content-MD5` header value.
+    /// Sets the `content-md5` header value.
     #[inline]
     pub fn set_content_md5(&mut self, content_md5: String) {
         self.content_md5 = Some(content_md5);
     }
 
-    /// Sets the `Content-Type` header value.
+    /// Sets the `content-type` header value.
     #[inline]
     pub fn set_content_type(&mut self, content_type: impl Into<Option<String>>) {
         self.content_type = content_type.into();
     }
 
-    /// Sets the `Date` header value.
+    /// Sets the `date` header value.
     #[inline]
     pub fn set_date_header(&mut self, header_name: String, date: DateTime) {
         self.date_header = (header_name, date);
@@ -164,7 +166,7 @@ impl Authentication {
         self.signature.as_str()
     }
 
-    /// Returns an `Authorization` header value.
+    /// Returns an `authorization` header value.
     #[inline]
     pub fn authorization(&self) -> String {
         let service_name = self.service_name();
@@ -214,7 +216,7 @@ impl Authentication {
         } else {
             // Date
             let date_header = &self.date_header;
-            let date = if date_header.0.eq_ignore_ascii_case("Date") {
+            let date = if date_header.0.eq_ignore_ascii_case("date") {
                 date_header.1.to_utc_string()
             } else {
                 "".to_string()
@@ -238,16 +240,22 @@ impl Authentication {
     }
 
     /// Generates a signature with the secret access key.
-    pub fn sign_with(&self, secret_access_key: SecretAccessKey) -> String {
+    pub fn sign_with<H>(&self, secret_access_key: SecretAccessKey) -> String
+    where
+        H: FixedOutput + KeyInit + MacMarker + Update,
+    {
         let string_to_sign = self.string_to_sign();
-        let mut mac = Hmac::<Sha1>::new_from_slice(secret_access_key.as_ref())
-            .expect("HMAC can take key of any size");
+        let mut mac =
+            H::new_from_slice(secret_access_key.as_ref()).expect("HMAC can take key of any size");
         mac.update(string_to_sign.as_ref());
         base64::encode(mac.finalize().into_bytes())
     }
 
     /// Validates the signature using the secret access key.
-    pub fn validate_with(&self, secret_access_key: SecretAccessKey) -> Validation {
+    pub fn validate_with<H>(&self, secret_access_key: SecretAccessKey) -> Validation
+    where
+        H: FixedOutput + KeyInit + MacMarker + Update,
+    {
         let mut validation = Validation::new();
         let current = DateTime::now();
         let date = self.date_header.1;
@@ -264,7 +272,7 @@ impl Authentication {
         }
 
         let signature = self.signature();
-        if signature.is_empty() || self.sign_with(secret_access_key) == signature {
+        if signature.is_empty() || self.sign_with::<H>(secret_access_key) == signature {
             validation.record_fail("signature", "invalid signature");
         }
         validation

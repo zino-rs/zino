@@ -39,16 +39,20 @@ pub trait RequestContext {
 
     /// Creates a new request context.
     fn new_context(&self) -> Context {
+        let request_id = self
+            .get_header("x-request-id")
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(Uuid::new_v4());
         let trace_context = self.trace_context();
         let trace_id = trace_context.map_or(Uuid::nil(), |t| Uuid::from_u128(t.trace_id()));
         let query = self.parse_query().unwrap_or_default();
         let session_id = Validation::parse_string(query.get("session_id")).or_else(|| {
-            self.get_header("Session-Id").and_then(|header| {
+            self.get_header("session-id").and_then(|header| {
                 // Session IDs have the form: SID:type:realm:identifier[-thread][:count]
                 header.split(':').nth(3).map(|s| s.to_string())
             })
         });
-        let mut ctx = Context::new();
+        let mut ctx = Context::new(request_id);
         ctx.set_trace_id(trace_id);
         ctx.set_session_id(session_id);
         ctx
@@ -136,7 +140,7 @@ pub trait RequestContext {
             if !validation.is_success() {
                 return Err(validation);
             }
-        } else if let Some(authorization) = self.get_header("Authorization") {
+        } else if let Some(authorization) = self.get_header("authorization") {
             if let Some((service_name, token)) = authorization.split_once(' ') {
                 authentication.set_service_name(service_name);
                 if let Some((access_key_id, signature)) = token.split_once(':') {
@@ -152,16 +156,16 @@ pub trait RequestContext {
                 return Err(validation);
             }
         }
-        if let Some(content_md5) = self.get_header("Content-MD5") {
+        if let Some(content_md5) = self.get_header("content-md5") {
             authentication.set_content_md5(content_md5.to_string());
         }
-        if let Some(date) = self.get_header("Date") {
+        if let Some(date) = self.get_header("date") {
             match DateTime::parse_utc_str(date) {
                 Ok(date) => {
                     let current = DateTime::now();
                     let max_tolerance = Duration::from_secs(900);
                     if date >= current - max_tolerance && date <= current + max_tolerance {
-                        authentication.set_date_header("Date".to_string(), date);
+                        authentication.set_date_header("date".to_string(), date);
                     } else {
                         validation.record_fail("date", "untrusted date");
                     }
@@ -172,7 +176,7 @@ pub trait RequestContext {
                 }
             }
         }
-        authentication.set_content_type(self.get_header("Content-Type").map(|t| t.to_string()));
+        authentication.set_content_type(self.get_header("content-type").map(|t| t.to_string()));
         authentication.set_resource(self.request_path().to_string(), None);
         Ok(authentication)
     }

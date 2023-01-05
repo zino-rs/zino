@@ -26,6 +26,29 @@ pub struct ConnectionPool {
 }
 
 impl ConnectionPool {
+    /// Encrypts the database password in the config.
+    pub fn encrypt_password(config: &Table) -> Option<String> {
+        let user = config
+            .get("user")
+            .expect("the `postgres.user` field is missing")
+            .as_str()
+            .expect("the `postgres.user` field should be a str");
+        let database = config
+            .get("database")
+            .expect("the `postgres.database` field is missing")
+            .as_str()
+            .expect("the `postgres.database` field should be a str");
+        let password = config
+            .get("password")
+            .expect("the `postgres.password` field is missing")
+            .as_str()
+            .expect("the `postgres.password` field should be a str");
+        let key = format!("{user}@{database}");
+        crate::crypto::encrypt(key.as_bytes(), password.as_bytes())
+            .ok()
+            .map(base64::encode)
+    }
+
     /// Connects lazily to the database according to the config.
     pub fn connect_lazy(config: &Table) -> Result<Self, Error> {
         let host = config
@@ -43,17 +66,24 @@ impl ConnectionPool {
             .expect("the `postgres.user` field is missing")
             .as_str()
             .expect("the `postgres.user` field should be a str");
-        let password = config
-            .get("password")
-            .expect("the `postgres.password` field is missing")
-            .as_str()
-            .expect("the `postgres.password` field should be a str");
         let database = config
             .get("database")
             .expect("the `postgres.database` field is missing")
             .as_str()
             .expect("the `postgres.database` field should be a str");
-        let connection_string = format!("postgres://{user}:{password}@{host}:{port}/{database}",);
+        let mut password = config
+            .get("password")
+            .expect("the `postgres.password` field is missing")
+            .as_str()
+            .expect("the `postgres.password` field should be a str");
+        if let Ok(data) = base64::decode(password) {
+            let key = format!("{user}@{database}");
+            if let Ok(plaintext) = crate::crypto::decrypt(key.as_bytes(), &data) {
+                password = plaintext.leak();
+            }
+        }
+
+        let connection_string = format!("postgres://{user}:{password}@{host}:{port}/{database}");
         let max_connections = config
             .get("max-connections")
             .and_then(|t| t.as_integer())

@@ -20,11 +20,11 @@ pub struct Context {
 
 impl Context {
     /// Creates a new instance.
-    pub fn new() -> Self {
+    pub fn new(request_id: Uuid) -> Self {
         Self {
             start_time: Instant::now(),
             request_path: String::new(),
-            request_id: Uuid::new_v4(),
+            request_id,
             trace_id: Uuid::nil(),
             session_id: None,
         }
@@ -82,11 +82,5 @@ impl Context {
     #[inline]
     pub fn session_id(&self) -> Option<&str> {
         self.session_id.as_deref()
-    }
-}
-
-impl Default for Context {
-    fn default() -> Self {
-        Self::new()
     }
 }

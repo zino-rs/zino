@@ -39,17 +39,16 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Returns the model namespace.
     #[inline]
     fn model_namespace() -> &'static str {
-        let namespace = [*NAMESPACE_PREFIX, Self::TYPE_NAME].join(":");
-        Box::leak(namespace.into_boxed_str())
+        [*NAMESPACE_PREFIX, Self::TYPE_NAME].join(":").leak()
     }
 
     /// Returns the table name.
     #[inline]
     fn table_name() -> &'static str {
-        let table_name = [*NAMESPACE_PREFIX, Self::TYPE_NAME]
+        [*NAMESPACE_PREFIX, Self::TYPE_NAME]
             .join("_")
-            .replace(':', "_");
-        Box::leak(table_name.into_boxed_str())
+            .replace(':', "_")
+            .leak()
     }
 
     /// Gets a column for the field.

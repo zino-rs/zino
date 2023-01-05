@@ -3,6 +3,7 @@
 #![feature(async_fn_in_trait)]
 #![feature(once_cell)]
 #![feature(result_option_inspect)]
+#![feature(string_leak)]
 
 mod channel;
 mod cluster;

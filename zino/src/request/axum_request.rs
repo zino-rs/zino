@@ -16,7 +16,7 @@ use toml::value::Table;
 use zino_core::{CloudEvent, Context, Map, Rejection, RequestContext, State, Validation};
 
 /// An HTTP request extractor for `axum`.
-pub struct AxumExtractor<T>(pub T);
+pub struct AxumExtractor<T>(pub(crate) T);
 
 impl<T> Deref for AxumExtractor<T> {
     type Target = T;
@@ -70,7 +70,7 @@ impl RequestContext for AxumExtractor<Request<Body>> {
 
     async fn parse_body(&mut self) -> Result<Map, Validation> {
         let form_urlencoded = self
-            .get_header("Content-Type")
+            .get_header("content-type")
             .unwrap_or("application/x-www-form-urlencoded")
             .starts_with("application/x-www-form-urlencoded");
         let body = self.body_mut();
@@ -109,14 +109,7 @@ impl FromRequest<(), Body> for AxumExtractor<Request<Body>> {
     type Rejection = Infallible;
 
     async fn from_request(req: Request<Body>, _state: &()) -> Result<Self, Self::Rejection> {
-        let (parts, body) = req.into_parts();
-        let mut request = Request::new(body);
-        *request.method_mut() = parts.method;
-        *request.uri_mut() = parts.uri;
-        *request.version_mut() = parts.version;
-        *request.headers_mut() = parts.headers;
-        *request.extensions_mut() = parts.extensions;
-        Ok(AxumExtractor(request))
+        Ok(AxumExtractor(req))
     }
 }
 

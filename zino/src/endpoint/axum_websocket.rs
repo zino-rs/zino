@@ -18,7 +18,7 @@ pub(crate) async fn websocket_handler(
         let source = subscription.source();
         let topic = subscription.topic();
         while let Some(Ok(Message::Text(message))) = socket.recv().await {
-            let data = Box::leak(message.into_boxed_str());
+            let data = message.leak();
             match serde_json::from_str::<'_, CloudEvent>(data) {
                 Ok(event) => {
                     let event_session_id = event.session_id();

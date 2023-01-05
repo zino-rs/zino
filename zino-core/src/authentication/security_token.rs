@@ -49,9 +49,11 @@ impl SecurityToken {
         let key = key.as_ref();
         let grantor_id = id.into();
         let timestamp = expires.timestamp();
-        let assignee_id = base64::encode(crypto::encrypt(key, grantor_id.as_ref())).into();
+        let grantor_id_cipher = crypto::encrypt(key, grantor_id.as_ref()).unwrap_or_default();
+        let assignee_id = base64::encode(grantor_id_cipher).into();
         let authorization = format!("{assignee_id}:{timestamp}");
-        let token = base64::encode(crypto::encrypt(key, authorization.as_ref()));
+        let authorization_cipher = crypto::encrypt(key, authorization.as_ref()).unwrap_or_default();
+        let token = base64::encode(authorization_cipher);
         Self {
             grantor_id,
             assignee_id,
@@ -65,13 +67,17 @@ impl SecurityToken {
         use ParseTokenError::*;
         match base64::decode(&token) {
             Ok(data) => {
-                let authorization = crypto::decrypt(key, &data);
+                let authorization = crypto::decrypt(key, &data)
+                    .map_err(|_| DecodeError("fail to decrypt authorization".to_string()))?;
                 if let Some((assignee_id, timestamp)) = authorization.split_once(':') {
                     match timestamp.parse() {
                         Ok(secs) => {
                             if DateTime::now().timestamp() <= secs {
                                 let expires = DateTime::from_timestamp(secs);
-                                let grantor_id = crypto::decrypt(key, assignee_id.as_ref());
+                                let grantor_id = crypto::decrypt(key, assignee_id.as_ref())
+                                    .map_err(|_| {
+                                        DecodeError("fail to decrypt grantor id".to_string())
+                                    })?;
                                 Ok(Self {
                                     grantor_id: grantor_id.into(),
                                     assignee_id: assignee_id.into(),

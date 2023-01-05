@@ -1,4 +1,3 @@
-use crate::AxumExtractor;
 use axum::{
     body::{Body, BoxBody},
     http::{Request, Response, StatusCode},
@@ -10,7 +9,7 @@ pub(crate) async fn request_context(
     req: Request<Body>,
     next: Next<Body>,
 ) -> Result<Response<BoxBody>, StatusCode> {
-    let mut req_extractor = AxumExtractor(req);
+    let mut req_extractor = crate::AxumExtractor(req);
     let ext = match req_extractor.get_context() {
         Some(_) => None,
         None => {

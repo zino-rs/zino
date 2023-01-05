@@ -343,12 +343,12 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
                         HeaderValue::from_str(content_type.as_str()).unwrap(),
                     )
                     .body(Full::from(bytes))
-                    .unwrap(),
+                    .unwrap_or_default(),
                 Err(err) => http::Response::builder()
                     .status(http::StatusCode::INTERNAL_SERVER_ERROR)
                     .header(header::CONTENT_TYPE, "text/plain")
                     .body(Full::from(err.to_string()))
-                    .unwrap(),
+                    .unwrap_or_default(),
             },
             None => match serde_json::to_vec(&response) {
                 Ok(bytes) => {
@@ -361,13 +361,13 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
                         .status(response.status_code)
                         .header(header::CONTENT_TYPE, HeaderValue::from_static(content_type))
                         .body(Full::from(bytes))
-                        .unwrap()
+                        .unwrap_or_default()
                 }
                 Err(err) => http::Response::builder()
                     .status(http::StatusCode::INTERNAL_SERVER_ERROR)
                     .header(header::CONTENT_TYPE, "text/plain")
                     .body(Full::from(err.to_string()))
-                    .unwrap(),
+                    .unwrap_or_default(),
             },
         };
         let trace_context = match response.trace_context {
@@ -384,6 +384,14 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
             HeaderName::from_static("server-timing"),
             HeaderValue::from_str(response.server_timing.value().as_str()).unwrap(),
         );
+
+        let request_id = response.request_id;
+        if !request_id.is_nil() {
+            res.headers_mut().insert(
+                HeaderName::from_static("x-request-id"),
+                HeaderValue::from_str(request_id.to_string().as_str()).unwrap(),
+            );
+        }
         res
     }
 }
