@@ -27,4 +27,4 @@ user = "postgres"
 password = "G76hTg8T5Aa+SZQFc+0QnsRLo1UOjqpkp/jUQ+lySc8QCt4B"
 
 [tracing]
-filter = "sqlx=warn,tower_http=info,zino=info,zino_core=info"
+filter = "sqlx=warn,tower_http=warn,zino=info,zino_core=info"

@@ -19,10 +19,8 @@ pub(crate) fn get_type_name(ty: &Type) -> String {
 /// Parses an attribute and returns a list of arguments
 pub(crate) fn parse_attr(attr: &Attribute) -> Vec<(String, Option<String>)> {
     if let Ok(meta) = attr.parse_meta() {
-        if let Some(ident) = meta.path().get_ident() {
-            if *ident != "schema" {
-                return Vec::new();
-            }
+        if let Some(ident) = meta.path().get_ident() && *ident != "schema" {
+            return Vec::new();
         }
         if let Meta::List(list) = meta {
             let mut arguments = Vec::new();

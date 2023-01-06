@@ -26,7 +26,7 @@ serde = { version = "1.0.152", features = ["derive"] }
 serde_json = { version = "1.0.91" }
 serde_qs = { version = "0.10.1" }
 serde_urlencoded = { version = "0.7.1" }
-tokio = { version = "1.23.0", features = ["rt-multi-thread", "sync"], optional = true }
+tokio = { version = "1.24.1", features = ["rt-multi-thread", "sync"], optional = true }
 tokio-stream = { version = "0.1.11", features = ["sync"], optional = true }
 toml = { version = "0.5.10" }
 tower = { version = "0.4.13", features = ["timeout"], optional = true }

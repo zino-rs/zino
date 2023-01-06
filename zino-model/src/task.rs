@@ -26,14 +26,10 @@ pub struct Task {
     output_id: Option<Uuid>, // source.id
     #[schema(index = "gin")]
     dependencies: Vec<Uuid>, // task.id
-    #[schema(default = "now")]
     valid_from: DateTime,
-    #[schema(default = "now")]
     expires_at: DateTime,
     schedule: String,
-    #[schema(default = "epoch")]
     last_time: DateTime,
-    #[schema(default = "epoch")]
     next_time: DateTime,
     priority: u16,
     #[schema(index = "gin")]
@@ -47,9 +43,9 @@ pub struct Task {
     // Revisions.
     manager_id: Uuid,    // user.id
     maintainer_id: Uuid, // user.id
-    #[schema(default = "now", index = "btree")]
+    #[schema(index = "btree")]
     created_at: DateTime,
-    #[schema(default = "now", index = "btree")]
+    #[schema(index = "btree")]
     updated_at: DateTime,
     version: u64,
     edition: u32,
@@ -59,10 +55,6 @@ impl Model for Task {
     fn new() -> Self {
         Self {
             id: Uuid::new_v4(),
-            valid_from: DateTime::now(),
-            expires_at: DateTime::now(),
-            created_at: DateTime::now(),
-            updated_at: DateTime::now(),
             ..Self::default()
         }
     }

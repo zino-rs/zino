@@ -23,7 +23,7 @@ pub struct Record {
     // Info fields.
     integrity: String,
     signature: String,
-    #[schema(default = "now", index = "btree")]
+    #[schema(index = "btree")]
     recorded_at: DateTime,
 
     // Extensions.
@@ -36,7 +36,6 @@ impl Model for Record {
     fn new() -> Self {
         Self {
             id: Uuid::new_v4(),
-            recorded_at: DateTime::now(),
             ..Self::default()
         }
     }

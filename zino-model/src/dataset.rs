@@ -23,9 +23,7 @@ pub struct Dataset {
     // Info fields.
     project_id: Uuid, // group.id, group.namespace = "*:project", group.subject = "user"
     task_id: Option<Uuid>, // task.id
-    #[schema(default = "now")]
     valid_from: DateTime,
-    #[schema(default = "now")]
     expires_at: DateTime,
     #[schema(index = "gin")]
     tags: Vec<Uuid>, // tag.id, tag.namespace = "*:dataset"
@@ -38,9 +36,9 @@ pub struct Dataset {
     // Revisions.
     manager_id: Uuid,    // user.id
     maintainer_id: Uuid, // user.id
-    #[schema(default = "now", index = "btree")]
+    #[schema(index = "btree")]
     created_at: DateTime,
-    #[schema(default = "now", index = "btree")]
+    #[schema(index = "btree")]
     updated_at: DateTime,
     version: u64,
     edition: u32,
@@ -50,10 +48,6 @@ impl Model for Dataset {
     fn new() -> Self {
         Self {
             id: Uuid::new_v4(),
-            valid_from: DateTime::now(),
-            expires_at: DateTime::now(),
-            created_at: DateTime::now(),
-            updated_at: DateTime::now(),
             ..Self::default()
         }
     }

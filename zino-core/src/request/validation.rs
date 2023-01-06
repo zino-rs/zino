@@ -122,7 +122,7 @@ impl Validation {
     /// Parses a json value as `DateTime`.
     pub fn parse_datetime<'a>(
         value: impl Into<Option<&'a Value>>,
-    ) -> Option<Result<DateTime, time::error::Parse>> {
+    ) -> Option<Result<DateTime, chrono::format::ParseError>> {
         value.into().and_then(|v| v.as_str()).map(|s| s.parse())
     }
 

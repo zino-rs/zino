@@ -1,5 +1,7 @@
-use crate::{Model, Query, Rejection, Request, RequestContext, Response, Schema, User, Uuid};
 use serde_json::json;
+use zino::Request;
+use zino_core::{Model, Query, Rejection, RequestContext, Response, Schema, Uuid};
+use zino_model::User;
 
 pub(crate) async fn new(mut req: Request) -> zino::Result {
     let mut user = User::new();

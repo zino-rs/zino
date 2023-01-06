@@ -2,7 +2,8 @@ use crate::{DateTime, Map};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-/// Cloud event. See [the spec](https://github.com/cloudevents/spec/blob/v1.0.1/spec.md).
+/// Cloud event.
+/// See [the spec](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md).
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]

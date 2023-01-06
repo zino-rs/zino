@@ -30,7 +30,7 @@ pub struct Log {
     #[schema(index = "text")]
     message: String,
     source: String,
-    #[schema(default = "now", index = "btree")]
+    #[schema(index = "btree")]
     recorded_at: DateTime,
 
     // Extensions.
@@ -43,7 +43,6 @@ impl Model for Log {
     fn new() -> Self {
         Self {
             id: Uuid::new_v4(),
-            recorded_at: DateTime::now(),
             ..Self::default()
         }
     }

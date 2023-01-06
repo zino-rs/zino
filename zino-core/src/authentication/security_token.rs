@@ -121,6 +121,20 @@ impl SecurityToken {
     pub fn as_str(&self) -> &str {
         self.token.as_str()
     }
+
+    /// Encrypts the plaintext using AES-GCM-SIV.
+    pub fn encrypt(key: impl AsRef<[u8]>, plaintext: impl AsRef<[u8]>) -> Option<String> {
+        crypto::encrypt(key.as_ref(), plaintext.as_ref())
+            .ok()
+            .map(base64::encode)
+    }
+
+    /// Decrypts the data using AES-GCM-SIV.
+    pub fn decrypt(key: impl AsRef<[u8]>, data: impl AsRef<[u8]>) -> Option<String> {
+        base64::decode(data)
+            .ok()
+            .and_then(|cipher| crypto::decrypt(key.as_ref(), &cipher).ok())
+    }
 }
 
 impl fmt::Display for SecurityToken {

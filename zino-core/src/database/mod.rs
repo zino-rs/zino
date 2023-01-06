@@ -1,3 +1,4 @@
+use crate::crypto;
 use sqlx::{postgres::PgPoolOptions, Error, PgPool};
 use toml::value::Table;
 
@@ -44,7 +45,7 @@ impl ConnectionPool {
             .as_str()
             .expect("the `postgres.password` field should be a str");
         let key = format!("{user}@{database}");
-        crate::crypto::encrypt(key.as_bytes(), password.as_bytes())
+        crypto::encrypt(key.as_bytes(), password.as_bytes())
             .ok()
             .map(base64::encode)
     }
@@ -78,7 +79,7 @@ impl ConnectionPool {
             .expect("the `postgres.password` field should be a str");
         if let Ok(data) = base64::decode(password) {
             let key = format!("{user}@{database}");
-            if let Ok(plaintext) = crate::crypto::decrypt(key.as_bytes(), &data) {
+            if let Ok(plaintext) = crypto::decrypt(key.as_bytes(), &data) {
                 password = plaintext.leak();
             }
         }

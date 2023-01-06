@@ -1,8 +1,8 @@
 use crate::{Map, Uuid};
+use chrono::{DateTime, Local, SecondsFormat};
 use serde::Serialize;
 use serde_json::Value;
 use sqlx::{postgres::PgRow, Column as _, Error, Row, TypeInfo};
-use time::OffsetDateTime;
 
 /// A column is a model field with associated metadata.
 #[derive(Debug, Clone, Serialize)]
@@ -140,8 +140,10 @@ impl<'a> Column<'a> {
             "bool" => row.try_get_unchecked::<bool, _>(key)?.into(),
             "String" => row.try_get_unchecked::<String, _>(key)?.into(),
             "DateTime" => {
-                let datetime = row.try_get_unchecked::<OffsetDateTime, _>(key)?;
-                datetime.to_string().into()
+                let datetime = row.try_get_unchecked::<DateTime<Local>, _>(key)?;
+                datetime
+                    .to_rfc3339_opts(SecondsFormat::Micros, false)
+                    .into()
             }
             "Uuid" | "Option<Uuid>" => row.try_get_unchecked::<Uuid, _>(key)?.to_string().into(),
             "Vec<u8>" => row.try_get_unchecked::<Vec<u8>, _>(key)?.into(),
@@ -175,8 +177,10 @@ impl<'a> Column<'a> {
                 "BOOL" => row.try_get_unchecked::<bool, _>(key)?.into(),
                 "TEXT" | "VARCHAR" => row.try_get_unchecked::<String, _>(key)?.into(),
                 "TIMESTAMPTZ" => {
-                    let datetime = row.try_get_unchecked::<OffsetDateTime, _>(key)?;
-                    datetime.to_string().into()
+                    let datetime = row.try_get_unchecked::<DateTime<Local>, _>(key)?;
+                    datetime
+                        .to_rfc3339_opts(SecondsFormat::Micros, false)
+                        .into()
                 }
                 "UUID" => row.try_get_unchecked::<Uuid, _>(key)?.to_string().into(),
                 "BYTEA" => row.try_get_unchecked::<Vec<u8>, _>(key)?.into(),

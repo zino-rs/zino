@@ -13,6 +13,7 @@ use std::{
     net::SocketAddr,
     path::Path,
     sync::{Arc, LazyLock},
+    thread,
     time::{Duration, Instant},
 };
 use tokio::runtime::Builder;
@@ -25,7 +26,7 @@ use tower_http::{
     compression::CompressionLayer,
     services::{ServeDir, ServeFile},
 };
-use zino_core::{Application, Response, State};
+use zino_core::{Application, AsyncCronJob, Job, JobScheduler, Response, State};
 
 /// An HTTP server cluster for `axum`.
 pub struct AxumCluster {
@@ -37,7 +38,7 @@ pub struct AxumCluster {
 
 impl Application for AxumCluster {
     /// Router.
-    type Router = HashMap<&'static str, Router>;
+    type Router = Router;
 
     /// Creates a new application.
     fn new() -> Self {
@@ -47,20 +48,33 @@ impl Application for AxumCluster {
         }
     }
 
-    /// Registers the router.
-    fn register(mut self, routes: Self::Router) -> Self {
-        self.routes = routes;
-        self
-    }
-
     /// Returns the start time.
     #[inline]
     fn start_time(&self) -> Instant {
         self.start_time
     }
 
+    /// Registers routes.
+    fn register(mut self, routes: HashMap<&'static str, Self::Router>) -> Self {
+        self.routes = routes;
+        self
+    }
+
     /// Runs the application.
-    fn run(self) -> io::Result<()> {
+    fn run(self, async_jobs: HashMap<&'static str, AsyncCronJob>) -> io::Result<()> {
+        let mut scheduler = JobScheduler::new();
+        for (cron_expr, exec) in async_jobs {
+            scheduler.add(Job::new_async(cron_expr, exec));
+        }
+
+        let runtime = Builder::new_multi_thread().enable_all().build()?;
+        runtime.spawn(async move {
+            loop {
+                scheduler.tick_async().await;
+                thread::sleep(scheduler.time_till_next_job());
+            }
+        });
+
         let current_dir = env::current_dir().unwrap();
         let project_dir = Path::new(&current_dir);
         let public_dir = project_dir.join("./public");
@@ -86,76 +100,73 @@ impl Application for AxumCluster {
                 )
             },
         );
-        Builder::new_multi_thread()
-            .enable_all()
-            .build()?
-            .block_on(async {
-                let routes = self.routes;
-                let shared_state = State::shared();
-                let app_env = shared_state.env();
-                tracing::info!("load config.{app_env}.toml");
 
-                let listeners = shared_state.listeners();
-                let servers = listeners.iter().map(|listener| {
-                    let mut app = Router::new()
-                        .route_service("/", serve_file_service.clone())
-                        .nest_service("/public", serve_dir_service.clone())
-                        .route("/sse", routing::get(crate::endpoint::axum_sse::sse_handler))
-                        .route(
-                            "/websocket",
-                            routing::get(crate::endpoint::axum_websocket::websocket_handler),
-                        );
-                    for (path, route) in &routes {
-                        app = app.nest(path, route.clone());
-                    }
+        runtime.block_on(async {
+            let routes = self.routes;
+            let shared_state = State::shared();
+            let app_env = shared_state.env();
+            tracing::info!("load config.{app_env}.toml");
 
-                    let state = Arc::new(State::default());
-                    app = app
-                        .fallback_service(tower::service_fn(|_| async {
-                            let res = Response::new(StatusCode::NOT_FOUND);
-                            Ok::<http::Response<Full<Bytes>>, Infallible>(res.into())
-                        }))
-                        .layer(
-                            ServiceBuilder::new()
-                                .layer(LazyLock::force(
-                                    &crate::middleware::tower_tracing::TRACING_MIDDLEWARE,
-                                ))
-                                .layer(LazyLock::force(
-                                    &crate::middleware::tower_cors::CORS_MIDDLEWARE,
-                                ))
-                                .layer(middleware::from_fn(
-                                    crate::middleware::axum_context::request_context,
-                                ))
-                                .layer(DefaultBodyLimit::disable())
-                                .layer(AddExtensionLayer::new(state))
-                                .layer(CompressionLayer::new())
-                                .layer(HandleErrorLayer::new(|err: BoxError| async move {
-                                    let status_code = if err.is::<Elapsed>() {
-                                        StatusCode::REQUEST_TIMEOUT
-                                    } else if err.is::<LengthLimitError>() {
-                                        StatusCode::PAYLOAD_TOO_LARGE
-                                    } else {
-                                        StatusCode::INTERNAL_SERVER_ERROR
-                                    };
-                                    let res = Response::new(status_code);
-                                    Ok::<http::Response<Full<Bytes>>, Infallible>(res.into())
-                                }))
-                                .layer(TimeoutLayer::new(Duration::from_secs(10))),
-                        );
-
-                    let addr = listener
-                        .parse()
-                        .inspect(|addr| tracing::info!(env = app_env, "listen on {addr}"))
-                        .unwrap_or_else(|_| panic!("invalid socket address: {listener}"));
-                    Server::bind(&addr)
-                        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
-                });
-                for result in future::join_all(servers).await {
-                    if let Err(err) = result {
-                        tracing::error!("server error: {err}");
-                    }
+            let listeners = shared_state.listeners();
+            let servers = listeners.iter().map(|listener| {
+                let mut app = Router::new()
+                    .route_service("/", serve_file_service.clone())
+                    .nest_service("/public", serve_dir_service.clone())
+                    .route("/sse", routing::get(crate::endpoint::axum_sse::sse_handler))
+                    .route(
+                        "/websocket",
+                        routing::get(crate::endpoint::axum_websocket::websocket_handler),
+                    );
+                for (path, route) in &routes {
+                    app = app.nest(path, route.clone());
                 }
+
+                let state = Arc::new(State::default());
+                app = app
+                    .fallback_service(tower::service_fn(|_| async {
+                        let res = Response::new(StatusCode::NOT_FOUND);
+                        Ok::<http::Response<Full<Bytes>>, Infallible>(res.into())
+                    }))
+                    .layer(
+                        ServiceBuilder::new()
+                            .layer(LazyLock::force(
+                                &crate::middleware::tower_tracing::TRACING_MIDDLEWARE,
+                            ))
+                            .layer(LazyLock::force(
+                                &crate::middleware::tower_cors::CORS_MIDDLEWARE,
+                            ))
+                            .layer(middleware::from_fn(
+                                crate::middleware::axum_context::request_context,
+                            ))
+                            .layer(DefaultBodyLimit::disable())
+                            .layer(AddExtensionLayer::new(state))
+                            .layer(CompressionLayer::new())
+                            .layer(HandleErrorLayer::new(|err: BoxError| async move {
+                                let status_code = if err.is::<Elapsed>() {
+                                    StatusCode::REQUEST_TIMEOUT
+                                } else if err.is::<LengthLimitError>() {
+                                    StatusCode::PAYLOAD_TOO_LARGE
+                                } else {
+                                    StatusCode::INTERNAL_SERVER_ERROR
+                                };
+                                let res = Response::new(status_code);
+                                Ok::<http::Response<Full<Bytes>>, Infallible>(res.into())
+                            }))
+                            .layer(TimeoutLayer::new(Duration::from_secs(10))),
+                    );
+
+                let addr = listener
+                    .parse()
+                    .inspect(|addr| tracing::info!(env = app_env, "listen on {addr}"))
+                    .unwrap_or_else(|_| panic!("invalid socket address: {listener}"));
+                Server::bind(&addr).serve(app.into_make_service_with_connect_info::<SocketAddr>())
             });
+            for result in future::join_all(servers).await {
+                if let Err(err) = result {
+                    tracing::error!("server error: {err}");
+                }
+            }
+        });
         Ok(())
     }
 }

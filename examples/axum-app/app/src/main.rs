@@ -1,11 +1,12 @@
 mod controller;
 mod router;
+mod schedule;
 
-/// Reexports.
-use zino::{AxumCluster, Request};
-use zino_core::{Application, Model, Query, Rejection, RequestContext, Response, Schema, Uuid};
-use zino_model::User;
+use zino_core::Application;
 
 fn main() -> std::io::Result<()> {
-    AxumCluster::new().register(router::init()).run()
+    zino::AxumCluster::new()
+        .register(router::init_routes())
+        .spawn(schedule::init_jobs())
+        .run(schedule::init_async_jobs())
 }

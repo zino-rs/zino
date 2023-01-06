@@ -33,9 +33,9 @@ pub struct Tag {
     // Revisions.
     manager_id: Uuid,    // user.id
     maintainer_id: Uuid, // user.id
-    #[schema(default = "now", index = "btree")]
+    #[schema(index = "btree")]
     created_at: DateTime,
-    #[schema(default = "now", index = "btree")]
+    #[schema(index = "btree")]
     updated_at: DateTime,
     version: u64,
     edition: u32,
@@ -45,8 +45,6 @@ impl Model for Tag {
     fn new() -> Self {
         Self {
             id: Uuid::new_v4(),
-            created_at: DateTime::now(),
-            updated_at: DateTime::now(),
             ..Self::default()
         }
     }

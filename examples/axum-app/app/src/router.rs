@@ -5,7 +5,7 @@ use axum::{
 };
 use std::collections::HashMap;
 
-pub(crate) fn init() -> HashMap<&'static str, Router> {
+pub(crate) fn init_routes() -> HashMap<&'static str, Router> {
     let mut routes = HashMap::new();
 
     // User controller.
