@@ -1,6 +1,6 @@
 [package]
 name = "zino"
-description = "A minimal web framework."
+description = "A full featured web application framework."
 version = "0.2.3"
 rust-version = "1.68"
 edition = "2021"
