@@ -2,6 +2,11 @@
 
 `zino` is a full featured web application framework which focuses on productivity and performance.
 
+[![Crates.io](https://img.shields.io/crates/v/zino)][zino]
+[![Documentation](https://docs.rs/zino/badge.svg)][zino-docs]
+[![Downloads](https://img.shields.io/crates/d/zino)][zino]
+
+
 ## Highlights
 
 - 🚀 Out-of-the-box features for rapid application development.
@@ -19,10 +24,9 @@ You can start with the example [`axum-app`].
 
 | Name            | Description            | Crates.io    | Documentation |
 |-----------------|------------------------|--------------|---------------|
-| [`zino`]        | Named features.        | [![crates.io](https://img.shields.io/crates/v/zino)][zino] | [![Documentation](https://docs.rs/zino/badge.svg)][zino-docs] |
-| [`zino-core`]   | Core types and traits. | [![crates.io](https://img.shields.io/crates/v/zino-core)][zino-core] | [![Documentation](https://docs.rs/zino-core/badge.svg)][zino-core-docs] |
-| [`zino-derive`] | Derived traits.        | [![crates.io](https://img.shields.io/crates/v/zino-derive)][zino-derive] | [![Documentation](https://docs.rs/zino-derive/badge.svg)][zino-derive-docs] |
-| [`zino-model`]  | Model types.           | [![crates.io](https://img.shields.io/crates/v/zino-model)][zino-model] | [![Documentation](https://docs.rs/zino-model/badge.svg)][zino-model-docs] |
+| [`zino-core`]   | Core types and traits. | [![Crates.io](https://img.shields.io/crates/v/zino-core)][zino-core] | [![Documentation](https://docs.rs/zino-core/badge.svg)][zino-core-docs] |
+| [`zino-derive`] | Derived traits.        | [![Crates.io](https://img.shields.io/crates/v/zino-derive)][zino-derive] | [![Documentation](https://docs.rs/zino-derive/badge.svg)][zino-derive-docs] |
+| [`zino-model`]  | Model types.           | [![Crates.io](https://img.shields.io/crates/v/zino-model)][zino-model] | [![Documentation](https://docs.rs/zino-model/badge.svg)][zino-model-docs] |
 
 ## License
 
