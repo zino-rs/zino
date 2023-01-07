@@ -4,8 +4,8 @@ use zino_core::State;
 
 // CORS middleware.
 pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {
-    let config = State::shared().config();
-    match config.get("cors").and_then(|t| t.as_table()) {
+    let shared_state = State::shared();
+    match shared_state.config().get("cors").and_then(|t| t.as_table()) {
         Some(cors) => {
             let allow_credentials = cors
                 .get("allow-credentials")

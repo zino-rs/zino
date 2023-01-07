@@ -111,11 +111,12 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     let schema_columns = format_ident!("{}_COLUMNS", type_name_uppercase);
     let schema_reader = format_ident!("{}_READER", type_name_uppercase);
     let schema_writer = format_ident!("{}_WRITER", type_name_uppercase);
+    let columns_len = columns.len();
     let output = quote! {
         use std::sync::{LazyLock, OnceLock};
 
-        static #schema_columns: LazyLock<Vec<zino_core::Column>> = LazyLock::new(|| {
-            vec![#(#columns),*]
+        static #schema_columns: LazyLock<[zino_core::Column; #columns_len]> = LazyLock::new(|| {
+            [#(#columns),*]
         });
         static #schema_reader: OnceLock<&zino_core::ConnectionPool> = OnceLock::new();
         static #schema_writer: OnceLock<&zino_core::ConnectionPool> = OnceLock::new();
@@ -132,7 +133,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
 
             /// Returns a reference to the columns.
             #[inline]
-            fn columns() -> &'static[zino_core::Column<'static>] {
+            fn columns() -> &'static [zino_core::Column<'static>] {
                 std::sync::LazyLock::force(&#schema_columns).as_slice()
             }
 

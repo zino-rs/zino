@@ -130,21 +130,22 @@ impl State {
 impl Default for State {
     #[inline]
     fn default() -> Self {
-        SHARED_STATE.clone()
+        let mut app_env = "dev".to_string();
+        for arg in env::args() {
+            if arg.starts_with("--env=") {
+                app_env = arg.strip_prefix("--env=").unwrap().to_string();
+            }
+        }
+
+        let mut state = State::new(app_env);
+        state.load_config();
+        state
     }
 }
 
 /// Shared server state.
 pub(crate) static SHARED_STATE: LazyLock<State> = LazyLock::new(|| {
-    let mut app_env = "dev".to_string();
-    for arg in env::args() {
-        if arg.starts_with("--env=") {
-            app_env = arg.strip_prefix("--env=").unwrap().to_string();
-        }
-    }
-
-    let mut state = State::new(app_env);
-    state.load_config();
+    let mut state = State::default();
 
     // Database connection pools.
     let mut pools = Vec::new();

@@ -124,10 +124,10 @@ impl Query {
     /// Retains the projection fields in the allow list of columns.
     /// If the projection fields are empty, it will be set to the allow list.
     #[inline]
-    pub fn allow_fields(&mut self, columns: &[String]) {
+    pub fn allow_fields<const N: usize>(&mut self, columns: [&str; N]) {
         let fields = &mut self.fields;
         if fields.is_empty() {
-            fields.extend_from_slice(columns);
+            self.fields = columns.map(|col| col.to_string()).to_vec();
         } else {
             fields.retain(|field| {
                 columns
@@ -139,7 +139,7 @@ impl Query {
 
     /// Removes the projection fields in the deny list of columns.
     #[inline]
-    pub fn deny_fields(&mut self, columns: &[String]) {
+    pub fn deny_fields<const N: usize>(&mut self, columns: [&str; N]) {
         self.fields.retain(|field| {
             !columns
                 .iter()

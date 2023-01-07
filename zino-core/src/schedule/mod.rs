@@ -4,10 +4,10 @@ use cron::Schedule;
 use std::{str::FromStr, time::Duration};
 
 /// Cron job.
-pub type CronJob = fn(Uuid, &mut Map);
+pub type CronJob = fn(Uuid, &mut Map, DateTime);
 
 /// Async cron job.
-pub type AsyncCronJob = for<'a> fn(Uuid, &'a mut Map) -> BoxFuture<'a>;
+pub type AsyncCronJob = for<'a> fn(Uuid, &'a mut Map, DateTime) -> BoxFuture<'a>;
 
 /// Exectuable job.
 enum ExecutableJob {
@@ -72,13 +72,13 @@ impl Job {
     /// Executes missed runs.
     pub fn tick(&mut self) {
         let now = Local::now();
-        if let Some(ref last_tick) = self.last_tick {
-            for event in self.schedule.after(last_tick) {
+        if let Some(last_tick) = self.last_tick {
+            for event in self.schedule.after(&last_tick) {
                 if event > now {
                     break;
                 }
                 match self.run {
-                    ExecutableJob::Fn(exec) => exec(self.id, &mut self.data),
+                    ExecutableJob::Fn(exec) => exec(self.id, &mut self.data, last_tick.into()),
                     ExecutableJob::AsyncFn(_) => tracing::warn!("job {} is async", self.id),
                 }
             }
@@ -89,14 +89,16 @@ impl Job {
     /// Executes missed runs asynchronously.
     pub async fn tick_async(&mut self) {
         let now = Local::now();
-        if let Some(ref last_tick) = self.last_tick {
-            for event in self.schedule.after(last_tick) {
+        if let Some(last_tick) = self.last_tick {
+            for event in self.schedule.after(&last_tick) {
                 if event > now {
                     break;
                 }
                 match self.run {
                     ExecutableJob::Fn(_) => tracing::warn!("job {} is not async", self.id),
-                    ExecutableJob::AsyncFn(exec) => exec(self.id, &mut self.data).await,
+                    ExecutableJob::AsyncFn(exec) => {
+                        exec(self.id, &mut self.data, last_tick.into()).await
+                    }
                 }
             }
         }

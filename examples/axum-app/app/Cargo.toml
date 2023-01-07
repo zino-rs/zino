@@ -8,6 +8,7 @@ publish = false
 [dependencies]
 axum = { version = "0.6.1" }
 serde_json = { version = "1.0.91" }
+tracing = { version = "0.1.37" }
 
 [dependencies.zino]
 path = "../../../zino"

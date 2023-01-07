@@ -86,16 +86,15 @@ pub trait Schema: 'static + Send + Sync + Model {
             }
             columns.push(column);
         }
+
+        let columns = columns.join(",\n");
         let sql = format!(
             "
-                CREATE TABLE IF NOT EXISTS {0} (
-                    {1},
-                    CONSTRAINT {0}_pkey PRIMARY KEY ({2})
+                CREATE TABLE IF NOT EXISTS {table_name} (
+                    {columns},
+                    CONSTRAINT {table_name}_pkey PRIMARY KEY ({primary_key_name})
                 );
-            ",
-            table_name,
-            columns.join(",\n"),
-            primary_key_name
+            "
         );
         let query_result = sqlx::query(&sql).execute(pool).await?;
         Ok(query_result.rows_affected())
@@ -159,20 +158,18 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::init_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let map = self.into_map();
-        let mut keys = Vec::new();
+        let mut columns = Vec::new();
         let mut values = Vec::new();
         for col in Self::columns() {
-            let key = col.name();
-            let value = col.encode_postgres_value(map.get(key));
-            keys.push(key);
+            let column = col.name();
+            let value = col.encode_postgres_value(map.get(column));
+            columns.push(column);
             values.push(value);
         }
-        let sql = format!(
-            "INSERT INTO {0} ({1}) VALUES ({2});",
-            table_name,
-            keys.join(","),
-            values.join(",")
-        );
+
+        let columns = columns.join(",");
+        let values = values.join(",");
+        let sql = format!("INSERT INTO {table_name} ({columns}) VALUES ({values});");
         let query_result = sqlx::query(&sql).execute(pool).await?;
         Ok(query_result.rows_affected())
     }
@@ -181,25 +178,23 @@ pub trait Schema: 'static + Send + Sync + Model {
     async fn insert_many(models: Vec<Self>) -> Result<u64, Error> {
         let pool = Self::init_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
-        let mut keys = Vec::new();
+        let mut columns = Vec::new();
         let mut values = Vec::new();
         for model in models.into_iter() {
             let map = model.into_map();
             let mut entries = Vec::new();
             for col in Self::columns() {
-                let key = col.name();
-                let value = col.encode_postgres_value(map.get(key));
-                keys.push(key);
+                let column = col.name();
+                let value = col.encode_postgres_value(map.get(column));
+                columns.push(column);
                 entries.push(value);
             }
             values.push(format!("({})", entries.join(",")));
         }
-        let sql = format!(
-            "INSERT INTO {0} ({1}) VALUES {2};",
-            table_name,
-            keys.join(","),
-            values.join(",")
-        );
+
+        let columns = columns.join(",");
+        let values = values.join(",");
+        let sql = format!("INSERT INTO {table_name} ({columns}) VALUES ({values});");
         let query_result = sqlx::query(&sql).execute(pool).await?;
         Ok(query_result.rows_affected())
     }
@@ -213,18 +208,16 @@ pub trait Schema: 'static + Send + Sync + Model {
         let map = self.into_map();
         let mut mutations = Vec::new();
         for col in Self::columns() {
-            let key = col.name();
-            if key != primary_key_name {
-                let value = col.encode_postgres_value(map.get(key));
-                mutations.push(format!("{key} = {value}"));
+            let column = col.name();
+            if column != primary_key_name {
+                let value = col.encode_postgres_value(map.get(column));
+                mutations.push(format!("{column} = {value}"));
             }
         }
+
+        let mutations = mutations.join(",");
         let sql = format!(
-            "UPDATE {0} SET {1} WHERE {2} = '{3}';",
-            table_name,
-            mutations.join(","),
-            primary_key_name,
-            primary_key
+            "UPDATE {table_name} SET {mutations} WHERE {primary_key_name} = '{primary_key}';"
         );
         let query_result = sqlx::query(&sql).execute(pool).await?;
         Ok(query_result.rows_affected())
@@ -265,28 +258,27 @@ pub trait Schema: 'static + Send + Sync + Model {
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let map = self.into_map();
-        let mut keys = Vec::new();
+        let mut columns = Vec::new();
         let mut values = Vec::new();
         let mut mutations = Vec::new();
         for col in Self::columns() {
-            let key = col.name();
-            let value = col.encode_postgres_value(map.get(key));
-            if key != primary_key_name {
-                mutations.push(format!("{key} = {value}"));
+            let column = col.name();
+            let value = col.encode_postgres_value(map.get(column));
+            if column != primary_key_name {
+                mutations.push(format!("{column} = {value}"));
             }
-            keys.push(key);
+            columns.push(column);
             values.push(value);
         }
+
+        let columns = columns.join(",");
+        let values = values.join(",");
+        let mutations = mutations.join(",");
         let sql = format!(
             "
-                INSERT INTO {0} ({1}) VALUES ({2})
-                ON CONFLICT ({3}) DO UPDATE SET {4};
-            ",
-            table_name,
-            keys.join(","),
-            values.join(","),
-            primary_key_name,
-            mutations.join(",")
+                INSERT INTO {table_name} ({columns}) VALUES ({values})
+                ON CONFLICT ({primary_key_name}) DO UPDATE SET {mutations};
+            "
         );
         let query_result = sqlx::query(&sql).execute(pool).await?;
         Ok(query_result.rows_affected())
@@ -409,10 +401,10 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Fetches the associated data in the corresponding `columns` for `Vec<Map>` using
     /// a merged select on the primary key, which solves the `N+1` problem.
-    async fn fetch(
+    async fn fetch<const N: usize>(
         mut query: Query,
         data: &mut Vec<Map>,
-        columns: &[String],
+        columns: [&str; N],
     ) -> Result<u64, Error> {
         let pool = Self::init_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
@@ -485,7 +477,11 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Fetches the associated data in the corresponding `columns` for `Map` using
     /// a merged select on the primary key, which solves the `N+1` problem.
-    async fn fetch_one(mut query: Query, data: &mut Map, columns: &[String]) -> Result<u64, Error> {
+    async fn fetch_one<const N: usize>(
+        mut query: Query,
+        data: &mut Map,
+        columns: [&str; N],
+    ) -> Result<u64, Error> {
         let pool = Self::init_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
@@ -551,8 +547,35 @@ pub trait Schema: 'static + Send + Sync + Model {
         u64::try_from(associations.len()).map_err(|err| Error::Decode(Box::new(err)))
     }
 
+    /// Counts the number of rows selected by the query in the table.
+    /// The boolean value `true` denotes that it only counts distinct values in the column.
+    async fn count<const N: usize>(query: Query, columns: [(&str, bool); N]) -> Result<Map, Error> {
+        let pool = Self::init_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let table_name = Self::table_name();
+        let filter = query.format_filter::<Self>();
+        let projection = columns
+            .into_iter()
+            .map(|(key, distinct)| {
+                if key != "*" {
+                    if distinct {
+                        format!("count(distinct {key}) as count_distinct_{key}")
+                    } else {
+                        format!("count({key}) as count_{key}")
+                    }
+                } else {
+                    "count(*)".to_string()
+                }
+            })
+            .intersperse(",".to_string())
+            .collect::<String>();
+        let sql = format!("SELECT {projection} FROM {table_name} {filter};");
+        let row = sqlx::query(&sql).fetch_one(pool).await?;
+        let map = Column::parse_postgres_row(&row)?;
+        Ok(map)
+    }
+
     /// Executes the query in the table, and returns the total number of rows affected.
-    async fn execute(sql: &str, params: Option<&[String]>) -> Result<u64, Error> {
+    async fn execute<const N: usize>(sql: &str, params: Option<[&str; N]>) -> Result<u64, Error> {
         let pool = Self::init_reader().await.ok_or(Error::PoolClosed)?.pool();
         let mut query = sqlx::query(sql);
         if let Some(params) = params {
@@ -565,7 +588,10 @@ pub trait Schema: 'static + Send + Sync + Model {
     }
 
     /// Executes the query in the table, and parses it as `Vec<Map>`.
-    async fn query(sql: &str, params: Option<&[String]>) -> Result<Vec<Map>, Error> {
+    async fn query<const N: usize>(
+        sql: &str,
+        params: Option<[&str; N]>,
+    ) -> Result<Vec<Map>, Error> {
         let pool = Self::init_reader().await.ok_or(Error::PoolClosed)?.pool();
         let mut query = sqlx::query(sql);
         if let Some(params) = params {
@@ -583,16 +609,19 @@ pub trait Schema: 'static + Send + Sync + Model {
     }
 
     /// Executes the query in the table, and parses it as `Vec<T>`.
-    async fn query_as<T: DeserializeOwned>(
+    async fn query_as<T: DeserializeOwned, const N: usize>(
         sql: &str,
-        params: Option<&[String]>,
+        params: Option<[&str; N]>,
     ) -> Result<Vec<T>, Error> {
         let data = Self::query(sql, params).await?;
         serde_json::from_value(data.into()).map_err(|err| Error::Decode(Box::new(err)))
     }
 
     /// Executes the query in the table, and parses it as a `Map`.
-    async fn query_one(sql: &str, params: Option<&[String]>) -> Result<Option<Map>, Error> {
+    async fn query_one<const N: usize>(
+        sql: &str,
+        params: Option<[&str; N]>,
+    ) -> Result<Option<Map>, Error> {
         let pool = Self::init_reader().await.ok_or(Error::PoolClosed)?.pool();
         let mut query = sqlx::query(sql);
         if let Some(params) = params {
@@ -611,9 +640,9 @@ pub trait Schema: 'static + Send + Sync + Model {
     }
 
     /// Executes the query in the table, and parses it as an instance of type `T`.
-    async fn query_one_as<T: DeserializeOwned>(
+    async fn query_one_as<T: DeserializeOwned, const N: usize>(
         sql: &str,
-        params: Option<&[String]>,
+        params: Option<[&str; N]>,
     ) -> Result<Option<T>, Error> {
         match Self::query_one(sql, params).await? {
             Some(data) => {
@@ -628,11 +657,11 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::init_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key = Column::format_postgres_string(primary_key);
         let sql = format!(
-            "SELECT * FROM {0} WHERE {1} = {2};",
-            table_name,
-            primary_key_name,
-            Column::format_postgres_string(primary_key)
+            "
+                SELECT * FROM {table_name} WHERE {primary_key_name} = {primary_key};
+            "
         );
         match sqlx::query(&sql).fetch_optional(pool).await? {
             Some(row) => {
