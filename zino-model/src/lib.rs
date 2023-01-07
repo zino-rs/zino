@@ -1,4 +1,6 @@
-//! Model types for zino.
+//! Model types for [`zino`].
+//!
+//! [`zino`]: https://github.com/photino/zino
 
 #![feature(async_fn_in_trait)]
 #![feature(once_cell)]

@@ -15,7 +15,7 @@ pub trait Application {
     /// Registers routes.
     fn register(self, routes: HashMap<&'static str, Self::Router>) -> Self;
 
-    /// Spawns a new thread to run jobs.
+    /// Spawns a new thread to run cron jobs.
     fn spawn(self, jobs: HashMap<&'static str, CronJob>) -> Self
     where
         Self: Sized,

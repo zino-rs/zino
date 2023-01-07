@@ -407,8 +407,8 @@ pub trait Schema: 'static + Send + Sync + Model {
         }
     }
 
-    /// Fetches the associated data for `Vec<Map>` using a merged select on the primary key,
-    /// which solves the `N+1` problem.
+    /// Fetches the associated data in the corresponding `columns` for `Vec<Map>` using
+    /// a merged select on the primary key, which solves the `N+1` problem.
     async fn fetch(
         mut query: Query,
         data: &mut Vec<Map>,
@@ -483,8 +483,8 @@ pub trait Schema: 'static + Send + Sync + Model {
         u64::try_from(associations.len()).map_err(|err| Error::Decode(Box::new(err)))
     }
 
-    /// Fetches the associated data for `Map` using a merged select on the primary key,
-    /// which solves the `N+1` problem.
+    /// Fetches the associated data in the corresponding `columns` for `Map` using
+    /// a merged select on the primary key, which solves the `N+1` problem.
     async fn fetch_one(mut query: Query, data: &mut Map, columns: &[String]) -> Result<u64, Error> {
         let pool = Self::init_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();

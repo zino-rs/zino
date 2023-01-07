@@ -1,2 +1,1 @@
-# zino
-A minimal web framework.
+zino/README.md

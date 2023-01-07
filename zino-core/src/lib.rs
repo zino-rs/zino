@@ -1,7 +1,10 @@
-//! Core types and traits for zino.
+//! Core types and traits for [`zino`].
+//!
+//! [`zino`]: https://github.com/photino/zino
 
 #![feature(async_fn_in_trait)]
 #![feature(iter_intersperse)]
+#![feature(let_chains)]
 #![feature(once_cell)]
 #![feature(string_leak)]
 #![feature(type_alias_impl_trait)]

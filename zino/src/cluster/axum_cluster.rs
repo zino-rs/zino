@@ -13,7 +13,6 @@ use std::{
     net::SocketAddr,
     path::Path,
     sync::{Arc, LazyLock},
-    thread,
     time::{Duration, Instant},
 };
 use tokio::runtime::Builder;
@@ -62,16 +61,17 @@ impl Application for AxumCluster {
 
     /// Runs the application.
     fn run(self, async_jobs: HashMap<&'static str, AsyncCronJob>) -> io::Result<()> {
+        let runtime = Builder::new_multi_thread().enable_all().build()?;
         let mut scheduler = JobScheduler::new();
         for (cron_expr, exec) in async_jobs {
             scheduler.add(Job::new_async(cron_expr, exec));
         }
-
-        let runtime = Builder::new_multi_thread().enable_all().build()?;
         runtime.spawn(async move {
             loop {
                 scheduler.tick_async().await;
-                thread::sleep(scheduler.time_till_next_job());
+
+                // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
+                tokio::time::sleep(scheduler.time_till_next_job()).await;
             }
         });
 

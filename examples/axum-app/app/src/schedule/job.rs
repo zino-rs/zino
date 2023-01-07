@@ -28,7 +28,7 @@ pub(super) fn every_30s(job_id: Uuid, job_data: &mut Map) -> BoxFuture {
         .unwrap_or_default();
     job_data.insert("current".to_string(), DateTime::now().to_string().into());
     job_data.insert("counter".to_string(), counter.into());
-    println!("job {job_id} is executed every 45 seconds: {job_data:?}");
+    println!("async job {job_id} is executed every 30 seconds: {job_data:?}");
 
     Box::pin(async {
         let query = Query::new();

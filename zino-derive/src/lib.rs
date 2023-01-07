@@ -1,4 +1,6 @@
-//! Derived traits for zino.
+//! Derived traits for [`zino`].
+//!
+//! [`zino`]: https://github.com/photino/zino
 
 #![feature(let_chains)]
 #![forbid(unsafe_code)]
