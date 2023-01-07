@@ -5,6 +5,7 @@
 #![feature(once_cell)]
 #![feature(string_leak)]
 #![feature(type_alias_impl_trait)]
+#![forbid(unsafe_code)]
 
 mod application;
 mod authentication;

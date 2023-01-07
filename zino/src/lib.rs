@@ -4,6 +4,7 @@
 #![feature(once_cell)]
 #![feature(result_option_inspect)]
 #![feature(string_leak)]
+#![forbid(unsafe_code)]
 
 mod channel;
 mod cluster;

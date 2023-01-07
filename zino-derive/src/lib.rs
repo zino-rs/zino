@@ -1,6 +1,7 @@
 //! Derived traits for zino.
 
 #![feature(let_chains)]
+#![forbid(unsafe_code)]
 
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};

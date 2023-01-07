@@ -2,6 +2,7 @@
 
 #![feature(async_fn_in_trait)]
 #![feature(once_cell)]
+#![forbid(unsafe_code)]
 
 mod group;
 mod policy;
