@@ -5,7 +5,7 @@ use std::{
 };
 use tokio::sync::mpsc::{self, error::TrySendError, Receiver, Sender};
 use tokio_stream::wrappers::ReceiverStream;
-use zino_core::{CloudEvent, State, Subscription, Uuid};
+use zino_core::{Application, CloudEvent, Subscription, Uuid};
 
 /// A emitter is a sender of cloud events.
 type Emitter = Sender<CloudEvent>;
@@ -118,7 +118,7 @@ impl Default for MessageChannel {
 
 /// Channel capacity.
 static CHANNEL_CAPACITY: LazyLock<usize> =
-    LazyLock::new(|| match State::shared().config().get("channel") {
+    LazyLock::new(|| match crate::AxumCluster::config().get("channel") {
         Some(config) => config
             .as_table()
             .expect("the `channel` field should be a table")

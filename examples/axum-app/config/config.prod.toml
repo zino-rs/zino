@@ -23,7 +23,7 @@ namespace = "dc"
 host = "localhost"
 port = 5432
 database = "data_cube"
-user = "postgres"
+username = "postgres"
 password = "G76hTg8T5Aa+SZQFc+0QnsRLo1UOjqpkp/jUQ+lySc8QCt4B"
 
 [tracing]

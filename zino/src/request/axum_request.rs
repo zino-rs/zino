@@ -41,6 +41,16 @@ impl RequestContext for AxumExtractor<Request<Body>> {
         state.config()
     }
 
+    fn state_data(&self) -> &Map {
+        let state = self.extensions().get::<Arc<State>>().unwrap();
+        state.data()
+    }
+
+    fn state_data_mut(&mut self) -> &mut Map {
+        let state = self.extensions_mut().get_mut::<Arc<State>>().unwrap();
+        Arc::make_mut(state).data_mut()
+    }
+
     #[inline]
     fn get_context(&self) -> Option<&Context> {
         self.extensions().get::<Context>()
@@ -116,7 +126,7 @@ impl FromRequest<(), Body> for AxumExtractor<Request<Body>> {
 impl AxumExtractor<Request<Body>> {
     /// Extracts the original request URI regardless of nesting.
     pub async fn original_uri(&mut self) -> Uri {
-        let OriginalUri(uri) = self.extract_parts::<OriginalUri>().await.unwrap();
+        let OriginalUri(uri) = self.extract_parts().await.unwrap();
         uri
     }
 

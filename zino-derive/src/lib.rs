@@ -143,12 +143,12 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 self.#schema_primary_key.to_string()
             }
 
-            /// Initializes model reader.
-            async fn init_reader() -> Option<&'static zino_core::ConnectionPool> {
+            /// Gets the model reader.
+            async fn get_reader() -> Option<&'static zino_core::ConnectionPool> {
                 match #schema_reader.get() {
                     Some(connection_pool) => Some(*connection_pool),
                     None => {
-                        let connection_pool = Self::get_reader()?;
+                        let connection_pool = Self::init_reader().ok()?;
                         let _ = Self::create_table().await.ok()?;
                         let _ = Self::create_indexes().await.ok()?;
                         let _ = #schema_reader.set(connection_pool).ok()?;
@@ -157,12 +157,12 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 }
             }
 
-            /// Initializes model writer.
-            async fn init_writer() -> Option<&'static zino_core::ConnectionPool> {
+            /// Gets the model writer.
+            async fn get_writer() -> Option<&'static zino_core::ConnectionPool> {
                 match #schema_writer.get() {
                     Some(connection_pool) => Some(*connection_pool),
                     None => {
-                        let connection_pool = Self::get_writer()?;
+                        let connection_pool = Self::init_writer().ok()?;
                         let _ = Self::create_table().await.ok()?;
                         let _ = Self::create_indexes().await.ok()?;
                         let _ = #schema_writer.set(connection_pool).ok()?;

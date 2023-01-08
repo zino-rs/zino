@@ -1,11 +1,13 @@
 use std::{sync::LazyLock, time::Duration};
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer, ExposeHeaders};
-use zino_core::State;
+use zino_core::Application;
 
 // CORS middleware.
 pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {
-    let shared_state = State::shared();
-    match shared_state.config().get("cors").and_then(|t| t.as_table()) {
+    match crate::AxumCluster::config()
+        .get("cors")
+        .and_then(|t| t.as_table())
+    {
         Some(cors) => {
             let allow_credentials = cors
                 .get("allow-credentials")
@@ -58,7 +60,7 @@ pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {
             let max_age = cors
                 .get("max-age")
                 .and_then(|t| t.as_integer().and_then(|i| i.try_into().ok()))
-                .unwrap_or(86400);
+                .unwrap_or(60 * 60);
             CorsLayer::new()
                 .allow_credentials(allow_credentials)
                 .allow_origin(allow_origin)

@@ -19,6 +19,12 @@ pub trait RequestContext {
     /// Returns a reference to the application scoped config.
     fn config(&self) -> &Table;
 
+    /// Returns a reference to the request scoped state data.
+    fn state_data(&self) -> &Map;
+
+    /// Returns a mutable reference to the request scoped state data.
+    fn state_data_mut(&mut self) -> &mut Map;
+
     /// Gets a reference to the request context.
     fn get_context(&self) -> Option<&Context>;
 

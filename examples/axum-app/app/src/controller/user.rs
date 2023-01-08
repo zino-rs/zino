@@ -53,8 +53,18 @@ pub(crate) async fn view(mut req: Request) -> zino::Result {
     let user = User::find_one(query)
         .await
         .map_err(Rejection::internal_server_error)?;
+
+    let state_data = req.state_data_mut();
+    let counter = state_data
+        .get("counter")
+        .map(|c| c.as_u64().unwrap_or_default() + 1)
+        .unwrap_or_default();
+    state_data.insert("counter".to_string(), counter.into());
+
     let data = json!({
         "user": user,
+        "state": state_data,
+        "config": req.config(),
     });
     res.set_data(data);
     Ok(res.into())

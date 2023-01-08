@@ -8,7 +8,7 @@ use serde_json::Value;
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
 pub struct CloudEvent {
-    /// Event id.
+    /// Event ID.
     id: String,
     /// Event source.
     source: String,
@@ -57,7 +57,7 @@ impl CloudEvent {
         self.session_id.as_deref()
     }
 
-    /// Returns the event id as a `str`.
+    /// Returns the event ID as a `str`.
     #[inline]
     pub fn id(&self) -> &str {
         self.id.as_str()

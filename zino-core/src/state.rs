@@ -1,8 +1,8 @@
-use crate::ConnectionPool;
-use std::{env, fs, path::Path, sync::LazyLock};
+use crate::{ConnectionPool, Map};
+use std::{env, fs, path::Path};
 use toml::value::{Table, Value};
 
-/// Application scoped state.
+/// Application state.
 #[derive(Debug, Clone)]
 pub struct State {
     /// Environment.
@@ -11,6 +11,8 @@ pub struct State {
     config: Table,
     /// Connection pools.
     pools: Vec<ConnectionPool>,
+    /// Associated data.
+    data: Map,
 }
 
 impl State {
@@ -21,13 +23,8 @@ impl State {
             env,
             config: Table::new(),
             pools: Vec::new(),
+            data: Map::new(),
         }
-    }
-
-    /// Returns a reference to the shared `State`.
-    #[inline]
-    pub fn shared() -> &'static Self {
-        LazyLock::force(&SHARED_STATE)
     }
 
     /// Loads the config file according to the specific env.
@@ -49,16 +46,28 @@ impl State {
         }
     }
 
-    /// Returns the env.
+    /// Returns the env as `&str`.
     #[inline]
     pub fn env(&self) -> &str {
         self.env.as_str()
     }
 
-    /// Returns the config.
+    /// Returns a reference to the config.
     #[inline]
     pub fn config(&self) -> &Table {
         &self.config
+    }
+
+    /// Returns a reference to the data.
+    #[inline]
+    pub fn data(&self) -> &Map {
+        &self.data
+    }
+
+    /// Returns a mutable reference to the data.
+    #[inline]
+    pub fn data_mut(&mut self) -> &mut Map {
+        &mut self.data
     }
 
     /// Returns a list of listeners as `Vec<String>`.
@@ -69,17 +78,17 @@ impl State {
         // Main server.
         let main = config
             .get("main")
-            .expect("the `main` field is missing")
+            .expect("the `main` field should be specified")
             .as_table()
             .expect("the `main` field should be a table");
         let main_host = main
             .get("host")
-            .expect("the `main.host` field is missing")
+            .expect("the `main.host` field should be specified")
             .as_str()
             .expect("the `main.host` field should be a str");
         let main_port = main
             .get("port")
-            .expect("the `main.port` field is missing")
+            .expect("the `main.port` field should be specified")
             .as_integer()
             .expect("the `main.port` field should be an integer");
         let main_listener = format!("{main_host}:{main_port}");
@@ -88,7 +97,7 @@ impl State {
         // Standbys.
         let standbys = config
             .get("standby")
-            .expect("the `standby` field is missing")
+            .expect("the `standby` field should be specified")
             .as_array()
             .expect("the `standby` field should be an array of tables");
         for standby in standbys {
@@ -98,12 +107,12 @@ impl State {
                     .expect("the `standby` field should be a table");
                 let standby_host = standby
                     .get("host")
-                    .expect("the `standby.host` field is missing")
+                    .expect("the `standby.host` field should be specified")
                     .as_str()
                     .expect("the `standby.host` field should be a str");
                 let standby_port = standby
                     .get("port")
-                    .expect("the `standby.port` field is missing")
+                    .expect("the `standby.port` field should be specified")
                     .as_integer()
                     .expect("the `standby.port` field should be an integer");
                 let standby_listener = format!("{standby_host}:{standby_port}");
@@ -142,46 +151,3 @@ impl Default for State {
         state
     }
 }
-
-/// Shared server state.
-pub(crate) static SHARED_STATE: LazyLock<State> = LazyLock::new(|| {
-    let mut state = State::default();
-
-    // Database connection pools.
-    let mut pools = Vec::new();
-    let databases = state
-        .config()
-        .get("postgres")
-        .expect("the `postgres` field is missing")
-        .as_array()
-        .expect("the `postgres` field should be an array of tables");
-    for database in databases {
-        if database.is_table() {
-            let postgres = database
-                .as_table()
-                .expect("the `postgres` field should be a table");
-            match ConnectionPool::connect_lazy(postgres) {
-                Ok(pool) => pools.push(pool),
-                Err(err) => tracing::error!("{err}"),
-            }
-        }
-    }
-    if !pools.is_empty() {
-        state.set_pools(pools);
-    }
-    state
-});
-
-/// Database namespace prefix.
-pub(crate) static NAMESPACE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
-    State::shared()
-        .config()
-        .get("database")
-        .expect("the `database` field is missing")
-        .as_table()
-        .expect("the `database` field should be a table")
-        .get("namespace")
-        .expect("the `database.namespace` field is missing")
-        .as_str()
-        .expect("the `database.namespace` field should be a str")
-});

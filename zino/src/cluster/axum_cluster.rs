@@ -43,29 +43,28 @@ impl Application for AxumCluster {
 
     /// Creates a new application.
     fn new() -> Self {
-        let state = State::default();
-        let app_env = state.env();
+        let app_env = Self::env();
         let is_dev = app_env == "dev";
         let mut env_filter = if is_dev {
             "sqlx=trace,tower_http=trace,zino=trace,zino_core=trace"
         } else {
             "sqlx=warn,tower_http=info,zino=info,zino_core=info"
         };
-        let mut display_target = is_dev;
+        let mut display_target = true;
         let mut display_filename = false;
         let mut display_line_number = false;
         let mut display_thread_names = false;
         let mut display_span_list = false;
         let display_current_span = true;
 
-        if let Some(tracing) = state.config().get("tracing").and_then(|t| t.as_table()) {
+        if let Some(tracing) = Self::config().get("tracing").and_then(|t| t.as_table()) {
             if let Some(filter) = tracing.get("filter").and_then(|t| t.as_str()) {
                 env_filter = filter;
             }
             display_target = tracing
                 .get("display-target")
                 .and_then(|t| t.as_bool())
-                .unwrap_or(is_dev);
+                .unwrap_or(true);
             display_filename = tracing
                 .get("display-filename")
                 .and_then(|t| t.as_bool())
@@ -84,7 +83,7 @@ impl Application for AxumCluster {
                 .unwrap_or(false);
         }
 
-        let stderr = std::io::stderr.with_max_level(Level::WARN);
+        let stderr = io::stderr.with_max_level(Level::WARN);
         tracing_subscriber::fmt()
             .json()
             .with_env_filter(env_filter)
@@ -117,8 +116,12 @@ impl Application for AxumCluster {
     }
 
     /// Runs the application.
-    fn run(self, async_jobs: HashMap<&'static str, AsyncCronJob>) -> io::Result<()> {
-        let runtime = Builder::new_multi_thread().enable_all().build()?;
+    fn run(self, async_jobs: HashMap<&'static str, AsyncCronJob>) {
+        let app_state = State::default();
+        let app_env = app_state.env();
+        tracing::info!("load config.{app_env}.toml");
+
+        let runtime = Builder::new_multi_thread().enable_all().build().unwrap();
         let mut scheduler = JobScheduler::new();
         for (cron_expr, exec) in async_jobs {
             scheduler.add(Job::new_async(cron_expr, exec));
@@ -141,30 +144,20 @@ impl Application for AxumCluster {
             project_dir.join("../public")
         };
         let index_file = static_site_dir.join("./index.html");
-        let serve_file_service = routing::get_service(ServeFile::new(index_file)).handle_error(
-            |err: io::Error| async move {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Unhandled internal error: {err}"),
-                )
-            },
-        );
-        let serve_dir_service = routing::get_service(ServeDir::new(static_site_dir)).handle_error(
-            |err: io::Error| async move {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Unhandled internal error: {err}"),
-                )
-            },
-        );
+        let internal_server_error_handler = |err: io::Error| async move {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Unhandled internal error: {err}"),
+            )
+        };
+        let serve_file_service = routing::get_service(ServeFile::new(index_file))
+            .handle_error(internal_server_error_handler);
+        let serve_dir_service = routing::get_service(ServeDir::new(static_site_dir))
+            .handle_error(internal_server_error_handler);
 
         runtime.block_on(async {
             let routes = self.routes;
-            let shared_state = State::shared();
-            let app_env = shared_state.env();
-            tracing::info!("load config.{app_env}.toml");
-
-            let listeners = shared_state.listeners();
+            let listeners = app_state.listeners();
             let servers = listeners.iter().map(|listener| {
                 let mut app = Router::new()
                     .route_service("/", serve_file_service.clone())
@@ -178,7 +171,7 @@ impl Application for AxumCluster {
                     app = app.nest(path, route.clone());
                 }
 
-                let state = Arc::new(State::default());
+                let state = Arc::new(app_state.clone());
                 app = app
                     .fallback_service(tower::service_fn(|_| async {
                         let res = Response::new(StatusCode::NOT_FOUND);
@@ -209,7 +202,8 @@ impl Application for AxumCluster {
                                 let res = Response::new(status_code);
                                 Ok::<http::Response<Full<Bytes>>, Infallible>(res.into())
                             }))
-                            .layer(TimeoutLayer::new(Duration::from_secs(10))),
+                            // be consistent with the default acquire timeout of `PoolOptions`.
+                            .layer(TimeoutLayer::new(Duration::from_secs(30))),
                     );
 
                 let addr = listener
@@ -224,6 +218,5 @@ impl Application for AxumCluster {
                 }
             }
         });
-        Ok(())
     }
 }

@@ -1,5 +1,6 @@
-use crate::{AsyncCronJob, CronJob, Job, JobScheduler};
-use std::{collections::HashMap, io, thread, time::Instant};
+use crate::{AsyncCronJob, CronJob, Job, JobScheduler, State};
+use std::{collections::HashMap, sync::LazyLock, thread, time::Instant};
+use toml::value::Table;
 
 /// Application.
 pub trait Application {
@@ -14,6 +15,21 @@ pub trait Application {
 
     /// Registers routes.
     fn register(self, routes: HashMap<&'static str, Self::Router>) -> Self;
+
+    /// Runs the application.
+    fn run(self, async_jobs: HashMap<&'static str, AsyncCronJob>);
+
+    /// Returns the application env.
+    #[inline]
+    fn env() -> &'static str {
+        SHARED_STATE.env()
+    }
+
+    /// Returns a reference to the application scoped config.
+    #[inline]
+    fn config() -> &'static Table {
+        SHARED_STATE.config()
+    }
 
     /// Spawns a new thread to run cron jobs.
     fn spawn(self, jobs: HashMap<&'static str, CronJob>) -> Self
@@ -30,7 +46,7 @@ pub trait Application {
         });
         self
     }
-
-    /// Runs the application.
-    fn run(self, async_jobs: HashMap<&'static str, AsyncCronJob>) -> io::Result<()>;
 }
+
+/// Shared application state.
+static SHARED_STATE: LazyLock<State> = LazyLock::new(State::default);

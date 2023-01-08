@@ -65,7 +65,7 @@ impl Model for Message {
             self.name = name;
         }
         if self.name.is_empty() {
-            validation.record_fail("name", "must be nonempty");
+            validation.record_fail("name", "should be nonempty");
         }
         validation
     }

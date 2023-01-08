@@ -1,7 +1,4 @@
-use crate::{
-    state::{NAMESPACE_PREFIX, SHARED_STATE},
-    Column, ConnectionPool, Map, Model, Mutation, Query, Validation,
-};
+use crate::{Column, ConnectionPool, Map, Model, Mutation, Query, Validation};
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use serde_json::json;
@@ -24,11 +21,11 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Returns the primary key value as a `String`.
     fn primary_key(&self) -> String;
 
-    /// Initializes model reader.
-    async fn init_reader() -> Option<&'static ConnectionPool>;
+    /// Gets the model reader.
+    async fn get_reader() -> Option<&'static ConnectionPool>;
 
-    /// Initializes model writer.
-    async fn init_writer() -> Option<&'static ConnectionPool>;
+    /// Gets the model writer.
+    async fn get_writer() -> Option<&'static ConnectionPool>;
 
     /// Returns the model name.
     #[inline]
@@ -39,13 +36,13 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Returns the model namespace.
     #[inline]
     fn model_namespace() -> &'static str {
-        [*NAMESPACE_PREFIX, Self::TYPE_NAME].join(":").leak()
+        [*super::NAMESPACE_PREFIX, Self::TYPE_NAME].join(":").leak()
     }
 
     /// Returns the table name.
     #[inline]
     fn table_name() -> &'static str {
-        [*NAMESPACE_PREFIX, Self::TYPE_NAME]
+        [*super::NAMESPACE_PREFIX, Self::TYPE_NAME]
             .join("_")
             .replace(':', "_")
             .leak()
@@ -57,21 +54,25 @@ pub trait Schema: 'static + Send + Sync + Model {
         Self::columns().iter().find(|c| c.name() == key)
     }
 
-    /// Gets model reader.
+    /// Initializes the model reader.
     #[inline]
-    fn get_reader() -> Option<&'static ConnectionPool> {
-        SHARED_STATE.get_pool(Self::READER_NAME)
+    fn init_reader() -> Result<&'static ConnectionPool, Error> {
+        super::SHARED_STATE
+            .get_pool(Self::READER_NAME)
+            .ok_or(Error::PoolClosed)
     }
 
-    /// Gets model writer.
+    /// Initializes the model writer.
     #[inline]
-    fn get_writer() -> Option<&'static ConnectionPool> {
-        SHARED_STATE.get_pool(Self::WRITER_NAME)
+    fn init_writer() -> Result<&'static ConnectionPool, Error> {
+        super::SHARED_STATE
+            .get_pool(Self::WRITER_NAME)
+            .ok_or(Error::PoolClosed)
     }
 
     /// Creates table for the model.
     async fn create_table() -> Result<u64, Error> {
-        let pool = Self::get_writer().ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::init_writer()?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut columns = Vec::new();
@@ -102,7 +103,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Creates indexes for the model.
     async fn create_indexes() -> Result<u64, Error> {
-        let pool = Self::get_writer().ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::init_writer()?.pool();
         let table_name = Self::table_name();
         let mut text_search_languages = Vec::new();
         let mut text_search_columns = Vec::new();
@@ -155,7 +156,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Inserts the model into the table.
     async fn insert(self) -> Result<u64, Error> {
-        let pool = Self::init_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let map = self.into_map();
         let mut columns = Vec::new();
@@ -176,7 +177,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Inserts many models into the table.
     async fn insert_many(models: Vec<Self>) -> Result<u64, Error> {
-        let pool = Self::init_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let mut columns = Vec::new();
         let mut values = Vec::new();
@@ -201,7 +202,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Updates the model in the table.
     async fn update(self) -> Result<u64, Error> {
-        let pool = Self::init_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let primary_key = self.primary_key();
@@ -225,7 +226,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Updates at most one model selected by the query in the table.
     async fn update_one(query: Query, mutation: Mutation) -> Result<u64, Error> {
-        let pool = Self::init_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let filter = query.format_filter::<Self>();
@@ -243,7 +244,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Updates many models selected by the query in the table.
     async fn update_many(query: Query, mutation: Mutation) -> Result<u64, Error> {
-        let pool = Self::init_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let filter = query.format_filter::<Self>();
         let update = mutation.format_update::<Self>();
@@ -254,7 +255,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Updates or inserts the model into the table.
     async fn upsert(self) -> Result<u64, Error> {
-        let pool = Self::init_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let map = self.into_map();
@@ -286,7 +287,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Deletes the model in the table.
     async fn delete(self) -> Result<u64, Error> {
-        let pool = Self::init_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let primary_key = self.primary_key();
@@ -297,7 +298,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Deletes at most one model selected by the query in the table.
     async fn delete_one(query: Query) -> Result<u64, Error> {
-        let pool = Self::init_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let filter = query.format_filter::<Self>();
@@ -314,7 +315,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Deletes many models selected by the query in the table.
     async fn delete_many(query: Query) -> Result<u64, Error> {
-        let pool = Self::init_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let filter = query.format_filter::<Self>();
         let sql = format!("DELETE FROM {table_name} {filter};");
@@ -324,7 +325,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Finds models selected by the query in the table, and parses it as `Vec<Map>`.
     async fn find(query: Query) -> Result<Vec<Map>, Error> {
-        let pool = Self::init_reader().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let fields = query.fields();
         let projection = query.format_fields();
@@ -362,7 +363,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Finds one model selected by the query in the table, and parses it as a `Map`.
     async fn find_one(query: Query) -> Result<Option<Map>, Error> {
-        let pool = Self::init_reader().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let fields = query.fields();
         let projection = query.format_fields();
@@ -406,7 +407,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         data: &mut Vec<Map>,
         columns: [&str; N],
     ) -> Result<u64, Error> {
-        let pool = Self::init_reader().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values: Vec<String> = Vec::new();
@@ -482,7 +483,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         data: &mut Map,
         columns: [&str; N],
     ) -> Result<u64, Error> {
-        let pool = Self::init_reader().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values: Vec<String> = Vec::new();
@@ -550,7 +551,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Counts the number of rows selected by the query in the table.
     /// The boolean value `true` denotes that it only counts distinct values in the column.
     async fn count<const N: usize>(query: Query, columns: [(&str, bool); N]) -> Result<Map, Error> {
-        let pool = Self::init_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let filter = query.format_filter::<Self>();
         let projection = columns
@@ -576,7 +577,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Executes the query in the table, and returns the total number of rows affected.
     async fn execute<const N: usize>(sql: &str, params: Option<[&str; N]>) -> Result<u64, Error> {
-        let pool = Self::init_reader().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let mut query = sqlx::query(sql);
         if let Some(params) = params {
             for param in params {
@@ -592,7 +593,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         sql: &str,
         params: Option<[&str; N]>,
     ) -> Result<Vec<Map>, Error> {
-        let pool = Self::init_reader().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let mut query = sqlx::query(sql);
         if let Some(params) = params {
             for param in params {
@@ -622,7 +623,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         sql: &str,
         params: Option<[&str; N]>,
     ) -> Result<Option<Map>, Error> {
-        let pool = Self::init_reader().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let mut query = sqlx::query(sql);
         if let Some(params) = params {
             for param in params {
@@ -654,7 +655,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Finds one model selected by the primary key in the table, and parses it as `Self`.
     async fn try_get_model(primary_key: &str) -> Result<Self, Error> {
-        let pool = Self::init_reader().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let primary_key = Column::format_postgres_string(primary_key);

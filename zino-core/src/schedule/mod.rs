@@ -3,10 +3,10 @@ use chrono::Local;
 use cron::Schedule;
 use std::{str::FromStr, time::Duration};
 
-/// Cron job.
+/// A function pointer of the cron job.
 pub type CronJob = fn(Uuid, &mut Map, DateTime);
 
-/// Async cron job.
+/// A function pointer of the async cron job.
 pub type AsyncCronJob = for<'a> fn(Uuid, &'a mut Map, DateTime) -> BoxFuture<'a>;
 
 /// Exectuable job.
@@ -53,14 +53,20 @@ impl Job {
 
     /// Returns the job ID.
     #[inline]
-    pub fn job_id(&self) -> Uuid {
+    pub fn id(&self) -> Uuid {
         self.id
     }
 
     /// Returns a reference to the job data.
     #[inline]
-    pub fn job_data(&self) -> &Map {
+    pub fn data(&self) -> &Map {
         &self.data
+    }
+
+    /// Returns a mutable reference to the job data.
+    #[inline]
+    pub fn data_mut(&mut self) -> &mut Map {
+        &mut self.data
     }
 
     /// Sets last tick.
