@@ -12,8 +12,8 @@ use std::{
     env, io,
     net::SocketAddr,
     path::Path,
-    sync::{Arc, LazyLock},
-    time::{Duration, Instant},
+    sync::LazyLock,
+    time::Duration,
 };
 use tokio::runtime::Builder;
 use tower::{
@@ -27,12 +27,10 @@ use tower_http::{
 };
 use tracing::Level;
 use tracing_subscriber::fmt::{time, writer::MakeWriterExt};
-use zino_core::{Application, AsyncCronJob, Job, JobScheduler, Response, State};
+use zino_core::{Application, AsyncCronJob, DateTime, Job, JobScheduler, Map, Response, State};
 
 /// An HTTP server cluster for `axum`.
 pub struct AxumCluster {
-    /// Start time.
-    start_time: Instant,
     /// Routes.
     routes: HashMap<&'static str, Router>,
 }
@@ -98,15 +96,14 @@ impl Application for AxumCluster {
             .init();
 
         Self {
-            start_time: Instant::now(),
             routes: HashMap::new(),
         }
     }
 
-    /// Returns the start time.
+    /// Returns a reference to the shared application state.
     #[inline]
-    fn start_time(&self) -> Instant {
-        self.start_time
+    fn shared() -> &'static State {
+        LazyLock::force(&SHARED_CLUSTER_STATE)
     }
 
     /// Registers routes.
@@ -171,7 +168,7 @@ impl Application for AxumCluster {
                     app = app.nest(path, route.clone());
                 }
 
-                let state = Arc::new(app_state.clone());
+                let state = app_state.clone();
                 app = app
                     .fallback_service(tower::service_fn(|_| async {
                         let res = Response::new(StatusCode::NOT_FOUND);
@@ -220,3 +217,24 @@ impl Application for AxumCluster {
         });
     }
 }
+
+/// Shared cluster state.
+static SHARED_CLUSTER_STATE: LazyLock<State> = LazyLock::new(|| {
+    let mut state = State::default();
+    let config = state.config();
+    let app_name = config
+        .get("name")
+        .and_then(|t| t.as_str())
+        .expect("the `name` field should be specified");
+    let app_version = config
+        .get("version")
+        .and_then(|t| t.as_str())
+        .expect("the `version` field should be specified");
+
+    let mut data = Map::new();
+    data.insert("app_name".to_string(), app_name.into());
+    data.insert("app_version".to_string(), app_version.into());
+    data.insert("cluster_start_at".to_string(), DateTime::now().into());
+    state.set_data(data);
+    state
+});

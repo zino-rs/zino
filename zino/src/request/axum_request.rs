@@ -10,7 +10,6 @@ use serde::de::DeserializeOwned;
 use std::{
     convert::Infallible,
     ops::{Deref, DerefMut},
-    sync::Arc,
 };
 use toml::value::Table;
 use zino_core::{CloudEvent, Context, Map, Rejection, RequestContext, State, Validation};
@@ -37,18 +36,18 @@ impl<T> DerefMut for AxumExtractor<T> {
 impl RequestContext for AxumExtractor<Request<Body>> {
     #[inline]
     fn config(&self) -> &Table {
-        let state = self.extensions().get::<Arc<State>>().unwrap();
+        let state = self.extensions().get::<State>().unwrap();
         state.config()
     }
 
     fn state_data(&self) -> &Map {
-        let state = self.extensions().get::<Arc<State>>().unwrap();
+        let state = self.extensions().get::<State>().unwrap();
         state.data()
     }
 
     fn state_data_mut(&mut self) -> &mut Map {
-        let state = self.extensions_mut().get_mut::<Arc<State>>().unwrap();
-        Arc::make_mut(state).data_mut()
+        let state = self.extensions_mut().get_mut::<State>().unwrap();
+        state.data_mut()
     }
 
     #[inline]

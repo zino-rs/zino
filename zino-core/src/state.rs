@@ -1,5 +1,5 @@
-use crate::{ConnectionPool, Map};
-use std::{env, fs, path::Path};
+use crate::Map;
+use std::{env, fs, path::Path, sync::LazyLock};
 use toml::value::{Table, Value};
 
 /// Application state.
@@ -9,8 +9,6 @@ pub struct State {
     env: String,
     /// Configuration.
     config: Table,
-    /// Connection pools.
-    pools: Vec<ConnectionPool>,
     /// Associated data.
     data: Map,
 }
@@ -22,7 +20,6 @@ impl State {
         Self {
             env,
             config: Table::new(),
-            pools: Vec::new(),
             data: Map::new(),
         }
     }
@@ -44,6 +41,12 @@ impl State {
             Value::Table(table) => self.config = table,
             _ => panic!("toml config file should be a table"),
         }
+    }
+
+    /// Set the state data.
+    #[inline]
+    pub fn set_data(&mut self, data: Map) {
+        self.data = data;
     }
 
     /// Returns the env as `&str`.
@@ -73,7 +76,7 @@ impl State {
     /// Returns a list of listeners as `Vec<String>`.
     pub fn listeners(&self) -> Vec<String> {
         let config = self.config();
-        let mut listeners = vec![];
+        let mut listeners = Vec::new();
 
         // Main server.
         let main = config
@@ -122,32 +125,24 @@ impl State {
 
         listeners
     }
-
-    /// Returns a connection pool with the specific name.
-    #[inline]
-    pub(crate) fn get_pool(&self, name: &str) -> Option<&ConnectionPool> {
-        self.pools.iter().find(|c| c.name() == name)
-    }
-
-    /// Sets the connection pools.
-    #[inline]
-    pub(crate) fn set_pools(&mut self, pools: Vec<ConnectionPool>) {
-        self.pools = pools;
-    }
 }
 
 impl Default for State {
-    #[inline]
     fn default() -> Self {
-        let mut app_env = "dev".to_string();
-        for arg in env::args() {
-            if arg.starts_with("--env=") {
-                app_env = arg.strip_prefix("--env=").unwrap().to_string();
-            }
-        }
-
-        let mut state = State::new(app_env);
-        state.load_config();
-        state
+        SHARED_STATE.clone()
     }
 }
+
+/// Shared application state.
+pub(crate) static SHARED_STATE: LazyLock<State> = LazyLock::new(|| {
+    let mut app_env = "dev".to_string();
+    for arg in env::args() {
+        if arg.starts_with("--env=") {
+            app_env = arg.strip_prefix("--env=").unwrap().to_string();
+        }
+    }
+
+    let mut state = State::new(app_env);
+    state.load_config();
+    state
+});

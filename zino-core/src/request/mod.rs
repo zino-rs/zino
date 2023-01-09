@@ -16,7 +16,7 @@ pub use validation::Validation;
 
 /// Request context.
 pub trait RequestContext {
-    /// Returns a reference to the application scoped config.
+    /// Returns a reference to the application config.
     fn config(&self) -> &Table;
 
     /// Returns a reference to the request scoped state data.

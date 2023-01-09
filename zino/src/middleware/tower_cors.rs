@@ -4,10 +4,8 @@ use zino_core::Application;
 
 // CORS middleware.
 pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {
-    match crate::AxumCluster::config()
-        .get("cors")
-        .and_then(|t| t.as_table())
-    {
+    let config = crate::AxumCluster::config();
+    match config.get("cors").and_then(|t| t.as_table()) {
         Some(cors) => {
             let allow_credentials = cors
                 .get("allow-credentials")

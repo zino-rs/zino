@@ -1,4 +1,4 @@
-use crate::{crypto, State};
+use crate::{crypto, state::SHARED_STATE};
 use sqlx::{
     postgres::{PgConnectOptions, PgPoolOptions},
     PgPool,
@@ -167,21 +167,31 @@ impl ConnectionPool {
     }
 }
 
-/// Shared state.
-pub(super) static SHARED_STATE: LazyLock<State> = LazyLock::new(|| {
-    let mut state = State::default();
+/// A list of database connection pools.
+#[derive(Debug, Clone)]
+pub(crate) struct ConnectionPools(Vec<ConnectionPool>);
+
+impl ConnectionPools {
+    /// Returns a connection pool with the specific name.
+    #[inline]
+    pub(crate) fn get_pool(&self, name: &str) -> Option<&ConnectionPool> {
+        self.0.iter().find(|c| c.name() == name)
+    }
+}
+
+/// Shared connection pools.
+pub(super) static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
+    let config = SHARED_STATE.config();
 
     // Application name.
-    let application_name = state
-        .config()
+    let application_name = config
         .get("name")
         .and_then(|t| t.as_str())
         .expect("the `name` field should be specified");
 
     // Database connection pools.
     let mut pools = Vec::new();
-    let databases = state
-        .config()
+    let databases = config
         .get("postgres")
         .expect("the `postgres` field should be specified")
         .as_array()
@@ -195,10 +205,7 @@ pub(super) static SHARED_STATE: LazyLock<State> = LazyLock::new(|| {
             pools.push(pool);
         }
     }
-    if !pools.is_empty() {
-        state.set_pools(pools);
-    }
-    state
+    ConnectionPools(pools)
 });
 
 /// Database namespace prefix.

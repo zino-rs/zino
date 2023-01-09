@@ -4,7 +4,7 @@ use serde::Serialize;
 use serde_json::Value;
 use sqlx::{postgres::PgRow, Column as _, Error, Row, TypeInfo};
 
-/// A column is a model field with associated metadata.
+/// A model field with associated metadata.
 #[derive(Debug, Clone, Serialize)]
 pub struct Column<'a> {
     /// Column name.

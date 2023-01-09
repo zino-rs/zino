@@ -3,6 +3,7 @@ use chrono::{
     Local, SecondsFormat, TimeZone, Utc,
 };
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::{
     fmt,
     ops::{Add, AddAssign, Sub, SubAssign},
@@ -64,15 +65,16 @@ impl DateTime {
     /// Returns an RFC 2822 date and time string.
     #[inline]
     pub fn to_utc_string(&self) -> String {
-        let datetime = self.0.with_timezone(&Utc).to_rfc2822();
-        format!("{} GMT", datetime.trim_end_matches(" +0000"))
+        let datetime = self.0.with_timezone(&Utc);
+        format!("{} GMT", datetime.to_rfc2822().trim_end_matches(" +0000"))
     }
 
     /// Return an RFC 3339 and ISO 8601 date and time string with subseconds
     /// formatted as [`SecondsFormat::Millis`](chrono::SecondsFormat::Millis).
     #[inline]
     pub fn to_iso_string(&self) -> String {
-        self.0.to_rfc3339_opts(SecondsFormat::Millis, true)
+        let datetime = self.0.with_timezone(&Utc);
+        datetime.to_rfc3339_opts(SecondsFormat::Millis, true)
     }
 }
 
@@ -83,15 +85,21 @@ impl Default for DateTime {
     }
 }
 
+impl From<chrono::DateTime<Local>> for DateTime {
+    fn from(dt: chrono::DateTime<Local>) -> Self {
+        Self(dt)
+    }
+}
+
 impl From<DateTime> for chrono::DateTime<Local> {
     fn from(dt: DateTime) -> Self {
         dt.0
     }
 }
 
-impl From<chrono::DateTime<Local>> for DateTime {
-    fn from(dt: chrono::DateTime<Local>) -> Self {
-        Self(dt)
+impl From<DateTime> for Value {
+    fn from(dt: DateTime) -> Self {
+        Value::String(dt.to_string())
     }
 }
 

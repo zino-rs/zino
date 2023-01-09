@@ -1,6 +1,6 @@
 use serde_json::json;
-use zino::Request;
-use zino_core::{Model, Query, Rejection, RequestContext, Response, Schema, Uuid};
+use zino::{AxumCluster, Request};
+use zino_core::{Application, Model, Query, Rejection, RequestContext, Response, Schema, Uuid};
 use zino_model::User;
 
 pub(crate) async fn new(mut req: Request) -> zino::Result {
@@ -63,7 +63,8 @@ pub(crate) async fn view(mut req: Request) -> zino::Result {
 
     let data = json!({
         "user": user,
-        "state": state_data,
+        "app_state_data": AxumCluster::state_data(),
+        "state_data": state_data,
         "config": req.config(),
     });
     res.set_data(data);

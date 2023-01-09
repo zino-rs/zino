@@ -57,7 +57,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Initializes the model reader.
     #[inline]
     fn init_reader() -> Result<&'static ConnectionPool, Error> {
-        super::SHARED_STATE
+        super::SHARED_CONNECTION_POOLS
             .get_pool(Self::READER_NAME)
             .ok_or(Error::PoolClosed)
     }
@@ -65,7 +65,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Initializes the model writer.
     #[inline]
     fn init_writer() -> Result<&'static ConnectionPool, Error> {
-        super::SHARED_STATE
+        super::SHARED_CONNECTION_POOLS
             .get_pool(Self::WRITER_NAME)
             .ok_or(Error::PoolClosed)
     }

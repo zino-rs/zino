@@ -117,8 +117,9 @@ impl Default for MessageChannel {
 }
 
 /// Channel capacity.
-static CHANNEL_CAPACITY: LazyLock<usize> =
-    LazyLock::new(|| match crate::AxumCluster::config().get("channel") {
+static CHANNEL_CAPACITY: LazyLock<usize> = LazyLock::new(|| {
+    let config = crate::AxumCluster::config();
+    match config.get("channel") {
         Some(config) => config
             .as_table()
             .expect("the `channel` field should be a table")
@@ -129,7 +130,8 @@ static CHANNEL_CAPACITY: LazyLock<usize> =
             .try_into()
             .expect("the `channel.capacity` field should be a positive integer"),
         None => 10000,
-    });
+    }
+});
 
 /// Channel subscribers.
 static CHANNEL_SUBSCRIBERS: LazyLock<RwLock<HashMap<Uuid, Subscriber>>> =
