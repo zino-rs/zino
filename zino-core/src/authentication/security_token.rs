@@ -68,7 +68,7 @@ impl SecurityToken {
         match base64::decode(&token) {
             Ok(data) => {
                 let authorization = crypto::decrypt(key, &data)
-                    .map_err(|_| DecodeError("fail to decrypt authorization".to_string()))?;
+                    .map_err(|_| DecodeError("failed to decrypt authorization".to_string()))?;
                 if let Some((assignee_id, timestamp)) = authorization.split_once(':') {
                     match timestamp.parse() {
                         Ok(secs) => {
@@ -76,7 +76,7 @@ impl SecurityToken {
                                 let expires = DateTime::from_timestamp(secs);
                                 let grantor_id = crypto::decrypt(key, assignee_id.as_ref())
                                     .map_err(|_| {
-                                        DecodeError("fail to decrypt grantor id".to_string())
+                                        DecodeError("failed to decrypt grantor id".to_string())
                                     })?;
                                 Ok(Self {
                                     grantor_id: grantor_id.into(),

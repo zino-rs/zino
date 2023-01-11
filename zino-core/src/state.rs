@@ -34,9 +34,9 @@ impl State {
             project_dir.join(format!("../config/config.{}.toml", self.env))
         };
         let config: Value = fs::read_to_string(&path)
-            .unwrap_or_else(|_| panic!("fail to read config file `{:#?}`", &path))
+            .unwrap_or_else(|_| panic!("failed to read config file `{:#?}`", &path))
             .parse()
-            .expect("fail to parse toml value");
+            .expect("failed to parse toml value");
         match config {
             Value::Table(table) => self.config = table,
             _ => panic!("toml config file should be a table"),

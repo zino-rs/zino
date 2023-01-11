@@ -28,3 +28,8 @@ password = "G76hTg8T5Aa+SZQFc+0QnsRLo1UOjqpkp/jUQ+lySc8QCt4B"
 
 [tracing]
 filter = "info,sqlx=warn"
+
+[metrics]
+exporter = "prometheus"
+host = "localhost"
+port = 9000

@@ -28,3 +28,8 @@ password = "QAx01wnh1i5ER713zfHmZi6dIUYn/Iq9ag+iUGtvKzEFJFYW"
 
 [tracing]
 filter = "info,sqlx=trace,tower_http=trace,zino=trace,zino_core=trace"
+
+[metrics]
+exporter = "prometheus"
+host = "localhost"
+port = 9000

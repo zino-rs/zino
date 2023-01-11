@@ -25,6 +25,9 @@ http = { version = "0.2.8" }
 http-body = { version = "0.4.5" }
 http-types = { version = "2.12.0" }
 lru = { version = "0.9.0" }
+metrics = { version = "0.20.1" }
+metrics-exporter-prometheus = { version = "0.11.0" }
+metrics-exporter-tcp = { version = "0.7.0" }
 parking_lot = { version = "0.12.1" }
 rand = { version = "0.8.5" }
 serde = { version = "1.0.152", features = ["derive"] }

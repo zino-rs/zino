@@ -1,4 +1,4 @@
-use crate::{RequestContext, Uuid, Validation};
+use crate::{RequestContext, SharedString, Uuid, Validation};
 use bytes::Bytes;
 use http::{
     self,
@@ -9,6 +9,7 @@ use http_types::trace::{Metric, ServerTiming, TraceContext};
 use serde::Serialize;
 use serde_json::Value;
 use std::{
+    borrow::{Borrow, Cow},
     marker::PhantomData,
     time::{Duration, Instant},
 };
@@ -28,22 +29,22 @@ pub trait ResponseCode {
     fn status_code(&self) -> u16;
 
     /// Error code.
-    fn error_code(&self) -> Option<String>;
+    fn error_code(&self) -> Option<SharedString>;
 
     /// Returns `true` if the response is successful.
     fn is_success(&self) -> bool;
 
     /// A URI reference that identifies the problem type.
     /// For successful response, it should be `None`.
-    fn type_uri(&self) -> Option<String>;
+    fn type_uri(&self) -> Option<SharedString>;
 
     /// A short, human-readable summary of the problem type.
     /// For successful response, it should be `None`.
-    fn title(&self) -> Option<String>;
+    fn title(&self) -> Option<SharedString>;
 
     /// A context-specific descriptive message. If the response is not successful,
     /// it should be a human-readable explanation specific to this occurrence of the problem.
-    fn message(&self) -> Option<String>;
+    fn message(&self) -> Option<SharedString>;
 }
 
 /// An HTTP response.
@@ -53,28 +54,28 @@ pub struct Response<S> {
     /// A URI reference that identifies the problem type.
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    type_uri: Option<String>,
+    type_uri: Option<SharedString>,
     /// A short, human-readable summary of the problem type.
     #[serde(skip_serializing_if = "Option::is_none")]
-    title: Option<String>,
+    title: Option<SharedString>,
     /// Status code.
     #[serde(rename = "status")]
     status_code: u16,
     /// Error code.
     #[serde(rename = "error")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    error_code: Option<String>,
+    error_code: Option<SharedString>,
     /// A human-readable explanation specific to this occurrence of the problem.
     #[serde(skip_serializing_if = "Option::is_none")]
-    detail: Option<String>,
+    detail: Option<SharedString>,
     /// A URI reference that identifies the specific occurrence of the problem.
     #[serde(skip_serializing_if = "Option::is_none")]
-    instance: Option<String>,
+    instance: Option<SharedString>,
     /// Indicates the response is successful or not.
     success: bool,
     /// A context-specific descriptive message for successful response.
     #[serde(skip_serializing_if = "Option::is_none")]
-    message: Option<String>,
+    message: Option<SharedString>,
     /// Start time.
     #[serde(skip)]
     start_time: Instant,
@@ -86,7 +87,7 @@ pub struct Response<S> {
     data: Value,
     /// Content type.
     #[serde(skip)]
-    content_type: Option<String>,
+    content_type: Option<SharedString>,
     /// Trace context.
     #[serde(skip)]
     trace_context: Option<TraceContext>,
@@ -138,7 +139,7 @@ impl<S: ResponseCode> Response<S> {
             status_code: code.status_code(),
             error_code: code.error_code(),
             detail: None,
-            instance: (!success).then(|| ctx.request_path().to_string()),
+            instance: (!success).then(|| ctx.request_path().to_string().into()),
             success,
             message: None,
             start_time: ctx.start_time(),
@@ -178,7 +179,7 @@ impl<S: ResponseCode> Response<S> {
 
     /// Sets the request context.
     pub fn set_context<T: RequestContext>(&mut self, ctx: &T) {
-        self.instance = (!self.is_success()).then(|| ctx.request_path().to_string());
+        self.instance = (!self.is_success()).then(|| ctx.request_path().to_string().into());
         self.start_time = ctx.start_time();
         self.request_id = ctx.request_id();
         self.trace_context = ctx.trace_context().map(|t| t.child());
@@ -191,13 +192,13 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Sets a URI reference that identifies the specific occurrence of the problem.
-    pub fn set_instance(&mut self, instance: impl Into<Option<String>>) {
+    pub fn set_instance(&mut self, instance: impl Into<Option<SharedString>>) {
         self.instance = instance.into();
     }
 
     /// Sets the message. If the response is not successful,
     /// it should be a human-readable explanation specific to this occurrence of the problem.
-    pub fn set_message(&mut self, message: impl Into<String>) {
+    pub fn set_message(&mut self, message: impl Into<SharedString>) {
         if self.is_success() {
             self.detail = None;
             self.message = Some(message.into());
@@ -227,7 +228,7 @@ impl<S: ResponseCode> Response<S> {
 
     /// Sets the content type.
     #[inline]
-    pub fn set_content_type(&mut self, content_type: impl Into<String>) {
+    pub fn set_content_type(&mut self, content_type: impl Into<SharedString>) {
         self.content_type = Some(content_type.into());
     }
 
@@ -280,7 +281,7 @@ impl ResponseCode for http::StatusCode {
     }
 
     #[inline]
-    fn error_code(&self) -> Option<String> {
+    fn error_code(&self) -> Option<SharedString> {
         None
     }
 
@@ -290,23 +291,23 @@ impl ResponseCode for http::StatusCode {
     }
 
     #[inline]
-    fn type_uri(&self) -> Option<String> {
+    fn type_uri(&self) -> Option<SharedString> {
         None
     }
 
     #[inline]
-    fn title(&self) -> Option<String> {
+    fn title(&self) -> Option<SharedString> {
         if self.is_success() {
             None
         } else {
-            self.canonical_reason().map(|s| s.to_string())
+            self.canonical_reason().map(Cow::Borrowed)
         }
     }
 
     #[inline]
-    fn message(&self) -> Option<String> {
+    fn message(&self) -> Option<SharedString> {
         if self.is_success() {
-            self.canonical_reason().map(|s| s.to_string())
+            self.canonical_reason().map(Cow::Borrowed)
         } else {
             None
         }
@@ -340,7 +341,7 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
                     .status(response.status_code)
                     .header(
                         header::CONTENT_TYPE,
-                        HeaderValue::from_str(content_type.as_str()).unwrap(),
+                        HeaderValue::from_str(content_type.borrow()).unwrap(),
                     )
                     .body(Full::from(bytes))
                     .unwrap_or_default(),
@@ -405,7 +406,7 @@ impl ResponseCode for http_types::StatusCode {
     }
 
     #[inline]
-    fn error_code(&self) -> Option<String> {
+    fn error_code(&self) -> Option<SharedString> {
         None
     }
 
@@ -415,19 +416,18 @@ impl ResponseCode for http_types::StatusCode {
     }
 
     #[inline]
-    fn type_uri(&self) -> Option<String> {
+    fn type_uri(&self) -> Option<SharedString> {
         None
     }
 
     #[inline]
-    fn title(&self) -> Option<String> {
-        (!self.is_success()).then(|| self.canonical_reason().to_string())
+    fn title(&self) -> Option<SharedString> {
+        (!self.is_success()).then(|| self.canonical_reason().into())
     }
 
     #[inline]
-    fn message(&self) -> Option<String> {
-        self.is_success()
-            .then(|| self.canonical_reason().to_string())
+    fn message(&self) -> Option<SharedString> {
+        self.is_success().then(|| self.canonical_reason().into())
     }
 }
 

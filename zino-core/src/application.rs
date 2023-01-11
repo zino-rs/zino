@@ -1,10 +1,14 @@
 use crate::{AsyncCronJob, CronJob, Job, JobScheduler, Map, State};
+use metrics_exporter_prometheus::PrometheusBuilder;
+use metrics_exporter_tcp::TcpBuilder;
 use std::{
     collections::HashMap,
     env, io,
-    path::PathBuf,
+    net::IpAddr,
+    path::{Path, PathBuf},
     sync::{LazyLock, OnceLock},
     thread,
+    time::Duration,
 };
 use toml::value::Table;
 use tracing::Level;
@@ -86,16 +90,16 @@ pub trait Application {
         LazyLock::force(&PROJECT_DIR)
     }
 
-    /// Initializes the tracing subscriber.
-    fn init_tracing_subscriber() {
+    /// Initializes the application.
+    fn init() {
         if TRACING_APPENDER_GUARD.get().is_some() {
             tracing::warn!("the tracing subscriber has already been initialized");
             return;
         }
 
         let app_env = Self::env();
-        let is_dev = app_env == "dev";
-        let mut env_filter = if is_dev {
+        let mut log_dir = "./log";
+        let mut env_filter = if app_env == "dev" {
             "info,sqlx=trace,zino=trace,zino_core=trace"
         } else {
             "info,sqlx=warn"
@@ -109,6 +113,9 @@ pub trait Application {
 
         let config = Self::config();
         if let Some(tracing) = config.get("tracing").and_then(|t| t.as_table()) {
+            if let Some(dir) = tracing.get("log-dir").and_then(|t| t.as_str()) {
+                log_dir = dir;
+            }
             if let Some(filter) = tracing.get("filter").and_then(|t| t.as_str()) {
                 env_filter = filter;
             }
@@ -134,7 +141,23 @@ pub trait Application {
                 .unwrap_or(false);
         }
 
-        let subscriber = tracing_subscriber::fmt()
+        let app_name = Self::name();
+        let log_dir = Path::new(log_dir);
+        let rolling_file_dir = if log_dir.exists() {
+            log_dir.to_path_buf()
+        } else {
+            let project_dir = Self::project_dir();
+            let log_dir = project_dir.join("./log");
+            if log_dir.exists() {
+                log_dir
+            } else {
+                project_dir.join("../log")
+            }
+        };
+        let file_appender = rolling::hourly(rolling_file_dir, format!("{app_name}.{app_env}"));
+        let (non_blocking_appender, worker_guard) = tracing_appender::non_blocking(file_appender);
+        let stderr = io::stderr.with_max_level(Level::WARN);
+        tracing_subscriber::fmt()
             .json()
             .with_env_filter(env_filter)
             .with_target(display_target)
@@ -143,29 +166,82 @@ pub trait Application {
             .with_thread_names(display_thread_names)
             .with_span_list(display_span_list)
             .with_current_span(display_current_span)
-            .with_timer(time::LocalTime::rfc_3339());
-
-        let app_name = Self::name();
-        let project_dir = Self::project_dir();
-        let log_dir = project_dir.join("./log");
-        let rolling_file_dir = if log_dir.exists() {
-            log_dir
-        } else {
-            project_dir.join("../log")
-        };
-        let file_appender = rolling::hourly(rolling_file_dir, format!("{app_name}.{app_env}"));
-        let (non_blocking_appender, worker_guard) = tracing_appender::non_blocking(file_appender);
-        if is_dev {
-            let stdout = io::stdout.with_max_level(Level::WARN);
-            subscriber
-                .with_writer(stdout.and(non_blocking_appender))
-                .init();
-        } else {
-            subscriber.with_writer(non_blocking_appender).init();
-        }
+            .with_timer(time::LocalTime::rfc_3339())
+            .with_writer(stderr.and(non_blocking_appender))
+            .init();
         TRACING_APPENDER_GUARD
             .set(worker_guard)
-            .expect("fail to set the worker guard for the tracing appender");
+            .expect("failed to set the worker guard for the tracing appender");
+
+        if let Some(metrics) = config.get("metrics").and_then(|t| t.as_table()) {
+            let exporter = metrics
+                .get("exporter")
+                .and_then(|t| t.as_str())
+                .unwrap_or_default();
+            if exporter == "prometheus" {
+                let mut builder = match metrics.get("push-gateway").and_then(|t| t.as_str()) {
+                    Some(endpoint) => {
+                        let interval = metrics
+                            .get("interval")
+                            .and_then(|t| t.as_integer().and_then(|i| i.try_into().ok()))
+                            .unwrap_or(60);
+                        PrometheusBuilder::new()
+                            .with_push_gateway(endpoint, Duration::from_secs(interval))
+                            .expect("failed to configure the exporter to run in push gateway mode")
+                    }
+                    None => {
+                        let host = config
+                            .get("host")
+                            .and_then(|t| t.as_str())
+                            .unwrap_or("localhost");
+                        let port = config
+                            .get("port")
+                            .and_then(|t| t.as_integer())
+                            .and_then(|t| u16::try_from(t).ok())
+                            .unwrap_or(9000);
+                        let host_addr = host
+                            .parse::<IpAddr>()
+                            .unwrap_or_else(|_| panic!("invalid host address: {host}"));
+                        PrometheusBuilder::new().with_http_listener((host_addr, port))
+                    }
+                };
+                if let Some(quantiles) = config.get("quantiles").and_then(|t| t.as_array()) {
+                    let quantiles = quantiles
+                        .iter()
+                        .filter_map(|q| q.as_float())
+                        .collect::<Vec<_>>();
+                    builder = builder
+                        .set_quantiles(&quantiles)
+                        .expect("the quantiles to use when rendering histograms are incorrect");
+                }
+                builder
+                    .install()
+                    .expect("failed to install Prometheus exporter");
+            } else if exporter == "tcp" {
+                let host = config
+                    .get("host")
+                    .and_then(|t| t.as_str())
+                    .unwrap_or("localhost");
+                let port = config
+                    .get("port")
+                    .and_then(|t| t.as_integer())
+                    .and_then(|t| u16::try_from(t).ok())
+                    .unwrap_or(9000);
+                let buffer_size = config
+                    .get("buffer_size")
+                    .and_then(|t| t.as_integer())
+                    .and_then(|t| usize::try_from(t).ok())
+                    .unwrap_or(1024);
+                let host_addr = host
+                    .parse::<IpAddr>()
+                    .unwrap_or_else(|_| panic!("invalid host address: {host}"));
+                TcpBuilder::new()
+                    .listen_address((host_addr, port))
+                    .buffer_size(Some(buffer_size))
+                    .install()
+                    .expect("failed to install TCP exporter");
+            }
+        }
     }
 }
 

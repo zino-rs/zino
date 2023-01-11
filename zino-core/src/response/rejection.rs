@@ -1,11 +1,8 @@
-use crate::{Response, Validation};
+use crate::{BoxError, Response, Validation};
 use bytes::Bytes;
 use http_body::Full;
 use std::{error, fmt};
 use Rejection::*;
-
-/// A type-erased error type.
-type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
 /// A rejection response type.
 #[derive(Debug)]

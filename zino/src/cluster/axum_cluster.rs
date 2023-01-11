@@ -34,7 +34,7 @@ impl Application for AxumCluster {
 
     /// Creates a new application.
     fn new() -> Self {
-        Self::init_tracing_subscriber();
+        Self::init();
         Self {
             routes: HashMap::new(),
         }
@@ -64,7 +64,7 @@ impl Application for AxumCluster {
             .global_queue_interval(61)
             .enable_all()
             .build()
-            .expect("fail to build Tokio runtime with the multi thread scheduler selected");
+            .expect("failed to build Tokio runtime with the multi thread scheduler selected");
         let mut scheduler = JobScheduler::new();
         for (cron_expr, exec) in async_jobs {
             scheduler.add(Job::new_async(cron_expr, exec));

@@ -141,5 +141,7 @@ static GLOBAL_CACHE: LazyLock<RwLock<LruCache<String, Value>>> = LazyLock::new(|
             .expect("the `cache.capacity` field should be a positive integer"),
         None => 10000,
     };
-    RwLock::new(LruCache::new(NonZeroUsize::new(capacity).unwrap()))
+    RwLock::new(LruCache::new(
+        NonZeroUsize::new(capacity).unwrap_or(NonZeroUsize::MIN),
+    ))
 });
