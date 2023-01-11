@@ -14,9 +14,9 @@ productivity and performance.
 - 🚀 Out-of-the-box features for rapid application development.
 - ✨ Minimal design, modular architecture and high-level abstractions.
 - ⚡ Embrace practical conventions to get the best performance.
-- 🐘 Highly optimized ORM for PostgreSQL built with [`sqlx`][sqlx].
+- 🐘 Highly optimized ORM for PostgreSQL built with [`sqlx`].
 - ⏲ Lightweight scheduler for sync and async cron jobs.
-- 📊 Support for `tracing`, `logging` and `metrics`.
+- 📊 Support for `logging`, [`tracing`] and [`metrics`].
 
 ## Getting started
 
@@ -46,6 +46,8 @@ This project is licensed under the [MIT license][license].
 [zino-derive-docs]: https://docs.rs/zino-derive
 [zino-model]: https://crates.io/crates/zino-model
 [zino-model-docs]: https://docs.rs/zino-model
-[sqlx]: https://crates.io/crates/sqlx
+[`sqlx`]: https://crates.io/crates/sqlx
+[`tracing`]: https://crates.io/crates/tracing
+[`metrics`]: https://crates.io/crates/metrics
 [`axum-app`]: https://github.com/photino/zino/tree/main/examples/axum-app
 [license]: https://github.com/photino/zino/blob/main/LICENSE

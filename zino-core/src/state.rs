@@ -1,5 +1,5 @@
 use crate::Map;
-use std::{env, fs, path::Path, sync::LazyLock};
+use std::{env, fs, sync::LazyLock};
 use toml::value::{Table, Value};
 
 /// Application state.
@@ -26,8 +26,8 @@ impl State {
 
     /// Loads the config file according to the specific env.
     pub fn load_config(&mut self) {
-        let current_dir = env::current_dir().unwrap();
-        let project_dir = Path::new(&current_dir);
+        let project_dir = env::current_dir()
+            .expect("the project directory does not exist or permissions are insufficient");
         let path = if project_dir.join("./config").exists() {
             project_dir.join(format!("./config/config.{}.toml", self.env))
         } else {

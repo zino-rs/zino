@@ -21,7 +21,7 @@ pub struct Column<'a> {
 
 impl<'a> Column<'a> {
     /// Creates a new instance.
-    pub fn new(
+    pub const fn new(
         name: &'a str,
         type_name: &'a str,
         default_value: Option<&'a str>,

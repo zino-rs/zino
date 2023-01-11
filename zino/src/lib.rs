@@ -8,7 +8,7 @@
 //! - ⚡ Embrace practical conventions to get the best performance.
 //! - 🐘 Highly optimized ORM for PostgreSQL built with [`sqlx`].
 //! - ⏲ Lightweight scheduler for sync and async cron jobs.
-//! - 📊 Support for `tracing`, `logging` and `metrics`.
+//! - 📊 Support for `logging`, [`tracing`] and [`metrics`].
 //!
 //! ## Getting started
 //!
@@ -16,6 +16,8 @@
 //!
 //! [`zino`]: https://github.com/photino/zino
 //! [`sqlx`]: https://crates.io/crates/sqlx
+//! [`tracing`]: https://crates.io/crates/tracing
+//! [`metrics`]: https://crates.io/crates/metrics
 //! [`axum-app`]: https://github.com/photino/zino/tree/main/examples/axum-app
 
 #![feature(async_fn_in_trait)]

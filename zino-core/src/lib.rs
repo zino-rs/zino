@@ -12,6 +12,7 @@
 
 mod application;
 mod authentication;
+mod cache;
 mod channel;
 mod crypto;
 mod database;
@@ -24,6 +25,7 @@ mod state;
 // Reexports.
 pub use application::Application;
 pub use authentication::{AccessKeyId, Authentication, SecretAccessKey, SecurityToken};
+pub use cache::GlobalCache;
 pub use channel::{CloudEvent, Subscription};
 pub use database::{Column, ConnectionPool, Model, Mutation, Query, Schema};
 pub use datetime::DateTime;

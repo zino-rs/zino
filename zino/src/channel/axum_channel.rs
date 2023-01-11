@@ -1,8 +1,6 @@
 use futures::stream::Stream;
-use std::{
-    collections::HashMap,
-    sync::{LazyLock, RwLock},
-};
+use parking_lot::RwLock;
+use std::{collections::HashMap, sync::LazyLock};
 use tokio::sync::mpsc::{self, error::TrySendError, Receiver, Sender};
 use tokio_stream::wrappers::ReceiverStream;
 use zino_core::{Application, CloudEvent, Subscription, Uuid};
@@ -57,7 +55,7 @@ impl MessageChannel {
         let (sender, receiver) = mpsc::channel(*CHANNEL_CAPACITY);
         let sender_id = Uuid::new_v4();
         let subscriber = Subscriber::new(sender, None);
-        let mut senders = CHANNEL_SUBSCRIBERS.write().unwrap();
+        let mut senders = CHANNEL_SUBSCRIBERS.write();
         senders.retain(|_, subscriber| !subscriber.emitter().is_closed());
         senders.insert(sender_id, subscriber);
         Self {
@@ -81,7 +79,7 @@ impl MessageChannel {
         let event = message.into();
         let event_source = event.source();
         let event_topic = event.topic();
-        let subscribers = CHANNEL_SUBSCRIBERS.read().unwrap();
+        let subscribers = CHANNEL_SUBSCRIBERS.read();
         for (key, subscriber) in subscribers.iter() {
             let emitter = subscriber.emitter();
             if key != sender_id && !emitter.is_closed() {
@@ -120,7 +118,7 @@ impl Default for MessageChannel {
 static CHANNEL_CAPACITY: LazyLock<usize> = LazyLock::new(|| {
     let config = crate::AxumCluster::config();
     match config.get("channel") {
-        Some(config) => config
+        Some(channel) => channel
             .as_table()
             .expect("the `channel` field should be a table")
             .get("capacity")

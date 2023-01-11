@@ -40,11 +40,13 @@ impl RequestContext for AxumExtractor<Request<Body>> {
         state.config()
     }
 
+    #[inline]
     fn state_data(&self) -> &Map {
         let state = self.extensions().get::<State>().unwrap();
         state.data()
     }
 
+    #[inline]
     fn state_data_mut(&mut self) -> &mut Map {
         let state = self.extensions_mut().get_mut::<State>().unwrap();
         state.data_mut()
@@ -66,6 +68,24 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
+    async fn original_uri(&mut self) -> Uri {
+        let OriginalUri(uri) = self.extract_parts().await.unwrap();
+        uri
+    }
+
+    /// Parses the route params as an instance of type `T`.
+    async fn parse_params<T>(&mut self) -> Result<T, Rejection>
+    where
+        T: DeserializeOwned + Send + 'static,
+    {
+        let Path(param) = self.extract_parts::<Path<T>>().await.map_err(|err| {
+            let mut validation = Validation::new();
+            validation.record_fail("params", err.to_string());
+            Rejection::bad_request(validation)
+        })?;
+        Ok(param)
+    }
+
     fn parse_query(&self) -> Result<Map, Validation> {
         match self.uri().query() {
             Some(query) => serde_qs::from_str::<Map>(query).map_err(|err| {
@@ -117,28 +137,8 @@ impl RequestContext for AxumExtractor<Request<Body>> {
 impl FromRequest<(), Body> for AxumExtractor<Request<Body>> {
     type Rejection = Infallible;
 
+    #[inline]
     async fn from_request(req: Request<Body>, _state: &()) -> Result<Self, Self::Rejection> {
         Ok(AxumExtractor(req))
-    }
-}
-
-impl AxumExtractor<Request<Body>> {
-    /// Extracts the original request URI regardless of nesting.
-    pub async fn original_uri(&mut self) -> Uri {
-        let OriginalUri(uri) = self.extract_parts().await.unwrap();
-        uri
-    }
-
-    /// Parses the route params as an instance of type `T`.
-    pub async fn parse_params<T>(&mut self) -> Result<T, Rejection>
-    where
-        T: DeserializeOwned + Send + 'static,
-    {
-        let Path(param) = self.extract_parts::<Path<T>>().await.map_err(|err| {
-            let mut validation = Validation::new();
-            validation.record_fail("params", err.to_string());
-            Rejection::bad_request(validation)
-        })?;
-        Ok(param)
     }
 }

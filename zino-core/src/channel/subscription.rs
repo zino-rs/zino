@@ -16,7 +16,7 @@ pub struct Subscription {
 impl Subscription {
     /// Creates a new instance.
     #[inline]
-    pub fn new(source: Option<String>, topic: Option<String>) -> Self {
+    pub const fn new(source: Option<String>, topic: Option<String>) -> Self {
         Self {
             session_id: None,
             source,

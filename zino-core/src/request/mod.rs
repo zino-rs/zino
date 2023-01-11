@@ -2,7 +2,9 @@ use crate::{
     authentication::ParseTokenError, Authentication, CloudEvent, DateTime, Map, Model, Query,
     Rejection, Response, ResponseCode, SecurityToken, Subscription, Uuid,
 };
+use http::uri::Uri;
 use http_types::{trace::TraceContext, Trailers};
+use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::time::{Duration, Instant};
 use toml::value::Table;
@@ -33,6 +35,14 @@ pub trait RequestContext {
 
     /// Returns the request method.
     fn request_method(&self) -> &str;
+
+    /// Extracts the original request URI regardless of nesting.
+    async fn original_uri(&mut self) -> Uri;
+
+    /// Parses the route params as an instance of type `T`.
+    async fn parse_params<T>(&mut self) -> Result<T, Rejection>
+    where
+        T: DeserializeOwned + Send + 'static;
 
     /// Parses the query as a json object.
     fn parse_query(&self) -> Result<Map, Validation>;
