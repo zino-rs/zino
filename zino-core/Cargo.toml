@@ -24,6 +24,7 @@ hmac = { version = "0.12.1" }
 http = { version = "0.2.8" }
 http-body = { version = "0.4.5" }
 http-types = { version = "2.12.0" }
+hyper = { version = "0.14.23" }
 lru = { version = "0.9.0" }
 metrics = { version = "0.20.1" }
 metrics-exporter-prometheus = { version = "0.11.0" }
@@ -32,6 +33,8 @@ parking_lot = { version = "0.12.1" }
 rand = { version = "0.8.5" }
 serde = { version = "1.0.152", features = ["derive"] }
 serde_json = { version = "1.0.91" }
+serde_qs = { version = "0.10.1" }
+serde_urlencoded = { version = "0.7.1" }
 sha2 = { version = "0.10.6" }
 sqlx = { version = "0.6.2", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono", "json"] }
 toml = { version = "0.5.10" }

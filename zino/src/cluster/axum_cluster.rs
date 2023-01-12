@@ -147,12 +147,9 @@ impl Application for AxumCluster {
                             }))
                             .layer(TimeoutLayer::new(Duration::from_secs(10))),
                     );
-
-                let addr = listener
-                    .parse()
-                    .inspect(|addr| tracing::info!(env = cluster_env, "listen on {addr}"))
-                    .unwrap_or_else(|_| panic!("invalid socket address: {listener}"));
-                Server::bind(&addr).serve(app.into_make_service_with_connect_info::<SocketAddr>())
+                tracing::info!(env = cluster_env, "listen on {listener}");
+                Server::bind(listener)
+                    .serve(app.into_make_service_with_connect_info::<SocketAddr>())
             });
             for result in future::join_all(servers).await {
                 if let Err(err) = result {

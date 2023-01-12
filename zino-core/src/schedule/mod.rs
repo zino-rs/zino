@@ -28,7 +28,8 @@ impl Job {
     /// Creates a new `Job`.
     #[inline]
     pub fn new(cron_expr: &str, exec: CronJob) -> Self {
-        let schedule = Schedule::from_str(cron_expr).unwrap();
+        let schedule = Schedule::from_str(cron_expr)
+            .unwrap_or_else(|err| panic!("invalid cron expression `{cron_expr}`: {err}"));
         Job {
             id: Uuid::new_v4(),
             data: Map::new(),
@@ -41,7 +42,8 @@ impl Job {
     /// Creates a new async `Job`.
     #[inline]
     pub fn new_async(cron_expr: &str, exec: AsyncCronJob) -> Self {
-        let schedule = Schedule::from_str(cron_expr).unwrap();
+        let schedule = Schedule::from_str(cron_expr)
+            .unwrap_or_else(|err| panic!("invalid cron expression `{cron_expr}`: {err}"));
         Job {
             id: Uuid::new_v4(),
             data: Map::new(),

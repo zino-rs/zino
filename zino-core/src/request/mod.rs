@@ -4,6 +4,7 @@ use crate::{
 };
 use http::uri::Uri;
 use http_types::{trace::TraceContext, Trailers};
+use hyper::body::Bytes;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::time::{Duration, Instant};
@@ -36,19 +37,14 @@ pub trait RequestContext {
     /// Returns the request method.
     fn request_method(&self) -> &str;
 
-    /// Extracts the original request URI regardless of nesting.
-    async fn original_uri(&mut self) -> Uri;
+    /// Returns the path in the router that matches the request.
+    fn matched_path(&self) -> &str;
 
-    /// Parses the route params as an instance of type `T`.
-    async fn parse_params<T>(&mut self) -> Result<T, Rejection>
-    where
-        T: DeserializeOwned + Send + 'static;
+    /// Returns the original request URI regardless of nesting.
+    fn original_uri(&self) -> &Uri;
 
-    /// Parses the query as a json object.
-    fn parse_query(&self) -> Result<Map, Validation>;
-
-    /// Parses the request body as a json object.
-    async fn parse_body(&mut self) -> Result<Map, Validation>;
+    /// Concatenates buffers from the request body into a single `Bytes` asynchronously.
+    async fn to_bytes(&mut self) -> Result<Bytes, Validation>;
 
     /// Attempts to send a message.
     fn try_send(&self, message: impl Into<CloudEvent>) -> Result<(), Rejection>;
@@ -61,7 +57,7 @@ pub trait RequestContext {
             .unwrap_or(Uuid::new_v4());
         let trace_context = self.trace_context();
         let trace_id = trace_context.map_or(Uuid::nil(), |t| Uuid::from_u128(t.trace_id()));
-        let query = self.parse_query().unwrap_or_default();
+        let query = self.parse_query::<Map>().unwrap_or_default();
         let session_id = Validation::parse_string(query.get("session_id")).or_else(|| {
             self.get_header("session-id").and_then(|header| {
                 // Session IDs have the form: SID:type:realm:identifier[-thread][:count]
@@ -92,15 +88,6 @@ pub trait RequestContext {
         }
     }
 
-    /// Returns the request path.
-    #[inline]
-    fn request_path(&self) -> &str {
-        match self.get_context() {
-            Some(ctx) => ctx.request_path(),
-            None => "",
-        }
-    }
-
     /// Returns the request ID.
     #[inline]
     fn request_id(&self) -> Uuid {
@@ -126,6 +113,84 @@ pub trait RequestContext {
         self.get_context().and_then(|ctx| ctx.session_id())
     }
 
+    /// Returns the request path.
+    #[inline]
+    fn request_path(&self) -> &str {
+        self.original_uri().path()
+    }
+
+    /// Parses the route parameter by name as an instance of type `T`.
+    /// The name should not include `:` or `*`.
+    fn parse_param<T>(&mut self, name: &str) -> Result<T, Validation>
+    where
+        T: DeserializeOwned + Send + 'static,
+    {
+        let path = self.matched_path();
+        if path.contains([':', '*']) {
+            let path_segments = path.split('/').collect::<Vec<_>>();
+            if let Some(index) = path_segments
+                .iter()
+                .position(|segment| segment.trim_matches(|c| c == ':' || c == '*') == name)
+            {
+                if let Some(&param) = self
+                    .request_path()
+                    .splitn(path_segments.len(), '/')
+                    .collect::<Vec<_>>()
+                    .get(index)
+                {
+                    return serde_json::from_value::<T>(param.into()).map_err(|err| {
+                        let mut validation = Validation::new();
+                        validation.record_fail(name, param);
+                        validation.record_fail("reason", err.to_string());
+                        validation
+                    });
+                }
+            }
+        }
+
+        let mut validation = Validation::new();
+        validation.record_fail(name, format!("the param `{name}` does not exist"));
+        Err(validation)
+    }
+
+    /// Parses the query as an instance of type `T`.
+    /// Returns a default value of `T` when the query is empty.
+    fn parse_query<T>(&self) -> Result<T, Validation>
+    where
+        T: Default + DeserializeOwned + Send + 'static,
+    {
+        match self.original_uri().query() {
+            Some(query) => serde_qs::from_str::<T>(query).map_err(|err| {
+                let mut validation = Validation::new();
+                validation.record_fail("query", err.to_string());
+                validation
+            }),
+            None => Ok(T::default()),
+        }
+    }
+
+    /// Parses the request body as an instance of type `T`.
+    async fn parse_body<T>(&mut self) -> Result<T, Validation>
+    where
+        T: DeserializeOwned + Send + 'static,
+    {
+        let form_urlencoded = self
+            .get_header("content-type")
+            .map(|t| t.starts_with("application/x-www-form-urlencoded"))
+            .unwrap_or(true);
+        let body_bytes = self.to_bytes().await?;
+        let result = if form_urlencoded {
+            serde_urlencoded::from_bytes(body_bytes.as_ref()).map_err(|err| err.to_string())
+        } else {
+            serde_json::from_slice(body_bytes.as_ref()).map_err(|err| err.to_string())
+        };
+        result.map_err(|err| {
+            let mut validation = Validation::new();
+            validation.record_fail("body", err);
+            validation
+        })
+    }
+
     /// Attempts to construct an instance of `Authentication` from an HTTP request.
     /// By default, the `Accept` header value is ignored and
     /// the canonicalized resource is set to the request path.
@@ -133,7 +198,7 @@ pub trait RequestContext {
     /// `Authentication`'s method [`set_headers()`](Authentication::set_headers).
     fn parse_authentication(&self) -> Result<Authentication, Validation> {
         let method = self.request_method();
-        let query = self.parse_query().unwrap_or_default();
+        let query = self.parse_query::<Map>().unwrap_or_default();
         let mut authentication = Authentication::new(method);
         let mut validation = Validation::new();
         if let Some(signature) = query.get("signature") {
@@ -205,7 +270,7 @@ pub trait RequestContext {
         if let Some(token) = self.get_header("x-security-token") {
             match SecurityToken::parse_token(key.as_ref(), token.to_string()) {
                 Ok(security_token) => {
-                    let query = self.parse_query().unwrap_or_default();
+                    let query = self.parse_query::<Map>().unwrap_or_default();
                     if let Some(assignee_id) = Validation::parse_string(query.get("access_key_id"))
                     {
                         if security_token.assignee_id().as_str() != assignee_id {
@@ -287,18 +352,11 @@ pub trait RequestContext {
 
     /// Creates a new subscription instance.
     fn subscription(&self) -> Subscription {
-        let mut subscription = Subscription::new(None, None);
-        let query = self.parse_query().unwrap_or_default();
-        if let Some(session_id) = Validation::parse_string(query.get("session_id")) {
-            subscription.set_session_id(session_id);
-        } else if let Some(session_id) = self.session_id() {
-            subscription.set_session_id(session_id.to_string());
-        }
-        if let Some(source) = Validation::parse_string(query.get("source")) {
-            subscription.set_source(source);
-        }
-        if let Some(topic) = Validation::parse_string(query.get("topic")) {
-            subscription.set_topic(topic);
+        let mut subscription = self.parse_query::<Subscription>().unwrap_or_default();
+        if subscription.session_id().is_none() {
+            if let Some(session_id) = self.session_id() {
+                subscription.set_session_id(session_id.to_string());
+            }
         }
         subscription
     }

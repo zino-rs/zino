@@ -39,7 +39,7 @@ pub(crate) async fn list(req: Request) -> zino::Result {
 }
 
 pub(crate) async fn view(mut req: Request) -> zino::Result {
-    let user_id = req.parse_params::<Uuid>().await?;
+    let user_id = req.parse_param::<Uuid>("id")?;
     let mut query = Query::new();
     let mut res = req.query_validation(&mut query)?;
     query.insert_filter("id", user_id.to_string());

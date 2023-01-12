@@ -65,7 +65,7 @@ impl ConnectionPool {
         let host = config
             .get("host")
             .and_then(|t| t.as_str())
-            .unwrap_or("localhost");
+            .unwrap_or("127.0.0.1");
         let port = config
             .get("port")
             .and_then(|t| t.as_integer())

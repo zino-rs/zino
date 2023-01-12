@@ -1,4 +1,4 @@
-use crate::{DateTime, Map, Rejection};
+use crate::{DateTime, Map, Response};
 use bytes::Bytes;
 use http_body::Full;
 use serde_json::Value;
@@ -182,6 +182,6 @@ impl fmt::Display for Validation {
 
 impl From<Validation> for http::Response<Full<Bytes>> {
     fn from(validation: Validation) -> Self {
-        Rejection::from(validation).into()
+        Response::from(validation).into()
     }
 }

@@ -559,9 +559,9 @@ pub trait Schema: 'static + Send + Sync + Model {
             .map(|(key, distinct)| {
                 if key != "*" {
                     if distinct {
-                        format!("count(distinct {key}) as count_distinct_{key}")
+                        format!("count(distinct {key}) as {key}_count_distinct")
                     } else {
-                        format!("count({key}) as count_{key}")
+                        format!("count({key}) as {key}_count")
                     }
                 } else {
                     "count(*)".to_string()

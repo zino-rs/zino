@@ -1,5 +1,5 @@
 use crate::{AsyncCronJob, CronJob, Job, JobScheduler, Map, State};
-use metrics_exporter_prometheus::PrometheusBuilder;
+use metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
 use metrics_exporter_tcp::TcpBuilder;
 use std::{
     collections::HashMap,
@@ -90,7 +90,7 @@ pub trait Application {
         LazyLock::force(&PROJECT_DIR)
     }
 
-    /// Initializes the application.
+    /// Initializes the application. It setups the tracing subscriber and the metrics exporter.
     fn init() {
         if TRACING_APPENDER_GUARD.get().is_some() {
             tracing::warn!("the tracing subscriber has already been initialized");
@@ -193,7 +193,7 @@ pub trait Application {
                         let host = config
                             .get("host")
                             .and_then(|t| t.as_str())
-                            .unwrap_or("localhost");
+                            .unwrap_or("127.0.0.1");
                         let port = config
                             .get("port")
                             .and_then(|t| t.as_integer())
@@ -201,7 +201,7 @@ pub trait Application {
                             .unwrap_or(9000);
                         let host_addr = host
                             .parse::<IpAddr>()
-                            .unwrap_or_else(|_| panic!("invalid host address: {host}"));
+                            .unwrap_or_else(|err| panic!("invalid host address `{host}`: {err}"));
                         PrometheusBuilder::new().with_http_listener((host_addr, port))
                     }
                 };
@@ -212,7 +212,40 @@ pub trait Application {
                         .collect::<Vec<_>>();
                     builder = builder
                         .set_quantiles(&quantiles)
-                        .expect("the quantiles to use when rendering histograms are incorrect");
+                        .expect("invalid quantiles to render histograms");
+                }
+                if let Some(buckets) = config.get("buckets").and_then(|t| t.as_table()) {
+                    for (key, value) in buckets {
+                        let matcher = if key.starts_with('^') {
+                            Matcher::Prefix(key.to_string())
+                        } else if key.ends_with('$') {
+                            Matcher::Suffix(key.to_string())
+                        } else {
+                            Matcher::Full(key.to_string())
+                        };
+                        let values = value
+                            .as_array()
+                            .expect("buckets should be an array of floats")
+                            .iter()
+                            .filter_map(|v| v.as_float())
+                            .collect::<Vec<_>>();
+                        builder = builder
+                            .set_buckets_for_metric(matcher, &values)
+                            .expect("invalid buckets to render histograms");
+                    }
+                }
+                if let Some(labels) = config.get("global-labels").and_then(|t| t.as_table()) {
+                    for (key, value) in labels {
+                        builder = builder.add_global_label(key, value.to_string());
+                    }
+                }
+                if let Some(addresses) = config.get("allowed-addresses").and_then(|t| t.as_array())
+                {
+                    for addr in addresses {
+                        builder = builder
+                            .add_allowed_address(addr.as_str().unwrap_or_default())
+                            .unwrap_or_else(|err| panic!("invalid IP address `{addr}`: {err}"));
+                    }
                 }
                 builder
                     .install()
@@ -221,7 +254,7 @@ pub trait Application {
                 let host = config
                     .get("host")
                     .and_then(|t| t.as_str())
-                    .unwrap_or("localhost");
+                    .unwrap_or("127.0.0.1");
                 let port = config
                     .get("port")
                     .and_then(|t| t.as_integer())
@@ -234,7 +267,7 @@ pub trait Application {
                     .unwrap_or(1024);
                 let host_addr = host
                     .parse::<IpAddr>()
-                    .unwrap_or_else(|_| panic!("invalid host address: {host}"));
+                    .unwrap_or_else(|err| panic!("invalid host address `{host}`: {err}"));
                 TcpBuilder::new()
                     .listen_address((host_addr, port))
                     .buffer_size(Some(buffer_size))

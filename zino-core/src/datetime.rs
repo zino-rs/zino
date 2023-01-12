@@ -1,6 +1,6 @@
 use chrono::{
     format::{ParseError, ParseResult},
-    Local, SecondsFormat, TimeZone, Utc,
+    Local, NaiveDateTime, SecondsFormat, TimeZone, Utc,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -26,14 +26,16 @@ impl DateTime {
     /// from the number of non-leap seconds since the midnight UTC on January 1, 1970.
     #[inline]
     pub fn from_timestamp(secs: i64) -> Self {
-        Self(Local.timestamp_opt(secs, 0).unwrap())
+        let dt = NaiveDateTime::from_timestamp_opt(secs, 0).unwrap_or_default();
+        Self(Local.from_utc_datetime(&dt))
     }
 
     /// Returns a new instance corresponding to a UTC date and time,
     /// from the number of non-leap milliseconds since the midnight UTC on January 1, 1970.
     #[inline]
-    pub fn from_timestamp_millis(mills: i64) -> Self {
-        Self(Local.timestamp_millis_opt(mills).unwrap())
+    pub fn from_timestamp_millis(millis: i64) -> Self {
+        let dt = NaiveDateTime::from_timestamp_millis(millis).unwrap_or_default();
+        Self(Local.from_utc_datetime(&dt))
     }
 
     /// Returns the number of non-leap seconds since January 1, 1970 0:00:00 UTC.

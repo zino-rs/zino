@@ -1,5 +1,9 @@
 use crate::Map;
-use std::{env, fs, sync::LazyLock};
+use std::{
+    env, fs,
+    net::{IpAddr, SocketAddr},
+    sync::LazyLock,
+};
 use toml::value::{Table, Value};
 
 /// Application state.
@@ -26,15 +30,19 @@ impl State {
 
     /// Loads the config file according to the specific env.
     pub fn load_config(&mut self) {
+        let env = &self.env;
         let project_dir = env::current_dir()
             .expect("the project directory does not exist or permissions are insufficient");
-        let path = if project_dir.join("./config").exists() {
-            project_dir.join(format!("./config/config.{}.toml", self.env))
+        let config_file = if project_dir.join("./config").exists() {
+            project_dir.join(format!("./config/config.{env}.toml"))
         } else {
-            project_dir.join(format!("../config/config.{}.toml", self.env))
+            project_dir.join(format!("../config/config.{env}.toml"))
         };
-        let config: Value = fs::read_to_string(&path)
-            .unwrap_or_else(|_| panic!("failed to read config file `{:#?}`", &path))
+        let config: Value = fs::read_to_string(&config_file)
+            .unwrap_or_else(|err| {
+                let config_file = config_file.to_string_lossy();
+                panic!("failed to read the config file `{config_file}`: {err}");
+            })
             .parse()
             .expect("failed to parse toml value");
         match config {
@@ -73,8 +81,8 @@ impl State {
         &mut self.data
     }
 
-    /// Returns a list of listeners as `Vec<String>`.
-    pub fn listeners(&self) -> Vec<String> {
+    /// Returns a list of listeners as `Vec<SocketAddr>`.
+    pub fn listeners(&self) -> Vec<SocketAddr> {
         let config = self.config();
         let mut listeners = Vec::new();
 
@@ -88,14 +96,15 @@ impl State {
             .get("host")
             .expect("the `main.host` field should be specified")
             .as_str()
-            .expect("the `main.host` field should be a str");
+            .and_then(|s| s.parse::<IpAddr>().ok())
+            .expect("the `main.host` field should be an IP address");
         let main_port = main
             .get("port")
             .expect("the `main.port` field should be specified")
             .as_integer()
+            .and_then(|t| u16::try_from(t).ok())
             .expect("the `main.port` field should be an integer");
-        let main_listener = format!("{main_host}:{main_port}");
-        listeners.push(main_listener);
+        listeners.push((main_host, main_port).into());
 
         // Standbys.
         let standbys = config
@@ -112,14 +121,15 @@ impl State {
                     .get("host")
                     .expect("the `standby.host` field should be specified")
                     .as_str()
+                    .and_then(|s| s.parse::<IpAddr>().ok())
                     .expect("the `standby.host` field should be a str");
                 let standby_port = standby
                     .get("port")
                     .expect("the `standby.port` field should be specified")
                     .as_integer()
+                    .and_then(|t| u16::try_from(t).ok())
                     .expect("the `standby.port` field should be an integer");
-                let standby_listener = format!("{standby_host}:{standby_port}");
-                listeners.push(standby_listener);
+                listeners.push((standby_host, standby_port).into());
             }
         }
 
@@ -137,8 +147,8 @@ impl Default for State {
 pub(crate) static SHARED_STATE: LazyLock<State> = LazyLock::new(|| {
     let mut app_env = "dev".to_string();
     for arg in env::args() {
-        if arg.starts_with("--env=") {
-            app_env = arg.strip_prefix("--env=").unwrap().to_string();
+        if let Some(value) = arg.strip_prefix("--env=") {
+            app_env = value.to_string();
         }
     }
 

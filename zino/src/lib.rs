@@ -32,17 +32,17 @@ mod endpoint;
 mod middleware;
 mod request;
 
-#[cfg(feature = "axum-server")]
-pub use cluster::axum_cluster::AxumCluster;
+cfg_if::cfg_if! {
+    if #[cfg(feature = "axum-server")] {
+        // Reexports.
+        pub use cluster::axum_cluster::AxumCluster;
+        pub use request::axum_request::AxumExtractor;
 
-#[cfg(feature = "axum-server")]
-pub use request::axum_request::AxumExtractor;
+        /// A specialized request extractor for `axum`.
+        pub type Request = AxumExtractor<axum::http::Request<axum::body::Body>>;
 
-#[cfg(feature = "axum-server")]
-/// A specialized request extractor for `axum`.
-pub type Request = AxumExtractor<axum::http::Request<axum::body::Body>>;
-
-#[cfg(feature = "axum-server")]
-/// A specialized `Result` type for `axum`.
-pub type Result<T = axum::http::Response<axum::body::Full<axum::body::Bytes>>> =
-    std::result::Result<T, T>;
+        /// A specialized `Result` type for `axum`.
+        pub type Result<T = axum::http::Response<axum::body::Full<axum::body::Bytes>>> =
+            std::result::Result<T, T>;
+    }
+}

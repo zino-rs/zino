@@ -19,6 +19,7 @@ axum-server = ["dep:axum", "dep:tokio", "dep:tokio-stream", "dep:tower", "dep:to
 [dependencies]
 async-trait = { version = "0.1.60" }
 axum = { version = "0.6.1", features = ["ws"], optional = true }
+cfg_if = { version = "1.0.0" }
 futures = { version = "0.3.25" }
 http-types = { version = "2.12.0" }
 hyper = { version = "0.14.23" }

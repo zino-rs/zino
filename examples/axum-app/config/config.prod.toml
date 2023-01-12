@@ -20,7 +20,7 @@ schema = "public"
 namespace = "dc"
 
 [[postgres]]
-host = "localhost"
+host = "127.0.0.1"
 port = 5432
 database = "data_cube"
 username = "postgres"
@@ -31,5 +31,5 @@ filter = "info,sqlx=warn"
 
 [metrics]
 exporter = "prometheus"
-host = "localhost"
+host = "127.0.0.1"
 port = 9000

@@ -1,15 +1,12 @@
 use crate::{RequestContext, SharedString, Uuid, Validation};
 use bytes::Bytes;
-use http::{
-    self,
-    header::{self, HeaderName, HeaderValue},
-};
+use http::header::{self, HeaderValue};
 use http_body::Full;
 use http_types::trace::{Metric, ServerTiming, TraceContext};
 use serde::Serialize;
 use serde_json::Value;
 use std::{
-    borrow::{Borrow, Cow},
+    borrow::Cow,
     marker::PhantomData,
     time::{Duration, Instant},
 };
@@ -339,10 +336,7 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
             Some(ref content_type) => match serde_json::to_vec(&response.data) {
                 Ok(bytes) => http::Response::builder()
                     .status(response.status_code)
-                    .header(
-                        header::CONTENT_TYPE,
-                        HeaderValue::from_str(content_type.borrow()).unwrap(),
-                    )
+                    .header(header::CONTENT_TYPE, content_type.as_ref())
                     .body(Full::from(bytes))
                     .unwrap_or_default(),
                 Err(err) => http::Response::builder()
@@ -360,7 +354,7 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
                     };
                     http::Response::builder()
                         .status(response.status_code)
-                        .header(header::CONTENT_TYPE, HeaderValue::from_static(content_type))
+                        .header(header::CONTENT_TYPE, content_type)
                         .body(Full::from(bytes))
                         .unwrap_or_default()
                 }
@@ -375,23 +369,20 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
             Some(ref trace_context) => trace_context.value(),
             None => TraceContext::new().value(),
         };
-        res.headers_mut().insert(
-            HeaderName::from_static("traceparent"),
-            HeaderValue::from_str(trace_context.as_str()).unwrap(),
-        );
+        if let Ok(header_value) = HeaderValue::try_from(trace_context.as_str()) {
+            res.headers_mut().insert("traceparent", header_value);
+        }
 
         response.record_server_timing("total", response.start_time.elapsed(), None);
-        res.headers_mut().insert(
-            HeaderName::from_static("server-timing"),
-            HeaderValue::from_str(response.server_timing.value().as_str()).unwrap(),
-        );
+        if let Ok(header_value) = HeaderValue::try_from(response.server_timing.value().as_str()) {
+            res.headers_mut().insert("server-timing", header_value);
+        }
 
         let request_id = response.request_id;
         if !request_id.is_nil() {
-            res.headers_mut().insert(
-                HeaderName::from_static("x-request-id"),
-                HeaderValue::from_str(request_id.to_string().as_str()).unwrap(),
-            );
+            if let Ok(header_value) = HeaderValue::try_from(request_id.to_string()) {
+                res.headers_mut().insert("x-request-id", header_value);
+            }
         }
         res
     }

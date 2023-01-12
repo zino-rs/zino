@@ -1,11 +1,10 @@
 use async_trait::async_trait;
 use axum::{
     body::Body,
-    extract::{FromRequest, OriginalUri, Path},
+    extract::{FromRequest, MatchedPath, OriginalUri},
     http::{Request, Uri},
-    RequestExt,
 };
-use hyper::body::Buf;
+use hyper::body::{self, Buf, Bytes};
 use serde::de::DeserializeOwned;
 use std::{
     convert::Infallible,
@@ -36,19 +35,28 @@ impl<T> DerefMut for AxumExtractor<T> {
 impl RequestContext for AxumExtractor<Request<Body>> {
     #[inline]
     fn config(&self) -> &Table {
-        let state = self.extensions().get::<State>().unwrap();
+        let state = self
+            .extensions()
+            .get::<State>()
+            .expect("the request extension `State` does not exist");
         state.config()
     }
 
     #[inline]
     fn state_data(&self) -> &Map {
-        let state = self.extensions().get::<State>().unwrap();
+        let state = self
+            .extensions()
+            .get::<State>()
+            .expect("the request extension `State` does not exist");
         state.data()
     }
 
     #[inline]
     fn state_data_mut(&mut self) -> &mut Map {
-        let state = self.extensions_mut().get_mut::<State>().unwrap();
+        let state = self
+            .extensions_mut()
+            .get_mut::<State>()
+            .expect("the request extension `State` does not exist");
         state.data_mut()
     }
 
@@ -67,60 +75,28 @@ impl RequestContext for AxumExtractor<Request<Body>> {
         self.method().as_str()
     }
 
-    #[inline]
-    async fn original_uri(&mut self) -> Uri {
-        let OriginalUri(uri) = self.extract_parts().await.unwrap();
-        uri
-    }
-
-    /// Parses the route params as an instance of type `T`.
-    async fn parse_params<T>(&mut self) -> Result<T, Rejection>
-    where
-        T: DeserializeOwned + Send + 'static,
-    {
-        let Path(param) = self.extract_parts::<Path<T>>().await.map_err(|err| {
-            let mut validation = Validation::new();
-            validation.record_fail("params", err.to_string());
-            Rejection::bad_request(validation)
-        })?;
-        Ok(param)
-    }
-
-    fn parse_query(&self) -> Result<Map, Validation> {
-        match self.uri().query() {
-            Some(query) => serde_qs::from_str::<Map>(query).map_err(|err| {
-                let mut validation = Validation::new();
-                validation.record_fail("query", err.to_string());
-                validation
-            }),
-            None => Ok(Map::new()),
+    fn matched_path(&self) -> &str {
+        if let Some(path) = self.extensions().get::<MatchedPath>() {
+            path.as_str()
+        } else {
+            self.uri().path()
         }
     }
 
-    async fn parse_body(&mut self) -> Result<Map, Validation> {
-        let form_urlencoded = self
-            .get_header("content-type")
-            .unwrap_or("application/x-www-form-urlencoded")
-            .starts_with("application/x-www-form-urlencoded");
-        let body = self.body_mut();
-        let result = if form_urlencoded {
-            hyper::body::aggregate(body)
-                .await
-                .map_err(|err| err.to_string())
-                .and_then(|buf| {
-                    serde_urlencoded::from_reader(buf.reader()).map_err(|err| err.to_string())
-                })
+    fn original_uri(&self) -> &Uri {
+        if let Some(original_uri) = self.extensions().get::<OriginalUri>() {
+            &original_uri.0
         } else {
-            hyper::body::aggregate(body)
-                .await
-                .map_err(|err| err.to_string())
-                .and_then(|buf| {
-                    serde_json::from_reader(buf.reader()).map_err(|err| err.to_string())
-                })
-        };
-        result.map_err(|err| {
+            // The `OriginalUri` extension will always be present if using
+            // `Router` unless another extractor or middleware has removed it
+            self.uri()
+        }
+    }
+
+    async fn to_bytes(&mut self) -> Result<Bytes, Validation> {
+        body::to_bytes(self.body_mut()).await.map_err(|err| {
             let mut validation = Validation::new();
-            validation.record_fail("query", err);
+            validation.record_fail("body", err.to_string());
             validation
         })
     }
@@ -130,6 +106,51 @@ impl RequestContext for AxumExtractor<Request<Body>> {
         crate::channel::axum_channel::MessageChannel::shared()
             .try_send(event)
             .map_err(Rejection::internal_server_error)
+    }
+
+    fn parse_query<T>(&self) -> Result<T, Validation>
+    where
+        T: Default + DeserializeOwned + Send + 'static,
+    {
+        match self.uri().query() {
+            Some(query) => serde_qs::from_str::<T>(query).map_err(|err| {
+                let mut validation = Validation::new();
+                validation.record_fail("query", err.to_string());
+                validation
+            }),
+            None => Ok(T::default()),
+        }
+    }
+
+    async fn parse_body<T>(&mut self) -> Result<T, Validation>
+    where
+        T: DeserializeOwned + Send + 'static,
+    {
+        let form_urlencoded = self
+            .get_header("content-type")
+            .map(|t| t.starts_with("application/x-www-form-urlencoded"))
+            .unwrap_or(true);
+        let body = self.body_mut();
+        let result = if form_urlencoded {
+            body::aggregate(body)
+                .await
+                .map_err(|err| err.to_string())
+                .and_then(|buf| {
+                    serde_urlencoded::from_reader(buf.reader()).map_err(|err| err.to_string())
+                })
+        } else {
+            body::aggregate(body)
+                .await
+                .map_err(|err| err.to_string())
+                .and_then(|buf| {
+                    serde_json::from_reader(buf.reader()).map_err(|err| err.to_string())
+                })
+        };
+        result.map_err(|err| {
+            let mut validation = Validation::new();
+            validation.record_fail("body", err);
+            validation
+        })
     }
 }
 
