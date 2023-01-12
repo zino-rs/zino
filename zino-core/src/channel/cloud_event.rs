@@ -81,13 +81,12 @@ impl CloudEvent {
         self.data.to_string()
     }
 
-    /// Consumes the event and returns as a json object. Panics if it fails.
+    /// Consumes the event and returns as a json object.
     #[must_use]
     pub fn into_map(self) -> Map {
-        if let Value::Object(map) = serde_json::to_value(self).unwrap() {
-            map
-        } else {
-            panic!("the cloud event cann't be converted to a json object");
+        match serde_json::to_value(self) {
+            Ok(Value::Object(map)) => map,
+            _ => panic!("the cloud event cann't be converted to a json object"),
         }
     }
 }

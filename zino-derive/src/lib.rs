@@ -48,9 +48,9 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     let mut columns = Vec::new();
     if let Data::Struct(data) = input.data && let Fields::Named(fields) = data.fields {
         for field in fields.named.into_iter() {
-            let name = field.ident.unwrap().to_string();
             let mut type_name = parser::get_type_name(&field.ty);
-            if !type_name.is_empty() {
+            if let Some(ident) = field.ident && !type_name.is_empty() {
+                let name = ident.to_string();
                 let mut default_value = None;
                 let mut not_null = false;
                 let mut index_type = None;

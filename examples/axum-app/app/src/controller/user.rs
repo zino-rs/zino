@@ -7,7 +7,7 @@ pub(crate) async fn new(mut req: Request) -> zino::Result {
     let mut user = User::new();
     let mut res = req.model_validation(&mut user).await?;
 
-    let rows = user.upsert().await.unwrap();
+    let rows = user.upsert().await.map_err(Rejection::from)?;
     let data = json!({
         "method": req.request_method(),
         "path": req.request_path(),
@@ -28,9 +28,7 @@ pub(crate) async fn list(req: Request) -> zino::Result {
     let mut query = Query::new();
     let mut res = req.query_validation(&mut query)?;
 
-    let users = User::find(query)
-        .await
-        .map_err(Rejection::internal_server_error)?;
+    let users = User::find(query).await.map_err(Rejection::from)?;
     let data = json!({
         "users": users,
     });
@@ -50,9 +48,7 @@ pub(crate) async fn view(mut req: Request) -> zino::Result {
     let event = req.cloud_event("message", message);
     req.try_send(event)?;
 
-    let user = User::find_one(query)
-        .await
-        .map_err(Rejection::internal_server_error)?;
+    let user = User::find_one(query).await.map_err(Rejection::from)?;
 
     let state_data = req.state_data_mut();
     let counter = state_data

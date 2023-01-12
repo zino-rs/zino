@@ -28,6 +28,8 @@ pub(super) fn every_20s(job_id: Uuid, job_data: &mut Map, _last_tick: DateTime) 
 }
 
 pub(super) fn every_30s(job_id: Uuid, job_data: &mut Map, _last_tick: DateTime) -> BoxFuture {
+    tracing::info_span!("count_users", %job_id);
+
     let counter = job_data
         .get("counter")
         .map(|c| c.as_u64().unwrap_or_default() + 1)
@@ -42,7 +44,9 @@ pub(super) fn every_30s(job_id: Uuid, job_data: &mut Map, _last_tick: DateTime) 
     Box::pin(async {
         let query = Query::new();
         let columns = [("*", true), ("roles", true)];
-        let mut map = User::count(query, columns).await.unwrap();
-        job_data.append(&mut map);
+        match User::count(query, columns).await {
+            Ok(mut map) => job_data.append(&mut map),
+            Err(err) => tracing::error!("failed to count users: {err}"),
+        }
     })
 }

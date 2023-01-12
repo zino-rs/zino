@@ -16,13 +16,12 @@ pub trait Model: Default + Serialize + DeserializeOwned {
         serde_json::from_value(Value::from(data))
     }
 
-    /// Consumes the model and returns as a json object. Panics if it fails.
+    /// Consumes the model and returns as a json object.
     #[must_use]
     fn into_map(self) -> Map {
-        if let Value::Object(map) = serde_json::to_value(self).unwrap() {
-            map
-        } else {
-            panic!("the model cann't be converted to a json object");
+        match serde_json::to_value(self) {
+            Ok(Value::Object(map)) => map,
+            _ => panic!("the model cann't be converted to a json object"),
         }
     }
 }

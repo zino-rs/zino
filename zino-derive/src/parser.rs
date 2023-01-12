@@ -2,8 +2,7 @@ use syn::{Attribute, GenericArgument, Lit, Meta, NestedMeta, PathArguments, Type
 
 /// Returns the Postgres type name as a str.
 pub(crate) fn get_type_name(ty: &Type) -> String {
-    if let Type::Path(ty) = ty {
-        let segment = ty.path.segments.last().unwrap();
+    if let Type::Path(ty) = ty && let Some(segment) = ty.path.segments.last() {
         let type_name = segment.ident.to_string();
         if let PathArguments::AngleBracketed(ref generics) = segment.arguments {
             if let Some(GenericArgument::Type(ref ty)) = generics.args.first() {

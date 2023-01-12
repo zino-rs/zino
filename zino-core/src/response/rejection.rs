@@ -74,6 +74,13 @@ impl From<Validation> for Rejection {
     }
 }
 
+impl From<sqlx::Error> for Rejection {
+    /// Converts to this type from the input type `sqlx::Error`.
+    fn from(err: sqlx::Error) -> Self {
+        InternalServerError(Box::new(err))
+    }
+}
+
 impl fmt::Display for Rejection {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
