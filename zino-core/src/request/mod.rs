@@ -56,6 +56,13 @@ pub trait RequestContext {
 
     /// Creates a new request context.
     fn new_context(&self) -> Context {
+        // Emit metrics.
+        metrics::increment_gauge!("zino_http_requests_pending", 1.0);
+        metrics::increment_counter!(
+            "zino_http_requests_total",
+            "method" => self.request_method().to_string(),
+        );
+
         let request_id = self
             .get_header("x-request-id")
             .and_then(|s| s.parse().ok())
@@ -73,14 +80,6 @@ pub trait RequestContext {
         let mut ctx = Context::new(request_id);
         ctx.set_trace_id(trace_id);
         ctx.set_session_id(session_id);
-
-        // Emit metrics.
-        metrics::increment_gauge!("zino_http_requests_pending", 1.0);
-        metrics::increment_counter!(
-            "zino_http_requests_total",
-            "method" => self.request_method().to_string(),
-        );
-
         ctx
     }
 

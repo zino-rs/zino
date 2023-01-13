@@ -78,7 +78,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 } else if INTEGER_TYPES.contains(&type_name.as_str()) {
                     default_value = default_value.or_else(|| Some("0".to_string()));
                 }
-                let value_quote = match default_value {
+                let quote_value = match default_value {
                     Some(value) => {
                         if value.contains("::") {
                             if let Some((type_name, type_fn)) = value.split_once("::") {
@@ -94,12 +94,12 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                     }
                     None => quote! { None },
                 };
-                let index_quote = match index_type {
+                let quote_index = match index_type {
                     Some(index) => quote! { Some(#index) },
                     None => quote! { None },
                 };
                 let column = quote! {
-                    zino_core::database::Column::new(#name, #type_name, #value_quote, #not_null, #index_quote)
+                    zino_core::database::Column::new(#name, #type_name, #quote_value, #not_null, #quote_index)
                 };
                 columns.push(column);
             }
