@@ -1,6 +1,8 @@
 use serde_json::json;
-use zino::{AxumCluster, Request};
-use zino_core::{Application, Model, Query, Rejection, RequestContext, Response, Schema, Uuid};
+use zino::{
+    Application, AxumCluster, Model, Query, Rejection, Request, RequestContext, Response, Schema,
+    Uuid,
+};
 use zino_model::User;
 
 pub(crate) async fn new(mut req: Request) -> zino::Result {

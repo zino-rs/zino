@@ -1,4 +1,4 @@
-use crate::{BoxError, Response, Validation};
+use crate::{request::Validation, response::Response, BoxError};
 use bytes::Bytes;
 use http_body::Full;
 use std::{error, fmt};

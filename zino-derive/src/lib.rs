@@ -99,7 +99,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                     None => quote! { None },
                 };
                 let column = quote! {
-                    zino_core::Column::new(#name, #type_name, #quote_value, #not_null, #quote_index)
+                    zino_core::database::Column::new(#name, #type_name, #quote_value, #not_null, #quote_index)
                 };
                 columns.push(column);
             }
@@ -114,14 +114,15 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     let columns_len = columns.len();
     let output = quote! {
         use std::sync::{LazyLock, OnceLock};
+        use zino_core::database::{Column, ConnectionPool, Schema};
 
-        static #schema_columns: LazyLock<[zino_core::Column; #columns_len]> = LazyLock::new(|| {
+        static #schema_columns: LazyLock<[Column; #columns_len]> = LazyLock::new(|| {
             [#(#columns),*]
         });
-        static #schema_reader: OnceLock<&zino_core::ConnectionPool> = OnceLock::new();
-        static #schema_writer: OnceLock<&zino_core::ConnectionPool> = OnceLock::new();
+        static #schema_reader: OnceLock<&ConnectionPool> = OnceLock::new();
+        static #schema_writer: OnceLock<&ConnectionPool> = OnceLock::new();
 
-        impl zino_core::Schema for #name {
+        impl Schema for #name {
             /// Type name as a str.
             const TYPE_NAME: &'static str = #type_name_lowercase;
             /// Primary key name as a str.
@@ -133,8 +134,8 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
 
             /// Returns a reference to the columns.
             #[inline]
-            fn columns() -> &'static [zino_core::Column<'static>] {
-                std::sync::LazyLock::force(&#schema_columns).as_slice()
+            fn columns() -> &'static [Column<'static>] {
+                LazyLock::force(&#schema_columns).as_slice()
             }
 
             /// Returns the primary key value as a `String`.
@@ -144,7 +145,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
             }
 
             /// Gets the model reader.
-            async fn get_reader() -> Option<&'static zino_core::ConnectionPool> {
+            async fn get_reader() -> Option<&'static ConnectionPool> {
                 match #schema_reader.get() {
                     Some(connection_pool) => Some(*connection_pool),
                     None => {
@@ -158,7 +159,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
             }
 
             /// Gets the model writer.
-            async fn get_writer() -> Option<&'static zino_core::ConnectionPool> {
+            async fn get_writer() -> Option<&'static ConnectionPool> {
                 match #schema_writer.get() {
                     Some(connection_pool) => Some(*connection_pool),
                     None => {
@@ -172,14 +173,14 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
             }
         }
 
-        impl std::cmp::PartialEq for #name {
+        impl PartialEq for #name {
             #[inline]
             fn eq(&self, other: &Self) -> bool {
                 self.#schema_primary_key == other.#schema_primary_key
             }
         }
 
-        impl std::cmp::Eq for #name {}
+        impl Eq for #name {}
     };
 
     TokenStream::from(output)

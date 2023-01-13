@@ -1,4 +1,8 @@
-use crate::{Column, Map, Schema, Validation};
+use crate::{
+    database::{Column, Schema},
+    request::Validation,
+    Map,
+};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Default)]

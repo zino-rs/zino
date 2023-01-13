@@ -1,4 +1,4 @@
-use crate::{crypto, AccessKeyId, DateTime};
+use crate::{authentication::AccessKeyId, crypto, datetime::DateTime};
 use std::fmt;
 
 /// An error which can be returned when parsing a token.

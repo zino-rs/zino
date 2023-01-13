@@ -1,4 +1,8 @@
-use crate::{Column, ConnectionPool, Map, Model, Mutation, Query, Validation};
+use crate::{
+    database::{Column, ConnectionPool, Model, Mutation, Query},
+    request::Validation,
+    Map,
+};
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use serde_json::json;

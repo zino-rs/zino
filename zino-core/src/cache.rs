@@ -1,10 +1,11 @@
+//! Global cache for the application.
+
 use lru::LruCache;
 use parking_lot::RwLock;
 use serde_json::Value;
 use std::{num::NonZeroUsize, sync::LazyLock};
 
-/// Global cache for the application.
-/// See the docs for [LruCache](https://docs.rs/lru/latest/lru/struct.LruCache.html).
+/// Global cache based on [LruCache](https://docs.rs/lru/latest/lru/struct.LruCache.html).
 #[derive(Debug, Clone, Copy, Default)]
 pub struct GlobalCache;
 

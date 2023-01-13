@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use zino_core::{AsyncCronJob, CronJob};
+use zino::{AsyncCronJob, CronJob};
 
 mod job;
 

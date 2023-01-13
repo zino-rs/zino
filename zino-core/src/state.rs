@@ -1,3 +1,5 @@
+//! Application state.
+
 use crate::Map;
 use std::{
     env, fs,

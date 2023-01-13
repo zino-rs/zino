@@ -5,7 +5,7 @@ use axum::{
 use futures::stream::Stream;
 use std::convert::Infallible;
 use tokio_stream::StreamExt;
-use zino_core::Subscription;
+use zino_core::channel::Subscription;
 
 /// SSE endpoint handler.
 pub(crate) async fn sse_handler(

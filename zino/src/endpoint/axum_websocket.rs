@@ -5,7 +5,7 @@ use axum::{
     },
     response::IntoResponse,
 };
-use zino_core::{CloudEvent, Subscription};
+use zino_core::channel::{CloudEvent, Subscription};
 
 /// WebSocket endpoint handler.
 pub(crate) async fn websocket_handler(

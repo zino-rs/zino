@@ -2,7 +2,7 @@ mod controller;
 mod router;
 mod schedule;
 
-use zino_core::Application;
+use zino::Application;
 
 fn main() {
     zino::AxumCluster::new()

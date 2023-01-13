@@ -1,6 +1,12 @@
+//! Request context and validation.
+
 use crate::{
-    authentication::ParseTokenError, Authentication, CloudEvent, DateTime, Map, Model, Query,
-    Rejection, Response, ResponseCode, SecurityToken, Subscription, Uuid,
+    authentication::{Authentication, ParseTokenError, SecurityToken},
+    channel::{CloudEvent, Subscription},
+    database::{Model, Query},
+    datetime::DateTime,
+    response::{Rejection, Response, ResponseCode},
+    Map, Uuid,
 };
 use http::uri::Uri;
 use http_types::{trace::TraceContext, Trailers};
@@ -13,7 +19,6 @@ use toml::value::Table;
 mod context;
 mod validation;
 
-// Reexports.
 pub use context::Context;
 pub use validation::Validation;
 

@@ -1,4 +1,6 @@
-use crate::{BoxFuture, DateTime, Map, Uuid};
+//! Scheduler for sync and async cron jobs.
+
+use crate::{datetime::DateTime, BoxFuture, Map, Uuid};
 use chrono::Local;
 use cron::Schedule;
 use std::{str::FromStr, time::Duration};

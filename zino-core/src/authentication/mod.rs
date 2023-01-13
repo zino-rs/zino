@@ -1,4 +1,6 @@
-use crate::{DateTime, Map, Validation};
+//! Access keys and security tokens.
+
+use crate::{datetime::DateTime, request::Validation, Map};
 use hmac::{
     digest::{FixedOutput, KeyInit, MacMarker, Update},
     Mac,
@@ -8,9 +10,8 @@ use std::time::Duration;
 mod access_key;
 mod security_token;
 
-// Rexports.
 pub use access_key::{AccessKeyId, SecretAccessKey};
-pub(crate) use security_token::ParseTokenError;
+pub(super) use security_token::ParseTokenError;
 pub use security_token::SecurityToken;
 
 /// HTTP signature using HMAC.

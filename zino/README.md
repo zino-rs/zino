@@ -16,7 +16,12 @@ productivity and performance.
 
 You can start with the example [`axum-app`].
 
+## Feature flags
+
+Currently, we only provide the `axum` feature to enable an integration with [`axum`].
+
 [`sqlx`]: https://crates.io/crates/sqlx
 [`tracing`]: https://crates.io/crates/tracing
 [`metrics`]: https://crates.io/crates/metrics
+[`axum`]: https://crates.io/crates/axum
 [`axum-app`]: https://github.com/photino/zino/tree/main/examples/axum-app

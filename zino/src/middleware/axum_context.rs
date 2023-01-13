@@ -3,7 +3,7 @@ use axum::{
     http::{Request, Response, StatusCode},
     middleware::Next,
 };
-use zino_core::RequestContext;
+use zino_core::request::RequestContext;
 
 pub(crate) async fn request_context(
     req: Request<Body>,

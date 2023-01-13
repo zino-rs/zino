@@ -1,3 +1,5 @@
+//! Connection pool and ORM.
+
 use crate::{crypto, state::SHARED_STATE};
 use sqlx::{
     postgres::{PgConnectOptions, PgPoolOptions},
@@ -12,7 +14,6 @@ mod mutation;
 mod query;
 mod schema;
 
-// Reexports.
 pub use column::Column;
 pub use model::Model;
 pub use mutation::Mutation;

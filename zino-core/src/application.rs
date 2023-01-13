@@ -1,4 +1,10 @@
-use crate::{AsyncCronJob, CronJob, Job, JobScheduler, Map, State};
+//! Application trait.
+
+use crate::{
+    schedule::{AsyncCronJob, CronJob, Job, JobScheduler},
+    state::State,
+    Map,
+};
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
 use metrics_exporter_tcp::TcpBuilder;
 use std::{

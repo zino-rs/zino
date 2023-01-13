@@ -1,4 +1,4 @@
-use crate::{Map, Schema, Validation};
+use crate::{database::Schema, request::Validation, Map};
 
 #[derive(Debug, Clone, Default)]
 /// SQL mutation builder.

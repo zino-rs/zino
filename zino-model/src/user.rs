@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
-use zino_core::{AccessKeyId, DateTime, Map, Model, Schema, Uuid, Validation};
+use zino_core::{
+    authentication::AccessKeyId, database::Model, datetime::DateTime, request::Validation, Map,
+    Uuid,
+};
 use zino_derive::Schema;
 
 /// The user model.

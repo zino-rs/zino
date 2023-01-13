@@ -3,7 +3,11 @@ use parking_lot::RwLock;
 use std::{collections::HashMap, sync::LazyLock};
 use tokio::sync::mpsc::{self, error::TrySendError, Receiver, Sender};
 use tokio_stream::wrappers::ReceiverStream;
-use zino_core::{Application, CloudEvent, Subscription, Uuid};
+use zino_core::{
+    application::Application,
+    channel::{CloudEvent, Subscription},
+    Uuid,
+};
 
 /// A emitter is a sender of cloud events.
 type Emitter = Sender<CloudEvent>;

@@ -1,3 +1,5 @@
+//! ISO 8601 combined date and time with local time zone.
+
 use chrono::{
     format::{ParseError, ParseResult},
     Local, NaiveDateTime, SecondsFormat, TimeZone, Utc,
@@ -11,7 +13,7 @@ use std::{
     time::Duration,
 };
 
-/// ISO 8601 combined date and time with local time zone.
+/// A wrapper type for `chrono::DateTime<Local>`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct DateTime(chrono::DateTime<Local>);
 

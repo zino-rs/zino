@@ -1,6 +1,6 @@
 use crate::Resource;
 use serde::{Deserialize, Serialize};
-use zino_core::{DateTime, Map, Model, Schema, Uuid, Validation};
+use zino_core::{database::Model, datetime::DateTime, request::Validation, Map, Uuid};
 use zino_derive::Schema;
 
 /// The order model.

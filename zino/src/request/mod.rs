@@ -1,2 +1,2 @@
-#[cfg(feature = "axum-server")]
-pub mod axum_request;
+#[cfg(feature = "axum")]
+pub(crate) mod axum_request;

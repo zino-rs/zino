@@ -1,2 +1,2 @@
-#[cfg(feature = "axum-server")]
+#[cfg(feature = "axum")]
 pub(crate) mod axum_channel;

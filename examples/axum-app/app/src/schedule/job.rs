@@ -1,4 +1,4 @@
-use zino_core::{BoxFuture, DateTime, Map, Query, Schema, Uuid};
+use zino::{BoxFuture, DateTime, Map, Query, Schema, Uuid};
 use zino_model::User;
 
 pub(super) fn every_15s(job_id: Uuid, job_data: &mut Map, _last_tick: DateTime) {

@@ -1,6 +1,6 @@
 
 name = "data-cube"
-version = "0.3.1"
+version = "0.4.0"
 
 [main]
 host = "127.0.0.1"
@@ -27,7 +27,7 @@ username = "postgres"
 password = "G76hTg8T5Aa+SZQFc+0QnsRLo1UOjqpkp/jUQ+lySc8QCt4B"
 
 [tracing]
-filter = "info,sqlx=warn"
+filter = "info,sqlx=warn,tower_http=warn"
 
 [metrics]
 exporter = "prometheus"

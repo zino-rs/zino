@@ -1,4 +1,9 @@
-use crate::{RequestContext, SharedString, Uuid, Validation};
+//! Constructing responses and rejections.
+
+use crate::{
+    request::{RequestContext, Validation},
+    SharedString, Uuid,
+};
 use bytes::Bytes;
 use http::header::{self, HeaderValue};
 use http_body::Full;
@@ -13,7 +18,6 @@ use std::{
 
 mod rejection;
 
-// Reexports.
 pub use rejection::Rejection;
 
 /// Response code.
