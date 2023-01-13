@@ -16,7 +16,6 @@ port = 6082
 
 [database]
 type = "postgres"
-schema = "public"
 namespace = "dc"
 
 [[postgres]]
@@ -28,6 +27,8 @@ password = "QAx01wnh1i5ER713zfHmZi6dIUYn/Iq9ag+iUGtvKzEFJFYW"
 
 [tracing]
 filter = "info,sqlx=trace,tower_http=trace,zino=trace,zino_core=trace"
+display-filename = true
+display-line-number = true
 
 [metrics]
 exporter = "prometheus"

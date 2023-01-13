@@ -69,9 +69,18 @@ pub trait RequestContext {
                 header.split(':').nth(3).map(|s| s.to_string())
             })
         });
+
         let mut ctx = Context::new(request_id);
         ctx.set_trace_id(trace_id);
         ctx.set_session_id(session_id);
+
+        // Emit metrics.
+        metrics::increment_gauge!("zino_http_requests_pending", 1.0);
+        metrics::increment_counter!(
+            "zino_http_requests_total",
+            "method" => self.request_method().to_string(),
+        );
+
         ctx
     }
 

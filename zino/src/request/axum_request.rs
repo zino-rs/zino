@@ -82,6 +82,8 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     fn matched_path(&self) -> &str {
+        // The `MatchedPath` extension is always accessible on handlers added via `Router::route`,
+        // but it is not accessible in middleware on nested routes.
         if let Some(path) = self.extensions().get::<MatchedPath>() {
             path.as_str()
         } else {
@@ -90,11 +92,11 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     fn original_uri(&self) -> &Uri {
+        // The `OriginalUri` extension will always be present if using
+        // `Router` unless another extractor or middleware has removed it.
         if let Some(original_uri) = self.extensions().get::<OriginalUri>() {
             &original_uri.0
         } else {
-            // The `OriginalUri` extension will always be present if using
-            // `Router` unless another extractor or middleware has removed it
             self.uri()
         }
     }

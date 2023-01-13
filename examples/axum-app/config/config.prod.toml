@@ -16,7 +16,6 @@ port = 6082
 
 [database]
 type = "postgres"
-schema = "public"
 namespace = "dc"
 
 [[postgres]]
@@ -27,7 +26,7 @@ username = "postgres"
 password = "G76hTg8T5Aa+SZQFc+0QnsRLo1UOjqpkp/jUQ+lySc8QCt4B"
 
 [tracing]
-filter = "info,sqlx=warn,tower_http=warn"
+filter = "info,sqlx=warn"
 
 [metrics]
 exporter = "prometheus"

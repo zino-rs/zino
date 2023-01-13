@@ -336,10 +336,11 @@ impl From<Validation> for Response<http::StatusCode> {
 
 impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
     fn from(mut response: Response<http::StatusCode>) -> Self {
+        let status_code = response.status_code;
         let mut res = match response.content_type {
             Some(ref content_type) => match serde_json::to_vec(&response.data) {
                 Ok(bytes) => http::Response::builder()
-                    .status(response.status_code)
+                    .status(status_code)
                     .header(header::CONTENT_TYPE, content_type.as_ref())
                     .body(Full::from(bytes))
                     .unwrap_or_default(),
@@ -357,7 +358,7 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
                         "application/problem+json"
                     };
                     http::Response::builder()
-                        .status(response.status_code)
+                        .status(status_code)
                         .header(header::CONTENT_TYPE, content_type)
                         .body(Full::from(bytes))
                         .unwrap_or_default()
@@ -377,7 +378,8 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
             res.headers_mut().insert("traceparent", header_value);
         }
 
-        response.record_server_timing("total", response.start_time.elapsed(), None);
+        let duration = response.start_time.elapsed();
+        response.record_server_timing("total", duration, None);
         if let Ok(header_value) = HeaderValue::try_from(response.server_timing.value().as_str()) {
             res.headers_mut().insert("server-timing", header_value);
         }
@@ -388,6 +390,17 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
                 res.headers_mut().insert("x-request-id", header_value);
             }
         }
+
+        // Emit metrics.
+        let labels = [("status", status_code.to_string())];
+        metrics::decrement_gauge!("zino_http_requests_pending", 1.0);
+        metrics::increment_counter!("zino_http_responses_total", &labels);
+        metrics::histogram!(
+            "zino_http_requests_duration_seconds",
+            duration.as_secs_f64(),
+            &labels,
+        );
+
         res
     }
 }
