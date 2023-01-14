@@ -35,11 +35,7 @@ impl State {
         let env = &self.env;
         let project_dir = env::current_dir()
             .expect("the project directory does not exist or permissions are insufficient");
-        let config_file = if project_dir.join("./config").exists() {
-            project_dir.join(format!("./config/config.{env}.toml"))
-        } else {
-            project_dir.join(format!("../config/config.{env}.toml"))
-        };
+        let config_file = project_dir.join(format!("./config/config.{env}.toml"));
         let config: Value = fs::read_to_string(&config_file)
             .unwrap_or_else(|err| {
                 let config_file = config_file.to_string_lossy();

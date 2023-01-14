@@ -9,7 +9,7 @@ use metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
 use metrics_exporter_tcp::TcpBuilder;
 use std::{
     collections::HashMap,
-    env, io,
+    env, fs, io,
     net::IpAddr,
     path::{Path, PathBuf},
     sync::{LazyLock, OnceLock},
@@ -154,11 +154,13 @@ pub trait Application {
         } else {
             let project_dir = Self::project_dir();
             let log_dir = project_dir.join("./log");
-            if log_dir.exists() {
-                log_dir
-            } else {
-                project_dir.join("../log")
+            if !log_dir.exists() {
+                fs::create_dir(log_dir.as_path()).unwrap_or_else(|err| {
+                    let log_dir = log_dir.to_string_lossy();
+                    panic!("failed to create the log directory `{log_dir}`: {err}");
+                });
             }
+            log_dir
         };
         let file_appender = rolling::hourly(rolling_file_dir, format!("{app_name}.{app_env}"));
         let (non_blocking_appender, worker_guard) = tracing_appender::non_blocking(file_appender);

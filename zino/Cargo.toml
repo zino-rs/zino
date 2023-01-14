@@ -1,7 +1,7 @@
 [package]
 name = "zino"
 description = "Full featured web application framework for Rust."
-version = "0.4.0"
+version = "0.4.1"
 rust-version = "1.68"
 edition = "2021"
 license = "MIT"
@@ -11,6 +11,9 @@ homepage = "https://github.com/photino/zino"
 repository = "https://github.com/photino/zino"
 documentation = "https://docs.rs/zino"
 readme = "README.md"
+
+[package.metadata.docs.rs]
+features = ["axum"]
 
 [features]
 axum = ["dep:axum", "dep:tokio", "dep:tokio-stream", "dep:tower", "dep:tower-http"]
@@ -37,4 +40,4 @@ tower-http = { version = "0.3.5", features = ["full"], optional = true }
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.4.0"
+version = "0.4.1"

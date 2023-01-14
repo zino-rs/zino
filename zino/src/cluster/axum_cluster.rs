@@ -87,12 +87,7 @@ impl Application for AxumCluster {
 
         let project_dir = Self::project_dir();
         let public_dir = project_dir.join("./public");
-        let static_site_dir = if public_dir.exists() {
-            public_dir
-        } else {
-            project_dir.join("../public")
-        };
-        let index_file = static_site_dir.join("./index.html");
+        let index_file = public_dir.join("./index.html");
         let internal_server_error_handler = |err: io::Error| async move {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -101,7 +96,7 @@ impl Application for AxumCluster {
         };
         let serve_file_service = routing::get_service(ServeFile::new(index_file))
             .handle_error(internal_server_error_handler);
-        let serve_dir_service = routing::get_service(ServeDir::new(static_site_dir))
+        let serve_dir_service = routing::get_service(ServeDir::new(public_dir))
             .handle_error(internal_server_error_handler);
 
         runtime.block_on(async {

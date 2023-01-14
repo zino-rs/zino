@@ -11,11 +11,12 @@
 #![feature(type_alias_impl_trait)]
 #![forbid(unsafe_code)]
 
+mod crypto;
+
 pub mod application;
 pub mod authentication;
 pub mod cache;
 pub mod channel;
-pub mod crypto;
 pub mod database;
 pub mod datetime;
 pub mod request;
