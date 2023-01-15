@@ -69,13 +69,7 @@ pub trait RequestContext {
             .unwrap_or(Uuid::new_v4());
         let trace_context = self.trace_context();
         let trace_id = trace_context.map_or(Uuid::nil(), |t| Uuid::from_u128(t.trace_id()));
-        let query = self.parse_query::<Map>().unwrap_or_default();
-        let session_id = Validation::parse_string(query.get("session_id")).or_else(|| {
-            self.get_header("session-id").and_then(|header| {
-                // Session IDs have the form: SID:type:realm:identifier[-thread][:count]
-                header.split(':').nth(3).map(|s| s.to_string())
-            })
-        });
+        let session_id = self.get_header("session-id").and_then(|s| s.parse().ok());
 
         let mut ctx = Context::new(request_id);
         ctx.set_trace_id(trace_id);
@@ -89,6 +83,7 @@ pub trait RequestContext {
         let traceparent = self.get_header("traceparent")?;
         let mut trailers = Trailers::new();
         trailers.insert("traceparent", traceparent);
+
         TraceContext::from_headers(&*trailers).unwrap_or(None)
     }
 
@@ -120,7 +115,6 @@ pub trait RequestContext {
     }
 
     /// Returns the session ID.
-    /// See [Session Identification URI](https://www.w3.org/TR/WD-session-id).
     #[inline]
     fn session_id(&self) -> Option<&str> {
         self.get_context().and_then(|ctx| ctx.session_id())
@@ -138,12 +132,13 @@ pub trait RequestContext {
     where
         T: DeserializeOwned + Send + 'static,
     {
+        const CAPTURES: [char; 2] = [':', '*'];
         let path = self.matched_path();
-        if path.contains([':', '*']) {
+        if path.contains(CAPTURES) {
             let path_segments = path.split('/').collect::<Vec<_>>();
             if let Some(index) = path_segments
                 .iter()
-                .position(|segment| segment.trim_matches(|c| c == ':' || c == '*') == name)
+                .position(|segment| segment.trim_matches(CAPTURES.as_slice()) == name)
             {
                 if let Some(&param) = self
                     .request_path()

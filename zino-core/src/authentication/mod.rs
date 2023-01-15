@@ -1,4 +1,4 @@
-//! Access keys and security tokens.
+//! Zero trust authentication.
 
 use crate::{datetime::DateTime, request::Validation, Map};
 use hmac::{
@@ -9,10 +9,13 @@ use std::time::Duration;
 
 mod access_key;
 mod security_token;
+mod session_id;
+
+pub(super) use security_token::ParseTokenError;
 
 pub use access_key::{AccessKeyId, SecretAccessKey};
-pub(super) use security_token::ParseTokenError;
 pub use security_token::SecurityToken;
+pub use session_id::SessionId;
 
 /// HTTP signature using HMAC.
 pub struct Authentication {

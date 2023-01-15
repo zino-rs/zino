@@ -186,12 +186,6 @@ impl<S: ResponseCode> Response<S> {
         self.trace_context = ctx.trace_context().map(|t| t.child());
     }
 
-    /// Returns `true` if the response is successful or `false` otherwise.
-    #[inline]
-    pub fn is_success(&self) -> bool {
-        self.success
-    }
-
     /// Sets a URI reference that identifies the specific occurrence of the problem.
     pub fn set_instance(&mut self, instance: impl Into<Option<SharedString>>) {
         self.instance = instance.into();
@@ -209,18 +203,6 @@ impl<S: ResponseCode> Response<S> {
         }
     }
 
-    /// Sets the request ID.
-    #[inline]
-    pub fn set_request_id(&mut self, request_id: Uuid) {
-        self.request_id = request_id;
-    }
-
-    /// Returns the request ID.
-    #[inline]
-    pub fn request_id(&self) -> Uuid {
-        self.request_id
-    }
-
     /// Sets the response data.
     #[inline]
     pub fn set_data(&mut self, data: impl Into<Value>) {
@@ -231,20 +213,6 @@ impl<S: ResponseCode> Response<S> {
     #[inline]
     pub fn set_content_type(&mut self, content_type: impl Into<SharedString>) {
         self.content_type = Some(content_type.into());
-    }
-
-    /// Sets the trace context from headers.
-    #[inline]
-    pub fn set_trace_context(&mut self, trace_context: impl Into<Option<TraceContext>>) {
-        self.trace_context = trace_context.into();
-    }
-
-    /// Returns the trace ID.
-    pub fn trace_id(&self) -> Uuid {
-        match self.trace_context {
-            Some(ref trace_context) => Uuid::from_u128(trace_context.trace_id()),
-            None => Uuid::nil(),
-        }
     }
 
     /// Records a server timing entry.
@@ -260,16 +228,24 @@ impl<S: ResponseCode> Response<S> {
         }
     }
 
-    /// Sets the start time.
+    /// Returns `true` if the response is successful or `false` otherwise.
     #[inline]
-    pub fn set_start_time(&mut self, start_time: Instant) {
-        self.start_time = start_time;
+    pub fn is_success(&self) -> bool {
+        self.success
     }
 
-    /// Returns the start time.
+    /// Returns the request ID.
     #[inline]
-    pub fn start_time(&self) -> Instant {
-        self.start_time
+    pub fn request_id(&self) -> Uuid {
+        self.request_id
+    }
+
+    /// Returns the trace ID.
+    pub fn trace_id(&self) -> Uuid {
+        match self.trace_context {
+            Some(ref trace_context) => Uuid::from_u128(trace_context.trace_id()),
+            None => Uuid::nil(),
+        }
     }
 }
 

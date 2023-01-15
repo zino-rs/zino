@@ -165,7 +165,7 @@ pub trait Application {
         let file_appender = rolling::hourly(rolling_file_dir, format!("{app_name}.{app_env}"));
         let (non_blocking_appender, worker_guard) = tracing_appender::non_blocking(file_appender);
         let stderr = io::stderr.with_max_level(Level::WARN);
-        tracing_subscriber::fmt()
+        let subscriber = tracing_subscriber::fmt()
             .json()
             .with_env_filter(env_filter)
             .with_target(display_target)
@@ -176,7 +176,9 @@ pub trait Application {
             .with_current_span(display_current_span)
             .with_timer(time::LocalTime::rfc_3339())
             .with_writer(stderr.and(non_blocking_appender))
-            .init();
+            .finish();
+        tracing::subscriber::set_global_default(subscriber)
+            .expect("setting default subscriber failed");
         TRACING_APPENDER_GUARD
             .set(worker_guard)
             .expect("failed to set the worker guard for the tracing appender");

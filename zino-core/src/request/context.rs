@@ -27,12 +27,6 @@ impl Context {
         }
     }
 
-    /// Sets the request ID.
-    #[inline]
-    pub fn set_request_id(&mut self, request_id: Uuid) {
-        self.request_id = request_id;
-    }
-
     /// Sets the trace ID.
     #[inline]
     pub fn set_trace_id(&mut self, trace_id: Uuid) {
