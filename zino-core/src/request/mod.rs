@@ -1,7 +1,7 @@
 //! Request context and validation.
 
 use crate::{
-    authentication::{Authentication, ParseTokenError, SecurityToken},
+    authentication::{Authentication, ParseSecurityTokenError, SecurityToken, SessionId},
     channel::{CloudEvent, Subscription},
     database::{Model, Query},
     datetime::DateTime,
@@ -42,8 +42,8 @@ pub trait RequestContext {
     /// Returns the request method.
     fn request_method(&self) -> &str;
 
-    /// Returns the path in the router that matches the request.
-    fn matched_path(&self) -> &str;
+    /// Returns the route that matches the request.
+    fn matched_route(&self) -> &str;
 
     /// Returns the original request URI regardless of nesting.
     fn original_uri(&self) -> &Uri;
@@ -133,23 +133,22 @@ pub trait RequestContext {
         T: DeserializeOwned + Send + 'static,
     {
         const CAPTURES: [char; 2] = [':', '*'];
-        let path = self.matched_path();
-        if path.contains(CAPTURES) {
-            let path_segments = path.split('/').collect::<Vec<_>>();
-            if let Some(index) = path_segments
+        let route = self.matched_route();
+        if route.contains(CAPTURES) {
+            let segments = route.split('/').collect::<Vec<_>>();
+            if let Some(index) = segments
                 .iter()
                 .position(|segment| segment.trim_matches(CAPTURES.as_slice()) == name)
             {
-                if let Some(&param) = self
-                    .request_path()
-                    .splitn(path_segments.len(), '/')
+                let path = self.request_path();
+                if let Some(&param) = path
+                    .splitn(segments.len(), '/')
                     .collect::<Vec<_>>()
                     .get(index)
                 {
                     return serde_json::from_value::<T>(param.into()).map_err(|err| {
                         let mut validation = Validation::new();
-                        validation.record_fail(name, param);
-                        validation.record_fail("reason", err.to_string());
+                        validation.record_fail(name, err.to_string());
                         validation
                     });
                 }
@@ -214,7 +213,7 @@ pub trait RequestContext {
             if let Some(access_key_id) = Validation::parse_string(query.get("access_key_id")) {
                 authentication.set_access_key_id(access_key_id);
             } else {
-                validation.record_fail("access_key_id", "must be nonempty");
+                validation.record_fail("access_key_id", "should be nonempty");
             }
             if let Some(Ok(secs)) = Validation::parse_i64(query.get("expires")) {
                 if DateTime::now().timestamp() <= secs {
@@ -271,12 +270,12 @@ pub trait RequestContext {
     }
 
     /// Attempts to construct an instance of `SecurityToken` from an HTTP request.
-    /// The token is extracted from the `x-security-token` header.
+    /// The value is extracted from the `x-security-token` header.
     fn parse_security_token(&self, key: impl AsRef<[u8]>) -> Result<SecurityToken, Validation> {
-        use ParseTokenError::*;
+        use ParseSecurityTokenError::*;
         let mut validation = Validation::new();
         if let Some(token) = self.get_header("x-security-token") {
-            match SecurityToken::parse_token(key.as_ref(), token.to_string()) {
+            match SecurityToken::parse_with(token.to_string(), key.as_ref()) {
                 Ok(security_token) => {
                     let query = self.parse_query::<Map>().unwrap_or_default();
                     if let Some(assignee_id) = Validation::parse_string(query.get("access_key_id"))
@@ -285,7 +284,7 @@ pub trait RequestContext {
                             validation.record_fail("access_key_id", "untrusted access key ID");
                         }
                     } else {
-                        validation.record_fail("access_key_id", "must be nonempty");
+                        validation.record_fail("access_key_id", "should be nonempty");
                     }
                     if let Some(Ok(expires)) = Validation::parse_i64(query.get("expires")) {
                         if security_token.expires().timestamp() != expires {
@@ -298,17 +297,33 @@ pub trait RequestContext {
                         return Ok(security_token);
                     }
                 }
-                Err(err) => match err {
-                    DecodeError(_) | InvalidFormat => {
-                        validation.record_fail("x-security-token", err.to_string())
-                    }
-                    ParseExpiresError(_) | ValidPeriodExpired => {
-                        validation.record_fail("expires", err.to_string())
-                    }
-                },
+                Err(err) => {
+                    let field = match err {
+                        DecodeError(_) | InvalidFormat => "x-security-token",
+                        ParseExpiresError(_) | ValidPeriodExpired => "expires",
+                    };
+                    validation.record_fail(field, err.to_string());
+                }
             }
         } else {
-            validation.record_fail("x-security-token", "must be nonempty");
+            validation.record_fail("x-security-token", "should be nonempty");
+        }
+        Err(validation)
+    }
+
+    /// Attempts to construct an instance of `SessionId` from an HTTP request.
+    /// The value is extracted from the `session-id` header.
+    fn parse_session_id(&self) -> Result<SessionId, Validation> {
+        let mut validation = Validation::new();
+        if let Some(session_id) = self.get_header("session-id") {
+            match SessionId::parse(session_id) {
+                Ok(session_id) => return Ok(session_id),
+                Err(err) => {
+                    validation.record_fail("session-id", err.to_string());
+                }
+            }
+        } else {
+            validation.record_fail("session-id", "should be nonempty");
         }
         Err(validation)
     }

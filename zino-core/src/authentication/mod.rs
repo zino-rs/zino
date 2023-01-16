@@ -1,6 +1,7 @@
 //! Zero trust authentication.
 
 use crate::{datetime::DateTime, request::Validation, Map};
+use base64::{engine::general_purpose::STANDARD_NO_PAD, Engine};
 use hmac::{
     digest::{FixedOutput, KeyInit, MacMarker, Update},
     Mac,
@@ -11,7 +12,7 @@ mod access_key;
 mod security_token;
 mod session_id;
 
-pub(super) use security_token::ParseTokenError;
+pub(crate) use security_token::ParseSecurityTokenError;
 
 pub use access_key::{AccessKeyId, SecretAccessKey};
 pub use security_token::SecurityToken;
@@ -252,7 +253,7 @@ impl Authentication {
         let mut mac =
             H::new_from_slice(secret_access_key.as_ref()).expect("HMAC can take key of any size");
         mac.update(string_to_sign.as_ref());
-        base64::encode(mac.finalize().into_bytes())
+        STANDARD_NO_PAD.encode(mac.finalize().into_bytes())
     }
 
     /// Validates the signature using the secret access key.
@@ -276,7 +277,7 @@ impl Authentication {
         }
 
         let signature = self.signature();
-        if signature.is_empty() || self.sign_with::<H>(secret_access_key) == signature {
+        if signature.is_empty() || self.sign_with::<H>(secret_access_key) != signature {
             validation.record_fail("signature", "invalid signature");
         }
         validation

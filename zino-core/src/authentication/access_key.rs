@@ -1,6 +1,9 @@
-use hmac::{Hmac, Mac};
+use base64::{engine::general_purpose::STANDARD_NO_PAD, Engine};
+use hmac::{
+    digest::{FixedOutput, KeyInit, MacMarker, Update},
+    Mac,
+};
 use rand::{distributions::Alphanumeric, Rng};
-use sha2::Sha256;
 use std::{fmt, iter};
 
 /// Access key ID.
@@ -60,12 +63,14 @@ pub struct SecretAccessKey(String);
 
 impl SecretAccessKey {
     /// Creates a new instance.
-    pub fn new(key: impl AsRef<[u8]>, id: impl Into<AccessKeyId>) -> Self {
-        let data = id.into();
-        let mut mac =
-            Hmac::<Sha256>::new_from_slice(key.as_ref()).expect("HMAC can take key of any size");
+    pub fn new<H>(key: impl AsRef<[u8]>, access_key_id: impl Into<AccessKeyId>) -> Self
+    where
+        H: FixedOutput + KeyInit + MacMarker + Update,
+    {
+        let data = access_key_id.into();
+        let mut mac = H::new_from_slice(key.as_ref()).expect("HMAC can take key of any size");
         mac.update(data.as_ref());
-        Self(base64::encode(mac.finalize().into_bytes()))
+        Self(STANDARD_NO_PAD.encode(mac.finalize().into_bytes()))
     }
 
     /// Returns a string slice.

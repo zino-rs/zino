@@ -81,7 +81,7 @@ impl RequestContext for AxumExtractor<Request<Body>> {
         self.method().as_str()
     }
 
-    fn matched_path(&self) -> &str {
+    fn matched_route(&self) -> &str {
         // The `MatchedPath` extension is always accessible on handlers added via `Router::route`,
         // but it is not accessible in middleware on nested routes.
         if let Some(path) = self.extensions().get::<MatchedPath>() {

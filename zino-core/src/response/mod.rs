@@ -368,7 +368,7 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
         }
 
         // Emit metrics.
-        let labels = [("status", status_code.to_string())];
+        let labels = [("status_code", status_code.to_string())];
         metrics::decrement_gauge!("zino_http_requests_pending", 1.0);
         metrics::increment_counter!("zino_http_responses_total", &labels);
         metrics::histogram!(

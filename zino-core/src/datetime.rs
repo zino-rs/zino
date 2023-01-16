@@ -82,6 +82,16 @@ impl DateTime {
     }
 }
 
+impl fmt::Display for DateTime {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.0.to_rfc3339_opts(SecondsFormat::Micros, false)
+        )
+    }
+}
+
 impl Default for DateTime {
     /// Returns an instance which corresponds to the current date.
     fn default() -> Self {
@@ -112,16 +122,6 @@ impl FromStr for DateTime {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         chrono::DateTime::<Local>::from_str(s).map(Self)
-    }
-}
-
-impl fmt::Display for DateTime {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            self.0.to_rfc3339_opts(SecondsFormat::Micros, false)
-        )
     }
 }
 

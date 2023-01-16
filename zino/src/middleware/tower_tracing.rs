@@ -80,7 +80,7 @@ fn new_on_response(response: &Response<BoxBody>, latency: Duration, span: &Span)
         .map(|trace_context| Uuid::from_u128(trace_context.trace_id()).to_string());
     span.record("trace_id", trace_id);
     tracing::info!(
-        status = response.status().as_u16(),
+        status_code = response.status().as_u16(),
         latency_micros = u64::try_from(latency.as_micros()).ok(),
         "finished processing request",
     );
@@ -102,7 +102,7 @@ fn new_on_failure(error: StatusInRangeFailureClass, latency: Duration, _span: &S
     match error {
         StatusInRangeFailureClass::StatusCode(status_code) => {
             tracing::error!(
-                status = status_code.as_u16(),
+                status_code = status_code.as_u16(),
                 latency_micros = latency,
                 "response failed",
             );

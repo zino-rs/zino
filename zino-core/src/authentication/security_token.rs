@@ -1,34 +1,6 @@
-use crate::{authentication::AccessKeyId, crypto, datetime::DateTime};
-use std::fmt;
-
-/// An error which can be returned when parsing a token.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) enum ParseTokenError {
-    /// An error that can occur while decoding.
-    DecodeError(String),
-    /// Invalid format.
-    InvalidFormat,
-    /// An error which can occur while parsing a expires timestamp.
-    ParseExpiresError(String),
-    /// Valid period expired.
-    ValidPeriodExpired,
-}
-
-impl fmt::Display for ParseTokenError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use ParseTokenError::*;
-        match self {
-            DecodeError(s) => {
-                write!(f, "decode error: {s}")
-            }
-            InvalidFormat => write!(f, "invalid format"),
-            ParseExpiresError(s) => {
-                write!(f, "parse expires error: {s}")
-            }
-            ValidPeriodExpired => write!(f, "valid period has expired"),
-        }
-    }
-}
+use crate::{authentication::AccessKeyId, crypto, datetime::DateTime, BoxError};
+use base64::{engine::general_purpose::STANDARD_NO_PAD, Engine};
+use std::{error::Error, fmt};
 
 /// Security token.
 #[derive(Debug, Clone)]
@@ -45,56 +17,24 @@ pub struct SecurityToken {
 
 impl SecurityToken {
     /// Creates a new instance.
-    pub fn new(key: impl AsRef<[u8]>, id: impl Into<AccessKeyId>, expires: DateTime) -> Self {
+    pub fn new(
+        key: impl AsRef<[u8]>,
+        access_key_id: impl Into<AccessKeyId>,
+        expires: DateTime,
+    ) -> Self {
         let key = key.as_ref();
-        let grantor_id = id.into();
+        let grantor_id = access_key_id.into();
         let timestamp = expires.timestamp();
         let grantor_id_cipher = crypto::encrypt(key, grantor_id.as_ref()).unwrap_or_default();
-        let assignee_id = base64::encode(grantor_id_cipher).into();
+        let assignee_id = STANDARD_NO_PAD.encode(grantor_id_cipher).into();
         let authorization = format!("{assignee_id}:{timestamp}");
         let authorization_cipher = crypto::encrypt(key, authorization.as_ref()).unwrap_or_default();
-        let token = base64::encode(authorization_cipher);
+        let token = STANDARD_NO_PAD.encode(authorization_cipher);
         Self {
             grantor_id,
             assignee_id,
             expires,
             token,
-        }
-    }
-
-    /// Parses the token with the encryption key.
-    pub(crate) fn parse_token(key: &[u8], token: String) -> Result<Self, ParseTokenError> {
-        use ParseTokenError::*;
-        match base64::decode(&token) {
-            Ok(data) => {
-                let authorization = crypto::decrypt(key, &data)
-                    .map_err(|_| DecodeError("failed to decrypt authorization".to_string()))?;
-                if let Some((assignee_id, timestamp)) = authorization.split_once(':') {
-                    match timestamp.parse() {
-                        Ok(secs) => {
-                            if DateTime::now().timestamp() <= secs {
-                                let expires = DateTime::from_timestamp(secs);
-                                let grantor_id = crypto::decrypt(key, assignee_id.as_ref())
-                                    .map_err(|_| {
-                                        DecodeError("failed to decrypt grantor id".to_string())
-                                    })?;
-                                Ok(Self {
-                                    grantor_id: grantor_id.into(),
-                                    assignee_id: assignee_id.into(),
-                                    expires,
-                                    token,
-                                })
-                            } else {
-                                Err(ValidPeriodExpired)
-                            }
-                        }
-                        Err(err) => Err(ParseExpiresError(err.to_string())),
-                    }
-                } else {
-                    Err(InvalidFormat)
-                }
-            }
-            Err(err) => Err(DecodeError(err.to_string())),
         }
     }
 
@@ -126,14 +66,51 @@ impl SecurityToken {
     pub fn encrypt(key: impl AsRef<[u8]>, plaintext: impl AsRef<[u8]>) -> Option<String> {
         crypto::encrypt(key.as_ref(), plaintext.as_ref())
             .ok()
-            .map(base64::encode)
+            .map(|bytes| STANDARD_NO_PAD.encode(bytes))
     }
 
     /// Decrypts the data using AES-GCM-SIV.
     pub fn decrypt(key: impl AsRef<[u8]>, data: impl AsRef<[u8]>) -> Option<String> {
-        base64::decode(data)
+        STANDARD_NO_PAD
+            .decode(data)
             .ok()
             .and_then(|cipher| crypto::decrypt(key.as_ref(), &cipher).ok())
+    }
+
+    /// Parses the token with the encryption key.
+    pub(crate) fn parse_with(token: String, key: &[u8]) -> Result<Self, ParseSecurityTokenError> {
+        use ParseSecurityTokenError::*;
+        match STANDARD_NO_PAD.decode(&token) {
+            Ok(data) => {
+                let authorization = crypto::decrypt(key, &data)
+                    .map_err(|_| DecodeError("failed to decrypt authorization".into()))?;
+                if let Some((assignee_id, timestamp)) = authorization.split_once(':') {
+                    match timestamp.parse() {
+                        Ok(secs) => {
+                            if DateTime::now().timestamp() <= secs {
+                                let expires = DateTime::from_timestamp(secs);
+                                let grantor_id = crypto::decrypt(key, assignee_id.as_ref())
+                                    .map_err(|_| {
+                                        DecodeError("failed to decrypt grantor id".into())
+                                    })?;
+                                Ok(Self {
+                                    grantor_id: grantor_id.into(),
+                                    assignee_id: assignee_id.into(),
+                                    expires,
+                                    token,
+                                })
+                            } else {
+                                Err(ValidPeriodExpired)
+                            }
+                        }
+                        Err(err) => Err(ParseExpiresError(Box::new(err))),
+                    }
+                } else {
+                    Err(InvalidFormat)
+                }
+            }
+            Err(err) => Err(DecodeError(Box::new(err))),
+        }
     }
 }
 
@@ -150,3 +127,30 @@ impl AsRef<[u8]> for SecurityToken {
         self.token.as_ref()
     }
 }
+
+/// An error which can be returned when parsing a token.
+#[derive(Debug)]
+pub(crate) enum ParseSecurityTokenError {
+    /// An error that can occur while decoding.
+    DecodeError(BoxError),
+    /// An error which can occur while parsing a expires timestamp.
+    ParseExpiresError(BoxError),
+    /// Valid period expired.
+    ValidPeriodExpired,
+    /// Invalid format.
+    InvalidFormat,
+}
+
+impl fmt::Display for ParseSecurityTokenError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use ParseSecurityTokenError::*;
+        match self {
+            DecodeError(err) => write!(f, "decode error: {err}"),
+            ParseExpiresError(err) => write!(f, "parse expires error: {err}"),
+            ValidPeriodExpired => write!(f, "valid period has expired"),
+            InvalidFormat => write!(f, "invalid format"),
+        }
+    }
+}
+
+impl Error for ParseSecurityTokenError {}
