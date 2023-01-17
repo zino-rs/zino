@@ -35,7 +35,7 @@ pub struct Record {
 impl Model for Record {
     fn new() -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id: Uuid::now_v7(),
             ..Self::default()
         }
     }

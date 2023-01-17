@@ -3,6 +3,7 @@
 //! [`zino`]: https://github.com/photino/zino
 
 #![feature(async_fn_in_trait)]
+#![feature(io_error_other)]
 #![feature(iter_intersperse)]
 #![feature(let_chains)]
 #![feature(nonzero_min_max)]

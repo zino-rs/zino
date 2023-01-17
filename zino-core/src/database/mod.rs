@@ -171,7 +171,7 @@ impl ConnectionPool {
 
 /// A list of database connection pools.
 #[derive(Debug, Clone)]
-pub(crate) struct ConnectionPools(Vec<ConnectionPool>);
+struct ConnectionPools(Vec<ConnectionPool>);
 
 impl ConnectionPools {
     /// Returns a connection pool with the specific name.
@@ -182,7 +182,7 @@ impl ConnectionPools {
 }
 
 /// Shared connection pools.
-pub(super) static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
+static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
     let config = SHARED_STATE.config();
 
     // Application name.
@@ -211,7 +211,7 @@ pub(super) static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock:
 });
 
 /// Database namespace prefix.
-pub(super) static NAMESPACE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
+static NAMESPACE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
     SHARED_STATE
         .config()
         .get("database")

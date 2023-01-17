@@ -12,30 +12,48 @@ repository = "https://github.com/photino/zino"
 documentation = "https://docs.rs/zino"
 readme = "README.md"
 
-[package.metadata.docs.rs]
-features = ["axum"]
-
 [features]
 axum = ["dep:axum", "dep:tokio", "dep:tokio-stream", "dep:tower", "dep:tower-http"]
 
 [dependencies]
-async-trait = { version = "0.1.60" }
-futures = { version = "0.3.25" }
-hyper = { version = "0.14.23" }
-parking_lot = { version = "0.12.1" }
-serde = { version = "1.0.152", features = ["derive"] }
-serde_json = { version = "1.0.91" }
-serde_qs = { version = "0.10.1" }
-serde_urlencoded = { version = "0.7.1" }
-toml = { version = "0.5.10" }
-tracing = { version = "0.1.37" }
+async-trait = "0.1.60"
+futures = "0.3.25"
+hyper = "0.14.23"
+parking_lot = "0.12.1"
+serde_json = "1.0.91"
+serde_qs = "0.11.0"
+serde_urlencoded = "0.7.1"
+toml = "0.5.10"
+tracing = "0.1.37"
 
-# optional dependencies
-axum = { version = "0.6.1", features = ["ws"], optional = true }
-tokio = { version = "1.24.1", features = ["rt-multi-thread", "sync", "parking_lot"], optional = true }
-tokio-stream = { version = "0.1.11", features = ["sync"], optional = true }
-tower = { version = "0.4.13", features = ["timeout"], optional = true }
-tower-http = { version = "0.3.5", features = ["full"], optional = true }
+[dependencies.axum]
+version = "0.6.2"
+features = ["ws"]
+optional = true
+
+[dependencies.serde]
+version = "1.0.152"
+features = ["derive"]
+
+[dependencies.tokio]
+version = "1.24.1"
+features = ["rt-multi-thread", "sync", "parking_lot"]
+optional = true
+
+[dependencies.tokio-stream]
+version = "0.1.11"
+features = ["sync"]
+optional = true
+
+[dependencies.tower]
+version = "0.4.13"
+features = ["timeout"]
+optional = true
+
+[dependencies.tower-http]
+version = "0.3.5"
+features = ["full"]
+optional = true
 
 [dependencies.zino-core]
 path = "../zino-core"

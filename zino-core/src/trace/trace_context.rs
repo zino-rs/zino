@@ -8,7 +8,7 @@ const FLAG_SAMPLED: u8 = 1;
 const FLAG_RANDOM_TRACE_ID: u8 = 2;
 
 /// HTTP headers for distributed tracing.
-/// See the [spec](https://w3c.github.io/trace-context).
+/// See [the spec](https://w3c.github.io/trace-context).
 #[derive(Debug)]
 pub struct TraceContext {
     /// Span identifier.

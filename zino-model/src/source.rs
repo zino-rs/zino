@@ -43,7 +43,7 @@ pub struct Source {
 impl Model for Source {
     fn new() -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id: Uuid::now_v7(),
             ..Self::default()
         }
     }

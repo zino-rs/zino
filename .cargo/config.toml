@@ -1,0 +1,3 @@
+[build]
+rustflags = ["--cfg", "uuid_unstable"]
+rustdocflags = ["--cfg", "uuid_unstable"]

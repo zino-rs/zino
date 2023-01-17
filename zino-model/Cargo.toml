@@ -10,8 +10,9 @@ repository = "https://github.com/photino/zino"
 documentation = "https://docs.rs/zino-model"
 readme = "README.md"
 
-[dependencies]
-serde = { version = "1.0.152", features = ["derive"] }
+[dependencies.serde]
+version = "1.0.152"
+features = ["derive"]
 
 [dependencies.zino-core]
 path = "../zino-core"
