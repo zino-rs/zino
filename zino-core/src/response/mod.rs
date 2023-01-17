@@ -2,12 +2,13 @@
 
 use crate::{
     request::{RequestContext, Validation},
+    trace::TraceContext,
     SharedString, Uuid,
 };
 use bytes::Bytes;
 use http::header::{self, HeaderValue};
 use http_body::Full;
-use http_types::trace::{Metric, ServerTiming, TraceContext};
+use http_types::trace::{Metric, ServerTiming};
 use serde::Serialize;
 use serde_json::Value;
 use std::{
@@ -347,10 +348,10 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
             },
         };
         let trace_context = match response.trace_context {
-            Some(ref trace_context) => trace_context.value(),
-            None => TraceContext::new().value(),
+            Some(ref trace_context) => trace_context.to_string(),
+            None => TraceContext::new().to_string(),
         };
-        if let Ok(header_value) = HeaderValue::try_from(trace_context.as_str()) {
+        if let Ok(header_value) = HeaderValue::try_from(trace_context) {
             res.headers_mut().insert("traceparent", header_value);
         }
 

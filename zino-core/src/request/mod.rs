@@ -6,10 +6,10 @@ use crate::{
     database::{Model, Query},
     datetime::DateTime,
     response::{Rejection, Response, ResponseCode},
+    trace::TraceContext,
     Map, Uuid,
 };
 use http::uri::Uri;
-use http_types::{trace::TraceContext, Trailers};
 use hyper::body::Bytes;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -81,10 +81,7 @@ pub trait RequestContext {
     #[inline]
     fn trace_context(&self) -> Option<TraceContext> {
         let traceparent = self.get_header("traceparent")?;
-        let mut trailers = Trailers::new();
-        trailers.insert("traceparent", traceparent);
-
-        TraceContext::from_headers(&*trailers).unwrap_or(None)
+        TraceContext::from_traceparent(traceparent)
     }
 
     /// Returns the start time.
@@ -342,10 +339,10 @@ pub trait RequestContext {
                     res.set_context(self);
                     Ok(res)
                 } else {
-                    Err(Rejection::BadRequest(validation))
+                    Err(validation.into())
                 }
             }
-            Err(validation) => Err(Rejection::BadRequest(validation)),
+            Err(validation) => Err(validation.into()),
         }
     }
 
@@ -366,10 +363,10 @@ pub trait RequestContext {
                     res.set_context(self);
                     Ok(res)
                 } else {
-                    Err(Rejection::BadRequest(validation))
+                    Err(validation.into())
                 }
             }
-            Err(validation) => Err(Rejection::BadRequest(validation)),
+            Err(validation) => Err(validation.into()),
         }
     }
 

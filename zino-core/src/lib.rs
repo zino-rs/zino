@@ -23,6 +23,7 @@ pub mod request;
 pub mod response;
 pub mod schedule;
 pub mod state;
+pub mod trace;
 
 /// A JSON key/value type.
 pub type Map = serde_json::Map<String, serde_json::Value>;

@@ -22,7 +22,8 @@ pub(crate) async fn new(mut req: Request) -> zino::Result {
 pub(crate) async fn update(mut req: Request) -> zino::Result {
     let mut user = User::new();
     let validation = req.parse_body().await.map(|body| user.read_map(body))?;
-    let res = Response::from(validation);
+    let mut res = Response::from(validation);
+    res.set_context(&req);
     Ok(res.into())
 }
 

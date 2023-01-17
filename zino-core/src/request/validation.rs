@@ -181,6 +181,7 @@ impl fmt::Display for Validation {
 }
 
 impl From<Validation> for http::Response<Full<Bytes>> {
+    #[inline]
     fn from(validation: Validation) -> Self {
         Response::from(validation).into()
     }

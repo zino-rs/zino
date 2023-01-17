@@ -1,7 +1,7 @@
 use crate::{request::Validation, response::Response, BoxError};
 use bytes::Bytes;
 use http_body::Full;
-use std::{error, fmt};
+use std::{error::Error, fmt};
 use Rejection::*;
 
 /// A rejection response type.
@@ -33,42 +33,43 @@ impl Rejection {
 
     /// Creates an `Unauthorized` rejection.
     #[inline]
-    pub fn unauthorized(err: impl std::error::Error + Send + Sync + 'static) -> Self {
+    pub fn unauthorized(err: impl Error + Send + Sync + 'static) -> Self {
         Unauthorized(Box::new(err))
     }
 
     /// Creates a `Forbidden` rejection.
     #[inline]
-    pub fn forbidden(err: impl std::error::Error + Send + Sync + 'static) -> Self {
+    pub fn forbidden(err: impl Error + Send + Sync + 'static) -> Self {
         Forbidden(Box::new(err))
     }
 
     /// Creates a `NotFound` rejection.
     #[inline]
-    pub fn not_found(err: impl std::error::Error + Send + Sync + 'static) -> Self {
+    pub fn not_found(err: impl Error + Send + Sync + 'static) -> Self {
         NotFound(Box::new(err))
     }
 
     /// Creates a `MethodNotAllowed` rejection.
     #[inline]
-    pub fn method_not_allowed(err: impl std::error::Error + Send + Sync + 'static) -> Self {
+    pub fn method_not_allowed(err: impl Error + Send + Sync + 'static) -> Self {
         MethodNotAllowed(Box::new(err))
     }
 
     /// Creates a `Conflict` rejection.
     #[inline]
-    pub fn conflict(err: impl std::error::Error + Send + Sync + 'static) -> Self {
+    pub fn conflict(err: impl Error + Send + Sync + 'static) -> Self {
         Conflict(Box::new(err))
     }
 
     /// Creates an `InternalServerError` rejection.
     #[inline]
-    pub fn internal_server_error(err: impl std::error::Error + Send + Sync + 'static) -> Self {
+    pub fn internal_server_error(err: impl Error + Send + Sync + 'static) -> Self {
         InternalServerError(Box::new(err))
     }
 }
 
 impl From<Validation> for Rejection {
+    #[inline]
     fn from(validation: Validation) -> Self {
         BadRequest(validation)
     }
@@ -76,6 +77,7 @@ impl From<Validation> for Rejection {
 
 impl From<sqlx::Error> for Rejection {
     /// Converts to this type from the input type `sqlx::Error`.
+    #[inline]
     fn from(err: sqlx::Error) -> Self {
         InternalServerError(Box::new(err))
     }
@@ -95,7 +97,7 @@ impl fmt::Display for Rejection {
     }
 }
 
-impl error::Error for Rejection {}
+impl Error for Rejection {}
 
 impl From<Rejection> for Response<http::StatusCode> {
     fn from(rejection: Rejection) -> Self {
@@ -184,6 +186,7 @@ impl<'a> From<&'a Rejection> for Response<http::StatusCode> {
 }
 
 impl From<Rejection> for http::Response<Full<Bytes>> {
+    #[inline]
     fn from(rejection: Rejection) -> Self {
         Response::from(rejection).into()
     }

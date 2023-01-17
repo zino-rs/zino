@@ -2,14 +2,13 @@ use axum::{
     body::{Body, BoxBody, Bytes},
     http::{HeaderMap, Request, Response},
 };
-use http_types::{trace::TraceContext, Trailers};
 use std::{sync::LazyLock, time::Duration};
 use tower_http::{
     classify::{SharedClassifier, StatusInRangeAsFailures, StatusInRangeFailureClass},
     trace::TraceLayer,
 };
 use tracing::{field::Empty, Span};
-use zino_core::Uuid;
+use zino_core::{trace::TraceContext, Uuid};
 
 // Type aliases.
 type NewMakeSpan = fn(&Request<Body>) -> Span;
@@ -70,13 +69,7 @@ fn new_on_response(response: &Response<BoxBody>, latency: Duration, span: &Span)
 
     let trace_id = headers
         .get("traceparent")
-        .and_then(|v| v.to_str().ok())
-        .and_then(|traceparent| {
-            let mut trailers = Trailers::new();
-            trailers.insert("traceparent", traceparent);
-
-            TraceContext::from_headers(&*trailers).ok().flatten()
-        })
+        .and_then(|v| v.to_str().ok().and_then(TraceContext::from_traceparent))
         .map(|trace_context| Uuid::from_u128(trace_context.trace_id()).to_string());
     span.record("trace_id", trace_id);
     tracing::info!(

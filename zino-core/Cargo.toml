@@ -41,4 +41,4 @@ tracing = { version = "0.1.37" }
 tracing-appender = { version = "0.2.2" }
 tracing-subscriber = { version = "0.3.16", features = ["env-filter", "json", "local-time"] }
 url = { version = "2.3.1" }
-uuid = { version = "1.2.2", features = ["serde", "v4"] }
+uuid = { version = "1.2.2", features = ["fast-rng", "serde", "v4", "v7"] }

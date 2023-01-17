@@ -21,7 +21,6 @@ axum = ["dep:axum", "dep:tokio", "dep:tokio-stream", "dep:tower", "dep:tower-htt
 [dependencies]
 async-trait = { version = "0.1.60" }
 futures = { version = "0.3.25" }
-http-types = { version = "2.12.0" }
 hyper = { version = "0.14.23" }
 parking_lot = { version = "0.12.1" }
 serde = { version = "1.0.152", features = ["derive"] }
