@@ -34,6 +34,7 @@ metrics-exporter-tcp = "0.7.0"
 parking_lot = "0.12.1"
 rand = "0.8.5"
 reqwest-middleware = "0.2.0"
+reqwest-retry = "0.2.1"
 reqwest-tracing = "0.4.0"
 serde_json = "1.0.91"
 serde_qs = "0.11.0"
@@ -54,7 +55,7 @@ features = ["derive"]
 
 [dependencies.reqwest]
 version = "0.11.13"
-features = ["cookies", "gzip", "brotli", "deflate", "json", "multipart"]
+features = ["cookies", "gzip", "brotli", "deflate", "json", "multipart", "stream"]
 
 [dependencies.sqlx]
 version = "0.6.2"

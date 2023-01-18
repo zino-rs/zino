@@ -183,7 +183,9 @@ impl JobScheduler {
                     }
                 }
             }
-            duration.to_std().unwrap_or(Duration::from_millis(500))
+            duration
+                .to_std()
+                .unwrap_or_else(|_| Duration::from_millis(500))
         }
     }
 }

@@ -21,7 +21,7 @@ pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {
                         .collect::<Vec<_>>();
                     AllowOrigin::list(origins)
                 })
-                .unwrap_or(AllowOrigin::mirror_request());
+                .unwrap_or_else(AllowOrigin::mirror_request);
             let allow_methods = cors
                 .get("allow-methods")
                 .and_then(|t| t.as_array())
@@ -32,7 +32,7 @@ pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {
                         .collect::<Vec<_>>();
                     AllowMethods::list(methods)
                 })
-                .unwrap_or(AllowMethods::mirror_request());
+                .unwrap_or_else(AllowMethods::mirror_request);
             let allow_headers = cors
                 .get("allow-headers")
                 .and_then(|t| t.as_array())
@@ -43,7 +43,7 @@ pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {
                         .collect::<Vec<_>>();
                     AllowHeaders::list(header_names)
                 })
-                .unwrap_or(AllowHeaders::mirror_request());
+                .unwrap_or_else(AllowHeaders::mirror_request);
             let expose_headers = cors
                 .get("expose-headers")
                 .and_then(|t| t.as_array())
@@ -54,7 +54,7 @@ pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {
                         .collect::<Vec<_>>();
                     ExposeHeaders::list(header_names)
                 })
-                .unwrap_or(ExposeHeaders::any());
+                .unwrap_or_else(ExposeHeaders::any);
             let max_age = cors
                 .get("max-age")
                 .and_then(|t| t.as_integer().and_then(|i| i.try_into().ok()))

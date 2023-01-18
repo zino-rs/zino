@@ -157,8 +157,17 @@ impl<S: ResponseCode> Response<S> {
         } else {
             res.detail = message;
         }
-        res.trace_context = ctx.trace_context().map(|t| t.child());
+        res.trace_context = Some(ctx.new_trace_context().child());
         res
+    }
+
+    /// Provides the request context for the response.
+    pub fn provide_context<T: RequestContext>(mut self, ctx: &T) -> Self {
+        self.instance = (!self.is_success()).then(|| ctx.request_path().to_string().into());
+        self.start_time = ctx.start_time();
+        self.request_id = ctx.request_id();
+        self.trace_context = Some(ctx.new_trace_context().child());
+        self
     }
 
     /// Sets the code.
@@ -177,14 +186,6 @@ impl<S: ResponseCode> Response<S> {
             self.detail = message;
             self.message = None;
         }
-    }
-
-    /// Sets the request context.
-    pub fn set_context<T: RequestContext>(&mut self, ctx: &T) {
-        self.instance = (!self.is_success()).then(|| ctx.request_path().to_string().into());
-        self.start_time = ctx.start_time();
-        self.request_id = ctx.request_id();
-        self.trace_context = ctx.trace_context().map(|t| t.child());
     }
 
     /// Sets a URI reference that identifies the specific occurrence of the problem.

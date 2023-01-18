@@ -1,3 +1,4 @@
+use crate::AxumCluster;
 use axum::{
     body::{Body, BoxBody, Bytes},
     http::{HeaderMap, Request, Response},
@@ -8,7 +9,7 @@ use tower_http::{
     trace::TraceLayer,
 };
 use tracing::{field::Empty, Span};
-use zino_core::{trace::TraceContext, Uuid};
+use zino_core::{application::Application, trace::TraceContext, Uuid};
 
 // Type aliases.
 type NewMakeSpan = fn(&Request<Body>) -> Span;
@@ -41,67 +42,87 @@ pub(crate) static TRACING_MIDDLEWARE: LazyLock<NewTraceLayer> = LazyLock::new(||
 
 fn new_make_span(request: &Request<Body>) -> Span {
     let uri = request.uri();
+    let headers = request.headers();
     tracing::info_span!(
-        "http-request",
-        method = request.method().as_str(),
-        path = uri.path(),
-        query = uri.query(),
-        span_id = Empty,
-        request_id = Empty,
-        trace_id = Empty,
-        session_id = Empty,
+        "HTTP request",
+        "otel.kind" = "server",
+        "otel.name" = AxumCluster::name(),
+        "http.method" = request.method().as_str(),
+        "http.scheme" = uri.scheme_str(),
+        "http.target" = uri.path_and_query().map(|t| t.as_str()),
+        "http.user_agent" = headers.get("user-agent").and_then(|v| v.to_str().ok()),
+        "http.request.header.traceparent" = Empty,
+        "http.response.header.traceparent" = Empty,
+        "http.status_code" = Empty,
+        "http.server.duration" = Empty,
+        "net.host.name" = uri.host(),
+        "net.host.port" = uri.port_u16(),
+        "zino.request_id" = Empty,
+        "zino.trace_id" = Empty,
+        "zino.session_id" = Empty,
+        id = Empty,
     )
 }
 
 fn new_on_request(request: &Request<Body>, span: &Span) {
     let headers = request.headers();
-    let session_id = headers.get("session-id").and_then(|v| v.to_str().ok());
-    span.record("session_id", session_id);
-    span.record("span_id", span.id().map(|t| t.into_u64()));
-
+    span.record(
+        "http.request.header.traceparent",
+        headers.get("traceparent").and_then(|v| v.to_str().ok()),
+    );
+    span.record(
+        "zino.session_id",
+        headers.get("session-id").and_then(|v| v.to_str().ok()),
+    );
+    span.record("id", span.id().map(|t| t.into_u64()));
     tracing::debug!("started processing request");
 }
 
 fn new_on_response(response: &Response<BoxBody>, latency: Duration, span: &Span) {
     let headers = response.headers();
-    let request_id = headers.get("x-request-id").and_then(|v| v.to_str().ok());
-    span.record("request_id", request_id);
-
-    let trace_id = headers
-        .get("traceparent")
-        .and_then(|v| v.to_str().ok().and_then(TraceContext::from_traceparent))
-        .map(|trace_context| Uuid::from_u128(trace_context.trace_id()).to_string());
-    span.record("trace_id", trace_id);
-    tracing::info!(
-        status_code = response.status().as_u16(),
-        latency_micros = u64::try_from(latency.as_micros()).ok(),
-        "finished processing request",
+    let traceparent = headers.get("traceparent").and_then(|v| v.to_str().ok());
+    span.record("http.response.header.traceparent", traceparent);
+    span.record(
+        "zino.trace_id",
+        traceparent
+            .and_then(TraceContext::from_traceparent)
+            .map(|ctx| Uuid::from_u128(ctx.trace_id()).to_string()),
     );
+    span.record(
+        "zino.request_id",
+        headers.get("x-request-id").and_then(|v| v.to_str().ok()),
+    );
+    span.record("http.status_code", response.status().as_u16());
+    span.record(
+        "http.server.duration",
+        u64::try_from(latency.as_millis()).ok(),
+    );
+    tracing::info!("finished processing request");
 }
 
 fn new_on_body_chunk(chunk: &Bytes, _latency: Duration, _span: &Span) {
-    tracing::debug!(chunk_size = chunk.len(), "sending body chunk");
+    tracing::debug!("flushed {} bytes", chunk.len());
 }
 
 fn new_on_eos(_trailers: Option<&HeaderMap>, stream_duration: Duration, _span: &Span) {
     tracing::debug!(
-        stream_duration_micros = u64::try_from(stream_duration.as_micros()).ok(),
+        stream_duration = u64::try_from(stream_duration.as_millis()).ok(),
         "end of stream",
     );
 }
 
-fn new_on_failure(error: StatusInRangeFailureClass, latency: Duration, _span: &Span) {
-    let latency = u64::try_from(latency.as_micros()).ok();
+fn new_on_failure(error: StatusInRangeFailureClass, latency: Duration, span: &Span) {
+    span.record(
+        "http.server.duration",
+        u64::try_from(latency.as_millis()).ok(),
+    );
     match error {
         StatusInRangeFailureClass::StatusCode(status_code) => {
-            tracing::error!(
-                status_code = status_code.as_u16(),
-                latency_micros = latency,
-                "response failed",
-            );
+            span.record("http.status_code", status_code.as_u16());
+            tracing::error!("response failed");
         }
         StatusInRangeFailureClass::Error(err) => {
-            tracing::error!(latency_micros = latency, err);
+            tracing::error!(err);
         }
     }
 }

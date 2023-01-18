@@ -1,16 +1,18 @@
 //! Request context and validation.
 
 use crate::{
+    application::http_client,
     authentication::{Authentication, ParseSecurityTokenError, SecurityToken, SessionId},
     channel::{CloudEvent, Subscription},
     database::{Model, Query},
     datetime::DateTime,
     response::{Rejection, Response, ResponseCode},
     trace::TraceContext,
-    Map, Uuid,
+    BoxError, Map, Uuid,
 };
 use http::uri::Uri;
 use hyper::body::Bytes;
+use reqwest::IntoUrl;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::time::{Duration, Instant};
@@ -66,9 +68,10 @@ pub trait RequestContext {
         let request_id = self
             .get_header("x-request-id")
             .and_then(|s| s.parse().ok())
-            .unwrap_or(Uuid::new_v4());
-        let trace_context = self.trace_context();
-        let trace_id = trace_context.map_or(Uuid::nil(), |t| Uuid::from_u128(t.trace_id()));
+            .unwrap_or_else(Uuid::new_v4);
+        let trace_id = self
+            .get_trace_context()
+            .map_or_else(Uuid::new_v4, |t| Uuid::from_u128(t.trace_id()));
         let session_id = self.get_header("session-id").and_then(|s| s.parse().ok());
 
         let mut ctx = Context::new(request_id);
@@ -77,11 +80,21 @@ pub trait RequestContext {
         ctx
     }
 
-    /// Returns the trace context.
+    /// Returns the trace context by parsing the `traceparent` header.
     #[inline]
-    fn trace_context(&self) -> Option<TraceContext> {
+    fn get_trace_context(&self) -> Option<TraceContext> {
         let traceparent = self.get_header("traceparent")?;
         TraceContext::from_traceparent(traceparent)
+    }
+
+    /// Creates a new `TraceContext`.
+    fn new_trace_context(&self) -> TraceContext {
+        self.get_trace_context()
+            .or_else(|| {
+                self.get_context()
+                    .map(|ctx| TraceContext::with_trace_id(ctx.trace_id()))
+            })
+            .unwrap_or_default()
     }
 
     /// Returns the start time.
@@ -335,8 +348,7 @@ pub trait RequestContext {
             Ok(data) => {
                 let validation = query.read_map(data);
                 if validation.is_success() {
-                    let mut res = Response::new(S::OK);
-                    res.set_context(self);
+                    let res = Response::with_context(S::OK, self);
                     Ok(res)
                 } else {
                     Err(validation.into())
@@ -359,8 +371,7 @@ pub trait RequestContext {
             Ok(data) => {
                 let validation = model.read_map(data);
                 if validation.is_success() {
-                    let mut res = Response::new(S::OK);
-                    res.set_context(self);
+                    let res = Response::with_context(S::OK, self);
                     Ok(res)
                 } else {
                     Err(validation.into())
@@ -368,6 +379,20 @@ pub trait RequestContext {
             }
             Err(validation) => Err(validation.into()),
         }
+    }
+
+    /// Makes an HTTP request to the provided resource
+    /// using [`reqwest`](https://crates.io/crates/reqwest).
+    async fn fetch(
+        &self,
+        resource: impl IntoUrl,
+        options: impl Into<Option<Map>>,
+    ) -> Result<reqwest::Response, BoxError> {
+        http_client::request_builder(resource, options)?
+            .header("traceparent", self.new_trace_context().to_string())
+            .send()
+            .await
+            .map_err(BoxError::from)
     }
 
     /// Creates a new subscription instance.

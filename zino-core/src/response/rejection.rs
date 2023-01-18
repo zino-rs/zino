@@ -75,6 +75,13 @@ impl From<Validation> for Rejection {
     }
 }
 
+impl From<BoxError> for Rejection {
+    #[inline]
+    fn from(err: BoxError) -> Self {
+        InternalServerError(err)
+    }
+}
+
 impl From<sqlx::Error> for Rejection {
     /// Converts to this type from the input type `sqlx::Error`.
     #[inline]

@@ -22,8 +22,7 @@ pub(crate) async fn new(mut req: Request) -> zino::Result {
 pub(crate) async fn update(mut req: Request) -> zino::Result {
     let mut user = User::new();
     let validation = req.parse_body().await.map(|body| user.read_map(body))?;
-    let mut res = Response::from(validation);
-    res.set_context(&req);
+    let res = Response::from(validation).provide_context(&req);
     Ok(res.into())
 }
 
@@ -52,6 +51,7 @@ pub(crate) async fn view(mut req: Request) -> zino::Result {
     req.try_send(event)?;
 
     let user = User::find_one(query).await.map_err(Rejection::from)?;
+    req.fetch("http://localhost:6081/stats", None).await.map_err(Rejection::from)?;
 
     let state_data = req.state_data_mut();
     let counter = state_data

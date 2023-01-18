@@ -1,3 +1,4 @@
+use crate::Uuid;
 use std::fmt;
 use tracing::Span;
 
@@ -16,7 +17,6 @@ pub struct TraceContext {
     /// Version of the traceparent header.
     version: u8,
     /// Globally unique identifier.
-    /// All bytes as zero is considered an invalid value.
     trace_id: u128,
     /// Identifier of the request known by the caller.
     parent_id: Option<u64>,
@@ -34,7 +34,22 @@ impl TraceContext {
         Self {
             span_id,
             version: 0,
-            trace_id: rand::random(),
+            trace_id: Uuid::new_v4().as_u128(),
+            parent_id: None,
+            trace_flags: FLAG_SAMPLED | FLAG_RANDOM_TRACE_ID,
+        }
+    }
+
+    /// Creates a new instance with the specific `trace-id`.
+    pub fn with_trace_id(trace_id: Uuid) -> Self {
+        let span_id = Span::current()
+            .id()
+            .map(|t| t.into_u64())
+            .unwrap_or_else(rand::random);
+        Self {
+            span_id,
+            version: 0,
+            trace_id: trace_id.as_u128(),
             parent_id: None,
             trace_flags: FLAG_SAMPLED | FLAG_RANDOM_TRACE_ID,
         }

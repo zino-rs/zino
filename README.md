@@ -14,8 +14,8 @@ productivity and performance.
 - 🚀 Out-of-the-box features for rapid application development.
 - ✨ Minimal design, modular architecture and high-level abstractions.
 - ⚡ Embrace practical conventions to get the best performance.
-- 🐘 Highly optimized ORM for PostgreSQL built with [`sqlx`].
-- ⏲ Lightweight scheduler for sync and async cron jobs.
+- 🐘 Highly optimized ORM for PostgreSQL built on top of [`sqlx`].
+- 🕗 Lightweight scheduler for sync and async cron jobs.
 - 📊 Support for `logging`, [`tracing`] and [`metrics`].
 
 ## Getting started

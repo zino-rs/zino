@@ -3,15 +3,17 @@
 use crate::{
     schedule::{AsyncCronJob, CronJob, Job, JobScheduler},
     state::State,
+    trace::TraceContext,
     BoxError, Map,
 };
-use reqwest::{Method, Response, Url};
+use reqwest::{IntoUrl, Response};
 use std::{collections::HashMap, env, path::PathBuf, sync::LazyLock, thread};
 use toml::value::Table;
 
-mod http_client;
 mod metrics_exporter;
 mod tracing_subscriber;
+
+pub(crate) mod http_client;
 
 /// Application.
 pub trait Application {
@@ -48,16 +50,12 @@ pub trait Application {
 
     /// Makes an HTTP request to the provided resource
     /// using [`reqwest`](https://crates.io/crates/reqwest).
-    async fn fetch(resource: Url, options: Map) -> Result<Response, BoxError> {
-        let method = options
-            .get("method")
-            .and_then(|s| s.as_str())
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(Method::GET);
-        http_client::SHARED_HTTP_CLIENT
-            .get()
-            .ok_or("failed to get the global http client")?
-            .request(method, resource)
+    async fn fetch(
+        resource: impl IntoUrl,
+        options: impl Into<Option<Map>>,
+    ) -> Result<Response, BoxError> {
+        http_client::request_builder(resource, options)?
+            .header("traceparent", TraceContext::new().to_string())
             .send()
             .await
             .map_err(BoxError::from)

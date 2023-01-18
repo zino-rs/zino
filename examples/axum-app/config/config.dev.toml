@@ -26,9 +26,10 @@ username = "postgres"
 password = "QAx01wnh1i5ER713zfHmZi6dIUYn/Iq9ag+iUGtvKzEFJFYW"
 
 [tracing]
-filter = "debug,sqlx=trace,tower_http=trace,zino=trace,zino_core=trace"
-display-filename = true
-display-line-number = true
+filter = "info,sqlx=trace,tower_http=trace,zino=trace,zino_core=trace"
+display-filename = false
+display-line-number = false
+display-span-list = false
 
 [metrics]
 exporter = "prometheus"
