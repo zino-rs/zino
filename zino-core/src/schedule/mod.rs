@@ -177,9 +177,9 @@ impl JobScheduler {
             let now = Local::now();
             for job in self.jobs.iter() {
                 for event in job.schedule.after(&now).take(1) {
-                    let d = event - now;
-                    if duration.is_zero() || d < duration {
-                        duration = d;
+                    let interval = event - now;
+                    if duration.is_zero() || interval < duration {
+                        duration = interval;
                     }
                 }
             }

@@ -1,4 +1,5 @@
 use serde_json::json;
+use std::time::Instant;
 use zino::{
     Application, AxumCluster, Model, Query, Rejection, Request, RequestContext, Response, Schema,
     Uuid,
@@ -30,7 +31,10 @@ pub(crate) async fn list(req: Request) -> zino::Result {
     let mut query = Query::new();
     let mut res = req.query_validation(&mut query)?;
 
+    let db_query_start_time = Instant::now();
     let users = User::find(query).await.map_err(Rejection::from)?;
+    res.record_server_timing("db", None, db_query_start_time.elapsed());
+
     let data = json!({
         "users": users,
     });
@@ -52,6 +56,7 @@ pub(crate) async fn view(mut req: Request) -> zino::Result {
 
     let user = User::find_one(query).await.map_err(Rejection::from)?;
     req.fetch("http://localhost:6081/stats", None).await.map_err(Rejection::from)?;
+    req.fetch("http://localhost:6081/user/list", None).await.map_err(Rejection::from)?;
 
     let state_data = req.state_data_mut();
     let counter = state_data

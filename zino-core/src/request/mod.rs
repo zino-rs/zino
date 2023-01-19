@@ -7,7 +7,7 @@ use crate::{
     database::{Model, Query},
     datetime::DateTime,
     response::{Rejection, Response, ResponseCode},
-    trace::TraceContext,
+    trace::{TraceContext, TraceState},
     BoxError, Map, Uuid,
 };
 use http::uri::Uri;
@@ -80,21 +80,32 @@ pub trait RequestContext {
         ctx
     }
 
-    /// Returns the trace context by parsing the `traceparent` header.
+    /// Returns the trace context by parsing the `traceparent` and `tracestate` header values.
     #[inline]
     fn get_trace_context(&self) -> Option<TraceContext> {
         let traceparent = self.get_header("traceparent")?;
-        TraceContext::from_traceparent(traceparent)
+        let mut trace_context = TraceContext::from_traceparent(traceparent)?;
+        if let Some(tracestate) = self.get_header("tracestate") {
+            *trace_context.trace_state_mut() = TraceState::from_tracestate(tracestate);
+        }
+        Some(trace_context)
     }
 
     /// Creates a new `TraceContext`.
     fn new_trace_context(&self) -> TraceContext {
-        self.get_trace_context()
+        let mut trace_context = self
+            .get_trace_context()
             .or_else(|| {
                 self.get_context()
                     .map(|ctx| TraceContext::with_trace_id(ctx.trace_id()))
             })
-            .unwrap_or_default()
+            .map(|t| t.child())
+            .unwrap_or_default();
+        let span_id = trace_context.span_id();
+        trace_context
+            .trace_state_mut()
+            .push("zino", format!("{span_id:x}"));
+        trace_context
     }
 
     /// Returns the start time.
@@ -388,8 +399,10 @@ pub trait RequestContext {
         resource: impl IntoUrl,
         options: impl Into<Option<Map>>,
     ) -> Result<reqwest::Response, BoxError> {
+        let trace_context = self.new_trace_context();
         http_client::request_builder(resource, options)?
-            .header("traceparent", self.new_trace_context().to_string())
+            .header("traceparent", trace_context.traceparent())
+            .header("tracestate", trace_context.tracestate())
             .send()
             .await
             .map_err(BoxError::from)

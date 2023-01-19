@@ -54,8 +54,14 @@ pub trait Application {
         resource: impl IntoUrl,
         options: impl Into<Option<Map>>,
     ) -> Result<Response, BoxError> {
+        let mut trace_context = TraceContext::new();
+        let span_id = trace_context.span_id();
+        trace_context
+            .trace_state_mut()
+            .push("zino", format!("{span_id:x}"));
         http_client::request_builder(resource, options)?
-            .header("traceparent", TraceContext::new().to_string())
+            .header("traceparent", trace_context.traceparent())
+            .header("tracestate", trace_context.tracestate())
             .send()
             .await
             .map_err(BoxError::from)

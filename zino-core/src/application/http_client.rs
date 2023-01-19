@@ -120,6 +120,7 @@ impl ReqwestOtelSpanBackend for RequestTiming {
         let url = request.url();
         let headers = request.headers();
         let traceparent = headers.get("traceparent").and_then(|v| v.to_str().ok());
+        let trace_context = traceparent.and_then(TraceContext::from_traceparent);
         extensions.insert(Instant::now());
         tracing::info_span!(
             "HTTP request",
@@ -129,17 +130,23 @@ impl ReqwestOtelSpanBackend for RequestTiming {
             "http.scheme" = url.scheme(),
             "http.url" = remove_credentials(url).as_ref(),
             "http.request.header.traceparent" = traceparent,
+            "http.request.header.tracestate" =
+                headers.get("tracestate").and_then(|v| v.to_str().ok()),
             "http.response.header.traceparent" = Empty,
+            "http.response.header.tracestate" = Empty,
             "http.status_code" = Empty,
             "http.client.duration" = Empty,
             "net.peer.name" = url.domain(),
             "net.peer.port" = url.port(),
-            "zino.trace_id" = traceparent
-                .and_then(TraceContext::from_traceparent)
+            "context.request_id" = Empty,
+            "context.session_id" = headers.get("session-id").and_then(|v| v.to_str().ok()),
+            "context.span_id" = Empty,
+            "context.trace_id" = trace_context
+                .as_ref()
                 .map(|ctx| Uuid::from_u128(ctx.trace_id()).to_string()),
-            "zino.request_id" = Empty,
-            "zino.session_id" = headers.get("session-id").and_then(|v| v.to_str().ok()),
-            id = Empty,
+            "context.parent_id" = trace_context
+                .and_then(|ctx| ctx.parent_id())
+                .map(|parent_id| format!("{parent_id:x}")),
         )
     }
 
@@ -148,7 +155,10 @@ impl ReqwestOtelSpanBackend for RequestTiming {
             .get::<Instant>()
             .and_then(|t| u64::try_from(t.elapsed().as_millis()).ok());
         span.record("http.client.duration", latency_millis);
-        span.record("id", span.id().map(|t| t.into_u64()));
+        span.record(
+            "context.span_id",
+            span.id().map(|t| format!("{:x}", t.into_u64())),
+        );
         match outcome {
             Ok(response) => {
                 let headers = response.headers();
@@ -157,7 +167,11 @@ impl ReqwestOtelSpanBackend for RequestTiming {
                     headers.get("traceparent").and_then(|v| v.to_str().ok()),
                 );
                 span.record(
-                    "zino.request_id",
+                    "http.response.header.tracestate",
+                    headers.get("tracestate").and_then(|v| v.to_str().ok()),
+                );
+                span.record(
+                    "context.request_id",
                     headers.get("x-request-id").and_then(|v| v.to_str().ok()),
                 );
                 span.record("http.status_code", response.status().as_u16());

@@ -2,52 +2,27 @@
 
 use crate::{
     request::{RequestContext, Validation},
-    trace::TraceContext,
+    trace::{ServerTiming, TimingMetric, TraceContext},
     SharedString, Uuid,
 };
 use bytes::Bytes;
-use http::header::{self, HeaderValue};
+use http::{
+    header::{self, HeaderValue},
+    StatusCode,
+};
 use http_body::Full;
-use http_types::trace::{Metric, ServerTiming};
 use serde::Serialize;
 use serde_json::Value;
 use std::{
-    borrow::Cow,
     marker::PhantomData,
     time::{Duration, Instant},
 };
 
 mod rejection;
+mod response_code;
 
 pub use rejection::Rejection;
-
-/// Response code.
-/// See [Problem Details for HTTP APIs](https://tools.ietf.org/html/rfc7807).
-pub trait ResponseCode {
-    /// 200 Ok.
-    const OK: Self;
-
-    /// Status code.
-    fn status_code(&self) -> u16;
-
-    /// Error code.
-    fn error_code(&self) -> Option<SharedString>;
-
-    /// Returns `true` if the response is successful.
-    fn is_success(&self) -> bool;
-
-    /// A URI reference that identifies the problem type.
-    /// For successful response, it should be `None`.
-    fn type_uri(&self) -> Option<SharedString>;
-
-    /// A short, human-readable summary of the problem type.
-    /// For successful response, it should be `None`.
-    fn title(&self) -> Option<SharedString>;
-
-    /// A context-specific descriptive message. If the response is not successful,
-    /// it should be a human-readable explanation specific to this occurrence of the problem.
-    fn message(&self) -> Option<SharedString>;
-}
+pub use response_code::ResponseCode;
 
 /// An HTTP response.
 #[derive(Debug, Serialize)]
@@ -157,7 +132,7 @@ impl<S: ResponseCode> Response<S> {
         } else {
             res.detail = message;
         }
-        res.trace_context = Some(ctx.new_trace_context().child());
+        res.trace_context = Some(ctx.new_trace_context());
         res
     }
 
@@ -166,7 +141,7 @@ impl<S: ResponseCode> Response<S> {
         self.instance = (!self.is_success()).then(|| ctx.request_path().to_string().into());
         self.start_time = ctx.start_time();
         self.request_id = ctx.request_id();
-        self.trace_context = Some(ctx.new_trace_context().child());
+        self.trace_context = Some(ctx.new_trace_context());
         self
     }
 
@@ -217,17 +192,15 @@ impl<S: ResponseCode> Response<S> {
         self.content_type = Some(content_type.into());
     }
 
-    /// Records a server timing entry.
+    /// Records a server timing metric entry.
     pub fn record_server_timing(
         &mut self,
-        name: impl Into<String>,
-        dur: impl Into<Option<Duration>>,
-        desc: impl Into<Option<String>>,
+        name: impl Into<SharedString>,
+        description: impl Into<Option<SharedString>>,
+        duration: impl Into<Option<Duration>>,
     ) {
-        match Metric::new(name.into(), dur.into(), desc.into()) {
-            Ok(entry) => self.server_timing.push(entry),
-            Err(err) => tracing::error!("{err}"),
-        }
+        let metric = TimingMetric::new(name.into(), description.into(), duration.into());
+        self.server_timing.push(metric);
     }
 
     /// Returns `true` if the response is successful or `false` otherwise.
@@ -251,68 +224,26 @@ impl<S: ResponseCode> Response<S> {
     }
 }
 
-impl ResponseCode for http::StatusCode {
-    const OK: Self = http::StatusCode::OK;
-
-    #[inline]
-    fn status_code(&self) -> u16 {
-        self.as_u16()
-    }
-
-    #[inline]
-    fn error_code(&self) -> Option<SharedString> {
-        None
-    }
-
-    #[inline]
-    fn is_success(&self) -> bool {
-        self.is_success()
-    }
-
-    #[inline]
-    fn type_uri(&self) -> Option<SharedString> {
-        None
-    }
-
-    #[inline]
-    fn title(&self) -> Option<SharedString> {
-        if self.is_success() {
-            None
-        } else {
-            self.canonical_reason().map(Cow::Borrowed)
-        }
-    }
-
-    #[inline]
-    fn message(&self) -> Option<SharedString> {
-        if self.is_success() {
-            self.canonical_reason().map(Cow::Borrowed)
-        } else {
-            None
-        }
-    }
-}
-
-impl Default for Response<http::StatusCode> {
+impl Default for Response<StatusCode> {
     #[inline]
     fn default() -> Self {
-        Self::new(http::StatusCode::OK)
+        Self::new(StatusCode::OK)
     }
 }
 
-impl From<Validation> for Response<http::StatusCode> {
+impl From<Validation> for Response<StatusCode> {
     fn from(validation: Validation) -> Self {
         if validation.is_success() {
-            Self::new(http::StatusCode::OK)
+            Self::new(StatusCode::OK)
         } else {
-            let mut res = Self::new(http::StatusCode::BAD_REQUEST);
+            let mut res = Self::new(StatusCode::BAD_REQUEST);
             res.set_data(validation.into_map());
             res
         }
     }
 }
 
-impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
+impl From<Response<StatusCode>> for http::Response<Full<Bytes>> {
     fn from(mut response: Response<http::StatusCode>) -> Self {
         let status_code = response.status_code;
         let mut res = match response.content_type {
@@ -323,7 +254,7 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
                     .body(Full::from(bytes))
                     .unwrap_or_default(),
                 Err(err) => http::Response::builder()
-                    .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
                     .header(header::CONTENT_TYPE, "text/plain")
                     .body(Full::from(err.to_string()))
                     .unwrap_or_default(),
@@ -342,23 +273,33 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
                         .unwrap_or_default()
                 }
                 Err(err) => http::Response::builder()
-                    .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
                     .header(header::CONTENT_TYPE, "text/plain")
                     .body(Full::from(err.to_string()))
                     .unwrap_or_default(),
             },
         };
-        let trace_context = match response.trace_context {
-            Some(ref trace_context) => trace_context.to_string(),
-            None => TraceContext::new().to_string(),
+        let (traceparent, tracestate) = match response.trace_context {
+            Some(ref trace_context) => (trace_context.traceparent(), trace_context.tracestate()),
+            None => {
+                let mut trace_context = TraceContext::new();
+                let span_id = trace_context.span_id();
+                trace_context
+                    .trace_state_mut()
+                    .push("zino", format!("{span_id:x}"));
+                (trace_context.traceparent(), trace_context.tracestate())
+            }
         };
-        if let Ok(header_value) = HeaderValue::try_from(trace_context) {
+        if let Ok(header_value) = HeaderValue::try_from(traceparent) {
             res.headers_mut().insert("traceparent", header_value);
+        }
+        if let Ok(header_value) = HeaderValue::try_from(tracestate) {
+            res.headers_mut().insert("tracestate", header_value);
         }
 
         let duration = response.start_time.elapsed();
-        response.record_server_timing("total", duration, None);
-        if let Ok(header_value) = HeaderValue::try_from(response.server_timing.value().as_str()) {
+        response.record_server_timing("total", None, duration);
+        if let Ok(header_value) = HeaderValue::try_from(response.server_timing.to_string()) {
             res.headers_mut().insert("server-timing", header_value);
         }
 
@@ -380,58 +321,5 @@ impl From<Response<http::StatusCode>> for http::Response<Full<Bytes>> {
         );
 
         res
-    }
-}
-
-impl ResponseCode for http_types::StatusCode {
-    const OK: Self = http_types::StatusCode::Ok;
-
-    #[inline]
-    fn status_code(&self) -> u16 {
-        *self as u16
-    }
-
-    #[inline]
-    fn error_code(&self) -> Option<SharedString> {
-        None
-    }
-
-    #[inline]
-    fn is_success(&self) -> bool {
-        self.is_success()
-    }
-
-    #[inline]
-    fn type_uri(&self) -> Option<SharedString> {
-        None
-    }
-
-    #[inline]
-    fn title(&self) -> Option<SharedString> {
-        (!self.is_success()).then(|| self.canonical_reason().into())
-    }
-
-    #[inline]
-    fn message(&self) -> Option<SharedString> {
-        self.is_success().then(|| self.canonical_reason().into())
-    }
-}
-
-impl Default for Response<http_types::StatusCode> {
-    #[inline]
-    fn default() -> Self {
-        Self::new(http_types::StatusCode::Ok)
-    }
-}
-
-impl From<Validation> for Response<http_types::StatusCode> {
-    fn from(validation: Validation) -> Self {
-        if validation.is_success() {
-            Self::new(http_types::StatusCode::Ok)
-        } else {
-            let mut res = Self::new(http_types::StatusCode::BadRequest);
-            res.set_data(validation.into_map());
-            res
-        }
     }
 }

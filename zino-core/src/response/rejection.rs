@@ -1,5 +1,6 @@
 use crate::{request::Validation, response::Response, BoxError};
 use bytes::Bytes;
+use http::StatusCode;
 use http_body::Full;
 use std::{error::Error, fmt};
 use Rejection::*;
@@ -106,42 +107,42 @@ impl fmt::Display for Rejection {
 
 impl Error for Rejection {}
 
-impl From<Rejection> for Response<http::StatusCode> {
+impl From<Rejection> for Response<StatusCode> {
     fn from(rejection: Rejection) -> Self {
         use Rejection::*;
         match rejection {
             BadRequest(validation) => {
-                let mut res = Self::new(http::StatusCode::BAD_REQUEST);
+                let mut res = Self::new(StatusCode::BAD_REQUEST);
                 res.set_data(validation.into_map());
                 res
             }
             Unauthorized(err) => {
-                let mut res = Self::new(http::StatusCode::UNAUTHORIZED);
+                let mut res = Self::new(StatusCode::UNAUTHORIZED);
                 res.set_message(err.to_string());
                 res
             }
             Forbidden(err) => {
-                let mut res = Self::new(http::StatusCode::FORBIDDEN);
+                let mut res = Self::new(StatusCode::FORBIDDEN);
                 res.set_message(err.to_string());
                 res
             }
             NotFound(err) => {
-                let mut res = Self::new(http::StatusCode::NOT_FOUND);
+                let mut res = Self::new(StatusCode::NOT_FOUND);
                 res.set_message(err.to_string());
                 res
             }
             MethodNotAllowed(err) => {
-                let mut res = Self::new(http::StatusCode::METHOD_NOT_ALLOWED);
+                let mut res = Self::new(StatusCode::METHOD_NOT_ALLOWED);
                 res.set_message(err.to_string());
                 res
             }
             Conflict(err) => {
-                let mut res = Self::new(http::StatusCode::CONFLICT);
+                let mut res = Self::new(StatusCode::CONFLICT);
                 res.set_message(err.to_string());
                 res
             }
             InternalServerError(err) => {
-                let mut res = Self::new(http::StatusCode::INTERNAL_SERVER_ERROR);
+                let mut res = Self::new(StatusCode::INTERNAL_SERVER_ERROR);
                 res.set_message(err.to_string());
                 res
             }
@@ -149,42 +150,42 @@ impl From<Rejection> for Response<http::StatusCode> {
     }
 }
 
-impl<'a> From<&'a Rejection> for Response<http::StatusCode> {
+impl<'a> From<&'a Rejection> for Response<StatusCode> {
     fn from(rejection: &'a Rejection) -> Self {
         use Rejection::*;
         match rejection {
             BadRequest(validation) => {
-                let mut res = Self::new(http::StatusCode::BAD_REQUEST);
+                let mut res = Self::new(StatusCode::BAD_REQUEST);
                 res.set_data(validation.clone().into_map());
                 res
             }
             Unauthorized(err) => {
-                let mut res = Self::new(http::StatusCode::UNAUTHORIZED);
+                let mut res = Self::new(StatusCode::UNAUTHORIZED);
                 res.set_message(err.to_string());
                 res
             }
             Forbidden(err) => {
-                let mut res = Self::new(http::StatusCode::FORBIDDEN);
+                let mut res = Self::new(StatusCode::FORBIDDEN);
                 res.set_message(err.to_string());
                 res
             }
             NotFound(err) => {
-                let mut res = Self::new(http::StatusCode::NOT_FOUND);
+                let mut res = Self::new(StatusCode::NOT_FOUND);
                 res.set_message(err.to_string());
                 res
             }
             MethodNotAllowed(err) => {
-                let mut res = Self::new(http::StatusCode::METHOD_NOT_ALLOWED);
+                let mut res = Self::new(StatusCode::METHOD_NOT_ALLOWED);
                 res.set_message(err.to_string());
                 res
             }
             Conflict(err) => {
-                let mut res = Self::new(http::StatusCode::CONFLICT);
+                let mut res = Self::new(StatusCode::CONFLICT);
                 res.set_message(err.to_string());
                 res
             }
             InternalServerError(err) => {
-                let mut res = Self::new(http::StatusCode::INTERNAL_SERVER_ERROR);
+                let mut res = Self::new(StatusCode::INTERNAL_SERVER_ERROR);
                 res.set_message(err.to_string());
                 res
             }
@@ -196,91 +197,5 @@ impl From<Rejection> for http::Response<Full<Bytes>> {
     #[inline]
     fn from(rejection: Rejection) -> Self {
         Response::from(rejection).into()
-    }
-}
-
-impl From<Rejection> for Response<http_types::StatusCode> {
-    fn from(rejection: Rejection) -> Self {
-        use Rejection::*;
-        match rejection {
-            BadRequest(validation) => {
-                let mut res = Self::new(http_types::StatusCode::BadRequest);
-                res.set_data(validation.into_map());
-                res
-            }
-            Unauthorized(err) => {
-                let mut res = Self::new(http_types::StatusCode::Unauthorized);
-                res.set_message(err.to_string());
-                res
-            }
-            Forbidden(err) => {
-                let mut res = Self::new(http_types::StatusCode::Forbidden);
-                res.set_message(err.to_string());
-                res
-            }
-            NotFound(err) => {
-                let mut res = Self::new(http_types::StatusCode::NotFound);
-                res.set_message(err.to_string());
-                res
-            }
-            MethodNotAllowed(err) => {
-                let mut res = Self::new(http_types::StatusCode::MethodNotAllowed);
-                res.set_message(err.to_string());
-                res
-            }
-            Conflict(err) => {
-                let mut res = Self::new(http_types::StatusCode::Conflict);
-                res.set_message(err.to_string());
-                res
-            }
-            InternalServerError(err) => {
-                let mut res = Self::new(http_types::StatusCode::InternalServerError);
-                res.set_message(err.to_string());
-                res
-            }
-        }
-    }
-}
-
-impl<'a> From<&'a Rejection> for Response<http_types::StatusCode> {
-    fn from(rejection: &'a Rejection) -> Self {
-        use Rejection::*;
-        match rejection {
-            BadRequest(validation) => {
-                let mut res = Self::new(http_types::StatusCode::BadRequest);
-                res.set_data(validation.clone().into_map());
-                res
-            }
-            Unauthorized(err) => {
-                let mut res = Self::new(http_types::StatusCode::Unauthorized);
-                res.set_message(err.to_string());
-                res
-            }
-            Forbidden(err) => {
-                let mut res = Self::new(http_types::StatusCode::Forbidden);
-                res.set_message(err.to_string());
-                res
-            }
-            NotFound(err) => {
-                let mut res = Self::new(http_types::StatusCode::NotFound);
-                res.set_message(err.to_string());
-                res
-            }
-            MethodNotAllowed(err) => {
-                let mut res = Self::new(http_types::StatusCode::MethodNotAllowed);
-                res.set_message(err.to_string());
-                res
-            }
-            Conflict(err) => {
-                let mut res = Self::new(http_types::StatusCode::Conflict);
-                res.set_message(err.to_string());
-                res
-            }
-            InternalServerError(err) => {
-                let mut res = Self::new(http_types::StatusCode::InternalServerError);
-                res.set_message(err.to_string());
-                res
-            }
-        }
     }
 }

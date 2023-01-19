@@ -52,29 +52,44 @@ fn new_make_span(request: &Request<Body>) -> Span {
         "http.target" = uri.path_and_query().map(|t| t.as_str()),
         "http.user_agent" = headers.get("user-agent").and_then(|v| v.to_str().ok()),
         "http.request.header.traceparent" = Empty,
+        "http.request.header.tracestate" = Empty,
         "http.response.header.traceparent" = Empty,
+        "http.response.header.tracestate" = Empty,
         "http.status_code" = Empty,
         "http.server.duration" = Empty,
         "net.host.name" = uri.host(),
         "net.host.port" = uri.port_u16(),
-        "zino.request_id" = Empty,
-        "zino.trace_id" = Empty,
-        "zino.session_id" = Empty,
-        id = Empty,
+        "context.request_id" = Empty,
+        "context.session_id" = Empty,
+        "context.span_id" = Empty,
+        "context.trace_id" = Empty,
+        "context.parent_id" = Empty,
     )
 }
 
 fn new_on_request(request: &Request<Body>, span: &Span) {
     let headers = request.headers();
+    let traceparent = headers.get("traceparent").and_then(|v| v.to_str().ok());
+    let trace_context = traceparent.and_then(TraceContext::from_traceparent);
+    span.record("http.request.header.traceparent", traceparent);
     span.record(
-        "http.request.header.traceparent",
-        headers.get("traceparent").and_then(|v| v.to_str().ok()),
+        "http.request.header.tracestate",
+        headers.get("tracestate").and_then(|v| v.to_str().ok()),
     );
     span.record(
-        "zino.session_id",
+        "context.parent_id",
+        trace_context
+            .and_then(|ctx| ctx.parent_id())
+            .map(|parent_id| format!("{parent_id:x}")),
+    );
+    span.record(
+        "context.session_id",
         headers.get("session-id").and_then(|v| v.to_str().ok()),
     );
-    span.record("id", span.id().map(|t| t.into_u64()));
+    span.record(
+        "context.span_id",
+        span.id().map(|t| format!("{:x}", t.into_u64())),
+    );
     tracing::debug!("started processing request");
 }
 
@@ -83,13 +98,17 @@ fn new_on_response(response: &Response<BoxBody>, latency: Duration, span: &Span)
     let traceparent = headers.get("traceparent").and_then(|v| v.to_str().ok());
     span.record("http.response.header.traceparent", traceparent);
     span.record(
-        "zino.trace_id",
+        "http.response.header.tracestate",
+        headers.get("tracestate").and_then(|v| v.to_str().ok()),
+    );
+    span.record(
+        "context.trace_id",
         traceparent
             .and_then(TraceContext::from_traceparent)
             .map(|ctx| Uuid::from_u128(ctx.trace_id()).to_string()),
     );
     span.record(
-        "zino.request_id",
+        "context.request_id",
         headers.get("x-request-id").and_then(|v| v.to_str().ok()),
     );
     span.record("http.status_code", response.status().as_u16());
