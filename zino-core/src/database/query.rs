@@ -50,7 +50,7 @@ impl Query {
                         if sort_by.contains('.') {
                             order = sort_by.replace('.', "->'") + "'" + &order;
                         } else {
-                            order = sort_by.to_string() + &order;
+                            order = sort_by.to_owned() + &order;
                         }
                     }
                 }
@@ -67,7 +67,7 @@ impl Query {
                     if let Some(result) = Validation::parse_u64(&value) {
                         match result {
                             Ok(limit) => self.limit = limit,
-                            Err(err) => validation.record_fail("limit", err.to_string()),
+                            Err(err) => validation.record_fail("limit", err),
                         }
                     }
                 }
@@ -75,7 +75,7 @@ impl Query {
                     if let Some(result) = Validation::parse_u64(&value) {
                         match result {
                             Ok(offset) => self.offset = offset,
-                            Err(err) => validation.record_fail("offset", err.to_string()),
+                            Err(err) => validation.record_fail("offset", err),
                         }
                     }
                 }
@@ -96,16 +96,16 @@ impl Query {
                                         let mut vec = Vec::new();
                                         vec.resize(index, Value::Null);
                                         vec.insert(index, value);
-                                        filter.insert(key.to_string(), vec.into());
+                                        filter.insert(key.to_owned(), vec.into());
                                     }
                                 } else if let Some(map) = filter.get_mut(key) {
                                     if let Some(map) = map.as_object_mut() {
-                                        map.insert(path.to_string(), value);
+                                        map.insert(path.to_owned(), value);
                                     }
                                 } else {
                                     let mut map = Map::new();
-                                    map.insert(path.to_string(), value);
-                                    filter.insert(key.to_string(), map.into());
+                                    map.insert(path.to_owned(), value);
+                                    filter.insert(key.to_owned(), map.into());
                                 }
                             }
                         } else if value != "" && value != "all" {
@@ -131,7 +131,7 @@ impl Query {
     pub fn allow_fields<const N: usize>(&mut self, columns: [&str; N]) {
         let fields = &mut self.fields;
         if fields.is_empty() {
-            self.fields = columns.map(|col| col.to_string()).to_vec();
+            self.fields = columns.map(|col| col.to_owned()).to_vec();
         } else {
             fields.retain(|field| {
                 columns
@@ -215,7 +215,7 @@ impl Query {
     pub(crate) fn format_fields(&self) -> String {
         let fields = &self.fields;
         if fields.is_empty() {
-            "*".to_string()
+            "*".to_owned()
         } else {
             fields.join(", ")
         }
@@ -280,7 +280,7 @@ impl Query {
         }
 
         let (sort_by, sort_order) = self.order.split_once(' ').unwrap_or(("", ""));
-        let mut expression = " ".to_string();
+        let mut expression = " ".to_owned();
         let mut conditions = Vec::new();
         for (key, value) in filter {
             match key.as_str() {
@@ -386,7 +386,7 @@ impl Query {
             if let Some(search) = Validation::parse_string(filter.get("$search")) {
                 let column = columns.join(" || ' ' || ");
                 let language = Validation::parse_string(filter.get("$language"))
-                    .unwrap_or_else(|| "english".to_string());
+                    .unwrap_or_else(|| "english".to_owned());
                 let search = Column::format_postgres_string(&search);
                 let condition = format!(
                     "to_tsvector('{language}', {column}) @@ websearch_to_tsquery('{language}', '{search}')",

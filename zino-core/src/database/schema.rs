@@ -55,7 +55,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Gets a column for the field.
     #[inline]
     fn get_column(key: &str) -> Option<&Column<'static>> {
-        Self::columns().iter().find(|c| c.name() == key)
+        Self::columns().iter().find(|col| col.name() == key)
     }
 
     /// Initializes the model reader.
@@ -346,7 +346,7 @@ pub trait Schema: 'static + Send + Sync + Model {
                 let mut map = Map::with_capacity(capacity);
                 for col in columns {
                     let value = col.decode_postgres_row(&row)?;
-                    map.insert(col.name().to_string(), value);
+                    map.insert(col.name().to_owned(), value);
                 }
                 data.push(map);
             }
@@ -381,7 +381,7 @@ pub trait Schema: 'static + Send + Sync + Model {
                     let mut map = Map::with_capacity(columns.len());
                     for col in columns {
                         let value = col.decode_postgres_row(&row)?;
-                        map.insert(col.name().to_string(), value);
+                        map.insert(col.name().to_owned(), value);
                     }
                     Some(map)
                 } else {
@@ -425,7 +425,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         if !values.is_empty() {
             let mut primary_key_filter = Map::new();
             primary_key_filter.insert(
-                primary_key_name.to_string(),
+                primary_key_name.to_owned(),
                 json!({
                     "$in": values,
                 }),
@@ -447,7 +447,7 @@ pub trait Schema: 'static + Send + Sync + Model {
                 let mut map = Map::with_capacity(capacity);
                 for col in columns {
                     let value = col.decode_postgres_row(&row)?;
-                    map.insert(col.name().to_string(), value);
+                    map.insert(col.name().to_owned(), value);
                 }
                 associations.insert(primary_key_value, map.into());
             }
@@ -463,7 +463,7 @@ pub trait Schema: 'static + Send + Sync + Model {
                 if let Some(value) = row.get_mut(col) {
                     if let Some(value) = value.as_str() {
                         if let Some(value) = associations.get(value) {
-                            row.insert(col.to_string(), value.clone());
+                            row.insert(col.to_owned(), value.clone());
                         }
                     } else if let Some(entries) = value.as_array_mut() {
                         for entry in entries {
@@ -499,7 +499,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         if !values.is_empty() {
             let mut primary_key_filter = Map::new();
             primary_key_filter.insert(
-                primary_key_name.to_string(),
+                primary_key_name.to_owned(),
                 json!({
                     "$in": values,
                 }),
@@ -521,7 +521,7 @@ pub trait Schema: 'static + Send + Sync + Model {
                 let mut map = Map::with_capacity(capacity);
                 for col in columns {
                     let value = col.decode_postgres_row(&row)?;
-                    map.insert(col.name().to_string(), value);
+                    map.insert(col.name().to_owned(), value);
                 }
                 associations.insert(primary_key_value, map.into());
             }
@@ -536,7 +536,7 @@ pub trait Schema: 'static + Send + Sync + Model {
             if let Some(value) = data.get_mut(col) {
                 if let Some(value) = value.as_str() {
                     if let Some(value) = associations.get(value) {
-                        data.insert(col.to_string(), value.clone());
+                        data.insert(col.to_owned(), value.clone());
                     }
                 } else if let Some(entries) = value.as_array_mut() {
                     for entry in entries {
@@ -568,10 +568,10 @@ pub trait Schema: 'static + Send + Sync + Model {
                         format!("count({key}) as {key}_count")
                     }
                 } else {
-                    "count(*)".to_string()
+                    "count(*)".to_owned()
                 }
             })
-            .intersperse(",".to_string())
+            .intersperse(",".to_owned())
             .collect::<String>();
         let sql = format!("SELECT {projection} FROM {table_name} {filter};");
         let row = sqlx::query(&sql).fetch_one(pool).await?;

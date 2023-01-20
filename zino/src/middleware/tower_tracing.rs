@@ -49,7 +49,7 @@ fn new_make_span(request: &Request<Body>) -> Span {
         "otel.name" = AxumCluster::name(),
         "http.method" = request.method().as_str(),
         "http.scheme" = uri.scheme_str(),
-        "http.target" = uri.path_and_query().map(|t| t.as_str()),
+        "http.target" = uri.path_and_query().map(|p| p.as_str()),
         "http.user_agent" = headers.get("user-agent").and_then(|v| v.to_str().ok()),
         "http.request.header.traceparent" = Empty,
         "http.request.header.tracestate" = Empty,
@@ -88,7 +88,7 @@ fn new_on_request(request: &Request<Body>, span: &Span) {
     );
     span.record(
         "context.span_id",
-        span.id().map(|t| format!("{:x}", t.into_u64())),
+        span.id().map(|id| format!("{:x}", id.into_u64())),
     );
     tracing::debug!("started processing request");
 }

@@ -57,7 +57,7 @@ impl MessageChannel {
     /// Creates a new `MessageChannel`.
     pub(crate) fn new() -> Self {
         let (sender, receiver) = mpsc::channel(*CHANNEL_CAPACITY);
-        let sender_id = Uuid::now_v7();
+        let sender_id = Uuid::new_v4();
         let subscriber = Subscriber::new(sender, None);
         let mut senders = CHANNEL_SUBSCRIBERS.write();
         senders.retain(|_, subscriber| !subscriber.emitter().is_closed());
@@ -91,9 +91,12 @@ impl MessageChannel {
                     Some(subscription) => {
                         subscription
                             .source()
-                            .filter(|&s| s != event_source)
+                            .filter(|&source| source != event_source)
                             .is_none()
-                            && subscription.topic().filter(|&t| t != event_topic).is_none()
+                            && subscription
+                                .topic()
+                                .filter(|&topic| topic != event_topic)
+                                .is_none()
                     }
                     None => true,
                 };

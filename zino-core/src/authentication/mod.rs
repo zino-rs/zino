@@ -56,7 +56,7 @@ impl Authentication {
             accept: None,
             content_md5: None,
             content_type: None,
-            date_header: ("date".to_string(), DateTime::now()),
+            date_header: ("date".to_owned(), DateTime::now()),
             expires: None,
             headers: Vec::new(),
             resource: String::new(),
@@ -125,7 +125,7 @@ impl Authentication {
                 filter
                     .iter()
                     .any(|&s| key.starts_with(s))
-                    .then(|| (key.to_ascii_lowercase(), values.to_string()))
+                    .then(|| (key.to_ascii_lowercase(), values.clone()))
             })
             .collect::<Vec<_>>();
         headers.sort_by(|a, b| a.0.cmp(&b.0));
@@ -189,12 +189,12 @@ impl Authentication {
         let mut sign_parts = Vec::new();
 
         // HTTP verb
-        let method = self.method.to_string();
+        let method = self.method.clone();
         sign_parts.push(method);
 
         // Accept
         if let Some(accept) = self.accept.as_ref() {
-            let accept = accept.to_string();
+            let accept = accept.to_owned();
             sign_parts.push(accept);
         }
 
@@ -202,7 +202,7 @@ impl Authentication {
         let content_md5 = self
             .content_md5
             .as_ref()
-            .map(|t| t.to_string())
+            .map(|s| s.to_owned())
             .unwrap_or_default();
         sign_parts.push(content_md5);
 
@@ -210,7 +210,7 @@ impl Authentication {
         let content_type = self
             .content_type
             .as_ref()
-            .map(|t| t.to_string())
+            .map(|s| s.to_owned())
             .unwrap_or_default();
         sign_parts.push(content_type);
 
@@ -224,7 +224,7 @@ impl Authentication {
             let date = if date_header.0.eq_ignore_ascii_case("date") {
                 date_header.1.to_utc_string()
             } else {
-                "".to_string()
+                "".to_owned()
             };
             sign_parts.push(date);
         }
@@ -238,7 +238,7 @@ impl Authentication {
         sign_parts.extend(headers);
 
         // Canonicalized resource
-        let resource = self.resource.to_string();
+        let resource = self.resource.clone();
         sign_parts.push(resource);
 
         sign_parts.join("\n")

@@ -9,6 +9,8 @@ use reqwest_tracing::{ReqwestOtelSpanBackend, TracingMiddleware};
 use serde_json::Value;
 use std::{
     borrow::Cow,
+    net::IpAddr,
+    str::FromStr,
     sync::OnceLock,
     time::{Duration, Instant},
 };
@@ -18,12 +20,30 @@ use tracing::{field::Empty, Span};
 pub(super) fn init<APP: Application + ?Sized>() {
     let name = APP::name();
     let version = APP::version();
-    let reqwest_client = Client::builder()
+    let mut client_builder = Client::builder()
         .user_agent(format!("ZinoBot/1.0 {name}/{version}"))
         .cookie_store(true)
         .gzip(true)
         .brotli(true)
-        .deflate(true)
+        .deflate(true);
+    if let Some(http_client) = APP::config().get("http-client").and_then(|v| v.as_table()) {
+        if let Some(timeout) = http_client
+            .get("request-timeout")
+            .and_then(|v| v.as_integer())
+            .and_then(|i| u64::try_from(i).ok())
+        {
+            client_builder = client_builder.timeout(Duration::from_secs(timeout));
+        }
+        if let Some(addr) = http_client
+            .get("local-address")
+            .and_then(|v| v.as_str())
+            .and_then(|s| IpAddr::from_str(s).ok())
+        {
+            client_builder = client_builder.local_address(addr);
+        }
+    }
+
+    let reqwest_client = client_builder
         .build()
         .unwrap_or_else(|err| panic!("failed to create an HTTP client: {err}"));
     let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
@@ -52,7 +72,7 @@ pub(crate) fn request_builder(
 
     let method = options
         .get("method")
-        .and_then(|s| s.as_str())
+        .and_then(|v| v.as_str())
         .and_then(|s| s.parse().ok())
         .unwrap_or(Method::GET);
     let mut request_builder = SHARED_HTTP_CLIENT
@@ -66,7 +86,7 @@ pub(crate) fn request_builder(
     if let Some(body) = options.get("body") {
         let content_type = options
             .get("content_type")
-            .and_then(|t| t.as_str())
+            .and_then(|v| v.as_str())
             .unwrap_or_default();
         match body {
             Value::String(value) => {
@@ -94,7 +114,7 @@ pub(crate) fn request_builder(
             _ => tracing::warn!("unsupported body format"),
         }
     }
-    if let Some(map) = options.get("headers").and_then(|t| t.as_object()) {
+    if let Some(map) = options.get("headers").and_then(|v| v.as_object()) {
         for (key, value) in map {
             if let Ok(header_name) = HeaderName::try_from(key) {
                 if let Some(header_value) = value.as_str().and_then(|s| s.parse().ok()) {
@@ -106,7 +126,7 @@ pub(crate) fn request_builder(
     if !headers.is_empty() {
         request_builder = request_builder.headers(headers);
     }
-    if let Some(timeout) = options.get("timeout").and_then(|t| t.as_u64()) {
+    if let Some(timeout) = options.get("timeout").and_then(|v| v.as_u64()) {
         request_builder = request_builder.timeout(Duration::from_millis(timeout));
     }
     Ok(request_builder)
@@ -157,7 +177,7 @@ impl ReqwestOtelSpanBackend for RequestTiming {
         span.record("http.client.duration", latency_millis);
         span.record(
             "context.span_id",
-            span.id().map(|t| format!("{:x}", t.into_u64())),
+            span.id().map(|id| format!("{:x}", id.into_u64())),
         );
         match outcome {
             Ok(response) => {

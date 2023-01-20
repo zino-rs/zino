@@ -15,7 +15,7 @@ impl AccessKeyId {
     pub fn new() -> Self {
         let mut rng = rand::thread_rng();
         let chars: String = iter::repeat(())
-            .map(|()| rng.sample(Alphanumeric))
+            .map(|_| rng.sample(Alphanumeric))
             .map(char::from)
             .take(20)
             .collect();
@@ -53,7 +53,7 @@ impl From<String> for AccessKeyId {
 impl From<&str> for AccessKeyId {
     #[inline]
     fn from(s: &str) -> Self {
-        Self(s.to_string())
+        Self(s.to_owned())
     }
 }
 

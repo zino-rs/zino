@@ -62,7 +62,7 @@ pub trait RequestContext {
         metrics::increment_gauge!("zino_http_requests_pending", 1.0);
         metrics::increment_counter!(
             "zino_http_requests_total",
-            "method" => self.request_method().to_string(),
+            "method" => self.request_method().to_owned(),
         );
 
         let request_id = self
@@ -169,7 +169,7 @@ pub trait RequestContext {
                 {
                     return serde_json::from_value::<T>(param.into()).map_err(|err| {
                         let mut validation = Validation::new();
-                        validation.record_fail(name, err.to_string());
+                        validation.record_fail(name.to_owned(), err);
                         validation
                     });
                 }
@@ -177,7 +177,10 @@ pub trait RequestContext {
         }
 
         let mut validation = Validation::new();
-        validation.record_fail(name, format!("the param `{name}` does not exist"));
+        validation.record_fail(
+            name.to_owned(),
+            format!("the param `{name}` does not exist"),
+        );
         Err(validation)
     }
 
@@ -190,7 +193,7 @@ pub trait RequestContext {
         match self.original_uri().query() {
             Some(query) => serde_qs::from_str::<T>(query).map_err(|err| {
                 let mut validation = Validation::new();
-                validation.record_fail("query", err.to_string());
+                validation.record_fail("query", err);
                 validation
             }),
             None => Ok(T::default()),
@@ -204,7 +207,7 @@ pub trait RequestContext {
     {
         let form_urlencoded = self
             .get_header("content-type")
-            .map(|t| t.starts_with("application/x-www-form-urlencoded"))
+            .map(|s| s.starts_with("application/x-www-form-urlencoded"))
             .unwrap_or(true);
         let body_bytes = self.to_bytes().await?;
         let result = if form_urlencoded {
@@ -229,8 +232,8 @@ pub trait RequestContext {
         let query = self.parse_query::<Map>().unwrap_or_default();
         let mut authentication = Authentication::new(method);
         let mut validation = Validation::new();
-        if let Some(signature) = query.get("signature") {
-            authentication.set_signature(signature.to_string());
+        if let Some(signature) = query.get("signature").and_then(|v| v.as_str()) {
+            authentication.set_signature(signature.to_owned());
             if let Some(access_key_id) = Validation::parse_string(query.get("access_key_id")) {
                 authentication.set_access_key_id(access_key_id);
             } else {
@@ -254,7 +257,7 @@ pub trait RequestContext {
                 authentication.set_service_name(service_name);
                 if let Some((access_key_id, signature)) = token.split_once(':') {
                     authentication.set_access_key_id(access_key_id);
-                    authentication.set_signature(signature.to_string());
+                    authentication.set_signature(signature.to_owned());
                 } else {
                     validation.record_fail("authorization", "invalid header value");
                 }
@@ -266,7 +269,7 @@ pub trait RequestContext {
             }
         }
         if let Some(content_md5) = self.get_header("content-md5") {
-            authentication.set_content_md5(content_md5.to_string());
+            authentication.set_content_md5(content_md5.to_owned());
         }
         if let Some(date) = self.get_header("date") {
             match DateTime::parse_utc_str(date) {
@@ -274,19 +277,19 @@ pub trait RequestContext {
                     let current = DateTime::now();
                     let max_tolerance = Duration::from_secs(900);
                     if date >= current - max_tolerance && date <= current + max_tolerance {
-                        authentication.set_date_header("date".to_string(), date);
+                        authentication.set_date_header("date".to_owned(), date);
                     } else {
                         validation.record_fail("date", "untrusted date");
                     }
                 }
                 Err(err) => {
-                    validation.record_fail("date", err.to_string());
+                    validation.record_fail("date", err);
                     return Err(validation);
                 }
             }
         }
-        authentication.set_content_type(self.get_header("content-type").map(|t| t.to_string()));
-        authentication.set_resource(self.request_path().to_string(), None);
+        authentication.set_content_type(self.get_header("content-type").map(|s| s.to_owned()));
+        authentication.set_resource(self.request_path().to_owned(), None);
         Ok(authentication)
     }
 
@@ -296,7 +299,7 @@ pub trait RequestContext {
         use ParseSecurityTokenError::*;
         let mut validation = Validation::new();
         if let Some(token) = self.get_header("x-security-token") {
-            match SecurityToken::parse_with(token.to_string(), key.as_ref()) {
+            match SecurityToken::parse_with(token.to_owned(), key.as_ref()) {
                 Ok(security_token) => {
                     let query = self.parse_query::<Map>().unwrap_or_default();
                     if let Some(assignee_id) = Validation::parse_string(query.get("access_key_id"))
@@ -340,7 +343,7 @@ pub trait RequestContext {
             match SessionId::parse(session_id) {
                 Ok(session_id) => return Ok(session_id),
                 Err(err) => {
-                    validation.record_fail("session-id", err.to_string());
+                    validation.record_fail("session-id", err);
                 }
             }
         } else {
@@ -413,7 +416,7 @@ pub trait RequestContext {
         let mut subscription = self.parse_query::<Subscription>().unwrap_or_default();
         if subscription.session_id().is_none() {
             if let Some(session_id) = self.session_id() {
-                subscription.set_session_id(session_id.to_string());
+                subscription.set_session_id(Some(session_id.to_owned()));
             }
         }
         subscription
@@ -422,10 +425,10 @@ pub trait RequestContext {
     /// Creates a new cloud event instance.
     fn cloud_event(&self, topic: impl Into<String>, data: impl Into<Value>) -> CloudEvent {
         let id = self.request_id().to_string();
-        let source = self.request_path().to_string();
+        let source = self.request_path().to_owned();
         let mut event = CloudEvent::new(id, source, topic.into(), data.into());
         if let Some(session_id) = self.session_id() {
-            event.set_session_id(session_id.to_string());
+            event.set_session_id(session_id.to_owned());
         }
         event
     }

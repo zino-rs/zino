@@ -11,7 +11,7 @@ pub struct SessionId {
     realm: SharedString,
     /// Unstructured random integer specific to realm generated using a procedure with
     /// a negligible probability of collision. The identifier is encoded using base64.
-    identifier: SharedString,
+    identifier: String,
     /// Optional extension of identifier field used to differentiate concurrent uses of
     /// the same session identifier. The thread field is an integer encoded in hexadecimal.
     thread: u8,
@@ -35,7 +35,7 @@ impl SessionId {
         let identifier = STANDARD_NO_PAD.encode(hasher.finalize().as_slice());
         Self {
             realm,
-            identifier: identifier.into(),
+            identifier,
             thread: 0,
             count: 0,
         }
@@ -47,7 +47,7 @@ impl SessionId {
         D: Default + FixedOutput + HashMarker + Update,
     {
         let mut validation = Validation::new();
-        let identifier = self.identifier.as_ref();
+        let identifier = &self.identifier;
         match STANDARD_NO_PAD.decode(identifier) {
             Ok(hash) => {
                 let data = [realm.as_bytes(), access_key_id.as_ref()].concat();
@@ -59,7 +59,7 @@ impl SessionId {
                 }
             }
             Err(err) => {
-                validation.record_fail("identifier", err.to_string());
+                validation.record_fail("identifier", err);
             }
         }
         validation
@@ -114,8 +114,8 @@ impl SessionId {
                                 u8::from_str_radix(count, 16)
                                     .map_err(|err| ParseCountError(Box::new(err)))
                                     .map(|count| Self {
-                                        realm: realm.to_string().into(),
-                                        identifier: identifier.to_string().into(),
+                                        realm: realm.to_owned().into(),
+                                        identifier: identifier.to_owned(),
                                         thread,
                                         count,
                                     })
@@ -124,8 +124,8 @@ impl SessionId {
                         return u8::from_str_radix(s, 16)
                             .map_err(|err| ParseThreadError(Box::new(err)))
                             .map(|thread| Self {
-                                realm: realm.to_string().into(),
-                                identifier: identifier.to_string().into(),
+                                realm: realm.to_owned().into(),
+                                identifier: identifier.to_owned(),
                                 thread,
                                 count: 0,
                             });
@@ -134,15 +134,15 @@ impl SessionId {
                     return u8::from_str_radix(count, 16)
                         .map_err(|err| ParseCountError(Box::new(err)))
                         .map(|count| Self {
-                            realm: realm.to_string().into(),
-                            identifier: identifier.to_string().into(),
+                            realm: realm.to_owned().into(),
+                            identifier: identifier.to_owned(),
                             thread: 0,
                             count,
                         });
                 } else {
                     return Ok(Self {
-                        realm: realm.to_string().into(),
-                        identifier: s.to_string().into(),
+                        realm: realm.to_owned().into(),
+                        identifier: s.to_owned(),
                         thread: 0,
                         count: 0,
                     });

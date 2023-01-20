@@ -16,11 +16,11 @@ pub struct Subscription {
 impl Subscription {
     /// Creates a new instance.
     #[inline]
-    pub const fn new(source: Option<String>, topic: Option<String>) -> Self {
+    pub fn new(source: impl Into<Option<String>>, topic: impl Into<Option<String>>) -> Self {
         Self {
             session_id: None,
-            source,
-            topic,
+            source: source.into(),
+            topic: topic.into(),
         }
     }
 

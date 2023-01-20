@@ -56,7 +56,7 @@ pub struct User {
 impl Model for User {
     fn new() -> Self {
         Self {
-            id: Uuid::now_v7(),
+            id: Uuid::new_v4(),
             access_key_id: AccessKeyId::new().to_string(),
             ..Self::default()
         }
@@ -67,7 +67,7 @@ impl Model for User {
         if let Some(result) = Validation::parse_uuid(data.get("id")) {
             match result {
                 Ok(id) => self.id = id,
-                Err(err) => validation.record_fail("id", err.to_string()),
+                Err(err) => validation.record_fail("id", err),
             }
         }
         if let Some(name) = Validation::parse_string(data.get("name")) {

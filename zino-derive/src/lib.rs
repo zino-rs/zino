@@ -76,7 +76,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 } else if type_name == "Uuid" {
                     not_null = true;
                 } else if INTEGER_TYPES.contains(&type_name.as_str()) {
-                    default_value = default_value.or_else(|| Some("0".to_string()));
+                    default_value = default_value.or_else(|| Some("0".to_owned()));
                 }
                 let quote_value = match default_value {
                     Some(value) => {

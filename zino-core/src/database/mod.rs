@@ -61,24 +61,24 @@ impl ConnectionPool {
         // Connect options.
         let statement_cache_capacity = config
             .get("statement-cache-capacity")
-            .and_then(|t| t.as_integer())
-            .and_then(|t| usize::try_from(t).ok())
+            .and_then(|v| v.as_integer())
+            .and_then(|i| usize::try_from(i).ok())
             .unwrap_or(100);
         let host = config
             .get("host")
-            .and_then(|t| t.as_str())
+            .and_then(|v| v.as_str())
             .unwrap_or("127.0.0.1");
         let port = config
             .get("port")
-            .and_then(|t| t.as_integer())
-            .and_then(|t| u16::try_from(t).ok())
+            .and_then(|v| v.as_integer())
+            .and_then(|i| u16::try_from(i).ok())
             .unwrap_or(5432);
         let mut connect_options = PgConnectOptions::new()
             .application_name(application_name)
             .statement_cache_capacity(statement_cache_capacity)
             .host(host)
             .port(port);
-        if let Some(database) = config.get("database").and_then(|t| t.as_str()) {
+        if let Some(database) = config.get("database").and_then(|v| v.as_str()) {
             let username = config
                 .get("username")
                 .expect("the `postgres.username` field should be specified")
@@ -105,30 +105,30 @@ impl ConnectionPool {
         let database = connect_options
             .get_database()
             .unwrap_or_default()
-            .to_string();
+            .to_owned();
 
         // Pool options.
         let max_connections = config
             .get("max-connections")
-            .and_then(|t| t.as_integer())
-            .and_then(|t| u32::try_from(t).ok())
+            .and_then(|v| v.as_integer())
+            .and_then(|i| u32::try_from(i).ok())
             .unwrap_or(16);
         let min_connections = config
             .get("min-connections")
-            .and_then(|t| t.as_integer())
-            .and_then(|t| u32::try_from(t).ok())
+            .and_then(|v| v.as_integer())
+            .and_then(|i| u32::try_from(i).ok())
             .unwrap_or(2);
         let max_lifetime = config
             .get("max-lifetime")
-            .and_then(|t| t.as_integer().and_then(|i| i.try_into().ok()))
+            .and_then(|v| v.as_integer().and_then(|i| u64::try_from(i).ok()))
             .unwrap_or(60 * 60);
         let idle_timeout = config
             .get("idle-timeout")
-            .and_then(|t| t.as_integer().and_then(|i| i.try_into().ok()))
+            .and_then(|v| v.as_integer().and_then(|i| u64::try_from(i).ok()))
             .unwrap_or(10 * 60);
         let acquire_timeout = config
             .get("acquire-timeout")
-            .and_then(|t| t.as_integer().and_then(|i| i.try_into().ok()))
+            .and_then(|v| v.as_integer().and_then(|i| u64::try_from(i).ok()))
             .unwrap_or(30);
         let pool = PgPoolOptions::new()
             .max_connections(max_connections)
@@ -140,9 +140,9 @@ impl ConnectionPool {
 
         let name = config
             .get("name")
-            .and_then(|t| t.as_str())
+            .and_then(|v| v.as_str())
             .unwrap_or("main")
-            .to_string();
+            .to_owned();
         Self {
             name,
             database,
@@ -188,7 +188,7 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
     // Application name.
     let application_name = config
         .get("name")
-        .and_then(|t| t.as_str())
+        .and_then(|v| v.as_str())
         .expect("the `name` field should be specified");
 
     // Database connection pools.

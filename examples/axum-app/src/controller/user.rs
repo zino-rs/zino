@@ -63,7 +63,7 @@ pub(crate) async fn view(mut req: Request) -> zino::Result {
         .get("counter")
         .map(|c| c.as_u64().unwrap_or_default() + 1)
         .unwrap_or_default();
-    state_data.insert("counter".to_string(), counter.into());
+    state_data.insert("counter".to_owned(), counter.into());
 
     let data = json!({
         "user": user,

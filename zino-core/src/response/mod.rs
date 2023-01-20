@@ -3,7 +3,7 @@
 use crate::{
     request::{RequestContext, Validation},
     trace::{ServerTiming, TimingMetric, TraceContext},
-    SharedString, Uuid,
+    BoxError, SharedString, Uuid,
 };
 use bytes::Bytes;
 use http::{
@@ -116,7 +116,7 @@ impl<S: ResponseCode> Response<S> {
             status_code: code.status_code(),
             error_code: code.error_code(),
             detail: None,
-            instance: (!success).then(|| ctx.request_path().to_string().into()),
+            instance: (!success).then(|| ctx.request_path().to_owned().into()),
             success,
             message: None,
             start_time: ctx.start_time(),
@@ -138,7 +138,7 @@ impl<S: ResponseCode> Response<S> {
 
     /// Provides the request context for the response.
     pub fn provide_context<T: RequestContext>(mut self, ctx: &T) -> Self {
-        self.instance = (!self.is_success()).then(|| ctx.request_path().to_string().into());
+        self.instance = (!self.is_success()).then(|| ctx.request_path().to_owned().into());
         self.start_time = ctx.start_time();
         self.request_id = ctx.request_id();
         self.trace_context = Some(ctx.new_trace_context());
@@ -164,18 +164,31 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Sets a URI reference that identifies the specific occurrence of the problem.
-    pub fn set_instance(&mut self, instance: impl Into<Option<SharedString>>) {
-        self.instance = instance.into();
+    pub fn set_instance(&mut self, instance: Option<SharedString>) {
+        self.instance = instance;
     }
 
     /// Sets the message. If the response is not successful,
     /// it should be a human-readable explanation specific to this occurrence of the problem.
     pub fn set_message(&mut self, message: impl Into<SharedString>) {
+        let message = message.into();
         if self.is_success() {
             self.detail = None;
-            self.message = Some(message.into());
+            self.message = Some(message);
         } else {
-            self.detail = Some(message.into());
+            self.detail = Some(message);
+            self.message = None;
+        }
+    }
+
+    /// Sets the error message.
+    pub fn set_error_message(&mut self, error: impl Into<BoxError>) {
+        let message = error.into().to_string().into();
+        if self.is_success() {
+            self.detail = None;
+            self.message = Some(message);
+        } else {
+            self.detail = Some(message);
             self.message = None;
         }
     }
@@ -184,6 +197,11 @@ impl<S: ResponseCode> Response<S> {
     #[inline]
     pub fn set_data(&mut self, data: impl Into<Value>) {
         self.data = data.into();
+    }
+
+    /// Sets the response data for the validation.
+    pub fn set_validation_data(&mut self, validation: Validation) {
+        self.data = validation.into_map().into();
     }
 
     /// Sets the content type.
@@ -196,10 +214,10 @@ impl<S: ResponseCode> Response<S> {
     pub fn record_server_timing(
         &mut self,
         name: impl Into<SharedString>,
-        description: impl Into<Option<SharedString>>,
+        description: Option<SharedString>,
         duration: impl Into<Option<Duration>>,
     ) {
-        let metric = TimingMetric::new(name.into(), description.into(), duration.into());
+        let metric = TimingMetric::new(name.into(), description, duration.into());
         self.server_timing.push(metric);
     }
 
@@ -237,7 +255,7 @@ impl From<Validation> for Response<StatusCode> {
             Self::new(StatusCode::OK)
         } else {
             let mut res = Self::new(StatusCode::BAD_REQUEST);
-            res.set_data(validation.into_map());
+            res.set_validation_data(validation);
             res
         }
     }

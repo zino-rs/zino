@@ -33,7 +33,7 @@ impl Job {
         let schedule = Schedule::from_str(cron_expr)
             .unwrap_or_else(|err| panic!("invalid cron expression `{cron_expr}`: {err}"));
         Job {
-            id: Uuid::now_v7(),
+            id: Uuid::new_v4(),
             data: Map::new(),
             schedule,
             run: ExecutableJob::Fn(exec),
@@ -47,7 +47,7 @@ impl Job {
         let schedule = Schedule::from_str(cron_expr)
             .unwrap_or_else(|err| panic!("invalid cron expression `{cron_expr}`: {err}"));
         Job {
-            id: Uuid::now_v7(),
+            id: Uuid::new_v4(),
             data: Map::new(),
             schedule,
             run: ExecutableJob::AsyncFn(exec),

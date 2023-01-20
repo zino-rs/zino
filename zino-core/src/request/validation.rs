@@ -1,9 +1,9 @@
-use crate::{datetime::DateTime, response::Response, Map};
+use crate::{datetime::DateTime, response::Response, BoxError, Map, SharedString};
 use bytes::Bytes;
 use http_body::Full;
 use serde_json::Value;
 use std::{
-    fmt,
+    collections::HashMap,
     net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr},
     num::{ParseFloatError, ParseIntError},
     str::{FromStr, ParseBoolError},
@@ -12,16 +12,16 @@ use url::{self, Url};
 use uuid::Uuid;
 
 /// A record of validation results.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug)]
 pub struct Validation {
-    failed_entries: Map,
+    failed_entries: HashMap<SharedString, BoxError>,
 }
 
 impl Validation {
     /// Creates a new validation record.
     pub fn new() -> Self {
         Self {
-            failed_entries: Map::new(),
+            failed_entries: HashMap::new(),
         }
     }
 
@@ -75,7 +75,7 @@ impl Validation {
             .into()
             .and_then(|v| {
                 v.as_str()
-                    .map(|s| s.to_string())
+                    .map(|s| s.to_owned())
                     .or_else(|| Some(v.to_string()))
             })
             .filter(|s| !s.is_empty())
@@ -83,15 +83,15 @@ impl Validation {
 
     /// Parses a json value as `Vec`. If the vec is empty, it also returns `None`.
     pub fn parse_array<'a, T: FromStr>(value: impl Into<Option<&'a Value>>) -> Option<Vec<T>> {
-        let value = value.into();
         value
+            .into()
             .and_then(|v| match v {
                 Value::String(s) => Some(s.split(',').collect::<Vec<_>>()),
-                Value::Array(v) => Some(v.iter().filter_map(|t| t.as_str()).collect()),
+                Value::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
                 _ => None,
             })
-            .and_then(|v| {
-                let vec = v
+            .and_then(|values| {
+                let vec = values
                     .iter()
                     .filter_map(|s| if s.is_empty() { None } else { s.parse().ok() })
                     .collect::<Vec<_>>();
@@ -104,7 +104,7 @@ impl Validation {
         value
             .into()
             .and_then(|v| v.as_object())
-            .filter(|s| !s.is_empty())
+            .filter(|o| !o.is_empty())
     }
 
     /// Parses a json value as `Uuid`. If the `Uuid` is `nil`, it also returns `None`.
@@ -162,21 +162,25 @@ impl Validation {
 
     /// Records a failed entry.
     #[inline]
-    pub fn record_fail(&mut self, name: impl Into<String>, value: impl Into<Value>) {
-        self.failed_entries.insert(name.into(), value.into());
+    pub fn record_fail(&mut self, key: impl Into<SharedString>, err: impl Into<BoxError>) {
+        self.failed_entries.insert(key.into(), err.into());
     }
 
     /// Consumes the validation and returns as a json object.
-    #[inline]
     #[must_use]
     pub fn into_map(self) -> Map {
-        self.failed_entries
+        let mut map = Map::new();
+        for (key, err) in self.failed_entries {
+            map.insert(key.into_owned(), err.to_string().into());
+        }
+        map
     }
 }
 
-impl fmt::Display for Validation {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", Value::from(self.failed_entries.clone()))
+impl Default for Validation {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
     }
 }
 

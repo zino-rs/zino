@@ -45,7 +45,7 @@ pub struct Collection {
 impl Model for Collection {
     fn new() -> Self {
         Self {
-            id: Uuid::now_v7(),
+            id: Uuid::new_v4(),
             ..Self::default()
         }
     }
@@ -55,7 +55,7 @@ impl Model for Collection {
         if let Some(result) = Validation::parse_uuid(data.get("id")) {
             match result {
                 Ok(id) => self.id = id,
-                Err(err) => validation.record_fail("id", err.to_string()),
+                Err(err) => validation.record_fail("id", err),
             }
         }
         if let Some(name) = Validation::parse_string(data.get("name")) {

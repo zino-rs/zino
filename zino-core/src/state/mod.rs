@@ -1,7 +1,8 @@
 //! Application state.
 
-use crate::Map;
+use crate::{Map, SharedString};
 use std::{
+    borrow::Cow,
     env, fs,
     net::{IpAddr, SocketAddr},
     sync::LazyLock,
@@ -12,7 +13,7 @@ use toml::value::{Table, Value};
 #[derive(Debug, Clone)]
 pub struct State {
     /// Environment.
-    env: String,
+    env: SharedString,
     /// Configuration.
     config: Table,
     /// Associated data.
@@ -22,9 +23,9 @@ pub struct State {
 impl State {
     /// Creates a new instance.
     #[inline]
-    pub fn new(env: String) -> Self {
+    pub fn new(env: impl Into<SharedString>) -> Self {
         Self {
-            env,
+            env: env.into(),
             config: Table::new(),
             data: Map::new(),
         }
@@ -32,7 +33,7 @@ impl State {
 
     /// Loads the config file according to the specific env.
     pub fn load_config(&mut self) {
-        let env = &self.env;
+        let env = self.env.as_ref();
         let project_dir = env::current_dir()
             .expect("the project directory does not exist or permissions are insufficient");
         let config_file = project_dir.join(format!("./config/config.{env}.toml"));
@@ -58,7 +59,7 @@ impl State {
     /// Returns the env as `&str`.
     #[inline]
     pub fn env(&self) -> &str {
-        self.env.as_str()
+        self.env.as_ref()
     }
 
     /// Returns a reference to the config.
@@ -100,7 +101,7 @@ impl State {
             .get("port")
             .expect("the `main.port` field should be specified")
             .as_integer()
-            .and_then(|t| u16::try_from(t).ok())
+            .and_then(|i| u16::try_from(i).ok())
             .expect("the `main.port` field should be an integer");
         listeners.push((main_host, main_port).into());
 
@@ -125,7 +126,7 @@ impl State {
                     .get("port")
                     .expect("the `standby.port` field should be specified")
                     .as_integer()
-                    .and_then(|t| u16::try_from(t).ok())
+                    .and_then(|i| u16::try_from(i).ok())
                     .expect("the `standby.port` field should be an integer");
                 listeners.push((standby_host, standby_port).into());
             }
@@ -143,10 +144,10 @@ impl Default for State {
 
 /// Shared application state.
 pub(crate) static SHARED_STATE: LazyLock<State> = LazyLock::new(|| {
-    let mut app_env = "dev".to_string();
+    let mut app_env = Cow::from("dev");
     for arg in env::args() {
         if let Some(value) = arg.strip_prefix("--env=") {
-            app_env = value.to_string();
+            app_env = value.to_owned().into();
         }
     }
 

@@ -31,7 +31,7 @@ impl TraceContext {
     pub fn new() -> Self {
         let span_id = Span::current()
             .id()
-            .map(|t| t.into_u64())
+            .map(|id| id.into_u64())
             .unwrap_or_else(rand::random);
         Self {
             span_id,
@@ -47,7 +47,7 @@ impl TraceContext {
     pub fn with_trace_id(trace_id: Uuid) -> Self {
         let span_id = Span::current()
             .id()
-            .map(|t| t.into_u64())
+            .map(|id| id.into_u64())
             .unwrap_or_else(rand::random);
         Self {
             span_id,
@@ -63,7 +63,7 @@ impl TraceContext {
     pub fn child(&self) -> Self {
         let span_id = Span::current()
             .id()
-            .map(|t| t.into_u64())
+            .map(|id| id.into_u64())
             .unwrap_or_else(rand::random);
         Self {
             span_id,
@@ -79,7 +79,7 @@ impl TraceContext {
     pub fn from_traceparent(traceparent: &str) -> Option<Self> {
         let span_id = Span::current()
             .id()
-            .map(|t| t.into_u64())
+            .map(|id| id.into_u64())
             .unwrap_or_else(rand::random);
         let parts = traceparent.split('-').collect::<Vec<_>>();
         (parts.len() == 4).then_some(Self {

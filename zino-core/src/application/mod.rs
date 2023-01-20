@@ -90,7 +90,7 @@ pub trait Application {
     fn name() -> &'static str {
         Self::config()
             .get("name")
-            .and_then(|t| t.as_str())
+            .and_then(|v| v.as_str())
             .expect("the `name` field should be specified")
     }
 
@@ -99,7 +99,7 @@ pub trait Application {
     fn version() -> &'static str {
         Self::config()
             .get("version")
-            .and_then(|t| t.as_str())
+            .and_then(|v| v.as_str())
             .expect("the `version` field should be specified")
     }
 

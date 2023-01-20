@@ -39,5 +39,5 @@ pub(crate) fn decrypt(key: &[u8], data: &[u8]) -> Result<String, Error> {
     let (ciphertext, bytes) = data.split_at(data.len() - NONCE_SIZE);
     let nonce = GenericArray::from_slice(bytes);
     let plaintext = cipher.decrypt(nonce, ciphertext)?;
-    Ok(String::from_utf8_lossy(&plaintext).to_string())
+    Ok(String::from_utf8_lossy(&plaintext).into_owned())
 }

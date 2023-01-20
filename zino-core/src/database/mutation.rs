@@ -50,7 +50,7 @@ impl Mutation {
     pub fn allow_fields<const N: usize>(&mut self, columns: [&str; N]) {
         let fields = &mut self.fields;
         if fields.is_empty() {
-            self.fields = columns.map(|col| col.to_string()).to_vec();
+            self.fields = columns.map(|col| col.to_owned()).to_vec();
         } else {
             fields.retain(|field| {
                 columns
@@ -182,7 +182,7 @@ impl Mutation {
         if mutations.is_empty() {
             String::new()
         } else {
-            "SET ".to_string() + &mutations.join(",")
+            "SET ".to_owned() + &mutations.join(",")
         }
     }
 }

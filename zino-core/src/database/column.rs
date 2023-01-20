@@ -91,20 +91,20 @@ impl<'a> Column<'a> {
     pub(crate) fn encode_postgres_value<'q>(&self, value: impl Into<Option<&'q Value>>) -> String {
         match value.into() {
             Some(value) => match value {
-                Value::Null => "NULL".to_string(),
+                Value::Null => "NULL".to_owned(),
                 Value::Bool(value) => {
                     let value = if *value { "TRUE" } else { "FALSE" };
-                    value.to_string()
+                    value.to_owned()
                 }
                 Value::Number(value) => value.to_string(),
                 Value::String(value) => {
                     if value.is_empty() {
                         match self.default_value {
                             Some(value) => self.format_postgres_value(value),
-                            None => "''".to_string(),
+                            None => "''".to_owned(),
                         }
                     } else if value == "null" {
-                        "NULL".to_string()
+                        "NULL".to_owned()
                     } else {
                         self.format_postgres_value(value)
                     }
@@ -122,8 +122,8 @@ impl<'a> Column<'a> {
                 Value::Object(_) => format!("'{}'::{}", value, self.postgres_type()),
             },
             None => match self.default_value {
-                Some(_) => "DEFAULT".to_string(),
-                None => "NULL".to_string(),
+                Some(_) => "DEFAULT".to_owned(),
+                None => "NULL".to_owned(),
             },
         }
     }
@@ -196,7 +196,7 @@ impl<'a> Column<'a> {
                 "JSONB" | "JSON" => row.try_get_unchecked::<Value, _>(key)?,
                 _ => Value::Null,
             };
-            map.insert(key.to_string(), value);
+            map.insert(key.to_owned(), value);
         }
         Ok(map)
     }
@@ -216,7 +216,7 @@ impl<'a> Column<'a> {
                 } else {
                     "NULL"
                 };
-                value.to_string()
+                value.to_owned()
             }
             "i64" | "i32" | "i16" => {
                 let value = if value.parse::<i64>().is_ok() {
@@ -224,7 +224,7 @@ impl<'a> Column<'a> {
                 } else {
                     "NULL"
                 };
-                value.to_string()
+                value.to_owned()
             }
             "f64" | "f32" => {
                 let value = if value.parse::<f64>().is_ok() {
@@ -232,11 +232,11 @@ impl<'a> Column<'a> {
                 } else {
                     "NULL"
                 };
-                value.to_string()
+                value.to_owned()
             }
             "bool" => {
                 let value = if value == "true" { "TRUE" } else { "FALSE" };
-                value.to_string()
+                value.to_owned()
             }
             "String" | "DateTime" | "Uuid" | "Option<Uuid>" => Self::format_postgres_string(value),
             "Vec<u8>" => format!("'\\x{value}'"),
@@ -257,7 +257,7 @@ impl<'a> Column<'a> {
                 let value = Self::format_postgres_string(value);
                 format!("{value}::jsonb")
             }
-            _ => "NULL".to_string(),
+            _ => "NULL".to_owned(),
         }
     }
 

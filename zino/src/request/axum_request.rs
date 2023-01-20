@@ -104,7 +104,7 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     async fn to_bytes(&mut self) -> Result<Bytes, Validation> {
         body::to_bytes(self.body_mut()).await.map_err(|err| {
             let mut validation = Validation::new();
-            validation.record_fail("body", err.to_string());
+            validation.record_fail("body", err);
             validation
         })
     }
@@ -123,7 +123,7 @@ impl RequestContext for AxumExtractor<Request<Body>> {
         match self.uri().query() {
             Some(query) => serde_qs::from_str::<T>(query).map_err(|err| {
                 let mut validation = Validation::new();
-                validation.record_fail("query", err.to_string());
+                validation.record_fail("query", err);
                 validation
             }),
             None => Ok(T::default()),

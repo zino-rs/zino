@@ -7,8 +7,8 @@ use axum::{
 };
 use futures::future;
 use std::{
-    collections::HashMap, convert::Infallible, env, io, net::SocketAddr, sync::LazyLock, thread,
-    time::Duration,
+    collections::HashMap, convert::Infallible, io, net::SocketAddr, path::PathBuf, sync::LazyLock,
+    thread, time::Duration,
 };
 use tokio::runtime::Builder;
 use tower::{
@@ -85,9 +85,36 @@ impl Application for AxumCluster {
             }
         });
 
-        let project_dir = Self::project_dir();
-        let public_dir = project_dir.join("./public");
+        // Server config.
+        let mut body_limit = 100 * 1024 * 1024; // 100MB
+        let mut request_timeout = 10; // 10 seconds
+        let mut public_dir = PathBuf::new();
+        let default_public_dir = Self::project_dir().join("./public");
+        if let Some(server) = Self::config().get("server").and_then(|v| v.as_table()) {
+            if let Some(limit) = server
+                .get("body-limit")
+                .and_then(|v| v.as_integer())
+                .and_then(|i| usize::try_from(i).ok())
+            {
+                body_limit = limit;
+            }
+            if let Some(timeout) = server
+                .get("request-timeout")
+                .and_then(|v| v.as_integer())
+                .and_then(|i| u64::try_from(i).ok())
+            {
+                request_timeout = timeout;
+            }
+            if let Some(dir) = server.get("public-dir").and_then(|v| v.as_str()) {
+                public_dir.push(dir);
+            } else {
+                public_dir = default_public_dir;
+            }
+        } else {
+            public_dir = default_public_dir;
+        }
         let index_file = public_dir.join("./index.html");
+        let not_found_file = public_dir.join("./404.html");
         let internal_server_error_handler = |err: io::Error| async move {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -96,8 +123,14 @@ impl Application for AxumCluster {
         };
         let serve_file_service = routing::get_service(ServeFile::new(index_file))
             .handle_error(internal_server_error_handler);
-        let serve_dir_service = routing::get_service(ServeDir::new(public_dir))
-            .handle_error(internal_server_error_handler);
+        let serve_dir_service = routing::get_service(
+            ServeDir::new(public_dir)
+                .precompressed_gzip()
+                .precompressed_deflate()
+                .precompressed_br()
+                .not_found_service(ServeFile::new(not_found_file)),
+        )
+        .handle_error(internal_server_error_handler);
 
         runtime.block_on(async {
             let routes = self.routes;
@@ -125,8 +158,8 @@ impl Application for AxumCluster {
                     .layer(
                         ServiceBuilder::new()
                             .layer(AddExtensionLayer::new(state))
-                            .layer(DefaultBodyLimit::disable())
-                            .layer(CompressionLayer::new())
+                            .layer(DefaultBodyLimit::max(body_limit))
+                            .layer(CompressionLayer::new().gzip(true).deflate(true).br(true))
                             .layer(LazyLock::force(
                                 &crate::middleware::tower_tracing::TRACING_MIDDLEWARE,
                             ))
@@ -147,7 +180,7 @@ impl Application for AxumCluster {
                                 let res = Response::new(status_code);
                                 Ok::<http::Response<Full<Bytes>>, Infallible>(res.into())
                             }))
-                            .layer(TimeoutLayer::new(Duration::from_secs(10))),
+                            .layer(TimeoutLayer::new(Duration::from_secs(request_timeout))),
                     );
                 tracing::info!(env = cluster_env, "listen on {listener}");
                 Server::bind(listener)
@@ -168,25 +201,22 @@ static SHARED_CLUSTER_STATE: LazyLock<State> = LazyLock::new(|| {
     let config = state.config();
     let app_name = config
         .get("name")
-        .and_then(|t| t.as_str())
+        .and_then(|v| v.as_str())
         .expect("the `name` field should be specified");
     let app_version = config
         .get("version")
-        .and_then(|t| t.as_str())
+        .and_then(|v| v.as_str())
         .expect("the `version` field should be specified");
-    let project_dir = env::current_dir()
-        .expect("the project directory does not exist or permissions are insufficient");
     let available_parallelism = thread::available_parallelism()
         .map(usize::from)
         .unwrap_or_default();
 
     let mut data = Map::new();
-    data.insert("app_name".to_string(), app_name.into());
-    data.insert("app_version".to_string(), app_version.into());
-    data.insert("project_dir".to_string(), project_dir.to_str().into());
-    data.insert("cluster_start_at".to_string(), DateTime::now().into());
+    data.insert("app_name".to_owned(), app_name.into());
+    data.insert("app_version".to_owned(), app_version.into());
+    data.insert("cluster_start_at".to_owned(), DateTime::now().into());
     data.insert(
-        "available_parallelism".to_string(),
+        "available_parallelism".to_owned(),
         available_parallelism.into(),
     );
     state.set_data(data);

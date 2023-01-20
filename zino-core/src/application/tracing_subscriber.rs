@@ -24,32 +24,32 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let mut display_span_list = false;
     let display_current_span = true;
 
-    if let Some(tracing) = APP::config().get("tracing").and_then(|t| t.as_table()) {
-        if let Some(dir) = tracing.get("log-dir").and_then(|t| t.as_str()) {
+    if let Some(tracing) = APP::config().get("tracing").and_then(|v| v.as_table()) {
+        if let Some(dir) = tracing.get("log-dir").and_then(|v| v.as_str()) {
             log_dir = dir;
         }
-        if let Some(filter) = tracing.get("filter").and_then(|t| t.as_str()) {
+        if let Some(filter) = tracing.get("filter").and_then(|v| v.as_str()) {
             env_filter = filter;
         }
         display_target = tracing
             .get("display-target")
-            .and_then(|t| t.as_bool())
+            .and_then(|v| v.as_bool())
             .unwrap_or(true);
         display_filename = tracing
             .get("display-filename")
-            .and_then(|t| t.as_bool())
+            .and_then(|v| v.as_bool())
             .unwrap_or(false);
         display_line_number = tracing
             .get("display-line-number")
-            .and_then(|t| t.as_bool())
+            .and_then(|v| v.as_bool())
             .unwrap_or(false);
         display_thread_names = tracing
             .get("display-thread-names")
-            .and_then(|t| t.as_bool())
+            .and_then(|v| v.as_bool())
             .unwrap_or(false);
         display_span_list = tracing
             .get("display-span-list")
-            .and_then(|t| t.as_bool())
+            .and_then(|v| v.as_bool())
             .unwrap_or(false);
     }
 

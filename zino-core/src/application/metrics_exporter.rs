@@ -4,17 +4,17 @@ use metrics_exporter_tcp::TcpBuilder;
 use std::{net::IpAddr, time::Duration};
 
 pub(super) fn init<APP: Application + ?Sized>() {
-    if let Some(metrics) = APP::config().get("metrics").and_then(|t| t.as_table()) {
+    if let Some(metrics) = APP::config().get("metrics").and_then(|v| v.as_table()) {
         let exporter = metrics
             .get("exporter")
-            .and_then(|t| t.as_str())
+            .and_then(|v| v.as_str())
             .unwrap_or_default();
         if exporter == "prometheus" {
-            let mut builder = match metrics.get("push-gateway").and_then(|t| t.as_str()) {
+            let mut builder = match metrics.get("push-gateway").and_then(|v| v.as_str()) {
                 Some(endpoint) => {
                     let interval = metrics
                         .get("interval")
-                        .and_then(|t| t.as_integer().and_then(|i| i.try_into().ok()))
+                        .and_then(|v| v.as_integer().and_then(|i| i.try_into().ok()))
                         .unwrap_or(60);
                     PrometheusBuilder::new()
                         .with_push_gateway(endpoint, Duration::from_secs(interval))
@@ -23,12 +23,12 @@ pub(super) fn init<APP: Application + ?Sized>() {
                 None => {
                     let host = metrics
                         .get("host")
-                        .and_then(|t| t.as_str())
+                        .and_then(|v| v.as_str())
                         .unwrap_or("127.0.0.1");
                     let port = metrics
                         .get("port")
-                        .and_then(|t| t.as_integer())
-                        .and_then(|t| u16::try_from(t).ok())
+                        .and_then(|v| v.as_integer())
+                        .and_then(|i| u16::try_from(i).ok())
                         .unwrap_or(9000);
                     let host_addr = host
                         .parse::<IpAddr>()
@@ -36,7 +36,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
                     PrometheusBuilder::new().with_http_listener((host_addr, port))
                 }
             };
-            if let Some(quantiles) = metrics.get("quantiles").and_then(|t| t.as_array()) {
+            if let Some(quantiles) = metrics.get("quantiles").and_then(|v| v.as_array()) {
                 let quantiles = quantiles
                     .iter()
                     .filter_map(|q| q.as_float())
@@ -45,14 +45,14 @@ pub(super) fn init<APP: Application + ?Sized>() {
                     .set_quantiles(&quantiles)
                     .expect("invalid quantiles to render histograms");
             }
-            if let Some(buckets) = metrics.get("buckets").and_then(|t| t.as_table()) {
+            if let Some(buckets) = metrics.get("buckets").and_then(|v| v.as_table()) {
                 for (key, value) in buckets {
                     let matcher = if key.starts_with('^') {
-                        Matcher::Prefix(key.to_string())
+                        Matcher::Prefix(key.to_owned())
                     } else if key.ends_with('$') {
-                        Matcher::Suffix(key.to_string())
+                        Matcher::Suffix(key.to_owned())
                     } else {
-                        Matcher::Full(key.to_string())
+                        Matcher::Full(key.to_owned())
                     };
                     let values = value
                         .as_array()
@@ -65,12 +65,12 @@ pub(super) fn init<APP: Application + ?Sized>() {
                         .expect("invalid buckets to render histograms");
                 }
             }
-            if let Some(labels) = metrics.get("global-labels").and_then(|t| t.as_table()) {
+            if let Some(labels) = metrics.get("global-labels").and_then(|v| v.as_table()) {
                 for (key, value) in labels {
                     builder = builder.add_global_label(key, value.to_string());
                 }
             }
-            if let Some(addresses) = metrics.get("allowed-addresses").and_then(|t| t.as_array()) {
+            if let Some(addresses) = metrics.get("allowed-addresses").and_then(|v| v.as_array()) {
                 for addr in addresses {
                     builder = builder
                         .add_allowed_address(addr.as_str().unwrap_or_default())
@@ -83,17 +83,17 @@ pub(super) fn init<APP: Application + ?Sized>() {
         } else if exporter == "tcp" {
             let host = metrics
                 .get("host")
-                .and_then(|t| t.as_str())
+                .and_then(|v| v.as_str())
                 .unwrap_or("127.0.0.1");
             let port = metrics
                 .get("port")
-                .and_then(|t| t.as_integer())
-                .and_then(|t| u16::try_from(t).ok())
+                .and_then(|v| v.as_integer())
+                .and_then(|i| u16::try_from(i).ok())
                 .unwrap_or(9000);
             let buffer_size = metrics
                 .get("buffer_size")
-                .and_then(|t| t.as_integer())
-                .and_then(|t| usize::try_from(t).ok())
+                .and_then(|v| v.as_integer())
+                .and_then(|i| usize::try_from(i).ok())
                 .unwrap_or(1024);
             let host_addr = host
                 .parse::<IpAddr>()
