@@ -35,7 +35,7 @@ pub struct Authentication {
     /// Content-Type header value.
     content_type: Option<String>,
     /// Date header.
-    date_header: (String, DateTime),
+    date_header: (&'static str, DateTime),
     /// Expires.
     expires: Option<DateTime>,
     /// Canonicalized headers.
@@ -56,7 +56,7 @@ impl Authentication {
             accept: None,
             content_md5: None,
             content_type: None,
-            date_header: ("date".to_owned(), DateTime::now()),
+            date_header: ("date", DateTime::now()),
             expires: None,
             headers: Vec::new(),
             resource: String::new(),
@@ -99,9 +99,9 @@ impl Authentication {
         self.content_type = content_type.into();
     }
 
-    /// Sets the `date` header value.
+    /// Sets the header value for the date.
     #[inline]
-    pub fn set_date_header(&mut self, header_name: String, date: DateTime) {
+    pub fn set_date_header(&mut self, header_name: &'static str, date: DateTime) {
         self.date_header = (header_name, date);
     }
 

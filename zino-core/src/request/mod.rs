@@ -277,7 +277,7 @@ pub trait RequestContext {
                     let current = DateTime::now();
                     let max_tolerance = Duration::from_secs(900);
                     if date >= current - max_tolerance && date <= current + max_tolerance {
-                        authentication.set_date_header("date".to_owned(), date);
+                        authentication.set_date_header("date", date);
                     } else {
                         validation.record_fail("date", "untrusted date");
                     }

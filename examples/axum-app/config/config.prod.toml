@@ -1,6 +1,6 @@
 
 name = "data-cube"
-version = "0.4.3"
+version = "0.4.4"
 
 [main]
 host = "127.0.0.1"

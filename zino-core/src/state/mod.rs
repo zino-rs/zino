@@ -134,6 +134,12 @@ impl State {
 
         listeners
     }
+
+    /// Returns a reference to the shared state.
+    #[inline]
+    pub(crate) fn shared() -> &'static State {
+        LazyLock::force(&SHARED_STATE)
+    }
 }
 
 impl Default for State {

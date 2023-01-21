@@ -1,6 +1,6 @@
 //! Connection pool and ORM.
 
-use crate::{crypto, state::SHARED_STATE};
+use crate::{crypto, state::State, SharedString};
 use base64::{engine::general_purpose::STANDARD_NO_PAD, Engine};
 use sqlx::{
     postgres::{PgConnectOptions, PgPoolOptions},
@@ -25,9 +25,9 @@ pub use schema::Schema;
 #[derive(Debug, Clone)]
 pub struct ConnectionPool {
     /// Name.
-    name: String,
+    name: &'static str,
     /// Database.
-    database: String,
+    database: SharedString,
     /// Pool.
     pool: PgPool,
 }
@@ -57,7 +57,7 @@ impl ConnectionPool {
     }
 
     /// Connects lazily to the database according to the config.
-    pub fn connect_lazy(application_name: &str, config: &Table) -> Self {
+    pub fn connect_lazy(application_name: &str, config: &'static Table) -> Self {
         // Connect options.
         let statement_cache_capacity = config
             .get("statement-cache-capacity")
@@ -105,7 +105,8 @@ impl ConnectionPool {
         let database = connect_options
             .get_database()
             .unwrap_or_default()
-            .to_owned();
+            .to_owned()
+            .into();
 
         // Pool options.
         let max_connections = config
@@ -141,8 +142,7 @@ impl ConnectionPool {
         let name = config
             .get("name")
             .and_then(|v| v.as_str())
-            .unwrap_or("main")
-            .to_owned();
+            .unwrap_or("main");
         Self {
             name,
             database,
@@ -150,16 +150,16 @@ impl ConnectionPool {
         }
     }
 
-    /// Returns the name as a str.
+    /// Returns the name.
     #[inline]
-    pub fn name(&self) -> &str {
-        &self.name
+    pub fn name(&self) -> &'static str {
+        self.name
     }
 
-    /// Returns the database as a str.
+    /// Returns the database.
     #[inline]
     pub fn database(&self) -> &str {
-        &self.database
+        self.database.as_ref()
     }
 
     /// Returns a reference to the pool.
@@ -170,7 +170,7 @@ impl ConnectionPool {
 }
 
 /// A list of database connection pools.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct ConnectionPools(Vec<ConnectionPool>);
 
 impl ConnectionPools {
@@ -183,7 +183,7 @@ impl ConnectionPools {
 
 /// Shared connection pools.
 static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
-    let config = SHARED_STATE.config();
+    let config = State::shared().config();
 
     // Application name.
     let application_name = config
@@ -212,7 +212,7 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
 
 /// Database namespace prefix.
 static NAMESPACE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
-    SHARED_STATE
+    State::shared()
         .config()
         .get("database")
         .expect("the `database` field should be specified")

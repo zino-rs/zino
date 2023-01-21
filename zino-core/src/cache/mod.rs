@@ -1,5 +1,6 @@
 //! Global cache for the application.
 
+use crate::state::State;
 use lru::LruCache;
 use parking_lot::RwLock;
 use serde_json::Value;
@@ -129,7 +130,7 @@ impl GlobalCache {
 
 /// Global cache.
 static GLOBAL_CACHE: LazyLock<RwLock<LruCache<String, Value>>> = LazyLock::new(|| {
-    let config = crate::state::SHARED_STATE.config();
+    let config = State::shared().config();
     let capacity = match config.get("cache") {
         Some(cache) => cache
             .as_table()

@@ -8,12 +8,14 @@
 #![feature(let_chains)]
 #![feature(nonzero_min_max)]
 #![feature(once_cell)]
+#![feature(option_result_contains)]
 #![feature(string_leak)]
 #![feature(type_alias_impl_trait)]
 #![forbid(unsafe_code)]
 
 mod crypto;
 
+pub mod accessor;
 pub mod application;
 pub mod authentication;
 pub mod cache;
