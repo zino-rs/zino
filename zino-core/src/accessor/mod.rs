@@ -1,15 +1,16 @@
-//! Unified data access to databases and storage backends.
+//! Unified data access to different storage services.
 
 use crate::state::State;
 use backon::ExponentialBackoff;
 use opendal::{
     layers::{MetricsLayer, RetryLayer, TracingLayer},
     services::{
-        azblob, azdfs, fs, ftp, gcs, ipfs, ipmfs, memcached, memory, moka, obs, oss, redis, s3,
+        azblob, azdfs, fs, ftp, gcs, ghac, ipfs, ipmfs, memcached, memory, moka, obs, oss, redis,
+        s3,
     },
     Error,
     ErrorKind::{Unexpected, Unsupported},
-    Operator, Result,
+    Operator,
 };
 use std::time::Duration;
 
@@ -18,22 +19,20 @@ use std::time::Duration;
 pub struct StorageAccessor {}
 
 impl StorageAccessor {
-    /// Creates a new operator for the specific storage backend.
-    pub fn new_operator(scheme: &'static str, name: Option<&'static str>) -> Result<Operator> {
+    /// Creates a new operator for the specific storage service.
+    pub fn new_operator(
+        scheme: &'static str,
+        name: Option<&'static str>,
+    ) -> Result<Operator, Error> {
         let config = State::shared().config();
         let operator = if scheme == "memory" {
             let mut builder = memory::Builder::default();
             Ok(Operator::new(builder.build()?))
         } else if let Some(accessors) = config.get("accessor").and_then(|v| v.as_array()) {
-            if let Some(accessor) = accessors
-                .iter()
-                .filter_map(|v| v.as_table())
-                .filter(|t| {
-                    t.get("scheme").and_then(|v| v.as_str()).contains(&scheme)
-                        && t.get("name").and_then(|v| v.as_str()) == name
-                })
-                .next()
-            {
+            if let Some(accessor) = accessors.iter().filter_map(|v| v.as_table()).find(|t| {
+                t.get("scheme").and_then(|v| v.as_str()).contains(&scheme)
+                    && t.get("name").and_then(|v| v.as_str()) == name
+            }) {
                 match scheme {
                     "azblob" => {
                         let mut builder = azblob::Builder::default();
@@ -141,6 +140,16 @@ impl StorageAccessor {
                             accessor.get("credential-path").and_then(|v| v.as_str())
                         {
                             builder.credential_path(credential_path);
+                        }
+                        Ok(Operator::new(builder.build()?))
+                    }
+                    "ghac" => {
+                        let mut builder = ghac::Builder::default();
+                        if let Some(root) = accessor.get("root").and_then(|v| v.as_str()) {
+                            builder.root(root);
+                        }
+                        if let Some(version) = accessor.get("version").and_then(|v| v.as_str()) {
+                            builder.version(version);
                         }
                         Ok(Operator::new(builder.build()?))
                     }
@@ -336,7 +345,7 @@ impl StorageAccessor {
                     _ => Err(Error::new(Unsupported, "scheme is unsupported")),
                 }
             } else {
-                Err(Error::new(Unexpected, "failed to find the storage backend"))
+                Err(Error::new(Unexpected, "failed to find the storage service"))
             }
         } else if name.is_none() {
             scheme.parse().and_then(Operator::from_env)

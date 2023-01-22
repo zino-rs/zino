@@ -1,6 +1,6 @@
 [package]
 name = "axum-app"
-version = "0.4.4"
+version = "0.4.5"
 rust-version = "1.68"
 edition = "2021"
 publish = false
@@ -12,9 +12,9 @@ tracing = "0.1.37"
 
 [dependencies.zino]
 path = "../../zino"
-version = "0.4.4"
+version = "0.5.0"
 features = ["axum"]
 
 [dependencies.zino-model]
 path = "../../zino-model"
-version = "0.3.6"
+version = "0.3.7"

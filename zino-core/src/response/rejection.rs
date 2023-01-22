@@ -83,10 +83,27 @@ impl From<BoxError> for Rejection {
     }
 }
 
+impl From<serde_json::Error> for Rejection {
+    /// Converts to a rejection from the input type [`serde_json::Error`](serde_json::Error).
+    #[inline]
+    fn from(err: serde_json::Error) -> Self {
+        InternalServerError(Box::new(err))
+    }
+}
+
 impl From<sqlx::Error> for Rejection {
-    /// Converts to this type from the input type `sqlx::Error`.
+    /// Converts to a rejection from the input type [`sqlx::Error`](sqlx::Error).
     #[inline]
     fn from(err: sqlx::Error) -> Self {
+        InternalServerError(Box::new(err))
+    }
+}
+
+#[cfg(feature = "accessor")]
+impl From<opendal::Error> for Rejection {
+    /// Converts to a rejection from the input type [`opendal::Error`](opendal::Error).
+    #[inline]
+    fn from(err: opendal::Error) -> Self {
         InternalServerError(Box::new(err))
     }
 }

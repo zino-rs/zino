@@ -11,7 +11,8 @@ pub trait Model: Default + Serialize + DeserializeOwned {
     #[must_use]
     fn read_map(&mut self, data: Map) -> Validation;
 
-    /// Attempts to constructs a model from a json object.
+    /// Attempts to construct a model from a json object.
+    #[inline]
     fn try_from_map(data: Map) -> Result<Self, Error> {
         serde_json::from_value(Value::from(data))
     }

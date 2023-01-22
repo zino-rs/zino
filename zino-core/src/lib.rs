@@ -3,22 +3,29 @@
 //! [`zino`]: https://github.com/photino/zino
 
 #![feature(async_fn_in_trait)]
+#![feature(doc_auto_cfg)]
 #![feature(io_error_other)]
+#![feature(is_some_and)]
 #![feature(iter_intersperse)]
 #![feature(let_chains)]
 #![feature(nonzero_min_max)]
 #![feature(once_cell)]
 #![feature(option_result_contains)]
+#![feature(result_option_inspect)]
 #![feature(string_leak)]
 #![feature(type_alias_impl_trait)]
 #![forbid(unsafe_code)]
 
 mod crypto;
 
+#[cfg(feature = "accessor")]
 pub mod accessor;
+
+#[cfg(feature = "cache")]
+pub mod cache;
+
 pub mod application;
 pub mod authentication;
-pub mod cache;
 pub mod channel;
 pub mod database;
 pub mod datetime;
@@ -31,7 +38,7 @@ pub mod trace;
 /// A JSON key/value type.
 pub type Map = serde_json::Map<String, serde_json::Value>;
 
-/// A UUID is a unique 128-bit number, stored as 16 octets.
+/// A Universally Unique Identifier (UUID).
 pub type Uuid = uuid::Uuid;
 
 /// An allocation-optimized string.

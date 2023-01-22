@@ -14,7 +14,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
                 Some(endpoint) => {
                     let interval = metrics
                         .get("interval")
-                        .and_then(|v| v.as_integer().and_then(|i| i.try_into().ok()))
+                        .and_then(|v| v.as_integer().and_then(|i| u64::try_from(i).ok()))
                         .unwrap_or(60);
                     PrometheusBuilder::new()
                         .with_push_gateway(endpoint, Duration::from_secs(interval))

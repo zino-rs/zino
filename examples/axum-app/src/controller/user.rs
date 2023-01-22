@@ -1,9 +1,6 @@
 use serde_json::json;
 use std::time::Instant;
-use zino::{
-    Application, AxumCluster, Model, Query, Rejection, Request, RequestContext, Response, Schema,
-    Uuid,
-};
+use zino::{Model, Query, Rejection, Request, RequestContext, Response, Schema, Uuid};
 use zino_model::User;
 
 pub(crate) async fn new(mut req: Request) -> zino::Result {
@@ -30,11 +27,7 @@ pub(crate) async fn update(mut req: Request) -> zino::Result {
 pub(crate) async fn list(req: Request) -> zino::Result {
     let mut query = Query::new();
     let mut res = req.query_validation(&mut query)?;
-
-    let db_query_start_time = Instant::now();
     let users = User::find(query).await.map_err(Rejection::from)?;
-    res.record_server_timing("db", None, db_query_start_time.elapsed());
-
     let data = json!({
         "users": users,
     });
@@ -54,22 +47,12 @@ pub(crate) async fn view(mut req: Request) -> zino::Result {
     let event = req.cloud_event("message", message);
     req.try_send(event)?;
 
+    let db_query_start_time = Instant::now();
     let user = User::find_one(query).await.map_err(Rejection::from)?;
-    req.fetch("http://localhost:6081/stats", None).await.map_err(Rejection::from)?;
-    req.fetch("http://localhost:6081/user/list", None).await.map_err(Rejection::from)?;
-
-    let state_data = req.state_data_mut();
-    let counter = state_data
-        .get("counter")
-        .map(|c| c.as_u64().unwrap_or_default() + 1)
-        .unwrap_or_default();
-    state_data.insert("counter".to_owned(), counter.into());
+    res.record_server_timing("db", None, db_query_start_time.elapsed());
 
     let data = json!({
         "user": user,
-        "app_state_data": AxumCluster::state_data(),
-        "state_data": state_data,
-        "config": req.config(),
     });
     res.set_data(data);
     Ok(res.into())

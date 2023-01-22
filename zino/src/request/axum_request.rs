@@ -73,7 +73,13 @@ impl RequestContext for AxumExtractor<Request<Body>> {
 
     #[inline]
     fn get_header(&self, key: &str) -> Option<&str> {
-        self.headers().get(key)?.to_str().ok()
+        self.headers()
+            .get(key)?
+            .to_str()
+            .inspect_err(|err| {
+                tracing::error!("{err}");
+            })
+            .ok()
     }
 
     #[inline]

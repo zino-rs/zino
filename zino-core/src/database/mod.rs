@@ -1,6 +1,6 @@
 //! Connection pool and ORM.
 
-use crate::{crypto, state::State, SharedString};
+use crate::{crypto, state::State};
 use base64::{engine::general_purpose::STANDARD_NO_PAD, Engine};
 use sqlx::{
     postgres::{PgConnectOptions, PgPoolOptions},
@@ -27,7 +27,7 @@ pub struct ConnectionPool {
     /// Name.
     name: &'static str,
     /// Database.
-    database: SharedString,
+    database: &'static str,
     /// Pool.
     pool: PgPool,
 }
@@ -52,6 +52,7 @@ impl ConnectionPool {
             .expect("the `postgres.password` field should be a str");
         let key = format!("{username}@{database}");
         crypto::encrypt(key.as_bytes(), password.as_bytes())
+            .inspect_err(|_| tracing::error!("failed to encrypt the database password"))
             .ok()
             .map(|bytes| STANDARD_NO_PAD.encode(bytes))
     }
@@ -106,7 +107,7 @@ impl ConnectionPool {
             .get_database()
             .unwrap_or_default()
             .to_owned()
-            .into();
+            .leak();
 
         // Pool options.
         let max_connections = config
@@ -158,8 +159,8 @@ impl ConnectionPool {
 
     /// Returns the database.
     #[inline]
-    pub fn database(&self) -> &str {
-        self.database.as_ref()
+    pub fn database(&self) -> &'static str {
+        self.database
     }
 
     /// Returns a reference to the pool.

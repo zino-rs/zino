@@ -1,19 +1,18 @@
-//! Application state.
+//! Application or request scoped state.
 
-use crate::{Map, SharedString};
+use crate::Map;
 use std::{
-    borrow::Cow,
     env, fs,
     net::{IpAddr, SocketAddr},
     sync::LazyLock,
 };
 use toml::value::{Table, Value};
 
-/// Application state.
+/// A state is a record of the env, config and associated data.
 #[derive(Debug, Clone)]
 pub struct State {
     /// Environment.
-    env: SharedString,
+    env: &'static str,
     /// Configuration.
     config: Table,
     /// Associated data.
@@ -23,9 +22,9 @@ pub struct State {
 impl State {
     /// Creates a new instance.
     #[inline]
-    pub fn new(env: impl Into<SharedString>) -> Self {
+    pub fn new(env: &'static str) -> Self {
         Self {
-            env: env.into(),
+            env,
             config: Table::new(),
             data: Map::new(),
         }
@@ -33,7 +32,7 @@ impl State {
 
     /// Loads the config file according to the specific env.
     pub fn load_config(&mut self) {
-        let env = self.env.as_ref();
+        let env = self.env;
         let project_dir = env::current_dir()
             .expect("the project directory does not exist or permissions are insufficient");
         let config_file = project_dir.join(format!("./config/config.{env}.toml"));
@@ -58,8 +57,8 @@ impl State {
 
     /// Returns the env as `&str`.
     #[inline]
-    pub fn env(&self) -> &str {
-        self.env.as_ref()
+    pub fn env(&self) -> &'static str {
+        self.env
     }
 
     /// Returns a reference to the config.
@@ -150,10 +149,10 @@ impl Default for State {
 
 /// Shared application state.
 pub(crate) static SHARED_STATE: LazyLock<State> = LazyLock::new(|| {
-    let mut app_env = Cow::from("dev");
+    let mut app_env = "dev";
     for arg in env::args() {
         if let Some(value) = arg.strip_prefix("--env=") {
-            app_env = value.to_owned().into();
+            app_env = value.to_owned().leak();
         }
     }
 

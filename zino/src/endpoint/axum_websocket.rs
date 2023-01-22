@@ -27,7 +27,7 @@ pub(crate) async fn websocket_handler(
                         if source.filter(|&source| source != event_source).is_none() {
                             let event_topic = event.topic();
                             if topic.filter(|&topic| topic != event_topic).is_none() {
-                                let message = Message::Text(data.to_string());
+                                let message = Message::Text(data.to_owned());
                                 if let Err(err) = socket.send(message).await {
                                     tracing::error!("{err}");
                                 }

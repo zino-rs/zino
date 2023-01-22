@@ -8,7 +8,7 @@ use axum::{
 use futures::future;
 use std::{
     collections::HashMap, convert::Infallible, io, net::SocketAddr, path::PathBuf, sync::LazyLock,
-    thread, time::Duration,
+    time::Duration,
 };
 use tokio::runtime::Builder;
 use tower::{
@@ -207,18 +207,11 @@ static SHARED_CLUSTER_STATE: LazyLock<State> = LazyLock::new(|| {
         .get("version")
         .and_then(|v| v.as_str())
         .expect("the `version` field should be specified");
-    let available_parallelism = thread::available_parallelism()
-        .map(usize::from)
-        .unwrap_or_default();
 
     let mut data = Map::new();
-    data.insert("app_name".to_owned(), app_name.into());
-    data.insert("app_version".to_owned(), app_version.into());
-    data.insert("cluster_start_at".to_owned(), DateTime::now().into());
-    data.insert(
-        "available_parallelism".to_owned(),
-        available_parallelism.into(),
-    );
+    data.insert("app.name".to_owned(), app_name.into());
+    data.insert("app.version".to_owned(), app_version.into());
+    data.insert("app.start_at".to_owned(), DateTime::now().into());
     state.set_data(data);
     state
 });

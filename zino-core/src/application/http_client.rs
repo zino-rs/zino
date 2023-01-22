@@ -1,7 +1,7 @@
 use crate::{application::Application, trace::TraceContext, BoxError, Map, Uuid};
 use reqwest::{
     header::{self, HeaderMap, HeaderName},
-    Client, IntoUrl, Method, Request, Response, Url,
+    Certificate, Client, IntoUrl, Method, Request, Response, Url,
 };
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, Error, RequestBuilder};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
@@ -9,6 +9,7 @@ use reqwest_tracing::{ReqwestOtelSpanBackend, TracingMiddleware};
 use serde_json::Value;
 use std::{
     borrow::Cow,
+    fs,
     net::IpAddr,
     str::FromStr,
     sync::OnceLock,
@@ -34,12 +35,57 @@ pub(super) fn init<APP: Application + ?Sized>() {
         {
             client_builder = client_builder.timeout(Duration::from_secs(timeout));
         }
+        if let Some(timeout) = http_client
+            .get("pool-idle-timeout")
+            .and_then(|v| v.as_integer())
+            .and_then(|i| u64::try_from(i).ok())
+        {
+            client_builder = client_builder.pool_idle_timeout(Duration::from_secs(timeout));
+        }
+        if let Some(max_idle_per_host) = http_client
+            .get("pool-max-idle-per-host")
+            .and_then(|v| v.as_integer())
+            .and_then(|i| usize::try_from(i).ok())
+        {
+            client_builder = client_builder.pool_max_idle_per_host(max_idle_per_host);
+        }
         if let Some(addr) = http_client
             .get("local-address")
             .and_then(|v| v.as_str())
             .and_then(|s| IpAddr::from_str(s).ok())
         {
             client_builder = client_builder.local_address(addr);
+        }
+        if let Some(tcp_keepalive) = http_client
+            .get("tcp-keepalive")
+            .and_then(|v| v.as_integer())
+            .and_then(|i| u64::try_from(i).ok())
+        {
+            client_builder = client_builder.tcp_keepalive(Duration::from_secs(tcp_keepalive));
+        }
+        if let Some(root_certs) = http_client.get("root-certs").and_then(|v| v.as_array()) {
+            for root_cert in root_certs.iter().filter_map(|cert| cert.as_str()) {
+                match fs::read(root_cert) {
+                    Ok(bytes) => {
+                        if root_cert.ends_with(".der") {
+                            match Certificate::from_der(&bytes) {
+                                Ok(cert) => {
+                                    client_builder = client_builder.add_root_certificate(cert);
+                                }
+                                Err(err) => panic!("failed to read a DER encoded cert: {err}"),
+                            }
+                        } else if root_cert.ends_with(".pem") {
+                            match Certificate::from_pem(&bytes) {
+                                Ok(cert) => {
+                                    client_builder = client_builder.add_root_certificate(cert);
+                                }
+                                Err(err) => panic!("failed to read a PEM encoded cert: {err}"),
+                            }
+                        }
+                    }
+                    Err(err) => panic!("failed to read cert file: {err}"),
+                }
+            }
         }
     }
 

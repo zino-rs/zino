@@ -65,6 +65,7 @@ impl SecurityToken {
     /// Encrypts the plaintext using AES-GCM-SIV.
     pub fn encrypt(key: impl AsRef<[u8]>, plaintext: impl AsRef<[u8]>) -> Option<String> {
         crypto::encrypt(key.as_ref(), plaintext.as_ref())
+            .inspect_err(|_| tracing::error!("failed to encrypt the plaintext"))
             .ok()
             .map(|bytes| STANDARD_NO_PAD.encode(bytes))
     }
@@ -73,8 +74,13 @@ impl SecurityToken {
     pub fn decrypt(key: impl AsRef<[u8]>, data: impl AsRef<[u8]>) -> Option<String> {
         STANDARD_NO_PAD
             .decode(data)
+            .inspect_err(|_| tracing::error!("failed to encode the data with base64"))
             .ok()
-            .and_then(|cipher| crypto::decrypt(key.as_ref(), &cipher).ok())
+            .and_then(|cipher| {
+                crypto::decrypt(key.as_ref(), &cipher)
+                    .inspect_err(|_| tracing::error!("failed to decrypt the data"))
+                    .ok()
+            })
     }
 
     /// Parses the token with the encryption key.

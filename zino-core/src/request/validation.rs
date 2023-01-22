@@ -3,7 +3,6 @@ use bytes::Bytes;
 use http_body::Full;
 use serde_json::Value;
 use std::{
-    collections::HashMap,
     net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr},
     num::{ParseFloatError, ParseIntError},
     str::{FromStr, ParseBoolError},
@@ -14,14 +13,14 @@ use uuid::Uuid;
 /// A record of validation results.
 #[derive(Debug)]
 pub struct Validation {
-    failed_entries: HashMap<SharedString, BoxError>,
+    failed_entries: Vec<(SharedString, BoxError)>,
 }
 
 impl Validation {
     /// Creates a new validation record.
     pub fn new() -> Self {
         Self {
-            failed_entries: HashMap::new(),
+            failed_entries: Vec::new(),
         }
     }
 
@@ -163,7 +162,7 @@ impl Validation {
     /// Records a failed entry.
     #[inline]
     pub fn record_fail(&mut self, key: impl Into<SharedString>, err: impl Into<BoxError>) {
-        self.failed_entries.insert(key.into(), err.into());
+        self.failed_entries.push((key.into(), err.into()));
     }
 
     /// Consumes the validation and returns as a json object.

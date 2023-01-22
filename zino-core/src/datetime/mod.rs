@@ -13,7 +13,7 @@ use std::{
     time::Duration,
 };
 
-/// A wrapper type for `chrono::DateTime<Local>`.
+/// A wrapper type for [`chrono::DateTime<Local>`](chrono::DateTime).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct DateTime(chrono::DateTime<Local>);
 
@@ -80,6 +80,13 @@ impl DateTime {
         let datetime = self.0.with_timezone(&Utc);
         datetime.to_rfc3339_opts(SecondsFormat::Millis, true)
     }
+
+    /// Formats the combined date and time with the specified format string.
+    /// See [`format::strftime`](chrono::format::strftime) for the supported escape sequences.
+    #[inline]
+    pub fn format(&self, fmt: &str) -> String {
+        format!("{}", self.0.format(fmt))
+    }
 }
 
 impl fmt::Display for DateTime {
@@ -93,7 +100,7 @@ impl fmt::Display for DateTime {
 }
 
 impl Default for DateTime {
-    /// Returns an instance which corresponds to the current date.
+    /// Returns an instance which corresponds to **the current date**.
     fn default() -> Self {
         Self::now()
     }
