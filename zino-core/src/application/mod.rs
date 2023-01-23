@@ -1,6 +1,7 @@
 //! Application utilities.
 
 use crate::{
+    datetime::DateTime,
     schedule::{AsyncCronJob, CronJob, Job, JobScheduler},
     state::State,
     trace::TraceContext,
@@ -24,9 +25,6 @@ pub trait Application {
     /// Creates a new application.
     fn new() -> Self;
 
-    /// Returns a reference to the shared application state.
-    fn shared_state() -> &'static State;
-
     /// Registers routes.
     fn register(self, routes: HashMap<&'static str, Self::Router>) -> Self;
 
@@ -44,6 +42,12 @@ pub trait Application {
     /// Gets the system’s information.
     fn sysinfo() -> Map {
         system_monitor::refresh_and_retrieve()
+    }
+
+    /// Returns a reference to the shared application state.
+    #[inline]
+    fn shared_state() -> &'static State {
+        LazyLock::force(&SHARED_APP_STATE)
     }
 
     /// Returns the application env.
@@ -128,4 +132,25 @@ pub trait Application {
 static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     env::current_dir()
         .expect("the project directory does not exist or permissions are insufficient")
+});
+
+/// Shared app state.
+static SHARED_APP_STATE: LazyLock<State> = LazyLock::new(|| {
+    let mut state = State::default();
+    let config = state.config();
+    let app_name = config
+        .get("name")
+        .and_then(|v| v.as_str())
+        .expect("the `name` field should be specified");
+    let app_version = config
+        .get("version")
+        .and_then(|v| v.as_str())
+        .expect("the `version` field should be specified");
+
+    let mut data = Map::new();
+    data.insert("app.name".to_owned(), app_name.into());
+    data.insert("app.version".to_owned(), app_version.into());
+    data.insert("app.start_at".to_owned(), DateTime::now().into());
+    state.set_data(data);
+    state
 });

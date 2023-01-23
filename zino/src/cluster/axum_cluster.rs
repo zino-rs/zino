@@ -22,11 +22,9 @@ use tower_http::{
 };
 use zino_core::{
     application::Application,
-    datetime::DateTime,
     response::Response,
     schedule::{AsyncCronJob, Job, JobScheduler},
     state::State,
-    Map,
 };
 
 /// An HTTP server cluster for `axum`.
@@ -47,12 +45,6 @@ impl Application for AxumCluster {
         }
     }
 
-    /// Returns a reference to the shared application state.
-    #[inline]
-    fn shared_state() -> &'static State {
-        LazyLock::force(&SHARED_CLUSTER_STATE)
-    }
-
     /// Registers routes.
     fn register(mut self, routes: HashMap<&'static str, Self::Router>) -> Self {
         self.routes = routes;
@@ -61,10 +53,6 @@ impl Application for AxumCluster {
 
     /// Runs the application.
     fn run(self, async_jobs: HashMap<&'static str, AsyncCronJob>) {
-        let cluster_state = Self::shared_state();
-        let cluster_env = cluster_state.env();
-        tracing::info!("load config.{cluster_env}.toml");
-
         let runtime = Builder::new_multi_thread()
             .thread_keep_alive(Duration::from_secs(10))
             .thread_stack_size(2 * 1024 * 1024)
@@ -135,6 +123,7 @@ impl Application for AxumCluster {
         runtime.block_on(async {
             let routes = self.routes;
             let app_state = State::default();
+            let app_env = app_state.env();
             let listeners = app_state.listeners();
             let servers = listeners.iter().map(|listener| {
                 let mut app = Router::new()
@@ -182,7 +171,7 @@ impl Application for AxumCluster {
                             }))
                             .layer(TimeoutLayer::new(Duration::from_secs(request_timeout))),
                     );
-                tracing::info!(env = cluster_env, "listen on {listener}");
+                tracing::info!(env = app_env, "listen on {listener}");
                 Server::bind(listener)
                     .serve(app.into_make_service_with_connect_info::<SocketAddr>())
             });
@@ -194,24 +183,3 @@ impl Application for AxumCluster {
         });
     }
 }
-
-/// Shared cluster state.
-static SHARED_CLUSTER_STATE: LazyLock<State> = LazyLock::new(|| {
-    let mut state = State::default();
-    let config = state.config();
-    let app_name = config
-        .get("name")
-        .and_then(|v| v.as_str())
-        .expect("the `name` field should be specified");
-    let app_version = config
-        .get("version")
-        .and_then(|v| v.as_str())
-        .expect("the `version` field should be specified");
-
-    let mut data = Map::new();
-    data.insert("app.name".to_owned(), app_name.into());
-    data.insert("app.version".to_owned(), app_version.into());
-    data.insert("app.start_at".to_owned(), DateTime::now().into());
-    state.set_data(data);
-    state
-});

@@ -76,9 +76,7 @@ impl RequestContext for AxumExtractor<Request<Body>> {
         self.headers()
             .get(key)?
             .to_str()
-            .inspect_err(|err| {
-                tracing::error!("{err}");
-            })
+            .inspect_err(|err| tracing::error!("{err}"))
             .ok()
     }
 

@@ -25,23 +25,23 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     let mut type_name = name.to_string();
 
     // Reader and writer
-    let mut distribution_column = None;
     let mut primary_key_name = String::from("id");
     let mut reader_name = String::from("main");
     let mut writer_name = String::from("main");
+    let mut distribution_column = None;
     for attr in input.attrs.iter() {
         for (key, value) in parser::parse_attr(attr).into_iter() {
             if let Some(value) = value {
                 if key == "type_name" {
                     type_name = value;
-                } else if key == "distribution_column" {
-                    distribution_column = Some(value);
                 } else if key == "primary_key" {
                     primary_key_name = value;
                 } else if key == "reader_name" {
                     reader_name = value;
                 } else if key == "writer_name" {
                     writer_name = value;
+                } else if key == "distribution_column" {
+                    distribution_column = Some(value);
                 }
             }
         }
