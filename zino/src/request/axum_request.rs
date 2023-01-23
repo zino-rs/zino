@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use axum::{
     body::Body,
-    extract::{FromRequest, MatchedPath, OriginalUri},
+    extract::{FromRequest, MatchedPath},
     http::{Request, Uri},
 };
 use hyper::body::{self, Buf, Bytes};
@@ -85,9 +85,8 @@ impl RequestContext for AxumExtractor<Request<Body>> {
         self.method().as_str()
     }
 
+    #[inline]
     fn matched_route(&self) -> &str {
-        // The `MatchedPath` extension is always accessible on handlers added via `Router::route`,
-        // but it is not accessible in middleware on nested routes.
         if let Some(path) = self.extensions().get::<MatchedPath>() {
             path.as_str()
         } else {
@@ -95,14 +94,9 @@ impl RequestContext for AxumExtractor<Request<Body>> {
         }
     }
 
+    #[inline]
     fn original_uri(&self) -> &Uri {
-        // The `OriginalUri` extension will always be present if using
-        // `Router` unless another extractor or middleware has removed it.
-        if let Some(original_uri) = self.extensions().get::<OriginalUri>() {
-            &original_uri.0
-        } else {
-            self.uri()
-        }
+        self.uri()
     }
 
     async fn to_bytes(&mut self) -> Result<Bytes, Validation> {
@@ -113,25 +107,11 @@ impl RequestContext for AxumExtractor<Request<Body>> {
         })
     }
 
+    #[inline]
     fn try_send(&self, message: impl Into<CloudEvent>) -> Result<(), Rejection> {
-        let event = message.into();
         crate::channel::axum_channel::MessageChannel::shared()
-            .try_send(event)
+            .try_send(message.into())
             .map_err(Rejection::internal_server_error)
-    }
-
-    fn parse_query<T>(&self) -> Result<T, Validation>
-    where
-        T: Default + DeserializeOwned + Send + 'static,
-    {
-        match self.uri().query() {
-            Some(query) => serde_qs::from_str::<T>(query).map_err(|err| {
-                let mut validation = Validation::new();
-                validation.record_fail("query", err);
-                validation
-            }),
-            None => Ok(T::default()),
-        }
     }
 
     async fn parse_body<T>(&mut self) -> Result<T, Validation>

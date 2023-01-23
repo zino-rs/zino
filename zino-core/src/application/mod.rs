@@ -22,21 +22,22 @@ pub trait Application {
     /// Router.
     type Router;
 
-    /// Creates a new application.
-    fn new() -> Self;
-
     /// Registers routes.
-    fn register(self, routes: HashMap<&'static str, Self::Router>) -> Self;
+    fn register(self, routes: Vec<Self::Router>) -> Self;
 
     /// Runs the application.
     fn run(self, async_jobs: HashMap<&'static str, AsyncCronJob>);
 
-    /// Initializes the application. It setups the tracing subscriber, the metrics exporter
+    /// Boots the application. It also setups the tracing subscriber, the metrics exporter
     /// and a global HTTP client.
-    fn init() {
+    fn boot() -> Self
+    where
+        Self: Default,
+    {
         tracing_subscriber::init::<Self>();
         metrics_exporter::init::<Self>();
         http_client::init::<Self>();
+        Self::default()
     }
 
     /// Gets the system’s information.

@@ -3,22 +3,21 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use std::collections::HashMap;
 
-pub(crate) fn init_routes() -> HashMap<&'static str, Router> {
-    let mut routes = HashMap::new();
+pub(crate) fn init_routes() -> Vec<Router> {
+    let mut routes = Vec::new();
 
     // User controller.
     let controller = Router::new()
-        .route("/new", post(user::new))
-        .route("/update", post(user::update))
-        .route("/list", get(user::list))
-        .route("/:id/view", get(user::view));
-    routes.insert("/user", controller);
+        .route("/user/new", post(user::new))
+        .route("/user/update", post(user::update))
+        .route("/user/list", get(user::list))
+        .route("/user/:id/view", get(user::view));
+    routes.push(controller);
 
     // Stats controller.
-    let controller = Router::new().route("/", get(stats::index));
-    routes.insert("/stats", controller);
+    let controller = Router::new().route("/stats", get(stats::index));
+    routes.push(controller);
 
     routes
 }

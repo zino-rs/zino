@@ -28,25 +28,18 @@ use zino_core::{
 };
 
 /// An HTTP server cluster for `axum`.
+#[derive(Default)]
 pub struct AxumCluster {
     /// Routes.
-    routes: HashMap<&'static str, Router>,
+    routes: Vec<Router>,
 }
 
 impl Application for AxumCluster {
     /// Router.
     type Router = Router;
 
-    /// Creates a new application.
-    fn new() -> Self {
-        Self::init();
-        Self {
-            routes: HashMap::new(),
-        }
-    }
-
     /// Registers routes.
-    fn register(mut self, routes: HashMap<&'static str, Self::Router>) -> Self {
+    fn register(mut self, routes: Vec<Self::Router>) -> Self {
         self.routes = routes;
         self
     }
@@ -134,8 +127,8 @@ impl Application for AxumCluster {
                         "/websocket",
                         routing::get(crate::endpoint::axum_websocket::websocket_handler),
                     );
-                for (path, route) in &routes {
-                    app = app.nest(path, route.clone());
+                for route in &routes {
+                    app = app.merge(route.clone());
                 }
 
                 let state = app_state.clone();

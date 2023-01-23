@@ -63,6 +63,7 @@ pub trait RequestContext {
         metrics::increment_counter!(
             "zino_http_requests_total",
             "method" => self.request_method().to_owned(),
+            "route" => self.matched_route().to_owned(),
         );
 
         let request_id = self
