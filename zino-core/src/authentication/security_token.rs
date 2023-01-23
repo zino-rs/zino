@@ -1,5 +1,5 @@
 use crate::{authentication::AccessKeyId, crypto, datetime::DateTime, BoxError};
-use base64::{engine::general_purpose::STANDARD_NO_PAD, Engine};
+use base64_simd::STANDARD_NO_PAD;
 use std::{error::Error, fmt};
 
 /// Security token.
@@ -26,10 +26,10 @@ impl SecurityToken {
         let grantor_id = access_key_id.into();
         let timestamp = expires.timestamp();
         let grantor_id_cipher = crypto::encrypt(key, grantor_id.as_ref()).unwrap_or_default();
-        let assignee_id = STANDARD_NO_PAD.encode(grantor_id_cipher).into();
+        let assignee_id = STANDARD_NO_PAD.encode_to_string(grantor_id_cipher).into();
         let authorization = format!("{assignee_id}:{timestamp}");
         let authorization_cipher = crypto::encrypt(key, authorization.as_ref()).unwrap_or_default();
-        let token = STANDARD_NO_PAD.encode(authorization_cipher);
+        let token = STANDARD_NO_PAD.encode_to_string(authorization_cipher);
         Self {
             grantor_id,
             assignee_id,
@@ -67,13 +67,13 @@ impl SecurityToken {
         crypto::encrypt(key.as_ref(), plaintext.as_ref())
             .inspect_err(|_| tracing::error!("failed to encrypt the plaintext"))
             .ok()
-            .map(|bytes| STANDARD_NO_PAD.encode(bytes))
+            .map(|bytes| STANDARD_NO_PAD.encode_to_string(bytes))
     }
 
     /// Decrypts the data using AES-GCM-SIV.
     pub fn decrypt(key: impl AsRef<[u8]>, data: impl AsRef<[u8]>) -> Option<String> {
         STANDARD_NO_PAD
-            .decode(data)
+            .decode_to_vec(data)
             .inspect_err(|_| tracing::error!("failed to encode the data with base64"))
             .ok()
             .and_then(|cipher| {
@@ -86,7 +86,7 @@ impl SecurityToken {
     /// Parses the token with the encryption key.
     pub(crate) fn parse_with(token: String, key: &[u8]) -> Result<Self, ParseSecurityTokenError> {
         use ParseSecurityTokenError::*;
-        match STANDARD_NO_PAD.decode(&token) {
+        match STANDARD_NO_PAD.decode_to_vec(&token) {
             Ok(data) => {
                 let authorization = crypto::decrypt(key, &data)
                     .map_err(|_| DecodeError("failed to decrypt authorization".into()))?;

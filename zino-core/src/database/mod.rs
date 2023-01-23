@@ -1,7 +1,7 @@
 //! Connection pool and ORM.
 
 use crate::{crypto, state::State};
-use base64::{engine::general_purpose::STANDARD_NO_PAD, Engine};
+use base64_simd::STANDARD_NO_PAD;
 use sqlx::{
     postgres::{PgConnectOptions, PgPoolOptions},
     PgPool,
@@ -54,7 +54,7 @@ impl ConnectionPool {
         crypto::encrypt(key.as_bytes(), password.as_bytes())
             .inspect_err(|_| tracing::error!("failed to encrypt the database password"))
             .ok()
-            .map(|bytes| STANDARD_NO_PAD.encode(bytes))
+            .map(|bytes| STANDARD_NO_PAD.encode_to_string(bytes))
     }
 
     /// Connects lazily to the database according to the config.
@@ -90,7 +90,7 @@ impl ConnectionPool {
                 .expect("the `postgres.password` field should be specified")
                 .as_str()
                 .expect("the `postgres.password` field should be a str");
-            if let Ok(data) = STANDARD_NO_PAD.decode(password) {
+            if let Ok(data) = STANDARD_NO_PAD.decode_to_vec(password) {
                 let key = format!("{username}@{database}");
                 if let Ok(plaintext) = crypto::decrypt(key.as_bytes(), &data) {
                     password = plaintext.leak();

@@ -25,6 +25,8 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     let mut type_name = name.to_string();
 
     // Reader and writer
+    let mut distribution_column = None;
+    let mut primary_key_name = String::from("id");
     let mut reader_name = String::from("main");
     let mut writer_name = String::from("main");
     for attr in input.attrs.iter() {
@@ -32,6 +34,10 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
             if let Some(value) = value {
                 if key == "type_name" {
                     type_name = value;
+                } else if key == "distribution_column" {
+                    distribution_column = Some(value);
+                } else if key == "primary_key" {
+                    primary_key_name = value;
                 } else if key == "reader_name" {
                     reader_name = value;
                 } else if key == "writer_name" {
@@ -42,9 +48,6 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     }
 
     // Columns
-    let type_name_lowercase = type_name.to_ascii_lowercase();
-    let type_name_uppercase = type_name.to_ascii_uppercase();
-    let mut primary_key = String::from("id");
     let mut columns = Vec::new();
     if let Data::Struct(data) = input.data && let Fields::Named(fields) = data.fields {
         for field in fields.named.into_iter() {
@@ -60,8 +63,6 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                             if let Some(value) = value {
                                 type_name = value;
                             }
-                        } else if key == "primary_key" {
-                            primary_key.clone_from(&name);
                         } else if key == "not_null" {
                             not_null = true;
                         } else if key == "default" {
@@ -107,7 +108,13 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     }
 
     // Output
-    let schema_primary_key = format_ident!("{}", primary_key);
+    let type_name_lowercase = type_name.to_ascii_lowercase();
+    let type_name_uppercase = type_name.to_ascii_uppercase();
+    let quote_distribution_column = match distribution_column {
+        Some(column_name) => quote! { Some(#column_name) },
+        None => quote! { None },
+    };
+    let schema_primary_key = format_ident!("{}", primary_key_name);
     let schema_columns = format_ident!("{}_COLUMNS", type_name_uppercase);
     let schema_reader = format_ident!("{}_READER", type_name_uppercase);
     let schema_writer = format_ident!("{}_WRITER", type_name_uppercase);
@@ -123,14 +130,16 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
         static #schema_writer: OnceLock<&ConnectionPool> = OnceLock::new();
 
         impl Schema for #name {
-            /// Type name as a str.
+            /// Type name.
             const TYPE_NAME: &'static str = #type_name_lowercase;
-            /// Primary key name as a str.
-            const PRIMARY_KEY_NAME: &'static str = #primary_key;
+            /// Primary key name.
+            const PRIMARY_KEY_NAME: &'static str = #primary_key_name;
             /// Reader name.
             const READER_NAME: &'static str = #reader_name;
             /// Writer name.
             const WRITER_NAME: &'static str = #writer_name;
+            /// Distribution column.
+            const DISTRIBUTION_COLUMN: Option<&'static str> = #quote_distribution_column;
 
             /// Returns a reference to the columns.
             #[inline]

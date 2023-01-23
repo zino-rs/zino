@@ -10,14 +10,16 @@ use sqlx::{Error, Row};
 
 /// Model schema.
 pub trait Schema: 'static + Send + Sync + Model {
-    /// Type name as a str.
+    /// Type name.
     const TYPE_NAME: &'static str;
-    /// Primary key name as a str.
+    /// Primary key name.
     const PRIMARY_KEY_NAME: &'static str = "id";
     /// Reader name.
     const READER_NAME: &'static str = "main";
     /// Writer name.
     const WRITER_NAME: &'static str = "main";
+    /// Optional distribution column. It can only be used for Citus to create a distributed table.
+    const DISTRIBUTION_COLUMN: Option<&'static str> = None;
 
     /// Returns a reference to the columns.
     fn columns() -> &'static [Column<'static>];
@@ -93,7 +95,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         }
 
         let columns = columns.join(",\n");
-        let sql = format!(
+        let mut sql = format!(
             "
                 CREATE TABLE IF NOT EXISTS {table_name} (
                     {columns},
@@ -101,6 +103,9 @@ pub trait Schema: 'static + Send + Sync + Model {
                 );
             "
         );
+        if let Some(column_name) = Self::DISTRIBUTION_COLUMN {
+            sql += &format!("\n SELECT create_distributed_table('{table_name}', '{column_name}');");
+        }
         let query_result = sqlx::query(&sql).execute(pool).await?;
         Ok(query_result.rows_affected())
     }

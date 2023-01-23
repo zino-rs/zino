@@ -1,5 +1,5 @@
 use serde_json::json;
-use zino::{Application, AxumCluster, Request, RequestContext, Response};
+use zino::{Application, AxumCluster, Request, Response};
 
 pub(crate) async fn index(req: Request) -> zino::Result {
     let mut res = Response::default().provide_context(&req);
