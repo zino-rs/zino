@@ -4,7 +4,7 @@ use axum::{
     extract::{FromRequest, MatchedPath},
     http::{Request, Uri},
 };
-use hyper::body::{self, Buf, Bytes};
+use hyper::body::{self, Buf};
 use serde::de::DeserializeOwned;
 use std::{
     convert::Infallible,
@@ -99,21 +99,6 @@ impl RequestContext for AxumExtractor<Request<Body>> {
         self.uri()
     }
 
-    async fn to_bytes(&mut self) -> Result<Bytes, Validation> {
-        body::to_bytes(self.body_mut()).await.map_err(|err| {
-            let mut validation = Validation::new();
-            validation.record_fail("body", err);
-            validation
-        })
-    }
-
-    #[inline]
-    fn try_send(&self, message: impl Into<CloudEvent>) -> Result<(), Rejection> {
-        crate::channel::axum_channel::MessageChannel::shared()
-            .try_send(message.into())
-            .map_err(Rejection::internal_server_error)
-    }
-
     async fn parse_body<T>(&mut self) -> Result<T, Validation>
     where
         T: DeserializeOwned + Send + 'static,
@@ -143,6 +128,13 @@ impl RequestContext for AxumExtractor<Request<Body>> {
             validation.record_fail("body", err);
             validation
         })
+    }
+
+    #[inline]
+    fn try_send(&self, message: impl Into<CloudEvent>) -> Result<(), Rejection> {
+        crate::channel::axum_channel::MessageChannel::shared()
+            .try_send(message.into())
+            .map_err(Rejection::internal_server_error)
     }
 }
 

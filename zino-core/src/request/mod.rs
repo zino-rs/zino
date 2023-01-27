@@ -11,7 +11,6 @@ use crate::{
     BoxError, Map, Uuid,
 };
 use http::uri::Uri;
-use hyper::body::Bytes;
 use reqwest::IntoUrl;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -50,8 +49,10 @@ pub trait RequestContext {
     /// Returns the original request URI regardless of nesting.
     fn original_uri(&self) -> &Uri;
 
-    /// Concatenates buffers from the request body into a single `Bytes` asynchronously.
-    async fn to_bytes(&mut self) -> Result<Bytes, Validation>;
+    /// Parses the request body as an instance of type `T`.
+    async fn parse_body<T>(&mut self) -> Result<T, Validation>
+    where
+        T: DeserializeOwned + Send + 'static;
 
     /// Attempts to send a message.
     fn try_send(&self, message: impl Into<CloudEvent>) -> Result<(), Rejection>;
@@ -199,28 +200,6 @@ pub trait RequestContext {
             }),
             None => Ok(T::default()),
         }
-    }
-
-    /// Parses the request body as an instance of type `T`.
-    async fn parse_body<T>(&mut self) -> Result<T, Validation>
-    where
-        T: DeserializeOwned + Send + 'static,
-    {
-        let form_urlencoded = self
-            .get_header("content-type")
-            .map(|s| s.starts_with("application/x-www-form-urlencoded"))
-            .unwrap_or(true);
-        let body_bytes = self.to_bytes().await?;
-        let result = if form_urlencoded {
-            serde_urlencoded::from_bytes(body_bytes.as_ref()).map_err(|err| err.to_string())
-        } else {
-            serde_json::from_slice(body_bytes.as_ref()).map_err(|err| err.to_string())
-        };
-        result.map_err(|err| {
-            let mut validation = Validation::new();
-            validation.record_fail("body", err);
-            validation
-        })
     }
 
     /// Attempts to construct an instance of `Authentication` from an HTTP request.
