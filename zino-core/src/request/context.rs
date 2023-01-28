@@ -1,12 +1,11 @@
-use serde::Serialize;
 use std::time::Instant;
+use unic_langid::LanguageIdentifier;
 use uuid::Uuid;
 
 /// Data associated with a request-response lifecycle.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub struct Context {
     /// Start time.
-    #[serde(skip)]
     start_time: Instant,
     /// Request ID.
     request_id: Uuid,
@@ -14,6 +13,8 @@ pub struct Context {
     trace_id: Uuid,
     /// Session ID.
     session_id: Option<String>,
+    /// Locale.
+    locale: Option<LanguageIdentifier>,
 }
 
 impl Context {
@@ -24,6 +25,7 @@ impl Context {
             request_id,
             trace_id: Uuid::nil(),
             session_id: None,
+            locale: None,
         }
     }
 
@@ -37,6 +39,15 @@ impl Context {
     #[inline]
     pub fn set_session_id(&mut self, session_id: impl Into<Option<String>>) {
         self.session_id = session_id.into();
+    }
+
+    /// Sets the locale.
+    #[inline]
+    pub fn set_locale(&mut self, locale: &str) {
+        match locale.parse() {
+            Ok(locale) => self.locale = Some(locale),
+            Err(err) => tracing::error!("{err}"),
+        }
     }
 
     /// Returns the start time.
@@ -61,5 +72,10 @@ impl Context {
     #[inline]
     pub fn session_id(&self) -> Option<&str> {
         self.session_id.as_deref()
+    }
+
+    /// Returns the locale.
+    pub fn locale(&self) -> Option<&LanguageIdentifier> {
+        self.locale.as_ref()
     }
 }

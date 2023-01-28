@@ -1,3 +1,4 @@
+use fluent::fluent_args;
 use serde_json::json;
 use std::time::Instant;
 use zino::{Model, Query, Rejection, Request, RequestContext, Response, Schema, Uuid};
@@ -7,7 +8,10 @@ pub(crate) async fn new(mut req: Request) -> zino::Result {
     let mut user = User::new();
     let mut res = req.model_validation(&mut user).await?;
 
-    let rows = user.upsert().await.map_err(Rejection::from)?;
+    let rows = user
+        .upsert()
+        .await
+        .map_err(Rejection::internal_server_error)?;
     let data = json!({
         "method": req.request_method(),
         "path": req.request_path(),
@@ -27,7 +31,9 @@ pub(crate) async fn update(mut req: Request) -> zino::Result {
 pub(crate) async fn list(req: Request) -> zino::Result {
     let mut query = Query::new();
     let mut res = req.query_validation(&mut query)?;
-    let users = User::find(query).await.map_err(Rejection::from)?;
+    let users = User::find(query)
+        .await
+        .map_err(Rejection::internal_server_error)?;
     let data = json!({
         "users": users,
     });
@@ -48,11 +54,21 @@ pub(crate) async fn view(mut req: Request) -> zino::Result {
     req.try_send(event)?;
 
     let db_query_start_time = Instant::now();
-    let user = User::find_one(query).await.map_err(Rejection::from)?;
+    let user = User::find_one(query)
+        .await
+        .map_err(Rejection::internal_server_error)?
+        .ok_or_else(|| Rejection::not_found("user does not exits"))?;
     res.record_server_timing("db", None, db_query_start_time.elapsed());
 
+    let args = fluent_args![
+        "name" => user.get("name").and_then(|v| v.as_str()).unwrap_or_default()
+    ];
+    let user_intro = req
+        .translate("user-intro", args)
+        .map_err(Rejection::internal_server_error)?;
     let data = json!({
         "user": user,
+        "intro": user_intro,
     });
     res.set_data(data);
     Ok(res.into())

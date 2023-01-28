@@ -2,7 +2,7 @@ use crate::application::Application;
 use std::{fs, io, path::Path, sync::OnceLock};
 use tracing::Level;
 use tracing_appender::{non_blocking::WorkerGuard, rolling};
-use tracing_subscriber::fmt::{time, writer::MakeWriterExt};
+use tracing_subscriber::fmt::{time::OffsetTime, writer::MakeWriterExt};
 
 pub(super) fn init<APP: Application + ?Sized>() {
     if TRACING_APPENDER_GUARD.get().is_some() {
@@ -22,7 +22,6 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let mut display_line_number = false;
     let mut display_thread_names = false;
     let mut display_span_list = false;
-    let display_current_span = true;
 
     if let Some(tracing) = APP::config().get("tracing").and_then(|v| v.as_table()) {
         if let Some(dir) = tracing.get("log-dir").and_then(|v| v.as_str()) {
@@ -72,16 +71,16 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let (non_blocking_appender, worker_guard) = tracing_appender::non_blocking(file_appender);
     let stderr = io::stderr.with_max_level(Level::WARN);
     let subscriber = tracing_subscriber::fmt()
-        .json()
         .with_env_filter(env_filter)
         .with_target(display_target)
         .with_file(display_filename)
         .with_line_number(display_line_number)
         .with_thread_names(display_thread_names)
-        .with_span_list(display_span_list)
-        .with_current_span(display_current_span)
-        .with_timer(time::LocalTime::rfc_3339())
+        .with_timer(OffsetTime::local_rfc_3339().expect("could not get local offset"))
         .with_writer(stderr.and(non_blocking_appender))
+        .json()
+        .with_current_span(true)
+        .with_span_list(display_span_list)
         .finish();
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
     TRACING_APPENDER_GUARD

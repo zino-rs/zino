@@ -2,7 +2,6 @@ use crate::{request::Validation, response::Response, BoxError};
 use bytes::Bytes;
 use http::StatusCode;
 use http_body::Full;
-use std::error::Error;
 use Rejection::*;
 
 /// A rejection response type.
@@ -34,38 +33,38 @@ impl Rejection {
 
     /// Creates an `Unauthorized` rejection.
     #[inline]
-    pub fn unauthorized(err: impl Error + Send + Sync + 'static) -> Self {
-        Unauthorized(Box::new(err))
+    pub fn unauthorized(err: impl Into<BoxError>) -> Self {
+        Unauthorized(err.into())
     }
 
     /// Creates a `Forbidden` rejection.
     #[inline]
-    pub fn forbidden(err: impl Error + Send + Sync + 'static) -> Self {
-        Forbidden(Box::new(err))
+    pub fn forbidden(err: impl Into<BoxError>) -> Self {
+        Forbidden(err.into())
     }
 
     /// Creates a `NotFound` rejection.
     #[inline]
-    pub fn not_found(err: impl Error + Send + Sync + 'static) -> Self {
-        NotFound(Box::new(err))
+    pub fn not_found(err: impl Into<BoxError>) -> Self {
+        NotFound(err.into())
     }
 
     /// Creates a `MethodNotAllowed` rejection.
     #[inline]
-    pub fn method_not_allowed(err: impl Error + Send + Sync + 'static) -> Self {
-        MethodNotAllowed(Box::new(err))
+    pub fn method_not_allowed(err: impl Into<BoxError>) -> Self {
+        MethodNotAllowed(err.into())
     }
 
     /// Creates a `Conflict` rejection.
     #[inline]
-    pub fn conflict(err: impl Error + Send + Sync + 'static) -> Self {
-        Conflict(Box::new(err))
+    pub fn conflict(err: impl Into<BoxError>) -> Self {
+        Conflict(err.into())
     }
 
     /// Creates an `InternalServerError` rejection.
     #[inline]
-    pub fn internal_server_error(err: impl Error + Send + Sync + 'static) -> Self {
-        InternalServerError(Box::new(err))
+    pub fn internal_server_error(err: impl Into<BoxError>) -> Self {
+        InternalServerError(err.into())
     }
 }
 

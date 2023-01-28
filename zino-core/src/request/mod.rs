@@ -6,16 +6,19 @@ use crate::{
     channel::{CloudEvent, Subscription},
     database::{Model, Query},
     datetime::DateTime,
+    i18n,
     response::{Rejection, Response, ResponseCode},
     trace::{TraceContext, TraceState},
-    BoxError, Map, Uuid,
+    BoxError, Map, SharedString, Uuid,
 };
+use fluent::FluentArgs;
 use http::uri::Uri;
 use reqwest::IntoUrl;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::time::{Duration, Instant};
 use toml::value::Table;
+use unic_langid::{langid, LanguageIdentifier};
 
 mod context;
 mod validation;
@@ -67,6 +70,7 @@ pub trait RequestContext {
             "route" => self.matched_route().to_owned(),
         );
 
+        // Parse tracing headers.
         let request_id = self
             .get_header("x-request-id")
             .and_then(|s| s.parse().ok())
@@ -76,9 +80,23 @@ pub trait RequestContext {
             .map_or_else(Uuid::new_v4, |t| Uuid::from_u128(t.trace_id()));
         let session_id = self.get_header("session-id").and_then(|s| s.parse().ok());
 
+        // Parse locale.
+        let locale = self
+            .get_header("accept-language")
+            .map(|s| {
+                if let Some((locale, _)) = s.split_once(',') {
+                    locale
+                } else {
+                    s
+                }
+            })
+            .unwrap_or("en-US");
+
+        // Generate new context.
         let mut ctx = Context::new(request_id);
         ctx.set_trace_id(trace_id);
         ctx.set_session_id(session_id);
+        ctx.set_locale(locale);
         ctx
     }
 
@@ -141,6 +159,12 @@ pub trait RequestContext {
     #[inline]
     fn session_id(&self) -> Option<&str> {
         self.get_context().and_then(|ctx| ctx.session_id())
+    }
+
+    /// Returns the locale.
+    #[inline]
+    fn locale(&self) -> Option<&LanguageIdentifier> {
+        self.get_context().and_then(|ctx| ctx.locale())
     }
 
     /// Returns the request path.
@@ -389,6 +413,19 @@ pub trait RequestContext {
             .send()
             .await
             .map_err(BoxError::from)
+    }
+
+    /// Translates the localization message.
+    fn translate<'a>(
+        &self,
+        message: &str,
+        args: impl Into<Option<FluentArgs<'a>>>,
+    ) -> Result<SharedString, BoxError> {
+        let args = args.into();
+        match self.locale() {
+            Some(locale) => i18n::translate(locale, message, args),
+            None => i18n::translate(&langid!("en-US"), message, args),
+        }
     }
 
     /// Creates a new subscription instance.
