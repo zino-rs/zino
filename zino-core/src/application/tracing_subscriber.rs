@@ -10,6 +10,9 @@ pub(super) fn init<APP: Application + ?Sized>() {
         return;
     }
 
+    // Initialize `OffsetTime` before forking threads.
+    let local_offset_time = OffsetTime::local_rfc_3339().expect("could not get local offset");
+
     let app_env = APP::env();
     let mut log_dir = "./log";
     let mut env_filter = if app_env == "dev" {
@@ -76,7 +79,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .with_file(display_filename)
         .with_line_number(display_line_number)
         .with_thread_names(display_thread_names)
-        .with_timer(OffsetTime::local_rfc_3339().expect("could not get local offset"))
+        .with_timer(local_offset_time)
         .with_writer(stderr.and(non_blocking_appender))
         .json()
         .with_current_span(true)

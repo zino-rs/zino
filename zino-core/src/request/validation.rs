@@ -1,5 +1,6 @@
 use crate::{datetime::DateTime, response::Response, BoxError, Map, SharedString};
 use bytes::Bytes;
+use http::StatusCode;
 use http_body::Full;
 use serde_json::Value;
 use std::{
@@ -186,6 +187,6 @@ impl Default for Validation {
 impl From<Validation> for http::Response<Full<Bytes>> {
     #[inline]
     fn from(validation: Validation) -> Self {
-        Response::from(validation).into()
+        Response::<StatusCode>::from(validation).into()
     }
 }

@@ -369,10 +369,10 @@ pub trait RequestContext {
                     let res = Response::with_context(S::OK, self);
                     Ok(res)
                 } else {
-                    Err(validation.into())
+                    Err(Rejection::BadRequest(validation))
                 }
             }
-            Err(validation) => Err(validation.into()),
+            Err(validation) => Err(Rejection::BadRequest(validation)),
         }
     }
 
@@ -392,10 +392,10 @@ pub trait RequestContext {
                     let res = Response::with_context(S::OK, self);
                     Ok(res)
                 } else {
-                    Err(validation.into())
+                    Err(Rejection::BadRequest(validation))
                 }
             }
-            Err(validation) => Err(validation.into()),
+            Err(validation) => Err(Rejection::BadRequest(validation)),
         }
     }
 

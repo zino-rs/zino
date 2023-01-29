@@ -38,6 +38,17 @@ mod endpoint;
 mod middleware;
 mod request;
 
+#[doc(no_inline)]
+pub use zino_core::{
+    application::Application,
+    database::{Model, Query, Schema},
+    datetime::DateTime,
+    request::RequestContext,
+    response::ExtractRejection,
+    schedule::{AsyncCronJob, CronJob},
+    BoxFuture, Map, Uuid,
+};
+
 #[cfg(feature = "axum")]
 pub use cluster::axum_cluster::AxumCluster;
 
@@ -49,17 +60,10 @@ pub use request::axum_request::AxumExtractor;
 pub type Request = AxumExtractor<axum::http::Request<axum::body::Body>>;
 
 #[cfg(feature = "axum")]
+/// A specialized response for `axum`.
+pub type Response = zino_core::response::Response<axum::http::StatusCode>;
+
+#[cfg(feature = "axum")]
 /// A specialized `Result` type for `axum`.
 pub type Result<T = axum::http::Response<axum::body::Full<axum::body::Bytes>>> =
     std::result::Result<T, T>;
-
-#[doc(no_inline)]
-pub use zino_core::{
-    application::Application,
-    database::{Model, Query, Schema},
-    datetime::DateTime,
-    request::RequestContext,
-    response::{Rejection, Response},
-    schedule::{AsyncCronJob, CronJob},
-    BoxFuture, Map, Uuid,
-};

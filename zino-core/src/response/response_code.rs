@@ -2,11 +2,15 @@ use crate::SharedString;
 use http::StatusCode;
 use std::borrow::Cow;
 
-/// Response code.
+/// Trait for response code.
 /// See [Problem Details for HTTP APIs](https://tools.ietf.org/html/rfc7807).
 pub trait ResponseCode {
     /// 200 Ok.
     const OK: Self;
+    /// 400 Bad Request.
+    const BAD_REQUEST: Self;
+    /// 500 Internal Server Error.
+    const INTERNAL_SERVER_ERROR: Self;
 
     /// Status code.
     fn status_code(&self) -> u16;
@@ -32,6 +36,8 @@ pub trait ResponseCode {
 
 impl ResponseCode for StatusCode {
     const OK: Self = StatusCode::OK;
+    const BAD_REQUEST: Self = StatusCode::BAD_REQUEST;
+    const INTERNAL_SERVER_ERROR: Self = StatusCode::INTERNAL_SERVER_ERROR;
 
     #[inline]
     fn status_code(&self) -> u16 {

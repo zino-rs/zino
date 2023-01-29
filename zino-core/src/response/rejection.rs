@@ -25,12 +25,6 @@ pub enum Rejection {
 }
 
 impl Rejection {
-    /// Creates a `BadRequest` rejection.
-    #[inline]
-    pub fn bad_request(validation: Validation) -> Self {
-        BadRequest(validation)
-    }
-
     /// Creates an `Unauthorized` rejection.
     #[inline]
     pub fn unauthorized(err: impl Into<BoxError>) -> Self {
@@ -82,77 +76,72 @@ impl From<BoxError> for Rejection {
     }
 }
 
-impl From<serde_json::Error> for Rejection {
-    /// Converts to a rejection from the input type [`serde_json::Error`](serde_json::Error).
-    #[inline]
-    fn from(err: serde_json::Error) -> Self {
-        InternalServerError(Box::new(err))
-    }
-}
-
-impl From<sqlx::Error> for Rejection {
-    /// Converts to a rejection from the input type [`sqlx::Error`](sqlx::Error).
-    #[inline]
-    fn from(err: sqlx::Error) -> Self {
-        InternalServerError(Box::new(err))
-    }
-}
-
-#[cfg(feature = "accessor")]
-impl From<opendal::Error> for Rejection {
-    /// Converts to a rejection from the input type [`opendal::Error`](opendal::Error).
-    #[inline]
-    fn from(err: opendal::Error) -> Self {
-        InternalServerError(Box::new(err))
-    }
-}
-
-impl From<Rejection> for Response<StatusCode> {
+impl From<Rejection> for http::Response<Full<Bytes>> {
     fn from(rejection: Rejection) -> Self {
-        use Rejection::*;
         match rejection {
             BadRequest(validation) => {
-                let mut res = Self::new(StatusCode::BAD_REQUEST);
+                let mut res = Response::new(StatusCode::BAD_REQUEST);
                 res.set_validation_data(validation);
-                res
+                res.into()
             }
             Unauthorized(err) => {
-                let mut res = Self::new(StatusCode::UNAUTHORIZED);
+                let mut res = Response::new(StatusCode::UNAUTHORIZED);
                 res.set_error_message(err);
-                res
+                res.into()
             }
             Forbidden(err) => {
-                let mut res = Self::new(StatusCode::FORBIDDEN);
+                let mut res = Response::new(StatusCode::FORBIDDEN);
                 res.set_error_message(err);
-                res
+                res.into()
             }
             NotFound(err) => {
-                let mut res = Self::new(StatusCode::NOT_FOUND);
+                let mut res = Response::new(StatusCode::NOT_FOUND);
                 res.set_error_message(err);
-                res
+                res.into()
             }
             MethodNotAllowed(err) => {
-                let mut res = Self::new(StatusCode::METHOD_NOT_ALLOWED);
+                let mut res = Response::new(StatusCode::METHOD_NOT_ALLOWED);
                 res.set_error_message(err);
-                res
+                res.into()
             }
             Conflict(err) => {
-                let mut res = Self::new(StatusCode::CONFLICT);
+                let mut res = Response::new(StatusCode::CONFLICT);
                 res.set_error_message(err);
-                res
+                res.into()
             }
             InternalServerError(err) => {
-                let mut res = Self::new(StatusCode::INTERNAL_SERVER_ERROR);
+                let mut res = Response::new(StatusCode::INTERNAL_SERVER_ERROR);
                 res.set_error_message(err);
-                res
+                res.into()
             }
         }
     }
 }
 
-impl From<Rejection> for http::Response<Full<Bytes>> {
+/// Trait for extracting rejections.
+pub trait ExtractRejection<T> {
+    /// Extracs a rejection.
+    fn extract_rejection(self) -> Result<T, Rejection>;
+}
+
+impl<T> ExtractRejection<T> for Result<T, Validation> {
     #[inline]
-    fn from(rejection: Rejection) -> Self {
-        Response::from(rejection).into()
+    fn extract_rejection(self) -> Result<T, Rejection> {
+        self.map_err(BadRequest)
+    }
+}
+
+impl<T, E: Into<BoxError>> ExtractRejection<T> for Result<T, E> {
+    #[inline]
+    fn extract_rejection(self) -> Result<T, Rejection> {
+        self.map_err(|err| InternalServerError(err.into()))
+    }
+}
+
+impl<T, E: Into<BoxError>> ExtractRejection<T> for Result<Option<T>, E> {
+    #[inline]
+    fn extract_rejection(self) -> Result<T, Rejection> {
+        self.map_err(|err| InternalServerError(err.into()))?
+            .ok_or_else(|| Rejection::not_found("resource does not exit"))
     }
 }

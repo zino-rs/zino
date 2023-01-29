@@ -6,10 +6,7 @@ use crate::{
     BoxError, SharedString, Uuid,
 };
 use bytes::Bytes;
-use http::{
-    header::{self, HeaderValue},
-    StatusCode,
-};
+use http::header::{self, HeaderValue};
 use http_body::Full;
 use serde::Serialize;
 use serde_json::Value;
@@ -21,7 +18,7 @@ use std::{
 mod rejection;
 mod response_code;
 
-pub use rejection::Rejection;
+pub use rejection::{ExtractRejection, Rejection};
 pub use response_code::ResponseCode;
 
 /// An HTTP response.
@@ -242,27 +239,27 @@ impl<S: ResponseCode> Response<S> {
     }
 }
 
-impl Default for Response<StatusCode> {
+impl<S: ResponseCode> Default for Response<S> {
     #[inline]
     fn default() -> Self {
-        Self::new(StatusCode::OK)
+        Self::new(S::OK)
     }
 }
 
-impl From<Validation> for Response<StatusCode> {
+impl<S: ResponseCode> From<Validation> for Response<S> {
     fn from(validation: Validation) -> Self {
         if validation.is_success() {
-            Self::new(StatusCode::OK)
+            Self::new(S::OK)
         } else {
-            let mut res = Self::new(StatusCode::BAD_REQUEST);
+            let mut res = Self::new(S::BAD_REQUEST);
             res.set_validation_data(validation);
             res
         }
     }
 }
 
-impl From<Response<StatusCode>> for http::Response<Full<Bytes>> {
-    fn from(mut response: Response<http::StatusCode>) -> Self {
+impl<S: ResponseCode> From<Response<S>> for http::Response<Full<Bytes>> {
+    fn from(mut response: Response<S>) -> Self {
         let status_code = response.status_code;
         let mut res = match response.content_type {
             Some(ref content_type) => match serde_json::to_vec(&response.data) {
@@ -272,7 +269,7 @@ impl From<Response<StatusCode>> for http::Response<Full<Bytes>> {
                     .body(Full::from(bytes))
                     .unwrap_or_default(),
                 Err(err) => http::Response::builder()
-                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .status(S::INTERNAL_SERVER_ERROR.status_code())
                     .header(header::CONTENT_TYPE, "text/plain")
                     .body(Full::from(err.to_string()))
                     .unwrap_or_default(),
@@ -291,7 +288,7 @@ impl From<Response<StatusCode>> for http::Response<Full<Bytes>> {
                         .unwrap_or_default()
                 }
                 Err(err) => http::Response::builder()
-                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .status(S::INTERNAL_SERVER_ERROR.status_code())
                     .header(header::CONTENT_TYPE, "text/plain")
                     .body(Full::from(err.to_string()))
                     .unwrap_or_default(),
