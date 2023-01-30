@@ -1,4 +1,6 @@
-use crate::{application::Application, trace::TraceContext, BoxError, Map, Uuid};
+use crate::{
+    application::Application, extend::TomlTableExt, trace::TraceContext, BoxError, Map, Uuid,
+};
 use reqwest::{
     header::{self, HeaderMap, HeaderName},
     Certificate, Client, IntoUrl, Method, Request, Response, Url,
@@ -27,43 +29,27 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .gzip(true)
         .brotli(true)
         .deflate(true);
-    if let Some(http_client) = APP::config().get("http-client").and_then(|v| v.as_table()) {
-        if let Some(timeout) = http_client
-            .get("request-timeout")
-            .and_then(|v| v.as_integer())
-            .and_then(|i| u64::try_from(i).ok())
-        {
+    let mut max_retries = 3;
+    if let Some(http_client) = APP::config().get_table("http-client") {
+        if let Some(timeout) = http_client.get_u64("request-timeout") {
             client_builder = client_builder.timeout(Duration::from_secs(timeout));
         }
-        if let Some(timeout) = http_client
-            .get("pool-idle-timeout")
-            .and_then(|v| v.as_integer())
-            .and_then(|i| u64::try_from(i).ok())
-        {
+        if let Some(timeout) = http_client.get_u64("pool-idle-timeout") {
             client_builder = client_builder.pool_idle_timeout(Duration::from_secs(timeout));
         }
-        if let Some(max_idle_per_host) = http_client
-            .get("pool-max-idle-per-host")
-            .and_then(|v| v.as_integer())
-            .and_then(|i| usize::try_from(i).ok())
-        {
+        if let Some(max_idle_per_host) = http_client.get_usize("pool-max-idle-per-host") {
             client_builder = client_builder.pool_max_idle_per_host(max_idle_per_host);
         }
         if let Some(addr) = http_client
-            .get("local-address")
-            .and_then(|v| v.as_str())
+            .get_str("local-address")
             .and_then(|s| IpAddr::from_str(s).ok())
         {
             client_builder = client_builder.local_address(addr);
         }
-        if let Some(tcp_keepalive) = http_client
-            .get("tcp-keepalive")
-            .and_then(|v| v.as_integer())
-            .and_then(|i| u64::try_from(i).ok())
-        {
+        if let Some(tcp_keepalive) = http_client.get_u64("tcp-keepalive") {
             client_builder = client_builder.tcp_keepalive(Duration::from_secs(tcp_keepalive));
         }
-        if let Some(root_certs) = http_client.get("root-certs").and_then(|v| v.as_array()) {
+        if let Some(root_certs) = http_client.get_array("root-certs") {
             for root_cert in root_certs.iter().filter_map(|cert| cert.as_str()) {
                 match fs::read(root_cert) {
                     Ok(bytes) => {
@@ -87,12 +73,15 @@ pub(super) fn init<APP: Application + ?Sized>() {
                 }
             }
         }
+        if let Some(retries) = http_client.get_u32("max-retries") {
+            max_retries = retries;
+        }
     }
 
+    let retry_policy = ExponentialBackoff::builder().build_with_max_retries(max_retries);
     let reqwest_client = client_builder
         .build()
         .unwrap_or_else(|err| panic!("failed to create an HTTP client: {err}"));
-    let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
     let client = ClientBuilder::new(reqwest_client)
         .with(TracingMiddleware::<RequestTiming>::new())
         .with(RetryTransientMiddleware::new_with_policy(retry_policy))

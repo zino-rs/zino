@@ -1,4 +1,4 @@
-use crate::application::Application;
+use crate::{application::Application, extend::TomlTableExt};
 use std::{fs, io, path::Path, sync::OnceLock};
 use tracing::Level;
 use tracing_appender::{non_blocking::WorkerGuard, rolling};
@@ -26,33 +26,18 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let mut display_thread_names = false;
     let mut display_span_list = false;
 
-    if let Some(tracing) = APP::config().get("tracing").and_then(|v| v.as_table()) {
-        if let Some(dir) = tracing.get("log-dir").and_then(|v| v.as_str()) {
+    if let Some(tracing) = APP::config().get_table("tracing") {
+        if let Some(dir) = tracing.get_str("log-dir") {
             log_dir = dir;
         }
-        if let Some(filter) = tracing.get("filter").and_then(|v| v.as_str()) {
+        if let Some(filter) = tracing.get_str("filter") {
             env_filter = filter;
         }
-        display_target = tracing
-            .get("display-target")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(true);
-        display_filename = tracing
-            .get("display-filename")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
-        display_line_number = tracing
-            .get("display-line-number")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
-        display_thread_names = tracing
-            .get("display-thread-names")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
-        display_span_list = tracing
-            .get("display-span-list")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
+        display_target = tracing.get_bool("display-target").unwrap_or(true);
+        display_filename = tracing.get_bool("display-filename").unwrap_or(false);
+        display_line_number = tracing.get_bool("display-line-number").unwrap_or(false);
+        display_thread_names = tracing.get_bool("display-thread-names").unwrap_or(false);
+        display_span_list = tracing.get_bool("display-span-list").unwrap_or(false);
     }
 
     let app_name = APP::name();

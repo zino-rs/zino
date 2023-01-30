@@ -1,6 +1,6 @@
 //! Connection pool and ORM.
 
-use crate::{crypto, state::State};
+use crate::{crypto, extend::TomlTableExt, state::State};
 use base64_simd::STANDARD_NO_PAD;
 use sqlx::{
     postgres::{PgConnectOptions, PgPoolOptions},
@@ -36,19 +36,13 @@ impl ConnectionPool {
     /// Encrypts the database password in the config.
     pub fn encrypt_password(config: &Table) -> Option<String> {
         let username = config
-            .get("username")
-            .expect("the `postgres.username` field should be specified")
-            .as_str()
+            .get_str("username")
             .expect("the `postgres.username` field should be a str");
         let database = config
-            .get("database")
-            .expect("the `postgres.database` field should be specified")
-            .as_str()
+            .get_str("database")
             .expect("the `postgres.database` field should be a str");
         let password = config
-            .get("password")
-            .expect("the `postgres.password` field should be specified")
-            .as_str()
+            .get_str("password")
             .expect("the `postgres.password` field should be a str");
         let key = format!("{username}@{database}");
         crypto::encrypt(key.as_bytes(), password.as_bytes())
@@ -60,35 +54,20 @@ impl ConnectionPool {
     /// Connects lazily to the database according to the config.
     pub fn connect_lazy(application_name: &str, config: &'static Table) -> Self {
         // Connect options.
-        let statement_cache_capacity = config
-            .get("statement-cache-capacity")
-            .and_then(|v| v.as_integer())
-            .and_then(|i| usize::try_from(i).ok())
-            .unwrap_or(100);
-        let host = config
-            .get("host")
-            .and_then(|v| v.as_str())
-            .unwrap_or("127.0.0.1");
-        let port = config
-            .get("port")
-            .and_then(|v| v.as_integer())
-            .and_then(|i| u16::try_from(i).ok())
-            .unwrap_or(5432);
+        let statement_cache_capacity = config.get_usize("statement-cache-capacity").unwrap_or(100);
+        let host = config.get_str("host").unwrap_or("127.0.0.1");
+        let port = config.get_u16("port").unwrap_or(5432);
         let mut connect_options = PgConnectOptions::new()
             .application_name(application_name)
             .statement_cache_capacity(statement_cache_capacity)
             .host(host)
             .port(port);
-        if let Some(database) = config.get("database").and_then(|v| v.as_str()) {
+        if let Some(database) = config.get_str("database") {
             let username = config
-                .get("username")
-                .expect("the `postgres.username` field should be specified")
-                .as_str()
+                .get_str("username")
                 .expect("the `postgres.username` field should be a str");
             let mut password = config
-                .get("password")
-                .expect("the `postgres.password` field should be specified")
-                .as_str()
+                .get_str("password")
                 .expect("the `postgres.password` field should be a str");
             if let Ok(data) = STANDARD_NO_PAD.decode_to_vec(password) {
                 let key = format!("{username}@{database}");
@@ -110,28 +89,11 @@ impl ConnectionPool {
             .leak();
 
         // Pool options.
-        let max_connections = config
-            .get("max-connections")
-            .and_then(|v| v.as_integer())
-            .and_then(|i| u32::try_from(i).ok())
-            .unwrap_or(16);
-        let min_connections = config
-            .get("min-connections")
-            .and_then(|v| v.as_integer())
-            .and_then(|i| u32::try_from(i).ok())
-            .unwrap_or(2);
-        let max_lifetime = config
-            .get("max-lifetime")
-            .and_then(|v| v.as_integer().and_then(|i| u64::try_from(i).ok()))
-            .unwrap_or(60 * 60);
-        let idle_timeout = config
-            .get("idle-timeout")
-            .and_then(|v| v.as_integer().and_then(|i| u64::try_from(i).ok()))
-            .unwrap_or(10 * 60);
-        let acquire_timeout = config
-            .get("acquire-timeout")
-            .and_then(|v| v.as_integer().and_then(|i| u64::try_from(i).ok()))
-            .unwrap_or(30);
+        let max_connections = config.get_u32("max-connections").unwrap_or(16);
+        let min_connections = config.get_u32("min-connections").unwrap_or(2);
+        let max_lifetime = config.get_u64("max-lifetime").unwrap_or(60 * 60);
+        let idle_timeout = config.get_u64("idle-timeout").unwrap_or(10 * 60);
+        let acquire_timeout = config.get_u64("acquire-timeout").unwrap_or(30);
         let pool = PgPoolOptions::new()
             .max_connections(max_connections)
             .min_connections(min_connections)
@@ -140,10 +102,7 @@ impl ConnectionPool {
             .acquire_timeout(Duration::from_secs(acquire_timeout))
             .connect_lazy_with(connect_options);
 
-        let name = config
-            .get("name")
-            .and_then(|v| v.as_str())
-            .unwrap_or("main");
+        let name = config.get_str("name").unwrap_or("main");
         Self {
             name,
             database,
@@ -188,16 +147,13 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
 
     // Application name.
     let application_name = config
-        .get("name")
-        .and_then(|v| v.as_str())
-        .expect("the `name` field should be specified");
+        .get_str("name")
+        .expect("the `name` field should be a str");
 
     // Database connection pools.
     let mut pools = Vec::new();
     let databases = config
-        .get("postgres")
-        .expect("the `postgres` field should be specified")
-        .as_array()
+        .get_array("postgres")
         .expect("the `postgres` field should be an array of tables");
     for database in databases {
         if database.is_table() {
@@ -215,12 +171,8 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
 static NAMESPACE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
     State::shared()
         .config()
-        .get("database")
-        .expect("the `database` field should be specified")
-        .as_table()
+        .get_table("database")
         .expect("the `database` field should be a table")
-        .get("namespace")
-        .expect("the `database.namespace` field should be specified")
-        .as_str()
+        .get_str("namespace")
         .expect("the `database.namespace` field should be a str")
 });

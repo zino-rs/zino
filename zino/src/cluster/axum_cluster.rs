@@ -22,6 +22,7 @@ use tower_http::{
 };
 use zino_core::{
     application::Application,
+    extend::TomlTableExt,
     response::Response,
     schedule::{AsyncCronJob, Job, JobScheduler},
     state::State,
@@ -71,22 +72,14 @@ impl Application for AxumCluster {
         let mut request_timeout = 10; // 10 seconds
         let mut public_dir = PathBuf::new();
         let default_public_dir = Self::project_dir().join("./public");
-        if let Some(server) = Self::config().get("server").and_then(|v| v.as_table()) {
-            if let Some(limit) = server
-                .get("body-limit")
-                .and_then(|v| v.as_integer())
-                .and_then(|i| usize::try_from(i).ok())
-            {
+        if let Some(server) = Self::config().get_table("server") {
+            if let Some(limit) = server.get_usize("body-limit") {
                 body_limit = limit;
             }
-            if let Some(timeout) = server
-                .get("request-timeout")
-                .and_then(|v| v.as_integer())
-                .and_then(|i| u64::try_from(i).ok())
-            {
+            if let Some(timeout) = server.get_u64("request-timeout") {
                 request_timeout = timeout;
             }
-            if let Some(dir) = server.get("public-dir").and_then(|v| v.as_str()) {
+            if let Some(dir) = server.get_str("public-dir") {
                 public_dir.push(dir);
             } else {
                 public_dir = default_public_dir;

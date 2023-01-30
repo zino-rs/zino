@@ -5,6 +5,7 @@ use tokio::sync::mpsc::{self, error::TrySendError, Receiver, Sender};
 use tokio_stream::wrappers::ReceiverStream;
 use zino_core::{
     application::Application,
+    extend::TomlTableExt,
     channel::{CloudEvent, Subscription},
     Uuid,
 };
@@ -128,11 +129,7 @@ static CHANNEL_CAPACITY: LazyLock<usize> = LazyLock::new(|| {
         Some(channel) => channel
             .as_table()
             .expect("the `channel` field should be a table")
-            .get("capacity")
-            .expect("the `channel.capacity` field is missing")
-            .as_integer()
-            .expect("the `channel.capacity` field should be an integer")
-            .try_into()
+            .get_usize("capacity")
             .expect("the `channel.capacity` field should be a positive integer"),
         None => 10000,
     }

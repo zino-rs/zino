@@ -1,6 +1,6 @@
 //! Application or request scoped state.
 
-use crate::Map;
+use crate::{extend::TomlTableExt, Map};
 use std::{
     env, fs,
     net::{IpAddr, SocketAddr},
@@ -86,29 +86,20 @@ impl State {
 
         // Main server.
         let main = config
-            .get("main")
-            .expect("the `main` field should be specified")
-            .as_table()
+            .get_table("main")
             .expect("the `main` field should be a table");
         let main_host = main
-            .get("host")
-            .expect("the `main.host` field should be specified")
-            .as_str()
+            .get_str("host")
             .and_then(|s| s.parse::<IpAddr>().ok())
             .expect("the `main.host` field should be an IP address");
         let main_port = main
-            .get("port")
-            .expect("the `main.port` field should be specified")
-            .as_integer()
-            .and_then(|i| u16::try_from(i).ok())
+            .get_u16("port")
             .expect("the `main.port` field should be an integer");
         listeners.push((main_host, main_port).into());
 
         // Standbys.
         let standbys = config
-            .get("standby")
-            .expect("the `standby` field should be specified")
-            .as_array()
+            .get_array("standby")
             .expect("the `standby` field should be an array of tables");
         for standby in standbys {
             if standby.is_table() {
@@ -116,16 +107,11 @@ impl State {
                     .as_table()
                     .expect("the `standby` field should be a table");
                 let standby_host = standby
-                    .get("host")
-                    .expect("the `standby.host` field should be specified")
-                    .as_str()
+                    .get_str("host")
                     .and_then(|s| s.parse::<IpAddr>().ok())
                     .expect("the `standby.host` field should be a str");
                 let standby_port = standby
-                    .get("port")
-                    .expect("the `standby.port` field should be specified")
-                    .as_integer()
-                    .and_then(|i| u16::try_from(i).ok())
+                    .get_u16("port")
                     .expect("the `standby.port` field should be an integer");
                 listeners.push((standby_host, standby_port).into());
             }

@@ -29,6 +29,7 @@ pub mod authentication;
 pub mod channel;
 pub mod database;
 pub mod datetime;
+pub mod extend;
 pub mod i18n;
 pub mod request;
 pub mod response;

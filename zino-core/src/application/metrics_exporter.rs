@@ -1,42 +1,29 @@
-use crate::application::Application;
+use crate::{application::Application, extend::TomlTableExt};
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
 use metrics_exporter_tcp::TcpBuilder;
 use std::{net::IpAddr, time::Duration};
 
 pub(super) fn init<APP: Application + ?Sized>() {
-    if let Some(metrics) = APP::config().get("metrics").and_then(|v| v.as_table()) {
-        let exporter = metrics
-            .get("exporter")
-            .and_then(|v| v.as_str())
-            .unwrap_or_default();
+    if let Some(metrics) = APP::config().get_table("metrics") {
+        let exporter = metrics.get_str("exporter").unwrap_or_default();
         if exporter == "prometheus" {
-            let mut builder = match metrics.get("push-gateway").and_then(|v| v.as_str()) {
+            let mut builder = match metrics.get_str("push-gateway") {
                 Some(endpoint) => {
-                    let interval = metrics
-                        .get("interval")
-                        .and_then(|v| v.as_integer().and_then(|i| u64::try_from(i).ok()))
-                        .unwrap_or(60);
+                    let interval = metrics.get_u64("interval").unwrap_or(60);
                     PrometheusBuilder::new()
                         .with_push_gateway(endpoint, Duration::from_secs(interval))
                         .expect("failed to configure the exporter to run in push gateway mode")
                 }
                 None => {
-                    let host = metrics
-                        .get("host")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("127.0.0.1");
-                    let port = metrics
-                        .get("port")
-                        .and_then(|v| v.as_integer())
-                        .and_then(|i| u16::try_from(i).ok())
-                        .unwrap_or(9000);
+                    let host = metrics.get_str("host").unwrap_or("127.0.0.1");
+                    let port = metrics.get_u16("port").unwrap_or(9000);
                     let host_addr = host
                         .parse::<IpAddr>()
                         .unwrap_or_else(|err| panic!("invalid host address `{host}`: {err}"));
                     PrometheusBuilder::new().with_http_listener((host_addr, port))
                 }
             };
-            if let Some(quantiles) = metrics.get("quantiles").and_then(|v| v.as_array()) {
+            if let Some(quantiles) = metrics.get_array("quantiles") {
                 let quantiles = quantiles
                     .iter()
                     .filter_map(|q| q.as_float())
@@ -45,7 +32,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
                     .set_quantiles(&quantiles)
                     .expect("invalid quantiles to render histograms");
             }
-            if let Some(buckets) = metrics.get("buckets").and_then(|v| v.as_table()) {
+            if let Some(buckets) = metrics.get_table("buckets") {
                 for (key, value) in buckets {
                     let matcher = if key.starts_with('^') {
                         Matcher::Prefix(key.to_owned())
@@ -65,12 +52,12 @@ pub(super) fn init<APP: Application + ?Sized>() {
                         .expect("invalid buckets to render histograms");
                 }
             }
-            if let Some(labels) = metrics.get("global-labels").and_then(|v| v.as_table()) {
+            if let Some(labels) = metrics.get_table("global-labels") {
                 for (key, value) in labels {
                     builder = builder.add_global_label(key, value.to_string());
                 }
             }
-            if let Some(addresses) = metrics.get("allowed-addresses").and_then(|v| v.as_array()) {
+            if let Some(addresses) = metrics.get_array("allowed-addresses") {
                 for addr in addresses {
                     builder = builder
                         .add_allowed_address(addr.as_str().unwrap_or_default())
@@ -81,20 +68,9 @@ pub(super) fn init<APP: Application + ?Sized>() {
                 .install()
                 .expect("failed to install Prometheus exporter");
         } else if exporter == "tcp" {
-            let host = metrics
-                .get("host")
-                .and_then(|v| v.as_str())
-                .unwrap_or("127.0.0.1");
-            let port = metrics
-                .get("port")
-                .and_then(|v| v.as_integer())
-                .and_then(|i| u16::try_from(i).ok())
-                .unwrap_or(9000);
-            let buffer_size = metrics
-                .get("buffer_size")
-                .and_then(|v| v.as_integer())
-                .and_then(|i| usize::try_from(i).ok())
-                .unwrap_or(1024);
+            let host = metrics.get_str("host").unwrap_or("127.0.0.1");
+            let port = metrics.get_u16("port").unwrap_or(9000);
+            let buffer_size = metrics.get_usize("buffer_size").unwrap_or(1024);
             let host_addr = host
                 .parse::<IpAddr>()
                 .unwrap_or_else(|err| panic!("invalid host address `{host}`: {err}"));
