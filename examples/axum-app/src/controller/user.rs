@@ -1,7 +1,10 @@
 use fluent::fluent_args;
 use serde_json::json;
 use std::time::Instant;
-use zino::{ExtractRejection, Map, Model, Query, Request, RequestContext, Response, Schema, Uuid};
+use zino::{
+    ExtractRejection, JsonObjectExt, Map, Model, Query, Request, RequestContext, Response, Schema,
+    Uuid,
+};
 use zino_model::User;
 
 pub(crate) async fn new(mut req: Request) -> zino::Result {
@@ -53,7 +56,7 @@ pub(crate) async fn view(mut req: Request) -> zino::Result {
     res.record_server_timing("db", None, db_query_start_time.elapsed());
 
     let args = fluent_args![
-        "name" => user.get("name").and_then(|v| v.as_str()).unwrap_or_default()
+        "name" => user.get_str("name").unwrap_or_default()
     ];
     let user_intro = req.translate("user-intro", args).extract_rejection()?;
     let data = json!({

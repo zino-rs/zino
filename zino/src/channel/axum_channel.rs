@@ -5,8 +5,8 @@ use tokio::sync::mpsc::{self, error::TrySendError, Receiver, Sender};
 use tokio_stream::wrappers::ReceiverStream;
 use zino_core::{
     application::Application,
-    extend::TomlTableExt,
     channel::{CloudEvent, Subscription},
+    extend::TomlTableExt,
     Uuid,
 };
 

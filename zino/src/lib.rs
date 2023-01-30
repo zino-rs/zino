@@ -43,6 +43,7 @@ pub use zino_core::{
     application::Application,
     database::{Model, Query, Schema},
     datetime::DateTime,
+    extend::JsonObjectExt,
     request::RequestContext,
     response::ExtractRejection,
     schedule::{AsyncCronJob, CronJob},

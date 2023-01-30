@@ -1,7 +1,8 @@
-use toml::{Table, Value};
+use crate::Map;
+use serde_json::Value;
 
-/// Extension trait for [`Table`](toml::Table).
-pub trait TomlTableExt {
+/// Extension trait for [`Map`](crate::Map).
+pub trait JsonObjectExt {
     /// Extracts the boolean value corresponding to the key.
     fn get_bool(&self, key: &str) -> Option<bool>;
 
@@ -33,11 +34,16 @@ pub trait TomlTableExt {
     /// Extracts the array value corresponding to the key.
     fn get_array(&self, key: &str) -> Option<&Vec<Value>>;
 
-    /// Extracts the table value corresponding to the key.
-    fn get_table(&self, key: &str) -> Option<&Table>;
+    /// Extracts the object value corresponding to the key.
+    fn get_object(&self, key: &str) -> Option<&Map>;
+
+    /// Inserts or updates a key-value pair into the map.
+    /// If the map did have this key present, the value is updated and the old value is returned,
+    /// otherwise `None` is returned.
+    fn upsert(&mut self, key: impl Into<String>, value: impl Into<Value>) -> Option<Value>;
 }
 
-impl TomlTableExt for Table {
+impl JsonObjectExt for Map {
     #[inline]
     fn get_bool(&self, key: &str) -> Option<bool> {
         self.get(key).and_then(|v| v.as_bool())
@@ -45,40 +51,38 @@ impl TomlTableExt for Table {
 
     #[inline]
     fn get_i64(&self, key: &str) -> Option<i64> {
-        self.get(key).and_then(|v| v.as_integer())
+        self.get(key).and_then(|v| v.as_i64())
     }
 
     #[inline]
     fn get_u16(&self, key: &str) -> Option<u16> {
         self.get(key)
-            .and_then(|v| v.as_integer())
+            .and_then(|v| v.as_u64())
             .and_then(|i| u16::try_from(i).ok())
     }
 
     #[inline]
     fn get_u32(&self, key: &str) -> Option<u32> {
         self.get(key)
-            .and_then(|v| v.as_integer())
+            .and_then(|v| v.as_u64())
             .and_then(|i| u32::try_from(i).ok())
     }
 
     #[inline]
     fn get_u64(&self, key: &str) -> Option<u64> {
-        self.get(key)
-            .and_then(|v| v.as_integer())
-            .and_then(|i| u64::try_from(i).ok())
+        self.get(key).and_then(|v| v.as_u64())
     }
 
     #[inline]
     fn get_usize(&self, key: &str) -> Option<usize> {
         self.get(key)
-            .and_then(|v| v.as_integer())
+            .and_then(|v| v.as_u64())
             .and_then(|i| usize::try_from(i).ok())
     }
 
     #[inline]
     fn get_f64(&self, key: &str) -> Option<f64> {
-        self.get(key).and_then(|v| v.as_float())
+        self.get(key).and_then(|v| v.as_f64())
     }
 
     #[inline]
@@ -92,7 +96,12 @@ impl TomlTableExt for Table {
     }
 
     #[inline]
-    fn get_table(&self, key: &str) -> Option<&Table> {
-        self.get(key).and_then(|v| v.as_table())
+    fn get_object(&self, key: &str) -> Option<&Map> {
+        self.get(key).and_then(|v| v.as_object())
+    }
+
+    #[inline]
+    fn upsert(&mut self, key: impl Into<String>, value: impl Into<Value>) -> Option<Value> {
+        self.insert(key.into(), value.into())
     }
 }

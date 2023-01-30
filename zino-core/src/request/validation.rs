@@ -1,4 +1,6 @@
-use crate::{datetime::DateTime, response::Response, BoxError, Map, SharedString};
+use crate::{
+    datetime::DateTime, extend::JsonObjectExt, response::Response, BoxError, Map, SharedString,
+};
 use bytes::Bytes;
 use http::StatusCode;
 use http_body::Full;
@@ -171,7 +173,7 @@ impl Validation {
     pub fn into_map(self) -> Map {
         let mut map = Map::new();
         for (key, err) in self.failed_entries {
-            map.insert(key.into_owned(), err.to_string().into());
+            map.upsert(key, err.to_string());
         }
         map
     }

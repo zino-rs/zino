@@ -1,4 +1,3 @@
-use crate::AxumCluster;
 use axum::{
     body::{Body, BoxBody, Bytes},
     http::{HeaderMap, Request, Response},
@@ -46,7 +45,7 @@ fn new_make_span(request: &Request<Body>) -> Span {
     tracing::info_span!(
         "HTTP request",
         "otel.kind" = "server",
-        "otel.name" = AxumCluster::name(),
+        "otel.name" = crate::AxumCluster::name(),
         "http.method" = request.method().as_str(),
         "http.scheme" = uri.scheme_str(),
         "http.target" = uri.path_and_query().map(|p| p.as_str()),

@@ -1,5 +1,8 @@
 use crate::{
-    application::Application, extend::TomlTableExt, trace::TraceContext, BoxError, Map, Uuid,
+    application::Application,
+    extend::{JsonObjectExt, TomlTableExt},
+    trace::TraceContext,
+    BoxError, Map, Uuid,
 };
 use reqwest::{
     header::{self, HeaderMap, HeaderName},
@@ -106,8 +109,7 @@ pub(crate) fn request_builder(
     }
 
     let method = options
-        .get("method")
-        .and_then(|v| v.as_str())
+        .get_str("method")
         .and_then(|s| s.parse().ok())
         .unwrap_or(Method::GET);
     let mut request_builder = SHARED_HTTP_CLIENT
@@ -119,10 +121,7 @@ pub(crate) fn request_builder(
         request_builder = request_builder.query(query);
     }
     if let Some(body) = options.get("body") {
-        let content_type = options
-            .get("content_type")
-            .and_then(|v| v.as_str())
-            .unwrap_or_default();
+        let content_type = options.get_str("content_type").unwrap_or_default();
         match body {
             Value::String(value) => {
                 if content_type == "json" {
@@ -149,7 +148,7 @@ pub(crate) fn request_builder(
             _ => tracing::warn!("unsupported body format"),
         }
     }
-    if let Some(map) = options.get("headers").and_then(|v| v.as_object()) {
+    if let Some(map) = options.get_object("headers") {
         for (key, value) in map {
             if let Ok(header_name) = HeaderName::try_from(key) {
                 if let Some(header_value) = value.as_str().and_then(|s| s.parse().ok()) {
@@ -161,7 +160,7 @@ pub(crate) fn request_builder(
     if !headers.is_empty() {
         request_builder = request_builder.headers(headers);
     }
-    if let Some(timeout) = options.get("timeout").and_then(|v| v.as_u64()) {
+    if let Some(timeout) = options.get_u64("timeout") {
         request_builder = request_builder.timeout(Duration::from_millis(timeout));
     }
     Ok(request_builder)

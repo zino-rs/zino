@@ -1,5 +1,6 @@
 use crate::{
     database::{Column, Schema},
+    extend::JsonObjectExt,
     request::Validation,
     Map,
 };
@@ -96,16 +97,16 @@ impl Query {
                                         let mut vec = Vec::new();
                                         vec.resize(index, Value::Null);
                                         vec.insert(index, value);
-                                        filter.insert(key.to_owned(), vec.into());
+                                        filter.upsert(key, vec);
                                     }
                                 } else if let Some(map) = filter.get_mut(key) {
                                     if let Some(map) = map.as_object_mut() {
-                                        map.insert(path.to_owned(), value);
+                                        map.upsert(path, value);
                                     }
                                 } else {
                                     let mut map = Map::new();
-                                    map.insert(path.to_owned(), value);
-                                    filter.insert(key.to_owned(), map.into());
+                                    map.upsert(path, value);
+                                    filter.upsert(key, map);
                                 }
                             }
                         } else if value != "" && value != "all" {
@@ -160,7 +161,7 @@ impl Query {
     /// Inserts a key-value pair into the query filter.
     #[inline]
     pub fn insert_filter(&mut self, key: impl Into<String>, value: impl Into<Value>) {
-        self.filter.insert(key.into(), value.into());
+        self.filter.upsert(key, value);
     }
 
     /// Sets the query order.

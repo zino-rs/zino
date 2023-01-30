@@ -2,6 +2,7 @@
 
 use crate::{
     datetime::DateTime,
+    extend::{JsonObjectExt, TomlTableExt},
     schedule::{AsyncCronJob, CronJob, Job, JobScheduler},
     state::State,
     trace::TraceContext,
@@ -73,8 +74,7 @@ pub trait Application {
     #[inline]
     fn name() -> &'static str {
         Self::config()
-            .get("name")
-            .and_then(|v| v.as_str())
+            .get_str("name")
             .expect("the `name` field should be specified")
     }
 
@@ -82,8 +82,7 @@ pub trait Application {
     #[inline]
     fn version() -> &'static str {
         Self::config()
-            .get("version")
-            .and_then(|v| v.as_str())
+            .get_str("version")
             .expect("the `version` field should be specified")
     }
 
@@ -140,18 +139,16 @@ static SHARED_APP_STATE: LazyLock<State> = LazyLock::new(|| {
     let mut state = State::default();
     let config = state.config();
     let app_name = config
-        .get("name")
-        .and_then(|v| v.as_str())
-        .expect("the `name` field should be specified");
+        .get_str("name")
+        .expect("the `name` field should be a str");
     let app_version = config
-        .get("version")
-        .and_then(|v| v.as_str())
-        .expect("the `version` field should be specified");
+        .get_str("version")
+        .expect("the `version` field should be a str");
 
     let mut data = Map::new();
-    data.insert("app.name".to_owned(), app_name.into());
-    data.insert("app.version".to_owned(), app_version.into());
-    data.insert("app.start_at".to_owned(), DateTime::now().into());
+    data.upsert("app.name", app_name);
+    data.upsert("app.version", app_version);
+    data.upsert("app.start_at", DateTime::now());
     state.set_data(data);
     state
 });
