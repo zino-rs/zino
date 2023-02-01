@@ -6,7 +6,7 @@ use opendal::{
     layers::{MetricsLayer, RetryLayer, TracingLayer},
     services::{
         azblob, azdfs, fs, ftp, gcs, ghac, ipfs, ipmfs, memcached, memory, moka, obs, oss, redis,
-        s3,
+        s3, webdav,
     },
     Error,
     ErrorKind::{Unexpected, Unsupported},
@@ -278,6 +278,16 @@ impl StorageAccessor {
                         }
                         if let Some(external_id) = accessor.get_str("external-id") {
                             builder.external_id(external_id);
+                        }
+                        Ok(Operator::new(builder.build()?))
+                    }
+                    "webdav" => {
+                        let mut builder = webdav::Builder::default();
+                        if let Some(root) = accessor.get_str("root") {
+                            builder.root(root);
+                        }
+                        if let Some(endpoint) = accessor.get_str("endpoint") {
+                            builder.endpoint(endpoint);
                         }
                         Ok(Operator::new(builder.build()?))
                     }

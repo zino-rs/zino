@@ -13,9 +13,9 @@ tracing = "0.1.37"
 
 [dependencies.zino]
 path = "../../zino"
-version = "0.5.1"
+version = "0.5.2"
 features = ["axum"]
 
 [dependencies.zino-model]
 path = "../../zino-model"
-version = "0.3.8"
+version = "0.3.9"
