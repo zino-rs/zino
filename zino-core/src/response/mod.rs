@@ -142,6 +142,33 @@ impl<S: ResponseCode> Response<S> {
         self
     }
 
+    #[cfg(feature = "view")]
+    /// Renders a template and sets it as the reponse data.
+    pub fn render(mut self, template_name: &str) -> Self {
+        if let Some(data) = self.data.as_object_mut() {
+            let mut map = crate::Map::new();
+            map.append(data);
+            match crate::view::render(template_name, map) {
+                Ok(data) => {
+                    self.data = data.into();
+                    self.content_type = Some("text/html".into());
+                }
+                Err(err) => {
+                    let code = S::INTERNAL_SERVER_ERROR;
+                    self.type_uri = code.type_uri();
+                    self.title = code.title();
+                    self.status_code = code.status_code();
+                    self.error_code = code.error_code();
+                    self.success = false;
+                    self.detail = Some(err.to_string().into());
+                    self.message = None;
+                    self.data = Value::Null;
+                }
+            }
+        }
+        self
+    }
+
     /// Sets the code.
     pub fn set_code(&mut self, code: S) {
         let success = code.is_success();
@@ -262,18 +289,29 @@ impl<S: ResponseCode> From<Response<S>> for http::Response<Full<Bytes>> {
     fn from(mut response: Response<S>) -> Self {
         let status_code = response.status_code;
         let mut res = match response.content_type {
-            Some(ref content_type) => match serde_json::to_vec(&response.data) {
-                Ok(bytes) => http::Response::builder()
-                    .status(status_code)
-                    .header(header::CONTENT_TYPE, content_type.as_ref())
-                    .body(Full::from(bytes))
-                    .unwrap_or_default(),
-                Err(err) => http::Response::builder()
-                    .status(S::INTERNAL_SERVER_ERROR.status_code())
-                    .header(header::CONTENT_TYPE, "text/plain")
-                    .body(Full::from(err.to_string()))
-                    .unwrap_or_default(),
-            },
+            Some(ref content_type) => {
+                let ref data = response.data;
+                if let Some(data) = data.as_str() {
+                    http::Response::builder()
+                        .status(status_code)
+                        .header(header::CONTENT_TYPE, content_type.as_ref())
+                        .body(Full::from(data.to_owned()))
+                        .unwrap_or_default()
+                } else {
+                    match serde_json::to_vec(&data) {
+                        Ok(bytes) => http::Response::builder()
+                            .status(status_code)
+                            .header(header::CONTENT_TYPE, content_type.as_ref())
+                            .body(Full::from(bytes))
+                            .unwrap_or_default(),
+                        Err(err) => http::Response::builder()
+                            .status(S::INTERNAL_SERVER_ERROR.status_code())
+                            .header(header::CONTENT_TYPE, "text/plain")
+                            .body(Full::from(err.to_string()))
+                            .unwrap_or_default(),
+                    }
+                }
+            }
             None => match serde_json::to_vec(&response) {
                 Ok(bytes) => {
                     let content_type = if response.is_success() {

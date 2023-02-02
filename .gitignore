@@ -11,4 +11,4 @@ Cargo.lock
 **/*.rs.bk
 
 # Logs
-**/log/*
+**/logs/*

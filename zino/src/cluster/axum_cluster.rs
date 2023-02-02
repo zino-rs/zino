@@ -71,7 +71,7 @@ impl Application for AxumCluster {
         let mut body_limit = 100 * 1024 * 1024; // 100MB
         let mut request_timeout = 10; // 10 seconds
         let mut public_dir = PathBuf::new();
-        let default_public_dir = Self::project_dir().join("./public");
+        let default_public_dir = Self::project_dir().join("assets");
         if let Some(server) = Self::config().get_table("server") {
             if let Some(limit) = server.get_usize("body-limit") {
                 body_limit = limit;
@@ -87,8 +87,8 @@ impl Application for AxumCluster {
         } else {
             public_dir = default_public_dir;
         }
-        let index_file = public_dir.join("./index.html");
-        let not_found_file = public_dir.join("./404.html");
+        let index_file = public_dir.join("index.html");
+        let not_found_file = public_dir.join("404.html");
         let internal_server_error_handler = |err: io::Error| async move {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -114,7 +114,7 @@ impl Application for AxumCluster {
             let servers = listeners.iter().map(|listener| {
                 let mut app = Router::new()
                     .route_service("/", serve_file_service.clone())
-                    .nest_service("/public", serve_dir_service.clone())
+                    .nest_service("/assets", serve_dir_service.clone())
                     .route("/sse", routing::get(crate::endpoint::axum_sse::sse_handler))
                     .route(
                         "/websocket",

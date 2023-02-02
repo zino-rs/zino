@@ -24,7 +24,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
         "info,sqlx=warn"
     };
 
-    let mut log_dir = "./log";
+    let mut log_dir = "logs";
     let mut display_target = true;
     let mut display_filename = false;
     let mut display_line_number = false;
@@ -49,7 +49,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
         log_dir.to_path_buf()
     } else {
         let project_dir = APP::project_dir();
-        let log_dir = project_dir.join("./log");
+        let log_dir = project_dir.join("logs");
         if !log_dir.exists() {
             fs::create_dir(log_dir.as_path()).unwrap_or_else(|err| {
                 let log_dir = log_dir.to_string_lossy();

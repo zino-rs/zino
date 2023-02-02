@@ -24,6 +24,9 @@ pub mod accessor;
 #[cfg(feature = "cache")]
 pub mod cache;
 
+#[cfg(feature = "view")]
+pub mod view;
+
 pub mod application;
 pub mod authentication;
 pub mod channel;

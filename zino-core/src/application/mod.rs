@@ -38,6 +38,12 @@ pub trait Application {
         tracing_subscriber::init::<Self>();
         metrics_exporter::init::<Self>();
         http_client::init::<Self>();
+
+        #[cfg(feature = "view")]
+        {
+            crate::view::init::<Self>();
+        }
+
         Self::default()
     }
 
