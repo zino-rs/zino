@@ -1,9 +1,4 @@
-use crate::{
-    datetime::DateTime, extend::JsonObjectExt, response::Response, BoxError, Map, SharedString,
-};
-use bytes::Bytes;
-use http::StatusCode;
-use http_body::Full;
+use crate::{datetime::DateTime, extend::JsonObjectExt, BoxError, Map, SharedString};
 use serde_json::Value;
 use std::{
     net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr},
@@ -183,12 +178,5 @@ impl Default for Validation {
     #[inline]
     fn default() -> Self {
         Self::new()
-    }
-}
-
-impl From<Validation> for http::Response<Full<Bytes>> {
-    #[inline]
-    fn from(validation: Validation) -> Self {
-        Response::<StatusCode>::from(validation).into()
     }
 }

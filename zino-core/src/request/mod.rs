@@ -63,7 +63,7 @@ pub trait RequestContext {
     /// Creates a new request context.
     fn new_context(&self) -> Context {
         // Emit metrics.
-        metrics::increment_gauge!("zino_http_requests_pending", 1.0);
+        metrics::increment_gauge!("zino_http_requests_in_flight", 1.0);
         metrics::increment_counter!(
             "zino_http_requests_total",
             "method" => self.request_method().to_owned(),
@@ -94,6 +94,7 @@ pub trait RequestContext {
 
         // Generate new context.
         let mut ctx = Context::new(request_id);
+        ctx.set_request_path(self.original_uri().path());
         ctx.set_trace_id(trace_id);
         ctx.set_session_id(session_id);
         ctx.set_locale(locale);
@@ -137,6 +138,15 @@ pub trait RequestContext {
         }
     }
 
+    /// Returns the request path.
+    #[inline]
+    fn request_path(&self) -> &str {
+        match self.get_context() {
+            Some(ctx) => ctx.request_path(),
+            None => "",
+        }
+    }
+
     /// Returns the request ID.
     #[inline]
     fn request_id(&self) -> Uuid {
@@ -165,12 +175,6 @@ pub trait RequestContext {
     #[inline]
     fn locale(&self) -> Option<&LanguageIdentifier> {
         self.get_context().and_then(|ctx| ctx.locale())
-    }
-
-    /// Returns the request path.
-    #[inline]
-    fn request_path(&self) -> &str {
-        self.original_uri().path()
     }
 
     /// Parses the route parameter by name as an instance of type `T`.
@@ -369,10 +373,10 @@ pub trait RequestContext {
                     let res = Response::with_context(S::OK, self);
                     Ok(res)
                 } else {
-                    Err(Rejection::BadRequest(validation))
+                    Err(Rejection::bad_request(validation))
                 }
             }
-            Err(validation) => Err(Rejection::BadRequest(validation)),
+            Err(validation) => Err(Rejection::bad_request(validation)),
         }
     }
 
@@ -392,10 +396,10 @@ pub trait RequestContext {
                     let res = Response::with_context(S::OK, self);
                     Ok(res)
                 } else {
-                    Err(Rejection::BadRequest(validation))
+                    Err(Rejection::bad_request(validation))
                 }
             }
-            Err(validation) => Err(Rejection::BadRequest(validation)),
+            Err(validation) => Err(Rejection::bad_request(validation)),
         }
     }
 

@@ -104,7 +104,7 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Creates a new instance with the request context.
-    pub fn with_context<T: RequestContext>(code: S, ctx: &T) -> Self {
+    pub fn with_context<Ctx: RequestContext>(code: S, ctx: &Ctx) -> Self {
         let success = code.is_success();
         let message = code.message();
         let mut res = Self {
@@ -134,7 +134,7 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Provides the request context for the response.
-    pub fn provide_context<T: RequestContext>(mut self, ctx: &T) -> Self {
+    pub fn provide_context<Ctx: RequestContext>(mut self, ctx: &Ctx) -> Self {
         self.instance = (!self.is_success()).then(|| ctx.request_path().to_owned().into());
         self.start_time = ctx.start_time();
         self.request_id = ctx.request_id();
@@ -188,6 +188,7 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Sets a URI reference that identifies the specific occurrence of the problem.
+    #[inline]
     pub fn set_instance(&mut self, instance: Option<SharedString>) {
         self.instance = instance;
     }
@@ -224,6 +225,7 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Sets the response data for the validation.
+    #[inline]
     pub fn set_validation_data(&mut self, validation: Validation) {
         self.data = validation.into_map().into();
     }
@@ -232,6 +234,24 @@ impl<S: ResponseCode> Response<S> {
     #[inline]
     pub fn set_content_type(&mut self, content_type: impl Into<SharedString>) {
         self.content_type = Some(content_type.into());
+    }
+
+    /// Sets the request ID.
+    #[inline]
+    pub(crate) fn set_request_id(&mut self, request_id: Uuid) {
+        self.request_id = request_id;
+    }
+
+    /// Sets the trace context from headers.
+    #[inline]
+    pub(crate) fn set_trace_context(&mut self, trace_context: impl Into<Option<TraceContext>>) {
+        self.trace_context = trace_context.into();
+    }
+
+    /// Sets the start time.
+    #[inline]
+    pub(crate) fn set_start_time(&mut self, start_time: Instant) {
+        self.start_time = start_time;
     }
 
     /// Records a server timing metric entry.
@@ -290,7 +310,7 @@ impl<S: ResponseCode> From<Response<S>> for http::Response<Full<Bytes>> {
         let status_code = response.status_code;
         let mut res = match response.content_type {
             Some(ref content_type) => {
-                let ref data = response.data;
+                let data = &response.data;
                 if let Some(data) = data.as_str() {
                     http::Response::builder()
                         .status(status_code)
@@ -365,7 +385,7 @@ impl<S: ResponseCode> From<Response<S>> for http::Response<Full<Bytes>> {
 
         // Emit metrics.
         let labels = [("status_code", status_code.to_string())];
-        metrics::decrement_gauge!("zino_http_requests_pending", 1.0);
+        metrics::decrement_gauge!("zino_http_requests_in_flight", 1.0);
         metrics::increment_counter!("zino_http_responses_total", &labels);
         metrics::histogram!(
             "zino_http_requests_duration_seconds",

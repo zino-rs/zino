@@ -7,6 +7,8 @@ use uuid::Uuid;
 pub struct Context {
     /// Start time.
     start_time: Instant,
+    /// Request path.
+    request_path: String,
     /// Request ID.
     request_id: Uuid,
     /// Trace ID.
@@ -22,11 +24,18 @@ impl Context {
     pub fn new(request_id: Uuid) -> Self {
         Self {
             start_time: Instant::now(),
+            request_path: String::new(),
             request_id,
             trace_id: Uuid::nil(),
             session_id: None,
             locale: None,
         }
+    }
+
+    /// Sets the request path.
+    #[inline]
+    pub fn set_request_path(&mut self, request_path: impl Into<String>) {
+        self.request_path = request_path.into();
     }
 
     /// Sets the trace ID.
@@ -54,6 +63,12 @@ impl Context {
     #[inline]
     pub fn start_time(&self) -> Instant {
         self.start_time
+    }
+
+    /// Returns the request path.
+    #[inline]
+    pub fn request_path(&self) -> &str {
+        &self.request_path
     }
 
     /// Returns the request id.
