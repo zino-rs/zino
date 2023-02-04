@@ -9,9 +9,12 @@ use serde::de::DeserializeOwned;
 use std::{
     convert::Infallible,
     ops::{Deref, DerefMut},
+    sync::LazyLock,
 };
 use toml::value::Table;
+use tower_cookies::{Cookie, Cookies, Key};
 use zino_core::{
+    application::Application,
     channel::CloudEvent,
     request::{Context, RequestContext, Validation},
     response::Rejection,
@@ -72,12 +75,29 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
-    fn get_header(&self, key: &str) -> Option<&str> {
+    fn get_header(&self, name: &str) -> Option<&str> {
         self.headers()
-            .get(key)?
+            .get(name)?
             .to_str()
             .inspect_err(|err| tracing::error!("{err}"))
             .ok()
+    }
+
+    #[inline]
+    fn get_cookie(&self, name: &str) -> Option<Cookie<'static>> {
+        let cookies = self.extensions().get::<Cookies>()?;
+        let key = LazyLock::force(&COOKIE_PRIVATE_KEY);
+        let signed_cookies = cookies.signed(key);
+        signed_cookies.get(name)
+    }
+
+    #[inline]
+    fn add_cookie(&self, cookie: Cookie<'static>) {
+        self.extensions().get::<Cookies>().map(|cookies| {
+            let key = LazyLock::force(&COOKIE_PRIVATE_KEY);
+            let signed_cookies = cookies.signed(key);
+            signed_cookies.add(cookie);
+        });
     }
 
     #[inline]
@@ -147,3 +167,9 @@ impl FromRequest<(), Body> for AxumExtractor<Request<Body>> {
         Ok(AxumExtractor(req))
     }
 }
+
+/// Private key for cookie signing.
+static COOKIE_PRIVATE_KEY: LazyLock<Key> = LazyLock::new(|| {
+    let secret_key = crate::AxumCluster::secret_key();
+    Key::try_from(secret_key).unwrap_or_else(|_| Key::generate())
+});

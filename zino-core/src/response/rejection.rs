@@ -10,6 +10,7 @@ use http_body::Full;
 use RejectionKind::*;
 
 /// A rejection response type.
+#[derive(Debug)]
 pub struct Rejection<'a> {
     /// Rejection kind.
     kind: RejectionKind,

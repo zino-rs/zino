@@ -11,6 +11,7 @@ use crate::{
     trace::{TraceContext, TraceState},
     BoxError, Map, SharedString, Uuid,
 };
+use cookie::{Cookie, SameSite};
 use fluent::FluentArgs;
 use http::uri::Uri;
 use reqwest::IntoUrl;
@@ -40,8 +41,14 @@ pub trait RequestContext {
     /// Gets a reference to the request context.
     fn get_context(&self) -> Option<&Context>;
 
-    /// Gets an HTTP header.
-    fn get_header(&self, key: &str) -> Option<&str>;
+    /// Gets an HTTP header with the given name.
+    fn get_header(&self, name: &str) -> Option<&str>;
+
+    /// Gets a cookie with the given name.
+    fn get_cookie(&self, name: &str) -> Option<Cookie<'static>>;
+
+    /// Adds a cookie to the cookie jar.
+    fn add_cookie(&self, cookie: Cookie<'static>);
 
     /// Returns the request method.
     fn request_method(&self) -> &str;
@@ -80,24 +87,26 @@ pub trait RequestContext {
             .map_or_else(Uuid::new_v4, |t| Uuid::from_u128(t.trace_id()));
         let session_id = self.get_header("session-id").and_then(|s| s.parse().ok());
 
-        // Parse locale.
-        let locale = self
-            .get_header("accept-language")
-            .map(|s| {
-                if let Some((locale, _)) = s.split_once(',') {
-                    locale
-                } else {
-                    s
-                }
-            })
-            .unwrap_or("en-US");
-
         // Generate new context.
         let mut ctx = Context::new(request_id);
         ctx.set_request_path(self.original_uri().path());
         ctx.set_trace_id(trace_id);
         ctx.set_session_id(session_id);
-        ctx.set_locale(locale);
+        if let Some(cookie) = self.get_cookie("locale") {
+            ctx.set_locale(cookie.value());
+        } else {
+            let locale = self
+                .get_header("accept-language")
+                .map(|s| {
+                    if let Some((locale, _)) = s.split_once(',') {
+                        locale
+                    } else {
+                        s
+                    }
+                })
+                .unwrap_or("en-US");
+            ctx.set_locale(locale);
+        }
         ctx
     }
 
@@ -127,6 +136,27 @@ pub trait RequestContext {
             .trace_state_mut()
             .push("zino", format!("{span_id:x}"));
         trace_context
+    }
+
+    /// Creates a new cookie with the given name and value.
+    fn new_cookie(
+        &self,
+        name: impl Into<SharedString>,
+        value: impl Into<SharedString>,
+        max_age: impl Into<Option<Duration>>,
+    ) -> Cookie<'static> {
+        let original_uri = self.original_uri();
+        let mut cookie_builder = Cookie::build(name, value)
+            .http_only(true)
+            .same_site(SameSite::Lax)
+            .path(original_uri.path().to_owned());
+        if let Some(host) = original_uri.host() {
+            cookie_builder = cookie_builder.domain(host.to_owned());
+        }
+        if let Some(max_age) = max_age.into().and_then(|d| d.try_into().ok()) {
+            cookie_builder = cookie_builder.max_age(max_age);
+        }
+        cookie_builder.finish()
     }
 
     /// Returns the start time.

@@ -8,7 +8,9 @@ use crate::{
     trace::TraceContext,
     BoxError, Map,
 };
+use hkdf::Hkdf;
 use reqwest::{IntoUrl, Response};
+use sha2::{Digest, Sha256};
 use std::{collections::HashMap, env, path::PathBuf, sync::LazyLock, thread};
 use toml::value::Table;
 
@@ -98,6 +100,13 @@ pub trait Application {
         LazyLock::force(&PROJECT_DIR)
     }
 
+    /// Returns the secret key for the application.
+    /// It should have at least 64 bytes.
+    #[inline]
+    fn secret_key() -> &'static [u8] {
+        SECRET_KEY.as_ref()
+    }
+
     /// Spawns a new thread to run cron jobs.
     fn spawn(self, jobs: HashMap<&'static str, CronJob>) -> Self
     where
@@ -135,9 +144,38 @@ pub trait Application {
 }
 
 /// Project directory.
-static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
+pub(crate) static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     env::current_dir()
         .expect("the project directory does not exist or permissions are insufficient")
+});
+
+/// Secret key.
+pub(crate) static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
+    let state = State::default();
+    let config = state.config();
+    let app_checksum: [u8; 32] = config
+        .get_str("checksum")
+        .and_then(|checksum| checksum.as_bytes().try_into().ok())
+        .unwrap_or_else(|| {
+            let app_name = config
+                .get_str("name")
+                .expect("the `name` field should be a str");
+            let app_version = config
+                .get_str("version")
+                .expect("the `version` field should be a str");
+            let app_key = format!("{app_name}@{app_version}");
+
+            let mut hasher = Sha256::new();
+            hasher.update(app_key.as_bytes());
+            hasher.finalize().into()
+        });
+
+    let mut secret_key = [0; 64];
+    Hkdf::<Sha256>::from_prk(&app_checksum)
+        .expect("pseudorandom key is not long enough")
+        .expand(b"ZINO;CHECKSUM:SHA256;HKDF:HMAC-SHA256", &mut secret_key)
+        .expect("invalid length for Sha256 to output");
+    secret_key
 });
 
 /// Shared app state.

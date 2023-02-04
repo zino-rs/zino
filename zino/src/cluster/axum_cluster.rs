@@ -15,6 +15,7 @@ use tower::{
     timeout::{error::Elapsed, TimeoutLayer},
     ServiceBuilder,
 };
+use tower_cookies::CookieManagerLayer;
 use tower_http::{
     add_extension::AddExtensionLayer,
     compression::CompressionLayer,
@@ -134,6 +135,7 @@ impl Application for AxumCluster {
                     .layer(
                         ServiceBuilder::new()
                             .layer(AddExtensionLayer::new(state))
+                            .layer(CookieManagerLayer::new())
                             .layer(DefaultBodyLimit::max(body_limit))
                             .layer(CompressionLayer::new().gzip(true).deflate(true).br(true))
                             .layer(LazyLock::force(

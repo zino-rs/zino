@@ -1,9 +1,9 @@
 //! Internationalization and localization.
 
-use crate::{BoxError, SharedString};
+use crate::{application, BoxError, SharedString};
 use fluent::{bundle::FluentBundle, FluentArgs, FluentResource};
 use intl_memoizer::concurrent::IntlLangMemoizer;
-use std::{collections::HashMap, env, fs, sync::LazyLock};
+use std::{collections::HashMap, fs, sync::LazyLock};
 use unic_langid::{langid, LanguageIdentifier};
 
 /// Translates the localization message.
@@ -56,10 +56,7 @@ type Translation = FluentBundle<FluentResource, IntlLangMemoizer>;
 /// Localization.
 static LOCALIZATION: LazyLock<HashMap<LanguageIdentifier, Translation>> = LazyLock::new(|| {
     let mut locales = HashMap::new();
-
-    let project_dir = env::current_dir()
-        .expect("the project directory does not exist or permissions are insufficient");
-    let locale_dir = project_dir.join("./config/locale");
+    let locale_dir = application::PROJECT_DIR.join("./config/locale");
     match fs::read_dir(locale_dir) {
         Ok(entries) => {
             let files = entries.filter_map(|entry| entry.ok());

@@ -1,6 +1,6 @@
 //! Application or request scoped state.
 
-use crate::{extend::TomlTableExt, Map};
+use crate::{application, extend::TomlTableExt, Map};
 use std::{
     env, fs,
     net::{IpAddr, SocketAddr},
@@ -33,9 +33,7 @@ impl State {
     /// Loads the config file according to the specific env.
     pub fn load_config(&mut self) {
         let env = self.env;
-        let project_dir = env::current_dir()
-            .expect("the project directory does not exist or permissions are insufficient");
-        let config_file = project_dir.join(format!("./config/config.{env}.toml"));
+        let config_file = application::PROJECT_DIR.join(format!("./config/config.{env}.toml"));
         let config: Value = fs::read_to_string(&config_file)
             .unwrap_or_else(|err| {
                 let config_file = config_file.to_string_lossy();

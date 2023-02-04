@@ -44,6 +44,9 @@ pub(crate) async fn list(req: Request) -> zino::Result {
 }
 
 pub(crate) async fn view(mut req: Request) -> zino::Result {
+    let locale_cookie = req.new_cookie("locale", "en-US", None);
+    req.add_cookie(locale_cookie);
+
     let user_id = req.parse_param::<Uuid>("id").extract_with_context(&req)?;
     let mut query = Query::new();
     let mut res: Response = req.query_validation(&mut query)?;
