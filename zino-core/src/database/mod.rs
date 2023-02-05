@@ -1,7 +1,6 @@
 //! Connection pool and ORM.
 
-use crate::{application, crypto, extend::TomlTableExt, state::State};
-use base64_simd::STANDARD_NO_PAD;
+use crate::{extend::TomlTableExt, state::State};
 use sqlx::{
     postgres::{PgConnectOptions, PgPoolOptions},
     PgPool,
@@ -33,18 +32,6 @@ pub struct ConnectionPool {
 }
 
 impl ConnectionPool {
-    /// Encrypts the database password in the config.
-    pub fn encrypt_password(config: &Table) -> Option<String> {
-        let password = config
-            .get_str("password")
-            .expect("the `postgres.password` field should be a str");
-        let key = application::SECRET_KEY.as_ref();
-        crypto::encrypt(key, password.as_bytes())
-            .inspect_err(|_| tracing::error!("failed to encrypt the database password"))
-            .ok()
-            .map(|bytes| STANDARD_NO_PAD.encode_to_string(bytes))
-    }
-
     /// Connects lazily to the database according to the config.
     pub fn connect_lazy(application_name: &str, config: &'static Table) -> Self {
         // Connect options.
@@ -60,19 +47,12 @@ impl ConnectionPool {
             let username = config
                 .get_str("username")
                 .expect("the `postgres.username` field should be a str");
-            let mut password = config
-                .get_str("password")
+            let password = State::decrypt_password(config)
                 .expect("the `postgres.password` field should be a str");
-            if let Ok(data) = STANDARD_NO_PAD.decode_to_vec(password) {
-                let key = application::SECRET_KEY.as_ref();
-                if let Ok(plaintext) = crypto::decrypt(key, &data) {
-                    password = plaintext.leak();
-                }
-            }
             connect_options = connect_options
                 .database(database)
                 .username(username)
-                .password(password);
+                .password(password.as_ref());
         }
 
         // Database name.

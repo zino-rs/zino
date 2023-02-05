@@ -6,7 +6,7 @@ use parking_lot::RwLock;
 use serde_json::Value;
 use std::{num::NonZeroUsize, sync::LazyLock};
 
-/// Global cache based on [`LruCache`](lru::LruCache).
+/// Global cache built on the top of [`LruCache`](lru::LruCache).
 #[derive(Debug, Clone, Copy, Default)]
 pub struct GlobalCache;
 

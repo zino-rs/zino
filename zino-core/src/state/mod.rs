@@ -1,7 +1,9 @@
 //! Application or request scoped state.
 
-use crate::{application, extend::TomlTableExt, Map};
+use crate::{application, crypto, extend::TomlTableExt, Map};
+use base64_simd::STANDARD_NO_PAD;
 use std::{
+    borrow::Cow,
     env, fs,
     net::{IpAddr, SocketAddr},
     sync::LazyLock,
@@ -116,6 +118,34 @@ impl State {
         }
 
         listeners
+    }
+
+    /// Encrypts the password in the config.
+    pub fn encrypt_password(config: &Table) -> Option<Cow<'_, str>> {
+        let password = config.get_str("password")?;
+        let key = application::SECRET_KEY.as_ref();
+        if let Ok(data) = STANDARD_NO_PAD.decode_to_vec(password) &&
+            crypto::decrypt(key, &data).is_ok()
+        {
+            Some(password.into())
+        } else {
+            crypto::encrypt(key, password.as_bytes())
+                .inspect_err(|_| tracing::error!("failed to encrypt the password"))
+                .ok()
+                .map(|bytes| STANDARD_NO_PAD.encode_to_string(bytes).into())
+        }
+    }
+
+    /// Decrypts the password in the config.
+    pub fn decrypt_password(config: &Table) -> Option<Cow<'_, str>> {
+        let password = config.get_str("password")?;
+        if let Ok(data) = STANDARD_NO_PAD.decode_to_vec(password) {
+            let key = application::SECRET_KEY.as_ref();
+            if let Ok(plaintext) = crypto::decrypt(key, &data) {
+                return Some(plaintext.into());
+            }
+        }
+        Some(password.into())
     }
 
     /// Returns a reference to the shared state.

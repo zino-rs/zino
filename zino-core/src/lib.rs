@@ -24,6 +24,9 @@ pub mod accessor;
 #[cfg(feature = "cache")]
 pub mod cache;
 
+#[cfg(feature = "connector")]
+pub mod connector;
+
 #[cfg(feature = "view")]
 pub mod view;
 
