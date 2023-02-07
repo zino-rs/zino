@@ -1,3 +1,4 @@
+use self::RejectionKind::*;
 use crate::{
     request::{Context, RequestContext, Validation},
     response::Response,
@@ -7,7 +8,6 @@ use crate::{
 use bytes::Bytes;
 use http::StatusCode;
 use http_body::Full;
-use RejectionKind::*;
 
 /// A rejection response type.
 #[derive(Debug)]

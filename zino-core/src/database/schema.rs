@@ -1,5 +1,5 @@
 use crate::{
-    database::{Column, ConnectionPool, Model, Mutation, Query},
+    database::{Column, ColumnExt, ConnectionPool, Model, Mutation, Query},
     request::Validation,
     Map,
 };
@@ -18,7 +18,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     const READER_NAME: &'static str = "main";
     /// Writer name.
     const WRITER_NAME: &'static str = "main";
-    /// Optional distribution column. It can only be used for Citus to create a distributed table.
+    /// Optional distribution column. It can be used for Citus to create a distributed table.
     const DISTRIBUTION_COLUMN: Option<&'static str> = None;
 
     /// Returns a reference to the columns.
@@ -84,10 +84,10 @@ pub trait Schema: 'static + Send + Sync + Model {
         let mut columns = Vec::new();
         for col in Self::columns() {
             let name = col.name();
-            let postgres_type = col.postgres_type();
-            let mut column = format!("{name} {postgres_type}");
+            let column_type = col.column_type();
+            let mut column = format!("{name} {column_type}");
             if let Some(value) = col.default_value() {
-                column = column + " DEFAULT " + &col.format_postgres_value(value);
+                column = column + " DEFAULT " + &col.format_value(value);
             } else if col.is_not_null() {
                 column += " NOT NULL";
             }
@@ -172,7 +172,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let mut values = Vec::new();
         for col in Self::columns() {
             let column = col.name();
-            let value = col.encode_postgres_value(map.get(column));
+            let value = col.encode_value(map.get(column));
             columns.push(column);
             values.push(value);
         }
@@ -195,7 +195,7 @@ pub trait Schema: 'static + Send + Sync + Model {
             let mut entries = Vec::new();
             for col in Self::columns() {
                 let column = col.name();
-                let value = col.encode_postgres_value(map.get(column));
+                let value = col.encode_value(map.get(column));
                 columns.push(column);
                 entries.push(value);
             }
@@ -220,7 +220,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         for col in Self::columns() {
             let column = col.name();
             if column != primary_key_name {
-                let value = col.encode_postgres_value(map.get(column));
+                let value = col.encode_value(map.get(column));
                 mutations.push(format!("{column} = {value}"));
             }
         }
@@ -273,7 +273,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let mut mutations = Vec::new();
         for col in Self::columns() {
             let column = col.name();
-            let value = col.encode_postgres_value(map.get(column));
+            let value = col.encode_value(map.get(column));
             if column != primary_key_name {
                 mutations.push(format!("{column} = {value}"));
             }
@@ -350,14 +350,14 @@ pub trait Schema: 'static + Send + Sync + Model {
             while let Some(row) = rows.try_next().await? {
                 let mut map = Map::with_capacity(capacity);
                 for col in columns {
-                    let value = col.decode_postgres_row(&row)?;
+                    let value = col.decode_row(&row)?;
                     map.insert(col.name().to_owned(), value);
                 }
                 data.push(map);
             }
         } else {
             while let Some(row) = rows.try_next().await? {
-                let map = Column::parse_postgres_row(&row)?;
+                let map = Column::parse_row(&row)?;
                 data.push(map);
             }
         }
@@ -385,12 +385,12 @@ pub trait Schema: 'static + Send + Sync + Model {
                     let columns = Self::columns();
                     let mut map = Map::with_capacity(columns.len());
                     for col in columns {
-                        let value = col.decode_postgres_row(&row)?;
+                        let value = col.decode_row(&row)?;
                         map.insert(col.name().to_owned(), value);
                     }
                     Some(map)
                 } else {
-                    let map = Column::parse_postgres_row(&row)?;
+                    let map = Column::parse_row(&row)?;
                     Some(map)
                 }
             }
@@ -409,9 +409,9 @@ pub trait Schema: 'static + Send + Sync + Model {
         }
     }
 
-    /// Fetches the associated data in the corresponding `columns` for `Vec<Map>` using
+    /// Finds the related data in the corresponding `columns` for `Vec<Map>` using
     /// a merged select on the primary key, which solves the `N+1` problem.
-    async fn fetch<const N: usize>(
+    async fn find_related<const N: usize>(
         mut query: Query,
         data: &mut Vec<Map>,
         columns: [&str; N],
@@ -451,7 +451,7 @@ pub trait Schema: 'static + Send + Sync + Model {
                 let primary_key_value = row.try_get_unchecked::<String, _>(primary_key_name)?;
                 let mut map = Map::with_capacity(capacity);
                 for col in columns {
-                    let value = col.decode_postgres_row(&row)?;
+                    let value = col.decode_row(&row)?;
                     map.insert(col.name().to_owned(), value);
                 }
                 associations.insert(primary_key_value, map.into());
@@ -459,7 +459,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         } else {
             while let Some(row) = rows.try_next().await? {
                 let primary_key_value = row.try_get_unchecked::<String, _>(primary_key_name)?;
-                let map = Column::parse_postgres_row(&row)?;
+                let map = Column::parse_row(&row)?;
                 associations.insert(primary_key_value, map.into());
             }
         }
@@ -485,9 +485,9 @@ pub trait Schema: 'static + Send + Sync + Model {
         u64::try_from(associations.len()).map_err(|err| Error::Decode(Box::new(err)))
     }
 
-    /// Fetches the associated data in the corresponding `columns` for `Map` using
+    /// Finds the related data in the corresponding `columns` for `Map` using
     /// a merged select on the primary key, which solves the `N+1` problem.
-    async fn fetch_one<const N: usize>(
+    async fn find_related_one<const N: usize>(
         mut query: Query,
         data: &mut Map,
         columns: [&str; N],
@@ -525,7 +525,7 @@ pub trait Schema: 'static + Send + Sync + Model {
                 let primary_key_value = row.try_get_unchecked::<String, _>(primary_key_name)?;
                 let mut map = Map::with_capacity(capacity);
                 for col in columns {
-                    let value = col.decode_postgres_row(&row)?;
+                    let value = col.decode_row(&row)?;
                     map.insert(col.name().to_owned(), value);
                 }
                 associations.insert(primary_key_value, map.into());
@@ -533,7 +533,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         } else {
             while let Some(row) = rows.try_next().await? {
                 let primary_key_value = row.try_get_unchecked::<String, _>(primary_key_name)?;
-                let map = Column::parse_postgres_row(&row)?;
+                let map = Column::parse_row(&row)?;
                 associations.insert(primary_key_value, map.into());
             }
         }
@@ -580,7 +580,7 @@ pub trait Schema: 'static + Send + Sync + Model {
             .collect::<String>();
         let sql = format!("SELECT {projection} FROM {table_name} {filter};");
         let row = sqlx::query(&sql).fetch_one(pool).await?;
-        let map = Column::parse_postgres_row(&row)?;
+        let map = Column::parse_row(&row)?;
         Ok(map)
     }
 
@@ -612,7 +612,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let mut rows = query.fetch(pool);
         let mut data = Vec::new();
         while let Some(row) = rows.try_next().await? {
-            let map = Column::parse_postgres_row(&row)?;
+            let map = Column::parse_row(&row)?;
             data.push(map);
         }
         Ok(data)
@@ -641,7 +641,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         }
         let data = match query.fetch_optional(pool).await? {
             Some(row) => {
-                let map = Column::parse_postgres_row(&row)?;
+                let map = Column::parse_row(&row)?;
                 Some(map)
             }
             None => None,
@@ -667,7 +667,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let primary_key = Column::format_postgres_string(primary_key);
+        let primary_key = Column::format_string(primary_key);
         let sql = format!(
             "
                 SELECT * FROM {table_name} WHERE {primary_key_name} = {primary_key};
@@ -675,7 +675,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         );
         match sqlx::query(&sql).fetch_optional(pool).await? {
             Some(row) => {
-                let map = Column::parse_postgres_row(&row)?;
+                let map = Column::parse_row(&row)?;
                 serde_json::from_value(map.into()).map_err(|err| Error::Decode(Box::new(err)))
             }
             None => Err(Error::RowNotFound),

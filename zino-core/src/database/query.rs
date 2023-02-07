@@ -1,5 +1,5 @@
 use crate::{
-    database::{Column, Schema},
+    database::{Column, ColumnExt, Schema},
     extend::JsonObjectExt,
     request::Validation,
     Map,
@@ -260,7 +260,7 @@ impl Query {
                 }
                 _ => {
                     if let Some(col) = M::get_column(key) {
-                        let condition = col.format_postgres_filter(key, value);
+                        let condition = col.format_filter(key, value);
                         conditions.push(condition);
                     }
                 }
@@ -337,10 +337,10 @@ impl Query {
                             } else {
                                 ">"
                             };
-                            let value = col.encode_postgres_value(value);
+                            let value = col.encode_value(value);
                             format!("{key} {operator} {value}")
                         } else {
-                            col.format_postgres_filter(key, value)
+                            col.format_filter(key, value)
                         };
                         conditions.push(condition);
                     }
@@ -388,7 +388,7 @@ impl Query {
                 let column = columns.join(" || ' ' || ");
                 let language = Validation::parse_string(filter.get("$language"))
                     .unwrap_or_else(|| "english".to_owned());
-                let search = Column::format_postgres_string(&search);
+                let search = Column::format_string(&search);
                 let condition = format!(
                     "to_tsvector('{language}', {column}) @@ websearch_to_tsquery('{language}', '{search}')",
                 );

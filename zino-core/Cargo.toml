@@ -103,6 +103,9 @@ version = "0.6.2"
 features = [
     "runtime-tokio-native-tls",
     "postgres",
+    "mysql",
+    "mssql",
+    "sqlite",
     "uuid",
     "chrono",
     "json",

@@ -1,4 +1,8 @@
-use crate::{database::Schema, request::Validation, Map};
+use crate::{
+    database::{ColumnExt, Schema},
+    request::Validation,
+    Map,
+};
 
 #[derive(Debug, Clone, Default)]
 /// SQL mutation builder.
@@ -97,7 +101,7 @@ impl Mutation {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
                             if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let value = col.encode_postgres_value(value);
+                                let value = col.encode_value(value);
                                 let mutation = format!("{key} = {key} || {value}");
                                 mutations.push(mutation);
                             }
@@ -108,7 +112,7 @@ impl Mutation {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
                             if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let value = col.encode_postgres_value(value);
+                                let value = col.encode_value(value);
                                 let mutation = format!("{key} = {value} || {key}");
                                 mutations.push(mutation);
                             }
@@ -119,7 +123,7 @@ impl Mutation {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
                             if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let value = col.encode_postgres_value(value);
+                                let value = col.encode_value(value);
                                 let mutation = format!("{key} = array_remove({key}, {value})");
                                 mutations.push(mutation);
                             }
@@ -130,7 +134,7 @@ impl Mutation {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
                             if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let value = col.encode_postgres_value(value);
+                                let value = col.encode_value(value);
                                 let mutation = format!("{key} = {key} + {value}");
                                 mutations.push(mutation);
                             }
@@ -141,7 +145,7 @@ impl Mutation {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
                             if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let value = col.encode_postgres_value(value);
+                                let value = col.encode_value(value);
                                 let mutation = format!("{key} = {key} * {value}");
                                 mutations.push(mutation);
                             }
@@ -152,7 +156,7 @@ impl Mutation {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
                             if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let value = col.encode_postgres_value(value);
+                                let value = col.encode_value(value);
                                 let mutation = format!("{key} = LEAST({key}, {value})");
                                 mutations.push(mutation);
                             }
@@ -163,7 +167,7 @@ impl Mutation {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
                             if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let value = col.encode_postgres_value(value);
+                                let value = col.encode_value(value);
                                 let mutation = format!("{key} = GREATEST({key}, {value})");
                                 mutations.push(mutation);
                             }
@@ -172,7 +176,7 @@ impl Mutation {
                 }
                 _ => {
                     if fields.contains(key) && let Some(col) = M::get_column(key) {
-                        let value = col.encode_postgres_value(value);
+                        let value = col.encode_value(value);
                         let mutation = format!("{key} = {value}");
                         mutations.push(mutation);
                     }

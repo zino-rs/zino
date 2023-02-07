@@ -2,6 +2,7 @@
 //!
 //! [`zino`]: https://github.com/photino/zino
 
+#![feature(associated_type_defaults)]
 #![feature(async_fn_in_trait)]
 #![feature(doc_auto_cfg)]
 #![feature(io_error_other)]
