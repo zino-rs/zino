@@ -160,7 +160,7 @@ impl Application for AxumCluster {
                             }))
                             .layer(TimeoutLayer::new(Duration::from_secs(request_timeout))),
                     );
-                tracing::info!(env = app_env, "listen on {listener}");
+                tracing::warn!(env = app_env, "listen on {listener}");
                 Server::bind(listener)
                     .serve(app.into_make_service_with_connect_info::<SocketAddr>())
             });

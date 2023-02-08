@@ -1,21 +1,23 @@
 //! Database connectors.
 
-use crate::{extend::TomlTableExt, state::State};
-use sqlx::{
-    mssql::{MssqlConnectOptions, MssqlPool, MssqlPoolOptions},
-    mysql::{MySqlConnectOptions, MySqlPool, MySqlPoolOptions},
-    postgres::{PgConnectOptions, PgPool, PgPoolOptions},
-    sqlite::{SqliteConnectOptions, SqlitePool, SqlitePoolOptions},
-    Error,
-};
+use crate::{extend::TomlTableExt, state::State, Map};
+use sqlx::Error;
 use std::{collections::HashMap, sync::LazyLock};
 use toml::Table;
 
 mod data_source;
+mod serialize_row;
+
+/// Supported connectors.
+mod mssql_connector;
+mod mysql_connector;
+mod postgres_connector;
+mod sqlite_connector;
 
 pub use data_source::DataSource;
 
 use data_source::DataSourcePool;
+use serialize_row::SerializeRow;
 
 /// Underlying trait of all data sources for implementors.
 trait Connector {
@@ -28,106 +30,20 @@ trait Connector {
         sql: &str,
         params: Option<[&str; N]>,
     ) -> Result<u64, Error>;
-}
 
-impl Connector for MssqlPool {
-    fn new_data_source(config: &'static Table) -> DataSource {
-        let name = config.get_str("name").unwrap_or("mssql");
-        let database = config.get_str("database").unwrap_or("master");
-        let connect_options = MssqlConnectOptions::new();
-        let pool = MssqlPoolOptions::new().connect_lazy_with(connect_options);
-        DataSource::new(name, database, DataSourcePool::Mssql(pool))
-    }
-
-    async fn execute<const N: usize>(
+    /// Executes the query in the table, and parses it as `Vec<Map>`.
+    async fn query<const N: usize>(
         &self,
         sql: &str,
         params: Option<[&str; N]>,
-    ) -> Result<u64, Error> {
-        let mut query = sqlx::query(sql);
-        if let Some(params) = params {
-            for param in params {
-                query = query.bind(param);
-            }
-        }
-        let query_result = query.execute(self).await?;
-        Ok(query_result.rows_affected())
-    }
-}
+    ) -> Result<Vec<Map>, Error>;
 
-impl Connector for MySqlPool {
-    fn new_data_source(config: &'static Table) -> DataSource {
-        let name = config.get_str("name").unwrap_or("mysql");
-        let database = config.get_str("database").unwrap_or_default();
-        let connect_options = MySqlConnectOptions::new();
-        let pool = MySqlPoolOptions::new().connect_lazy_with(connect_options);
-        DataSource::new(name, database, DataSourcePool::MySql(pool))
-    }
-
-    async fn execute<const N: usize>(
+    /// Executes the query in the table, and parses it as a `Map`.
+    async fn query_one<const N: usize>(
         &self,
         sql: &str,
         params: Option<[&str; N]>,
-    ) -> Result<u64, Error> {
-        let mut query = sqlx::query(sql);
-        if let Some(params) = params {
-            for param in params {
-                query = query.bind(param);
-            }
-        }
-        let query_result = query.execute(self).await?;
-        Ok(query_result.rows_affected())
-    }
-}
-
-impl Connector for PgPool {
-    fn new_data_source(config: &'static Table) -> DataSource {
-        let name = config.get_str("name").unwrap_or("postgres");
-        let database = config.get_str("database").unwrap_or("postgres");
-        let connect_options = PgConnectOptions::new();
-        let pool = PgPoolOptions::new().connect_lazy_with(connect_options);
-        DataSource::new(name, database, DataSourcePool::Postgres(pool))
-    }
-
-    async fn execute<const N: usize>(
-        &self,
-        sql: &str,
-        params: Option<[&str; N]>,
-    ) -> Result<u64, Error> {
-        let mut query = sqlx::query(sql);
-        if let Some(params) = params {
-            for param in params {
-                query = query.bind(param);
-            }
-        }
-        let query_result = query.execute(self).await?;
-        Ok(query_result.rows_affected())
-    }
-}
-
-impl Connector for SqlitePool {
-    fn new_data_source(config: &'static Table) -> DataSource {
-        let name = config.get_str("name").unwrap_or("sqlite");
-        let database = config.get_str("database").unwrap_or_default();
-        let connect_options = SqliteConnectOptions::new();
-        let pool = SqlitePoolOptions::new().connect_lazy_with(connect_options);
-        DataSource::new(name, database, DataSourcePool::Sqlite(pool))
-    }
-
-    async fn execute<const N: usize>(
-        &self,
-        sql: &str,
-        params: Option<[&str; N]>,
-    ) -> Result<u64, Error> {
-        let mut query = sqlx::query(sql);
-        if let Some(params) = params {
-            for param in params {
-                query = query.bind(param);
-            }
-        }
-        let query_result = query.execute(self).await?;
-        Ok(query_result.rows_affected())
-    }
+    ) -> Result<Option<Map>, Error>;
 }
 
 /// Global database connector.

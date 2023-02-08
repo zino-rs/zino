@@ -334,11 +334,8 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
         for col in columns {
             let key = col.name();
             let value = match col.type_info().name() {
-                "INT8" => row.try_get_unchecked::<i64, _>(key)?.into(),
-                "INT4" => row.try_get_unchecked::<i32, _>(key)?.into(),
-                "INT2" => row.try_get_unchecked::<i16, _>(key)?.into(),
-                "FLOAT8" => row.try_get_unchecked::<f64, _>(key)?.into(),
-                "FLOAT4" => row.try_get_unchecked::<f32, _>(key)?.into(),
+                "INT8" | "INT4" | "INT2" => row.try_get_unchecked::<i64, _>(key)?.into(),
+                "FLOAT8" | "FLOAT4" => row.try_get_unchecked::<f64, _>(key)?.into(),
                 "BOOL" => row.try_get_unchecked::<bool, _>(key)?.into(),
                 "TEXT" | "VARCHAR" => row.try_get_unchecked::<String, _>(key)?.into(),
                 "TIMESTAMPTZ" => {
