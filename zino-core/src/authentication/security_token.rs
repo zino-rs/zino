@@ -1,4 +1,5 @@
-use crate::{authentication::AccessKeyId, crypto, datetime::DateTime, BoxError};
+use super::AccessKeyId;
+use crate::{crypto, datetime::DateTime, BoxError};
 use base64_simd::STANDARD_NO_PAD;
 use std::{error::Error, fmt};
 

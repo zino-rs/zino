@@ -1,4 +1,5 @@
-use crate::{application::Application, extend::TomlTableExt};
+use super::Application;
+use crate::extend::TomlTableExt;
 use std::{fs, io, path::Path, sync::OnceLock};
 use tracing::Level;
 use tracing_appender::{non_blocking::WorkerGuard, rolling};

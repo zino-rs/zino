@@ -1,4 +1,24 @@
 //! Unified data access to different storage services.
+//!
+//! Supported storage services:
+//! - `azblob`: Azure Storage Blob services.
+//! - `azdfs`: Azure Data Lake Storage Gen2 services.
+//! - `fs`: POSIX alike file system.
+//! - `ftp`: FTP and FTPS support.
+//! - `gcs`: Google Cloud Storage Service.
+//! - `ghac`: Github Action Cache Service.
+//! - `ipfs`: InterPlanetary File System HTTP Gateway support.
+//! - `ipmfs`: InterPlanetary File System MFS API support.
+//! - `memcached`: Memcached service support.
+//! - `memory`: In memory backend.
+//! - `moka`: Moka backend support.
+//! - `obs`: Huawei Cloud Object Storage Service (OBS).
+//! - `oss`: Aliyun Object Storage Service (OSS).
+//! - `redis`: Redis services support.
+//! - `s3`: AWS S3 alike services.
+//! - `webdav`: WebDAV Service Support.
+//! - `webhdfs`: WebHDFS Service Support.
+//!
 
 use crate::{extend::TomlTableExt, state::State};
 use backon::ExponentialBackoff;
@@ -6,7 +26,7 @@ use opendal::{
     layers::{MetricsLayer, RetryLayer, TracingLayer},
     services::{
         Azblob, Azdfs, Fs, Ftp, Gcs, Ghac, Ipfs, Ipmfs, Memcached, Memory, Moka, Obs, Oss, Redis,
-        Webdav, S3,
+        Webdav, Webhdfs, S3,
     },
     Builder, Error,
     ErrorKind::Unsupported,
@@ -285,6 +305,19 @@ impl GlobalAccessor {
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
                     builder.endpoint(endpoint);
+                }
+                Ok(Operator::new(builder.build()?).finish())
+            }
+            "webhdfs" => {
+                let mut builder = Webhdfs::default();
+                if let Some(root) = config.get_str("root") {
+                    builder.root(root);
+                }
+                if let Some(endpoint) = config.get_str("endpoint") {
+                    builder.endpoint(endpoint);
+                }
+                if let Some(delegation) = config.get_str("delegation") {
+                    builder.delegation(delegation);
                 }
                 Ok(Operator::new(builder.build()?).finish())
             }

@@ -1,4 +1,5 @@
-use crate::{application::Application, extend::TomlTableExt};
+use super::Application;
+use crate::extend::TomlTableExt;
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
 use metrics_exporter_tcp::TcpBuilder;
 use std::{net::IpAddr, time::Duration};
@@ -20,6 +21,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
                     let host_addr = host
                         .parse::<IpAddr>()
                         .unwrap_or_else(|err| panic!("invalid host address `{host}`: {err}"));
+                    tracing::warn!(exporter, "listen on {host_addr}:{port}");
                     PrometheusBuilder::new().with_http_listener((host_addr, port))
                 }
             };

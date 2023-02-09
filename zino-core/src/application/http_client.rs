@@ -1,5 +1,5 @@
+use super::Application;
 use crate::{
-    application::Application,
     extend::{JsonObjectExt, TomlTableExt},
     trace::TraceContext,
     BoxError, Map, Uuid,

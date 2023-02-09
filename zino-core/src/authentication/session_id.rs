@@ -1,4 +1,5 @@
-use crate::{authentication::AccessKeyId, request::Validation, BoxError, SharedString};
+use super::AccessKeyId;
+use crate::{request::Validation, BoxError, SharedString};
 use base64_simd::STANDARD_NO_PAD;
 use hmac::digest::{Digest, FixedOutput, HashMarker, Update};
 use std::{error::Error, fmt};

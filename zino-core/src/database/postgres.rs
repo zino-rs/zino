@@ -1,7 +1,5 @@
-use crate::{
-    database::{Column, ColumnExt},
-    Map, Uuid,
-};
+use super::{Column, ColumnExt};
+use crate::{Map, Uuid};
 use chrono::{DateTime, Local, SecondsFormat};
 use serde_json::Value;
 use sqlx::{postgres::PgRow, Column as _, Error, Postgres, Row, TypeInfo};

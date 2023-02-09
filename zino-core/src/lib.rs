@@ -4,6 +4,7 @@
 
 #![feature(associated_type_defaults)]
 #![feature(async_fn_in_trait)]
+#![feature(decl_macro)]
 #![feature(doc_auto_cfg)]
 #![feature(io_error_other)]
 #![feature(is_some_and)]

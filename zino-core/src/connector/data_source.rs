@@ -1,11 +1,11 @@
 use self::DataSourcePool::*;
-use crate::{connector::Connector, Map};
+use super::Connector;
+use crate::{BoxError, Map};
 use serde::de::DeserializeOwned;
-use sqlx::{mssql::MssqlPool, mysql::MySqlPool, postgres::PgPool, sqlite::SqlitePool, Error};
+use sqlx::{mssql::MssqlPool, mysql::MySqlPool, postgres::PgPool, sqlite::SqlitePool};
 use toml::Table;
 
 /// Supported data source pool.
-#[derive(Debug)]
 #[non_exhaustive]
 pub(super) enum DataSourcePool {
     /// MSSQL
@@ -43,15 +43,13 @@ impl DataSource {
     pub fn new_connector(
         database_type: &'static str,
         config: &'static Table,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, BoxError> {
         match database_type {
             "mssql" => Ok(MssqlPool::new_data_source(config)),
             "mysql" => Ok(MySqlPool::new_data_source(config)),
             "postgres" => Ok(PgPool::new_data_source(config)),
             "sqlite" => Ok(SqlitePool::new_data_source(config)),
-            _ => Err(Error::Protocol(format!(
-                "database type `{database_type}` is unsupported"
-            ))),
+            _ => Err(format!("database type `{database_type}` is unsupported").into()),
         }
     }
 
@@ -72,7 +70,7 @@ impl DataSource {
         &self,
         sql: &str,
         params: Option<[&str; N]>,
-    ) -> Result<u64, Error> {
+    ) -> Result<Option<u64>, BoxError> {
         match &self.pool {
             Mssql(pool) => pool.execute(sql, params).await,
             MySql(pool) => pool.execute(sql, params).await,
@@ -86,7 +84,7 @@ impl DataSource {
         &self,
         sql: &str,
         params: Option<[&str; N]>,
-    ) -> Result<Vec<Map>, Error> {
+    ) -> Result<Vec<Map>, BoxError> {
         match &self.pool {
             Mssql(pool) => pool.query::<N>(sql, params).await,
             MySql(pool) => pool.query::<N>(sql, params).await,
@@ -100,9 +98,9 @@ impl DataSource {
         &self,
         sql: &str,
         params: Option<[&str; N]>,
-    ) -> Result<Vec<T>, Error> {
+    ) -> Result<Vec<T>, BoxError> {
         let data = self.query::<N>(sql, params).await?;
-        serde_json::from_value(data.into()).map_err(|err| Error::Decode(Box::new(err)))
+        serde_json::from_value(data.into()).map_err(|err| err.into())
     }
 
     /// Executes the query in the table, and parses it as a `Map`.
@@ -110,7 +108,7 @@ impl DataSource {
         &self,
         sql: &str,
         params: Option<[&str; N]>,
-    ) -> Result<Option<Map>, Error> {
+    ) -> Result<Option<Map>, BoxError> {
         match &self.pool {
             Mssql(pool) => pool.query_one::<N>(sql, params).await,
             MySql(pool) => pool.query_one::<N>(sql, params).await,
@@ -124,11 +122,9 @@ impl DataSource {
         &self,
         sql: &str,
         params: Option<[&str; N]>,
-    ) -> Result<Option<T>, Error> {
+    ) -> Result<Option<T>, BoxError> {
         match self.query_one::<N>(sql, params).await? {
-            Some(data) => {
-                serde_json::from_value(data.into()).map_err(|err| Error::Decode(Box::new(err)))
-            }
+            Some(data) => serde_json::from_value(data.into()).map_err(|err| err.into()),
             None => Ok(None),
         }
     }

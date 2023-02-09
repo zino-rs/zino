@@ -1,12 +1,18 @@
 //! Database connectors.
+//!
+//! Supported data sources:
+//! - `mssql`: MSSQL
+//! - `mysql`: MySQL
+//! - `postgres`: PostgreSQL
+//! - `sqlite`: SQLite
+//!
 
-use crate::{extend::TomlTableExt, state::State, Map};
-use sqlx::Error;
+use crate::{extend::TomlTableExt, state::State, BoxError, Map};
 use std::{collections::HashMap, sync::LazyLock};
 use toml::Table;
 
 mod data_source;
-mod serialize_row;
+mod sqlx_common;
 
 /// Supported connectors.
 mod mssql_connector;
@@ -17,7 +23,7 @@ mod sqlite_connector;
 pub use data_source::DataSource;
 
 use data_source::DataSourcePool;
-use serialize_row::SerializeRow;
+use sqlx_common::impl_sqlx_connector;
 
 /// Underlying trait of all data sources for implementors.
 trait Connector {
@@ -29,21 +35,21 @@ trait Connector {
         &self,
         sql: &str,
         params: Option<[&str; N]>,
-    ) -> Result<u64, Error>;
+    ) -> Result<Option<u64>, BoxError>;
 
     /// Executes the query in the table, and parses it as `Vec<Map>`.
     async fn query<const N: usize>(
         &self,
         sql: &str,
         params: Option<[&str; N]>,
-    ) -> Result<Vec<Map>, Error>;
+    ) -> Result<Vec<Map>, BoxError>;
 
     /// Executes the query in the table, and parses it as a `Map`.
     async fn query_one<const N: usize>(
         &self,
         sql: &str,
         params: Option<[&str; N]>,
-    ) -> Result<Option<Map>, Error>;
+    ) -> Result<Option<Map>, BoxError>;
 }
 
 /// Global database connector.

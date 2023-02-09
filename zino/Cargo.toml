@@ -29,9 +29,9 @@ async-trait = "0.1.64"
 futures = "0.3.26"
 hyper = "0.14.23"
 parking_lot = "0.12.1"
-serde_json = "1.0.92"
+serde_json = "1.0.93"
 serde_urlencoded = "0.7.1"
-toml = "0.7.1"
+toml = "0.7.2"
 tracing = "0.1.37"
 
 [dependencies.axum]

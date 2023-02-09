@@ -1,10 +1,7 @@
 //! Connection pool and ORM.
 
 use crate::{extend::TomlTableExt, state::State};
-use sqlx::{
-    postgres::{PgConnectOptions, PgPoolOptions},
-    Pool, Postgres,
-};
+use sqlx::postgres::{PgConnectOptions, PgPool, PgPoolOptions};
 use std::{sync::LazyLock, time::Duration};
 use toml::value::Table;
 
@@ -31,7 +28,7 @@ pub struct ConnectionPool {
     /// Database.
     database: &'static str,
     /// Pool.
-    pool: Pool<Postgres>,
+    pool: PgPool,
 }
 
 impl ConnectionPool {
@@ -101,7 +98,7 @@ impl ConnectionPool {
 
     /// Returns a reference to the pool.
     #[inline]
-    pub(crate) fn pool(&self) -> &Pool<Postgres> {
+    pub(crate) fn pool(&self) -> &PgPool {
         &self.pool
     }
 }

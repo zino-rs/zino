@@ -1,9 +1,5 @@
-use crate::{
-    database::{Column, ColumnExt, Schema},
-    extend::JsonObjectExt,
-    request::Validation,
-    Map,
-};
+use super::{Column, ColumnExt, Schema};
+use crate::{extend::JsonObjectExt, request::Validation, Map};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Default)]

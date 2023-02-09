@@ -8,7 +8,7 @@ publish = false
 [dependencies]
 axum = "0.6.4"
 fluent = "0.16.0"
-serde_json = "1.0.92"
+serde_json = "1.0.93"
 tracing = "0.1.37"
 
 [dependencies.zino]
@@ -19,7 +19,7 @@ features = ["axum"]
 [dependencies.zino-core]
 path = "../../zino-core"
 version = "0.5.3"
-features = ["view"]
+features = ["connector", "view"]
 
 [dependencies.zino-model]
 path = "../../zino-model"

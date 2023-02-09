@@ -1,7 +1,7 @@
 use self::RejectionKind::*;
+use super::Response;
 use crate::{
     request::{Context, RequestContext, Validation},
-    response::Response,
     trace::TraceContext,
     BoxError,
 };

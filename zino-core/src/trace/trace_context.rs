@@ -1,4 +1,5 @@
-use crate::{trace::TraceState, Uuid};
+use super::TraceState;
+use crate::Uuid;
 use http::header::HeaderMap;
 use tracing::Span;
 

@@ -1,8 +1,5 @@
-use crate::{
-    database::{ColumnExt, Schema},
-    request::Validation,
-    Map,
-};
+use super::{ColumnExt, Schema};
+use crate::{request::Validation, Map};
 
 #[derive(Debug, Clone, Default)]
 /// SQL mutation builder.
