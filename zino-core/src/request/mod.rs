@@ -14,7 +14,6 @@ use crate::{
 use cookie::{Cookie, SameSite};
 use fluent::FluentArgs;
 use http::uri::Uri;
-use reqwest::IntoUrl;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::time::{Duration, Instant};
@@ -143,7 +142,7 @@ pub trait RequestContext {
         &self,
         name: impl Into<SharedString>,
         value: impl Into<SharedString>,
-        max_age: impl Into<Option<Duration>>,
+        max_age: Option<Duration>,
     ) -> Cookie<'static> {
         let original_uri = self.original_uri();
         let mut cookie_builder = Cookie::build(name, value)
@@ -153,7 +152,7 @@ pub trait RequestContext {
         if let Some(host) = original_uri.host() {
             cookie_builder = cookie_builder.domain(host.to_owned());
         }
-        if let Some(max_age) = max_age.into().and_then(|d| d.try_into().ok()) {
+        if let Some(max_age) = max_age.and_then(|d| d.try_into().ok()) {
             cookie_builder = cookie_builder.max_age(max_age);
         }
         cookie_builder.finish()
@@ -280,7 +279,7 @@ pub trait RequestContext {
             if let Some(Ok(secs)) = Validation::parse_i64(query.get("expires")) {
                 if DateTime::now().timestamp() <= secs {
                     let expires = DateTime::from_timestamp(secs);
-                    authentication.set_expires(expires);
+                    authentication.set_expires(Some(expires));
                 } else {
                     validation.record_fail("expires", "valid period has expired");
                 }
@@ -437,8 +436,8 @@ pub trait RequestContext {
     /// using [`reqwest`](https://crates.io/crates/reqwest).
     async fn fetch(
         &self,
-        resource: impl IntoUrl,
-        options: impl Into<Option<Map>>,
+        resource: &str,
+        options: Option<Map>,
     ) -> Result<reqwest::Response, BoxError> {
         let trace_context = self.new_trace_context();
         http_client::request_builder(resource, options)?
@@ -450,12 +449,7 @@ pub trait RequestContext {
     }
 
     /// Translates the localization message.
-    fn translate<'a>(
-        &self,
-        message: &str,
-        args: impl Into<Option<FluentArgs<'a>>>,
-    ) -> Result<SharedString, BoxError> {
-        let args = args.into();
+    fn translate(&self, message: &str, args: Option<FluentArgs>) -> Result<SharedString, BoxError> {
         match self.locale() {
             Some(locale) => i18n::translate(locale, message, args),
             None => i18n::translate(&langid!("en-US"), message, args),

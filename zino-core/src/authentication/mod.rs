@@ -83,8 +83,8 @@ impl Authentication {
 
     /// Sets the `accept` header value.
     #[inline]
-    pub fn set_accept(&mut self, accept: impl Into<Option<String>>) {
-        self.accept = accept.into();
+    pub fn set_accept(&mut self, accept: Option<String>) {
+        self.accept = accept;
     }
 
     /// Sets the `content-md5` header value.
@@ -95,8 +95,8 @@ impl Authentication {
 
     /// Sets the `content-type` header value.
     #[inline]
-    pub fn set_content_type(&mut self, content_type: impl Into<Option<String>>) {
-        self.content_type = content_type.into();
+    pub fn set_content_type(&mut self, content_type: Option<String>) {
+        self.content_type = content_type;
     }
 
     /// Sets the header value for the date.
@@ -107,8 +107,8 @@ impl Authentication {
 
     /// Sets the expires timestamp.
     #[inline]
-    pub fn set_expires(&mut self, expires: impl Into<Option<DateTime>>) {
-        self.expires = expires.into();
+    pub fn set_expires(&mut self, expires: Option<DateTime>) {
+        self.expires = expires;
     }
 
     /// Sets the canonicalized headers.
@@ -134,8 +134,8 @@ impl Authentication {
 
     /// Sets the canonicalized resource.
     #[inline]
-    pub fn set_resource(&mut self, path: String, query: impl Into<Option<Map>>) {
-        if let Some(query) = query.into() {
+    pub fn set_resource(&mut self, path: String, query: Option<Map>) {
+        if let Some(query) = query {
             if query.is_empty() {
                 self.resource = path;
             } else {

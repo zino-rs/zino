@@ -8,17 +8,18 @@ use crate::{
     trace::TraceContext,
     BoxError, Map,
 };
-use hkdf::Hkdf;
-use reqwest::{IntoUrl, Response};
-use sha2::{Digest, Sha256};
+use reqwest::Response;
 use std::{collections::HashMap, env, path::PathBuf, sync::LazyLock, thread};
 use toml::value::Table;
 
 mod metrics_exporter;
+mod secret_key;
 mod system_monitor;
 mod tracing_subscriber;
 
 pub(crate) mod http_client;
+
+pub(crate) use secret_key::SECRET_KEY;
 
 /// Application.
 pub trait Application {
@@ -31,12 +32,13 @@ pub trait Application {
     /// Runs the application.
     fn run(self, async_jobs: HashMap<&'static str, AsyncCronJob>);
 
-    /// Boots the application. It also setups the tracing subscriber, the metrics exporter
-    /// and a global HTTP client.
+    /// Boots the application. It also setups the default secret key,
+    /// the tracing subscriber, the metrics exporter and a global HTTP client.
     fn boot() -> Self
     where
         Self: Default,
     {
+        secret_key::init::<Self>();
         tracing_subscriber::init::<Self>();
         metrics_exporter::init::<Self>();
         http_client::init::<Self>();
@@ -104,7 +106,7 @@ pub trait Application {
     /// It should have at least 64 bytes.
     #[inline]
     fn secret_key() -> &'static [u8] {
-        SECRET_KEY.as_ref()
+        SECRET_KEY.get().expect("failed to get the secret key")
     }
 
     /// Spawns a new thread to run cron jobs.
@@ -125,10 +127,7 @@ pub trait Application {
 
     /// Makes an HTTP request to the provided resource
     /// using [`reqwest`](https://crates.io/crates/reqwest).
-    async fn fetch(
-        resource: impl IntoUrl,
-        options: impl Into<Option<Map>>,
-    ) -> Result<Response, BoxError> {
+    async fn fetch(resource: &str, options: Option<Map>) -> Result<Response, BoxError> {
         let mut trace_context = TraceContext::new();
         let span_id = trace_context.span_id();
         trace_context
@@ -147,35 +146,6 @@ pub trait Application {
 pub(crate) static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     env::current_dir()
         .expect("the project directory does not exist or permissions are insufficient")
-});
-
-/// Secret key.
-pub(crate) static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
-    let state = State::default();
-    let config = state.config();
-    let app_checksum: [u8; 32] = config
-        .get_str("checksum")
-        .and_then(|checksum| checksum.as_bytes().try_into().ok())
-        .unwrap_or_else(|| {
-            let app_name = config
-                .get_str("name")
-                .expect("the `name` field should be a str");
-            let app_version = config
-                .get_str("version")
-                .expect("the `version` field should be a str");
-            let app_key = format!("{app_name}@{app_version}");
-
-            let mut hasher = Sha256::new();
-            hasher.update(app_key.as_bytes());
-            hasher.finalize().into()
-        });
-
-    let mut secret_key = [0; 64];
-    Hkdf::<Sha256>::from_prk(&app_checksum)
-        .expect("pseudorandom key is not long enough")
-        .expand(b"ZINO;CHECKSUM:SHA256;HKDF:HMAC-SHA256", &mut secret_key)
-        .expect("invalid length for Sha256 to output");
-    secret_key
 });
 
 /// Shared app state.

@@ -16,30 +16,30 @@ pub struct Subscription {
 impl Subscription {
     /// Creates a new instance.
     #[inline]
-    pub fn new(source: impl Into<Option<String>>, topic: impl Into<Option<String>>) -> Self {
+    pub fn new(source: Option<String>, topic: Option<String>) -> Self {
         Self {
             session_id: None,
-            source: source.into(),
-            topic: topic.into(),
+            source,
+            topic,
         }
     }
 
     /// Sets the session ID.
     #[inline]
-    pub fn set_session_id(&mut self, session_id: impl Into<Option<String>>) {
-        self.session_id = session_id.into();
+    pub fn set_session_id(&mut self, session_id: Option<String>) {
+        self.session_id = session_id;
     }
 
     /// Sets the source.
     #[inline]
-    pub fn set_source(&mut self, source: impl Into<Option<String>>) {
-        self.source = source.into();
+    pub fn set_source(&mut self, source: Option<String>) {
+        self.source = source;
     }
 
     /// Sets the topic.
     #[inline]
-    pub fn set_topic(&mut self, topic: impl Into<Option<String>>) {
-        self.topic = topic.into();
+    pub fn set_topic(&mut self, topic: Option<String>) {
+        self.topic = topic;
     }
 
     /// Returns the session ID.

@@ -123,29 +123,64 @@ impl State {
     /// Encrypts the password in the config.
     pub fn encrypt_password(config: &Table) -> Option<Cow<'_, str>> {
         let password = config.get_str("password")?;
-        let key = application::SECRET_KEY.as_ref();
-        if let Ok(data) = STANDARD_NO_PAD.decode_to_vec(password) &&
-            crypto::decrypt(key, &data).is_ok()
-        {
-            Some(password.into())
-        } else {
-            crypto::encrypt(key, password.as_bytes())
-                .inspect_err(|_| tracing::error!("failed to encrypt the password"))
-                .ok()
-                .map(|bytes| STANDARD_NO_PAD.encode_to_string(bytes).into())
-        }
+        application::SECRET_KEY.get().and_then(|key| {
+            if let Ok(data) = STANDARD_NO_PAD.decode_to_vec(password) &&
+                crypto::decrypt(key, &data).is_ok()
+            {
+                Some(password.into())
+            } else {
+                crypto::encrypt(key, password.as_bytes())
+                    .inspect_err(|_| tracing::error!("failed to encrypt the password"))
+                    .ok()
+                    .map(|bytes| STANDARD_NO_PAD.encode_to_string(bytes).into())
+            }
+        })
     }
 
     /// Decrypts the password in the config.
     pub fn decrypt_password(config: &Table) -> Option<Cow<'_, str>> {
         let password = config.get_str("password")?;
         if let Ok(data) = STANDARD_NO_PAD.decode_to_vec(password) {
-            let key = application::SECRET_KEY.as_ref();
-            if let Ok(plaintext) = crypto::decrypt(key, &data) {
+            if let Some(key) = application::SECRET_KEY.get() &&
+                let Ok(plaintext) = crypto::decrypt(key, &data)
+            {
                 return Some(plaintext.into());
             }
         }
+        if let Some(encrypted_password) = Self::encrypt_password(config).as_deref() {
+            tracing::warn!(
+                encrypted_password,
+                "raw passowrd `{password}` should be encypted"
+            );
+        }
         Some(password.into())
+    }
+
+    /// Formats the authority in the config.
+    /// An authority can contain a username, password, host, and port number
+    /// formated as `{username}:{password}@{host}:{port}`.
+    pub fn format_authority(config: &Table, default_port: Option<u16>) -> String {
+        let mut authority = String::new();
+
+        // Username
+        let username = config.get_str("username").unwrap_or_default();
+        authority += username;
+
+        // Password
+        if let Some(password) = Self::decrypt_password(config) {
+            authority += &format!(":{password}@");
+        }
+
+        // Host
+        let host = config.get_str("host").unwrap_or("localhost");
+        authority += host;
+
+        // Port
+        if let Some(port) = config.get_u16("port").or(default_port) {
+            authority += &format!(":{port}");
+        }
+
+        authority
     }
 
     /// Returns a reference to the shared state.

@@ -46,8 +46,8 @@ impl Context {
 
     /// Sets the session ID.
     #[inline]
-    pub fn set_session_id(&mut self, session_id: impl Into<Option<String>>) {
-        self.session_id = session_id.into();
+    pub fn set_session_id(&mut self, session_id: Option<String>) {
+        self.session_id = session_id;
     }
 
     /// Sets the locale.

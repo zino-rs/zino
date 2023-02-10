@@ -1,10 +1,20 @@
 //! Database connectors.
 //!
 //! Supported data sources:
+//! - `ceresdb`: CeresDB
+//! - `citus`: Citus
+//! - `databend`: Databend
+//! - `hologres`: Aliyun Hologres
+//! - `mariadb`: MariaDB
 //! - `mssql`: MSSQL
 //! - `mysql`: MySQL
+//! - `opengauss`: openGauss
+//! - `postgis`: PostGIS
 //! - `postgres`: PostgreSQL
 //! - `sqlite`: SQLite
+//! - `taos`: TDengine
+//! - `tidb`: TiDB
+//! - `timescaledb`: TimescaleDB
 //!
 
 use crate::{extend::TomlTableExt, state::State, BoxError, Map};
@@ -19,6 +29,7 @@ mod mssql_connector;
 mod mysql_connector;
 mod postgres_connector;
 mod sqlite_connector;
+mod taos_connector;
 
 pub use data_source::DataSource;
 
@@ -28,28 +39,16 @@ use sqlx_common::impl_sqlx_connector;
 /// Underlying trait of all data sources for implementors.
 trait Connector {
     /// Creates a new data source with the configuration.
-    fn new_data_source(config: &'static Table) -> DataSource;
+    fn new_data_source(config: &'static Table) -> Result<DataSource, BoxError>;
 
     /// Executes the query and returns the total number of rows affected.
-    async fn execute<const N: usize>(
-        &self,
-        sql: &str,
-        params: Option<[&str; N]>,
-    ) -> Result<Option<u64>, BoxError>;
+    async fn execute(&self, sql: &str, params: Option<Map>) -> Result<Option<u64>, BoxError>;
 
     /// Executes the query in the table, and parses it as `Vec<Map>`.
-    async fn query<const N: usize>(
-        &self,
-        sql: &str,
-        params: Option<[&str; N]>,
-    ) -> Result<Vec<Map>, BoxError>;
+    async fn query(&self, sql: &str, params: Option<Map>) -> Result<Vec<Map>, BoxError>;
 
     /// Executes the query in the table, and parses it as a `Map`.
-    async fn query_one<const N: usize>(
-        &self,
-        sql: &str,
-        params: Option<[&str; N]>,
-    ) -> Result<Option<Map>, BoxError>;
+    async fn query_one(&self, sql: &str, params: Option<Map>) -> Result<Option<Map>, BoxError>;
 }
 
 /// Global database connector.

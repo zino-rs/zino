@@ -76,7 +76,7 @@ pub trait ColumnExt<DB: Database> {
     fn column_type(&self) -> &str;
 
     /// Encodes a json value as a column value represented by `String`.
-    fn encode_value<'q>(&self, value: impl Into<Option<&'q Value>>) -> String;
+    fn encode_value(&self, value: Option<&Value>) -> String;
 
     /// Decodes a row and gets a column value represented by `Value`.
     fn decode_row(&self, row: &Self::Row) -> Result<Value, Error>;

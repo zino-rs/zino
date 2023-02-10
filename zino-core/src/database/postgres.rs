@@ -26,8 +26,8 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
         }
     }
 
-    fn encode_value<'q>(&self, value: impl Into<Option<&'q Value>>) -> String {
-        match value.into() {
+    fn encode_value(&self, value: Option<&Value>) -> String {
+        match value {
             Some(value) => match value {
                 Value::Null => "NULL".to_owned(),
                 Value::Bool(value) => {
@@ -52,7 +52,7 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                         .iter()
                         .map(|v| match v {
                             Value::String(v) => Self::format_string(v),
-                            _ => self.encode_value(v),
+                            _ => self.encode_value(Some(v)),
                         })
                         .collect::<Vec<_>>();
                     format!("ARRAY[{}]::{}", values.join(","), self.column_type())
@@ -156,7 +156,7 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
         let type_name = self.type_name();
         if let Some(filter) = value.as_object() {
             if type_name == "Map" {
-                let value = self.encode_value(value);
+                let value = self.encode_value(Some(value));
                 return format!("{key} @> {value}");
             } else {
                 let mut conditions = Vec::new();
@@ -175,7 +175,7 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                         _ => "=",
                     };
                     if operator == "array_length" {
-                        let value = self.encode_value(value);
+                        let value = self.encode_value(Some(value));
                         let condition = format!("array_length({key}, 1) = {value}");
                         conditions.push(condition);
                     } else if operator == "IN" || operator == "NOT IN" {
@@ -183,7 +183,7 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                             if !value.is_empty() {
                                 let value = value
                                     .iter()
-                                    .map(|v| self.encode_value(v))
+                                    .map(|v| self.encode_value(Some(v)))
                                     .collect::<Vec<_>>()
                                     .join(",");
                                 let condition = format!("{key} {operator} ({value})");
@@ -191,7 +191,7 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                             }
                         }
                     } else {
-                        let value = self.encode_value(value);
+                        let value = self.encode_value(Some(value));
                         let condition = format!("{key} {operator} {value}");
                         conditions.push(condition);
                     }
@@ -222,12 +222,12 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                         }
                     }
                 } else {
-                    let value = self.encode_value(value);
+                    let value = self.encode_value(Some(value));
                     format!("{key} = {value}")
                 }
             }
             "bool" => {
-                let value = self.encode_value(value);
+                let value = self.encode_value(Some(value));
                 if value == "TRUE" {
                     format!("{key} IS TRUE")
                 } else {
@@ -253,7 +253,7 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                         }
                     }
                 } else {
-                    let value = self.encode_value(value);
+                    let value = self.encode_value(Some(value));
                     format!("{key} = {value}")
                 }
             }
@@ -275,7 +275,7 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                         format!("{key} = {value}")
                     }
                 } else {
-                    let value = self.encode_value(value);
+                    let value = self.encode_value(Some(value));
                     format!("{key} = {value}")
                 }
             }
@@ -300,7 +300,7 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                         format!("{key} && {value}")
                     }
                 } else {
-                    let value = self.encode_value(value);
+                    let value = self.encode_value(Some(value));
                     format!("{key} && {value}")
                 }
             }
@@ -310,12 +310,12 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                     let value = Self::format_string(value);
                     format!("{key} @@ {value}")
                 } else {
-                    let value = self.encode_value(value);
+                    let value = self.encode_value(Some(value));
                     format!("{key} @> {value}")
                 }
             }
             _ => {
-                let value = self.encode_value(value);
+                let value = self.encode_value(Some(value));
                 format!("{key} = {value}")
             }
         }

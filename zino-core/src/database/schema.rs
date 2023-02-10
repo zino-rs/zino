@@ -582,31 +582,18 @@ pub trait Schema: 'static + Send + Sync + Model {
     }
 
     /// Executes the query in the table, and returns the total number of rows affected.
-    async fn execute<const N: usize>(sql: &str, params: Option<[&str; N]>) -> Result<u64, Error> {
+    async fn execute(sql: &str, params: Option<Map>) -> Result<u64, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
-        let mut query = sqlx::query(sql);
-        if let Some(params) = params {
-            for param in params {
-                query = query.bind(param);
-            }
-        }
-        let query_result = query.execute(pool).await?;
+        let sql = Query::format_sql(sql, params);
+        let query_result = sqlx::query(&sql).execute(pool).await?;
         Ok(query_result.rows_affected())
     }
 
     /// Executes the query in the table, and parses it as `Vec<Map>`.
-    async fn query<const N: usize>(
-        sql: &str,
-        params: Option<[&str; N]>,
-    ) -> Result<Vec<Map>, Error> {
+    async fn query(sql: &str, params: Option<Map>) -> Result<Vec<Map>, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
-        let mut query = sqlx::query(sql);
-        if let Some(params) = params {
-            for param in params {
-                query = query.bind(param);
-            }
-        }
-        let mut rows = query.fetch(pool);
+        let sql = Query::format_sql(sql, params);
+        let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
         while let Some(row) = rows.try_next().await? {
             let map = Column::parse_row(&row)?;
@@ -616,27 +603,19 @@ pub trait Schema: 'static + Send + Sync + Model {
     }
 
     /// Executes the query in the table, and parses it as `Vec<T>`.
-    async fn query_as<T: DeserializeOwned, const N: usize>(
+    async fn query_as<T: DeserializeOwned>(
         sql: &str,
-        params: Option<[&str; N]>,
+        params: Option<Map>,
     ) -> Result<Vec<T>, Error> {
         let data = Self::query(sql, params).await?;
         serde_json::from_value(data.into()).map_err(|err| Error::Decode(Box::new(err)))
     }
 
     /// Executes the query in the table, and parses it as a `Map`.
-    async fn query_one<const N: usize>(
-        sql: &str,
-        params: Option<[&str; N]>,
-    ) -> Result<Option<Map>, Error> {
+    async fn query_one(sql: &str, params: Option<Map>) -> Result<Option<Map>, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
-        let mut query = sqlx::query(sql);
-        if let Some(params) = params {
-            for param in params {
-                query = query.bind(param);
-            }
-        }
-        let data = match query.fetch_optional(pool).await? {
+        let sql = Query::format_sql(sql, params);
+        let data = match sqlx::query(&sql).fetch_optional(pool).await? {
             Some(row) => {
                 let map = Column::parse_row(&row)?;
                 Some(map)
@@ -647,9 +626,9 @@ pub trait Schema: 'static + Send + Sync + Model {
     }
 
     /// Executes the query in the table, and parses it as an instance of type `T`.
-    async fn query_one_as<T: DeserializeOwned, const N: usize>(
+    async fn query_one_as<T: DeserializeOwned>(
         sql: &str,
-        params: Option<[&str; N]>,
+        params: Option<Map>,
     ) -> Result<Option<T>, Error> {
         match Self::query_one(sql, params).await? {
             Some(data) => {

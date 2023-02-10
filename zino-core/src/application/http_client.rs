@@ -6,7 +6,7 @@ use crate::{
 };
 use reqwest::{
     header::{self, HeaderMap, HeaderName},
-    Certificate, Client, IntoUrl, Method, Request, Response, Url,
+    Certificate, Client, Method, Request, Response, Url,
 };
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, Error, RequestBuilder};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
@@ -96,10 +96,10 @@ pub(super) fn init<APP: Application + ?Sized>() {
 
 /// Constructs a request builder.
 pub(crate) fn request_builder(
-    resource: impl IntoUrl,
-    options: impl Into<Option<Map>>,
+    resource: &str,
+    options: Option<Map>,
 ) -> Result<RequestBuilder, BoxError> {
-    let options = options.into().unwrap_or_default();
+    let options = options.unwrap_or_default();
     if options.is_empty() {
         let request_builder = SHARED_HTTP_CLIENT
             .get()

@@ -1,6 +1,7 @@
 use super::{Column, ColumnExt, Schema};
 use crate::{extend::JsonObjectExt, request::Validation, Map};
 use serde_json::Value;
+use std::borrow::Cow;
 
 #[derive(Debug, Clone, Default)]
 /// SQL query builder.
@@ -209,7 +210,7 @@ impl Query {
     }
 
     /// Formats projection fields.
-    pub(crate) fn format_fields(&self) -> String {
+    pub(super) fn format_fields(&self) -> String {
         let fields = &self.fields;
         if fields.is_empty() {
             "*".to_owned()
@@ -270,7 +271,7 @@ impl Query {
     }
 
     /// Formats the query filter to generate SQL `WHERE` expression.
-    pub(crate) fn format_filter<M: Schema>(&self) -> String {
+    pub(super) fn format_filter<M: Schema>(&self) -> String {
         let filter = &self.filter;
         if filter.is_empty() {
             return String::new();
@@ -333,7 +334,7 @@ impl Query {
                             } else {
                                 ">"
                             };
-                            let value = col.encode_value(value);
+                            let value = col.encode_value(Some(value));
                             format!("{key} {operator} {value}")
                         } else {
                             col.format_filter(key, value)
@@ -357,7 +358,7 @@ impl Query {
     }
 
     /// Formats the query sort to generate SQL `ORDER BY` expression.
-    pub(crate) fn format_sort(&self) -> String {
+    pub(super) fn format_sort(&self) -> String {
         let order = &self.order;
         if order.is_empty() {
             String::new()
@@ -367,7 +368,7 @@ impl Query {
     }
 
     /// Formats the query pagination to generate SQL `LIMIT` expression.
-    pub(crate) fn format_pagination(&self) -> String {
+    pub(super) fn format_pagination(&self) -> String {
         if let Some((sort_by, _)) = self.order.split_once(' ') {
             if self.filter.contains_key(sort_by) {
                 return format!("LIMIT {}", self.limit);
@@ -392,5 +393,27 @@ impl Query {
             }
         }
         None
+    }
+
+    /// Formats the sql with the params.
+    pub(crate) fn format_sql(sql: &str, params: Option<Map>) -> Cow<'_, str> {
+        if let Some(params) = params {
+            if params.is_empty() {
+                Cow::Borrowed(sql)
+            } else {
+                let mut sql = sql.to_owned();
+                for (key, value) in params {
+                    let pattern = format!("\\{{{key}\\}}");
+                    let value = match value {
+                        Value::String(s) => s,
+                        _ => value.to_string(),
+                    };
+                    sql = sql.replace(&pattern, &value);
+                }
+                sql.into()
+            }
+        } else {
+            Cow::Borrowed(sql)
+        }
     }
 }

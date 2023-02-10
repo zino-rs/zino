@@ -60,13 +60,13 @@ pub(crate) async fn view(mut req: Request) -> zino::Result {
 
     let db_query_start_time = Instant::now();
     let user: Map = User::find_one(query).await.extract_with_context(&req)?;
-    res.record_server_timing("db", None, db_query_start_time.elapsed());
+    res.record_server_timing("db", None, Some(db_query_start_time.elapsed()));
 
     let args = fluent_args![
         "name" => user.get_str("name").unwrap_or_default()
     ];
     let user_intro = req
-        .translate("user-intro", args)
+        .translate("user-intro", Some(args))
         .extract_with_context(&req)?;
     let data = json!({
         "user": user,

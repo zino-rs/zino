@@ -19,6 +19,7 @@ all-features = true
 accessor = ["dep:backon", "dep:opendal"]
 cache = ["dep:lru"]
 connector = [
+    "dep:taos",
     "sqlx/mssql",
     "sqlx/mysql",
     "sqlx/sqlite",
@@ -111,6 +112,12 @@ features = [
     "chrono",
     "json",
 ]
+
+[dependencies.taos]
+version = "0.4.18"
+default-features = false
+features = ["ws"]
+optional = true
 
 [dependencies.tera]
 version = "1.17.1"

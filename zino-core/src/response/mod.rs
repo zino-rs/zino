@@ -244,8 +244,8 @@ impl<S: ResponseCode> Response<S> {
 
     /// Sets the trace context from headers.
     #[inline]
-    pub(crate) fn set_trace_context(&mut self, trace_context: impl Into<Option<TraceContext>>) {
-        self.trace_context = trace_context.into();
+    pub(crate) fn set_trace_context(&mut self, trace_context: Option<TraceContext>) {
+        self.trace_context = trace_context;
     }
 
     /// Sets the start time.
@@ -259,9 +259,9 @@ impl<S: ResponseCode> Response<S> {
         &mut self,
         name: impl Into<SharedString>,
         description: Option<SharedString>,
-        duration: impl Into<Option<Duration>>,
+        duration: Option<Duration>,
     ) {
-        let metric = TimingMetric::new(name.into(), description, duration.into());
+        let metric = TimingMetric::new(name.into(), description, duration);
         self.server_timing.push(metric);
     }
 
@@ -371,7 +371,7 @@ impl<S: ResponseCode> From<Response<S>> for http::Response<Full<Bytes>> {
         }
 
         let duration = response.start_time.elapsed();
-        response.record_server_timing("total", None, duration);
+        response.record_server_timing("total", None, Some(duration));
         if let Ok(header_value) = HeaderValue::try_from(response.server_timing.to_string()) {
             res.headers_mut().insert("server-timing", header_value);
         }

@@ -11,6 +11,7 @@
 //! - `ipmfs`: InterPlanetary File System MFS API support.
 //! - `memcached`: Memcached service support.
 //! - `memory`: In memory backend.
+//! - `minio`: MinIO services support.
 //! - `moka`: Moka backend support.
 //! - `obs`: Huawei Cloud Object Storage Service (OBS).
 //! - `oss`: Aliyun Object Storage Service (OSS).
@@ -270,7 +271,7 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder.build()?).finish())
             }
-            "s3" => {
+            "s3" | "minio" => {
                 let mut builder = S3::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);

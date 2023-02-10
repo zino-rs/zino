@@ -75,8 +75,8 @@ impl Job {
 
     /// Sets last tick.
     #[inline]
-    pub fn set_last_tick(&mut self, last_tick: impl Into<Option<DateTime>>) {
-        self.last_tick = last_tick.into().map(|dt| dt.into());
+    pub fn set_last_tick(&mut self, last_tick: Option<DateTime>) {
+        self.last_tick = last_tick.map(|dt| dt.into());
     }
 
     /// Executes missed runs.

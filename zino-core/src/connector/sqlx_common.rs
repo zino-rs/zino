@@ -1,4 +1,4 @@
-use crate::{BoxError, Map};
+use crate::{database::Query, BoxError, Map};
 use futures::TryStreamExt;
 use serde::ser::{self, Serialize, SerializeMap, Serializer};
 use serde_json::Value;
@@ -51,32 +51,16 @@ fn map_serialize<'r, M: SerializeMap, DB: Database, T: Decode<'r, DB> + Serializ
 }
 
 pub(super) macro impl_sqlx_connector($pool:ty) {
-    async fn execute<const N: usize>(
-        &self,
-        sql: &str,
-        params: Option<[&str; N]>,
-    ) -> Result<Option<u64>, BoxError> {
-        let mut query = sqlx::query(sql);
-        if let Some(params) = params {
-            for param in params {
-                query = query.bind(param);
-            }
-        }
+    async fn execute(&self, sql: &str, params: Option<Map>) -> Result<Option<u64>, BoxError> {
+        let sql = Query::format_sql(sql, params);
+        let query = sqlx::query(sql.as_ref());
         let query_result = query.execute(self).await?;
         Ok(Some(query_result.rows_affected()))
     }
 
-    async fn query<const N: usize>(
-        &self,
-        sql: &str,
-        params: Option<[&str; N]>,
-    ) -> Result<Vec<Map>, BoxError> {
-        let mut query = sqlx::query(sql);
-        if let Some(params) = params {
-            for param in params {
-                query = query.bind(param);
-            }
-        }
+    async fn query(&self, sql: &str, params: Option<Map>) -> Result<Vec<Map>, BoxError> {
+        let sql = Query::format_sql(sql, params);
+        let query = sqlx::query(sql.as_ref());
         let mut rows = query.fetch(self);
         let mut data = Vec::new();
         while let Some(row) = rows.try_next().await? {
@@ -88,17 +72,9 @@ pub(super) macro impl_sqlx_connector($pool:ty) {
         Ok(data)
     }
 
-    async fn query_one<const N: usize>(
-        &self,
-        sql: &str,
-        params: Option<[&str; N]>,
-    ) -> Result<Option<Map>, BoxError> {
-        let mut query = sqlx::query(sql);
-        if let Some(params) = params {
-            for param in params {
-                query = query.bind(param);
-            }
-        }
+    async fn query_one(&self, sql: &str, params: Option<Map>) -> Result<Option<Map>, BoxError> {
+        let sql = Query::format_sql(sql, params);
+        let query = sqlx::query(sql.as_ref());
         let data = match query.fetch_optional(self).await? {
             Some(row) => {
                 let value = serde_json::to_value(&SerializeRow(row))?;
