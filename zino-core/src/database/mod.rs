@@ -1,4 +1,4 @@
-//! Connection pool and ORM.
+//! Database model schema and SQL builder.
 
 use crate::{extend::TomlTableExt, state::State};
 use sqlx::postgres::{PgConnectOptions, PgPool, PgPoolOptions};

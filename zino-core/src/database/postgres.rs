@@ -99,6 +99,41 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
         Ok(value)
     }
 
+    fn parse_row(row: &Self::Row) -> Result<Map, Error> {
+        let columns = row.columns();
+        let mut map = Map::with_capacity(columns.len());
+        for col in columns {
+            let key = col.name();
+            let value = match col.type_info().name() {
+                "INT8" | "INT4" | "INT2" => row.try_get_unchecked::<i64, _>(key)?.into(),
+                "FLOAT8" | "FLOAT4" => row.try_get_unchecked::<f64, _>(key)?.into(),
+                "BOOL" => row.try_get_unchecked::<bool, _>(key)?.into(),
+                "TEXT" | "VARCHAR" => row.try_get_unchecked::<String, _>(key)?.into(),
+                "TIMESTAMPTZ" => {
+                    let datetime = row.try_get_unchecked::<DateTime<Local>, _>(key)?;
+                    datetime
+                        .to_rfc3339_opts(SecondsFormat::Micros, false)
+                        .into()
+                }
+                "UUID" => row.try_get_unchecked::<Uuid, _>(key)?.to_string().into(),
+                "BYTEA" => row.try_get_unchecked::<Vec<u8>, _>(key)?.into(),
+                "TEXT[]" => row.try_get_unchecked::<Vec<String>, _>(key)?.into(),
+                "UUID[]" => {
+                    let values = row.try_get_unchecked::<Vec<Uuid>, _>(key)?;
+                    values
+                        .iter()
+                        .map(|v| v.to_string())
+                        .collect::<Vec<_>>()
+                        .into()
+                }
+                "JSONB" | "JSON" => row.try_get_unchecked::<Value, _>(key)?,
+                _ => Value::Null,
+            };
+            map.insert(key.to_owned(), value);
+        }
+        Ok(map)
+    }
+
     fn format_value(&self, value: &str) -> String {
         match self.type_name() {
             "u64" | "u32" | "u16" => {
@@ -319,45 +354,5 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                 format!("{key} = {value}")
             }
         }
-    }
-
-    #[inline]
-    fn format_string(value: &str) -> String {
-        format!("'{}'", value.replace('\'', "''"))
-    }
-
-    fn parse_row(row: &Self::Row) -> Result<Map, Error> {
-        let columns = row.columns();
-        let mut map = Map::with_capacity(columns.len());
-        for col in columns {
-            let key = col.name();
-            let value = match col.type_info().name() {
-                "INT8" | "INT4" | "INT2" => row.try_get_unchecked::<i64, _>(key)?.into(),
-                "FLOAT8" | "FLOAT4" => row.try_get_unchecked::<f64, _>(key)?.into(),
-                "BOOL" => row.try_get_unchecked::<bool, _>(key)?.into(),
-                "TEXT" | "VARCHAR" => row.try_get_unchecked::<String, _>(key)?.into(),
-                "TIMESTAMPTZ" => {
-                    let datetime = row.try_get_unchecked::<DateTime<Local>, _>(key)?;
-                    datetime
-                        .to_rfc3339_opts(SecondsFormat::Micros, false)
-                        .into()
-                }
-                "UUID" => row.try_get_unchecked::<Uuid, _>(key)?.to_string().into(),
-                "BYTEA" => row.try_get_unchecked::<Vec<u8>, _>(key)?.into(),
-                "TEXT[]" => row.try_get_unchecked::<Vec<String>, _>(key)?.into(),
-                "UUID[]" => {
-                    let values = row.try_get_unchecked::<Vec<Uuid>, _>(key)?;
-                    values
-                        .iter()
-                        .map(|v| v.to_string())
-                        .collect::<Vec<_>>()
-                        .into()
-                }
-                "JSONB" | "JSON" => row.try_get_unchecked::<Value, _>(key)?,
-                _ => Value::Null,
-            };
-            map.insert(key.to_owned(), value);
-        }
-        Ok(map)
     }
 }

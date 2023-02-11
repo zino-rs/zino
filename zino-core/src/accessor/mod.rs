@@ -41,12 +41,6 @@ use toml::Table;
 pub struct GlobalAccessor;
 
 impl GlobalAccessor {
-    /// Gets the operator for the specific storage service.
-    #[inline]
-    pub fn get(name: &'static str) -> Option<&'static Operator> {
-        GLOBAL_ACCESSOR.get(name)
-    }
-
     /// Creates a new operator with the configuration for the specific storage service.
     pub fn new_operator(scheme: &'static str, config: &Table) -> Result<Operator, Error> {
         let operator = match scheme {
@@ -329,6 +323,12 @@ impl GlobalAccessor {
                 .layer(MetricsLayer)
                 .layer(RetryLayer::new(ExponentialBackoff::default()))
         })
+    }
+
+    /// Gets the operator for the specific storage service.
+    #[inline]
+    pub fn get(name: &'static str) -> Option<&'static Operator> {
+        GLOBAL_ACCESSOR.get(name)
     }
 }
 

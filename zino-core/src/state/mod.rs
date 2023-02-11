@@ -157,8 +157,8 @@ impl State {
     }
 
     /// Formats the authority in the config.
-    /// An authority can contain a username, password, host, and port number
-    /// formated as `{username}:{password}@{host}:{port}`.
+    /// An authority can contain a username, password, host, and port number,
+    /// which is formated as `{username}:{password}@{host}:{port}`.
     pub fn format_authority(config: &Table, default_port: Option<u16>) -> String {
         let mut authority = String::new();
 

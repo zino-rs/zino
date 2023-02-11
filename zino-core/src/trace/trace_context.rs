@@ -184,3 +184,24 @@ impl Default for TraceContext {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::TraceContext;
+
+    #[test]
+    fn it_constructs_trace_context() {
+        let traceparent = "00-76580b47d0bf430ebbb0d1d966b10f2b-0000004000000001-03";
+        let trace_context = TraceContext::from_traceparent(traceparent).unwrap();
+        assert_eq!(trace_context.version(), 0);
+        assert_eq!(
+            trace_context.trace_id(),
+            u128::from_str_radix("76580b47d0bf430ebbb0d1d966b10f2b", 16).unwrap(),
+        );
+        assert_eq!(
+            trace_context.parent_id(),
+            u64::from_str_radix("0000004000000001", 16).ok(),
+        );
+        assert_eq!(trace_context.trace_flags(), 3);
+    }
+}

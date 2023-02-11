@@ -81,6 +81,9 @@ pub trait ColumnExt<DB: Database> {
     /// Decodes a row and gets a column value represented by `Value`.
     fn decode_row(&self, row: &Self::Row) -> Result<Value, Error>;
 
+    /// Parses a row as a json object.
+    fn parse_row(row: &Self::Row) -> Result<Map, Error>;
+
     /// Formats a value.
     fn format_value(&self, value: &str) -> String;
 
@@ -88,8 +91,8 @@ pub trait ColumnExt<DB: Database> {
     fn format_filter(&self, key: &str, value: &Value) -> String;
 
     /// Formats a string.
-    fn format_string(value: &str) -> String;
-
-    /// Parses a row as a json object.
-    fn parse_row(row: &Self::Row) -> Result<Map, Error>;
+    #[inline]
+    fn format_string(value: &str) -> String {
+        format!("'{}'", value.replace('\'', "''"))
+    }
 }

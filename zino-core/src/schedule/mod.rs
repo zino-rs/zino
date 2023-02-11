@@ -6,10 +6,11 @@ use cron::Schedule;
 use std::{str::FromStr, time::Duration};
 
 /// A function pointer of the cron job.
-pub type CronJob = fn(Uuid, &mut Map, DateTime);
+pub type CronJob = fn(id: Uuid, data: &mut Map, last_tick: DateTime);
 
 /// A function pointer of the async cron job.
-pub type AsyncCronJob = for<'a> fn(Uuid, &'a mut Map, DateTime) -> BoxFuture<'a>;
+pub type AsyncCronJob =
+    for<'a> fn(id: Uuid, data: &'a mut Map, last_tick: DateTime) -> BoxFuture<'a>;
 
 /// Exectuable job.
 enum ExecutableJob {

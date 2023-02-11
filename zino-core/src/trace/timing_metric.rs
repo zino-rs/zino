@@ -65,3 +65,26 @@ impl fmt::Display for TimingMetric {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::TimingMetric;
+    use std::time::Duration;
+
+    #[test]
+    fn it_formats_timing_metric() {
+        let cache_miss_metric = TimingMetric::new("miss".into(), None, None);
+        assert_eq!(format!("{cache_miss_metric}"), "miss");
+
+        let db_query_metric = TimingMetric::new(
+            "db".into(),
+            Some("query".into()),
+            Some(Duration::from_secs_f64(0.0024635)),
+        );
+        assert_eq!(format!("{db_query_metric}"), "db;desc=query;dur=2.463");
+
+        let total_timing_metric =
+            TimingMetric::new("total".into(), None, Some(Duration::from_secs_f64(0.01082)));
+        assert_eq!(format!("{total_timing_metric}"), "total;dur=10.82");
+    }
+}

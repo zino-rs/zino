@@ -1,4 +1,4 @@
-//! Extenstion traits to provide helper utilities.
+//! Extension traits to provide helper utilities.
 
 mod json_object;
 mod toml_table;

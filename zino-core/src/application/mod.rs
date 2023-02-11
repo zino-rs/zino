@@ -1,4 +1,4 @@
-//! Application utilities.
+//! High level abstractions for the application.
 
 use crate::{
     datetime::DateTime,
@@ -9,7 +9,7 @@ use crate::{
     BoxError, Map,
 };
 use reqwest::Response;
-use std::{collections::HashMap, env, path::PathBuf, sync::LazyLock, thread};
+use std::{env, path::PathBuf, sync::LazyLock, thread};
 use toml::value::Table;
 
 mod metrics_exporter;
@@ -30,7 +30,7 @@ pub trait Application {
     fn register(self, routes: Vec<Self::Router>) -> Self;
 
     /// Runs the application.
-    fn run(self, async_jobs: HashMap<&'static str, AsyncCronJob>);
+    fn run(self, async_jobs: Vec<(&'static str, AsyncCronJob)>);
 
     /// Boots the application. It also setups the default secret key,
     /// the tracing subscriber, the metrics exporter and a global HTTP client.
@@ -110,7 +110,7 @@ pub trait Application {
     }
 
     /// Spawns a new thread to run cron jobs.
-    fn spawn(self, jobs: HashMap<&'static str, CronJob>) -> Self
+    fn spawn(self, jobs: Vec<(&'static str, CronJob)>) -> Self
     where
         Self: Sized,
     {

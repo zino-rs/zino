@@ -1,4 +1,4 @@
-//! Database connectors.
+//! Unified database connector to different data sources.
 //!
 //! Supported data sources:
 //! - `ceresdb`: CeresDB

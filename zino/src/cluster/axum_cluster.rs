@@ -7,8 +7,7 @@ use axum::{
 };
 use futures::future;
 use std::{
-    collections::HashMap, convert::Infallible, io, net::SocketAddr, path::PathBuf, sync::LazyLock,
-    time::Duration,
+    convert::Infallible, io, net::SocketAddr, path::PathBuf, sync::LazyLock, time::Duration,
 };
 use tokio::runtime::Builder;
 use tower::{
@@ -47,7 +46,7 @@ impl Application for AxumCluster {
     }
 
     /// Runs the application.
-    fn run(self, async_jobs: HashMap<&'static str, AsyncCronJob>) {
+    fn run(self, async_jobs: Vec<(&'static str, AsyncCronJob)>) {
         let runtime = Builder::new_multi_thread()
             .thread_keep_alive(Duration::from_secs(10))
             .thread_stack_size(2 * 1024 * 1024)

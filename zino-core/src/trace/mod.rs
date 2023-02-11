@@ -1,4 +1,4 @@
-//! HTTP timings and traces.
+//! HTTP headers for performance metrics and traces.
 
 mod server_timing;
 mod timing_metric;
