@@ -83,7 +83,7 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                     .into()
             }
             // deserialize Avro Uuid value wasn't supported in 0.14.0
-            "Uuid" | "Option<Uuid>" => row.try_get_unchecked::<Uuid, _>(field)?.into(),
+            "Uuid" | "Option<Uuid>" => row.try_get_unchecked::<Uuid, _>(field)?.to_string().into(),
             "Vec<u8>" => row.try_get_unchecked::<Vec<u8>, _>(field)?.into(),
             "Vec<String>" => {
                 let values = row.try_get_unchecked::<Vec<String>, _>(field)?;

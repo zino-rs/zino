@@ -1,20 +1,24 @@
 //! Unified database connector to different data sources.
 //!
-//! Supported data sources:
-//! - `ceresdb`: CeresDB
-//! - `citus`: Citus
-//! - `databend`: Databend
-//! - `hologres`: Aliyun Hologres
-//! - `mariadb`: MariaDB
-//! - `mssql`: MSSQL
-//! - `mysql`: MySQL
-//! - `opengauss`: openGauss
-//! - `postgis`: PostGIS
-//! - `postgres`: PostgreSQL
-//! - `sqlite`: SQLite
-//! - `taos`: TDengine
-//! - `tidb`: TiDB
-//! - `timescaledb`: TimescaleDB
+//! ## Supported data sources
+//!
+//! | Data source type | Database               | Feature flag           |
+//! |------------------|------------------------|------------------------|
+//! | `hologres`       | Aliyun Hologres        | `connector-postgres`   |
+//! | `ceresdb`        | CeresDB                | `connector-postgres`   |
+//! | `citus`          | Citus                  | `connector-postgres`   |
+//! | `databend`       | Databend               | `connector-mysql`      |
+//! | `hologres`       | Aliyun Hologres        | `connector-postgres`   |
+//! | `maridb`         | MariaDB                | `connector-mysql`      |
+//! | `mssql`          | MSSQL (SQL Server)     | `connector-mssql`      |
+//! | `mysql`          | MySQL                  | `connector-mysql`      |
+//! | `opengauss`      | openGauss              | `connector-postgres`   |
+//! | `postgis`        | PostGIS                | `connector-postgres`   |
+//! | `postgres`       | PostgreSQL             | `connector-postgres`   |
+//! | `sqlite`         | SQLite                 | `connector-sqlite`     |
+//! | `taos`           | TDengine               | `connector-taos`       |
+//! | `tidb`           | TiDB                   | `connector-mysql`      |
+//! | `timescaledb`    | TimescaleDB            | `connector-postgres`   |
 //!
 
 use crate::{extend::TomlTableExt, state::State, BoxError, Map, Record};
@@ -42,7 +46,7 @@ use data_source::DataSourcePool;
 use sqlx_common::impl_sqlx_connector;
 
 /// Underlying trait of all data sources for implementors.
-trait Connector {
+pub trait Connector {
     /// Creates a new data source with the configuration.
     fn new_data_source(config: &'static Table) -> Result<DataSource, BoxError>;
 

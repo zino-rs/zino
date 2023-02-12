@@ -1,6 +1,6 @@
 use crate::{Map, Record};
 use apache_avro::{types::Value, Error, Schema, Writer};
-use std::{collections::HashMap, mem, io::Write};
+use std::{collections::HashMap, io::Write, mem};
 
 /// Extension trait for [`Record`](crate::Record).
 pub trait AvroRecordExt {
@@ -54,7 +54,7 @@ pub trait AvroRecordExt {
 
     /// Flushes the content appended to a writer with the given schema.
     /// Returns the number of bytes written.
-    fn flush_to_writer<'a, W: Write>(self, schema: &'a Schema, writer: W) -> Result<usize, Error>;
+    fn flush_to_writer<W: Write>(self, schema: &Schema, writer: W) -> Result<usize, Error>;
 
     /// Converts `self` to an Avro map value.
     fn into_avro_map(self) -> Value;
@@ -201,7 +201,7 @@ impl AvroRecordExt for Record {
         }
     }
 
-    fn flush_to_writer<'a, W: Write>(self, schema: &'a Schema, writer: W) -> Result<usize, Error> {
+    fn flush_to_writer<W: Write>(self, schema: &Schema, writer: W) -> Result<usize, Error> {
         let mut writer = Writer::new(schema, writer);
         writer.append(Value::Record(self))?;
         writer.flush()

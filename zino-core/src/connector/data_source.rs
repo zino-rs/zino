@@ -38,8 +38,8 @@ pub(super) enum DataSourcePool {
 
 /// Data sources.
 pub struct DataSource {
-    /// Database type
-    database_type: &'static str,
+    /// Data souce type
+    data_source_type: &'static str,
     /// Name
     name: &'static str,
     /// Database
@@ -52,48 +52,48 @@ impl DataSource {
     /// Creates a new instance.
     #[inline]
     pub(super) fn new(
-        database_type: &'static str,
+        data_source_type: &'static str,
         name: &'static str,
         database: &'static str,
         pool: DataSourcePool,
     ) -> Self {
         Self {
-            database_type,
+            data_source_type,
             name,
             database,
             pool,
         }
     }
 
-    /// Creates a new connector with the configuration for the specific database service.
+    /// Creates a new connector with the configuration for the specific data source.
     pub fn new_connector(
-        database_type: &'static str,
+        data_source_type: &'static str,
         config: &'static Table,
     ) -> Result<Self, BoxError> {
-        match database_type {
+        match data_source_type {
             #[cfg(feature = "connector-mssql")]
             "mssql" => {
                 let mut data_source = MssqlPool::new_data_source(config)?;
-                data_source.database_type = database_type;
+                data_source.data_source_type = data_source_type;
                 Ok(data_source)
             }
             #[cfg(feature = "connector-mysql")]
             "mysql" | "ceresdb" | "databend" | "mariadb" | "tidb" => {
                 let mut data_source = MySqlPool::new_data_source(config)?;
-                data_source.database_type = database_type;
+                data_source.data_source_type = data_source_type;
                 Ok(data_source)
             }
             #[cfg(feature = "connector-postgres")]
             "postgres" | "citus" | "hologres" | "opengauss" | "postgis" | "timescaledb" => {
                 let mut data_source = PgPool::new_data_source(config)?;
-                data_source.database_type = database_type;
+                data_source.data_source_type = data_source_type;
                 Ok(data_source)
             }
             #[cfg(feature = "connector-sqlite")]
             "sqlite" => SqlitePool::new_data_source(config),
             #[cfg(feature = "connector-taos")]
             "taos" => TaosPool::new_data_source(config),
-            _ => Err(format!("database type `{database_type}` is unsupported").into()),
+            _ => Err(format!("data source type `{data_source_type}` is unsupported").into()),
         }
     }
 

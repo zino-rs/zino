@@ -1,24 +1,27 @@
 //! Unified data access to different storage services.
 //!
-//! Supported storage services:
-//! - `azblob`: Azure Storage Blob services.
-//! - `azdfs`: Azure Data Lake Storage Gen2 services.
-//! - `fs`: POSIX alike file system.
-//! - `ftp`: FTP and FTPS support.
-//! - `gcs`: Google Cloud Storage Service.
-//! - `ghac`: Github Action Cache Service.
-//! - `ipfs`: InterPlanetary File System HTTP Gateway support.
-//! - `ipmfs`: InterPlanetary File System MFS API support.
-//! - `memcached`: Memcached service support.
-//! - `memory`: In memory backend.
-//! - `minio`: MinIO services support.
-//! - `moka`: Moka backend support.
-//! - `obs`: Huawei Cloud Object Storage Service (OBS).
-//! - `oss`: Aliyun Object Storage Service (OSS).
-//! - `redis`: Redis services support.
-//! - `s3`: AWS S3 alike services.
-//! - `webdav`: WebDAV Service Support.
-//! - `webhdfs`: WebHDFS Service Support.
+//! ## Supported storage services
+//!
+//! | Scheme        | Description                              | Feature flag          |
+//! |---------------|------------------------------------------|-----------------------|
+//! | `azblob`      | Azure Storage Blob services.             | `accessor`            |
+//! | `azdfs`       | Azure Data Lake Storage Gen2 services.   | `accessor`            |
+//! | `fs`          | POSIX alike file system.                 | `accessor`            |
+//! | `ftp`         | FTP and FTPS.                            | `accessor-ftp`        |
+//! | `gcs`         | Google Cloud Storage Service.            | `accessor`            |
+//! | `ghac`        | Github Action Cache Service.             | `accessor`            |
+//! | `ipfs`        | InterPlanetary File System HTTP Gateway. | `accessor-ipfs`       |
+//! | `ipmfs`       | InterPlanetary File System MFS API.      | `accessor`            |
+//! | `memcached`   | Memcached services.                      | `accessor-memcached`  |
+//! | `memory`      | In memory backend.                       | `accessor`            |
+//! | `minio`       | MinIO services.                          | `accessor`            |
+//! | `moka`        | Moka backend.                            | `accessor-moka`       |
+//! | `obs`         | Huawei Cloud Object Storage Service.     | `accessor`            |
+//! | `oss`         | Aliyun Object Storage Service.           | `accessor`            |
+//! | `redis`       | Redis services.                          | `accessor-redis`      |
+//! | `s3`          | AWS S3 alike services.                   | `accessor`            |
+//! | `webdav`      | WebDAV Services.                         | `accessor`            |
+//! | `webhdfs`     | WebHDFS Services.                        | `accessor`            |
 //!
 
 use crate::{extend::TomlTableExt, state::State};
