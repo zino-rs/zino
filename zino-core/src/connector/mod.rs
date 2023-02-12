@@ -17,7 +17,7 @@
 //! - `timescaledb`: TimescaleDB
 //!
 
-use crate::{extend::TomlTableExt, state::State, BoxError, Map};
+use crate::{extend::TomlTableExt, state::State, BoxError, Map, Record};
 use std::{collections::HashMap, sync::LazyLock};
 use toml::Table;
 
@@ -45,10 +45,10 @@ trait Connector {
     async fn execute(&self, sql: &str, params: Option<Map>) -> Result<Option<u64>, BoxError>;
 
     /// Executes the query in the table, and parses it as `Vec<Map>`.
-    async fn query(&self, sql: &str, params: Option<Map>) -> Result<Vec<Map>, BoxError>;
+    async fn query(&self, sql: &str, params: Option<Map>) -> Result<Vec<Record>, BoxError>;
 
     /// Executes the query in the table, and parses it as a `Map`.
-    async fn query_one(&self, sql: &str, params: Option<Map>) -> Result<Option<Map>, BoxError>;
+    async fn query_one(&self, sql: &str, params: Option<Map>) -> Result<Option<Record>, BoxError>;
 }
 
 /// Global database connector.

@@ -12,6 +12,9 @@ repository = "https://github.com/photino/zino"
 documentation = "https://docs.rs/zino-model"
 readme = "README.md"
 
+[dependencies.apache-avro]
+version = "0.14.0"
+
 [dependencies.serde]
 version = "1.0.152"
 features = ["derive"]

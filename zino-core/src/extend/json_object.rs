@@ -37,7 +37,7 @@ pub trait JsonObjectExt {
     /// Extracts the object value corresponding to the key.
     fn get_object(&self, key: &str) -> Option<&Map>;
 
-    /// Inserts or updates a key-value pair into the map.
+    /// Inserts or updates a key/value pair into the map.
     /// If the map did have this key present, the value is updated and the old value is returned,
     /// otherwise `None` is returned.
     fn upsert(&mut self, key: impl Into<String>, value: impl Into<Value>) -> Option<Value>;

@@ -1,7 +1,7 @@
-use crate::{database::Query, BoxError, Map};
+use crate::{database::Query, BoxError, Map, Record};
+use apache_avro::types::Value;
 use futures::TryStreamExt;
 use serde::ser::{self, Serialize, SerializeMap, Serializer};
-use serde_json::Value;
 use sqlx::{database::HasValueRef, Column, ColumnIndex, Database, Decode, Row, TypeInfo, ValueRef};
 use std::borrow::Cow;
 
@@ -58,28 +58,28 @@ pub(super) macro impl_sqlx_connector($pool:ty) {
         Ok(Some(query_result.rows_affected()))
     }
 
-    async fn query(&self, sql: &str, params: Option<Map>) -> Result<Vec<Map>, BoxError> {
+    async fn query(&self, sql: &str, params: Option<Map>) -> Result<Vec<Record>, BoxError> {
         let sql = Query::format_sql(sql, params);
         let query = sqlx::query(sql.as_ref());
         let mut rows = query.fetch(self);
         let mut data = Vec::new();
         while let Some(row) = rows.try_next().await? {
-            let value = serde_json::to_value(&SerializeRow(row))?;
-            if let Value::Object(map) = value {
-                data.push(map);
+            let value = apache_avro::to_value(&SerializeRow(row))?;
+            if let Value::Record(record) = value {
+                data.push(record);
             }
         }
         Ok(data)
     }
 
-    async fn query_one(&self, sql: &str, params: Option<Map>) -> Result<Option<Map>, BoxError> {
+    async fn query_one(&self, sql: &str, params: Option<Map>) -> Result<Option<Record>, BoxError> {
         let sql = Query::format_sql(sql, params);
         let query = sqlx::query(sql.as_ref());
         let data = match query.fetch_optional(self).await? {
             Some(row) => {
-                let value = serde_json::to_value(&SerializeRow(row))?;
-                if let Value::Object(map) = value {
-                    Some(map)
+                let value = apache_avro::to_value(&SerializeRow(row))?;
+                if let Value::Record(record) = value {
+                    Some(record)
                 } else {
                     None
                 }

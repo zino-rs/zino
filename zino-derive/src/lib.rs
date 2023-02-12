@@ -118,11 +118,48 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     let schema_columns = format_ident!("{}_COLUMNS", type_name_uppercase);
     let schema_reader = format_ident!("{}_READER", type_name_uppercase);
     let schema_writer = format_ident!("{}_WRITER", type_name_uppercase);
+    let avro_schema = format_ident!("{}_AVRO_SCHEMA", type_name_uppercase);
     let columns_len = columns.len();
     let output = quote! {
-        use std::sync::{LazyLock, OnceLock};
+        use std::{collections::BTreeMap, sync::{LazyLock, OnceLock}};
         use zino_core::database::{Column, ConnectionPool, Schema};
 
+        static #avro_schema: LazyLock<apache_avro::Schema> = LazyLock::new(|| {
+            use apache_avro::schema::{Name, RecordField, RecordFieldOrder, Schema};
+            let mut fields = #schema_columns.iter().enumerate()
+                .map(|(index, col)| {
+                    let schema = col.schema();
+                    let default_value = col.default_value().and_then(|s| {
+                        match schema {
+                           Schema::Boolean => s.parse::<bool>().ok().map(|b| b.into()),
+                           Schema::Int => s.parse::<i32>().ok().map(|i| i.into()),
+                           Schema::Long => s.parse::<i64>().ok().map(|i| i.into()),
+                           Schema::Float => s.parse::<f32>().ok().map(|f| f.into()),
+                           Schema::Double => s.parse::<f64>().ok().map(|f| f.into()),
+                           _ => Some(s.into()),
+                        }
+                    });
+                    RecordField {
+                        name: col.name().to_owned(),
+                        doc: None,
+                        default: default_value,
+                        schema,
+                        order: RecordFieldOrder::Ascending,
+                        position: index,
+                    }
+                })
+                .collect::<Vec<_>>();
+            Schema::Record {
+                name: Name {
+                    name: #type_name.to_owned(),
+                    namespace: None,
+                },
+                aliases: None,
+                doc: None,
+                fields,
+                lookup: BTreeMap::new(),
+            }
+        });
         static #schema_columns: LazyLock<[Column; #columns_len]> = LazyLock::new(|| {
             [#(#columns),*]
         });
@@ -140,6 +177,11 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
             const WRITER_NAME: &'static str = #writer_name;
             /// Distribution column.
             const DISTRIBUTION_COLUMN: Option<&'static str> = #quote_distribution_column;
+
+            /// Returns a reference to the Avro schema.
+            fn schema() -> &'static apache_avro::Schema {
+                LazyLock::force(&#avro_schema)
+            }
 
             /// Returns a reference to the columns.
             #[inline]

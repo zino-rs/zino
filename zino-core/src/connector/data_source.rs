@@ -1,6 +1,7 @@
 use self::DataSourcePool::*;
 use super::Connector;
-use crate::{BoxError, Map};
+use crate::{extend::AvroRecordExt, BoxError, Map, Record};
+use apache_avro::types::Value;
 use serde::de::DeserializeOwned;
 use sqlx::{mssql::MssqlPool, mysql::MySqlPool, postgres::PgPool, sqlite::SqlitePool};
 use taos::TaosPool;
@@ -101,7 +102,7 @@ impl DataSource {
     }
 
     /// Executes the query in the table, and parses it as `Vec<Map>`.
-    pub async fn query(&self, sql: &str, params: Option<Map>) -> Result<Vec<Map>, BoxError> {
+    pub async fn query(&self, sql: &str, params: Option<Map>) -> Result<Vec<Record>, BoxError> {
         match &self.pool {
             Mssql(pool) => pool.query(sql, params).await,
             MySql(pool) => pool.query(sql, params).await,
@@ -118,11 +119,19 @@ impl DataSource {
         params: Option<Map>,
     ) -> Result<Vec<T>, BoxError> {
         let data = self.query(sql, params).await?;
-        serde_json::from_value(data.into()).map_err(|err| err.into())
+        let value = data
+            .into_iter()
+            .map(|record| record.into_avro_map())
+            .collect::<Vec<_>>();
+        apache_avro::from_value(&Value::Array(value)).map_err(|err| err.into())
     }
 
     /// Executes the query in the table, and parses it as a `Map`.
-    pub async fn query_one(&self, sql: &str, params: Option<Map>) -> Result<Option<Map>, BoxError> {
+    pub async fn query_one(
+        &self,
+        sql: &str,
+        params: Option<Map>,
+    ) -> Result<Option<Record>, BoxError> {
         match &self.pool {
             Mssql(pool) => pool.query_one(sql, params).await,
             MySql(pool) => pool.query_one(sql, params).await,
@@ -139,7 +148,10 @@ impl DataSource {
         params: Option<Map>,
     ) -> Result<Option<T>, BoxError> {
         match self.query_one(sql, params).await? {
-            Some(data) => serde_json::from_value(data.into()).map_err(|err| err.into()),
+            Some(data) => {
+                let value = Value::Union(1, Box::new(data.into_avro_map()));
+                apache_avro::from_value(&value).map_err(|err| err.into())
+            }
             None => Ok(None),
         }
     }

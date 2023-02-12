@@ -22,7 +22,6 @@
 //!
 
 use crate::{extend::TomlTableExt, state::State};
-use backon::ExponentialBackoff;
 use opendal::{
     layers::{MetricsLayer, RetryLayer, TracingLayer},
     services::{
@@ -321,7 +320,7 @@ impl GlobalAccessor {
         operator.map(|op| {
             op.layer(TracingLayer)
                 .layer(MetricsLayer)
-                .layer(RetryLayer::new(ExponentialBackoff::default()))
+                .layer(RetryLayer::new())
         })
     }
 
@@ -341,7 +340,7 @@ static GLOBAL_ACCESSOR: LazyLock<HashMap<&'static str, Operator>> = LazyLock::ne
     let memory_operator = Operator::new(memory_accessor)
         .layer(TracingLayer)
         .layer(MetricsLayer)
-        .layer(RetryLayer::new(ExponentialBackoff::default()))
+        .layer(RetryLayer::new())
         .finish();
     operators.insert("memory", memory_operator);
 

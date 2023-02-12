@@ -16,7 +16,7 @@ readme = "README.md"
 all-features = true
 
 [features]
-accessor = ["dep:backon", "dep:opendal"]
+accessor = ["dep:opendal"]
 cache = ["dep:lru"]
 connector = [
     "dep:taos",
@@ -28,6 +28,7 @@ view = ["dep:tera"]
 
 [dependencies]
 aes-gcm-siv = "0.11.1"
+apache-avro = "0.14.0"
 async-trait = "0.1.64"
 base64-simd = "0.8.0"
 bytes = "1.4.0"
@@ -49,7 +50,6 @@ regex = "1.7.1"
 reqwest-middleware = "0.2.0"
 reqwest-retry = "0.2.1"
 reqwest-tracing = "0.4.0"
-serde_json = "1.0.93"
 serde_qs = "0.11.0"
 serde_urlencoded = "0.7.1"
 sha2 = "0.10.6"
@@ -60,10 +60,6 @@ tracing = "0.1.37"
 tracing-appender = "0.2.2"
 url = "2.3.1"
 
-[dependencies.backon]
-version = "0.2.0"
-optional = true
-
 [dependencies.chrono]
 version = "0.4.23"
 features = ["serde"]
@@ -73,7 +69,7 @@ version = "0.9.0"
 optional = true
 
 [dependencies.opendal]
-version = "0.26.2"
+version = "0.27.0"
 features = [
     "layers-all",
     "compress",
@@ -85,10 +81,6 @@ features = [
     "services-redis",
 ]
 optional = true
-
-[dependencies.serde]
-version = "1.0.152"
-features = ["derive"]
 
 [dependencies.reqwest]
 version = "0.11.14"
@@ -103,6 +95,14 @@ features = [
     "native-tls",
     "socks",
 ]
+
+[dependencies.serde]
+version = "1.0.152"
+features = ["derive"]
+
+[dependencies.serde_json]
+version = "1.0.93"
+features = ["raw_value"]
 
 [dependencies.sqlx]
 version = "0.6.2"

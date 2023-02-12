@@ -1,9 +1,11 @@
 use super::{Column, ColumnExt, ConnectionPool, Model, Mutation, Query};
-use crate::{request::Validation, Map};
+use crate::{extend::AvroRecordExt, Map, Record};
+use apache_avro::types::Value;
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use serde_json::json;
 use sqlx::{Error, Row};
+use std::collections::HashMap;
 
 /// Model schema.
 pub trait Schema: 'static + Send + Sync + Model {
@@ -17,6 +19,9 @@ pub trait Schema: 'static + Send + Sync + Model {
     const WRITER_NAME: &'static str = "main";
     /// Optional distribution column. It can be used for Citus to create a distributed table.
     const DISTRIBUTION_COLUMN: Option<&'static str> = None;
+
+    /// Returns a reference to the [Avro schema](apache_avro::schema::Schema).
+    fn schema() -> &'static apache_avro::Schema;
 
     /// Returns a reference to the columns.
     fn columns() -> &'static [Column<'static>];
@@ -329,8 +334,8 @@ pub trait Schema: 'static + Send + Sync + Model {
         Ok(query_result.rows_affected())
     }
 
-    /// Finds models selected by the query in the table, and parses it as `Vec<Map>`.
-    async fn find(query: Query) -> Result<Vec<Map>, Error> {
+    /// Finds models selected by the query in the table, and parses it as `Vec<Record>`.
+    async fn find(query: Query) -> Result<Vec<Record>, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let fields = query.fields();
@@ -345,17 +350,17 @@ pub trait Schema: 'static + Send + Sync + Model {
             let columns = Self::columns();
             let capacity = columns.len();
             while let Some(row) = rows.try_next().await? {
-                let mut map = Map::with_capacity(capacity);
+                let mut record = Record::with_capacity(capacity);
                 for col in columns {
                     let value = col.decode_row(&row)?;
-                    map.insert(col.name().to_owned(), value);
+                    record.push((col.name().to_owned(), value));
                 }
-                data.push(map);
+                data.push(record);
             }
         } else {
             while let Some(row) = rows.try_next().await? {
-                let map = Column::parse_row(&row)?;
-                data.push(map);
+                let record = Column::parse_row(&row)?;
+                data.push(record);
             }
         }
         Ok(data)
@@ -364,11 +369,15 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Finds models selected by the query in the table, and parses it as `Vec<T>`.
     async fn find_as<T: DeserializeOwned>(query: Query) -> Result<Vec<T>, Error> {
         let data = Self::find(query).await?;
-        serde_json::from_value(data.into()).map_err(|err| Error::Decode(Box::new(err)))
+        let value = data
+            .into_iter()
+            .map(|r| r.into_avro_map())
+            .collect::<Vec<_>>();
+        apache_avro::from_value(&Value::Array(value)).map_err(|err| Error::Decode(Box::new(err)))
     }
 
-    /// Finds one model selected by the query in the table, and parses it as a `Map`.
-    async fn find_one(query: Query) -> Result<Option<Map>, Error> {
+    /// Finds one model selected by the query in the table, and parses it as a `Record`.
+    async fn find_one(query: Query) -> Result<Option<Record>, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let fields = query.fields();
@@ -380,15 +389,15 @@ pub trait Schema: 'static + Send + Sync + Model {
             Some(row) => {
                 if fields.is_empty() {
                     let columns = Self::columns();
-                    let mut map = Map::with_capacity(columns.len());
+                    let mut record = Record::with_capacity(columns.len());
                     for col in columns {
                         let value = col.decode_row(&row)?;
-                        map.insert(col.name().to_owned(), value);
+                        record.push((col.name().to_owned(), value));
                     }
-                    Some(map)
+                    Some(record)
                 } else {
-                    let map = Column::parse_row(&row)?;
-                    Some(map)
+                    let record = Column::parse_row(&row)?;
+                    Some(record)
                 }
             }
             None => None,
@@ -400,27 +409,44 @@ pub trait Schema: 'static + Send + Sync + Model {
     async fn find_one_as<T: DeserializeOwned>(query: Query) -> Result<Option<T>, Error> {
         match Self::find_one(query).await? {
             Some(data) => {
-                serde_json::from_value(data.into()).map_err(|err| Error::Decode(Box::new(err)))
+                let value = Value::Union(1, Box::new(data.into_avro_map()));
+                apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
             }
             None => Ok(None),
         }
     }
 
-    /// Finds the related data in the corresponding `columns` for `Vec<Map>` using
+    /// Finds the related data in the corresponding `columns` for `Vec<Record>` using
     /// a merged select on the primary key, which solves the `N+1` problem.
     async fn find_related<const N: usize>(
         mut query: Query,
-        data: &mut Vec<Map>,
+        data: &mut Vec<Record>,
         columns: [&str; N],
     ) -> Result<u64, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let mut values: Vec<String> = Vec::new();
+        let mut values = Vec::new();
         for row in data.iter() {
             for col in columns {
-                if let Some(mut vec) = Validation::parse_array(row.get(col)) {
-                    values.append(&mut vec);
+                if let Some(value) = row.find(col) {
+                    match value {
+                        Value::String(s) => values.push(s),
+                        Value::Array(vec) => {
+                            let mut vec = vec
+                                .iter()
+                                .filter_map(|v| {
+                                    if let Value::String(s) = v {
+                                        Some(s)
+                                    } else {
+                                        None
+                                    }
+                                })
+                                .collect::<Vec<_>>();
+                            values.append(&mut vec);
+                        }
+                        _ => (),
+                    }
                 }
             }
         }
@@ -440,37 +466,37 @@ pub trait Schema: 'static + Send + Sync + Model {
         let filter = query.format_filter::<Self>();
         let sql = format!("SELECT {projection} FROM {table_name} {filter};");
         let mut rows = sqlx::query(&sql).fetch(pool);
-        let mut associations = Map::new();
+        let mut associations = HashMap::new();
         if fields.is_empty() {
             let columns = Self::columns();
             let capacity = columns.len();
             while let Some(row) = rows.try_next().await? {
                 let primary_key_value = row.try_get_unchecked::<String, _>(primary_key_name)?;
-                let mut map = Map::with_capacity(capacity);
+                let mut record = Record::with_capacity(capacity);
                 for col in columns {
                     let value = col.decode_row(&row)?;
-                    map.insert(col.name().to_owned(), value);
+                    record.push((col.name().to_owned(), value));
                 }
-                associations.insert(primary_key_value, map.into());
+                associations.insert(primary_key_value, record.into_avro_map());
             }
         } else {
             while let Some(row) = rows.try_next().await? {
                 let primary_key_value = row.try_get_unchecked::<String, _>(primary_key_name)?;
-                let map = Column::parse_row(&row)?;
-                associations.insert(primary_key_value, map.into());
+                let record = Column::parse_row(&row)?;
+                associations.insert(primary_key_value, record.into_avro_map());
             }
         }
         for row in data {
             for col in columns {
-                if let Some(value) = row.get_mut(col) {
-                    if let Some(value) = value.as_str() {
-                        if let Some(value) = associations.get(value) {
-                            row.insert(col.to_owned(), value.clone());
+                if let Some(index) = row.position(col) && let Some((_, value)) = row.get_mut(index) {
+                    if let Value::String(key) = value {
+                        if let Some(value) = associations.get(key) {
+                            row.upsert(col.to_owned(), value.clone());
                         }
-                    } else if let Some(entries) = value.as_array_mut() {
+                    } else if let Value::Array(entries) = value {
                         for entry in entries {
-                            if let Some(value) = entry.as_str() {
-                                if let Some(value) = associations.get(value) {
+                            if let Value::String(key) = entry {
+                                if let Some(value) = associations.get(key) {
                                     *entry = value.clone();
                                 }
                             }
@@ -482,20 +508,36 @@ pub trait Schema: 'static + Send + Sync + Model {
         u64::try_from(associations.len()).map_err(|err| Error::Decode(Box::new(err)))
     }
 
-    /// Finds the related data in the corresponding `columns` for `Map` using
+    /// Finds the related data in the corresponding `columns` for `Record` using
     /// a merged select on the primary key, which solves the `N+1` problem.
     async fn find_related_one<const N: usize>(
         mut query: Query,
-        data: &mut Map,
+        data: &mut Record,
         columns: [&str; N],
     ) -> Result<u64, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let mut values: Vec<String> = Vec::new();
+        let mut values = Vec::new();
         for col in columns {
-            if let Some(mut vec) = Validation::parse_array(data.get(col)) {
-                values.append(&mut vec);
+            if let Some(value) = data.find(col) {
+                match value {
+                    Value::String(s) => values.push(s),
+                    Value::Array(vec) => {
+                        let mut vec = vec
+                            .iter()
+                            .filter_map(|v| {
+                                if let Value::String(s) = v {
+                                    Some(s)
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect::<Vec<_>>();
+                        values.append(&mut vec);
+                    }
+                    _ => (),
+                }
             }
         }
         if !values.is_empty() {
@@ -514,36 +556,36 @@ pub trait Schema: 'static + Send + Sync + Model {
         let filter = query.format_filter::<Self>();
         let sql = format!("SELECT {projection} FROM {table_name} {filter};");
         let mut rows = sqlx::query(&sql).fetch(pool);
-        let mut associations = Map::new();
+        let mut associations = HashMap::new();
         if fields.is_empty() {
             let columns = Self::columns();
             let capacity = columns.len();
             while let Some(row) = rows.try_next().await? {
                 let primary_key_value = row.try_get_unchecked::<String, _>(primary_key_name)?;
-                let mut map = Map::with_capacity(capacity);
+                let mut record = Record::with_capacity(capacity);
                 for col in columns {
                     let value = col.decode_row(&row)?;
-                    map.insert(col.name().to_owned(), value);
+                    record.push((col.name().to_owned(), value));
                 }
-                associations.insert(primary_key_value, map.into());
+                associations.insert(primary_key_value, record.into_avro_map());
             }
         } else {
             while let Some(row) = rows.try_next().await? {
                 let primary_key_value = row.try_get_unchecked::<String, _>(primary_key_name)?;
-                let map = Column::parse_row(&row)?;
-                associations.insert(primary_key_value, map.into());
+                let record = Column::parse_row(&row)?;
+                associations.insert(primary_key_value, record.into_avro_map());
             }
         }
         for col in columns {
-            if let Some(value) = data.get_mut(col) {
-                if let Some(value) = value.as_str() {
-                    if let Some(value) = associations.get(value) {
-                        data.insert(col.to_owned(), value.clone());
+            if let Some(index) = data.position(col) && let Some((_, value)) = data.get_mut(index) {
+                if let Value::String(key) = value {
+                    if let Some(value) = associations.get(key) {
+                        data.upsert(col.to_owned(), value.clone());
                     }
-                } else if let Some(entries) = value.as_array_mut() {
+                } else if let Value::Array(entries) = value {
                     for entry in entries {
-                        if let Some(value) = entry.as_str() {
-                            if let Some(value) = associations.get(value) {
+                        if let Value::String(key) = entry {
+                            if let Some(value) = associations.get(key) {
                                 *entry = value.clone();
                             }
                         }
@@ -556,7 +598,10 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Counts the number of rows selected by the query in the table.
     /// The boolean value `true` denotes that it only counts distinct values in the column.
-    async fn count<const N: usize>(query: Query, columns: [(&str, bool); N]) -> Result<Map, Error> {
+    async fn count<const N: usize>(
+        query: Query,
+        columns: [(&str, bool); N],
+    ) -> Result<Record, Error> {
         let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let filter = query.format_filter::<Self>();
@@ -577,8 +622,19 @@ pub trait Schema: 'static + Send + Sync + Model {
             .collect::<String>();
         let sql = format!("SELECT {projection} FROM {table_name} {filter};");
         let row = sqlx::query(&sql).fetch_one(pool).await?;
-        let map = Column::parse_row(&row)?;
-        Ok(map)
+        let record = Column::parse_row(&row)?;
+        Ok(record)
+    }
+
+    /// Counts the number of rows selected by the query in the table,
+    /// and parses it as an instance of type `T`.
+    async fn count_as<const N: usize, T: DeserializeOwned>(
+        query: Query,
+        columns: [(&str, bool); N],
+    ) -> Result<T, Error> {
+        let data = Self::count(query, columns).await?;
+        let value = data.into_avro_map();
+        apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
     }
 
     /// Executes the query in the table, and returns the total number of rows affected.
@@ -589,15 +645,15 @@ pub trait Schema: 'static + Send + Sync + Model {
         Ok(query_result.rows_affected())
     }
 
-    /// Executes the query in the table, and parses it as `Vec<Map>`.
-    async fn query(sql: &str, params: Option<Map>) -> Result<Vec<Map>, Error> {
+    /// Executes the query in the table, and parses it as `Vec<Record>`.
+    async fn query(sql: &str, params: Option<Map>) -> Result<Vec<Record>, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let sql = Query::format_sql(sql, params);
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
         while let Some(row) = rows.try_next().await? {
-            let map = Column::parse_row(&row)?;
-            data.push(map);
+            let record = Column::parse_row(&row)?;
+            data.push(record);
         }
         Ok(data)
     }
@@ -608,17 +664,21 @@ pub trait Schema: 'static + Send + Sync + Model {
         params: Option<Map>,
     ) -> Result<Vec<T>, Error> {
         let data = Self::query(sql, params).await?;
-        serde_json::from_value(data.into()).map_err(|err| Error::Decode(Box::new(err)))
+        let value = data
+            .into_iter()
+            .map(|record| record.into_avro_map())
+            .collect::<Vec<_>>();
+        apache_avro::from_value(&Value::Array(value)).map_err(|err| Error::Decode(Box::new(err)))
     }
 
-    /// Executes the query in the table, and parses it as a `Map`.
-    async fn query_one(sql: &str, params: Option<Map>) -> Result<Option<Map>, Error> {
+    /// Executes the query in the table, and parses it as a `Record`.
+    async fn query_one(sql: &str, params: Option<Map>) -> Result<Option<Record>, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let sql = Query::format_sql(sql, params);
         let data = match sqlx::query(&sql).fetch_optional(pool).await? {
             Some(row) => {
-                let map = Column::parse_row(&row)?;
-                Some(map)
+                let record = Column::parse_row(&row)?;
+                Some(record)
             }
             None => None,
         };
@@ -632,7 +692,8 @@ pub trait Schema: 'static + Send + Sync + Model {
     ) -> Result<Option<T>, Error> {
         match Self::query_one(sql, params).await? {
             Some(data) => {
-                serde_json::from_value(data.into()).map_err(|err| Error::Decode(Box::new(err)))
+                let value = Value::Union(1, Box::new(data.into_avro_map()));
+                apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
             }
             None => Ok(None),
         }
@@ -651,8 +712,8 @@ pub trait Schema: 'static + Send + Sync + Model {
         );
         match sqlx::query(&sql).fetch_optional(pool).await? {
             Some(row) => {
-                let map = Column::parse_row(&row)?;
-                serde_json::from_value(map.into()).map_err(|err| Error::Decode(Box::new(err)))
+                let value = Column::parse_row(&row)?.into_avro_map();
+                apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
             }
             None => Err(Error::RowNotFound),
         }

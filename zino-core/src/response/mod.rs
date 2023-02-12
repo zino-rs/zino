@@ -9,7 +9,7 @@ use bytes::Bytes;
 use http::header::{self, HeaderValue};
 use http_body::Full;
 use serde::Serialize;
-use serde_json::Value;
+use serde_json::value::RawValue;
 use std::{
     marker::PhantomData,
     time::{Duration, Instant},
@@ -57,8 +57,8 @@ pub struct Response<S> {
     #[serde(skip_serializing_if = "Uuid::is_nil")]
     request_id: Uuid,
     /// Response data.
-    #[serde(skip_serializing_if = "Value::is_null")]
-    data: Value,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    data: Option<Box<RawValue>>,
     /// Content type.
     #[serde(skip)]
     content_type: Option<SharedString>,
@@ -89,7 +89,7 @@ impl<S: ResponseCode> Response<S> {
             message: None,
             start_time: Instant::now(),
             request_id: Uuid::nil(),
-            data: Value::Null,
+            data: None,
             content_type: None,
             trace_context: None,
             server_timing: ServerTiming::new(),
@@ -118,7 +118,7 @@ impl<S: ResponseCode> Response<S> {
             message: None,
             start_time: ctx.start_time(),
             request_id: ctx.request_id(),
-            data: Value::Null,
+            data: None,
             content_type: None,
             trace_context: None,
             server_timing: ServerTiming::new(),
@@ -144,26 +144,35 @@ impl<S: ResponseCode> Response<S> {
 
     #[cfg(feature = "view")]
     /// Renders a template and sets it as the reponse data.
-    pub fn render(mut self, template_name: &str) -> Self {
-        if let Some(data) = self.data.as_object_mut() {
-            let mut map = crate::Map::new();
-            map.append(data);
-            match crate::view::render(template_name, map) {
-                Ok(data) => {
-                    self.data = data.into();
-                    self.content_type = Some("text/html".into());
+    pub fn render(mut self, template_name: &str, data: impl Serialize) -> Self {
+        let result = serde_json::to_value(data)
+            .map_err(|err| err.into())
+            .and_then(|mut value| {
+                if let Some(data) = value.as_object_mut() {
+                    let mut map = crate::Map::new();
+                    map.append(data);
+                    crate::view::render(template_name, map).and_then(|data| {
+                        serde_json::value::to_raw_value(&data).map_err(|err| err.into())
+                    })
+                } else {
+                    Err("invalid template data".into())
                 }
-                Err(err) => {
-                    let code = S::INTERNAL_SERVER_ERROR;
-                    self.type_uri = code.type_uri();
-                    self.title = code.title();
-                    self.status_code = code.status_code();
-                    self.error_code = code.error_code();
-                    self.success = false;
-                    self.detail = Some(err.to_string().into());
-                    self.message = None;
-                    self.data = Value::Null;
-                }
+            });
+        match result {
+            Ok(raw_value) => {
+                self.data = Some(raw_value);
+                self.content_type = Some("text/html".into());
+            }
+            Err(err) => {
+                let code = S::INTERNAL_SERVER_ERROR;
+                self.type_uri = code.type_uri();
+                self.title = code.title();
+                self.status_code = code.status_code();
+                self.error_code = code.error_code();
+                self.success = false;
+                self.detail = Some(err.to_string().into());
+                self.message = None;
+                self.data = None;
             }
         }
         self
@@ -220,14 +229,20 @@ impl<S: ResponseCode> Response<S> {
 
     /// Sets the response data.
     #[inline]
-    pub fn set_data(&mut self, data: impl Into<Value>) {
-        self.data = data.into();
+    pub fn set_data<T: ?Sized + Serialize>(&mut self, data: &T) {
+        match serde_json::value::to_raw_value(data) {
+            Ok(raw_value) => self.data = Some(raw_value),
+            Err(err) => self.set_error_message(err),
+        }
     }
 
     /// Sets the response data for the validation.
     #[inline]
     pub fn set_validation_data(&mut self, validation: Validation) {
-        self.data = validation.into_map().into();
+        match serde_json::value::to_raw_value(&validation.into_map()) {
+            Ok(raw_value) => self.data = Some(raw_value),
+            Err(err) => self.set_error_message(err),
+        }
     }
 
     /// Sets the content type.
@@ -311,12 +326,28 @@ impl<S: ResponseCode> From<Response<S>> for http::Response<Full<Bytes>> {
         let mut res = match response.content_type {
             Some(ref content_type) => {
                 let data = &response.data;
-                if let Some(data) = data.as_str() {
-                    http::Response::builder()
-                        .status(status_code)
-                        .header(header::CONTENT_TYPE, content_type.as_ref())
-                        .body(Full::from(data.to_owned()))
-                        .unwrap_or_default()
+                if let Some(data) = data {
+                    let result = serde_json::to_value(data)
+                        .map_err(|err| err.to_string())
+                        .and_then(|data| {
+                            if let Some(data) = data.as_str() {
+                                Ok(data.to_owned())
+                            } else {
+                                Err(data.to_string())
+                            }
+                        });
+                    match result {
+                        Ok(data) => http::Response::builder()
+                            .status(status_code)
+                            .header(header::CONTENT_TYPE, content_type.as_ref())
+                            .body(Full::from(data))
+                            .unwrap_or_default(),
+                        Err(err) => http::Response::builder()
+                            .status(S::INTERNAL_SERVER_ERROR.status_code())
+                            .header(header::CONTENT_TYPE, content_type.as_ref())
+                            .body(Full::from(err))
+                            .unwrap_or_default(),
+                    }
                 } else {
                     match serde_json::to_vec(&data) {
                         Ok(bytes) => http::Response::builder()

@@ -44,6 +44,9 @@ pub mod trace;
 /// A JSON key/value type.
 pub type Map = serde_json::Map<String, serde_json::Value>;
 
+/// A schema-less record Avro value.
+pub type Record = Vec<(String, apache_avro::types::Value)>;
+
 /// A Universally Unique Identifier (UUID).
 pub type Uuid = uuid::Uuid;
 

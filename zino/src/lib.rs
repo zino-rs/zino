@@ -47,7 +47,7 @@ pub use zino_core::{
     request::RequestContext,
     response::ExtractRejection,
     schedule::{AsyncCronJob, CronJob},
-    BoxFuture, Map, Uuid,
+    BoxFuture, Map, Record, Uuid,
 };
 
 #[cfg(feature = "axum")]
