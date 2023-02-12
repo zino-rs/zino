@@ -25,11 +25,16 @@ mod data_source;
 mod sqlx_common;
 
 /// Supported connectors.
-mod mssql_connector;
-mod mysql_connector;
-mod postgres_connector;
-mod sqlite_connector;
-mod taos_connector;
+#[cfg(feature = "connector-mssql")]
+mod connector_mssql;
+#[cfg(feature = "connector-mysql")]
+mod connector_mysql;
+#[cfg(feature = "connector-postgres")]
+mod connector_postgres;
+#[cfg(feature = "connector-sqlite")]
+mod connector_sqlite;
+#[cfg(feature = "connector-taos")]
+mod connector_taos;
 
 pub use data_source::DataSource;
 

@@ -94,6 +94,7 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder.build()?).finish())
             }
+            #[cfg(feature = "accessor-ftp")]
             "ftp" => {
                 let mut builder = Ftp::default();
                 if let Some(root) = config.get_str("root") {
@@ -142,6 +143,7 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder.build()?).finish())
             }
+            #[cfg(feature = "accessor-ipfs")]
             "ipfs" => {
                 let mut builder = Ipfs::default();
                 if let Some(root) = config.get_str("root") {
@@ -162,6 +164,7 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder.build()?).finish())
             }
+            #[cfg(feature = "accessor-memcached")]
             "memcached" => {
                 let mut builder = Memcached::default();
                 if let Some(root) = config.get_str("root") {
@@ -179,6 +182,7 @@ impl GlobalAccessor {
                 let mut builder = Memory::default();
                 Ok(Operator::new(builder.build()?).finish())
             }
+            #[cfg(feature = "accessor-moka")]
             "moka" => {
                 let mut builder = Moka::default();
                 if let Some(name) = config.get_str("name") {
@@ -242,6 +246,7 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder.build()?).finish())
             }
+            #[cfg(feature = "accessor-redis")]
             "redis" => {
                 let mut builder = Redis::default();
                 if let Some(root) = config.get_str("root") {

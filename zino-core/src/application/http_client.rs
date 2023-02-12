@@ -29,9 +29,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let mut client_builder = Client::builder()
         .user_agent(format!("ZinoBot/1.0 {name}/{version}"))
         .cookie_store(true)
-        .gzip(true)
-        .brotli(true)
-        .deflate(true);
+        .gzip(true);
     let mut max_retries = 3;
     if let Some(http_client) = APP::config().get_table("http-client") {
         if let Some(timeout) = http_client.get_u64("request-timeout") {

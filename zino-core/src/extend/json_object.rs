@@ -10,6 +10,10 @@ pub trait JsonObjectExt {
     fn get_i64(&self, key: &str) -> Option<i64>;
 
     /// Extracts the integer value corresponding to the key and
+    /// represents it as `i32` if possible.
+    fn get_i32(&self, key: &str) -> Option<i32>;
+
+    /// Extracts the integer value corresponding to the key and
     /// represents it as `u16` if possible.
     fn get_u16(&self, key: &str) -> Option<u16>;
 
@@ -52,6 +56,13 @@ impl JsonObjectExt for Map {
     #[inline]
     fn get_i64(&self, key: &str) -> Option<i64> {
         self.get(key).and_then(|v| v.as_i64())
+    }
+
+    #[inline]
+    fn get_i32(&self, key: &str) -> Option<i32> {
+        self.get(key)
+            .and_then(|v| v.as_u64())
+            .and_then(|i| i32::try_from(i).ok())
     }
 
     #[inline]

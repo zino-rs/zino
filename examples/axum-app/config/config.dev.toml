@@ -29,7 +29,7 @@ password = "7AHRe8DOFbdHEFdGrLUKVeRuJXTaLWN6KwdalhsNTXfqv+lV"
 filter = "info,sqlx=trace,tower_http=trace,zino=trace,zino_core=trace"
 display-filename = false
 display-line-number = false
-display-span-list = true
+display-span-list = false
 
 [metrics]
 exporter = "prometheus"

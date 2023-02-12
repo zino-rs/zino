@@ -136,7 +136,7 @@ impl Application for AxumCluster {
                             .layer(AddExtensionLayer::new(state))
                             .layer(CookieManagerLayer::new())
                             .layer(DefaultBodyLimit::max(body_limit))
-                            .layer(CompressionLayer::new().gzip(true).deflate(true).br(true))
+                            .layer(CompressionLayer::new().gzip(true).br(true))
                             .layer(LazyLock::force(
                                 &crate::middleware::tower_tracing::TRACING_MIDDLEWARE,
                             ))

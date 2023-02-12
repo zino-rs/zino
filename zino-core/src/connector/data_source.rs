@@ -3,21 +3,35 @@ use super::Connector;
 use crate::{extend::AvroRecordExt, BoxError, Map, Record};
 use apache_avro::types::Value;
 use serde::de::DeserializeOwned;
-use sqlx::{mssql::MssqlPool, mysql::MySqlPool, postgres::PgPool, sqlite::SqlitePool};
-use taos::TaosPool;
 use toml::Table;
+
+#[cfg(feature = "connector-mssql")]
+use sqlx::mssql::MssqlPool;
+#[cfg(feature = "connector-mysql")]
+use sqlx::mysql::MySqlPool;
+#[cfg(feature = "connector-postgres")]
+use sqlx::postgres::PgPool;
+#[cfg(feature = "connector-sqlite")]
+use sqlx::sqlite::SqlitePool;
+#[cfg(feature = "connector-taos")]
+use taos::TaosPool;
 
 /// Supported data source pool.
 #[non_exhaustive]
 pub(super) enum DataSourcePool {
+    #[cfg(feature = "connector-mssql")]
     /// MSSQL
     Mssql(MssqlPool),
+    #[cfg(feature = "connector-mysql")]
     /// MySQL
     MySql(MySqlPool),
+    #[cfg(feature = "connector-postgres")]
     /// Postgres
     Postgres(PgPool),
+    #[cfg(feature = "connector-sqlite")]
     /// SQLite
     Sqlite(SqlitePool),
+    #[cfg(feature = "connector-taos")]
     /// TDengine
     Taos(TaosPool),
 }
@@ -57,22 +71,27 @@ impl DataSource {
         config: &'static Table,
     ) -> Result<Self, BoxError> {
         match database_type {
+            #[cfg(feature = "connector-mssql")]
             "mssql" => {
                 let mut data_source = MssqlPool::new_data_source(config)?;
                 data_source.database_type = database_type;
                 Ok(data_source)
             }
+            #[cfg(feature = "connector-mysql")]
             "mysql" | "ceresdb" | "databend" | "mariadb" | "tidb" => {
                 let mut data_source = MySqlPool::new_data_source(config)?;
                 data_source.database_type = database_type;
                 Ok(data_source)
             }
+            #[cfg(feature = "connector-postgres")]
             "postgres" | "citus" | "hologres" | "opengauss" | "postgis" | "timescaledb" => {
                 let mut data_source = PgPool::new_data_source(config)?;
                 data_source.database_type = database_type;
                 Ok(data_source)
             }
+            #[cfg(feature = "connector-sqlite")]
             "sqlite" => SqlitePool::new_data_source(config),
+            #[cfg(feature = "connector-taos")]
             "taos" => TaosPool::new_data_source(config),
             _ => Err(format!("database type `{database_type}` is unsupported").into()),
         }
@@ -93,10 +112,15 @@ impl DataSource {
     /// Executes the query and returns the total number of rows affected.
     pub async fn execute(&self, sql: &str, params: Option<Map>) -> Result<Option<u64>, BoxError> {
         match &self.pool {
+            #[cfg(feature = "connector-mssql")]
             Mssql(pool) => pool.execute(sql, params).await,
+            #[cfg(feature = "connector-mysql")]
             MySql(pool) => pool.execute(sql, params).await,
+            #[cfg(feature = "connector-postgres")]
             Postgres(pool) => pool.execute(sql, params).await,
+            #[cfg(feature = "connector-sqlite")]
             Sqlite(pool) => pool.execute(sql, params).await,
+            #[cfg(feature = "connector-taos")]
             Taos(pool) => pool.execute(sql, params).await,
         }
     }
@@ -104,10 +128,15 @@ impl DataSource {
     /// Executes the query in the table, and parses it as `Vec<Map>`.
     pub async fn query(&self, sql: &str, params: Option<Map>) -> Result<Vec<Record>, BoxError> {
         match &self.pool {
+            #[cfg(feature = "connector-mssql")]
             Mssql(pool) => pool.query(sql, params).await,
+            #[cfg(feature = "connector-mysql")]
             MySql(pool) => pool.query(sql, params).await,
+            #[cfg(feature = "connector-postgres")]
             Postgres(pool) => pool.query(sql, params).await,
+            #[cfg(feature = "connector-sqlite")]
             Sqlite(pool) => pool.query(sql, params).await,
+            #[cfg(feature = "connector-taos")]
             Taos(pool) => pool.query(sql, params).await,
         }
     }
@@ -133,10 +162,15 @@ impl DataSource {
         params: Option<Map>,
     ) -> Result<Option<Record>, BoxError> {
         match &self.pool {
+            #[cfg(feature = "connector-mssql")]
             Mssql(pool) => pool.query_one(sql, params).await,
+            #[cfg(feature = "connector-mysql")]
             MySql(pool) => pool.query_one(sql, params).await,
+            #[cfg(feature = "connector-postgres")]
             Postgres(pool) => pool.query_one(sql, params).await,
+            #[cfg(feature = "connector-sqlite")]
             Sqlite(pool) => pool.query_one(sql, params).await,
+            #[cfg(feature = "connector-taos")]
             Taos(pool) => pool.query_one(sql, params).await,
         }
     }

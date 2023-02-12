@@ -16,14 +16,20 @@ readme = "README.md"
 all-features = true
 
 [features]
-accessor = ["dep:opendal"]
+default = ["view"]
+accessor = ["opendal"]
+accessor-ftp = ["accessor", "opendal/services-ftp"]
+accessor-ipfs = ["accessor", "opendal/services-ipfs"]
+accessor-memcached = ["accessor", "opendal/services-memcached"]
+accessor-moka = ["accessor", "opendal/services-moka"]
+accessor-redis = ["accessor", "opendal/services-redis"]
 cache = ["dep:lru"]
-connector = [
-    "dep:taos",
-    "sqlx/mssql",
-    "sqlx/mysql",
-    "sqlx/sqlite",
-]
+connector = ["connector-mysql", "connector-postgres"]
+connector-mssql = ["connector", "sqlx/mssql"]
+connector-mysql = ["connector", "sqlx/mysql"]
+connector-postgres = ["connector", "sqlx/postgres"]
+connector-sqlite = ["connector", "sqlx/sqlite"]
+connector-taos = ["connector", "dep:taos"]
 view = ["dep:tera"]
 
 [dependencies]
@@ -74,11 +80,6 @@ features = [
     "layers-all",
     "compress",
     "native-tls",
-    "services-ftp",
-    "services-ipfs",
-    "services-memcached",
-    "services-moka",
-    "services-redis",
 ]
 optional = true
 
@@ -87,13 +88,10 @@ version = "0.11.14"
 features = [
     "cookies",
     "gzip",
-    "brotli",
-    "deflate",
     "json",
     "multipart",
     "stream",
     "native-tls",
-    "socks",
 ]
 
 [dependencies.serde]

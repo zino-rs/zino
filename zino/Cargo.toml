@@ -64,7 +64,14 @@ features= ["signed"]
 
 [dependencies.tower-http]
 version = "0.3.5"
-features = ["full"]
+features = [
+    "add-extension",
+    "compression-br",
+    "compression-gzip",
+    "cors",
+    "fs",
+    "trace",
+]
 optional = true
 
 [dependencies.zino-core]
