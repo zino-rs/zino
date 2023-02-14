@@ -59,7 +59,7 @@ features = ["timeout"]
 optional = true
 
 [dependencies.tower-cookies]
-version = "0.8.0"
+version = "0.9.0"
 features= ["signed"]
 
 [dependencies.tower-http]

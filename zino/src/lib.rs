@@ -52,7 +52,6 @@ pub use zino_core::{
 
 #[cfg(feature = "axum")]
 pub use cluster::axum_cluster::AxumCluster;
-
 #[cfg(feature = "axum")]
 pub use request::axum_request::AxumExtractor;
 

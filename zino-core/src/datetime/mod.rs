@@ -1,7 +1,7 @@
 //! ISO 8601 combined date and time with local time zone.
 
 use chrono::{
-    format::{ParseError, ParseResult},
+    format::ParseError,
     Local, NaiveDateTime, SecondsFormat, TimeZone, Utc,
 };
 use serde::{Deserialize, Serialize};
@@ -54,14 +54,14 @@ impl DateTime {
 
     /// Parses an RFC 2822 date and time.
     #[inline]
-    pub fn parse_utc_str(s: &str) -> ParseResult<Self> {
+    pub fn parse_utc_str(s: &str) -> Result<Self, ParseError> {
         let datetime = chrono::DateTime::parse_from_rfc2822(s)?;
         Ok(Self(datetime.with_timezone(&Local)))
     }
 
     /// Parses an RFC 3339 and ISO 8601 date and time.
     #[inline]
-    pub fn parse_iso_str(s: &str) -> ParseResult<Self> {
+    pub fn parse_iso_str(s: &str) -> Result<Self, ParseError> {
         let datetime = chrono::DateTime::parse_from_rfc3339(s)?;
         Ok(Self(datetime.with_timezone(&Local)))
     }

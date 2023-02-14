@@ -162,7 +162,7 @@ static SHARED_APP_STATE: LazyLock<State> = LazyLock::new(|| {
     let mut data = Map::new();
     data.upsert("app.name", app_name);
     data.upsert("app.version", app_version);
-    data.upsert("app.start_at", DateTime::now());
+    data.upsert("app.booted_at", DateTime::now());
     state.set_data(data);
     state
 });

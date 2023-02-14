@@ -1,4 +1,4 @@
-//! Database model schema and SQL builder.
+//! Database schema and SQL builder.
 
 use crate::{extend::TomlTableExt, state::State};
 use sqlx::postgres::{PgConnectOptions, PgPool, PgPoolOptions};

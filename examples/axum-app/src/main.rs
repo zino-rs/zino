@@ -6,7 +6,7 @@ use zino::Application;
 
 fn main() {
     zino::AxumCluster::boot()
-        .register(router::init_routes())
-        .spawn(schedule::init_jobs())
-        .run(schedule::init_async_jobs())
+        .register(router::routes())
+        .spawn(schedule::jobs())
+        .run(schedule::async_jobs())
 }

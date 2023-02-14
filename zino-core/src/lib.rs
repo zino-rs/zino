@@ -18,13 +18,10 @@ mod crypto;
 
 #[cfg(feature = "accessor")]
 pub mod accessor;
-
 #[cfg(feature = "cache")]
 pub mod cache;
-
 #[cfg(feature = "connector")]
 pub mod connector;
-
 #[cfg(feature = "view")]
 pub mod view;
 
@@ -44,7 +41,7 @@ pub mod trace;
 /// A JSON key/value type.
 pub type Map = serde_json::Map<String, serde_json::Value>;
 
-/// A schema-less record Avro value.
+/// A schema-less Avro record value.
 pub type Record = Vec<(String, apache_avro::types::Value)>;
 
 /// A Universally Unique Identifier (UUID).

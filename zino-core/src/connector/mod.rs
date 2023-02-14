@@ -4,8 +4,7 @@
 //!
 //! | Data source type | Database               | Feature flag           |
 //! |------------------|------------------------|------------------------|
-//! | `hologres`       | Aliyun Hologres        | `connector-postgres`   |
-//! | `ceresdb`        | CeresDB                | `connector-postgres`   |
+//! | `ceresdb`        | CeresDB                | `connector-mysql`   |
 //! | `citus`          | Citus                  | `connector-postgres`   |
 //! | `databend`       | Databend               | `connector-mysql`      |
 //! | `hologres`       | Aliyun Hologres        | `connector-postgres`   |
@@ -53,10 +52,10 @@ pub trait Connector {
     /// Executes the query and returns the total number of rows affected.
     async fn execute(&self, sql: &str, params: Option<Map>) -> Result<Option<u64>, BoxError>;
 
-    /// Executes the query in the table, and parses it as `Vec<Map>`.
+    /// Executes the query and parses it as `Vec<Map>`.
     async fn query(&self, sql: &str, params: Option<Map>) -> Result<Vec<Record>, BoxError>;
 
-    /// Executes the query in the table, and parses it as a `Map`.
+    /// Executes the query and parses it as a `Map`.
     async fn query_one(&self, sql: &str, params: Option<Map>) -> Result<Option<Record>, BoxError>;
 }
 
