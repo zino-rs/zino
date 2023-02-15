@@ -109,8 +109,8 @@ impl GlobalAccessor {
                 if let Some(user) = config.get_str("user") {
                     builder.user(user);
                 }
-                if let Some(password) = config.get_str("password") {
-                    builder.password(password);
+                if let Some(password) = State::decrypt_password(config) {
+                    builder.password(password.as_ref());
                 }
                 Ok(Operator::new(builder.build()?).finish())
             }
@@ -261,8 +261,8 @@ impl GlobalAccessor {
                 if let Some(username) = config.get_str("username") {
                     builder.username(username);
                 }
-                if let Some(password) = config.get_str("password") {
-                    builder.password(password);
+                if let Some(password) = State::decrypt_password(config) {
+                    builder.password(password.as_ref());
                 }
                 if let Some(db) = config.get_i64("db") {
                     builder.db(db);
@@ -307,6 +307,12 @@ impl GlobalAccessor {
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
                     builder.endpoint(endpoint);
+                }
+                if let Some(username) = config.get_str("username") {
+                    builder.username(username);
+                }
+                if let Some(password) = State::decrypt_password(config) {
+                    builder.password(password.as_ref());
                 }
                 Ok(Operator::new(builder.build()?).finish())
             }

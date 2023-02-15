@@ -1,9 +1,6 @@
 //! ISO 8601 combined date and time with local time zone.
 
-use chrono::{
-    format::ParseError,
-    Local, NaiveDateTime, SecondsFormat, TimeZone, Utc,
-};
+use chrono::{format::ParseError, Local, NaiveDateTime, SecondsFormat, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{
