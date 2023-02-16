@@ -8,7 +8,7 @@
 //! | `citus`          | Citus                  | `connector-postgres`   |
 //! | `databend`       | Databend               | `connector-mysql`      |
 //! | `hologres`       | Aliyun Hologres        | `connector-postgres`   |
-//! | `maridb`         | MariaDB                | `connector-mysql`      |
+//! | `mariadb`        | MariaDB               | `connector-mysql`      |
 //! | `mssql`          | MSSQL (SQL Server)     | `connector-mssql`      |
 //! | `mysql`          | MySQL                  | `connector-mysql`      |
 //! | `opengauss`      | openGauss              | `connector-postgres`   |

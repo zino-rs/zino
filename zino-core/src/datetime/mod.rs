@@ -10,6 +10,10 @@ use std::{
     time::Duration,
 };
 
+mod duration;
+
+pub use duration::{parse_duration, ParseDurationError};
+
 /// A wrapper type for [`chrono::DateTime<Local>`](chrono::DateTime).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct DateTime(chrono::DateTime<Local>);

@@ -69,14 +69,14 @@ impl Application for AxumCluster {
 
         // Server config.
         let mut body_limit = 100 * 1024 * 1024; // 100MB
-        let mut request_timeout = 10; // 10 seconds
+        let mut request_timeout = Duration::from_secs(10); // 10 seconds
         let mut public_dir = PathBuf::new();
         let default_public_dir = Self::project_dir().join("assets");
         if let Some(server) = Self::config().get_table("server") {
             if let Some(limit) = server.get_usize("body-limit") {
                 body_limit = limit;
             }
-            if let Some(timeout) = server.get_u64("request-timeout") {
+            if let Some(timeout) = server.get_duration("request-timeout") {
                 request_timeout = timeout;
             }
             if let Some(dir) = server.get_str("public-dir") {
@@ -157,7 +157,7 @@ impl Application for AxumCluster {
                                 let res = Response::new(status_code);
                                 Ok::<http::Response<Full<Bytes>>, Infallible>(res.into())
                             }))
-                            .layer(TimeoutLayer::new(Duration::from_secs(request_timeout))),
+                            .layer(TimeoutLayer::new(request_timeout)),
                     );
                 tracing::warn!(env = app_env, "listen on {listener}");
                 Server::bind(listener)

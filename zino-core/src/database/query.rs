@@ -402,7 +402,7 @@ impl Query {
             if params.is_empty() || !sql.contains('$') {
                 Cow::Borrowed(sql)
             } else {
-                SQL_PARAM_PLACEHOLDER.replace_all(sql, |captures: &Captures| {
+                SQL_PARAM_PLACEHOLDER_PATTERN.replace_all(sql, |captures: &Captures| {
                     let key = &captures[1];
                     params
                         .get(key)
@@ -420,7 +420,7 @@ impl Query {
 }
 
 /// SQL param placeholder pattern.
-static SQL_PARAM_PLACEHOLDER: LazyLock<Regex> = LazyLock::new(|| {
+static SQL_PARAM_PLACEHOLDER_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"\$\{\s*([\w\.]+)\s*\}").expect("failed to create SQL param placeholder pattern")
 });
 

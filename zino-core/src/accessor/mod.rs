@@ -35,7 +35,7 @@ use opendal::{
     ErrorKind::Unsupported,
     Operator,
 };
-use std::{collections::HashMap, sync::LazyLock, time::Duration};
+use std::{collections::HashMap, sync::LazyLock};
 use toml::Table;
 
 /// Global storage accessor built on the top of [`opendal`](https://crates.io/crates/opendal).
@@ -176,8 +176,8 @@ impl GlobalAccessor {
                 if let Some(endpoint) = config.get_str("endpoint") {
                     builder.endpoint(endpoint);
                 }
-                if let Some(default_ttl) = config.get_u64("default-ttl") {
-                    builder.default_ttl(Duration::from_secs(default_ttl));
+                if let Some(default_ttl) = config.get_duration("default-ttl") {
+                    builder.default_ttl(default_ttl);
                 }
                 Ok(Operator::new(builder.build()?).finish())
             }
@@ -194,11 +194,11 @@ impl GlobalAccessor {
                 if let Some(max_capacity) = config.get_u64("max-capacity") {
                     builder.max_capacity(max_capacity);
                 }
-                if let Some(time_to_live) = config.get_u64("time-to-live") {
-                    builder.time_to_live(Duration::from_secs(time_to_live));
+                if let Some(time_to_live) = config.get_duration("time-to-live") {
+                    builder.time_to_live(time_to_live);
                 }
-                if let Some(time_to_idle) = config.get_u64("time-to-idle") {
-                    builder.time_to_idle(Duration::from_secs(time_to_idle));
+                if let Some(time_to_idle) = config.get_duration("time-to-idle") {
+                    builder.time_to_idle(time_to_idle);
                 }
                 if let Some(segments) = config.get_usize("segments") {
                     builder.segments(segments);
@@ -267,8 +267,8 @@ impl GlobalAccessor {
                 if let Some(db) = config.get_i64("db") {
                     builder.db(db);
                 }
-                if let Some(default_ttl) = config.get_u64("default-ttl") {
-                    builder.default_ttl(Duration::from_secs(default_ttl));
+                if let Some(default_ttl) = config.get_duration("default-ttl") {
+                    builder.default_ttl(default_ttl);
                 }
                 Ok(Operator::new(builder.build()?).finish())
             }

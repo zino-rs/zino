@@ -48,14 +48,16 @@ pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {
                     ExposeHeaders::list(header_names)
                 })
                 .unwrap_or_else(ExposeHeaders::any);
-            let max_age = cors.get_u64("max-age").unwrap_or(60 * 60);
+            let max_age = cors
+                .get_duration("max-age")
+                .unwrap_or_else(|| Duration::from_secs(60 * 60));
             CorsLayer::new()
                 .allow_credentials(allow_credentials)
                 .allow_origin(allow_origin)
                 .allow_methods(allow_methods)
                 .allow_headers(allow_headers)
                 .expose_headers(expose_headers)
-                .max_age(Duration::from_secs(max_age))
+                .max_age(max_age)
         }
         None => CorsLayer::permissive(),
     }

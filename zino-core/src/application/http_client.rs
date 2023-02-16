@@ -32,11 +32,11 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .gzip(true);
     let mut max_retries = 3;
     if let Some(http_client) = APP::config().get_table("http-client") {
-        if let Some(timeout) = http_client.get_u64("request-timeout") {
-            client_builder = client_builder.timeout(Duration::from_secs(timeout));
+        if let Some(timeout) = http_client.get_duration("request-timeout") {
+            client_builder = client_builder.timeout(timeout);
         }
-        if let Some(timeout) = http_client.get_u64("pool-idle-timeout") {
-            client_builder = client_builder.pool_idle_timeout(Duration::from_secs(timeout));
+        if let Some(timeout) = http_client.get_duration("pool-idle-timeout") {
+            client_builder = client_builder.pool_idle_timeout(timeout);
         }
         if let Some(max_idle_per_host) = http_client.get_usize("pool-max-idle-per-host") {
             client_builder = client_builder.pool_max_idle_per_host(max_idle_per_host);
@@ -47,8 +47,8 @@ pub(super) fn init<APP: Application + ?Sized>() {
         {
             client_builder = client_builder.local_address(addr);
         }
-        if let Some(tcp_keepalive) = http_client.get_u64("tcp-keepalive") {
-            client_builder = client_builder.tcp_keepalive(Duration::from_secs(tcp_keepalive));
+        if let Some(tcp_keepalive) = http_client.get_duration("tcp-keepalive") {
+            client_builder = client_builder.tcp_keepalive(tcp_keepalive);
         }
         if let Some(root_certs) = http_client.get_array("root-certs") {
             for root_cert in root_certs.iter().filter_map(|cert| cert.as_str()) {

@@ -10,9 +10,11 @@ pub(super) fn init<APP: Application + ?Sized>() {
         if exporter == "prometheus" {
             let mut builder = match metrics.get_str("push-gateway") {
                 Some(endpoint) => {
-                    let interval = metrics.get_u64("interval").unwrap_or(60);
+                    let interval = metrics
+                        .get_duration("interval")
+                        .unwrap_or_else(|| Duration::from_secs(60));
                     PrometheusBuilder::new()
-                        .with_push_gateway(endpoint, Duration::from_secs(interval))
+                        .with_push_gateway(endpoint, interval)
                         .expect("failed to configure the exporter to run in push gateway mode")
                 }
                 None => {

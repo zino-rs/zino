@@ -1,3 +1,4 @@
+use self::ParseSecurityTokenError::*;
 use super::AccessKeyId;
 use crate::{crypto, datetime::DateTime, BoxError};
 use base64_simd::STANDARD_NO_PAD;
@@ -86,7 +87,6 @@ impl SecurityToken {
 
     /// Parses the token with the encryption key.
     pub(crate) fn parse_with(token: String, key: &[u8]) -> Result<Self, ParseSecurityTokenError> {
-        use ParseSecurityTokenError::*;
         match STANDARD_NO_PAD.decode_to_vec(&token) {
             Ok(data) => {
                 let authorization = crypto::decrypt(key, &data)
@@ -150,7 +150,6 @@ pub(crate) enum ParseSecurityTokenError {
 
 impl fmt::Display for ParseSecurityTokenError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use ParseSecurityTokenError::*;
         match self {
             DecodeError(err) => write!(f, "decode error: {err}"),
             ParseExpiresError(err) => write!(f, "parse expires error: {err}"),

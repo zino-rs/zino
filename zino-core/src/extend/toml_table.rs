@@ -1,3 +1,5 @@
+use crate::datetime;
+use std::time::Duration;
 use toml::{Table, Value};
 
 /// Extension trait for [`Table`](toml::Table).
@@ -35,6 +37,10 @@ pub trait TomlTableExt {
 
     /// Extracts the table value corresponding to the key.
     fn get_table(&self, key: &str) -> Option<&Table>;
+
+    /// Extracts the string corresponding to the key
+    /// and parses it as `Duration`.
+    fn get_duration(&self, key: &str) -> Option<Duration>;
 }
 
 impl TomlTableExt for Table {
@@ -94,5 +100,10 @@ impl TomlTableExt for Table {
     #[inline]
     fn get_table(&self, key: &str) -> Option<&Table> {
         self.get(key).and_then(|v| v.as_table())
+    }
+
+    fn get_duration(&self, key: &str) -> Option<Duration> {
+        self.get_str(key)
+            .and_then(|s| datetime::parse_duration(s).ok())
     }
 }

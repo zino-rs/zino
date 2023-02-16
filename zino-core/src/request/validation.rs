@@ -1,9 +1,14 @@
-use crate::{datetime::DateTime, extend::JsonObjectExt, BoxError, Map, SharedString};
+use crate::{
+    datetime::{self, DateTime},
+    extend::JsonObjectExt,
+    BoxError, Map, SharedString,
+};
 use serde_json::Value;
 use std::{
     net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr},
     num::{ParseFloatError, ParseIntError},
     str::{FromStr, ParseBoolError},
+    time::Duration,
 };
 use url::{self, Url};
 use uuid::Uuid;
@@ -121,6 +126,16 @@ impl Validation {
         value: impl Into<Option<&'a Value>>,
     ) -> Option<Result<DateTime, chrono::format::ParseError>> {
         value.into().and_then(|v| v.as_str()).map(|s| s.parse())
+    }
+
+    /// Parses a json value as `Duration`.
+    pub fn parse_duration<'a>(
+        value: impl Into<Option<&'a Value>>,
+    ) -> Option<Result<Duration, datetime::ParseDurationError>> {
+        value
+            .into()
+            .and_then(|v| v.as_str())
+            .map(datetime::parse_duration)
     }
 
     /// Parses a json value as `Url`.
