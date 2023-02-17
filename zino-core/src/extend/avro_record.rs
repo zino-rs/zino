@@ -208,7 +208,7 @@ impl AvroRecordExt for Record {
     }
 
     fn into_avro_map(self) -> Value {
-        let mut map = HashMap::new();
+        let mut map = HashMap::with_capacity(self.len());
         for (field, value) in self.into_iter() {
             map.insert(field, value);
         }
@@ -216,7 +216,7 @@ impl AvroRecordExt for Record {
     }
 
     fn try_into_map(self) -> Result<Map, Error> {
-        let mut map = Map::new();
+        let mut map = Map::with_capacity(self.len());
         for (field, value) in self.into_iter() {
             map.insert(field, value.try_into()?);
         }

@@ -1,11 +1,11 @@
-use super::{Connector, DataSource, DataSourcePool::MySql};
+use super::{Connector, DataSource, DataSourceConnector::MySql};
 use crate::{extend::TomlTableExt, state::State, BoxError};
 use sqlx::mysql::{MySqlPool, MySqlPoolOptions};
 use std::time::Duration;
 use toml::Table;
 
 impl Connector for MySqlPool {
-    fn new_data_source(config: &'static Table) -> Result<DataSource, BoxError> {
+    fn try_new_data_source(config: &'static Table) -> Result<DataSource, BoxError> {
         let name = config.get_str("name").unwrap_or("mysql");
         let database = config.get_str("database").unwrap_or_default();
         let authority = State::format_authority(config, Some(3306));
@@ -29,7 +29,7 @@ impl Connector for MySqlPool {
             .idle_timeout(idle_timeout)
             .acquire_timeout(acquire_timeout);
         let pool = pool_options.connect_lazy(&dsn)?;
-        let data_source = DataSource::new("mysql", name, database, MySql(pool));
+        let data_source = DataSource::new(name, "mysql", database, MySql(pool));
         Ok(data_source)
     }
 

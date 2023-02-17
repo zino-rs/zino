@@ -9,6 +9,7 @@ use crate::{
     BoxError, Map,
 };
 use reqwest::Response;
+use serde::de::DeserializeOwned;
 use std::{env, path::PathBuf, sync::LazyLock, thread};
 use toml::value::Table;
 
@@ -127,7 +128,7 @@ pub trait Application {
 
     /// Makes an HTTP request to the provided resource
     /// using [`reqwest`](https://crates.io/crates/reqwest).
-    async fn fetch(resource: &str, options: Option<Map>) -> Result<Response, BoxError> {
+    async fn fetch(resource: &str, options: Option<&Map>) -> Result<Response, BoxError> {
         let mut trace_context = TraceContext::new();
         let span_id = trace_context.span_id();
         trace_context
@@ -139,6 +140,27 @@ pub trait Application {
             .send()
             .await
             .map_err(BoxError::from)
+    }
+
+    /// Makes an HTTP request to the provided resource and
+    /// deserializes the response body as JSON.
+    async fn fetch_json<T: DeserializeOwned>(
+        resource: &str,
+        options: Option<&Map>,
+    ) -> Result<T, BoxError> {
+        let response = Self::fetch(resource, options).await?.error_for_status()?;
+        let headers = response.headers();
+        let content_type = match headers.get("content-type") {
+            Some(header_value) => header_value.to_str()?,
+            None => "text/plain",
+        };
+        let data = if content_type.starts_with("application/") && content_type.ends_with("json") {
+            response.json().await?
+        } else {
+            let text = response.text().await?;
+            serde_json::from_str(&text)?
+        };
+        Ok(data)
     }
 }
 

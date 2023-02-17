@@ -43,8 +43,9 @@ use toml::Table;
 pub struct GlobalAccessor;
 
 impl GlobalAccessor {
-    /// Creates a new operator with the configuration for the specific storage service.
-    pub fn new_operator(scheme: &'static str, config: &Table) -> Result<Operator, Error> {
+    /// Constructs a new operator with the configuration for the specific storage service,
+    /// returning an error if it fails.
+    pub fn try_new_operator(scheme: &'static str, config: &Table) -> Result<Operator, Error> {
         let operator = match scheme {
             "azblob" => {
                 let mut builder = Azblob::default();
@@ -362,7 +363,7 @@ static GLOBAL_ACCESSOR: LazyLock<HashMap<&'static str, Operator>> = LazyLock::ne
         for accessor in accessors.iter().filter_map(|v| v.as_table()) {
             let scheme = accessor.get_str("scheme").unwrap_or("unkown");
             let name = accessor.get_str("name").unwrap_or(scheme);
-            let operator = GlobalAccessor::new_operator(scheme, accessor)
+            let operator = GlobalAccessor::try_new_operator(scheme, accessor)
                 .unwrap_or_else(|err| panic!("failed to build `{scheme}` operator: {err}"));
             operators.insert(name, operator);
         }

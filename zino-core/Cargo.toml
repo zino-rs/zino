@@ -16,7 +16,7 @@ readme = "README.md"
 all-features = true
 
 [features]
-default = ["view"]
+default = ["view", "connector"]
 accessor = ["opendal"]
 accessor-ftp = ["accessor", "opendal/services-ftp"]
 accessor-ipfs = ["accessor", "opendal/services-ipfs"]
@@ -24,7 +24,8 @@ accessor-memcached = ["accessor", "opendal/services-memcached"]
 accessor-moka = ["accessor", "opendal/services-moka"]
 accessor-redis = ["accessor", "opendal/services-redis"]
 cache = ["dep:lru"]
-connector = ["connector-mysql", "connector-postgres"]
+connector = ["connector-http", "connector-mysql", "connector-postgres"]
+connector-http = ["connector"]
 connector-mssql = ["connector", "sqlx/mssql"]
 connector-mysql = ["connector", "sqlx/mysql"]
 connector-postgres = ["connector", "sqlx/postgres"]

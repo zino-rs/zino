@@ -437,7 +437,7 @@ pub trait RequestContext {
     async fn fetch(
         &self,
         resource: &str,
-        options: Option<Map>,
+        options: Option<&Map>,
     ) -> Result<reqwest::Response, BoxError> {
         let trace_context = self.new_trace_context();
         http_client::request_builder(resource, options)?
@@ -446,6 +446,28 @@ pub trait RequestContext {
             .send()
             .await
             .map_err(BoxError::from)
+    }
+
+    /// Makes an HTTP request to the provided resource and
+    /// deserializes the response body as JSON.
+    async fn fetch_json<T: DeserializeOwned>(
+        &self,
+        resource: &str,
+        options: Option<&Map>,
+    ) -> Result<T, BoxError> {
+        let response = self.fetch(resource, options).await?.error_for_status()?;
+        let headers = response.headers();
+        let content_type = match headers.get("content-type") {
+            Some(header_value) => header_value.to_str()?,
+            None => "text/plain",
+        };
+        let data = if content_type.starts_with("application/") && content_type.ends_with("json") {
+            response.json().await?
+        } else {
+            let text = response.text().await?;
+            serde_json::from_str(&text)?
+        };
+        Ok(data)
     }
 
     /// Translates the localization message.

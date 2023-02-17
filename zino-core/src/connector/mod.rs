@@ -1,33 +1,45 @@
-//! Unified database connector to different data sources.
+//! Unified connector to different data sources.
 //!
 //! ## Supported data sources
 //!
-//! | Data source type | Database               | Feature flag           |
+//! | Data source type | Description            | Feature flag           |
 //! |------------------|------------------------|------------------------|
-//! | `ceresdb`        | CeresDB                | `connector-mysql`   |
+//! | `ceresdb`        | CeresDB                | `connector-mysql`      |
 //! | `citus`          | Citus                  | `connector-postgres`   |
 //! | `databend`       | Databend               | `connector-mysql`      |
+//! | `graphql`        | GraphQL API            | `connector-http`       |
 //! | `hologres`       | Aliyun Hologres        | `connector-postgres`   |
-//! | `mariadb`        | MariaDB               | `connector-mysql`      |
+//! | `http`           | HTTP services          | `connector-http`       |
+//! | `mariadb`        | MariaDB                | `connector-mysql`      |
 //! | `mssql`          | MSSQL (SQL Server)     | `connector-mssql`      |
 //! | `mysql`          | MySQL                  | `connector-mysql`      |
 //! | `opengauss`      | openGauss              | `connector-postgres`   |
 //! | `postgis`        | PostGIS                | `connector-postgres`   |
 //! | `postgres`       | PostgreSQL             | `connector-postgres`   |
+//! | `rest`           | RESTful API            | `connector-http`       |
 //! | `sqlite`         | SQLite                 | `connector-sqlite`     |
 //! | `taos`           | TDengine               | `connector-taos`       |
 //! | `tidb`           | TiDB                   | `connector-mysql`      |
 //! | `timescaledb`    | TimescaleDB            | `connector-postgres`   |
 //!
 
-use crate::{extend::TomlTableExt, state::State, BoxError, Map, Record};
-use std::{collections::HashMap, sync::LazyLock};
+use crate::{
+    database,
+    extend::{AvroRecordExt, TomlTableExt},
+    state::State,
+    BoxError, Map, Record,
+};
+use apache_avro::types::Value;
+use serde::de::DeserializeOwned;
+use std::{borrow::Cow, collections::HashMap, sync::LazyLock};
 use toml::Table;
 
 mod data_source;
 mod sqlx_common;
 
 /// Supported connectors.
+#[cfg(feature = "connector-http")]
+mod connector_http;
 #[cfg(feature = "connector-mssql")]
 mod connector_mssql;
 #[cfg(feature = "connector-mysql")]
@@ -41,22 +53,59 @@ mod connector_taos;
 
 pub use data_source::DataSource;
 
-use data_source::DataSourcePool;
+use data_source::DataSourceConnector;
 use sqlx_common::impl_sqlx_connector;
+
+#[cfg(feature = "connector-http")]
+pub use connector_http::HttpConnector;
 
 /// Underlying trait of all data sources for implementors.
 pub trait Connector {
-    /// Creates a new data source with the configuration.
-    fn new_data_source(config: &'static Table) -> Result<DataSource, BoxError>;
+    /// Constructs a new data source with the configuration,
+    /// returning an error if it fails.
+    fn try_new_data_source(config: &'static Table) -> Result<DataSource, BoxError>;
 
     /// Executes the query and returns the total number of rows affected.
-    async fn execute(&self, sql: &str, params: Option<Map>) -> Result<Option<u64>, BoxError>;
+    async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, BoxError>;
 
     /// Executes the query and parses it as `Vec<Map>`.
-    async fn query(&self, sql: &str, params: Option<Map>) -> Result<Vec<Record>, BoxError>;
+    async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, BoxError>;
 
     /// Executes the query and parses it as a `Map`.
-    async fn query_one(&self, sql: &str, params: Option<Map>) -> Result<Option<Record>, BoxError>;
+    async fn query_one(
+        &self,
+        query: &str,
+        params: Option<&Map>,
+    ) -> Result<Option<Record>, BoxError>;
+
+    /// Executes the query and parses it as `Vec<T>`.
+    async fn query_as<T: DeserializeOwned>(
+        &self,
+        query: &str,
+        params: Option<&Map>,
+    ) -> Result<Vec<T>, BoxError> {
+        let data = self.query(query, params).await?;
+        let value = data
+            .into_iter()
+            .map(|record| record.into_avro_map())
+            .collect::<Vec<_>>();
+        apache_avro::from_value(&Value::Array(value)).map_err(|err| err.into())
+    }
+
+    /// Executes the query and parses it as an instance of type `T`.
+    async fn query_one_as<T: DeserializeOwned>(
+        &self,
+        query: &str,
+        params: Option<&Map>,
+    ) -> Result<Option<T>, BoxError> {
+        match self.query_one(query, params).await? {
+            Some(data) => {
+                let value = Value::Union(1, Box::new(data.into_avro_map()));
+                apache_avro::from_value(&value).map_err(|err| err.into())
+            }
+            None => Ok(None),
+        }
+    }
 }
 
 /// Global database connector.
@@ -71,14 +120,23 @@ impl GlobalConnector {
     }
 }
 
-/// Global database connector.
+/// Formats the query using interpolation of the parameters.
+///
+/// The interpolation parameter is represented as `${param}`,
+/// in which `param` can only contain restricted chracters `[a-zA-Z]+[\w\.]*`.
+#[inline]
+pub fn format_query<'a>(query: &'a str, params: Option<&'a Map>) -> Cow<'a, str> {
+    database::format_query(query, params)
+}
+
+/// Global data source connector.
 static GLOBAL_CONNECTOR: LazyLock<HashMap<&'static str, DataSource>> = LazyLock::new(|| {
     let mut data_sources = HashMap::new();
     if let Some(connectors) = State::shared().config().get_array("connector") {
         for connector in connectors.iter().filter_map(|v| v.as_table()) {
-            let database_type = connector.get_str("type").unwrap_or("unkown");
-            let name = connector.get_str("name").unwrap_or(database_type);
-            let data_source = DataSource::new_connector(database_type, connector)
+            let data_source_type = connector.get_str("type").unwrap_or("unkown");
+            let name = connector.get_str("name").unwrap_or(data_source_type);
+            let data_source = DataSource::try_new(data_source_type, connector)
                 .unwrap_or_else(|err| panic!("failed to connect data source `{name}`: {err}"));
             data_sources.insert(name, data_source);
         }

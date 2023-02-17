@@ -1,10 +1,12 @@
-use self::DataSourcePool::*;
+use self::DataSourceConnector::*;
 use super::Connector;
 use crate::{extend::AvroRecordExt, BoxError, Map, Record};
 use apache_avro::types::Value;
 use serde::de::DeserializeOwned;
 use toml::Table;
 
+#[cfg(feature = "connector-http")]
+use super::HttpConnector;
 #[cfg(feature = "connector-mssql")]
 use sqlx::mssql::MssqlPool;
 #[cfg(feature = "connector-mysql")]
@@ -16,9 +18,12 @@ use sqlx::sqlite::SqlitePool;
 #[cfg(feature = "connector-taos")]
 use taos::TaosPool;
 
-/// Supported data source pool.
+/// Supported data source connectors.
 #[non_exhaustive]
-pub(super) enum DataSourcePool {
+pub(super) enum DataSourceConnector {
+    #[cfg(feature = "connector-http")]
+    /// HTTP
+    Http(HttpConnector),
     #[cfg(feature = "connector-mssql")]
     /// MSSQL
     Mssql(MssqlPool),
@@ -38,61 +43,68 @@ pub(super) enum DataSourcePool {
 
 /// Data sources.
 pub struct DataSource {
-    /// Data souce type
-    data_source_type: &'static str,
     /// Name
     name: &'static str,
-    /// Database
-    database: &'static str,
+    /// Data souce type
+    data_source_type: &'static str,
+    /// Repository
+    repository: &'static str,
     /// Pool
-    pool: DataSourcePool,
+    pool: DataSourceConnector,
 }
 
 impl DataSource {
     /// Creates a new instance.
     #[inline]
     pub(super) fn new(
-        data_source_type: &'static str,
         name: &'static str,
-        database: &'static str,
-        pool: DataSourcePool,
+        data_source_type: &'static str,
+        repository: &'static str,
+        pool: DataSourceConnector,
     ) -> Self {
         Self {
-            data_source_type,
             name,
-            database,
+            data_source_type,
+            repository,
             pool,
         }
     }
 
-    /// Creates a new connector with the configuration for the specific data source.
-    pub fn new_connector(
+    /// Constructs a new instance with the configuration for the specific data source,
+    /// returning an error if it fails.
+    pub fn try_new(
         data_source_type: &'static str,
         config: &'static Table,
     ) -> Result<Self, BoxError> {
         match data_source_type {
+            #[cfg(feature = "connector-http")]
+            "http" | "rest" | "graphql" => {
+                let mut data_source = HttpConnector::try_new_data_source(config)?;
+                data_source.data_source_type = data_source_type;
+                Ok(data_source)
+            }
             #[cfg(feature = "connector-mssql")]
             "mssql" => {
-                let mut data_source = MssqlPool::new_data_source(config)?;
+                let mut data_source = MssqlPool::try_new_data_source(config)?;
                 data_source.data_source_type = data_source_type;
                 Ok(data_source)
             }
             #[cfg(feature = "connector-mysql")]
             "mysql" | "ceresdb" | "databend" | "mariadb" | "tidb" => {
-                let mut data_source = MySqlPool::new_data_source(config)?;
+                let mut data_source = MySqlPool::try_new_data_source(config)?;
                 data_source.data_source_type = data_source_type;
                 Ok(data_source)
             }
             #[cfg(feature = "connector-postgres")]
             "postgres" | "citus" | "hologres" | "opengauss" | "postgis" | "timescaledb" => {
-                let mut data_source = PgPool::new_data_source(config)?;
+                let mut data_source = PgPool::try_new_data_source(config)?;
                 data_source.data_source_type = data_source_type;
                 Ok(data_source)
             }
             #[cfg(feature = "connector-sqlite")]
-            "sqlite" => SqlitePool::new_data_source(config),
+            "sqlite" => SqlitePool::try_new_data_source(config),
             #[cfg(feature = "connector-taos")]
-            "taos" => TaosPool::new_data_source(config),
+            "taos" => TaosPool::try_new_data_source(config),
             _ => Err(format!("data source type `{data_source_type}` is unsupported").into()),
         }
     }
@@ -103,15 +115,17 @@ impl DataSource {
         self.name
     }
 
-    /// Returns the database.
+    /// Returns the repository.
     #[inline]
-    pub fn database(&self) -> &'static str {
-        self.database
+    pub fn repository(&self) -> &'static str {
+        self.repository
     }
 
     /// Executes the query and returns the total number of rows affected.
-    pub async fn execute(&self, sql: &str, params: Option<Map>) -> Result<Option<u64>, BoxError> {
+    pub async fn execute(&self, sql: &str, params: Option<&Map>) -> Result<Option<u64>, BoxError> {
         match &self.pool {
+            #[cfg(feature = "connector-http")]
+            Http(connector) => connector.execute(sql, params).await,
             #[cfg(feature = "connector-mssql")]
             Mssql(pool) => pool.execute(sql, params).await,
             #[cfg(feature = "connector-mysql")]
@@ -125,9 +139,11 @@ impl DataSource {
         }
     }
 
-    /// Executes the query in the table, and parses it as `Vec<Map>`.
-    pub async fn query(&self, sql: &str, params: Option<Map>) -> Result<Vec<Record>, BoxError> {
+    /// Executes the query and parses it as `Vec<Map>`.
+    pub async fn query(&self, sql: &str, params: Option<&Map>) -> Result<Vec<Record>, BoxError> {
         match &self.pool {
+            #[cfg(feature = "connector-http")]
+            Http(connector) => connector.query(sql, params).await,
             #[cfg(feature = "connector-mssql")]
             Mssql(pool) => pool.query(sql, params).await,
             #[cfg(feature = "connector-mysql")]
@@ -141,11 +157,11 @@ impl DataSource {
         }
     }
 
-    /// Executes the query in the table, and parses it as `Vec<T>`.
+    /// Executes the query and parses it as `Vec<T>`.
     pub async fn query_as<T: DeserializeOwned>(
         &self,
         sql: &str,
-        params: Option<Map>,
+        params: Option<&Map>,
     ) -> Result<Vec<T>, BoxError> {
         let data = self.query(sql, params).await?;
         let value = data
@@ -155,13 +171,15 @@ impl DataSource {
         apache_avro::from_value(&Value::Array(value)).map_err(|err| err.into())
     }
 
-    /// Executes the query in the table, and parses it as a `Map`.
+    /// Executes the query and parses it as a `Map`.
     pub async fn query_one(
         &self,
         sql: &str,
-        params: Option<Map>,
+        params: Option<&Map>,
     ) -> Result<Option<Record>, BoxError> {
         match &self.pool {
+            #[cfg(feature = "connector-http")]
+            Http(connector) => connector.query_one(sql, params).await,
             #[cfg(feature = "connector-mssql")]
             Mssql(pool) => pool.query_one(sql, params).await,
             #[cfg(feature = "connector-mysql")]
@@ -175,11 +193,11 @@ impl DataSource {
         }
     }
 
-    /// Executes the query in the table, and parses it as an instance of type `T`.
+    /// Executes the query and parses it as an instance of type `T`.
     pub async fn query_one_as<T: DeserializeOwned>(
         &self,
         sql: &str,
-        params: Option<Map>,
+        params: Option<&Map>,
     ) -> Result<Option<T>, BoxError> {
         match self.query_one(sql, params).await? {
             Some(data) => {

@@ -18,8 +18,7 @@ pub(crate) async fn websocket_handler(
         let source = subscription.source();
         let topic = subscription.topic();
         while let Some(Ok(Message::Text(message))) = socket.recv().await {
-            let data = message.leak();
-            match serde_json::from_str::<'_, CloudEvent>(data) {
+            match serde_json::from_value::<CloudEvent>(message.clone().into()) {
                 Ok(event) => {
                     let event_session_id = event.session_id();
                     if session_id.is_none() || session_id != event_session_id {
@@ -27,7 +26,7 @@ pub(crate) async fn websocket_handler(
                         if source.filter(|&source| source != event_source).is_none() {
                             let event_topic = event.topic();
                             if topic.filter(|&topic| topic != event_topic).is_none() {
-                                let message = Message::Text(data.to_owned());
+                                let message = Message::Text(message.clone());
                                 if let Err(err) = socket.send(message).await {
                                     tracing::error!("{err}");
                                 }

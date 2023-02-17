@@ -123,12 +123,11 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     where
         T: DeserializeOwned + Send + 'static,
     {
-        let form_urlencoded = self
+        let content_type = self
             .get_header("content-type")
-            .map(|t| t.starts_with("application/x-www-form-urlencoded"))
-            .unwrap_or(true);
+            .unwrap_or("application/json");
         let body = self.body_mut();
-        let result = if form_urlencoded {
+        let result = if content_type.starts_with("application/x-www-form-urlencoded") {
             body::aggregate(body)
                 .await
                 .map_err(|err| err.to_string())

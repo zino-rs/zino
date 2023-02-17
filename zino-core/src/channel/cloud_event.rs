@@ -27,7 +27,7 @@ pub struct CloudEvent {
     timestamp: DateTime,
     /// Version.
     #[serde(rename = "specversion")]
-    version: &'static str,
+    version: String,
 }
 
 impl CloudEvent {
@@ -41,7 +41,7 @@ impl CloudEvent {
             data,
             session_id: None,
             timestamp: DateTime::now(),
-            version: "1.0",
+            version: "1.0".to_owned(),
         }
     }
 

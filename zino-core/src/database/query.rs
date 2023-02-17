@@ -1,8 +1,6 @@
 use super::{Column, ColumnExt, Schema};
 use crate::{extend::JsonObjectExt, request::Validation, Map};
-use regex::{Captures, Regex};
 use serde_json::Value;
-use std::{borrow::Cow, sync::LazyLock};
 
 #[derive(Debug, Clone, Default)]
 /// SQL query builder.
@@ -394,50 +392,5 @@ impl Query {
             }
         }
         None
-    }
-
-    /// Formats the sql with the params.
-    pub(crate) fn format_sql(sql: &str, params: Option<Map>) -> Cow<'_, str> {
-        if let Some(params) = params {
-            if params.is_empty() || !sql.contains('$') {
-                Cow::Borrowed(sql)
-            } else {
-                SQL_PARAM_PLACEHOLDER_PATTERN.replace_all(sql, |captures: &Captures| {
-                    let key = &captures[1];
-                    params
-                        .get(key)
-                        .map(|value| match value {
-                            Value::String(s) => s.to_owned(),
-                            _ => value.to_string(),
-                        })
-                        .unwrap_or_else(|| format!("${{{key}}}"))
-                })
-            }
-        } else {
-            Cow::Borrowed(sql)
-        }
-    }
-}
-
-/// SQL param placeholder pattern.
-static SQL_PARAM_PLACEHOLDER_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"\$\{\s*([\w\.]+)\s*\}").expect("failed to create SQL param placeholder pattern")
-});
-
-#[cfg(test)]
-mod tests {
-    use super::Query;
-    use crate::{extend::JsonObjectExt, Map};
-
-    #[test]
-    fn it_formats_sql_params() {
-        let sql = "SELECT ${fields} FROM users WHERE name = 'alice' AND age >= ${age};";
-        let mut params = Map::new();
-        params.upsert("fields", "id, name, age");
-        params.upsert("age", 18);
-        assert_eq!(
-            Query::format_sql(sql, Some(params)),
-            "SELECT id, name, age FROM users WHERE name = 'alice' AND age >= 18;"
-        );
     }
 }

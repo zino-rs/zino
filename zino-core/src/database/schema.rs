@@ -638,30 +638,30 @@ pub trait Schema: 'static + Send + Sync + Model {
     }
 
     /// Executes the query in the table, and returns the total number of rows affected.
-    async fn execute(sql: &str, params: Option<Map>) -> Result<u64, Error> {
+    async fn execute(sql: &str, params: Option<&Map>) -> Result<u64, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
-        let sql = Query::format_sql(sql, params);
+        let sql = super::format_query(sql, params);
         let query_result = sqlx::query(&sql).execute(pool).await?;
         Ok(query_result.rows_affected())
     }
 
     /// Executes the query in the table, and parses it as `Vec<Record>`.
-    async fn query(sql: &str, params: Option<Map>) -> Result<Vec<Record>, Error> {
+    async fn query(sql: &str, params: Option<&Map>) -> Result<Vec<Record>, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
-        let sql = Query::format_sql(sql, params);
+        let sql = super::format_query(sql, params);
         let mut rows = sqlx::query(&sql).fetch(pool);
-        let mut data = Vec::new();
+        let mut records = Vec::new();
         while let Some(row) = rows.try_next().await? {
             let record = Column::parse_row(&row)?;
-            data.push(record);
+            records.push(record);
         }
-        Ok(data)
+        Ok(records)
     }
 
     /// Executes the query in the table, and parses it as `Vec<T>`.
     async fn query_as<T: DeserializeOwned>(
         sql: &str,
-        params: Option<Map>,
+        params: Option<&Map>,
     ) -> Result<Vec<T>, Error> {
         let data = Self::query(sql, params).await?;
         let value = data
@@ -672,9 +672,9 @@ pub trait Schema: 'static + Send + Sync + Model {
     }
 
     /// Executes the query in the table, and parses it as a `Record`.
-    async fn query_one(sql: &str, params: Option<Map>) -> Result<Option<Record>, Error> {
+    async fn query_one(sql: &str, params: Option<&Map>) -> Result<Option<Record>, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
-        let sql = Query::format_sql(sql, params);
+        let sql = super::format_query(sql, params);
         let data = match sqlx::query(&sql).fetch_optional(pool).await? {
             Some(row) => {
                 let record = Column::parse_row(&row)?;
@@ -688,7 +688,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Executes the query in the table, and parses it as an instance of type `T`.
     async fn query_one_as<T: DeserializeOwned>(
         sql: &str,
-        params: Option<Map>,
+        params: Option<&Map>,
     ) -> Result<Option<T>, Error> {
         match Self::query_one(sql, params).await? {
             Some(data) => {

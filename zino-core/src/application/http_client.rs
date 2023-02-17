@@ -6,6 +6,7 @@ use crate::{
 };
 use reqwest::{
     header::{self, HeaderMap, HeaderName},
+    multipart::Form,
     Certificate, Client, Method, Request, Response, Url,
 };
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, Error, RequestBuilder};
@@ -95,10 +96,9 @@ pub(super) fn init<APP: Application + ?Sized>() {
 /// Constructs a request builder.
 pub(crate) fn request_builder(
     resource: &str,
-    options: Option<Map>,
+    options: Option<&Map>,
 ) -> Result<RequestBuilder, BoxError> {
-    let options = options.unwrap_or_default();
-    if options.is_empty() {
+    if options.is_none() || options.is_some_and(|map| map.is_empty()) {
         let request_builder = SHARED_HTTP_CLIENT
             .get()
             .ok_or("failed to get the global http client")?
@@ -106,6 +106,7 @@ pub(crate) fn request_builder(
         return Ok(request_builder);
     }
 
+    let options = options.expect("options should be nonempty");
     let method = options
         .get_str("method")
         .and_then(|s| s.parse().ok())
@@ -119,29 +120,32 @@ pub(crate) fn request_builder(
         request_builder = request_builder.query(query);
     }
     if let Some(body) = options.get("body") {
-        let content_type = options.get_str("content_type").unwrap_or_default();
         match body {
-            Value::String(value) => {
-                if content_type == "json" {
-                    request_builder = request_builder
-                        .json(value)
-                        .header(header::CONTENT_TYPE, "application/json");
-                } else {
-                    request_builder = request_builder
-                        .form(value)
-                        .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded");
-                }
+            Value::String(text) => {
+                request_builder = request_builder
+                    .body(text.to_owned())
+                    .header(header::CONTENT_TYPE, "text/plain");
             }
-            Value::Object(value) => {
-                if content_type == "form" {
-                    request_builder = request_builder
-                        .form(value)
-                        .header(header::CONTENT_TYPE, "application/x-www-form-urlencoded");
-                } else {
-                    request_builder = request_builder
-                        .json(value)
-                        .header(header::CONTENT_TYPE, "application/json");
-                }
+            Value::Object(map) => {
+                let content_type = options.get_str("content_type").unwrap_or_default();
+                request_builder = match content_type {
+                    "json" => request_builder.json(map),
+                    "form" => request_builder.form(map),
+                    "multipart" => {
+                        let mut form = Form::new();
+                        for (key, value) in map.clone() {
+                            if let Value::String(value) = value {
+                                form = form.text(key, value);
+                            } else {
+                                form = form.text(key, value.to_string());
+                            }
+                        }
+                        request_builder.multipart(form)
+                    }
+                    _ => request_builder
+                        .body(body.to_string())
+                        .header(header::CONTENT_TYPE, "text/plain"),
+                };
             }
             _ => tracing::warn!("unsupported body format"),
         }

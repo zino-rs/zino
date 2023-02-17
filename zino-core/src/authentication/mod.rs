@@ -134,7 +134,7 @@ impl Authentication {
 
     /// Sets the canonicalized resource.
     #[inline]
-    pub fn set_resource(&mut self, path: String, query: Option<Map>) {
+    pub fn set_resource(&mut self, path: String, query: Option<&Map>) {
         if let Some(query) = query {
             if query.is_empty() {
                 self.resource = path;

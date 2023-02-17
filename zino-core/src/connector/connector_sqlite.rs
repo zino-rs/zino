@@ -1,11 +1,11 @@
-use super::{Connector, DataSource, DataSourcePool::Sqlite};
+use super::{Connector, DataSource, DataSourceConnector::Sqlite};
 use crate::{extend::TomlTableExt, BoxError};
 use sqlx::sqlite::{SqlitePool, SqlitePoolOptions};
 use std::time::Duration;
 use toml::Table;
 
 impl Connector for SqlitePool {
-    fn new_data_source(config: &'static Table) -> Result<DataSource, BoxError> {
+    fn try_new_data_source(config: &'static Table) -> Result<DataSource, BoxError> {
         let name = config.get_str("name").unwrap_or("sqlite");
         let database = config.get_str("database").unwrap_or_default();
         let dsn = format!("sqlite://{database}");
@@ -28,7 +28,7 @@ impl Connector for SqlitePool {
             .idle_timeout(idle_timeout)
             .acquire_timeout(acquire_timeout);
         let pool = pool_options.connect_lazy(&dsn)?;
-        let data_source = DataSource::new("sqlite", name, database, Sqlite(pool));
+        let data_source = DataSource::new(name, "sqlite", database, Sqlite(pool));
         Ok(data_source)
     }
 

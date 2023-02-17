@@ -1,4 +1,4 @@
-use crate::Map;
+use crate::{Map, Record};
 use serde_json::Value;
 
 /// Extension trait for [`Map`](crate::Map).
@@ -45,6 +45,9 @@ pub trait JsonObjectExt {
     /// If the map did have this key present, the value is updated and the old value is returned,
     /// otherwise `None` is returned.
     fn upsert(&mut self, key: impl Into<String>, value: impl Into<Value>) -> Option<Value>;
+
+    /// Consumes `self` and constructs an Avro record value.
+    fn into_record(self) -> Record;
 }
 
 impl JsonObjectExt for Map {
@@ -114,5 +117,13 @@ impl JsonObjectExt for Map {
     #[inline]
     fn upsert(&mut self, key: impl Into<String>, value: impl Into<Value>) -> Option<Value> {
         self.insert(key.into(), value.into())
+    }
+
+    fn into_record(self) -> Record {
+        let mut record = Record::with_capacity(self.len());
+        for (field, value) in self.into_iter() {
+            record.push((field, value.into()));
+        }
+        record
     }
 }
