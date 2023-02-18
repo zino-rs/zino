@@ -127,10 +127,10 @@ pub(crate) fn request_builder(
                     .header(header::CONTENT_TYPE, "text/plain");
             }
             Value::Object(map) => {
-                let content_type = options.get_str("content_type").unwrap_or_default();
-                request_builder = match content_type {
-                    "json" => request_builder.json(map),
+                let data_type = options.get_str("data_type").unwrap_or_default();
+                request_builder = match data_type {
                     "form" => request_builder.form(map),
+                    "json" => request_builder.json(map),
                     "multipart" => {
                         let mut form = Form::new();
                         for (key, value) in map.clone() {

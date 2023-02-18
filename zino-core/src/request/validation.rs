@@ -20,11 +20,41 @@ pub struct Validation {
 }
 
 impl Validation {
-    /// Creates a new validation record.
+    /// Creates a new instance.
+    #[inline]
     pub fn new() -> Self {
         Self {
             failed_entries: Vec::new(),
         }
+    }
+
+    /// Creates a new instance with the failed entry.
+    #[inline]
+    pub fn from_entry(key: impl Into<SharedString>, err: impl Into<BoxError>) -> Self {
+        let failed_entries = vec![(key.into(), err.into())];
+        Self { failed_entries }
+    }
+
+    /// Records a failed entry.
+    #[inline]
+    pub fn record_fail(&mut self, key: impl Into<SharedString>, err: impl Into<BoxError>) {
+        self.failed_entries.push((key.into(), err.into()));
+    }
+
+    /// Returns `true` if the validation is success.
+    #[inline]
+    pub fn is_success(&self) -> bool {
+        self.failed_entries.is_empty()
+    }
+
+    /// Consumes the validation and returns as a json object.
+    #[must_use]
+    pub fn into_map(self) -> Map {
+        let mut map = Map::new();
+        for (key, err) in self.failed_entries {
+            map.upsert(key, err.to_string());
+        }
+        map
     }
 
     /// Parses a json value as `i64`.
@@ -164,28 +194,6 @@ impl Validation {
         value: impl Into<Option<&'a Value>>,
     ) -> Option<Result<Ipv6Addr, AddrParseError>> {
         value.into().and_then(|v| v.as_str()).map(|s| s.parse())
-    }
-
-    /// Returns `true` if the validation is success.
-    #[inline]
-    pub fn is_success(&self) -> bool {
-        self.failed_entries.is_empty()
-    }
-
-    /// Records a failed entry.
-    #[inline]
-    pub fn record_fail(&mut self, key: impl Into<SharedString>, err: impl Into<BoxError>) {
-        self.failed_entries.push((key.into(), err.into()));
-    }
-
-    /// Consumes the validation and returns as a json object.
-    #[must_use]
-    pub fn into_map(self) -> Map {
-        let mut map = Map::new();
-        for (key, err) in self.failed_entries {
-            map.upsert(key, err.to_string());
-        }
-        map
     }
 }
 

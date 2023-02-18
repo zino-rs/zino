@@ -14,7 +14,7 @@ use crate::{
 };
 use cookie::{Cookie, SameSite};
 use fluent::FluentArgs;
-use http::uri::Uri;
+use http::{HeaderMap, Uri};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::time::{Duration, Instant};
@@ -38,6 +38,12 @@ pub trait RequestContext {
     /// Returns a mutable reference to the request scoped state data.
     fn state_data_mut(&mut self) -> &mut Map;
 
+    /// Returns a reference to the request headers.
+    fn header_map(&self) -> &HeaderMap;
+
+    /// Returns a mutable reference to the request headers.
+    fn header_map_mut(&mut self) -> &mut HeaderMap;
+
     /// Gets a reference to the request context.
     fn get_context(&self) -> Option<&Context>;
 
@@ -59,13 +65,11 @@ pub trait RequestContext {
     /// Returns the original request URI regardless of nesting.
     fn original_uri(&self) -> &Uri;
 
-    /// Parses the request body as an instance of type `T`.
-    async fn parse_body<T>(&mut self) -> Result<T, Validation>
-    where
-        T: DeserializeOwned + Send + 'static;
-
     /// Attempts to send a message.
     fn try_send(&self, message: impl Into<CloudEvent>) -> Result<(), Rejection>;
+
+    /// Parses the request body as `Vec<u8>`.
+    async fn parse_bytes(&mut self) -> Result<Vec<u8>, Validation>;
 
     /// Creates a new request context.
     fn new_context(&self) -> Context {
@@ -227,17 +231,13 @@ pub trait RequestContext {
                     .collect::<Vec<_>>()
                     .get(index)
                 {
-                    return serde_json::from_value::<T>(param.into()).map_err(|err| {
-                        let mut validation = Validation::new();
-                        validation.record_fail(name.to_owned(), err);
-                        validation
-                    });
+                    return serde_json::from_value::<T>(param.into())
+                        .map_err(|err| Validation::from_entry(name.to_owned(), err));
                 }
             }
         }
 
-        let mut validation = Validation::new();
-        validation.record_fail(
+        let validation = Validation::from_entry(
             name.to_owned(),
             format!("the param `{name}` does not exist"),
         );
@@ -251,12 +251,32 @@ pub trait RequestContext {
         T: Default + DeserializeOwned + Send + 'static,
     {
         match self.original_uri().query() {
-            Some(query) => serde_qs::from_str::<T>(query).map_err(|err| {
-                let mut validation = Validation::new();
-                validation.record_fail("query", err);
-                validation
-            }),
+            Some(query) => {
+                serde_qs::from_str::<T>(query).map_err(|err| Validation::from_entry("query", err))
+            }
             None => Ok(T::default()),
+        }
+    }
+
+    /// Parses the request body as an instance of type `T`.
+    async fn parse_body<T>(&mut self) -> Result<T, Validation>
+    where
+        T: DeserializeOwned + Send + 'static,
+    {
+        let data_type = self.header_map().get_data_type().ok_or_else(|| {
+            Validation::from_entry("content_type", "invalid `content-type` header")
+        })?;
+        if data_type.contains('/') {
+            return Err(Validation::from_entry(
+                "data_type",
+                format!("deserialization of the data type `{data_type}` is unsupported"),
+            ));
+        }
+        let bytes = self.parse_bytes().await?;
+        if data_type == "form" {
+            serde_urlencoded::from_bytes(&bytes).map_err(|err| Validation::from_entry("body", err))
+        } else {
+            serde_json::from_slice(&bytes).map_err(|err| Validation::from_entry("body", err))
         }
     }
 
@@ -376,18 +396,12 @@ pub trait RequestContext {
     /// Attempts to construct an instance of `SessionId` from an HTTP request.
     /// The value is extracted from the `session-id` header.
     fn parse_session_id(&self) -> Result<SessionId, Validation> {
-        let mut validation = Validation::new();
-        if let Some(session_id) = self.get_header("session-id") {
-            match SessionId::parse(session_id) {
-                Ok(session_id) => return Ok(session_id),
-                Err(err) => {
-                    validation.record_fail("session-id", err);
-                }
-            }
-        } else {
-            validation.record_fail("session-id", "should be nonempty");
-        }
-        Err(validation)
+        self.get_header("session-id")
+            .ok_or_else(|| Validation::from_entry("session-id", "should be nonempty"))
+            .and_then(|session_id| {
+                SessionId::parse(session_id)
+                    .map_err(|err| Validation::from_entry("session-id", err))
+            })
     }
 
     /// Returns a `Response` or `Rejection` from an SQL query validation.
@@ -457,15 +471,7 @@ pub trait RequestContext {
         options: Option<&Map>,
     ) -> Result<T, BoxError> {
         let response = self.fetch(resource, options).await?.error_for_status()?;
-        let headers = response.headers();
-        let json_content_type = match headers.parse_content_type()? {
-            Some(content_type) => {
-                content_type == "application/json"
-                    || (content_type.starts_with("application/") && content_type.ends_with("+json"))
-            }
-            None => false,
-        };
-        let data = if json_content_type {
+        let data = if response.headers().has_json_content_type() {
             response.json().await?
         } else {
             let text = response.text().await?;

@@ -2,12 +2,12 @@ use async_trait::async_trait;
 use axum::{
     body::Body,
     extract::{FromRequest, MatchedPath},
-    http::{Request, Uri},
+    http::{HeaderMap, Request, Uri},
 };
-use hyper::body::{self, Buf};
-use serde::de::DeserializeOwned;
+use hyper::body::{self, Buf, HttpBody};
 use std::{
     convert::Infallible,
+    io::Read,
     ops::{Deref, DerefMut},
     sync::LazyLock,
 };
@@ -70,6 +70,16 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
+    fn header_map(&self) -> &HeaderMap {
+        self.headers()
+    }
+
+    #[inline]
+    fn header_map_mut(&mut self) -> &mut HeaderMap {
+        self.headers_mut()
+    }
+
+    #[inline]
     fn get_context(&self) -> Option<&Context> {
         self.extensions().get::<Context>()
     }
@@ -119,49 +129,23 @@ impl RequestContext for AxumExtractor<Request<Body>> {
         self.uri()
     }
 
-    async fn parse_body<T>(&mut self) -> Result<T, Validation>
-    where
-        T: DeserializeOwned + Send + 'static,
-    {
-        let content_type = if let Some(content_type) = self.get_header("content-type") {
-            if content_type.starts_with("application/x-www-form-urlencoded") {
-                "form"
-            } else if content_type.starts_with("multipart/form-data") {
-                "multipart"
-            } else {
-                "plain"
-            }
-        } else {
-            "json"
-        };
-        let body = self.body_mut();
-        let result = if content_type == "form" {
-            body::aggregate(body)
-                .await
-                .map_err(|err| err.to_string())
-                .and_then(|buf| {
-                    serde_urlencoded::from_reader(buf.reader()).map_err(|err| err.to_string())
-                })
-        } else {
-            body::aggregate(body)
-                .await
-                .map_err(|err| err.to_string())
-                .and_then(|buf| {
-                    serde_json::from_reader(buf.reader()).map_err(|err| err.to_string())
-                })
-        };
-        result.map_err(|err| {
-            let mut validation = Validation::new();
-            validation.record_fail("body", err);
-            validation
-        })
-    }
-
     #[inline]
     fn try_send(&self, message: impl Into<CloudEvent>) -> Result<(), Rejection> {
         crate::channel::axum_channel::MessageChannel::shared()
             .try_send(message.into())
             .map_err(Rejection::internal_server_error)
+    }
+
+    async fn parse_bytes(&mut self) -> Result<Vec<u8>, Validation> {
+        let buffer_size = self.size_hint().lower().try_into().unwrap_or(1024);
+        let body = body::aggregate(self.body_mut())
+            .await
+            .map_err(|err| Validation::from_entry("body", err))?;
+        let mut bytes = Vec::with_capacity(buffer_size);
+        body.reader()
+            .read_to_end(&mut bytes)
+            .map_err(|err| Validation::from_entry("body", err))?;
+        Ok(bytes)
     }
 }
 

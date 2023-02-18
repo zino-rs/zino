@@ -149,15 +149,7 @@ pub trait Application {
         options: Option<&Map>,
     ) -> Result<T, BoxError> {
         let response = Self::fetch(resource, options).await?.error_for_status()?;
-        let headers = response.headers();
-        let json_content_type = match headers.parse_content_type()? {
-            Some(content_type) => {
-                content_type == "application/json"
-                    || (content_type.starts_with("application/") && content_type.ends_with("+json"))
-            }
-            None => false,
-        };
-        let data = if json_content_type {
+        let data = if response.headers().has_json_content_type() {
             response.json().await?
         } else {
             let text = response.text().await?;
