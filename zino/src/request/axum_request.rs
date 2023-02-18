@@ -16,10 +16,10 @@ use tower_cookies::{Cookie, Cookies, Key};
 use zino_core::{
     application::Application,
     channel::CloudEvent,
-    request::{Context, RequestContext, Validation},
+    request::{Context, RequestContext},
     response::Rejection,
     state::State,
-    Map,
+    BoxError, Map,
 };
 
 /// An HTTP request extractor for `axum`.
@@ -80,17 +80,17 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
-    fn get_context(&self) -> Option<&Context> {
-        self.extensions().get::<Context>()
-    }
-
-    #[inline]
     fn get_header(&self, name: &str) -> Option<&str> {
         self.headers()
             .get(name)?
             .to_str()
             .inspect_err(|err| tracing::error!("{err}"))
             .ok()
+    }
+
+    #[inline]
+    fn get_context(&self) -> Option<&Context> {
+        self.extensions().get::<Context>()
     }
 
     #[inline]
@@ -136,15 +136,11 @@ impl RequestContext for AxumExtractor<Request<Body>> {
             .map_err(Rejection::internal_server_error)
     }
 
-    async fn parse_bytes(&mut self) -> Result<Vec<u8>, Validation> {
+    async fn body_bytes(&mut self) -> Result<Vec<u8>, BoxError> {
         let buffer_size = self.size_hint().lower().try_into().unwrap_or(1024);
-        let body = body::aggregate(self.body_mut())
-            .await
-            .map_err(|err| Validation::from_entry("body", err))?;
+        let body = body::aggregate(self.body_mut()).await?;
         let mut bytes = Vec::with_capacity(buffer_size);
-        body.reader()
-            .read_to_end(&mut bytes)
-            .map_err(|err| Validation::from_entry("body", err))?;
+        body.reader().read_to_end(&mut bytes)?;
         Ok(bytes)
     }
 }

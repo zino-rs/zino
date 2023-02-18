@@ -15,6 +15,7 @@ use crate::{
 use cookie::{Cookie, SameSite};
 use fluent::FluentArgs;
 use http::{HeaderMap, Uri};
+use multer::Multipart;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::time::{Duration, Instant};
@@ -44,11 +45,11 @@ pub trait RequestContext {
     /// Returns a mutable reference to the request headers.
     fn header_map_mut(&mut self) -> &mut HeaderMap;
 
-    /// Gets a reference to the request context.
-    fn get_context(&self) -> Option<&Context>;
-
     /// Gets an HTTP header with the given name.
     fn get_header(&self, name: &str) -> Option<&str>;
+
+    /// Gets a reference to the request context.
+    fn get_context(&self) -> Option<&Context>;
 
     /// Gets a cookie with the given name.
     fn get_cookie(&self, name: &str) -> Option<Cookie<'static>>;
@@ -68,8 +69,8 @@ pub trait RequestContext {
     /// Attempts to send a message.
     fn try_send(&self, message: impl Into<CloudEvent>) -> Result<(), Rejection>;
 
-    /// Parses the request body as `Vec<u8>`.
-    async fn parse_bytes(&mut self) -> Result<Vec<u8>, Validation>;
+    /// Aggregates the data buffers from the request body as `Vec<u8>`.
+    async fn body_bytes(&mut self) -> Result<Vec<u8>, BoxError>;
 
     /// Creates a new request context.
     fn new_context(&self) -> Context {
@@ -272,12 +273,27 @@ pub trait RequestContext {
                 format!("deserialization of the data type `{data_type}` is unsupported"),
             ));
         }
-        let bytes = self.parse_bytes().await?;
+        let bytes = self
+            .body_bytes()
+            .await
+            .map_err(|err| Validation::from_entry("body", err))?;
         if data_type == "form" {
             serde_urlencoded::from_bytes(&bytes).map_err(|err| Validation::from_entry("body", err))
         } else {
             serde_json::from_slice(&bytes).map_err(|err| Validation::from_entry("body", err))
         }
+    }
+
+    /// Parses the request body as a multipart, which is commonly used with file uploads.
+    async fn parse_multipart(&mut self) -> Result<Multipart, Validation> {
+        let content_type = self.get_header("content-type").ok_or_else(|| {
+            Validation::from_entry("content_type", "invalid `content-type` header")
+        })?;
+        let boundary = multer::parse_boundary(content_type)
+            .map_err(|err| Validation::from_entry("boundary", err))?;
+        let result = self.body_bytes().await;
+        let stream = futures::stream::once(async { result });
+        Ok(Multipart::new(stream, boundary))
     }
 
     /// Attempts to construct an instance of `Authentication` from an HTTP request.
