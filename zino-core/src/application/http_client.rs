@@ -1,6 +1,6 @@
 use super::Application;
 use crate::{
-    extend::{JsonObjectExt, TomlTableExt},
+    extend::{HeaderMapExt, JsonObjectExt, TomlTableExt},
     trace::TraceContext,
     BoxError, Map, Uuid,
 };
@@ -175,7 +175,7 @@ impl ReqwestOtelSpanBackend for RequestTiming {
     fn on_request_start(request: &Request, extensions: &mut Extensions) -> Span {
         let url = request.url();
         let headers = request.headers();
-        let traceparent = headers.get("traceparent").and_then(|v| v.to_str().ok());
+        let traceparent = headers.get_str("traceparent");
         let trace_context = traceparent.and_then(TraceContext::from_traceparent);
         extensions.insert(Instant::now());
         tracing::info_span!(
@@ -186,8 +186,7 @@ impl ReqwestOtelSpanBackend for RequestTiming {
             "http.scheme" = url.scheme(),
             "http.url" = remove_credentials(url).as_ref(),
             "http.request.header.traceparent" = traceparent,
-            "http.request.header.tracestate" =
-                headers.get("tracestate").and_then(|v| v.to_str().ok()),
+            "http.request.header.tracestate" = headers.get_str("tracestate"),
             "http.response.header.traceparent" = Empty,
             "http.response.header.tracestate" = Empty,
             "http.status_code" = Empty,
@@ -195,7 +194,7 @@ impl ReqwestOtelSpanBackend for RequestTiming {
             "net.peer.name" = url.domain(),
             "net.peer.port" = url.port(),
             "context.request_id" = Empty,
-            "context.session_id" = headers.get("session-id").and_then(|v| v.to_str().ok()),
+            "context.session_id" = headers.get_str("session-id"),
             "context.span_id" = Empty,
             "context.trace_id" = trace_context
                 .as_ref()
@@ -220,16 +219,13 @@ impl ReqwestOtelSpanBackend for RequestTiming {
                 let headers = response.headers();
                 span.record(
                     "http.response.header.traceparent",
-                    headers.get("traceparent").and_then(|v| v.to_str().ok()),
+                    headers.get_str("traceparent"),
                 );
                 span.record(
                     "http.response.header.tracestate",
-                    headers.get("tracestate").and_then(|v| v.to_str().ok()),
+                    headers.get_str("tracestate"),
                 );
-                span.record(
-                    "context.request_id",
-                    headers.get("x-request-id").and_then(|v| v.to_str().ok()),
-                );
+                span.record("context.request_id", headers.get_str("x-request-id"));
                 span.record("http.status_code", response.status().as_u16());
                 tracing::info!("finished HTTP request");
             }

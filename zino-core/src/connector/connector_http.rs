@@ -1,7 +1,7 @@
 use super::{Connector, DataSource, DataSourceConnector::Http};
 use crate::{
     application::http_client,
-    extend::{AvroRecordExt, JsonObjectExt, TomlTableExt},
+    extend::{AvroRecordExt, HeaderMapExt, JsonObjectExt, TomlTableExt},
     trace::TraceContext,
     BoxError, Map, Record,
 };
@@ -96,11 +96,14 @@ impl HttpConnector {
     ) -> Result<T, BoxError> {
         let response = self.fetch(query, params).await?.error_for_status()?;
         let headers = response.headers();
-        let content_type = match headers.get("content-type") {
-            Some(header_value) => header_value.to_str()?,
-            None => "text/plain",
+        let json_content_type = match headers.parse_content_type()? {
+            Some(content_type) => {
+                content_type == "application/json"
+                    || (content_type.starts_with("application/") && content_type.ends_with("+json"))
+            }
+            None => false,
         };
-        let data = if content_type.starts_with("application/") && content_type.ends_with("json") {
+        let data = if json_content_type {
             response.json().await?
         } else {
             let text = response.text().await?;

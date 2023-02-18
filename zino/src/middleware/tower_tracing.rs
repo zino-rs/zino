@@ -8,7 +8,7 @@ use tower_http::{
     trace::TraceLayer,
 };
 use tracing::{field::Empty, Span};
-use zino_core::{application::Application, trace::TraceContext, Uuid};
+use zino_core::{application::Application, extend::HeaderMapExt, trace::TraceContext, Uuid};
 
 // Type aliases.
 type NewMakeSpan = fn(&Request<Body>) -> Span;
@@ -49,7 +49,7 @@ fn new_make_span(request: &Request<Body>) -> Span {
         "http.method" = request.method().as_str(),
         "http.scheme" = uri.scheme_str(),
         "http.target" = uri.path_and_query().map(|p| p.as_str()),
-        "http.user_agent" = headers.get("user-agent").and_then(|v| v.to_str().ok()),
+        "http.user_agent" = headers.get_str("user-agent"),
         "http.request.header.traceparent" = Empty,
         "http.request.header.tracestate" = Empty,
         "http.response.header.traceparent" = Empty,
@@ -68,12 +68,12 @@ fn new_make_span(request: &Request<Body>) -> Span {
 
 fn new_on_request(request: &Request<Body>, span: &Span) {
     let headers = request.headers();
-    let traceparent = headers.get("traceparent").and_then(|v| v.to_str().ok());
+    let traceparent = headers.get_str("traceparent");
     let trace_context = traceparent.and_then(TraceContext::from_traceparent);
     span.record("http.request.header.traceparent", traceparent);
     span.record(
         "http.request.header.tracestate",
-        headers.get("tracestate").and_then(|v| v.to_str().ok()),
+        headers.get_str("tracestate"),
     );
     span.record(
         "context.parent_id",
@@ -81,10 +81,7 @@ fn new_on_request(request: &Request<Body>, span: &Span) {
             .and_then(|ctx| ctx.parent_id())
             .map(|parent_id| format!("{parent_id:x}")),
     );
-    span.record(
-        "context.session_id",
-        headers.get("session-id").and_then(|v| v.to_str().ok()),
-    );
+    span.record("context.session_id", headers.get_str("session-id"));
     span.record(
         "context.span_id",
         span.id().map(|id| format!("{:x}", id.into_u64())),
@@ -94,11 +91,11 @@ fn new_on_request(request: &Request<Body>, span: &Span) {
 
 fn new_on_response(response: &Response<BoxBody>, latency: Duration, span: &Span) {
     let headers = response.headers();
-    let traceparent = headers.get("traceparent").and_then(|v| v.to_str().ok());
+    let traceparent = headers.get_str("traceparent");
     span.record("http.response.header.traceparent", traceparent);
     span.record(
         "http.response.header.tracestate",
-        headers.get("tracestate").and_then(|v| v.to_str().ok()),
+        headers.get_str("tracestate"),
     );
     span.record(
         "context.trace_id",
@@ -106,10 +103,7 @@ fn new_on_response(response: &Response<BoxBody>, latency: Duration, span: &Span)
             .and_then(TraceContext::from_traceparent)
             .map(|ctx| Uuid::from_u128(ctx.trace_id()).to_string()),
     );
-    span.record(
-        "context.request_id",
-        headers.get("x-request-id").and_then(|v| v.to_str().ok()),
-    );
+    span.record("context.request_id", headers.get_str("x-request-id"));
     span.record("http.status_code", response.status().as_u16());
     span.record(
         "http.server.duration",

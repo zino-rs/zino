@@ -1,5 +1,5 @@
 use super::TraceState;
-use crate::Uuid;
+use crate::{extend::HeaderMapExt, Uuid};
 use http::header::HeaderMap;
 use tracing::Span;
 
@@ -95,9 +95,9 @@ impl TraceContext {
 
     /// Constructs an instance from the `traceparent` and `tracestate` header values.
     pub fn from_headers(headers: &HeaderMap) -> Option<Self> {
-        let traceparent = headers.get("traceparent")?.to_str().ok()?;
+        let traceparent = headers.get_str("traceparent")?;
         let mut trace_context = Self::from_traceparent(traceparent)?;
-        if let Some(tracestate) = headers.get("tracestate").and_then(|v| v.to_str().ok()) {
+        if let Some(tracestate) = headers.get_str("tracestate") {
             trace_context.trace_state = TraceState::from_tracestate(tracestate);
         }
         Some(trace_context)
