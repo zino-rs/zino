@@ -6,7 +6,6 @@ use std::{sync::LazyLock, time::Duration};
 use toml::value::Table;
 
 mod column;
-mod format;
 mod model;
 mod mutation;
 mod postgres;
@@ -18,8 +17,6 @@ pub use model::Model;
 pub use mutation::Mutation;
 pub use query::Query;
 pub use schema::Schema;
-
-pub(crate) use format::format_query;
 
 use column::ColumnExt;
 

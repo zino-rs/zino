@@ -1,5 +1,5 @@
 use super::{Column, ColumnExt, ConnectionPool, Model, Mutation, Query};
-use crate::{extend::AvroRecordExt, Map, Record};
+use crate::{extend::AvroRecordExt, format, Map, Record};
 use apache_avro::types::Value;
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
@@ -418,17 +418,17 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Finds the related data in the corresponding `columns` for `Vec<Record>` using
     /// a merged select on the primary key, which solves the `N+1` problem.
-    async fn find_related<const N: usize>(
+    async fn find_related(
         mut query: Query,
         data: &mut Vec<Record>,
-        columns: [&str; N],
+        columns: &[&str],
     ) -> Result<u64, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
         for row in data.iter() {
-            for col in columns {
+            for col in columns.iter() {
                 if let Some(value) = row.find(col) {
                     match value {
                         Value::String(s) => values.push(s),
@@ -510,16 +510,16 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Finds the related data in the corresponding `columns` for `Record` using
     /// a merged select on the primary key, which solves the `N+1` problem.
-    async fn find_related_one<const N: usize>(
+    async fn find_related_one(
         mut query: Query,
         data: &mut Record,
-        columns: [&str; N],
+        columns: &[&str],
     ) -> Result<u64, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
-        for col in columns {
+        for col in columns.iter() {
             if let Some(value) = data.find(col) {
                 match value {
                     Value::String(s) => values.push(s),
@@ -598,16 +598,13 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Counts the number of rows selected by the query in the table.
     /// The boolean value `true` denotes that it only counts distinct values in the column.
-    async fn count<const N: usize>(
-        query: Query,
-        columns: [(&str, bool); N],
-    ) -> Result<Record, Error> {
+    async fn count(query: Query, columns: &[(&str, bool)]) -> Result<Record, Error> {
         let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let filter = query.format_filter::<Self>();
         let projection = columns
-            .into_iter()
-            .map(|(key, distinct)| {
+            .iter()
+            .map(|&(key, distinct)| {
                 if key != "*" {
                     if distinct {
                         format!("count(distinct {key}) as {key}_count_distinct")
@@ -628,9 +625,9 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Counts the number of rows selected by the query in the table,
     /// and parses it as an instance of type `T`.
-    async fn count_as<const N: usize, T: DeserializeOwned>(
+    async fn count_as<T: DeserializeOwned>(
         query: Query,
-        columns: [(&str, bool); N],
+        columns: &[(&str, bool)],
     ) -> Result<T, Error> {
         let data = Self::count(query, columns).await?;
         let value = data.into_avro_map();
@@ -640,7 +637,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Executes the query in the table, and returns the total number of rows affected.
     async fn execute(sql: &str, params: Option<&Map>) -> Result<u64, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
-        let sql = super::format_query(sql, params);
+        let sql = format::format_query(sql, params);
         let query_result = sqlx::query(&sql).execute(pool).await?;
         Ok(query_result.rows_affected())
     }
@@ -648,7 +645,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Executes the query in the table, and parses it as `Vec<Record>`.
     async fn query(sql: &str, params: Option<&Map>) -> Result<Vec<Record>, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
-        let sql = super::format_query(sql, params);
+        let sql = format::format_query(sql, params);
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut records = Vec::new();
         while let Some(row) = rows.try_next().await? {
@@ -674,7 +671,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Executes the query in the table, and parses it as a `Record`.
     async fn query_one(sql: &str, params: Option<&Map>) -> Result<Option<Record>, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
-        let sql = super::format_query(sql, params);
+        let sql = format::format_query(sql, params);
         let data = match sqlx::query(&sql).fetch_optional(pool).await? {
             Some(row) => {
                 let record = Column::parse_row(&row)?;

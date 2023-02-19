@@ -3,7 +3,10 @@ use regex::{Captures, Regex};
 use serde_json::Value;
 use std::{borrow::Cow, sync::LazyLock};
 
-/// Formats the query with the params.
+/// Formats the query using interpolation of the parameters.
+///
+/// The interpolation parameter is represented as `${param}`,
+/// in which `param` can only contain restricted chracters `[a-zA-Z]+[\w\.]*`.
 pub(crate) fn format_query<'a>(query: &'a str, params: Option<&'a Map>) -> Cow<'a, str> {
     if let Some(params) = params {
         if params.is_empty() || !query.contains('$') {

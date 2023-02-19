@@ -24,14 +24,13 @@
 //!
 
 use crate::{
-    database,
     extend::{AvroRecordExt, TomlTableExt},
     state::State,
     BoxError, Map, Record,
 };
 use apache_avro::types::Value;
 use serde::de::DeserializeOwned;
-use std::{borrow::Cow, collections::HashMap, sync::LazyLock};
+use std::{collections::HashMap, sync::LazyLock};
 use toml::Table;
 
 mod data_source;
@@ -118,15 +117,6 @@ impl GlobalConnector {
     pub fn get(name: &'static str) -> Option<&'static DataSource> {
         GLOBAL_CONNECTOR.get(name)
     }
-}
-
-/// Formats the query using interpolation of the parameters.
-///
-/// The interpolation parameter is represented as `${param}`,
-/// in which `param` can only contain restricted chracters `[a-zA-Z]+[\w\.]*`.
-#[inline]
-pub fn format_query<'a>(query: &'a str, params: Option<&'a Map>) -> Cow<'a, str> {
-    database::format_query(query, params)
 }
 
 /// Global data source connector.

@@ -20,7 +20,7 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::time::{Duration, Instant};
 use toml::value::Table;
-use unic_langid::{langid, LanguageIdentifier};
+use unic_langid::LanguageIdentifier;
 
 mod context;
 mod validation;
@@ -97,19 +97,16 @@ pub trait RequestContext {
         ctx.set_request_path(self.original_uri().path());
         ctx.set_trace_id(trace_id);
         ctx.set_session_id(session_id);
+
+        // Set locale.
         if let Some(cookie) = self.get_cookie("locale") {
             ctx.set_locale(cookie.value());
         } else {
+            let supported_locales = i18n::SUPPORTED_LOCALES.as_slice();
             let locale = self
-                .get_header("accept-language")
-                .map(|s| {
-                    if let Some((locale, _)) = s.split_once(',') {
-                        locale
-                    } else {
-                        s
-                    }
-                })
-                .unwrap_or("en-US");
+                .header_map()
+                .select_language(supported_locales)
+                .unwrap_or(&i18n::DEFAULT_LOCALE);
             ctx.set_locale(locale);
         }
         ctx
@@ -500,7 +497,10 @@ pub trait RequestContext {
     fn translate(&self, message: &str, args: Option<FluentArgs>) -> Result<SharedString, BoxError> {
         match self.locale() {
             Some(locale) => i18n::translate(locale, message, args),
-            None => i18n::translate(&langid!("en-US"), message, args),
+            None => {
+                let default_locale = i18n::DEFAULT_LOCALE.parse()?;
+                i18n::translate(&default_locale, message, args)
+            }
         }
     }
 

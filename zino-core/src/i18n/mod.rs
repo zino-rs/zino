@@ -1,6 +1,6 @@
 //! Internationalization and localization.
 
-use crate::{application, BoxError, SharedString};
+use crate::{application, extend::TomlTableExt, state::State, BoxError, SharedString};
 use fluent::{bundle::FluentBundle, FluentArgs, FluentResource};
 use intl_memoizer::concurrent::IntlLangMemoizer;
 use std::{collections::HashMap, fs, sync::LazyLock};
@@ -87,6 +87,26 @@ static LOCALIZATION: LazyLock<HashMap<LanguageIdentifier, Translation>> = LazyLo
         }
         Err(err) => tracing::error!("{err}"),
     }
-
     locales
+});
+
+/// Supported locales.
+pub(crate) static SUPPORTED_LOCALES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
+    LOCALIZATION
+        .keys()
+        .map(|key| {
+            let language: &'static str = key.to_string().leak();
+            language
+        })
+        .collect::<Vec<_>>()
+});
+
+/// Default locale.
+pub(crate) static DEFAULT_LOCALE: LazyLock<&'static str> = LazyLock::new(|| {
+    State::shared()
+        .config()
+        .get_table("i18n")
+        .expect("the `i18n` field should be a table")
+        .get_str("default-locale")
+        .unwrap_or("en-US")
 });

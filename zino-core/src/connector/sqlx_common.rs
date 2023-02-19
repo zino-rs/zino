@@ -1,4 +1,4 @@
-use crate::{BoxError, Map, Record};
+use crate::{format, BoxError, Map, Record};
 use apache_avro::types::Value;
 use futures::TryStreamExt;
 use serde::ser::{self, Serialize, SerializeMap, Serializer};
@@ -52,14 +52,14 @@ fn map_serialize<'r, M: SerializeMap, DB: Database, T: Decode<'r, DB> + Serializ
 
 pub(super) macro impl_sqlx_connector($pool:ty) {
     async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, BoxError> {
-        let sql = super::format_query(query, params);
+        let sql = format::format_query(query, params);
         let query = sqlx::query(sql.as_ref());
         let query_result = query.execute(self).await?;
         Ok(Some(query_result.rows_affected()))
     }
 
     async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, BoxError> {
-        let sql = super::format_query(query, params);
+        let sql = format::format_query(query, params);
         let query = sqlx::query(sql.as_ref());
         let mut rows = query.fetch(self);
         let mut records = Vec::new();
@@ -77,7 +77,7 @@ pub(super) macro impl_sqlx_connector($pool:ty) {
         query: &str,
         params: Option<&Map>,
     ) -> Result<Option<Record>, BoxError> {
-        let sql = super::format_query(query, params);
+        let sql = format::format_query(query, params);
         let query = sqlx::query(sql.as_ref());
         let data = match query.fetch_optional(self).await? {
             Some(row) => {

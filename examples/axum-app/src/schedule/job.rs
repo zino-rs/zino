@@ -42,7 +42,7 @@ pub(super) fn every_30s(job_id: Uuid, job_data: &mut Map, _last_tick: DateTime) 
     Box::pin(async {
         let query = Query::new();
         let columns = [("*", true), ("roles", true)];
-        match User::count_as(query, columns).await {
+        match User::count_as(query, &columns).await {
             Ok(mut map) => job_data.append(&mut map),
             Err(err) => tracing::error!("failed to count users: {err}"),
         }

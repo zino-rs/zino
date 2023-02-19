@@ -22,6 +22,7 @@ features = ["derive"]
 [dependencies.zino-core]
 path = "../zino-core"
 version = "0.6.1"
+features = ["orm"]
 
 [dependencies.zino-derive]
 path = "../zino-derive"

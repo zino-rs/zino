@@ -44,7 +44,7 @@ features = ["derive"]
 
 [dependencies.tokio]
 version = "1.25.0"
-features = ["rt-multi-thread", "sync", "parking_lot"]
+features = ["parking_lot", "sync", "rt-multi-thread"]
 optional = true
 
 [dependencies.tokio-stream]
@@ -76,3 +76,4 @@ optional = true
 [dependencies.zino-core]
 path = "../zino-core"
 version = "0.6.1"
+features = ["orm", "schedule", "view"]

@@ -1,5 +1,5 @@
 use super::{Connector, DataSource, DataSourceConnector::Taos};
-use crate::{extend::TomlTableExt, state::State, BoxError, Map, Record};
+use crate::{extend::TomlTableExt, format, state::State, BoxError, Map, Record};
 use futures::TryStreamExt;
 use taos::{AsyncFetchable, AsyncQueryable, PoolBuilder, TBuilder, TaosBuilder, TaosPool};
 use toml::Table;
@@ -24,14 +24,14 @@ impl Connector for TaosPool {
 
     async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, BoxError> {
         let taos = self.get()?;
-        let sql = super::format_query(query, params);
+        let sql = format::format_query(query, params);
         let affected_rows = taos.exec(sql).await?;
         Ok(affected_rows.try_into().ok())
     }
 
     async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, BoxError> {
         let taos = self.get()?;
-        let sql = super::format_query(query, params);
+        let sql = format::format_query(query, params);
         let mut result = taos.query(sql).await?;
         let mut records = Vec::new();
         let mut rows = result.rows();
@@ -51,7 +51,7 @@ impl Connector for TaosPool {
         params: Option<&Map>,
     ) -> Result<Option<Record>, BoxError> {
         let taos = self.get()?;
-        let sql = super::format_query(query, params);
+        let sql = format::format_query(query, params);
         let mut result = taos.query(sql).await?;
         let data = result.rows().try_next().await?.map(|row| {
             let mut record = Record::new();
