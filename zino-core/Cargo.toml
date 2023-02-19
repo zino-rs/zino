@@ -30,17 +30,14 @@ connector-mysql = ["connector", "sqlx", "sqlx/mysql"]
 connector-postgres = ["connector", "sqlx", "sqlx/postgres"]
 connector-sqlite = ["connector", "sqlx", "sqlx/sqlite"]
 connector-taos = ["connector", "dep:taos"]
-datetime = ["dep:chrono"]
 orm = [
     "dep:apache-avro",
-    "datetime",
     "sqlx",
     "sqlx/postgres",
     "sqlx/chrono",
     "sqlx/json",
     "sqlx/uuid",
 ]
-schedule = ["dep:chrono", "dep:cron", "datetime"]
 view = ["dep:tera"]
 
 [dependencies]
@@ -49,6 +46,7 @@ async-trait = "0.1.64"
 base64-simd = "0.8.0"
 bytes = "1.4.0"
 cookie = "0.17.0"
+cron = "0.12.0"
 fluent = "0.16.0"
 futures = "0.3.26"
 hkdf = "0.12.3"
@@ -84,11 +82,6 @@ optional = true
 [dependencies.chrono]
 version = "0.4.23"
 features = ["serde"]
-optional = true
-
-[dependencies.cron]
-version = "0.12.0"
-optional = true
 
 [dependencies.lru]
 version = "0.9.0"

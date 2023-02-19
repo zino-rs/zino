@@ -25,20 +25,18 @@ pub mod cache;
 pub mod connector;
 #[cfg(feature = "orm")]
 pub mod database;
-#[cfg(feature = "datetime")]
-pub mod datetime;
-#[cfg(feature = "schedule")]
-pub mod schedule;
 #[cfg(feature = "view")]
 pub mod view;
 
 pub mod application;
 pub mod authentication;
 pub mod channel;
+pub mod datetime;
 pub mod extend;
 pub mod i18n;
 pub mod request;
 pub mod response;
+pub mod schedule;
 pub mod state;
 pub mod trace;
 
@@ -58,7 +56,6 @@ pub type SharedString = std::borrow::Cow<'static, str>;
 /// A type-erased error type.
 pub type BoxError = Box<dyn std::error::Error + Sync + Send + 'static>;
 
-#[cfg(feature = "schedule")]
 /// An owned dynamically typed future.
 pub type BoxFuture<'a, T = ()> =
     std::pin::Pin<Box<dyn std::future::Future<Output = T> + Send + 'a>>;
