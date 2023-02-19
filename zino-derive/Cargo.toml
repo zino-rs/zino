@@ -21,4 +21,3 @@ syn = "1.0.107"
 [dependencies.zino-core]
 path = "../zino-core"
 version = "0.6.1"
-features = ["orm"]

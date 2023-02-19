@@ -23,25 +23,18 @@ accessor-memcached = ["accessor", "opendal/services-memcached"]
 accessor-moka = ["accessor", "opendal/services-moka"]
 accessor-redis = ["accessor", "opendal/services-redis"]
 cache = ["dep:lru"]
-connector = ["dep:apache-avro"]
+connector = []
 connector-http = ["connector"]
-connector-mssql = ["connector", "sqlx", "sqlx/mssql"]
-connector-mysql = ["connector", "sqlx", "sqlx/mysql"]
-connector-postgres = ["connector", "sqlx", "sqlx/postgres"]
-connector-sqlite = ["connector", "sqlx", "sqlx/sqlite"]
+connector-mssql = ["connector", "sqlx/mssql"]
+connector-mysql = ["connector", "sqlx/mysql"]
+connector-postgres = ["connector", "sqlx/postgres"]
+connector-sqlite = ["connector", "sqlx/sqlite"]
 connector-taos = ["connector", "dep:taos"]
-orm = [
-    "dep:apache-avro",
-    "sqlx",
-    "sqlx/postgres",
-    "sqlx/chrono",
-    "sqlx/json",
-    "sqlx/uuid",
-]
 view = ["dep:tera"]
 
 [dependencies]
 aes-gcm-siv = "0.11.1"
+apache-avro = "0.14.0"
 async-trait = "0.1.64"
 base64-simd = "0.8.0"
 bytes = "1.4.0"
@@ -74,10 +67,6 @@ toml = "0.7.2"
 tracing = "0.1.37"
 tracing-appender = "0.2.2"
 url = "2.3.1"
-
-[dependencies.apache-avro]
-version = "0.14.0"
-optional = true
 
 [dependencies.chrono]
 version = "0.4.23"
@@ -117,8 +106,13 @@ features = ["raw_value"]
 
 [dependencies.sqlx]
 version = "0.6.2"
-features = ["runtime-tokio-native-tls"]
-optional = true
+features = [
+    "runtime-tokio-native-tls",
+    "postgres",
+    "chrono",
+    "json",
+    "uuid",
+]
 
 [dependencies.taos]
 version = "0.4.18"

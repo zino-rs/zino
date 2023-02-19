@@ -23,14 +23,13 @@ pub mod accessor;
 pub mod cache;
 #[cfg(feature = "connector")]
 pub mod connector;
-#[cfg(feature = "orm")]
-pub mod database;
 #[cfg(feature = "view")]
 pub mod view;
 
 pub mod application;
 pub mod authentication;
 pub mod channel;
+pub mod database;
 pub mod datetime;
 pub mod extend;
 pub mod i18n;
@@ -43,7 +42,6 @@ pub mod trace;
 /// A JSON key/value type.
 pub type Map = serde_json::Map<String, serde_json::Value>;
 
-#[cfg(any(feature = "connector", feature = "orm"))]
 /// A schema-less Avro record value.
 pub type Record = Vec<(String, apache_avro::types::Value)>;
 
