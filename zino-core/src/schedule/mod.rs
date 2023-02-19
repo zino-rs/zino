@@ -140,12 +140,11 @@ impl JobScheduler {
     /// Removes a job by ID from the `JobScheduler`.
     pub fn remove(&mut self, job_id: Uuid) -> bool {
         let position = self.jobs.iter().position(|job| job.id == job_id);
-        match position {
-            Some(index) => {
-                self.jobs.remove(index);
-                true
-            }
-            None => false,
+        if let Some(index) = position {
+            self.jobs.remove(index);
+            true
+        } else {
+            false
         }
     }
 

@@ -130,9 +130,8 @@ impl GlobalCache {
 
 /// Global cache.
 static GLOBAL_CACHE: LazyLock<RwLock<LruCache<String, Value>>> = LazyLock::new(|| {
-    let config = State::shared().config();
-    let capacity = match config.get("cache") {
-        Some(cache) => cache
+    let capacity = if let Some(cache) = State::shared().config().get("cache") {
+        cache
             .as_table()
             .expect("the `cache` field should be a table")
             .get("capacity")
@@ -140,8 +139,9 @@ static GLOBAL_CACHE: LazyLock<RwLock<LruCache<String, Value>>> = LazyLock::new(|
             .as_integer()
             .expect("the `cache.capacity` field should be an integer")
             .try_into()
-            .expect("the `cache.capacity` field should be a positive integer"),
-        None => 10000,
+            .expect("the `cache.capacity` field should be a positive integer")
+    } else {
+        10000
     };
     RwLock::new(LruCache::new(
         NonZeroUsize::new(capacity).unwrap_or(NonZeroUsize::MIN),

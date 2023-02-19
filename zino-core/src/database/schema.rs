@@ -385,34 +385,32 @@ pub trait Schema: 'static + Send + Sync + Model {
         let filter = query.format_filter::<Self>();
         let sort = query.format_sort();
         let sql = format!("SELECT {projection} FROM {table_name} {filter} {sort} LIMIT 1;");
-        let data = match sqlx::query(&sql).fetch_optional(pool).await? {
-            Some(row) => {
-                if fields.is_empty() {
-                    let columns = Self::columns();
-                    let mut record = Record::with_capacity(columns.len());
-                    for col in columns {
-                        let value = col.decode_row(&row)?;
-                        record.push((col.name().to_owned(), value));
-                    }
-                    Some(record)
-                } else {
-                    let record = Column::parse_row(&row)?;
-                    Some(record)
+        let data = if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
+            let record = if fields.is_empty() {
+                let columns = Self::columns();
+                let mut record = Record::with_capacity(columns.len());
+                for col in columns {
+                    let value = col.decode_row(&row)?;
+                    record.push((col.name().to_owned(), value));
                 }
-            }
-            None => None,
+                record
+            } else {
+                Column::parse_row(&row)?
+            };
+            Some(record)
+        } else {
+            None
         };
         Ok(data)
     }
 
     /// Finds one model selected by the query in the table, and parses it as an instance of type `T`.
     async fn find_one_as<T: DeserializeOwned>(query: Query) -> Result<Option<T>, Error> {
-        match Self::find_one(query).await? {
-            Some(data) => {
-                let value = Value::Union(1, Box::new(data.into_avro_map()));
-                apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
-            }
-            None => Ok(None),
+        if let Some(data) = Self::find_one(query).await? {
+            let value = Value::Union(1, Box::new(data.into_avro_map()));
+            apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
+        } else {
+            Ok(None)
         }
     }
 
@@ -672,12 +670,11 @@ pub trait Schema: 'static + Send + Sync + Model {
     async fn query_one(sql: &str, params: Option<&Map>) -> Result<Option<Record>, Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let sql = format::format_query(sql, params);
-        let data = match sqlx::query(&sql).fetch_optional(pool).await? {
-            Some(row) => {
-                let record = Column::parse_row(&row)?;
-                Some(record)
-            }
-            None => None,
+        let data = if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
+            let record = Column::parse_row(&row)?;
+            Some(record)
+        } else {
+            None
         };
         Ok(data)
     }
@@ -687,12 +684,11 @@ pub trait Schema: 'static + Send + Sync + Model {
         sql: &str,
         params: Option<&Map>,
     ) -> Result<Option<T>, Error> {
-        match Self::query_one(sql, params).await? {
-            Some(data) => {
-                let value = Value::Union(1, Box::new(data.into_avro_map()));
-                apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
-            }
-            None => Ok(None),
+        if let Some(data) = Self::query_one(sql, params).await? {
+            let value = Value::Union(1, Box::new(data.into_avro_map()));
+            apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
+        } else {
+            Ok(None)
         }
     }
 
@@ -707,12 +703,11 @@ pub trait Schema: 'static + Send + Sync + Model {
                 SELECT * FROM {table_name} WHERE {primary_key_name} = {primary_key};
             "
         );
-        match sqlx::query(&sql).fetch_optional(pool).await? {
-            Some(row) => {
-                let value = Column::parse_row(&row)?.into_avro_map();
-                apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
-            }
-            None => Err(Error::RowNotFound),
+        if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
+            let value = Column::parse_row(&row)?.into_avro_map();
+            apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
+        } else {
+            Err(Error::RowNotFound)
         }
     }
 }

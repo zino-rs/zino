@@ -12,28 +12,18 @@ pub(crate) async fn sse_handler(
     query: Query<Subscription>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     let subscription = query.0;
-    let session_id = subscription
-        .session_id()
-        .map(|session_id| session_id.to_owned());
-    let source = subscription.source().map(|source| source.to_owned());
-    let topic = subscription.topic().map(|topic| topic.to_owned());
+    let session_id = subscription.session_id().map(|s| s.to_owned());
+    let source = subscription.source().map(|s| s.to_owned());
+    let topic = subscription.topic().map(|t| t.to_owned());
     let channel = crate::channel::axum_channel::MessageChannel::new();
     let stream = channel.into_stream().filter_map(move |event| {
         let mut sse_event_filter = None;
         let event_session_id = event.session_id();
         if session_id.is_none() || session_id.as_deref() != event_session_id {
             let event_source = event.source();
-            if source
-                .as_ref()
-                .filter(|&source| source != event_source)
-                .is_none()
-            {
+            if source.as_ref().filter(|&s| event_source != s).is_none() {
                 let event_topic = event.topic();
-                if topic
-                    .as_ref()
-                    .filter(|&topic| topic != event_topic)
-                    .is_none()
-                {
+                if topic.as_ref().filter(|&t| event_topic != t).is_none() {
                     let event_id = event.id();
                     let event_data = event.stringify_data();
                     let sse_event = Event::default()

@@ -28,8 +28,8 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
     }
 
     fn encode_value(&self, value: Option<&JsonValue>) -> String {
-        match value {
-            Some(value) => match value {
+        if let Some(value) = value {
+            match value {
                 JsonValue::Null => "NULL".to_owned(),
                 JsonValue::Bool(value) => {
                     let value = if *value { "TRUE" } else { "FALSE" };
@@ -38,9 +38,10 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                 JsonValue::Number(value) => value.to_string(),
                 JsonValue::String(value) => {
                     if value.is_empty() {
-                        match self.default_value() {
-                            Some(value) => self.format_value(value),
-                            None => "''".to_owned(),
+                        if let Some(value) = self.default_value() {
+                            self.format_value(value)
+                        } else {
+                            "''".to_owned()
                         }
                     } else if value == "null" {
                         "NULL".to_owned()
@@ -59,11 +60,11 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                     format!("ARRAY[{}]::{}", values.join(","), self.column_type())
                 }
                 JsonValue::Object(_) => format!("'{}'::{}", value, self.column_type()),
-            },
-            None => match self.default_value() {
-                Some(_) => "DEFAULT".to_owned(),
-                None => "NULL".to_owned(),
-            },
+            }
+        } else if self.default_value().is_some() {
+            "DEFAULT".to_owned()
+        } else {
+            "NULL".to_owned()
         }
     }
 

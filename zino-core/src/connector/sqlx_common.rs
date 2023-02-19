@@ -79,16 +79,15 @@ pub(super) macro impl_sqlx_connector($pool:ty) {
     ) -> Result<Option<Record>, BoxError> {
         let sql = format::format_query(query, params);
         let query = sqlx::query(sql.as_ref());
-        let data = match query.fetch_optional(self).await? {
-            Some(row) => {
-                let value = apache_avro::to_value(&SerializeRow(row))?;
-                if let Value::Record(record) = value {
-                    Some(record)
-                } else {
-                    None
-                }
+        let data = if let Some(row) = query.fetch_optional(self).await? {
+            let value = apache_avro::to_value(&SerializeRow(row))?;
+            if let Value::Record(record) = value {
+                Some(record)
+            } else {
+                None
             }
-            None => None,
+        } else {
+            None
         };
         Ok(data)
     }

@@ -53,15 +53,15 @@ impl fmt::Display for TimingMetric {
         if let Some(duration) = self.duration() {
             let duration_millis = format!("{:.3}", duration.as_secs_f64() * 1000.0);
             let duration = duration_millis.trim_end_matches(['.', '0']);
-            match self.description() {
-                Some(description) => write!(f, "{name};desc={description};dur={duration}"),
-                None => write!(f, "{name};dur={duration}"),
+            if let Some(description) = self.description() {
+                write!(f, "{name};desc={description};dur={duration}")
+            } else {
+                write!(f, "{name};dur={duration}")
             }
+        } else if let Some(description) = self.description() {
+            write!(f, "{name};desc={description}")
         } else {
-            match self.description() {
-                Some(description) => write!(f, "{name};desc={description}"),
-                None => write!(f, "{name}"),
-            }
+            write!(f, "{name}")
         }
     }
 }

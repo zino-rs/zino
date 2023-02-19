@@ -9,7 +9,7 @@ use bytes::Bytes;
 use http::header::{self, HeaderValue};
 use http_body::Full;
 use serde::Serialize;
-use serde_json::value::RawValue;
+use serde_json::value::{RawValue, Value};
 use std::{
     marker::PhantomData,
     time::{Duration, Instant},
@@ -144,7 +144,7 @@ impl<S: ResponseCode> Response<S> {
 
     #[cfg(feature = "view")]
     /// Renders a template and sets it as the reponse data.
-    pub fn render(mut self, template_name: &str, data: impl Serialize) -> Self {
+    pub fn render<T: Serialize>(mut self, template_name: &str, data: T) -> Self {
         let result = serde_json::to_value(data)
             .map_err(|err| err.into())
             .and_then(|mut value| {
@@ -269,6 +269,12 @@ impl<S: ResponseCode> Response<S> {
         self.start_time = start_time;
     }
 
+    /// Enables the MessagePack encoding for the response data.
+    #[inline]
+    pub fn enable_msgpack_encoding(&mut self) {
+        self.content_type = Some("application/msgpack".into());
+    }
+
     /// Records a server timing metric entry.
     pub fn record_server_timing(
         &mut self,
@@ -294,9 +300,10 @@ impl<S: ResponseCode> Response<S> {
 
     /// Returns the trace ID.
     pub fn trace_id(&self) -> Uuid {
-        match self.trace_context {
-            Some(ref trace_context) => Uuid::from_u128(trace_context.trace_id()),
-            None => Uuid::nil(),
+        if let Some(ref trace_context) = self.trace_context {
+            Uuid::from_u128(trace_context.trace_id())
+        } else {
+            Uuid::nil()
         }
     }
 }
@@ -323,47 +330,49 @@ impl<S: ResponseCode> From<Validation> for Response<S> {
 impl<S: ResponseCode> From<Response<S>> for http::Response<Full<Bytes>> {
     fn from(mut response: Response<S>) -> Self {
         let status_code = response.status_code;
-        let mut res = match response.content_type {
-            Some(ref content_type) => {
-                let data = &response.data;
-                if let Some(data) = data {
-                    let result = serde_json::to_value(data)
-                        .map_err(|err| err.to_string())
-                        .and_then(|data| {
-                            if let Some(data) = data.as_str() {
-                                Ok(data.to_owned())
+        let mut res = if let Some(ref content_type) = response.content_type {
+            if let Some(data) = &response.data {
+                let result = serde_json::to_value(data)
+                    .map_err(|err| err.to_string())
+                    .and_then(|data| match data {
+                        Value::String(s) => Ok(s.into_bytes()),
+                        Value::Array(vec) => {
+                            if content_type.starts_with("application/msgpack") {
+                                rmp_serde::to_vec(&vec).map_err(|err| err.to_string())
                             } else {
-                                Err(data.to_string())
+                                Ok(Value::Array(vec).to_string().into_bytes())
                             }
-                        });
-                    match result {
-                        Ok(data) => http::Response::builder()
-                            .status(status_code)
-                            .header(header::CONTENT_TYPE, content_type.as_ref())
-                            .body(Full::from(data))
-                            .unwrap_or_default(),
-                        Err(err) => http::Response::builder()
-                            .status(S::INTERNAL_SERVER_ERROR.status_code())
-                            .header(header::CONTENT_TYPE, content_type.as_ref())
-                            .body(Full::from(err))
-                            .unwrap_or_default(),
-                    }
-                } else {
-                    match serde_json::to_vec(&data) {
-                        Ok(bytes) => http::Response::builder()
-                            .status(status_code)
-                            .header(header::CONTENT_TYPE, content_type.as_ref())
-                            .body(Full::from(bytes))
-                            .unwrap_or_default(),
-                        Err(err) => http::Response::builder()
-                            .status(S::INTERNAL_SERVER_ERROR.status_code())
-                            .header(header::CONTENT_TYPE, "text/plain")
-                            .body(Full::from(err.to_string()))
-                            .unwrap_or_default(),
-                    }
+                        }
+                        Value::Object(map) => {
+                            if content_type.starts_with("application/msgpack") {
+                                rmp_serde::to_vec(&map).map_err(|err| err.to_string())
+                            } else {
+                                Ok(Value::Object(map).to_string().into_bytes())
+                            }
+                        }
+                        _ => Err(data.to_string()),
+                    });
+                match result {
+                    Ok(data) => http::Response::builder()
+                        .status(status_code)
+                        .header(header::CONTENT_TYPE, content_type.as_ref())
+                        .body(Full::from(data))
+                        .unwrap_or_default(),
+                    Err(err) => http::Response::builder()
+                        .status(S::INTERNAL_SERVER_ERROR.status_code())
+                        .header(header::CONTENT_TYPE, content_type.as_ref())
+                        .body(Full::from(err))
+                        .unwrap_or_default(),
                 }
+            } else {
+                http::Response::builder()
+                    .status(status_code)
+                    .header(header::CONTENT_TYPE, content_type.as_ref())
+                    .body(Full::default())
+                    .unwrap_or_default()
             }
-            None => match serde_json::to_vec(&response) {
+        } else {
+            match serde_json::to_vec(&response) {
                 Ok(bytes) => {
                     let content_type = if response.is_success() {
                         "application/json"
@@ -381,18 +390,17 @@ impl<S: ResponseCode> From<Response<S>> for http::Response<Full<Bytes>> {
                     .header(header::CONTENT_TYPE, "text/plain")
                     .body(Full::from(err.to_string()))
                     .unwrap_or_default(),
-            },
-        };
-        let (traceparent, tracestate) = match response.trace_context {
-            Some(ref trace_context) => (trace_context.traceparent(), trace_context.tracestate()),
-            None => {
-                let mut trace_context = TraceContext::new();
-                let span_id = trace_context.span_id();
-                trace_context
-                    .trace_state_mut()
-                    .push("zino", format!("{span_id:x}"));
-                (trace_context.traceparent(), trace_context.tracestate())
             }
+        };
+        let (traceparent, tracestate) = if let Some(ref trace_context) = response.trace_context {
+            (trace_context.traceparent(), trace_context.tracestate())
+        } else {
+            let mut trace_context = TraceContext::new();
+            let span_id = trace_context.span_id();
+            trace_context
+                .trace_state_mut()
+                .push("zino", format!("{span_id:x}"));
+            (trace_context.traceparent(), trace_context.tracestate())
         };
         if let Ok(header_value) = HeaderValue::try_from(traceparent) {
             res.headers_mut().insert("traceparent", header_value);

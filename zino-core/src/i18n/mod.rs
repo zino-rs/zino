@@ -29,23 +29,20 @@ pub fn translate(
         .ok_or_else(|| format!("failed to retrieve an option of the pattern for `{message}`"))?;
 
     let mut errors = vec![];
-    match args {
-        Some(args) => {
-            let mut value = String::new();
-            bundle.write_pattern(&mut value, pattern, Some(&args), &mut errors)?;
-            if errors.is_empty() {
-                Ok(value.into())
-            } else {
-                Err(format!("{errors:?}").into())
-            }
+    if let Some(args) = args {
+        let mut value = String::new();
+        bundle.write_pattern(&mut value, pattern, Some(&args), &mut errors)?;
+        if errors.is_empty() {
+            Ok(value.into())
+        } else {
+            Err(format!("{errors:?}").into())
         }
-        None => {
-            let value = bundle.format_pattern(pattern, None, &mut errors);
-            if errors.is_empty() {
-                Ok(value)
-            } else {
-                Err(format!("{errors:?}").into())
-            }
+    } else {
+        let value = bundle.format_pattern(pattern, None, &mut errors);
+        if errors.is_empty() {
+            Ok(value)
+        } else {
+            Err(format!("{errors:?}").into())
         }
     }
 }
@@ -103,10 +100,9 @@ pub(crate) static SUPPORTED_LOCALES: LazyLock<Vec<&'static str>> = LazyLock::new
 
 /// Default locale.
 pub(crate) static DEFAULT_LOCALE: LazyLock<&'static str> = LazyLock::new(|| {
-    State::shared()
-        .config()
-        .get_table("i18n")
-        .expect("the `i18n` field should be a table")
-        .get_str("default-locale")
-        .unwrap_or("en-US")
+    if let Some(i18n) = State::shared().config().get_table("i18n") {
+        i18n.get_str("default-locale").unwrap_or("en-US")
+    } else {
+        "en-US"
+    }
 });

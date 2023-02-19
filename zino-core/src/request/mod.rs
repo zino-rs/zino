@@ -164,37 +164,33 @@ pub trait RequestContext {
     /// Returns the start time.
     #[inline]
     fn start_time(&self) -> Instant {
-        match self.get_context() {
-            Some(ctx) => ctx.start_time(),
-            None => Instant::now(),
-        }
+        self.get_context()
+            .map(|ctx| ctx.start_time())
+            .unwrap_or_else(Instant::now)
     }
 
     /// Returns the request path.
     #[inline]
     fn request_path(&self) -> &str {
-        match self.get_context() {
-            Some(ctx) => ctx.request_path(),
-            None => "",
-        }
+        self.get_context()
+            .map(|ctx| ctx.request_path())
+            .unwrap_or_default()
     }
 
     /// Returns the request ID.
     #[inline]
     fn request_id(&self) -> Uuid {
-        match self.get_context() {
-            Some(ctx) => ctx.request_id(),
-            None => Uuid::nil(),
-        }
+        self.get_context()
+            .map(|ctx| ctx.request_id())
+            .unwrap_or_default()
     }
 
     /// Returns the trace ID.
     #[inline]
     fn trace_id(&self) -> Uuid {
-        match self.get_context() {
-            Some(ctx) => ctx.trace_id(),
-            None => Uuid::nil(),
-        }
+        self.get_context()
+            .map(|ctx| ctx.trace_id())
+            .unwrap_or_default()
     }
 
     /// Returns the session ID.
@@ -248,11 +244,10 @@ pub trait RequestContext {
     where
         T: Default + DeserializeOwned + Send + 'static,
     {
-        match self.original_uri().query() {
-            Some(query) => {
-                serde_qs::from_str::<T>(query).map_err(|err| Validation::from_entry("query", err))
-            }
-            None => Ok(T::default()),
+        if let Some(query) = self.original_uri().query() {
+            serde_qs::from_str::<T>(query).map_err(|err| Validation::from_entry("query", err))
+        } else {
+            Ok(T::default())
         }
     }
 
@@ -276,6 +271,8 @@ pub trait RequestContext {
             .map_err(|err| Validation::from_entry("body", err))?;
         if data_type == "form" {
             serde_urlencoded::from_bytes(&bytes).map_err(|err| Validation::from_entry("body", err))
+        } else if data_type == "msgpack" {
+            rmp_serde::from_slice(&bytes).map_err(|err| Validation::from_entry("body", err))
         } else {
             serde_json::from_slice(&bytes).map_err(|err| Validation::from_entry("body", err))
         }
@@ -495,22 +492,19 @@ pub trait RequestContext {
 
     /// Translates the localization message.
     fn translate(&self, message: &str, args: Option<FluentArgs>) -> Result<SharedString, BoxError> {
-        match self.locale() {
-            Some(locale) => i18n::translate(locale, message, args),
-            None => {
-                let default_locale = i18n::DEFAULT_LOCALE.parse()?;
-                i18n::translate(&default_locale, message, args)
-            }
+        if let Some(locale) = self.locale() {
+            i18n::translate(locale, message, args)
+        } else {
+            let default_locale = i18n::DEFAULT_LOCALE.parse()?;
+            i18n::translate(&default_locale, message, args)
         }
     }
 
     /// Creates a new subscription instance.
     fn subscription(&self) -> Subscription {
         let mut subscription = self.parse_query::<Subscription>().unwrap_or_default();
-        if subscription.session_id().is_none() {
-            if let Some(session_id) = self.session_id() {
-                subscription.set_session_id(Some(session_id.to_owned()));
-            }
+        if subscription.session_id().is_none() && let Some(session_id) = self.session_id() {
+            subscription.set_session_id(Some(session_id.to_owned()));
         }
         subscription
     }

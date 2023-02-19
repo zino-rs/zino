@@ -199,12 +199,11 @@ impl DataSource {
         sql: &str,
         params: Option<&Map>,
     ) -> Result<Option<T>, BoxError> {
-        match self.query_one(sql, params).await? {
-            Some(data) => {
-                let value = Value::Union(1, Box::new(data.into_avro_map()));
-                apache_avro::from_value(&value).map_err(|err| err.into())
-            }
-            None => Ok(None),
+        if let Some(data) = self.query_one(sql, params).await? {
+            let value = Value::Union(1, Box::new(data.into_avro_map()));
+            apache_avro::from_value(&value).map_err(|err| err.into())
+        } else {
+            Ok(None)
         }
     }
 }

@@ -79,25 +79,25 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 } else if INTEGER_TYPES.contains(&type_name.as_str()) {
                     default_value = default_value.or_else(|| Some("0".to_owned()));
                 }
-                let quote_value = match default_value {
-                    Some(value) => {
-                        if value.contains("::") {
-                            if let Some((type_name, type_fn)) = value.split_once("::") {
-                                let type_name_ident = format_ident!("{}", type_name);
-                                let type_fn_ident = format_ident!("{}", type_fn);
-                                quote! { Some(<#type_name_ident>::#type_fn_ident()) }
-                            } else {
-                                quote! { Some(#value) }
-                            }
+                let quote_value = if let Some(value) = default_value {
+                    if value.contains("::") {
+                        if let Some((type_name, type_fn)) = value.split_once("::") {
+                            let type_name_ident = format_ident!("{}", type_name);
+                            let type_fn_ident = format_ident!("{}", type_fn);
+                            quote! { Some(<#type_name_ident>::#type_fn_ident()) }
                         } else {
                             quote! { Some(#value) }
                         }
+                    } else {
+                        quote! { Some(#value) }
                     }
-                    None => quote! { None },
+                } else {
+                    quote! { None }
                 };
-                let quote_index = match index_type {
-                    Some(index) => quote! { Some(#index) },
-                    None => quote! { None },
+                let quote_index = if let Some(index) = index_type {
+                    quote! { Some(#index) }
+                } else {
+                    quote! { None }
                 };
                 let column = quote! {
                     zino_core::database::Column::new(#name, #type_name, #quote_value, #not_null, #quote_index)
@@ -110,9 +110,10 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     // Output
     let type_name_lowercase = type_name.to_ascii_lowercase();
     let type_name_uppercase = type_name.to_ascii_uppercase();
-    let quote_distribution_column = match distribution_column {
-        Some(column_name) => quote! { Some(#column_name) },
-        None => quote! { None },
+    let quote_distribution_column = if let Some(column_name) = distribution_column {
+        quote! { Some(#column_name) }
+    } else {
+        quote! { None }
     };
     let schema_primary_key = format_ident!("{}", primary_key_name);
     let schema_columns = format_ident!("{}_COLUMNS", type_name_uppercase);
@@ -197,30 +198,30 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
 
             /// Gets the model reader.
             async fn get_reader() -> Option<&'static ConnectionPool> {
-                match #schema_reader.get() {
-                    Some(connection_pool) => Some(*connection_pool),
-                    None => {
-                        let connection_pool = Self::init_reader().ok()?;
-                        let _ = Self::create_table().await.ok()?;
-                        let _ = Self::create_indexes().await.ok()?;
-                        let _ = #schema_reader.set(connection_pool).ok()?;
-                        Some(connection_pool)
-                    },
-                }
+                let connection_pool = if let Some(connection_pool) = #schema_reader.get() {
+                    *connection_pool
+                } else {
+                    let connection_pool = Self::init_reader().ok()?;
+                    let _ = Self::create_table().await.ok()?;
+                    let _ = Self::create_indexes().await.ok()?;
+                    let _ = #schema_reader.set(connection_pool).ok()?;
+                    connection_pool
+                };
+                Some(connection_pool)
             }
 
             /// Gets the model writer.
             async fn get_writer() -> Option<&'static ConnectionPool> {
-                match #schema_writer.get() {
-                    Some(connection_pool) => Some(*connection_pool),
-                    None => {
-                        let connection_pool = Self::init_writer().ok()?;
-                        let _ = Self::create_table().await.ok()?;
-                        let _ = Self::create_indexes().await.ok()?;
-                        let _ = #schema_writer.set(connection_pool).ok()?;
-                        Some(connection_pool)
-                    },
-                }
+                let connection_pool = if let Some(connection_pool) = #schema_writer.get() {
+                    *connection_pool
+                } else {
+                    let connection_pool = Self::init_writer().ok()?;
+                    let _ = Self::create_table().await.ok()?;
+                    let _ = Self::create_indexes().await.ok()?;
+                    let _ = #schema_writer.set(connection_pool).ok()?;
+                    connection_pool
+                };
+                Some(connection_pool)
             }
         }
 

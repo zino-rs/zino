@@ -62,10 +62,10 @@ impl Validation {
         value: impl Into<Option<&'a Value>>,
     ) -> Option<Result<i64, ParseIntError>> {
         let value = value.into();
-        match value.and_then(|v| v.as_i64()) {
-            Some(value) => Some(Ok(value)),
-            None => value.and_then(|v| v.as_str()).map(|s| s.parse()),
-        }
+        value
+            .and_then(|v| v.as_i64())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
     }
 
     /// Parses a json value as `u64`.
@@ -73,10 +73,10 @@ impl Validation {
         value: impl Into<Option<&'a Value>>,
     ) -> Option<Result<u64, ParseIntError>> {
         let value = value.into();
-        match value.and_then(|v| v.as_u64()) {
-            Some(value) => Some(Ok(value)),
-            None => value.and_then(|v| v.as_str()).map(|s| s.parse()),
-        }
+        value
+            .and_then(|v| v.as_u64())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
     }
 
     /// Parses a json value as `f64`.
@@ -84,10 +84,10 @@ impl Validation {
         value: impl Into<Option<&'a Value>>,
     ) -> Option<Result<f64, ParseFloatError>> {
         let value = value.into();
-        match value.and_then(|v| v.as_f64()) {
-            Some(value) => Some(Ok(value)),
-            None => value.and_then(|v| v.as_str()).map(|s| s.parse()),
-        }
+        value
+            .and_then(|v| v.as_f64())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
     }
 
     /// Parses a json value as `bool`.
@@ -95,10 +95,10 @@ impl Validation {
         value: impl Into<Option<&'a Value>>,
     ) -> Option<Result<bool, ParseBoolError>> {
         let value = value.into();
-        match value.and_then(|v| v.as_bool()) {
-            Some(value) => Some(Ok(value)),
-            None => value.and_then(|v| v.as_str()).map(|s| s.parse()),
-        }
+        value
+            .and_then(|v| v.as_bool())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
     }
 
     /// Parses a json value as `String`. If the `String` is empty, it also returns `None`.

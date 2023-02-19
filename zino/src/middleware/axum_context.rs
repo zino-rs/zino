@@ -10,10 +10,10 @@ pub(crate) async fn request_context(
     next: Next<Body>,
 ) -> Result<Response<BoxBody>, StatusCode> {
     let request = crate::AxumExtractor(req);
-    let new_context = match request.get_context() {
-        Some(_) => None,
-        None => Some(request.new_context()),
-    };
+    let new_context = request
+        .get_context()
+        .is_none()
+        .then(|| request.new_context());
 
     let mut req = request.0;
     if let Some(ctx) = new_context {

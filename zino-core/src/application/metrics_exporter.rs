@@ -8,24 +8,21 @@ pub(super) fn init<APP: Application + ?Sized>() {
     if let Some(metrics) = APP::config().get_table("metrics") {
         let exporter = metrics.get_str("exporter").unwrap_or_default();
         if exporter == "prometheus" {
-            let mut builder = match metrics.get_str("push-gateway") {
-                Some(endpoint) => {
-                    let interval = metrics
-                        .get_duration("interval")
-                        .unwrap_or_else(|| Duration::from_secs(60));
-                    PrometheusBuilder::new()
-                        .with_push_gateway(endpoint, interval)
-                        .expect("failed to configure the exporter to run in push gateway mode")
-                }
-                None => {
-                    let host = metrics.get_str("host").unwrap_or("127.0.0.1");
-                    let port = metrics.get_u16("port").unwrap_or(9000);
-                    let host_addr = host
-                        .parse::<IpAddr>()
-                        .unwrap_or_else(|err| panic!("invalid host address `{host}`: {err}"));
-                    tracing::warn!(exporter, "listen on {host_addr}:{port}");
-                    PrometheusBuilder::new().with_http_listener((host_addr, port))
-                }
+            let mut builder = if let Some(endpoint) = metrics.get_str("push-gateway") {
+                let interval = metrics
+                    .get_duration("interval")
+                    .unwrap_or_else(|| Duration::from_secs(60));
+                PrometheusBuilder::new()
+                    .with_push_gateway(endpoint, interval)
+                    .expect("failed to configure the exporter to run in push gateway mode")
+            } else {
+                let host = metrics.get_str("host").unwrap_or("127.0.0.1");
+                let port = metrics.get_u16("port").unwrap_or(9000);
+                let host_addr = host
+                    .parse::<IpAddr>()
+                    .unwrap_or_else(|err| panic!("invalid host address `{host}`: {err}"));
+                tracing::warn!(exporter, "listen on {host_addr}:{port}");
+                PrometheusBuilder::new().with_http_listener((host_addr, port))
             };
             if let Some(quantiles) = metrics.get_array("quantiles") {
                 let quantiles = quantiles

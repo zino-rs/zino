@@ -82,24 +82,17 @@ impl MessageChannel {
     ) -> Result<(), TrySendError<CloudEvent>> {
         let sender_id = &self.sender_id;
         let event = message.into();
-        let event_source = event.source();
-        let event_topic = event.topic();
+        let source = event.source();
+        let topic = event.topic();
         let subscribers = CHANNEL_SUBSCRIBERS.read();
         for (key, subscriber) in subscribers.iter() {
             let emitter = subscriber.emitter();
             if key != sender_id && !emitter.is_closed() {
-                let is_subscribed = match subscriber.filter() {
-                    Some(subscription) => {
-                        subscription
-                            .source()
-                            .filter(|&source| source != event_source)
-                            .is_none()
-                            && subscription
-                                .topic()
-                                .filter(|&topic| topic != event_topic)
-                                .is_none()
-                    }
-                    None => true,
+                let is_subscribed = if let Some(subscription) = subscriber.filter() {
+                    subscription.source().filter(|&s| source != s).is_none()
+                        && subscription.topic().filter(|&t| topic != t).is_none()
+                } else {
+                    true
                 };
                 if is_subscribed {
                     emitter.try_send(event.clone())?;
@@ -124,14 +117,14 @@ impl Default for MessageChannel {
 
 /// Channel capacity.
 static CHANNEL_CAPACITY: LazyLock<usize> = LazyLock::new(|| {
-    let config = crate::AxumCluster::config();
-    match config.get("channel") {
-        Some(channel) => channel
+    if let Some(channel) = crate::AxumCluster::config().get("channel") {
+        channel
             .as_table()
             .expect("the `channel` field should be a table")
             .get_usize("capacity")
-            .expect("the `channel.capacity` field should be a positive integer"),
-        None => 10000,
+            .expect("the `channel.capacity` field should be a positive integer")
+    } else {
+        10000
     }
 });
 

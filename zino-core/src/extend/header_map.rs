@@ -39,21 +39,23 @@ impl HeaderMapExt for HeaderMap {
     }
 
     fn get_data_type(&self) -> Option<SharedString> {
-        self.get_content_type()
-            .map(|content_type| match content_type {
-                "application/json" => "json".into(),
-                "application/octet-stream" => "bytes".into(),
-                "application/x-www-form-urlencoded" => "form".into(),
-                "multipart/form-data" => "multipart".into(),
-                "text/plain" => "text".into(),
-                _ => {
-                    if content_type.starts_with("application/") && content_type.ends_with("+json") {
-                        "json".into()
-                    } else {
-                        content_type.to_owned().into()
-                    }
+        let content_type = self.get_content_type()?;
+        let data_type = match content_type {
+            "application/json" | "application/problem+json" => "json".into(),
+            "application/msgpack" | "application/x-msgpack" => "msgpack".into(),
+            "application/octet-stream" => "bytes".into(),
+            "application/x-www-form-urlencoded" => "form".into(),
+            "multipart/form-data" => "multipart".into(),
+            "text/plain" => "text".into(),
+            _ => {
+                if content_type.starts_with("application/") && content_type.ends_with("+json") {
+                    "json".into()
+                } else {
+                    content_type.to_owned().into()
                 }
-            })
+            }
+        };
+        Some(data_type)
     }
 
     fn has_json_content_type(&self) -> bool {
