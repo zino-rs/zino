@@ -23,16 +23,18 @@ pub mod accessor;
 pub mod cache;
 #[cfg(feature = "connector")]
 pub mod connector;
+#[cfg(feature = "orm")]
+pub mod database;
 #[cfg(feature = "view")]
 pub mod view;
 
 pub mod application;
 pub mod authentication;
 pub mod channel;
-pub mod database;
 pub mod datetime;
 pub mod extend;
 pub mod i18n;
+pub mod model;
 pub mod request;
 pub mod response;
 pub mod schedule;

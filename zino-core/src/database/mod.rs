@@ -1,4 +1,4 @@
-//! Database schema and SQL builder.
+//! Database schema and ORM.
 
 use crate::{extend::TomlTableExt, state::State};
 use sqlx::postgres::{PgConnectOptions, PgPool, PgPoolOptions};
@@ -6,19 +6,13 @@ use std::{sync::LazyLock, time::Duration};
 use toml::value::Table;
 
 mod column;
-mod model;
 mod mutation;
 mod postgres;
 mod query;
 mod schema;
 
 pub use column::Column;
-pub use model::Model;
-pub use mutation::Mutation;
-pub use query::Query;
 pub use schema::Schema;
-
-use column::ColumnExt;
 
 /// A database connection pool.
 #[derive(Debug, Clone)]

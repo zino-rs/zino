@@ -1,6 +1,6 @@
 use crate::User;
 use serde::{Deserialize, Serialize};
-use zino_core::{database::Model, datetime::DateTime, request::Validation, Map, Uuid};
+use zino_core::{datetime::DateTime, model::Model, request::Validation, Map, Uuid};
 use zino_derive::Schema;
 
 /// The group model.

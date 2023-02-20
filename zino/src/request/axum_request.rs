@@ -130,9 +130,9 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
-    fn try_send(&self, message: impl Into<CloudEvent>) -> Result<(), Rejection> {
+    fn try_send(&self, message: CloudEvent) -> Result<(), Rejection> {
         crate::channel::axum_channel::MessageChannel::shared()
-            .try_send(message.into())
+            .try_send(message)
             .map_err(Rejection::internal_server_error)
     }
 

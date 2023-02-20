@@ -41,9 +41,10 @@ mod request;
 #[doc(no_inline)]
 pub use zino_core::{
     application::Application,
-    database::{Model, Query, Schema},
+    database::Schema,
     datetime::DateTime,
     extend::JsonObjectExt,
+    model::{Model, Query},
     request::RequestContext,
     response::ExtractRejection,
     schedule::{AsyncCronJob, CronJob},

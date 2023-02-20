@@ -1,8 +1,16 @@
+//! Application specific models.
+
 use crate::{request::Validation, Map};
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json::{Error, Value};
 
-/// Application specific model.
+mod mutation;
+mod query;
+
+pub use mutation::Mutation;
+pub use query::Query;
+
+/// Data model.
 pub trait Model: Default + Serialize + DeserializeOwned {
     /// Creates a new instance.
     fn new() -> Self;

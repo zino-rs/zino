@@ -1,4 +1,4 @@
-use super::{Column, ColumnExt};
+use super::column::{Column, ColumnExt};
 use crate::{Record, Uuid};
 use apache_avro::types::Value;
 use chrono::{DateTime, Local, SecondsFormat};

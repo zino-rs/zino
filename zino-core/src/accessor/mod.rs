@@ -27,16 +27,24 @@
 use crate::{extend::TomlTableExt, state::State};
 use opendal::{
     layers::{MetricsLayer, RetryLayer, TracingLayer},
-    services::{
-        Azblob, Azdfs, Fs, Ftp, Gcs, Ghac, Ipfs, Ipmfs, Memcached, Memory, Moka, Obs, Oss, Redis,
-        Webdav, Webhdfs, S3,
-    },
+    services::{Azblob, Azdfs, Fs, Gcs, Ghac, Ipmfs, Memory, Obs, Oss, Webdav, Webhdfs, S3},
     Builder, Error,
     ErrorKind::Unsupported,
     Operator,
 };
 use std::{collections::HashMap, sync::LazyLock};
 use toml::Table;
+
+#[cfg(feature = "accessor-ftp")]
+use opendal::services::Ftp;
+#[cfg(feature = "accessor-ipfs")]
+use opendal::services::Ipfs;
+#[cfg(feature = "accessor-memcached")]
+use opendal::services::Memcached;
+#[cfg(feature = "accessor-moka")]
+use opendal::services::Moka;
+#[cfg(feature = "accessor-redis")]
+use opendal::services::Redis;
 
 /// Global storage accessor built on the top of [`opendal`](https://crates.io/crates/opendal).
 #[derive(Debug, Clone, Copy, Default)]

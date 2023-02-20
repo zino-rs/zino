@@ -1,5 +1,15 @@
-use super::{Column, ColumnExt, ConnectionPool, Model, Mutation, Query};
-use crate::{extend::AvroRecordExt, format, Map, Record};
+use super::{
+    column::{Column, ColumnExt},
+    mutation::MutationExt,
+    query::QueryExt,
+    ConnectionPool,
+};
+use crate::{
+    extend::AvroRecordExt,
+    format,
+    model::{Model, Mutation, Query},
+    Map, Record,
+};
 use apache_avro::types::Value;
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
@@ -7,7 +17,7 @@ use serde_json::json;
 use sqlx::{Error, Row};
 use std::collections::HashMap;
 
-/// Model schema.
+/// Database schema.
 pub trait Schema: 'static + Send + Sync + Model {
     /// Type name.
     const TYPE_NAME: &'static str;
@@ -236,7 +246,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     }
 
     /// Updates at most one model selected by the query in the table.
-    async fn update_one(query: Query, mutation: Mutation) -> Result<u64, Error> {
+    async fn update_one(query: Query, mutation: &Mutation) -> Result<u64, Error> {
         let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
@@ -254,7 +264,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     }
 
     /// Updates many models selected by the query in the table.
-    async fn update_many(query: Query, mutation: Mutation) -> Result<u64, Error> {
+    async fn update_many(query: Query, mutation: &Mutation) -> Result<u64, Error> {
         let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let filter = query.format_filter::<Self>();

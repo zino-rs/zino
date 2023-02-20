@@ -4,10 +4,10 @@ use crate::{
     application::http_client,
     authentication::{Authentication, ParseSecurityTokenError, SecurityToken, SessionId},
     channel::{CloudEvent, Subscription},
-    database::{Model, Query},
     datetime::DateTime,
     extend::HeaderMapExt,
     i18n,
+    model::{Model, Query},
     response::{Rejection, Response, ResponseCode},
     trace::{TraceContext, TraceState},
     BoxError, Map, SharedString, Uuid,
@@ -67,7 +67,7 @@ pub trait RequestContext {
     fn original_uri(&self) -> &Uri;
 
     /// Attempts to send a message.
-    fn try_send(&self, message: impl Into<CloudEvent>) -> Result<(), Rejection>;
+    fn try_send(&self, message: CloudEvent) -> Result<(), Rejection>;
 
     /// Aggregates the data buffers from the request body as `Vec<u8>`.
     async fn body_bytes(&mut self) -> Result<Vec<u8>, BoxError>;

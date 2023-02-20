@@ -1,7 +1,7 @@
 [package]
 name = "zino"
 description = "Full-featured web application framework for Rust."
-version = "0.5.5"
+version = "0.5.6"
 rust-version = "1.68"
 edition = "2021"
 license = "MIT"
@@ -13,7 +13,7 @@ documentation = "https://docs.rs/zino"
 readme = "README.md"
 
 [package.metadata.docs.rs]
-all-features = true
+features = ["axum"]
 
 [features]
 axum = [
@@ -22,6 +22,7 @@ axum = [
     "dep:tokio-stream",
     "dep:tower",
     "dep:tower-http",
+    "zino-core/runtime-tokio",
 ]
 
 [dependencies]
@@ -35,7 +36,7 @@ tracing = "0.1.37"
 
 [dependencies.axum]
 version = "0.6.7"
-features = ["multipart", "ws"]
+features = ["ws"]
 optional = true
 
 [dependencies.serde]
@@ -67,6 +68,8 @@ features = [
     "add-extension",
     "compression-br",
     "compression-gzip",
+    "decompression-br",
+    "decompression-gzip",
     "cors",
     "fs",
     "trace",
@@ -75,5 +78,11 @@ optional = true
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.6.1"
-features = ["view"]
+version = "0.6.2"
+features = [
+    "accessor",
+    "cache",
+    "connector",
+    "orm",
+    "view",
+]

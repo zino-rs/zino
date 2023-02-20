@@ -101,8 +101,8 @@ impl<'a> Column<'a> {
     }
 }
 
-/// Extension trait for column.
-pub trait ColumnExt<DB: Database> {
+/// Extension trait for [`Column`](crate::database::Column).
+pub(super) trait ColumnExt<DB: Database> {
     /// A database row type.
     type Row: Row;
 
