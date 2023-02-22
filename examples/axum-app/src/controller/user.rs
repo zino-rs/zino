@@ -13,7 +13,7 @@ pub(crate) async fn new(mut req: Request) -> zino::Result {
 
     let rows = user.upsert().await.extract_with_context(&req)?;
     let data = json!({
-        "method": req.request_method(),
+        "method": req.request_method().as_ref(),
         "path": req.request_path(),
         "rows": rows,
     });

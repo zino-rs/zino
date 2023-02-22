@@ -2,12 +2,13 @@ use async_trait::async_trait;
 use axum::{
     body::Body,
     extract::{FromRequest, MatchedPath},
-    http::{HeaderMap, Request, Uri},
+    http::{HeaderMap, Method, Request},
 };
 use hyper::body::{self, Buf, HttpBody};
 use std::{
     convert::Infallible,
     io::Read,
+    net::{IpAddr, SocketAddr},
     ops::{Deref, DerefMut},
     sync::LazyLock,
 };
@@ -16,6 +17,7 @@ use tower_cookies::{Cookie, Cookies, Key};
 use zino_core::{
     application::Application,
     channel::CloudEvent,
+    extend::HeaderMapExt,
     request::{Context, RequestContext},
     response::Rejection,
     state::State,
@@ -42,40 +44,40 @@ impl<T> DerefMut for AxumExtractor<T> {
 }
 
 impl RequestContext for AxumExtractor<Request<Body>> {
+    type Method = Method;
+    type Headers = HeaderMap;
+
     #[inline]
-    fn config(&self) -> &Table {
-        let state = self
-            .extensions()
-            .get::<State>()
-            .expect("the request extension `State` does not exist");
-        state.config()
+    fn request_method(&self) -> &Self::Method {
+        self.method()
     }
 
     #[inline]
-    fn state_data(&self) -> &Map {
-        let state = self
-            .extensions()
-            .get::<State>()
-            .expect("the request extension `State` does not exist");
-        state.data()
+    fn request_path(&self) -> &str {
+        self.uri().path()
     }
 
     #[inline]
-    fn state_data_mut(&mut self) -> &mut Map {
-        let state = self
-            .extensions_mut()
-            .get_mut::<State>()
-            .expect("the request extension `State` does not exist");
-        state.data_mut()
+    fn matched_route(&self) -> &str {
+        if let Some(path) = self.extensions().get::<MatchedPath>() {
+            path.as_str()
+        } else {
+            self.uri().path()
+        }
     }
 
     #[inline]
-    fn header_map(&self) -> &HeaderMap {
+    fn query_string(&self) -> Option<&str> {
+        self.uri().query()
+    }
+
+    #[inline]
+    fn header_map(&self) -> &Self::Headers {
         self.headers()
     }
 
     #[inline]
-    fn header_map_mut(&mut self) -> &mut HeaderMap {
+    fn header_map_mut(&mut self) -> &mut Self::Headers {
         self.headers_mut()
     }
 
@@ -111,22 +113,39 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
-    fn request_method(&self) -> &str {
-        self.method().as_str()
+    fn client_ip(&self) -> Option<IpAddr> {
+        self.header_map().get_client_ip().or_else(|| {
+            self.extensions()
+                .get::<SocketAddr>()
+                .map(|socket| socket.ip())
+        })
     }
 
     #[inline]
-    fn matched_route(&self) -> &str {
-        if let Some(path) = self.extensions().get::<MatchedPath>() {
-            path.as_str()
-        } else {
-            self.uri().path()
-        }
+    fn config(&self) -> &Table {
+        let state = self
+            .extensions()
+            .get::<State>()
+            .expect("the request extension `State` does not exist");
+        state.config()
     }
 
     #[inline]
-    fn original_uri(&self) -> &Uri {
-        self.uri()
+    fn state_data(&self) -> &Map {
+        let state = self
+            .extensions()
+            .get::<State>()
+            .expect("the request extension `State` does not exist");
+        state.data()
+    }
+
+    #[inline]
+    fn state_data_mut(&mut self) -> &mut Map {
+        let state = self
+            .extensions_mut()
+            .get_mut::<State>()
+            .expect("the request extension `State` does not exist");
+        state.data_mut()
     }
 
     #[inline]
@@ -136,7 +155,7 @@ impl RequestContext for AxumExtractor<Request<Body>> {
             .map_err(Rejection::internal_server_error)
     }
 
-    async fn body_bytes(&mut self) -> Result<Vec<u8>, BoxError> {
+    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, BoxError> {
         let buffer_size = self.size_hint().lower().try_into().unwrap_or(1024);
         let body = body::aggregate(self.body_mut()).await?;
         let mut bytes = Vec::with_capacity(buffer_size);

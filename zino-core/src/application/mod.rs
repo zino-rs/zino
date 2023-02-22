@@ -84,17 +84,19 @@ pub trait Application {
     /// Returns the application name.
     #[inline]
     fn name() -> &'static str {
-        Self::config()
-            .get_str("name")
-            .expect("the `name` field should be specified")
+        APP_NMAE.as_ref()
     }
 
     /// Returns the application version.
     #[inline]
     fn version() -> &'static str {
-        Self::config()
-            .get_str("version")
-            .expect("the `version` field should be specified")
+        APP_VERSION.as_ref()
+    }
+
+    /// Returns the domain for the application.
+    #[inline]
+    fn domain() -> &'static str {
+        APP_DOMAIN.as_ref()
     }
 
     /// Returns the project directory for the application.
@@ -158,6 +160,30 @@ pub trait Application {
         Ok(data)
     }
 }
+
+/// App name.
+pub(crate) static APP_NMAE: LazyLock<&'static str> = LazyLock::new(|| {
+    SHARED_APP_STATE
+        .config()
+        .get_str("name")
+        .expect("the `name` field should be specified")
+});
+
+/// App version.
+pub(crate) static APP_VERSION: LazyLock<&'static str> = LazyLock::new(|| {
+    SHARED_APP_STATE
+        .config()
+        .get_str("version")
+        .expect("the `version` field should be specified")
+});
+
+/// Domain.
+pub(crate) static APP_DOMAIN: LazyLock<&'static str> = LazyLock::new(|| {
+    SHARED_APP_STATE
+        .config()
+        .get_str("domain")
+        .unwrap_or("localhost")
+});
 
 /// Project directory.
 pub(crate) static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {

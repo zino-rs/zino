@@ -113,7 +113,7 @@ impl<S: ResponseCode> Response<S> {
             status_code: code.status_code(),
             error_code: code.error_code(),
             detail: None,
-            instance: (!success).then(|| ctx.request_path().to_owned().into()),
+            instance: (!success).then(|| ctx.instance().to_owned().into()),
             success,
             message: None,
             start_time: ctx.start_time(),
@@ -135,7 +135,7 @@ impl<S: ResponseCode> Response<S> {
 
     /// Provides the request context for the response.
     pub fn provide_context<Ctx: RequestContext>(mut self, ctx: &Ctx) -> Self {
-        self.instance = (!self.is_success()).then(|| ctx.request_path().to_owned().into());
+        self.instance = (!self.is_success()).then(|| ctx.instance().to_owned().into());
         self.start_time = ctx.start_time();
         self.request_id = ctx.request_id();
         self.trace_context = Some(ctx.new_trace_context());

@@ -1,7 +1,7 @@
 //! Request context and validation.
 
 use crate::{
-    application::http_client,
+    application::{self, http_client},
     authentication::{Authentication, ParseSecurityTokenError, SecurityToken, SessionId},
     channel::{CloudEvent, Subscription},
     datetime::DateTime,
@@ -14,11 +14,13 @@ use crate::{
 };
 use cookie::{Cookie, SameSite};
 use fluent::FluentArgs;
-use http::{HeaderMap, Uri};
 use multer::Multipart;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use std::time::{Duration, Instant};
+use std::{
+    net::IpAddr,
+    time::{Duration, Instant},
+};
 use toml::value::Table;
 use unic_langid::LanguageIdentifier;
 
@@ -30,20 +32,28 @@ pub use validation::Validation;
 
 /// Request context.
 pub trait RequestContext {
-    /// Returns a reference to the application config.
-    fn config(&self) -> &Table;
+    /// HTTP request method.
+    type Method: AsRef<str>;
+    /// A set of HTTP headers.
+    type Headers: HeaderMapExt;
 
-    /// Returns a reference to the request scoped state data.
-    fn state_data(&self) -> &Map;
+    /// Returns the request method.
+    fn request_method(&self) -> &Self::Method;
 
-    /// Returns a mutable reference to the request scoped state data.
-    fn state_data_mut(&mut self) -> &mut Map;
+    /// Returns the request path regardless of nesting.
+    fn request_path(&self) -> &str;
+
+    /// Returns the route that matches the request.
+    fn matched_route(&self) -> &str;
+
+    /// Returns the query string of the request URI.
+    fn query_string(&self) -> Option<&str>;
 
     /// Returns a reference to the request headers.
-    fn header_map(&self) -> &HeaderMap;
+    fn header_map(&self) -> &Self::Headers;
 
     /// Returns a mutable reference to the request headers.
-    fn header_map_mut(&mut self) -> &mut HeaderMap;
+    fn header_map_mut(&mut self) -> &mut Self::Headers;
 
     /// Gets an HTTP header with the given name.
     fn get_header(&self, name: &str) -> Option<&str>;
@@ -57,20 +67,23 @@ pub trait RequestContext {
     /// Adds a cookie to the cookie jar.
     fn add_cookie(&self, cookie: Cookie<'static>);
 
-    /// Returns the request method.
-    fn request_method(&self) -> &str;
+    /// Returns the client's remote IP.
+    fn client_ip(&self) -> Option<IpAddr>;
 
-    /// Returns the route that matches the request.
-    fn matched_route(&self) -> &str;
+    /// Returns a reference to the application config.
+    fn config(&self) -> &Table;
 
-    /// Returns the original request URI regardless of nesting.
-    fn original_uri(&self) -> &Uri;
+    /// Returns a reference to the request scoped state data.
+    fn state_data(&self) -> &Map;
+
+    /// Returns a mutable reference to the request scoped state data.
+    fn state_data_mut(&mut self) -> &mut Map;
 
     /// Attempts to send a message.
     fn try_send(&self, message: CloudEvent) -> Result<(), Rejection>;
 
-    /// Aggregates the data buffers from the request body as `Vec<u8>`.
-    async fn body_bytes(&mut self) -> Result<Vec<u8>, BoxError>;
+    /// Reads the entire request body into a byte buffer.
+    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, BoxError>;
 
     /// Creates a new request context.
     fn new_context(&self) -> Context {
@@ -78,7 +91,7 @@ pub trait RequestContext {
         metrics::increment_gauge!("zino_http_requests_in_flight", 1.0);
         metrics::increment_counter!(
             "zino_http_requests_total",
-            "method" => self.request_method().to_owned(),
+            "method" => self.request_method().as_ref().to_owned(),
             "route" => self.matched_route().to_owned(),
         );
 
@@ -94,7 +107,7 @@ pub trait RequestContext {
 
         // Generate new context.
         let mut ctx = Context::new(request_id);
-        ctx.set_request_path(self.original_uri().path());
+        ctx.set_instance(self.request_path());
         ctx.set_trace_id(trace_id);
         ctx.set_session_id(session_id);
 
@@ -147,13 +160,16 @@ pub trait RequestContext {
         value: impl Into<SharedString>,
         max_age: Option<Duration>,
     ) -> Cookie<'static> {
-        let original_uri = self.original_uri();
         let mut cookie_builder = Cookie::build(name, value)
             .http_only(true)
+            .secure(true)
             .same_site(SameSite::Lax)
-            .path(original_uri.path().to_owned());
-        if let Some(host) = original_uri.host() {
-            cookie_builder = cookie_builder.domain(host.to_owned());
+            .path(self.request_path().to_owned());
+        if let Some(host) = self.header_map().get_host() {
+            let domain = host.split_once(':').map(|v| v.0).unwrap_or(host);
+            if domain.ends_with::<&str>(application::APP_DOMAIN.as_ref()) {
+                cookie_builder = cookie_builder.domain(domain.to_owned());
+            }
         }
         if let Some(max_age) = max_age.and_then(|d| d.try_into().ok()) {
             cookie_builder = cookie_builder.max_age(max_age);
@@ -169,12 +185,12 @@ pub trait RequestContext {
             .unwrap_or_else(Instant::now)
     }
 
-    /// Returns the request path.
+    /// Returns the instance.
     #[inline]
-    fn request_path(&self) -> &str {
+    fn instance(&self) -> &str {
         self.get_context()
-            .map(|ctx| ctx.request_path())
-            .unwrap_or_default()
+            .map(|ctx| ctx.instance())
+            .unwrap_or_else(|| self.request_path())
     }
 
     /// Returns the request ID.
@@ -244,7 +260,7 @@ pub trait RequestContext {
     where
         T: Default + DeserializeOwned + Send + 'static,
     {
-        if let Some(query) = self.original_uri().query() {
+        if let Some(query) = self.query_string() {
             serde_qs::from_str::<T>(query).map_err(|err| Validation::from_entry("query", err))
         } else {
             Ok(T::default())
@@ -266,7 +282,7 @@ pub trait RequestContext {
             ));
         }
         let bytes = self
-            .body_bytes()
+            .read_body_bytes()
             .await
             .map_err(|err| Validation::from_entry("body", err))?;
         if data_type == "form" {
@@ -285,7 +301,7 @@ pub trait RequestContext {
         })?;
         let boundary = multer::parse_boundary(content_type)
             .map_err(|err| Validation::from_entry("boundary", err))?;
-        let result = self.body_bytes().await;
+        let result = self.read_body_bytes().await;
         let stream = futures::stream::once(async { result });
         Ok(Multipart::new(stream, boundary))
     }
@@ -296,7 +312,7 @@ pub trait RequestContext {
     /// You should always manually set canonicalized headers by calling
     /// `Authentication`'s method [`set_headers()`](Authentication::set_headers).
     fn parse_authentication(&self) -> Result<Authentication, Validation> {
-        let method = self.request_method();
+        let method = self.request_method().as_ref();
         let query = self.parse_query::<Map>().unwrap_or_default();
         let mut authentication = Authentication::new(method);
         let mut validation = Validation::new();
@@ -512,7 +528,7 @@ pub trait RequestContext {
     /// Creates a new cloud event instance.
     fn cloud_event(&self, topic: impl Into<String>, data: impl Into<Value>) -> CloudEvent {
         let id = self.request_id().to_string();
-        let source = self.request_path().to_owned();
+        let source = self.instance().to_owned();
         let mut event = CloudEvent::new(id, source, topic.into(), data.into());
         if let Some(session_id) = self.session_id() {
             event.set_session_id(session_id.to_owned());

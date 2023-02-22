@@ -160,7 +160,7 @@ impl<'a> From<Rejection<'a>> for http::Response<Full<Bytes>> {
             }
         };
         if let Some(ctx) = rejection.context {
-            res.set_instance(Some(ctx.request_path().to_owned().into()));
+            res.set_instance(Some(ctx.instance().to_owned().into()));
             res.set_start_time(ctx.start_time());
             res.set_request_id(ctx.request_id());
         }

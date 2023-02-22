@@ -81,6 +81,7 @@ impl Mutation {
         self.fields.as_slice()
     }
 
+    #[cfg(feature = "orm")]
     /// Returns a reference to the update map.
     #[inline]
     pub(crate) fn update(&self) -> &Map {

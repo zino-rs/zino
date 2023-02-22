@@ -1,12 +1,30 @@
 use crate::SharedString;
 use http::header::{self, HeaderMap};
+use std::net::IpAddr;
 
 /// Extension trait for [`HeaderMap`](http::HeaderMap).
 pub trait HeaderMapExt {
-    /// Extracts the string corresponding to the key.
+    /// Ges the string corresponding to the key.
     fn get_str(&self, key: &str) -> Option<&str>;
 
-    /// Extracts the essence of the `content-type` header, discarding the optional parameters.
+    /// Gets the destination host.
+    ///
+    /// It is determined in the following priority:
+    ///
+    /// 1. `Forwarded` header `host` key
+    /// 2. The first `X-Forwarded-Host` header
+    /// 3. `Host` header
+    fn get_host(&self) -> Option<&str>;
+
+    /// Gets the client's remote IP.
+    ///
+    /// It is determined in the following priority:
+    ///
+    /// 1. `Forwarded` header `for` key
+    /// 2. The first `X-Forwarded-For` header
+    fn get_client_ip(&self) -> Option<IpAddr>;
+
+    /// Gets the essence of the `content-type` header, discarding the optional parameters.
     fn get_content_type(&self) -> Option<&str>;
 
     /// Gets the data type by parsing the `content-type` header.
@@ -24,6 +42,38 @@ impl HeaderMapExt for HeaderMap {
     #[inline]
     fn get_str(&self, key: &str) -> Option<&str> {
         self.get(key).and_then(|v| v.to_str().ok())
+    }
+
+    fn get_host(&self) -> Option<&str> {
+        self.get(header::FORWARDED)
+            .and_then(|v| v.to_str().ok())
+            .and_then(|s| {
+                s.split(';').find_map(|entry| {
+                    let parts = entry.split('=').collect::<Vec<_>>();
+                    (parts.len() == 2 && parts[0].eq_ignore_ascii_case("host")).then(|| parts[1])
+                })
+            })
+            .or_else(|| {
+                self.get_str("x-forwarded-host")
+                    .and_then(|s| s.split(',').next())
+            })
+            .or_else(|| self.get(header::HOST).and_then(|v| v.to_str().ok()))
+    }
+
+    fn get_client_ip(&self) -> Option<IpAddr> {
+        self.get(header::FORWARDED)
+            .and_then(|v| v.to_str().ok())
+            .and_then(|s| {
+                s.split(';').find_map(|entry| {
+                    let parts = entry.split('=').collect::<Vec<_>>();
+                    (parts.len() == 2 && parts[0].eq_ignore_ascii_case("for")).then(|| parts[1])
+                })
+            })
+            .or_else(|| {
+                self.get_str("x-forwarded-for")
+                    .and_then(|s| s.split(',').next())
+            })
+            .and_then(|s| s.parse().ok())
     }
 
     fn get_content_type(&self) -> Option<&str> {
@@ -73,10 +123,9 @@ impl HeaderMapExt for HeaderMap {
     }
 
     fn select_language<'a>(&'a self, supported_locales: &[&'a str]) -> Option<&'a str> {
-        let header_value = self
+        let mut languages = self
             .get(header::ACCEPT_LANGUAGE)
-            .and_then(|v| v.to_str().ok())?;
-        let mut languages = header_value
+            .and_then(|v| v.to_str().ok())?
             .split(',')
             .filter_map(|s| {
                 let (language, quality) = if let Some((language, quality)) = s.split_once(';') {
@@ -109,29 +158,20 @@ mod tests {
             header::ACCEPT_LANGUAGE,
             HeaderValue::from_static(header_value),
         );
-        assert_eq!(
-            headers.select_language(vec!["en-US", "zh-CN"]),
-            Some("zh-CN"),
-        );
+        assert_eq!(headers.select_language(&["en-US", "zh-CN"]), Some("zh-CN"),);
 
         let header_value = "zh-HK,zh;q=0.8,en-US; q=0.7";
         headers.insert(
             header::ACCEPT_LANGUAGE,
             HeaderValue::from_static(header_value),
         );
-        assert_eq!(
-            headers.select_language(vec!["en-US", "zh-CN"]),
-            Some("zh-CN"),
-        );
+        assert_eq!(headers.select_language(&["en-US", "zh-CN"]), Some("zh-CN"),);
 
         let header_value = "zh-HK, zh;q=0.8,en-US; q=0.9";
         headers.insert(
             header::ACCEPT_LANGUAGE,
             HeaderValue::from_static(header_value),
         );
-        assert_eq!(
-            headers.select_language(vec!["en-US", "zh-CN"]),
-            Some("en-US"),
-        );
+        assert_eq!(headers.select_language(&["en-US", "zh-CN"]), Some("en-US"),);
     }
 }

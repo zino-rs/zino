@@ -40,7 +40,7 @@ impl Query {
                         self.fields = fields;
                     }
                 }
-                "sort_by" | "order_by" => {
+                "sort" | "sort_by" | "order_by" => {
                     if let Some(sort_by) = Validation::parse_string(&value) {
                         self.sort_order.0 = sort_by.into();
                     }

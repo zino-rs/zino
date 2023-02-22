@@ -49,6 +49,7 @@ fn new_make_span(request: &Request<Body>) -> Span {
         "http.method" = request.method().as_str(),
         "http.scheme" = uri.scheme_str(),
         "http.target" = uri.path_and_query().map(|p| p.as_str()),
+        "http.client_ip" = headers.get_client_ip().map(|ip| ip.to_string()),
         "http.user_agent" = headers.get_str("user-agent"),
         "http.request.header.traceparent" = Empty,
         "http.request.header.tracestate" = Empty,
