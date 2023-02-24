@@ -11,7 +11,7 @@ pub(crate) async fn index(req: Request) -> zino::Result {
     });
     let data = json!({
         "title": "Stats",
-        "stats": serde_json::to_string_pretty(&stats).unwrap_or_default(),
+        "output": serde_json::to_string_pretty(&stats).unwrap_or_default(),
     });
-    Ok(res.render("stats.html", data).into())
+    Ok(res.render("output.html", data).into())
 }

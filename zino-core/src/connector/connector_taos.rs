@@ -7,7 +7,7 @@ use toml::Table;
 impl Connector for TaosPool {
     fn try_new_data_source(config: &'static Table) -> Result<DataSource, BoxError> {
         let name = config.get_str("name").unwrap_or("taos");
-        let database = config.get_str("database").unwrap_or_default();
+        let database = config.get_str("database").unwrap_or(name);
         let authority = State::format_authority(config, Some(6041));
         let dsn = format!("taos+ws://{authority}/{database}");
 

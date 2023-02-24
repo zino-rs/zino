@@ -5,6 +5,8 @@ use apache_avro::types::Value;
 use serde::de::DeserializeOwned;
 use toml::Table;
 
+#[cfg(feature = "connector-arrow")]
+use super::ArrowConnector;
 #[cfg(feature = "connector-http")]
 use super::HttpConnector;
 #[cfg(feature = "connector-mssql")]
@@ -21,6 +23,9 @@ use taos::TaosPool;
 /// Supported data source connectors.
 #[non_exhaustive]
 pub(super) enum DataSourceConnector {
+    #[cfg(feature = "connector-arrow")]
+    /// Apache Arrow
+    Arrow(ArrowConnector),
     #[cfg(feature = "connector-http")]
     /// HTTP
     Http(HttpConnector),
@@ -47,8 +52,8 @@ pub struct DataSource {
     name: &'static str,
     /// Data souce type
     data_source_type: &'static str,
-    /// Repository
-    repository: &'static str,
+    /// Catalog
+    catalog: &'static str,
     /// Pool
     pool: DataSourceConnector,
 }
@@ -59,13 +64,13 @@ impl DataSource {
     pub(super) fn new(
         name: &'static str,
         data_source_type: &'static str,
-        repository: &'static str,
+        catalog: &'static str,
         pool: DataSourceConnector,
     ) -> Self {
         Self {
             name,
             data_source_type,
-            repository,
+            catalog,
             pool,
         }
     }
@@ -77,6 +82,8 @@ impl DataSource {
         config: &'static Table,
     ) -> Result<Self, BoxError> {
         match data_source_type {
+            #[cfg(feature = "connector-arrow")]
+            "arrow" => ArrowConnector::try_new_data_source(config),
             #[cfg(feature = "connector-http")]
             "http" | "rest" | "graphql" => {
                 let mut data_source = HttpConnector::try_new_data_source(config)?;
@@ -115,58 +122,66 @@ impl DataSource {
         self.name
     }
 
-    /// Returns the repository.
+    /// Returns the catalog.
     #[inline]
-    pub fn repository(&self) -> &'static str {
-        self.repository
+    pub fn catalog(&self) -> &'static str {
+        self.catalog
     }
 
     /// Executes the query and returns the total number of rows affected.
-    pub async fn execute(&self, sql: &str, params: Option<&Map>) -> Result<Option<u64>, BoxError> {
+    pub async fn execute(
+        &self,
+        query: &str,
+        params: Option<&Map>,
+    ) -> Result<Option<u64>, BoxError> {
         match &self.pool {
+            #[cfg(feature = "connector-arrow")]
+            Arrow(connector) => connector.execute(query, params).await,
             #[cfg(feature = "connector-http")]
-            Http(connector) => connector.execute(sql, params).await,
+            Http(connector) => connector.execute(query, params).await,
             #[cfg(feature = "connector-mssql")]
-            Mssql(pool) => pool.execute(sql, params).await,
+            Mssql(pool) => pool.execute(query, params).await,
             #[cfg(feature = "connector-mysql")]
-            MySql(pool) => pool.execute(sql, params).await,
+            MySql(pool) => pool.execute(query, params).await,
             #[cfg(feature = "connector-postgres")]
-            Postgres(pool) => pool.execute(sql, params).await,
+            Postgres(pool) => pool.execute(query, params).await,
             #[cfg(feature = "connector-sqlite")]
-            Sqlite(pool) => pool.execute(sql, params).await,
+            Sqlite(pool) => pool.execute(query, params).await,
             #[cfg(feature = "connector-taos")]
-            Taos(pool) => pool.execute(sql, params).await,
+            Taos(pool) => pool.execute(query, params).await,
         }
     }
 
     /// Executes the query and parses it as `Vec<Map>`.
-    pub async fn query(&self, sql: &str, params: Option<&Map>) -> Result<Vec<Record>, BoxError> {
+    pub async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, BoxError> {
         match &self.pool {
+            #[cfg(feature = "connector-arrow")]
+            Arrow(connector) => connector.query(query, params).await,
             #[cfg(feature = "connector-http")]
-            Http(connector) => connector.query(sql, params).await,
+            Http(connector) => connector.query(query, params).await,
             #[cfg(feature = "connector-mssql")]
-            Mssql(pool) => pool.query(sql, params).await,
+            Mssql(pool) => pool.query(query, params).await,
             #[cfg(feature = "connector-mysql")]
-            MySql(pool) => pool.query(sql, params).await,
+            MySql(pool) => pool.query(query, params).await,
             #[cfg(feature = "connector-postgres")]
-            Postgres(pool) => pool.query(sql, params).await,
+            Postgres(pool) => pool.query(query, params).await,
             #[cfg(feature = "connector-sqlite")]
-            Sqlite(pool) => pool.query(sql, params).await,
+            Sqlite(pool) => pool.query(query, params).await,
             #[cfg(feature = "connector-taos")]
-            Taos(pool) => pool.query(sql, params).await,
+            Taos(pool) => pool.query(query, params).await,
         }
     }
 
     /// Executes the query and parses it as `Vec<T>`.
     pub async fn query_as<T: DeserializeOwned>(
         &self,
-        sql: &str,
+        query: &str,
         params: Option<&Map>,
     ) -> Result<Vec<T>, BoxError> {
-        let data = self.query(sql, params).await?;
+        let data = self.query(query, params).await?;
         let value = data
             .into_iter()
-            .map(|record| record.into_avro_map())
+            .map(|record| Value::Map(record.into_avro_map()))
             .collect::<Vec<_>>();
         apache_avro::from_value(&Value::Array(value)).map_err(|err| err.into())
     }
@@ -174,33 +189,35 @@ impl DataSource {
     /// Executes the query and parses it as a `Map`.
     pub async fn query_one(
         &self,
-        sql: &str,
+        query: &str,
         params: Option<&Map>,
     ) -> Result<Option<Record>, BoxError> {
         match &self.pool {
+            #[cfg(feature = "connector-arrow")]
+            Arrow(connector) => connector.query_one(query, params).await,
             #[cfg(feature = "connector-http")]
-            Http(connector) => connector.query_one(sql, params).await,
+            Http(connector) => connector.query_one(query, params).await,
             #[cfg(feature = "connector-mssql")]
-            Mssql(pool) => pool.query_one(sql, params).await,
+            Mssql(pool) => pool.query_one(query, params).await,
             #[cfg(feature = "connector-mysql")]
-            MySql(pool) => pool.query_one(sql, params).await,
+            MySql(pool) => pool.query_one(query, params).await,
             #[cfg(feature = "connector-postgres")]
-            Postgres(pool) => pool.query_one(sql, params).await,
+            Postgres(pool) => pool.query_one(query, params).await,
             #[cfg(feature = "connector-sqlite")]
-            Sqlite(pool) => pool.query_one(sql, params).await,
+            Sqlite(pool) => pool.query_one(query, params).await,
             #[cfg(feature = "connector-taos")]
-            Taos(pool) => pool.query_one(sql, params).await,
+            Taos(pool) => pool.query_one(query, params).await,
         }
     }
 
     /// Executes the query and parses it as an instance of type `T`.
     pub async fn query_one_as<T: DeserializeOwned>(
         &self,
-        sql: &str,
+        query: &str,
         params: Option<&Map>,
     ) -> Result<Option<T>, BoxError> {
-        if let Some(data) = self.query_one(sql, params).await? {
-            let value = Value::Union(1, Box::new(data.into_avro_map()));
+        if let Some(data) = self.query_one(query, params).await? {
+            let value = Value::Union(1, Box::new(Value::Map(data.into_avro_map())));
             apache_avro::from_value(&value).map_err(|err| err.into())
         } else {
             Ok(None)

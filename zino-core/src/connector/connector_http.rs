@@ -17,7 +17,6 @@ use toml::Table;
 use url::Url;
 
 /// A connector to HTTP services.
-#[derive(Debug)]
 pub struct HttpConnector {
     /// HTTP request method (VERB).
     method: Method,
@@ -109,12 +108,12 @@ impl HttpConnector {
 impl Connector for HttpConnector {
     fn try_new_data_source(config: &'static Table) -> Result<DataSource, BoxError> {
         let name = config.get_str("name").unwrap_or("http");
-        let repository = config.get_str("repository").unwrap_or_default();
+        let catalog = config.get_str("catalog").unwrap_or(name);
 
         let method = config.get_str("method").unwrap_or_default();
         let base_url = config.get_str("base-url").unwrap_or_default();
         let connector = HttpConnector::try_new(method, base_url)?;
-        let data_source = DataSource::new(name, "http", repository, Http(connector));
+        let data_source = DataSource::new(name, "http", catalog, Http(connector));
         Ok(data_source)
     }
 

@@ -7,7 +7,7 @@ use toml::Table;
 impl Connector for MySqlPool {
     fn try_new_data_source(config: &'static Table) -> Result<DataSource, BoxError> {
         let name = config.get_str("name").unwrap_or("mysql");
-        let database = config.get_str("database").unwrap_or_default();
+        let database = config.get_str("database").unwrap_or(name);
         let authority = State::format_authority(config, Some(3306));
         let dsn = format!("mysql://{authority}/{database}");
 
@@ -33,5 +33,5 @@ impl Connector for MySqlPool {
         Ok(data_source)
     }
 
-    super::impl_sqlx_connector!(MySqlPool);
+    super::sqlx_common::impl_sqlx_connector!(MySqlPool);
 }

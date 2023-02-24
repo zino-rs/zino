@@ -33,5 +33,5 @@ impl Connector for MssqlPool {
         Ok(data_source)
     }
 
-    super::impl_sqlx_connector!(MssqlPool);
+    super::sqlx_common::impl_sqlx_connector!(MssqlPool);
 }

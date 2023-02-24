@@ -246,6 +246,15 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Sets the content type.
+    ///
+    /// Currently, we have built-in support for the following  values:
+    ///
+    /// - `application/json`
+    /// - `application/jsonlines`
+    /// - `application/msgpack`
+    /// - `application/problem+json`
+    /// - `text/html`
+    /// - `text/plain`
     #[inline]
     pub fn set_content_type(&mut self, content_type: impl Into<SharedString>) {
         self.content_type = Some(content_type.into());
@@ -267,12 +276,6 @@ impl<S: ResponseCode> Response<S> {
     #[inline]
     pub(crate) fn set_start_time(&mut self, start_time: Instant) {
         self.start_time = start_time;
-    }
-
-    /// Enables the MessagePack encoding for the response data.
-    #[inline]
-    pub fn enable_msgpack_encoding(&mut self) {
-        self.content_type = Some("application/msgpack".into());
     }
 
     /// Records a server timing metric entry.
@@ -332,20 +335,36 @@ impl<S: ResponseCode> From<Response<S>> for http::Response<Full<Bytes>> {
         let status_code = response.status_code;
         let mut res = if let Some(ref content_type) = response.content_type {
             if let Some(data) = &response.data {
+                let capacity = data.get().len();
                 let result = serde_json::to_value(data)
                     .map_err(|err| err.to_string())
                     .and_then(|data| match data {
                         Value::String(s) => Ok(s.into_bytes()),
                         Value::Array(vec) => {
                             if content_type.starts_with("application/msgpack") {
-                                rmp_serde::to_vec(&vec).map_err(|err| err.to_string())
+                                let mut bytes = Vec::with_capacity(capacity);
+                                rmp_serde::encode::write(&mut bytes, &vec)
+                                    .map_err(|err| err.to_string())?;
+                                Ok(bytes)
+                            } else if content_type.starts_with("application/jsonlines") {
+                                let mut bytes = Vec::with_capacity(capacity);
+                                for value in vec {
+                                    let mut jsonline = serde_json::to_vec(&value)
+                                        .map_err(|err| err.to_string())?;
+                                    bytes.append(&mut jsonline);
+                                    bytes.push(b'\n');
+                                }
+                                Ok(bytes)
                             } else {
                                 Ok(Value::Array(vec).to_string().into_bytes())
                             }
                         }
                         Value::Object(map) => {
                             if content_type.starts_with("application/msgpack") {
-                                rmp_serde::to_vec(&map).map_err(|err| err.to_string())
+                                let mut bytes = Vec::with_capacity(capacity);
+                                rmp_serde::encode::write(&mut bytes, &map)
+                                    .map_err(|err| err.to_string())?;
+                                Ok(bytes)
                             } else {
                                 Ok(Value::Object(map).to_string().into_bytes())
                             }
@@ -372,24 +391,29 @@ impl<S: ResponseCode> From<Response<S>> for http::Response<Full<Bytes>> {
                     .unwrap_or_default()
             }
         } else {
-            match serde_json::to_vec(&response) {
-                Ok(bytes) => {
-                    let content_type = if response.is_success() {
-                        "application/json"
-                    } else {
-                        "application/problem+json"
-                    };
-                    http::Response::builder()
-                        .status(status_code)
-                        .header(header::CONTENT_TYPE, content_type)
-                        .body(Full::from(bytes))
-                        .unwrap_or_default()
-                }
-                Err(err) => http::Response::builder()
+            let capacity = if let Some(data) = &response.data {
+                data.get().len() + 128
+            } else {
+                128
+            };
+            let mut bytes = Vec::with_capacity(capacity);
+            if let Err(err) = serde_json::to_writer(&mut bytes, &response) {
+                http::Response::builder()
                     .status(S::INTERNAL_SERVER_ERROR.status_code())
                     .header(header::CONTENT_TYPE, "text/plain")
                     .body(Full::from(err.to_string()))
-                    .unwrap_or_default(),
+                    .unwrap_or_default()
+            } else {
+                let content_type = if response.is_success() {
+                    "application/json"
+                } else {
+                    "application/problem+json"
+                };
+                http::Response::builder()
+                    .status(status_code)
+                    .header(header::CONTENT_TYPE, content_type)
+                    .body(Full::from(bytes))
+                    .unwrap_or_default()
             }
         };
         let (traceparent, tracestate) = if let Some(ref trace_context) = response.trace_context {

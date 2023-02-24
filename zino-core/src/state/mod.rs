@@ -101,20 +101,15 @@ impl State {
         let standbys = config
             .get_array("standby")
             .expect("the `standby` field should be an array of tables");
-        for standby in standbys {
-            if standby.is_table() {
-                let standby = standby
-                    .as_table()
-                    .expect("the `standby` field should be a table");
-                let standby_host = standby
-                    .get_str("host")
-                    .and_then(|s| s.parse::<IpAddr>().ok())
-                    .expect("the `standby.host` field should be a str");
-                let standby_port = standby
-                    .get_u16("port")
-                    .expect("the `standby.port` field should be an integer");
-                listeners.push((standby_host, standby_port).into());
-            }
+        for standby in standbys.iter().filter_map(|v| v.as_table()) {
+            let standby_host = standby
+                .get_str("host")
+                .and_then(|s| s.parse::<IpAddr>().ok())
+                .expect("the `standby.host` field should be a str");
+            let standby_port = standby
+                .get_u16("port")
+                .expect("the `standby.port` field should be an integer");
+            listeners.push((standby_host, standby_port).into());
         }
 
         listeners

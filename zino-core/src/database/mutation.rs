@@ -4,20 +4,20 @@ use crate::model::Mutation;
 
 /// Extension trait for [`Mutation`](crate::model::Mutation).
 pub(super) trait MutationExt {
-    /// Formats the update to generate SQL `SET` expression.
-    fn format_update<M: Schema>(&self) -> String;
+    /// Formats the updates to generate SQL `SET` expression.
+    fn format_updates<M: Schema>(&self) -> String;
 }
 
 impl MutationExt for Mutation {
-    fn format_update<M: Schema>(&self) -> String {
-        let update = self.update();
+    fn format_updates<M: Schema>(&self) -> String {
+        let updates = self.updates();
         let fields = self.fields();
-        if update.is_empty() || fields.is_empty() {
+        if updates.is_empty() || fields.is_empty() {
             return String::new();
         }
 
         let mut mutations = Vec::new();
-        for (key, value) in update.iter() {
+        for (key, value) in updates.iter() {
             match key.as_str() {
                     "$append" => {
                         if let Some(update) = value.as_object() {

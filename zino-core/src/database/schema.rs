@@ -252,10 +252,10 @@ pub trait Schema: 'static + Send + Sync + Model {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let filter = query.format_filter::<Self>();
         let sort = query.format_sort();
-        let update = mutation.format_update::<Self>();
+        let updates = mutation.format_updates::<Self>();
         let sql = format!(
             "
-                UPDATE {table_name} {update} WHERE {primary_key_name} IN
+                UPDATE {table_name} {updates} WHERE {primary_key_name} IN
                 (SELECT {primary_key_name} FROM {table_name} {filter} {sort} LIMIT 1);
             "
         );
@@ -268,8 +268,8 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let filter = query.format_filter::<Self>();
-        let update = mutation.format_update::<Self>();
-        let sql = format!("UPDATE {table_name} {update} {filter};");
+        let updates = mutation.format_updates::<Self>();
+        let sql = format!("UPDATE {table_name} {updates} {filter};");
         let query_result = sqlx::query(&sql).execute(pool).await?;
         Ok(query_result.rows_affected())
     }
@@ -381,7 +381,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let data = Self::find(query).await?;
         let value = data
             .into_iter()
-            .map(|r| r.into_avro_map())
+            .map(|record| Value::Map(record.into_avro_map()))
             .collect::<Vec<_>>();
         apache_avro::from_value(&Value::Array(value)).map_err(|err| Error::Decode(Box::new(err)))
     }
@@ -417,7 +417,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Finds one model selected by the query in the table, and parses it as an instance of type `T`.
     async fn find_one_as<T: DeserializeOwned>(query: Query) -> Result<Option<T>, Error> {
         if let Some(data) = Self::find_one(query).await? {
-            let value = Value::Union(1, Box::new(data.into_avro_map()));
+            let value = Value::Union(1, Box::new(Value::Map(data.into_avro_map())));
             apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
         } else {
             Ok(None)
@@ -485,13 +485,13 @@ pub trait Schema: 'static + Send + Sync + Model {
                     let value = col.decode_row(&row)?;
                     record.push((col.name().to_owned(), value));
                 }
-                associations.insert(primary_key_value, record.into_avro_map());
+                associations.insert(primary_key_value, Value::Map(record.into_avro_map()));
             }
         } else {
             while let Some(row) = rows.try_next().await? {
                 let primary_key_value = row.try_get_unchecked::<String, _>(primary_key_name)?;
                 let record = Column::parse_row(&row)?;
-                associations.insert(primary_key_value, record.into_avro_map());
+                associations.insert(primary_key_value, Value::Map(record.into_avro_map()));
             }
         }
         for row in data {
@@ -575,13 +575,13 @@ pub trait Schema: 'static + Send + Sync + Model {
                     let value = col.decode_row(&row)?;
                     record.push((col.name().to_owned(), value));
                 }
-                associations.insert(primary_key_value, record.into_avro_map());
+                associations.insert(primary_key_value, Value::Map(record.into_avro_map()));
             }
         } else {
             while let Some(row) = rows.try_next().await? {
                 let primary_key_value = row.try_get_unchecked::<String, _>(primary_key_name)?;
                 let record = Column::parse_row(&row)?;
-                associations.insert(primary_key_value, record.into_avro_map());
+                associations.insert(primary_key_value, Value::Map(record.into_avro_map()));
             }
         }
         for col in columns {
@@ -638,7 +638,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         columns: &[(&str, bool)],
     ) -> Result<T, Error> {
         let data = Self::count(query, columns).await?;
-        let value = data.into_avro_map();
+        let value = Value::Map(data.into_avro_map());
         apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
     }
 
@@ -671,7 +671,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let data = Self::query(sql, params).await?;
         let value = data
             .into_iter()
-            .map(|record| record.into_avro_map())
+            .map(|record| Value::Map(record.into_avro_map()))
             .collect::<Vec<_>>();
         apache_avro::from_value(&Value::Array(value)).map_err(|err| Error::Decode(Box::new(err)))
     }
@@ -695,7 +695,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         params: Option<&Map>,
     ) -> Result<Option<T>, Error> {
         if let Some(data) = Self::query_one(sql, params).await? {
-            let value = Value::Union(1, Box::new(data.into_avro_map()));
+            let value = Value::Union(1, Box::new(Value::Map(data.into_avro_map())));
             apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
         } else {
             Ok(None)
@@ -714,7 +714,8 @@ pub trait Schema: 'static + Send + Sync + Model {
             "
         );
         if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
-            let value = Column::parse_row(&row)?.into_avro_map();
+            let record = Column::parse_row(&row)?;
+            let value = Value::Map(record.into_avro_map());
             apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
         } else {
             Err(Error::RowNotFound)

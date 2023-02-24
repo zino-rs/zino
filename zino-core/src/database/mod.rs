@@ -129,14 +129,9 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
     let databases = config
         .get_array("postgres")
         .expect("the `postgres` field should be an array of tables");
-    for database in databases {
-        if database.is_table() {
-            let postgres = database
-                .as_table()
-                .expect("the `postgres` field should be a table");
-            let pool = ConnectionPool::connect_lazy(application_name, postgres);
-            pools.push(pool);
-        }
+    for database in databases.iter().filter_map(|v| v.as_table()) {
+        let pool = ConnectionPool::connect_lazy(application_name, database);
+        pools.push(pool);
     }
     ConnectionPools(pools)
 });

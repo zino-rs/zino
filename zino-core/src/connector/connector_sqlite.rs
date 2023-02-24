@@ -7,7 +7,7 @@ use toml::Table;
 impl Connector for SqlitePool {
     fn try_new_data_source(config: &'static Table) -> Result<DataSource, BoxError> {
         let name = config.get_str("name").unwrap_or("sqlite");
-        let database = config.get_str("database").unwrap_or_default();
+        let database = config.get_str("database").unwrap_or(name);
         let dsn = format!("sqlite://{database}");
 
         let max_connections = config.get_u32("max-connections").unwrap_or(16);
@@ -32,5 +32,5 @@ impl Connector for SqlitePool {
         Ok(data_source)
     }
 
-    super::impl_sqlx_connector!(SqlitePool);
+    super::sqlx_common::impl_sqlx_connector!(SqlitePool);
 }

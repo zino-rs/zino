@@ -4,6 +4,7 @@
 //!
 //! | Data source type | Description            | Feature flag           |
 //! |------------------|------------------------|------------------------|
+//! | `arrow`          | Apache Arrow           | `connector-arrow`      |
 //! | `ceresdb`        | CeresDB                | `connector-mysql`      |
 //! | `citus`          | Citus                  | `connector-postgres`   |
 //! | `databend`       | Databend               | `connector-mysql`      |
@@ -34,9 +35,10 @@ use std::{collections::HashMap, sync::LazyLock};
 use toml::Table;
 
 mod data_source;
-mod sqlx_common;
 
 /// Supported connectors.
+#[cfg(feature = "connector-arrow")]
+mod connector_arrow;
 #[cfg(feature = "connector-http")]
 mod connector_http;
 #[cfg(feature = "connector-mssql")]
@@ -50,11 +52,19 @@ mod connector_sqlite;
 #[cfg(feature = "connector-taos")]
 mod connector_taos;
 
+#[cfg(any(
+    feature = "connector-mssql",
+    feature = "connector-mysql",
+    feature = "connector-postgres",
+    feature = "connector-sqlite"
+))]
+mod sqlx_common;
+
 pub use data_source::DataSource;
-
 use data_source::DataSourceConnector;
-use sqlx_common::impl_sqlx_connector;
 
+#[cfg(feature = "connector-arrow")]
+pub use connector_arrow::ArrowConnector;
 #[cfg(feature = "connector-http")]
 pub use connector_http::HttpConnector;
 
@@ -86,7 +96,7 @@ pub trait Connector {
         let data = self.query(query, params).await?;
         let value = data
             .into_iter()
-            .map(|record| record.into_avro_map())
+            .map(|record| Value::Map(record.into_avro_map()))
             .collect::<Vec<_>>();
         apache_avro::from_value(&Value::Array(value)).map_err(|err| err.into())
     }
@@ -98,7 +108,7 @@ pub trait Connector {
         params: Option<&Map>,
     ) -> Result<Option<T>, BoxError> {
         if let Some(data) = self.query_one(query, params).await? {
-            let value = Value::Union(1, Box::new(data.into_avro_map()));
+            let value = Value::Union(1, Box::new(Value::Map(data.into_avro_map())));
             apache_avro::from_value(&value).map_err(|err| err.into())
         } else {
             Ok(None)

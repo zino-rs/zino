@@ -11,9 +11,10 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
     fn column_type(&self) -> &str {
         let type_name = self.type_name();
         match type_name {
-            "u64" | "i64" => "bigint",
+            "bool" => "boolean",
+            "u64" | "i64" | "usize" | "isize" => "bigint",
             "u32" | "i32" => "int",
-            "u16" | "i16" => "smallint",
+            "u16" | "i16" | "u8" | "i8" => "smallint",
             "f64" => "double precision",
             "f32" => "real",
             "String" => "text",
@@ -72,8 +73,10 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
         let field = self.name();
         let value = match self.type_name() {
             "bool" => row.try_get_unchecked::<bool, _>(field)?.into(),
-            "u64" | "i64" => row.try_get_unchecked::<i64, _>(field)?.into(),
-            "u32" | "i32" | "u16" | "i16" => row.try_get_unchecked::<i32, _>(field)?.into(),
+            "u64" | "i64" | "usize" | "isize" => row.try_get_unchecked::<i64, _>(field)?.into(),
+            "u32" | "i32" | "u16" | "i16" | "u8" | "i8" => {
+                row.try_get_unchecked::<i32, _>(field)?.into()
+            }
             "f64" => row.try_get_unchecked::<f64, _>(field)?.into(),
             "f32" => row.try_get_unchecked::<f32, _>(field)?.into(),
             "String" => row.try_get_unchecked::<String, _>(field)?.into(),
@@ -153,7 +156,7 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                 let value = if value == "true" { "TRUE" } else { "FALSE" };
                 value.to_owned()
             }
-            "u64" | "u32" | "u16" => {
+            "u64" | "u32" | "u16" | "u8" | "usize" => {
                 let value = if value.parse::<u64>().is_ok() {
                     value
                 } else {
@@ -161,7 +164,7 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                 };
                 value.to_owned()
             }
-            "i64" | "i32" | "i16" => {
+            "i64" | "i32" | "i16" | "i8" | "isize" => {
                 let value = if value.parse::<i64>().is_ok() {
                     value
                 } else {
@@ -260,7 +263,8 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                     format!("{field} IS NOT TRUE")
                 }
             }
-            "u64" | "i64" | "u32" | "i32" | "u16" | "i16" | "f64" | "f32" | "DateTime" => {
+            "u64" | "i64" | "u32" | "i32" | "u16" | "i16" | "u8" | "i8" | "usize" | "isize"
+            | "f64" | "f32" | "DateTime" => {
                 if let Some(value) = value.as_str() {
                     if let Some((min_value, max_value)) = value.split_once(',') {
                         let min_value = self.format_value(min_value);

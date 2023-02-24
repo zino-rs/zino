@@ -75,8 +75,8 @@ impl<'a> Column<'a> {
         let type_name = self.type_name;
         match type_name {
             "bool" => Schema::Boolean,
-            "i32" | "u32" | "i16" | "u16" => Schema::Int,
-            "i64" | "u64" => Schema::Long,
+            "i32" | "u32" | "i16" | "u16" | "i8" | "u8" => Schema::Int,
+            "i64" | "u64" | "isize" | "usize" => Schema::Long,
             "f32" => Schema::Float,
             "f64" => Schema::Double,
             "String" => Schema::String,

@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.6.2"
+version = "0.6.3"
 rust-version = "1.68"
 edition = "2021"
 license = "MIT"
@@ -32,6 +32,7 @@ all-accessors = [
 ]
 all-connectors = [
     "connector",
+    "connector-arrow",
     "connector-http",
     "connector-mssql",
     "connector-mysql",
@@ -40,7 +41,8 @@ all-connectors = [
     "connector-taos",
 ]
 cache = ["dep:lru"]
-connector = ["connector-http", "connector-mysql", "connector-postgres"]
+connector = ["connector-http"]
+connector-arrow = ["dep:datafusion", "connector"]
 connector-http = ["connector"]
 connector-mssql = ["connector", "sqlx", "sqlx/mssql"]
 connector-mysql = ["connector", "sqlx", "sqlx/mysql"]
@@ -107,12 +109,16 @@ url = "2.3.1"
 version = "0.4.23"
 features = ["serde"]
 
+[dependencies.datafusion]
+version = "18.0.0"
+optional = true
+
 [dependencies.lru]
 version = "0.9.0"
 optional = true
 
 [dependencies.opendal]
-version = "0.27.1"
+version = "0.28.0"
 features = [
     "compress",
     "layers-all",

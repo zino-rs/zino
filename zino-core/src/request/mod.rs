@@ -272,9 +272,7 @@ pub trait RequestContext {
     where
         T: DeserializeOwned + Send + 'static,
     {
-        let data_type = self.header_map().get_data_type().ok_or_else(|| {
-            Validation::from_entry("content_type", "invalid `content-type` header")
-        })?;
+        let data_type = self.header_map().get_data_type().unwrap_or("form".into());
         if data_type.contains('/') {
             return Err(Validation::from_entry(
                 "data_type",

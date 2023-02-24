@@ -156,7 +156,7 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     async fn read_body_bytes(&mut self) -> Result<Vec<u8>, BoxError> {
-        let buffer_size = self.size_hint().lower().try_into().unwrap_or(1024);
+        let buffer_size = self.size_hint().lower().try_into().unwrap_or(128);
         let body = body::aggregate(self.body_mut()).await?;
         let mut bytes = Vec::with_capacity(buffer_size);
         body.reader().read_to_end(&mut bytes)?;

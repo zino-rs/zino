@@ -5,8 +5,8 @@ use crate::{request::Validation, Map};
 pub struct Mutation {
     // Editable fields.
     fields: Vec<String>,
-    // Update.
-    update: Map,
+    // Updates.
+    updates: Map,
 }
 
 impl Mutation {
@@ -14,7 +14,7 @@ impl Mutation {
     pub fn new() -> Self {
         Self {
             fields: Vec::new(),
-            update: Map::new(),
+            updates: Map::new(),
         }
     }
 
@@ -22,7 +22,7 @@ impl Mutation {
     #[must_use]
     pub fn read_map(&mut self, data: Map) -> Validation {
         let mut validation = Validation::new();
-        let update = &mut self.update;
+        let updates = &mut self.updates;
         for (key, value) in data.into_iter() {
             match key.as_str() {
                 "fields" => {
@@ -36,7 +36,7 @@ impl Mutation {
                 }
                 _ => {
                     if !key.starts_with('$') && value != "" {
-                        update.insert(key, value);
+                        updates.insert(key, value);
                     }
                 }
             }
@@ -69,10 +69,10 @@ impl Mutation {
         })
     }
 
-    /// Appends to the update.
+    /// Appends to the updates.
     #[inline]
-    pub fn append_update(&mut self, update: &mut Map) {
-        self.update.append(update);
+    pub fn append_updates(&mut self, updates: &mut Map) {
+        self.updates.append(updates);
     }
 
     /// Returns a reference to the editable fields.
@@ -81,10 +81,9 @@ impl Mutation {
         self.fields.as_slice()
     }
 
-    #[cfg(feature = "orm")]
-    /// Returns a reference to the update map.
+    /// Returns a reference to the mutation updates.
     #[inline]
-    pub(crate) fn update(&self) -> &Map {
-        &self.update
+    pub fn updates(&self) -> &Map {
+        &self.updates
     }
 }

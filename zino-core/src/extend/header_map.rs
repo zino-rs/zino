@@ -92,6 +92,7 @@ impl HeaderMapExt for HeaderMap {
         let content_type = self.get_content_type()?;
         let data_type = match content_type {
             "application/json" | "application/problem+json" => "json".into(),
+            "application/jsonlines" | "application/x-ndjson" => "ndjson".into(),
             "application/msgpack" | "application/x-msgpack" => "msgpack".into(),
             "application/octet-stream" => "bytes".into(),
             "application/x-www-form-urlencoded" => "form".into(),

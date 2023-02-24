@@ -56,8 +56,8 @@ pub trait AvroRecordExt {
     /// Returns the number of bytes written.
     fn flush_to_writer<W: Write>(self, schema: &Schema, writer: W) -> Result<usize, Error>;
 
-    /// Converts `self` to an Avro map value.
-    fn into_avro_map(self) -> Value;
+    /// Converts `self` to an Avro map.
+    fn into_avro_map(self) -> HashMap<String, Value>;
 
     /// Consumes `self` and attempts to construct a json object.
     fn try_into_map(self) -> Result<Map, Error>;
@@ -207,12 +207,12 @@ impl AvroRecordExt for Record {
         writer.flush()
     }
 
-    fn into_avro_map(self) -> Value {
+    fn into_avro_map(self) -> HashMap<String, Value> {
         let mut map = HashMap::with_capacity(self.len());
         for (field, value) in self.into_iter() {
             map.insert(field, value);
         }
-        Value::Map(map)
+        map
     }
 
     fn try_into_map(self) -> Result<Map, Error> {

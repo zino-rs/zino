@@ -1,4 +1,4 @@
-use crate::controller::{stats, user};
+use crate::controller::{stats, task, user};
 use axum::{
     routing::{get, post},
     Router,
@@ -13,6 +13,10 @@ pub(crate) fn routes() -> Vec<Router> {
         .route("/user/update", post(user::update))
         .route("/user/list", get(user::list))
         .route("/user/:id/view", get(user::view));
+    routes.push(controller);
+
+    // Task controller.
+    let controller = Router::new().route("/task/execute", post(task::execute));
     routes.push(controller);
 
     // Stats controller.
