@@ -1,3 +1,4 @@
+# --env=prod
 
 name = "data-cube"
 version = "0.4.7"
@@ -35,8 +36,13 @@ port = 9000
 
 [[connector]]
 type = "arrow"
-name = "education"
+name = "mock"
+root = "./assets/data/mock/"
 
 [[connector.tables]]
-name = "students"
-path = "./assets/data/education/students.csv"
+type = "csv"
+name = "users"
+path = "./users.csv"
+
+[connector.variables]
+app-name = "data-cube"

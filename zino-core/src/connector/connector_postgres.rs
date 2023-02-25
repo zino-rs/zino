@@ -5,7 +5,7 @@ use std::time::Duration;
 use toml::Table;
 
 impl Connector for PgPool {
-    fn try_new_data_source(config: &'static Table) -> Result<DataSource, BoxError> {
+    fn try_new_data_source(config: &Table) -> Result<DataSource, BoxError> {
         let name = config.get_str("name").unwrap_or("postgres");
         let database = config.get_str("database").unwrap_or("postgres");
         let authority = State::format_authority(config, Some(5432));
@@ -29,9 +29,9 @@ impl Connector for PgPool {
             .idle_timeout(idle_timeout)
             .acquire_timeout(acquire_timeout);
         let pool = pool_options.connect_lazy(&dsn)?;
-        let data_source = DataSource::new(name, "postgres", database, Postgres(pool));
+        let data_source = DataSource::new("postgres", name, database, Postgres(pool));
         Ok(data_source)
     }
 
-    super::sqlx_common::impl_sqlx_connector!(PgPool);
+    super::sqlx_util::impl_sqlx_connector!(PgPool);
 }

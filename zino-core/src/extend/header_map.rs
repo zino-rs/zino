@@ -97,6 +97,7 @@ impl HeaderMapExt for HeaderMap {
             "application/octet-stream" => "bytes".into(),
             "application/x-www-form-urlencoded" => "form".into(),
             "multipart/form-data" => "multipart".into(),
+            "text/csv" => "csv".into(),
             "text/plain" => "text".into(),
             _ => {
                 if content_type.starts_with("application/") && content_type.ends_with("+json") {

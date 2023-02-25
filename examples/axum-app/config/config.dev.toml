@@ -1,3 +1,4 @@
+# --env=dev
 
 name = "data-cube"
 version = "0.4.7"
@@ -38,8 +39,17 @@ port = 9000
 
 [[connector]]
 type = "arrow"
-name = "education"
+name = "mock"
+root = "./assets/data/mock/"
 
 [[connector.tables]]
-name = "students"
-path = "./assets/data/education/students.csv"
+type = "ndjson"
+name = "logs"
+url = "http://localhost:6080/assets/data/logs.ndjson"
+
+[connector.tables.schema]
+timestamp = "string"
+level = "string"
+
+[connector.variables]
+app-name = "data-cube"

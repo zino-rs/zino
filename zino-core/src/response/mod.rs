@@ -247,7 +247,7 @@ impl<S: ResponseCode> Response<S> {
 
     /// Sets the content type.
     ///
-    /// Currently, we have built-in support for the following  values:
+    /// Currently, we have built-in support for the following values:
     ///
     /// - `application/json`
     /// - `application/jsonlines`

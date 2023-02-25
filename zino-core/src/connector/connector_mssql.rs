@@ -5,7 +5,7 @@ use std::time::Duration;
 use toml::Table;
 
 impl Connector for MssqlPool {
-    fn try_new_data_source(config: &'static Table) -> Result<DataSource, BoxError> {
+    fn try_new_data_source(config: &Table) -> Result<DataSource, BoxError> {
         let name = config.get_str("name").unwrap_or("mssql");
         let database = config.get_str("database").unwrap_or("master");
         let authority = State::format_authority(config, Some(1433));
@@ -29,9 +29,9 @@ impl Connector for MssqlPool {
             .idle_timeout(idle_timeout)
             .acquire_timeout(acquire_timeout);
         let pool = pool_options.connect_lazy(&dsn)?;
-        let data_source = DataSource::new(name, "mssql", database, Mssql(pool));
+        let data_source = DataSource::new("mssql", name, database, Mssql(pool));
         Ok(data_source)
     }
 
-    super::sqlx_common::impl_sqlx_connector!(MssqlPool);
+    super::sqlx_util::impl_sqlx_connector!(MssqlPool);
 }

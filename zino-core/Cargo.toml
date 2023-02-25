@@ -17,6 +17,7 @@ features = ["full", "runtime-tokio"]
 
 [features]
 accessor = ["opendal"]
+accessor-dashmap = ["accessor", "opendal/services-dashmap"]
 accessor-ftp = ["accessor", "opendal/services-ftp"]
 accessor-ipfs = ["accessor", "opendal/services-ipfs"]
 accessor-memcached = ["accessor", "opendal/services-memcached"]
@@ -24,6 +25,7 @@ accessor-moka = ["accessor", "opendal/services-moka"]
 accessor-redis = ["accessor", "opendal/services-redis"]
 all-accessors = [
     "accessor",
+    "accessor-dashmap",
     "accessor-ftp",
     "accessor-ipfs",
     "accessor-memcached",

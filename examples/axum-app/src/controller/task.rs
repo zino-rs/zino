@@ -3,8 +3,8 @@ use zino_core::connector::GlobalConnector;
 
 pub(crate) async fn execute(mut req: Request) -> zino::Result {
     let mut res = Response::default().provide_context(&req);
-    let data_source = GlobalConnector::get("education")
-        .ok_or("fail to get `education` data souce")
+    let data_source = GlobalConnector::get("mock")
+        .ok_or("fail to get the `mock` data souce")
         .extract_with_context(&req)?;
     let body: Map = req.parse_body().await.extract_with_context(&req)?;
     let sql = body.get_str("sql").unwrap_or("SELECT 'ok' AS status;");

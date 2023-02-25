@@ -6,6 +6,7 @@
 //! |---------------|------------------------------------------|-----------------------|
 //! | `azblob`      | Azure Storage Blob services.             | `accessor`            |
 //! | `azdfs`       | Azure Data Lake Storage Gen2 services.   | `accessor`            |
+//! | `dashmap`     | Dashmap backend.                         | `accessor-dashmap`    |
 //! | `fs`          | POSIX alike file system.                 | `accessor`            |
 //! | `ftp`         | FTP and FTPS.                            | `accessor-ftp`        |
 //! | `gcs`         | Google Cloud Storage services.           | `accessor`            |
@@ -35,6 +36,8 @@ use opendal::{
 use std::{collections::HashMap, sync::LazyLock};
 use toml::Table;
 
+#[cfg(feature = "accessor-dashmap")]
+use opendal::services::Dashmap;
 #[cfg(feature = "accessor-ftp")]
 use opendal::services::Ftp;
 #[cfg(feature = "accessor-ipfs")]
@@ -94,6 +97,11 @@ impl GlobalAccessor {
                 if let Some(account_key) = config.get_str("account-key") {
                     builder.account_key(account_key);
                 }
+                Ok(Operator::new(builder.build()?).finish())
+            }
+            #[cfg(feature = "accessor-dashmap")]
+            "dashmap" => {
+                let mut builder = Dashmap::default();
                 Ok(Operator::new(builder.build()?).finish())
             }
             "fs" => {

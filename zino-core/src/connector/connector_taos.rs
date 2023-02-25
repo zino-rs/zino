@@ -5,7 +5,7 @@ use taos::{AsyncFetchable, AsyncQueryable, PoolBuilder, TBuilder, TaosBuilder, T
 use toml::Table;
 
 impl Connector for TaosPool {
-    fn try_new_data_source(config: &'static Table) -> Result<DataSource, BoxError> {
+    fn try_new_data_source(config: &Table) -> Result<DataSource, BoxError> {
         let name = config.get_str("name").unwrap_or("taos");
         let database = config.get_str("database").unwrap_or(name);
         let authority = State::format_authority(config, Some(6041));
@@ -18,7 +18,7 @@ impl Connector for TaosPool {
             .min_idle(Some(min_idle))
             .max_lifetime(None);
         let pool = TaosBuilder::from_dsn(dsn)?.with_pool_builder(pool_options)?;
-        let data_source = DataSource::new(name, "taos", database, Taos(pool));
+        let data_source = DataSource::new("taos", name, database, Taos(pool));
         Ok(data_source)
     }
 

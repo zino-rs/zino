@@ -268,6 +268,13 @@ pub trait RequestContext {
     }
 
     /// Parses the request body as an instance of type `T`.
+    ///
+    /// Currently, we have built-in support for the following `content-type` header values:
+    ///
+    /// - `application/json`
+    /// - `application/msgpack`
+    /// - `application/problem+json`
+    /// - `application/x-www-form-urlencoded`
     async fn parse_body<T>(&mut self) -> Result<T, Validation>
     where
         T: DeserializeOwned + Send + 'static,

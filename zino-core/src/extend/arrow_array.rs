@@ -1,10 +1,14 @@
 use crate::BoxError;
-use apache_avro::types::Value;
+use apache_avro::{types::Value, Days, Duration, Millis, Months};
 use datafusion::arrow::{
-    array::{self, Array},
+    array::{self, Array, FixedSizeBinaryArray, FixedSizeListArray},
     datatypes::{
-        DataType, Float32Type, Float64Type, Int16Type, Int32Type, Int64Type, Int8Type, UInt16Type,
-        UInt32Type, UInt64Type, UInt8Type,
+        DataType, Date32Type, Date64Type, DurationMicrosecondType, DurationMillisecondType,
+        DurationNanosecondType, DurationSecondType, Float32Type, Float64Type, Int16Type, Int32Type,
+        Int64Type, Int8Type, IntervalDayTimeType, IntervalUnit, Time32MillisecondType,
+        Time32SecondType, Time64MicrosecondType, Time64NanosecondType, TimeUnit,
+        TimestampMicrosecondType, TimestampMillisecondType, TimestampNanosecondType,
+        TimestampSecondType, UInt16Type, UInt32Type, UInt64Type, UInt8Type,
     },
 };
 use std::collections::HashMap;
@@ -21,6 +25,7 @@ impl ArrowArrayExt for dyn Array {
             return Ok(Value::Null);
         }
         let value = match self.data_type() {
+            DataType::Null => Value::Null,
             DataType::Boolean => {
                 let value = array::as_boolean_array(self).value(index);
                 Value::Boolean(value)
@@ -69,12 +74,128 @@ impl ArrowArrayExt for dyn Array {
                 let value = array::as_string_array(self).value(index);
                 Value::String(value.to_owned())
             }
+            DataType::LargeUtf8 => {
+                let value = array::as_largestring_array(self).value(index);
+                Value::String(value.to_owned())
+            }
+            DataType::Date32 => {
+                let value = array::as_primitive_array::<Date32Type>(self).value(index);
+                Value::Date(value)
+            }
+            DataType::Date64 => {
+                let value = array::as_primitive_array::<Date64Type>(self).value(index);
+                Value::TimestampMillis(value)
+            }
+            DataType::Time32(TimeUnit::Second) => {
+                let value = array::as_primitive_array::<Time32SecondType>(self).value(index);
+                Value::TimeMillis(value * 1000)
+            }
+            DataType::Time32(TimeUnit::Millisecond) => {
+                let value = array::as_primitive_array::<Time32MillisecondType>(self).value(index);
+                Value::TimeMillis(value)
+            }
+            DataType::Time64(TimeUnit::Microsecond) => {
+                let value = array::as_primitive_array::<Time64MicrosecondType>(self).value(index);
+                Value::TimeMicros(value)
+            }
+            DataType::Time64(TimeUnit::Nanosecond) => {
+                let value = array::as_primitive_array::<Time64NanosecondType>(self).value(index);
+                Value::TimeMicros(value / 1000)
+            }
+            DataType::Timestamp(TimeUnit::Second, None) => {
+                let value = array::as_primitive_array::<TimestampSecondType>(self).value(index);
+                Value::TimestampMillis(value * 1000)
+            }
+            DataType::Timestamp(TimeUnit::Millisecond, None) => {
+                let value =
+                    array::as_primitive_array::<TimestampMillisecondType>(self).value(index);
+                Value::TimestampMillis(value)
+            }
+            DataType::Timestamp(TimeUnit::Microsecond, None) => {
+                let value =
+                    array::as_primitive_array::<TimestampMicrosecondType>(self).value(index);
+                Value::TimestampMicros(value)
+            }
+            DataType::Timestamp(TimeUnit::Nanosecond, None) => {
+                let value = array::as_primitive_array::<TimestampNanosecondType>(self).value(index);
+                Value::TimestampMicros(value / 1000)
+            }
+            DataType::Duration(TimeUnit::Second) => {
+                let value = array::as_primitive_array::<DurationSecondType>(self).value(index);
+                Value::Duration(Duration::new(
+                    Months::new(0),
+                    Days::new(0),
+                    Millis::new((value * 1000).try_into()?),
+                ))
+            }
+            DataType::Duration(TimeUnit::Millisecond) => {
+                let value = array::as_primitive_array::<DurationMillisecondType>(self).value(index);
+                Value::Duration(Duration::new(
+                    Months::new(0),
+                    Days::new(0),
+                    Millis::new(value.try_into()?),
+                ))
+            }
+            DataType::Duration(TimeUnit::Microsecond) => {
+                let value = array::as_primitive_array::<DurationMicrosecondType>(self).value(index);
+                Value::Duration(Duration::new(
+                    Months::new(0),
+                    Days::new(0),
+                    Millis::new((value / 1000).try_into()?),
+                ))
+            }
+            DataType::Duration(TimeUnit::Nanosecond) => {
+                let value = array::as_primitive_array::<DurationNanosecondType>(self).value(index);
+                Value::Duration(Duration::new(
+                    Months::new(0),
+                    Days::new(0),
+                    Millis::new((value / 1000000).try_into()?),
+                ))
+            }
+            DataType::Interval(IntervalUnit::DayTime) => {
+                let value = array::as_primitive_array::<IntervalDayTimeType>(self).value(index);
+                let (days, millis) = IntervalDayTimeType::to_parts(value);
+                Value::Duration(Duration::new(
+                    Months::new(0),
+                    Days::new(days.try_into()?),
+                    Millis::new(millis.try_into()?),
+                ))
+            }
             DataType::Binary => {
                 let value = array::as_generic_binary_array::<i32>(self).value(index);
                 Value::Bytes(value.to_vec())
             }
+            DataType::LargeBinary => {
+                let value = array::as_generic_binary_array::<i64>(self).value(index);
+                Value::Bytes(value.to_vec())
+            }
+            DataType::FixedSizeBinary(_size) => {
+                let fixed_size_array = array::downcast_array::<FixedSizeBinaryArray>(self);
+                let value = fixed_size_array.value(index).to_vec();
+                Value::Fixed(value.len(), value)
+            }
             DataType::List(_field) => {
                 let array = array::as_list_array(self).value(index);
+                let array_length = array.len();
+                let mut values = Vec::with_capacity(array_length);
+                for i in 0..array_length {
+                    let value = array.parse_avro_value(i)?;
+                    values.push(value);
+                }
+                Value::Array(values)
+            }
+            DataType::LargeList(_field) => {
+                let array = array::as_large_list_array(self).value(index);
+                let array_length = array.len();
+                let mut values = Vec::with_capacity(array_length);
+                for i in 0..array_length {
+                    let value = array.parse_avro_value(i)?;
+                    values.push(value);
+                }
+                Value::Array(values)
+            }
+            DataType::FixedSizeList(_field, _size) => {
+                let array = array::downcast_array::<FixedSizeListArray>(self).value(index);
                 let array_length = array.len();
                 let mut values = Vec::with_capacity(array_length);
                 for i in 0..array_length {
@@ -113,7 +234,22 @@ impl ArrowArrayExt for dyn Array {
                 }
                 Value::Map(hashmap)
             }
-            _ => Value::Null,
+            DataType::Union(_fields, types, _mode) => {
+                let union_array = array::as_union_array(self);
+                let type_id = union_array.type_id(index);
+                let position = types.iter().position(|&ty| type_id == ty).ok_or_else(|| {
+                    let type_names = union_array.type_names();
+                    format!("invalid slot `{type_id}` for the union types `{type_names:?}`")
+                })?;
+                let value = union_array.value(index).parse_avro_value(0)?;
+                Value::Union(position.try_into()?, Box::new(value))
+            }
+            data_type => {
+                return Err(format!(
+                    "conversion of the `{data_type}` value to an Avro value is unsupported"
+                )
+                .into())
+            }
         };
         Ok(value)
     }

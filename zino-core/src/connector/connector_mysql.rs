@@ -5,7 +5,7 @@ use std::time::Duration;
 use toml::Table;
 
 impl Connector for MySqlPool {
-    fn try_new_data_source(config: &'static Table) -> Result<DataSource, BoxError> {
+    fn try_new_data_source(config: &Table) -> Result<DataSource, BoxError> {
         let name = config.get_str("name").unwrap_or("mysql");
         let database = config.get_str("database").unwrap_or(name);
         let authority = State::format_authority(config, Some(3306));
@@ -29,9 +29,9 @@ impl Connector for MySqlPool {
             .idle_timeout(idle_timeout)
             .acquire_timeout(acquire_timeout);
         let pool = pool_options.connect_lazy(&dsn)?;
-        let data_source = DataSource::new(name, "mysql", database, MySql(pool));
+        let data_source = DataSource::new("mysql", name, database, MySql(pool));
         Ok(data_source)
     }
 
-    super::sqlx_common::impl_sqlx_connector!(MySqlPool);
+    super::sqlx_util::impl_sqlx_connector!(MySqlPool);
 }

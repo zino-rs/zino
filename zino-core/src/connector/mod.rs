@@ -52,13 +52,15 @@ mod connector_sqlite;
 #[cfg(feature = "connector-taos")]
 mod connector_taos;
 
+#[cfg(feature = "connector-arrow")]
+mod datafusion_util;
 #[cfg(any(
     feature = "connector-mssql",
     feature = "connector-mysql",
     feature = "connector-postgres",
     feature = "connector-sqlite"
 ))]
-mod sqlx_common;
+mod sqlx_util;
 
 pub use data_source::DataSource;
 use data_source::DataSourceConnector;
@@ -72,7 +74,7 @@ pub use connector_http::HttpConnector;
 pub trait Connector {
     /// Constructs a new data source with the configuration,
     /// returning an error if it fails.
-    fn try_new_data_source(config: &'static Table) -> Result<DataSource, BoxError>;
+    fn try_new_data_source(config: &Table) -> Result<DataSource, BoxError>;
 
     /// Executes the query and returns the total number of rows affected.
     async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, BoxError>;

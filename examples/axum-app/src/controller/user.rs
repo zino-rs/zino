@@ -35,7 +35,7 @@ pub(crate) async fn update(mut req: Request) -> zino::Result {
 pub(crate) async fn list(req: Request) -> zino::Result {
     let mut query = Query::new();
     let mut res: Response = req.query_validation(&mut query)?;
-    let users: Vec<Map> = User::find_as(query).await.extract_with_context(&req)?;
+    let users: Vec<Map> = User::find_as(&query).await.extract_with_context(&req)?;
     let data = json!({
         "users": users,
     });
@@ -59,7 +59,7 @@ pub(crate) async fn view(mut req: Request) -> zino::Result {
     req.try_send(event)?;
 
     let db_query_start_time = Instant::now();
-    let user: Map = User::find_one_as(query).await.extract_with_context(&req)?;
+    let user: Map = User::find_one_as(&query).await.extract_with_context(&req)?;
     res.record_server_timing("db", None, Some(db_query_start_time.elapsed()));
 
     let args = fluent_args![

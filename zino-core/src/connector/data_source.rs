@@ -48,39 +48,36 @@ pub(super) enum DataSourceConnector {
 
 /// Data sources.
 pub struct DataSource {
-    /// Name
-    name: &'static str,
     /// Data souce type
     data_source_type: &'static str,
+    /// Name
+    name: String,
     /// Catalog
-    catalog: &'static str,
-    /// Pool
-    pool: DataSourceConnector,
+    catalog: String,
+    /// Connector
+    connector: DataSourceConnector,
 }
 
 impl DataSource {
     /// Creates a new instance.
     #[inline]
     pub(super) fn new(
-        name: &'static str,
         data_source_type: &'static str,
-        catalog: &'static str,
-        pool: DataSourceConnector,
+        name: impl Into<String>,
+        catalog: impl Into<String>,
+        connector: DataSourceConnector,
     ) -> Self {
         Self {
-            name,
             data_source_type,
-            catalog,
-            pool,
+            name: name.into(),
+            catalog: catalog.into(),
+            connector,
         }
     }
 
     /// Constructs a new instance with the configuration for the specific data source,
     /// returning an error if it fails.
-    pub fn try_new(
-        data_source_type: &'static str,
-        config: &'static Table,
-    ) -> Result<Self, BoxError> {
+    pub fn try_new(data_source_type: &'static str, config: &Table) -> Result<Self, BoxError> {
         match data_source_type {
             #[cfg(feature = "connector-arrow")]
             "arrow" => ArrowConnector::try_new_data_source(config),
@@ -118,14 +115,14 @@ impl DataSource {
 
     /// Returns the name.
     #[inline]
-    pub fn name(&self) -> &'static str {
-        self.name
+    pub fn name(&self) -> &str {
+        self.name.as_str()
     }
 
     /// Returns the catalog.
     #[inline]
-    pub fn catalog(&self) -> &'static str {
-        self.catalog
+    pub fn catalog(&self) -> &str {
+        self.catalog.as_str()
     }
 
     /// Executes the query and returns the total number of rows affected.
@@ -134,7 +131,7 @@ impl DataSource {
         query: &str,
         params: Option<&Map>,
     ) -> Result<Option<u64>, BoxError> {
-        match &self.pool {
+        match &self.connector {
             #[cfg(feature = "connector-arrow")]
             Arrow(connector) => connector.execute(query, params).await,
             #[cfg(feature = "connector-http")]
@@ -154,7 +151,7 @@ impl DataSource {
 
     /// Executes the query and parses it as `Vec<Map>`.
     pub async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, BoxError> {
-        match &self.pool {
+        match &self.connector {
             #[cfg(feature = "connector-arrow")]
             Arrow(connector) => connector.query(query, params).await,
             #[cfg(feature = "connector-http")]
@@ -192,7 +189,7 @@ impl DataSource {
         query: &str,
         params: Option<&Map>,
     ) -> Result<Option<Record>, BoxError> {
-        match &self.pool {
+        match &self.connector {
             #[cfg(feature = "connector-arrow")]
             Arrow(connector) => connector.query_one(query, params).await,
             #[cfg(feature = "connector-http")]

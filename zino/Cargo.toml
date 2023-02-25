@@ -45,11 +45,11 @@ features = ["derive"]
 
 [dependencies.tokio]
 version = "1.25.0"
-features = ["parking_lot", "sync", "rt-multi-thread"]
+features = ["parking_lot", "rt-multi-thread"]
 optional = true
 
 [dependencies.tokio-stream]
-version = "0.1.11"
+version = "0.1.12"
 features = ["sync"]
 optional = true
 

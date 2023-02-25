@@ -106,14 +106,14 @@ impl HttpConnector {
 }
 
 impl Connector for HttpConnector {
-    fn try_new_data_source(config: &'static Table) -> Result<DataSource, BoxError> {
+    fn try_new_data_source(config: &Table) -> Result<DataSource, BoxError> {
         let name = config.get_str("name").unwrap_or("http");
         let catalog = config.get_str("catalog").unwrap_or(name);
 
         let method = config.get_str("method").unwrap_or_default();
         let base_url = config.get_str("base-url").unwrap_or_default();
         let connector = HttpConnector::try_new(method, base_url)?;
-        let data_source = DataSource::new(name, "http", catalog, Http(connector));
+        let data_source = DataSource::new("http", name, catalog, Http(connector));
         Ok(data_source)
     }
 
