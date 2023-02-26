@@ -1,6 +1,5 @@
 use super::AccessKeyId;
-use crate::{request::Validation, BoxError, SharedString};
-use base64_simd::STANDARD_NO_PAD;
+use crate::{format::base64, request::Validation, BoxError, SharedString};
 use hmac::digest::{Digest, FixedOutput, HashMarker, Update};
 use std::{error::Error, fmt};
 
@@ -33,7 +32,7 @@ impl SessionId {
         let mut hasher = D::new();
         hasher.update(data.as_ref());
 
-        let identifier = STANDARD_NO_PAD.encode_to_string(hasher.finalize().as_slice());
+        let identifier = base64::encode(hasher.finalize().as_slice());
         Self {
             realm,
             identifier,
@@ -49,7 +48,7 @@ impl SessionId {
     {
         let mut validation = Validation::new();
         let identifier = &self.identifier;
-        match STANDARD_NO_PAD.decode_to_vec(identifier) {
+        match base64::decode(identifier) {
             Ok(hash) => {
                 let data = [realm.as_bytes(), access_key_id.as_ref()].concat();
                 let mut hasher = D::new();

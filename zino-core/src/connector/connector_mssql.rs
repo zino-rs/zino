@@ -29,7 +29,7 @@ impl Connector for MssqlPool {
             .idle_timeout(idle_timeout)
             .acquire_timeout(acquire_timeout);
         let pool = pool_options.connect_lazy(&dsn)?;
-        let data_source = DataSource::new("mssql", name, database, Mssql(pool));
+        let data_source = DataSource::new("mssql", None, name, database, Mssql(pool));
         Ok(data_source)
     }
 

@@ -36,27 +36,26 @@ tracing = "0.1.37"
 
 [dependencies.axum]
 version = "0.6.8"
-features = ["ws"]
 optional = true
+features = ["ws"]
 
 [dependencies.serde]
 version = "1.0.152"
-features = ["derive"]
 
 [dependencies.tokio]
 version = "1.25.0"
-features = ["parking_lot", "rt-multi-thread"]
 optional = true
+features = ["parking_lot", "rt-multi-thread"]
 
 [dependencies.tokio-stream]
 version = "0.1.12"
-features = ["sync"]
 optional = true
+features = ["sync"]
 
 [dependencies.tower]
 version = "0.4.13"
-features = ["timeout"]
 optional = true
+features = ["timeout"]
 
 [dependencies.tower-cookies]
 version = "0.9.0"
@@ -64,6 +63,7 @@ features= ["signed"]
 
 [dependencies.tower-http]
 version = "0.4.0"
+optional = true
 features = [
     "add-extension",
     "compression-br",
@@ -74,7 +74,6 @@ features = [
     "fs",
     "trace",
 ]
-optional = true
 
 [dependencies.zino-core]
 path = "../zino-core"

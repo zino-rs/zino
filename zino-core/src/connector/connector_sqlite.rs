@@ -28,7 +28,7 @@ impl Connector for SqlitePool {
             .idle_timeout(idle_timeout)
             .acquire_timeout(acquire_timeout);
         let pool = pool_options.connect_lazy(&dsn)?;
-        let data_source = DataSource::new("sqlite", name, database, Sqlite(pool));
+        let data_source = DataSource::new("sqlite", None, name, database, Sqlite(pool));
         Ok(data_source)
     }
 

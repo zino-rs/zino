@@ -1,7 +1,6 @@
 //! Zero trust authentication.
 
-use crate::{datetime::DateTime, request::Validation, Map};
-use base64_simd::STANDARD_NO_PAD;
+use crate::{datetime::DateTime, format::base64, request::Validation, Map};
 use hmac::{
     digest::{FixedOutput, KeyInit, MacMarker, Update},
     Mac,
@@ -253,7 +252,7 @@ impl Authentication {
         let mut mac =
             H::new_from_slice(secret_access_key.as_ref()).expect("HMAC can take key of any size");
         mac.update(string_to_sign.as_ref());
-        STANDARD_NO_PAD.encode_to_string(mac.finalize().into_bytes())
+        base64::encode(mac.finalize().into_bytes())
     }
 
     /// Validates the signature using the secret access key.

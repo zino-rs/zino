@@ -1,5 +1,5 @@
 use zino::{ExtractRejection, JsonObjectExt, Map, Request, RequestContext, Response};
-use zino_core::connector::GlobalConnector;
+use zino_core::connector::{Connector, GlobalConnector};
 
 pub(crate) async fn execute(mut req: Request) -> zino::Result {
     let mut res = Response::default().provide_context(&req);

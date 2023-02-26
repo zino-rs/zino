@@ -1,4 +1,4 @@
-use base64_simd::STANDARD_NO_PAD;
+use crate::format::base64;
 use hmac::{
     digest::{FixedOutput, KeyInit, MacMarker, Update},
     Mac,
@@ -70,7 +70,7 @@ impl SecretAccessKey {
         let data = access_key_id.into();
         let mut mac = H::new_from_slice(key.as_ref()).expect("HMAC can take key of any size");
         mac.update(data.as_ref());
-        Self(STANDARD_NO_PAD.encode_to_string(mac.finalize().into_bytes()))
+        Self(base64::encode(mac.finalize().into_bytes()))
     }
 
     /// Returns a string slice.

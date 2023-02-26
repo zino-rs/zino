@@ -1,7 +1,6 @@
 //! Application or request scoped state.
 
-use crate::{application, crypto, extend::TomlTableExt, Map};
-use base64_simd::STANDARD_NO_PAD;
+use crate::{application, crypto, extend::TomlTableExt, format::base64, Map};
 use std::{
     borrow::Cow,
     env, fs,
@@ -119,7 +118,7 @@ impl State {
     pub fn encrypt_password(config: &Table) -> Option<Cow<'_, str>> {
         let password = config.get_str("password")?;
         application::SECRET_KEY.get().and_then(|key| {
-            if let Ok(data) = STANDARD_NO_PAD.decode_to_vec(password) &&
+            if let Ok(data) = base64::decode(password) &&
                 crypto::decrypt(key, &data).is_ok()
             {
                 Some(password.into())
@@ -127,7 +126,7 @@ impl State {
                 crypto::encrypt(key, password.as_bytes())
                     .inspect_err(|_| tracing::error!("failed to encrypt the password"))
                     .ok()
-                    .map(|bytes| STANDARD_NO_PAD.encode_to_string(bytes).into())
+                    .map(|bytes| base64::encode(bytes).into())
             }
         })
     }
@@ -135,7 +134,7 @@ impl State {
     /// Decrypts the password in the config.
     pub fn decrypt_password(config: &Table) -> Option<Cow<'_, str>> {
         let password = config.get_str("password")?;
-        if let Ok(data) = STANDARD_NO_PAD.decode_to_vec(password) {
+        if let Ok(data) = base64::decode(password) {
             if let Some(key) = application::SECRET_KEY.get() &&
                 let Ok(plaintext) = crypto::decrypt(key, &data)
             {

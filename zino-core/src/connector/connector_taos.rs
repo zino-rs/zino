@@ -18,7 +18,7 @@ impl Connector for TaosPool {
             .min_idle(Some(min_idle))
             .max_lifetime(None);
         let pool = TaosBuilder::from_dsn(dsn)?.with_pool_builder(pool_options)?;
-        let data_source = DataSource::new("taos", name, database, Taos(pool));
+        let data_source = DataSource::new("taos", None, name, database, Taos(pool));
         Ok(data_source)
     }
 

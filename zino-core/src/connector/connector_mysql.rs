@@ -29,7 +29,7 @@ impl Connector for MySqlPool {
             .idle_timeout(idle_timeout)
             .acquire_timeout(acquire_timeout);
         let pool = pool_options.connect_lazy(&dsn)?;
-        let data_source = DataSource::new("mysql", name, database, MySql(pool));
+        let data_source = DataSource::new("mysql", None, name, database, MySql(pool));
         Ok(data_source)
     }
 

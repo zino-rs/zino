@@ -29,7 +29,7 @@ impl Connector for PgPool {
             .idle_timeout(idle_timeout)
             .acquire_timeout(acquire_timeout);
         let pool = pool_options.connect_lazy(&dsn)?;
-        let data_source = DataSource::new("postgres", name, database, Postgres(pool));
+        let data_source = DataSource::new("postgres", None, name, database, Postgres(pool));
         Ok(data_source)
     }
 

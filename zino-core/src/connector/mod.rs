@@ -9,6 +9,7 @@
 //! | `citus`          | Citus                  | `connector-postgres`   |
 //! | `databend`       | Databend               | `connector-mysql`      |
 //! | `graphql`        | GraphQL API            | `connector-http`       |
+//! | `greptimedb`     | GreptimeDB             | `connector-postgres`   |
 //! | `hologres`       | Aliyun Hologres        | `connector-postgres`   |
 //! | `http`           | HTTP services          | `connector-http`       |
 //! | `mariadb`        | MariaDB                | `connector-mysql`      |
@@ -137,7 +138,7 @@ static GLOBAL_CONNECTOR: LazyLock<HashMap<&'static str, DataSource>> = LazyLock:
         for connector in connectors.iter().filter_map(|v| v.as_table()) {
             let data_source_type = connector.get_str("type").unwrap_or("unkown");
             let name = connector.get_str("name").unwrap_or(data_source_type);
-            let data_source = DataSource::try_new(data_source_type, connector)
+            let data_source = DataSource::try_new_data_source(connector)
                 .unwrap_or_else(|err| panic!("failed to connect data source `{name}`: {err}"));
             data_sources.insert(name, data_source);
         }

@@ -113,7 +113,7 @@ impl Connector for HttpConnector {
         let method = config.get_str("method").unwrap_or_default();
         let base_url = config.get_str("base-url").unwrap_or_default();
         let connector = HttpConnector::try_new(method, base_url)?;
-        let data_source = DataSource::new("http", name, catalog, Http(connector));
+        let data_source = DataSource::new("http", None, name, catalog, Http(connector));
         Ok(data_source)
     }
 
@@ -162,9 +162,7 @@ impl Connector for HttpConnector {
                     vec![map.into_record()]
                 }
             }
-            _ => {
-                return Err("invalid data format".into());
-            }
+            _ => return Err("invalid data format".into()),
         };
         Ok(records)
     }
@@ -188,9 +186,7 @@ impl Connector for HttpConnector {
                     map.into_record()
                 }
             }
-            _ => {
-                return Err("invalid data format".into());
-            }
+            _ => return Err("invalid data format".into()),
         };
         Ok(Some(record))
     }

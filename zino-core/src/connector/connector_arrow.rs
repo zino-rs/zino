@@ -180,7 +180,7 @@ impl Connector for ArrowConnector {
         let catalog = config.get_str("catalog").unwrap_or(name);
 
         let connector = ArrowConnector::new(config);
-        let data_source = DataSource::new("arrow", name, catalog, Arrow(connector));
+        let data_source = DataSource::new("arrow", None, name, catalog, Arrow(connector));
         Ok(data_source)
     }
 

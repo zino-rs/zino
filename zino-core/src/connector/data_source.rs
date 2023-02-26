@@ -1,8 +1,6 @@
 use self::DataSourceConnector::*;
 use super::Connector;
-use crate::{extend::AvroRecordExt, BoxError, Map, Record};
-use apache_avro::types::Value;
-use serde::de::DeserializeOwned;
+use crate::{extend::TomlTableExt, BoxError, Map, Record};
 use toml::Table;
 
 #[cfg(feature = "connector-arrow")]
@@ -48,8 +46,10 @@ pub(super) enum DataSourceConnector {
 
 /// Data sources.
 pub struct DataSource {
+    /// Protocol.
+    protocol: &'static str,
     /// Data souce type
-    data_source_type: &'static str,
+    data_source_type: String,
     /// Name
     name: String,
     /// Catalog
@@ -62,55 +62,59 @@ impl DataSource {
     /// Creates a new instance.
     #[inline]
     pub(super) fn new(
-        data_source_type: &'static str,
+        protocol: &'static str,
+        data_source_type: Option<String>,
         name: impl Into<String>,
         catalog: impl Into<String>,
         connector: DataSourceConnector,
     ) -> Self {
         Self {
-            data_source_type,
+            protocol,
+            data_source_type: data_source_type.unwrap_or_else(|| protocol.to_owned()),
             name: name.into(),
             catalog: catalog.into(),
             connector,
         }
     }
 
-    /// Constructs a new instance with the configuration for the specific data source,
+    /// Constructs a new instance with the protocol and configuration,
     /// returning an error if it fails.
-    pub fn try_new(data_source_type: &'static str, config: &Table) -> Result<Self, BoxError> {
-        match data_source_type {
+    ///
+    /// Currently, we have built-in support for the following protocols:
+    ///
+    /// - `arrow`
+    /// - `http`
+    /// - `mssql`
+    /// - `mysql`
+    /// - `postgres`
+    /// - `sqlite`
+    /// - `taos`
+    pub fn try_new(protocol: &'static str, config: &Table) -> Result<DataSource, BoxError> {
+        let mut data_source = match protocol {
             #[cfg(feature = "connector-arrow")]
-            "arrow" => ArrowConnector::try_new_data_source(config),
+            "arrow" => ArrowConnector::try_new_data_source(config)?,
             #[cfg(feature = "connector-http")]
-            "http" | "rest" | "graphql" => {
-                let mut data_source = HttpConnector::try_new_data_source(config)?;
-                data_source.data_source_type = data_source_type;
-                Ok(data_source)
-            }
+            "http" => HttpConnector::try_new_data_source(config)?,
             #[cfg(feature = "connector-mssql")]
-            "mssql" => {
-                let mut data_source = MssqlPool::try_new_data_source(config)?;
-                data_source.data_source_type = data_source_type;
-                Ok(data_source)
-            }
+            "mssql" => MssqlPool::try_new_data_source(config)?,
             #[cfg(feature = "connector-mysql")]
-            "mysql" | "ceresdb" | "databend" | "mariadb" | "tidb" => {
-                let mut data_source = MySqlPool::try_new_data_source(config)?;
-                data_source.data_source_type = data_source_type;
-                Ok(data_source)
-            }
+            "mysql" => MySqlPool::try_new_data_source(config)?,
             #[cfg(feature = "connector-postgres")]
-            "postgres" | "citus" | "hologres" | "opengauss" | "postgis" | "timescaledb" => {
-                let mut data_source = PgPool::try_new_data_source(config)?;
-                data_source.data_source_type = data_source_type;
-                Ok(data_source)
-            }
+            "postgres" => PgPool::try_new_data_source(config)?,
             #[cfg(feature = "connector-sqlite")]
-            "sqlite" => SqlitePool::try_new_data_source(config),
+            "sqlite" => SqlitePool::try_new_data_source(config)?,
             #[cfg(feature = "connector-taos")]
-            "taos" => TaosPool::try_new_data_source(config),
-            _ => Err(format!("data source type `{data_source_type}` is unsupported").into()),
-        }
+            "taos" => TaosPool::try_new_data_source(config)?,
+            _ => return Err(format!("data source protocol `{protocol}` is unsupported").into()),
+        };
+        let data_source_type = config.get_str("type").unwrap_or(protocol);
+        data_source.data_source_type = data_source_type.to_owned();
+        Ok(data_source)
+    }
+
+    /// Returns the protocol.
+    pub fn protocol(&self) -> &'static str {
+        &self.protocol
     }
 
     /// Returns the name.
@@ -124,13 +128,34 @@ impl DataSource {
     pub fn catalog(&self) -> &str {
         self.catalog.as_str()
     }
+}
 
-    /// Executes the query and returns the total number of rows affected.
-    pub async fn execute(
-        &self,
-        query: &str,
-        params: Option<&Map>,
-    ) -> Result<Option<u64>, BoxError> {
+impl Connector for DataSource {
+    fn try_new_data_source(config: &Table) -> Result<DataSource, BoxError> {
+        let data_source_type = config.get_str("type").unwrap_or("unkown");
+        let protocol = match data_source_type {
+            "arrow" => "arrow",
+            "http" | "rest" | "graphql" => "http",
+            "mssql" => "mssql",
+            "mysql" | "ceresdb" | "databend" | "mariadb" | "tidb" => "mysql",
+            "postgres" | "citus" | "greptimedb" | "hologres" | "opengauss" | "postgis"
+            | "timescaledb" => "postgres",
+            "sqlite" => "sqlite",
+            "taos" => "taos",
+            _ => {
+                if let Some(protocol) = config.get_str("protocol") {
+                    protocol.to_owned().leak()
+                } else {
+                    return Err(
+                        format!("data source type `{data_source_type}` is unsupported").into(),
+                    );
+                }
+            }
+        };
+        Self::try_new(protocol, config)
+    }
+
+    async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, BoxError> {
         match &self.connector {
             #[cfg(feature = "connector-arrow")]
             Arrow(connector) => connector.execute(query, params).await,
@@ -149,8 +174,7 @@ impl DataSource {
         }
     }
 
-    /// Executes the query and parses it as `Vec<Map>`.
-    pub async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, BoxError> {
+    async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, BoxError> {
         match &self.connector {
             #[cfg(feature = "connector-arrow")]
             Arrow(connector) => connector.query(query, params).await,
@@ -169,22 +193,7 @@ impl DataSource {
         }
     }
 
-    /// Executes the query and parses it as `Vec<T>`.
-    pub async fn query_as<T: DeserializeOwned>(
-        &self,
-        query: &str,
-        params: Option<&Map>,
-    ) -> Result<Vec<T>, BoxError> {
-        let data = self.query(query, params).await?;
-        let value = data
-            .into_iter()
-            .map(|record| Value::Map(record.into_avro_map()))
-            .collect::<Vec<_>>();
-        apache_avro::from_value(&Value::Array(value)).map_err(|err| err.into())
-    }
-
-    /// Executes the query and parses it as a `Map`.
-    pub async fn query_one(
+    async fn query_one(
         &self,
         query: &str,
         params: Option<&Map>,
@@ -204,20 +213,6 @@ impl DataSource {
             Sqlite(pool) => pool.query_one(query, params).await,
             #[cfg(feature = "connector-taos")]
             Taos(pool) => pool.query_one(query, params).await,
-        }
-    }
-
-    /// Executes the query and parses it as an instance of type `T`.
-    pub async fn query_one_as<T: DeserializeOwned>(
-        &self,
-        query: &str,
-        params: Option<&Map>,
-    ) -> Result<Option<T>, BoxError> {
-        if let Some(data) = self.query_one(query, params).await? {
-            let value = Value::Union(1, Box::new(Value::Map(data.into_avro_map())));
-            apache_avro::from_value(&value).map_err(|err| err.into())
-        } else {
-            Ok(None)
         }
     }
 }
