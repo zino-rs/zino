@@ -6,9 +6,7 @@ use axum::{
     middleware, routing, BoxError, Router, Server,
 };
 use futures::future;
-use std::{
-    convert::Infallible, io, net::SocketAddr, path::PathBuf, sync::LazyLock, time::Duration,
-};
+use std::{convert::Infallible, net::SocketAddr, path::PathBuf, sync::LazyLock, time::Duration};
 use tokio::runtime::Builder;
 use tower::{
     timeout::{error::Elapsed, TimeoutLayer},
@@ -93,22 +91,11 @@ impl Application for AxumCluster {
         }
         let index_file = public_dir.join("index.html");
         let not_found_file = public_dir.join("404.html");
-        let internal_server_error_handler = |err: io::Error| async move {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Unhandled internal error: {err}"),
-            )
-        };
-        let serve_file_service = routing::get_service(ServeFile::new(index_file))
-            .handle_error(internal_server_error_handler);
-        let serve_dir_service = routing::get_service(
-            ServeDir::new(public_dir)
-                .precompressed_gzip()
-                .precompressed_deflate()
-                .precompressed_br()
-                .not_found_service(ServeFile::new(not_found_file)),
-        )
-        .handle_error(internal_server_error_handler);
+        let serve_file = ServeFile::new(index_file);
+        let serve_dir = ServeDir::new(public_dir)
+            .precompressed_gzip()
+            .precompressed_br()
+            .not_found_service(ServeFile::new(not_found_file));
 
         runtime.block_on(async {
             let routes = self.routes;
@@ -117,8 +104,8 @@ impl Application for AxumCluster {
             let listeners = app_state.listeners();
             let servers = listeners.iter().map(|listener| {
                 let mut app = Router::new()
-                    .route_service("/", serve_file_service.clone())
-                    .nest_service("/assets", serve_dir_service.clone())
+                    .route_service("/", serve_file.clone())
+                    .nest_service("/assets", serve_dir.clone())
                     .route("/sse", routing::get(crate::endpoint::axum_sse::sse_handler))
                     .route(
                         "/websocket",

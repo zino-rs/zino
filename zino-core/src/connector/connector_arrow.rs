@@ -9,6 +9,7 @@ use crate::{
     format, BoxError, Map, Record,
 };
 use datafusion::{
+    arrow::datatypes::Schema,
     execution::{
         context::SessionContext,
         options::{AvroReadOptions, CsvReadOptions, NdJsonReadOptions, ParquetReadOptions},
@@ -84,7 +85,12 @@ impl ArrowConnector {
                         .map(|path| root.join(path).to_string_lossy().into_owned())
                         .ok_or_else(|| format!("the path for the table `{table_name}` is absent"))?
                 };
-                let table_schema = table.get_schema();
+                let table_schema = if let Some(schema) = table.get_table("schema") {
+                    let fields = schema.parse_schema_fields()?;
+                    Some(Schema::new(fields))
+                } else {
+                    None
+                };
                 match data_type {
                     "avro" => {
                         let mut options = AvroReadOptions::default();
@@ -113,7 +119,7 @@ impl ArrowConnector {
                         ctx.register_csv(table_name, &table_path, options).await?;
                     }
                     "ndjson" => {
-                        let mut options = NdJsonReadOptions::default();
+                        let mut options = NdJsonReadOptions::default().file_extension(".ndjson");
                         if table_schema.is_some() {
                             options.schema = table_schema.as_ref();
                         }
@@ -196,7 +202,7 @@ impl Connector for ArrowConnector {
         for batch in batches {
             let num_rows = batch.num_rows();
             if num_rows > max_rows {
-                records.resize_with(num_rows - max_rows, Record::new);
+                records.resize_with(num_rows, Record::new);
                 max_rows = num_rows;
             }
             for field in &batch.schema().fields {

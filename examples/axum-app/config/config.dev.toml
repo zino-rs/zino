@@ -43,6 +43,11 @@ name = "mock"
 root = "./assets/data/mock/"
 
 [[connector.tables]]
+type = "csv"
+name = "users"
+path = "./users.csv"
+
+[[connector.tables]]
 type = "ndjson"
 name = "logs"
 url = "http://localhost:6080/assets/data/logs.ndjson"
@@ -50,6 +55,9 @@ url = "http://localhost:6080/assets/data/logs.ndjson"
 [connector.tables.schema]
 timestamp = "string"
 level = "string"
+fields = { message = "string" }
+target = "string"
+span = { "http.method" = "string", "http.target" = "string", "http.status_code" = "int" }
 
 [connector.variables]
 app-name = "data-cube"

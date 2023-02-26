@@ -1,7 +1,7 @@
 use crate::BoxError;
 use apache_avro::{types::Value, Days, Duration, Millis, Months};
 use datafusion::arrow::{
-    array::{self, Array, FixedSizeBinaryArray, FixedSizeListArray},
+    array::{self, Array, ArrayAccessor, FixedSizeBinaryArray, FixedSizeListArray, StringArray},
     datatypes::{
         DataType, Date32Type, Date64Type, DurationMicrosecondType, DurationMillisecondType,
         DurationNanosecondType, DurationSecondType, Float32Type, Float64Type, Int16Type, Int32Type,
@@ -243,6 +243,20 @@ impl ArrowArrayExt for dyn Array {
                 })?;
                 let value = union_array.value(index).parse_avro_value(0)?;
                 Value::Union(position.try_into()?, Box::new(value))
+            }
+            DataType::Dictionary(key_type, value_type)
+                if key_type == &Box::new(DataType::UInt32)
+                    && value_type == &Box::new(DataType::Utf8) =>
+            {
+                let dictionary_array = array::as_dictionary_array::<UInt32Type>(self);
+                let string_array = dictionary_array
+                    .downcast_dict::<StringArray>()
+                    .ok_or_else(|| "fail to downcast the dictionary to string array")?;
+                let value = string_array.value(index);
+                let position = dictionary_array
+                    .lookup_key(value)
+                    .ok_or_else(|| format!("value `{value}` is not in the dictionary"))?;
+                Value::Enum(position.try_into()?, value.to_owned())
             }
             data_type => {
                 return Err(format!(

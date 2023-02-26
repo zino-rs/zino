@@ -1,9 +1,9 @@
 use crate::{
     extend::{ScalarValueExt, TomlTableExt},
-    Map,
+    BoxError, Map,
 };
 use datafusion::{
-    arrow::datatypes::{DataType, Field, Schema},
+    arrow::datatypes::{DataType, Field, UnionMode},
     datasource::file_format::file_type::FileCompressionType,
     error::DataFusionError,
     scalar::ScalarValue,
@@ -89,8 +89,11 @@ pub(super) trait TableDefinition {
     /// Gets the file compression type.
     fn get_compression_type(&self) -> Option<FileCompressionType>;
 
-    /// Gets the schema.
-    fn get_schema(&self) -> Option<Schema>;
+    /// Parses the schema fields.
+    fn parse_schema_fields(&self) -> Result<Vec<Field>, BoxError>;
+
+    /// Parses the arrow data type.
+    fn parse_arrow_data_type(value: &str) -> Result<DataType, BoxError>;
 }
 
 impl TableDefinition for Table {
@@ -104,21 +107,60 @@ impl TableDefinition for Table {
             })
     }
 
-    fn get_schema(&self) -> Option<Schema> {
-        self.get_table("schema").map(|schema| {
-            let mut fields = Vec::new();
-            for (key, value) in schema {
-                let name = key.to_owned();
-                let data_type = match value {
-                    Value::String(s) => match s.as_str() {
-                        "string" => DataType::Utf8,
-                        _ => DataType::Null,
-                    },
-                    _ => DataType::Null,
-                };
-                fields.push(Field::new(name, data_type, true));
+    fn parse_schema_fields(&self) -> Result<Vec<Field>, BoxError> {
+        let mut fields = Vec::new();
+        for (key, value) in self {
+            let name = key.to_owned();
+            let data_type = match value {
+                Value::String(value_type) => Self::parse_arrow_data_type(value_type)?,
+                Value::Array(array) => {
+                    let array_length = array.len();
+                    if array_length == 1 && let Some(Value::String(value_type)) = array.first() {
+                        let item_data_type = Self::parse_arrow_data_type(&value_type)?;
+                        let field = Field::new("item", item_data_type, true);
+                        DataType::List(Box::new(field))
+                    } else if array_length >= 2 {
+                        let mut fields = Vec::with_capacity(array_length);
+                        let mut positions = Vec::with_capacity(array_length);
+                        for (index, value) in array.iter().enumerate() {
+                            if let Value::String(value_type) = value {
+                                let data_type = Self::parse_arrow_data_type(value_type)?;
+                                let field = Field::new(index.to_string(), data_type, true);
+                                fields.push(field);
+                                positions.push(i8::try_from(index)?);
+                            }
+                        }
+                        DataType::Union(fields, positions, UnionMode::Dense)
+                    } else {
+                        return Err(format!("schema for `{key}` should be nonempty").into());
+                    }
+                }
+                Value::Table(table) => {
+                    let fields = table.parse_schema_fields()?;
+                    DataType::Struct(fields)
+                }
+                _ => return Err(format!("schema for `{key}` is invalid").into()),
+            };
+            fields.push(Field::new(name, data_type, true));
+        }
+        Ok(fields)
+    }
+
+    fn parse_arrow_data_type(value_type: &str) -> Result<DataType, BoxError> {
+        let data_type = match value_type {
+            "null" => DataType::Null,
+            "boolean" => DataType::Boolean,
+            "int" => DataType::Int32,
+            "long" => DataType::Int64,
+            "float" => DataType::Float32,
+            "double" => DataType::Float64,
+            "bytes" => DataType::Binary,
+            "string" => DataType::Utf8,
+            _ => {
+                let message = format!("parsing `{value_type}` as Arrow data type is unsupported");
+                return Err(message.into());
             }
-            Schema::new(fields)
-        })
+        };
+        Ok(data_type)
     }
 }
