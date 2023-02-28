@@ -49,7 +49,7 @@ pub struct DataSource {
     /// Protocol.
     protocol: &'static str,
     /// Data souce type
-    data_source_type: String,
+    source_type: String,
     /// Name
     name: String,
     /// Catalog
@@ -63,14 +63,14 @@ impl DataSource {
     #[inline]
     pub(super) fn new(
         protocol: &'static str,
-        data_source_type: Option<String>,
+        source_type: Option<String>,
         name: impl Into<String>,
         catalog: impl Into<String>,
         connector: DataSourceConnector,
     ) -> Self {
         Self {
             protocol,
-            data_source_type: data_source_type.unwrap_or_else(|| protocol.to_owned()),
+            source_type: source_type.unwrap_or_else(|| protocol.to_owned()),
             name: name.into(),
             catalog: catalog.into(),
             connector,
@@ -107,14 +107,19 @@ impl DataSource {
             "taos" => TaosPool::try_new_data_source(config)?,
             _ => return Err(format!("data source protocol `{protocol}` is unsupported").into()),
         };
-        let data_source_type = config.get_str("type").unwrap_or(protocol);
-        data_source.data_source_type = data_source_type.to_owned();
+        let source_type = config.get_str("type").unwrap_or(protocol);
+        data_source.source_type = source_type.to_owned();
         Ok(data_source)
     }
 
     /// Returns the protocol.
     pub fn protocol(&self) -> &'static str {
         &self.protocol
+    }
+
+    /// Returns the data source type.
+    pub fn source_type(&self) -> &str {
+        self.source_type.as_str()
     }
 
     /// Returns the name.
@@ -128,12 +133,36 @@ impl DataSource {
     pub fn catalog(&self) -> &str {
         self.catalog.as_str()
     }
+
+    #[cfg(feature = "connector-arrow")]
+    /// Returns a reference to the inner connector if it is of type `ArrowConnector`,
+    /// or `None` if it isn’t.
+    #[inline]
+    pub fn get_arrow_connector(&self) -> Option<&ArrowConnector> {
+        if let Arrow(connector) = &self.connector {
+            Some(connector)
+        } else {
+            None
+        }
+    }
+
+    #[cfg(feature = "connector-http")]
+    /// Returns a reference to the inner connector if it is of type `HttpConnector`,
+    /// or `None` if it isn’t.
+    #[inline]
+    pub fn get_http_connector(&self) -> Option<&HttpConnector> {
+        if let Http(connector) = &self.connector {
+            Some(connector)
+        } else {
+            None
+        }
+    }
 }
 
 impl Connector for DataSource {
     fn try_new_data_source(config: &Table) -> Result<DataSource, BoxError> {
-        let data_source_type = config.get_str("type").unwrap_or("unkown");
-        let protocol = match data_source_type {
+        let source_type = config.get_str("type").unwrap_or("unkown");
+        let protocol = match source_type {
             "arrow" => "arrow",
             "http" | "rest" | "graphql" => "http",
             "mssql" => "mssql",
@@ -146,9 +175,7 @@ impl Connector for DataSource {
                 if let Some(protocol) = config.get_str("protocol") {
                     protocol.to_owned().leak()
                 } else {
-                    return Err(
-                        format!("data source type `{data_source_type}` is unsupported").into(),
-                    );
+                    return Err(format!("data source type `{source_type}` is unsupported").into());
                 }
             }
         };

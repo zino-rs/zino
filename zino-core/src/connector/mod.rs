@@ -68,6 +68,9 @@ use data_source::DataSourceConnector;
 
 #[cfg(feature = "connector-arrow")]
 pub use connector_arrow::ArrowConnector;
+#[cfg(feature = "connector-arrow")]
+pub use datafusion_util::DataFrameExecutor;
+
 #[cfg(feature = "connector-http")]
 pub use connector_http::HttpConnector;
 

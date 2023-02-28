@@ -15,7 +15,7 @@ use std::collections::HashMap;
 
 /// Extension trait for [`dyn Array`](datafusion::arrow::array::Array).
 pub trait ArrowArrayExt {
-    /// Parses an Avro value at the index.
+    /// Parses the element at the index as an Avro value.
     fn parse_avro_value(&self, index: usize) -> Result<Value, BoxError>;
 }
 

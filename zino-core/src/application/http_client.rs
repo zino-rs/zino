@@ -24,6 +24,7 @@ use std::{
 use task_local_extensions::Extensions;
 use tracing::{field::Empty, Span};
 
+/// Initializes the HTTP client.
 pub(super) fn init<APP: Application + ?Sized>() {
     let name = APP::name();
     let version = APP::version();

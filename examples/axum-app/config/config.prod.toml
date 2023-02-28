@@ -37,7 +37,7 @@ port = 9000
 [[connector]]
 type = "arrow"
 name = "mock"
-root = "./assets/data/mock/"
+root = "./data/mock/"
 
 [[connector.tables]]
 type = "csv"

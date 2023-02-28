@@ -9,6 +9,7 @@ use tracing_subscriber::{
     layer::SubscriberExt,
 };
 
+/// Initializes the tracing subscriber.
 pub(super) fn init<APP: Application + ?Sized>() {
     if TRACING_APPENDER_GUARD.get().is_some() {
         tracing::warn!("the tracing subscriber has already been initialized");

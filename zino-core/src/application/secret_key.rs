@@ -4,6 +4,7 @@ use hkdf::Hkdf;
 use sha2::{Digest, Sha256};
 use std::{env, sync::OnceLock};
 
+/// Initializes the secret key.
 pub(super) fn init<APP: Application + ?Sized>() {
     let app_checksum: [u8; 32] = APP::config()
         .get_str("checksum")

@@ -7,11 +7,11 @@ pub trait AvroRecordExt {
     /// Extracts the boolean value corresponding to the field.
     fn get_bool(&self, field: &str) -> Option<bool>;
 
-    /// Extracts the `Long` integer value corresponding to the field.
-    fn get_i64(&self, field: &str) -> Option<i64>;
-
     /// Extracts the integer value corresponding to the field.
     fn get_i32(&self, field: &str) -> Option<i32>;
+
+    /// Extracts the `Long` integer value corresponding to the field.
+    fn get_i64(&self, field: &str) -> Option<i64>;
 
     /// Extracts the integer value corresponding to the field and
     /// represents it as `u16` if possible.
@@ -30,10 +30,13 @@ pub trait AvroRecordExt {
     fn get_usize(&self, field: &str) -> Option<usize>;
 
     /// Extracts the float value corresponding to the field.
-    fn get_f64(&self, field: &str) -> Option<f64>;
+    fn get_f32(&self, field: &str) -> Option<f32>;
 
     /// Extracts the float value corresponding to the field.
-    fn get_f32(&self, field: &str) -> Option<f32>;
+    fn get_f64(&self, field: &str) -> Option<f64>;
+
+    /// Extracts the bytes corresponding to the field.
+    fn get_bytes(&self, field: &str) -> Option<&[u8]>;
 
     /// Extracts the string corresponding to the field.
     fn get_str(&self, field: &str) -> Option<&str>;
@@ -76,9 +79,9 @@ impl AvroRecordExt for Record {
     }
 
     #[inline]
-    fn get_i64(&self, field: &str) -> Option<i64> {
+    fn get_i32(&self, field: &str) -> Option<i32> {
         self.find(field).and_then(|v| {
-            if let Value::Long(i) = v {
+            if let Value::Int(i) = v {
                 Some(*i)
             } else {
                 None
@@ -87,9 +90,9 @@ impl AvroRecordExt for Record {
     }
 
     #[inline]
-    fn get_i32(&self, field: &str) -> Option<i32> {
+    fn get_i64(&self, field: &str) -> Option<i64> {
         self.find(field).and_then(|v| {
-            if let Value::Int(i) = v {
+            if let Value::Long(i) = v {
                 Some(*i)
             } else {
                 None
@@ -142,6 +145,17 @@ impl AvroRecordExt for Record {
     }
 
     #[inline]
+    fn get_f32(&self, field: &str) -> Option<f32> {
+        self.find(field).and_then(|v| {
+            if let Value::Float(f) = v {
+                Some(*f)
+            } else {
+                None
+            }
+        })
+    }
+
+    #[inline]
     fn get_f64(&self, field: &str) -> Option<f64> {
         self.find(field).and_then(|v| {
             if let Value::Double(f) = v {
@@ -152,11 +166,10 @@ impl AvroRecordExt for Record {
         })
     }
 
-    #[inline]
-    fn get_f32(&self, field: &str) -> Option<f32> {
+    fn get_bytes(&self, field: &str) -> Option<&[u8]> {
         self.find(field).and_then(|v| {
-            if let Value::Float(f) = v {
-                Some(*f)
+            if let Value::Bytes(vec) = v {
+                Some(vec.as_slice())
             } else {
                 None
             }

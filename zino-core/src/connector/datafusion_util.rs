@@ -1,19 +1,21 @@
 use crate::{
-    extend::{ScalarValueExt, TomlTableExt},
-    BoxError, Map,
+    extend::{ArrowArrayExt, AvroRecordExt, ScalarValueExt},
+    BoxError, Map, Record,
 };
+use apache_avro::types::Value;
 use datafusion::{
-    arrow::datatypes::{DataType, Field, UnionMode},
-    datasource::file_format::file_type::FileCompressionType,
+    arrow::{datatypes::DataType, util},
+    dataframe::DataFrame,
     error::DataFusionError,
     scalar::ScalarValue,
     variable::VarProvider,
 };
+use serde::de::DeserializeOwned;
 use std::{
     collections::HashMap,
     ops::{Deref, DerefMut},
 };
-use toml::{Table, Value};
+use toml::Table;
 
 /// A provider for scalar values.
 #[derive(Debug, Clone)]
@@ -84,83 +86,95 @@ impl VarProvider for ScalarValueProvider {
     }
 }
 
-/// Trait for table definition.
-pub(super) trait TableDefinition {
-    /// Gets the file compression type.
-    fn get_compression_type(&self) -> Option<FileCompressionType>;
+/// Executor trait for [`DataFrame`](datafusion::dataframe::DataFrame).
+pub trait DataFrameExecutor {
+    /// Executes the `DataFrame` and returns the total number of rows affected.
+    async fn execute(self) -> Result<Option<u64>, BoxError>;
 
-    /// Parses the schema fields.
-    fn parse_schema_fields(&self) -> Result<Vec<Field>, BoxError>;
+    /// Executes the `DataFrame` and parses it as `Vec<Map>`.
+    async fn query(self) -> Result<Vec<Record>, BoxError>;
 
-    /// Parses the arrow data type.
-    fn parse_arrow_data_type(value: &str) -> Result<DataType, BoxError>;
+    /// Executes the `DataFrame` and parses it as a `Map`.
+    async fn query_one(self) -> Result<Option<Record>, BoxError>;
+
+    /// Executes the `DataFrame` and parses it as `Vec<T>`.
+    async fn query_as<T: DeserializeOwned>(self) -> Result<Vec<T>, BoxError>
+    where
+        Self: Sized,
+    {
+        let data = self.query().await?;
+        let value = data
+            .into_iter()
+            .map(|record| Value::Map(record.into_avro_map()))
+            .collect::<Vec<_>>();
+        apache_avro::from_value(&Value::Array(value)).map_err(|err| err.into())
+    }
+
+    /// Executes the `DataFrame` and parses it as an instance of type `T`.
+    async fn query_one_as<T: DeserializeOwned>(self) -> Result<Option<T>, BoxError>
+    where
+        Self: Sized,
+    {
+        if let Some(data) = self.query_one().await? {
+            let value = Value::Union(1, Box::new(Value::Map(data.into_avro_map())));
+            apache_avro::from_value(&value).map_err(|err| err.into())
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Executes the `DataFrame` and creates a visual representation of record batches.
+    async fn output(self) -> Result<String, BoxError>;
 }
 
-impl TableDefinition for Table {
-    fn get_compression_type(&self) -> Option<FileCompressionType> {
-        self.get_str("compression-type")
-            .map(|compression_type| match compression_type {
-                "bzip2" => FileCompressionType::BZIP2,
-                "gzip" => FileCompressionType::GZIP,
-                "xz" => FileCompressionType::XZ,
-                _ => FileCompressionType::UNCOMPRESSED,
-            })
+impl DataFrameExecutor for DataFrame {
+    async fn execute(self) -> Result<Option<u64>, BoxError> {
+        self.collect().await?;
+        Ok(None)
     }
 
-    fn parse_schema_fields(&self) -> Result<Vec<Field>, BoxError> {
-        let mut fields = Vec::new();
-        for (key, value) in self {
-            let name = key.to_owned();
-            let data_type = match value {
-                Value::String(value_type) => Self::parse_arrow_data_type(value_type)?,
-                Value::Array(array) => {
-                    let array_length = array.len();
-                    if array_length == 1 && let Some(Value::String(value_type)) = array.first() {
-                        let item_data_type = Self::parse_arrow_data_type(&value_type)?;
-                        let field = Field::new("item", item_data_type, true);
-                        DataType::List(Box::new(field))
-                    } else if array_length >= 2 {
-                        let mut fields = Vec::with_capacity(array_length);
-                        let mut positions = Vec::with_capacity(array_length);
-                        for (index, value) in array.iter().enumerate() {
-                            if let Value::String(value_type) = value {
-                                let data_type = Self::parse_arrow_data_type(value_type)?;
-                                let field = Field::new(index.to_string(), data_type, true);
-                                fields.push(field);
-                                positions.push(i8::try_from(index)?);
-                            }
-                        }
-                        DataType::Union(fields, positions, UnionMode::Dense)
-                    } else {
-                        return Err(format!("schema for `{key}` should be nonempty").into());
+    async fn query(self) -> Result<Vec<Record>, BoxError> {
+        let batches = self.collect().await?;
+        let mut records = Vec::new();
+        let mut max_rows = 0;
+        for batch in batches {
+            let num_rows = batch.num_rows();
+            if num_rows > max_rows {
+                records.resize_with(num_rows, Record::new);
+                max_rows = num_rows;
+            }
+            for field in &batch.schema().fields {
+                let field_name = field.name().as_str();
+                if let Some(array) = batch.column_by_name(field_name) {
+                    for i in 0..num_rows {
+                        let record = &mut records[i];
+                        let value = array.parse_avro_value(i)?;
+                        record.push((field_name.to_owned(), value));
                     }
                 }
-                Value::Table(table) => {
-                    let fields = table.parse_schema_fields()?;
-                    DataType::Struct(fields)
-                }
-                _ => return Err(format!("schema for `{key}` is invalid").into()),
-            };
-            fields.push(Field::new(name, data_type, true));
+            }
         }
-        Ok(fields)
+        Ok(records)
     }
 
-    fn parse_arrow_data_type(value_type: &str) -> Result<DataType, BoxError> {
-        let data_type = match value_type {
-            "null" => DataType::Null,
-            "boolean" => DataType::Boolean,
-            "int" => DataType::Int32,
-            "long" => DataType::Int64,
-            "float" => DataType::Float32,
-            "double" => DataType::Float64,
-            "bytes" => DataType::Binary,
-            "string" => DataType::Utf8,
-            _ => {
-                let message = format!("parsing `{value_type}` as Arrow data type is unsupported");
-                return Err(message.into());
+    async fn query_one(self) -> Result<Option<Record>, BoxError> {
+        let batches = self.limit(0, Some(1))?.collect().await?;
+        let mut record = Record::new();
+        for batch in batches {
+            for field in &batch.schema().fields {
+                let field_name = field.name().as_str();
+                if let Some(array) = batch.column_by_name(field_name) {
+                    let value = array.parse_avro_value(0)?;
+                    record.push((field_name.to_owned(), value));
+                }
             }
-        };
-        Ok(data_type)
+        }
+        Ok(Some(record))
+    }
+
+    async fn output(self) -> Result<String, BoxError> {
+        let batches = self.collect().await?;
+        let data = util::pretty::pretty_format_batches(&batches)?;
+        Ok(data.to_string())
     }
 }

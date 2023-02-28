@@ -1,6 +1,6 @@
 use crate::datetime;
 use std::time::Duration;
-use toml::{Table, Value};
+use toml::value::{Array, Table};
 
 /// Extension trait for [`Table`](toml::Table).
 pub trait TomlTableExt {
@@ -33,7 +33,7 @@ pub trait TomlTableExt {
     fn get_str(&self, key: &str) -> Option<&str>;
 
     /// Extracts the array value corresponding to the key.
-    fn get_array(&self, key: &str) -> Option<&Vec<Value>>;
+    fn get_array(&self, key: &str) -> Option<&Array>;
 
     /// Extracts the table value corresponding to the key.
     fn get_table(&self, key: &str) -> Option<&Table>;
@@ -93,7 +93,7 @@ impl TomlTableExt for Table {
     }
 
     #[inline]
-    fn get_array(&self, key: &str) -> Option<&Vec<Value>> {
+    fn get_array(&self, key: &str) -> Option<&Array> {
         self.get(key).and_then(|v| v.as_array())
     }
 

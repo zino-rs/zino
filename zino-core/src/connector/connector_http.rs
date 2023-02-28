@@ -135,7 +135,7 @@ impl Connector for HttpConnector {
                 .into_iter()
                 .filter_map(|value| {
                     if let Value::Object(map) = value {
-                        Some(map.into_record())
+                        Some(map.into_avro_record())
                     } else {
                         None
                     }
@@ -147,7 +147,7 @@ impl Connector for HttpConnector {
                         vec.into_iter()
                             .filter_map(|value| {
                                 if let Value::Object(map) = value {
-                                    Some(map.into_record())
+                                    Some(map.into_avro_record())
                                 } else {
                                     None
                                 }
@@ -159,7 +159,7 @@ impl Connector for HttpConnector {
                         vec![record]
                     }
                 } else {
-                    vec![map.into_record()]
+                    vec![map.into_avro_record()]
                 }
             }
             _ => return Err("invalid data format".into()),
@@ -176,14 +176,14 @@ impl Connector for HttpConnector {
             Value::Object(mut map) => {
                 if let Some(value) = map.remove("data").or_else(|| map.remove("result")) {
                     if let Value::Object(data) = value {
-                        data.into_record()
+                        data.into_avro_record()
                     } else {
                         let mut record = Record::new();
                         record.upsert("data", value);
                         record
                     }
                 } else {
-                    map.into_record()
+                    map.into_avro_record()
                 }
             }
             _ => return Err("invalid data format".into()),

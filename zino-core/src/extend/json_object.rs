@@ -6,12 +6,12 @@ pub trait JsonObjectExt {
     /// Extracts the boolean value corresponding to the key.
     fn get_bool(&self, key: &str) -> Option<bool>;
 
-    /// Extracts the integer value corresponding to the key.
-    fn get_i64(&self, key: &str) -> Option<i64>;
-
     /// Extracts the integer value corresponding to the key and
     /// represents it as `i32` if possible.
     fn get_i32(&self, key: &str) -> Option<i32>;
+
+    /// Extracts the integer value corresponding to the key.
+    fn get_i64(&self, key: &str) -> Option<i64>;
 
     /// Extracts the integer value corresponding to the key and
     /// represents it as `u16` if possible.
@@ -47,7 +47,7 @@ pub trait JsonObjectExt {
     fn upsert(&mut self, key: impl Into<String>, value: impl Into<Value>) -> Option<Value>;
 
     /// Consumes `self` and constructs an Avro record value.
-    fn into_record(self) -> Record;
+    fn into_avro_record(self) -> Record;
 }
 
 impl JsonObjectExt for Map {
@@ -57,15 +57,15 @@ impl JsonObjectExt for Map {
     }
 
     #[inline]
-    fn get_i64(&self, key: &str) -> Option<i64> {
-        self.get(key).and_then(|v| v.as_i64())
-    }
-
-    #[inline]
     fn get_i32(&self, key: &str) -> Option<i32> {
         self.get(key)
             .and_then(|v| v.as_u64())
             .and_then(|i| i32::try_from(i).ok())
+    }
+
+    #[inline]
+    fn get_i64(&self, key: &str) -> Option<i64> {
+        self.get(key).and_then(|v| v.as_i64())
     }
 
     #[inline]
@@ -119,7 +119,7 @@ impl JsonObjectExt for Map {
         self.insert(key.into(), value.into())
     }
 
-    fn into_record(self) -> Record {
+    fn into_avro_record(self) -> Record {
         let mut record = Record::with_capacity(self.len());
         for (field, value) in self.into_iter() {
             record.push((field, value.into()));
