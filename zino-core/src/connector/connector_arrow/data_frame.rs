@@ -1,6 +1,5 @@
 use super::ArrowArrayExt;
-use crate::{extend::AvroRecordExt, BoxError, Record};
-use apache_avro::types::Value;
+use crate::{BoxError, Map, Record};
 use datafusion::{arrow::util, dataframe::DataFrame};
 use serde::de::DeserializeOwned;
 
@@ -9,37 +8,17 @@ pub trait DataFrameExecutor {
     /// Executes the `DataFrame` and returns the total number of rows affected.
     async fn execute(self) -> Result<Option<u64>, BoxError>;
 
-    /// Executes the `DataFrame` and parses it as `Vec<Map>`.
+    /// Executes the `DataFrame` and parses it as `Vec<Record>`.
     async fn query(self) -> Result<Vec<Record>, BoxError>;
 
-    /// Executes the `DataFrame` and parses it as a `Map`.
+    /// Executes the `DataFrame` and parses it as `Vec<T>`.
+    async fn query_as<T: DeserializeOwned>(self) -> Result<Vec<T>, BoxError>;
+
+    /// Executes the `DataFrame` and parses it as a `Record`.
     async fn query_one(self) -> Result<Option<Record>, BoxError>;
 
-    /// Executes the `DataFrame` and parses it as `Vec<T>`.
-    async fn query_as<T: DeserializeOwned>(self) -> Result<Vec<T>, BoxError>
-    where
-        Self: Sized,
-    {
-        let data = self.query().await?;
-        let value = data
-            .into_iter()
-            .map(|record| Value::Map(record.into_avro_map()))
-            .collect::<Vec<_>>();
-        apache_avro::from_value(&Value::Array(value)).map_err(|err| err.into())
-    }
-
     /// Executes the `DataFrame` and parses it as an instance of type `T`.
-    async fn query_one_as<T: DeserializeOwned>(self) -> Result<Option<T>, BoxError>
-    where
-        Self: Sized,
-    {
-        if let Some(data) = self.query_one().await? {
-            let value = Value::Union(1, Box::new(Value::Map(data.into_avro_map())));
-            apache_avro::from_value(&value).map_err(|err| err.into())
-        } else {
-            Ok(None)
-        }
-    }
+    async fn query_one_as<T: DeserializeOwned>(self) -> Result<Option<T>, BoxError>;
 
     /// Executes the `DataFrame` and creates a visual representation of record batches.
     async fn output(self) -> Result<String, BoxError>;
@@ -75,6 +54,30 @@ impl DataFrameExecutor for DataFrame {
         Ok(records)
     }
 
+    async fn query_as<T: DeserializeOwned>(self) -> Result<Vec<T>, BoxError> {
+        let batches = self.collect().await?;
+        let mut data = Vec::new();
+        let mut max_rows = 0;
+        for batch in batches {
+            let num_rows = batch.num_rows();
+            if num_rows > max_rows {
+                data.resize_with(num_rows, Map::new);
+                max_rows = num_rows;
+            }
+            for field in &batch.schema().fields {
+                let field_name = field.name().as_str();
+                if let Some(array) = batch.column_by_name(field_name) {
+                    for i in 0..num_rows {
+                        let map = &mut data[i];
+                        let value = array.parse_json_value(i)?;
+                        map.insert(field_name.to_owned(), value);
+                    }
+                }
+            }
+        }
+        serde_json::from_value(data.into()).map_err(BoxError::from)
+    }
+
     async fn query_one(self) -> Result<Option<Record>, BoxError> {
         let batches = self.limit(0, Some(1))?.collect().await?;
         let mut record = Record::new();
@@ -88,6 +91,21 @@ impl DataFrameExecutor for DataFrame {
             }
         }
         Ok(Some(record))
+    }
+
+    async fn query_one_as<T: DeserializeOwned>(self) -> Result<Option<T>, BoxError> {
+        let batches = self.limit(0, Some(1))?.collect().await?;
+        let mut map = Map::new();
+        for batch in batches {
+            for field in &batch.schema().fields {
+                let field_name = field.name().as_str();
+                if let Some(array) = batch.column_by_name(field_name) {
+                    let value = array.parse_json_value(0)?;
+                    map.insert(field_name.to_owned(), value);
+                }
+            }
+        }
+        serde_json::from_value(map.into()).map_err(BoxError::from)
     }
 
     async fn output(self) -> Result<String, BoxError> {

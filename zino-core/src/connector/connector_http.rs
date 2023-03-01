@@ -167,6 +167,48 @@ impl Connector for HttpConnector {
         Ok(records)
     }
 
+    async fn query_as<T: DeserializeOwned>(
+        &self,
+        query: &str,
+        params: Option<&Map>,
+    ) -> Result<Vec<T>, BoxError> {
+        let data = match self.fetch_json(query, params).await? {
+            Value::Array(vec) => vec
+                .into_iter()
+                .filter_map(|value| {
+                    if let Value::Object(map) = value {
+                        Some(map)
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<_>>(),
+            Value::Object(mut map) => {
+                if let Some(value) = map.remove("data").or_else(|| map.remove("result")) {
+                    if let Value::Array(vec) = value {
+                        vec.into_iter()
+                            .filter_map(|value| {
+                                if let Value::Object(map) = value {
+                                    Some(map)
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect::<Vec<_>>()
+                    } else {
+                        let mut map = Map::new();
+                        map.upsert("data", value);
+                        vec![map]
+                    }
+                } else {
+                    vec![map]
+                }
+            }
+            _ => return Err("invalid data format".into()),
+        };
+        serde_json::from_value(data.into()).map_err(BoxError::from)
+    }
+
     async fn query_one(
         &self,
         query: &str,
@@ -189,5 +231,21 @@ impl Connector for HttpConnector {
             _ => return Err("invalid data format".into()),
         };
         Ok(Some(record))
+    }
+
+    async fn query_one_as<T: DeserializeOwned>(
+        &self,
+        query: &str,
+        params: Option<&Map>,
+    ) -> Result<Option<T>, BoxError> {
+        if let Value::Object(mut map) = self.fetch_json(query, params).await? {
+            if let Some(value) = map.remove("data").or_else(|| map.remove("result")) {
+                serde_json::from_value(value).map_err(BoxError::from)
+            } else {
+                serde_json::from_value(map.into()).map_err(BoxError::from)
+            }
+        } else {
+            Err("invalid data format".into())
+        }
     }
 }

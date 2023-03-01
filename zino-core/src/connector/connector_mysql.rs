@@ -33,5 +33,5 @@ impl Connector for MySqlPool {
         Ok(data_source)
     }
 
-    super::sqlx_util::impl_sqlx_connector!(MySqlPool);
+    super::sqlx_common::impl_sqlx_connector!(MySqlPool);
 }

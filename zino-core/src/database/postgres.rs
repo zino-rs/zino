@@ -1,5 +1,5 @@
 use super::column::{Column, ColumnExt};
-use crate::{Record, Uuid};
+use crate::{Map, Record, Uuid};
 use apache_avro::types::Value as AvroValue;
 use chrono::{DateTime, Local, SecondsFormat};
 use serde_json::Value as JsonValue;
@@ -69,7 +69,40 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
         }
     }
 
-    fn decode_row(&self, row: &Self::Row) -> Result<AvroValue, Error> {
+    fn decode_value(&self, row: &Self::Row) -> Result<JsonValue, Error> {
+        let key = self.name();
+        let value = match self.type_name() {
+            "bool" => row.try_get_unchecked::<bool, _>(key)?.into(),
+            "u16" | "i16" => row.try_get_unchecked::<i16, _>(key)?.into(),
+            "u32" | "i32" => row.try_get_unchecked::<i32, _>(key)?.into(),
+            "u64" | "i64" => row.try_get_unchecked::<i64, _>(key)?.into(),
+            "f32" => row.try_get_unchecked::<f32, _>(key)?.into(),
+            "f64" => row.try_get_unchecked::<f64, _>(key)?.into(),
+            "String" => row.try_get_unchecked::<String, _>(key)?.into(),
+            "DateTime" => {
+                let datetime = row.try_get_unchecked::<DateTime<Local>, _>(key)?;
+                datetime
+                    .to_rfc3339_opts(SecondsFormat::Micros, false)
+                    .into()
+            }
+            "Uuid" | "Option<Uuid>" => row.try_get_unchecked::<Uuid, _>(key)?.to_string().into(),
+            "Vec<u8>" => row.try_get_unchecked::<Vec<u8>, _>(key)?.into(),
+            "Vec<String>" => row.try_get_unchecked::<Vec<String>, _>(key)?.into(),
+            "Vec<Uuid>" => {
+                let values = row.try_get_unchecked::<Vec<Uuid>, _>(key)?;
+                values
+                    .iter()
+                    .map(|v| v.to_string())
+                    .collect::<Vec<_>>()
+                    .into()
+            }
+            "Map" => row.try_get_unchecked::<JsonValue, _>(key)?,
+            _ => JsonValue::Null,
+        };
+        Ok(value)
+    }
+
+    fn decode_as_avro_value(&self, row: &Self::Row) -> Result<AvroValue, Error> {
         let field = self.name();
         let value = match self.type_name() {
             "bool" => row.try_get_unchecked::<bool, _>(field)?.into(),
@@ -110,7 +143,45 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
         Ok(value)
     }
 
-    fn parse_row(row: &Self::Row) -> Result<Record, Error> {
+    fn parse_row(row: &Self::Row) -> Result<Map, Error> {
+        let columns = row.columns();
+        let mut map = Map::with_capacity(columns.len());
+        for col in columns {
+            let key = col.name();
+            let value = match col.type_info().name() {
+                "BOOL" => row.try_get_unchecked::<bool, _>(key)?.into(),
+                "INT2" => row.try_get_unchecked::<i16, _>(key)?.into(),
+                "INT4" => row.try_get_unchecked::<i32, _>(key)?.into(),
+                "INT8" => row.try_get_unchecked::<i64, _>(key)?.into(),
+                "FLOAT4" => row.try_get_unchecked::<f32, _>(key)?.into(),
+                "FLOAT8" => row.try_get_unchecked::<f64, _>(key)?.into(),
+                "TEXT" | "VARCHAR" => row.try_get_unchecked::<String, _>(key)?.into(),
+                "TIMESTAMPTZ" => {
+                    let datetime = row.try_get_unchecked::<DateTime<Local>, _>(key)?;
+                    datetime
+                        .to_rfc3339_opts(SecondsFormat::Micros, false)
+                        .into()
+                }
+                "UUID" => row.try_get_unchecked::<Uuid, _>(key)?.to_string().into(),
+                "BYTEA" => row.try_get_unchecked::<Vec<u8>, _>(key)?.into(),
+                "TEXT[]" => row.try_get_unchecked::<Vec<String>, _>(key)?.into(),
+                "UUID[]" => {
+                    let values = row.try_get_unchecked::<Vec<Uuid>, _>(key)?;
+                    values
+                        .iter()
+                        .map(|v| v.to_string())
+                        .collect::<Vec<_>>()
+                        .into()
+                }
+                "JSONB" | "JSON" => row.try_get_unchecked::<JsonValue, _>(key)?,
+                _ => JsonValue::Null,
+            };
+            map.insert(key.to_owned(), value);
+        }
+        Ok(map)
+    }
+
+    fn parse_avro_record(row: &Self::Row) -> Result<Record, Error> {
         let columns = row.columns();
         let mut record = Record::with_capacity(columns.len());
         for col in columns {

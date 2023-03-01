@@ -33,5 +33,5 @@ impl Connector for PgPool {
         Ok(data_source)
     }
 
-    super::sqlx_util::impl_sqlx_connector!(PgPool);
+    super::sqlx_common::impl_sqlx_connector!(PgPool);
 }

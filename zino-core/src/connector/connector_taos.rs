@@ -1,6 +1,7 @@
 use super::{Connector, DataSource, DataSourceConnector::Taos};
 use crate::{extend::TomlTableExt, format, state::State, BoxError, Map, Record};
 use futures::TryStreamExt;
+use serde::de::DeserializeOwned;
 use taos::{AsyncFetchable, AsyncQueryable, PoolBuilder, TBuilder, TaosBuilder, TaosPool};
 use toml::Table;
 
@@ -33,8 +34,8 @@ impl Connector for TaosPool {
         let taos = self.get()?;
         let sql = format::format_query(query, params);
         let mut result = taos.query(sql).await?;
-        let mut records = Vec::new();
         let mut rows = result.rows();
+        let mut records = Vec::new();
         while let Some(row) = rows.try_next().await? {
             let mut record = Record::new();
             for (name, value) in row {
@@ -43,6 +44,26 @@ impl Connector for TaosPool {
             records.push(record);
         }
         Ok(records)
+    }
+
+    async fn query_as<T: DeserializeOwned>(
+        &self,
+        query: &str,
+        params: Option<&Map>,
+    ) -> Result<Vec<T>, BoxError> {
+        let taos = self.get()?;
+        let sql = format::format_query(query, params);
+        let mut result = taos.query(sql).await?;
+        let mut rows = result.rows();
+        let mut data = Vec::new();
+        while let Some(row) = rows.try_next().await? {
+            let mut map = Map::new();
+            for (name, value) in row {
+                map.insert(name.to_owned(), value.to_json_value());
+            }
+            data.push(map);
+        }
+        serde_json::from_value(data.into()).map_err(BoxError::from)
     }
 
     async fn query_one(
@@ -61,5 +82,24 @@ impl Connector for TaosPool {
             record
         });
         Ok(data)
+    }
+
+    async fn query_one_as<T: DeserializeOwned>(
+        &self,
+        query: &str,
+        params: Option<&Map>,
+    ) -> Result<Option<T>, BoxError> {
+        let taos = self.get()?;
+        let sql = format::format_query(query, params);
+        let mut result = taos.query(sql).await?;
+        if let Some(row) = result.rows().try_next().await? {
+            let mut map = Map::new();
+            for (name, value) in row {
+                map.insert(name.to_owned(), value.to_json_value());
+            }
+            serde_json::from_value(map.into()).map_err(BoxError::from)
+        } else {
+            Ok(None)
+        }
     }
 }

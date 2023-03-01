@@ -1,7 +1,10 @@
 use crate::{format, BoxError, Map, Record};
 use apache_avro::types::Value;
 use futures::TryStreamExt;
-use serde::ser::{self, Serialize, SerializeMap, Serializer};
+use serde::{
+    de::DeserializeOwned,
+    ser::{self, Serialize, SerializeMap, Serializer},
+};
 use sqlx::{database::HasValueRef, Column, ColumnIndex, Database, Decode, Row, TypeInfo, ValueRef};
 use std::borrow::Cow;
 
@@ -72,6 +75,23 @@ pub(super) macro impl_sqlx_connector($pool:ty) {
         Ok(records)
     }
 
+    async fn query_as<T: DeserializeOwned>(
+        &self,
+        query: &str,
+        params: Option<&Map>,
+    ) -> Result<Vec<T>, BoxError> {
+        let sql = format::format_query(query, params);
+        let query = sqlx::query(sql.as_ref());
+        let mut rows = query.fetch(self);
+        let mut data = Vec::new();
+        while let Some(row) = rows.try_next().await? {
+            let json_value = serde_json::to_value(&SerializeRow(row))?;
+            let value = serde_json::from_value(json_value)?;
+            data.push(value);
+        }
+        Ok(data)
+    }
+
     async fn query_one(
         &self,
         query: &str,
@@ -90,5 +110,20 @@ pub(super) macro impl_sqlx_connector($pool:ty) {
             None
         };
         Ok(data)
+    }
+
+    async fn query_one_as<T: DeserializeOwned>(
+        &self,
+        query: &str,
+        params: Option<&Map>,
+    ) -> Result<Option<T>, BoxError> {
+        let sql = format::format_query(query, params);
+        let query = sqlx::query(sql.as_ref());
+        if let Some(row) = query.fetch_optional(self).await? {
+            let json_value = serde_json::to_value(&SerializeRow(row))?;
+            serde_json::from_value(json_value).map_err(BoxError::from)
+        } else {
+            Ok(None)
+        }
     }
 }

@@ -25,11 +25,7 @@
 //! | `timescaledb`    | TimescaleDB            | `connector-postgres`   |
 //!
 
-use crate::{
-    extend::{AvroRecordExt, TomlTableExt},
-    state::State,
-    BoxError, Map, Record,
-};
+use crate::{extend::TomlTableExt, state::State, BoxError, Map, Record};
 use apache_avro::types::Value;
 use serde::de::DeserializeOwned;
 use std::{collections::HashMap, sync::LazyLock};
@@ -59,7 +55,7 @@ mod connector_taos;
     feature = "connector-postgres",
     feature = "connector-sqlite"
 ))]
-mod sqlx_util;
+mod sqlx_common;
 
 pub use data_source::DataSource;
 use data_source::DataSourceConnector;
@@ -79,15 +75,8 @@ pub trait Connector {
     /// Executes the query and returns the total number of rows affected.
     async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, BoxError>;
 
-    /// Executes the query and parses it as `Vec<Map>`.
+    /// Executes the query and parses it as `Vec<Record>`.
     async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, BoxError>;
-
-    /// Executes the query and parses it as a `Map`.
-    async fn query_one(
-        &self,
-        query: &str,
-        params: Option<&Map>,
-    ) -> Result<Option<Record>, BoxError>;
 
     /// Executes the query and parses it as `Vec<T>`.
     async fn query_as<T: DeserializeOwned>(
@@ -98,10 +87,17 @@ pub trait Connector {
         let data = self.query(query, params).await?;
         let value = data
             .into_iter()
-            .map(|record| Value::Map(record.into_avro_map()))
+            .map(|record| Value::Record(record))
             .collect::<Vec<_>>();
         apache_avro::from_value(&Value::Array(value)).map_err(|err| err.into())
     }
+
+    /// Executes the query and parses it as a `Record`.
+    async fn query_one(
+        &self,
+        query: &str,
+        params: Option<&Map>,
+    ) -> Result<Option<Record>, BoxError>;
 
     /// Executes the query and parses it as an instance of type `T`.
     async fn query_one_as<T: DeserializeOwned>(
@@ -109,8 +105,8 @@ pub trait Connector {
         query: &str,
         params: Option<&Map>,
     ) -> Result<Option<T>, BoxError> {
-        if let Some(data) = self.query_one(query, params).await? {
-            let value = Value::Union(1, Box::new(Value::Map(data.into_avro_map())));
+        if let Some(record) = self.query_one(query, params).await? {
+            let value = Value::Union(1, Box::new(Value::Record(record)));
             apache_avro::from_value(&value).map_err(|err| err.into())
         } else {
             Ok(None)
@@ -118,7 +114,7 @@ pub trait Connector {
     }
 }
 
-/// Global database connector.
+/// Global connector to data sources.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct GlobalConnector;
 
@@ -130,7 +126,7 @@ impl GlobalConnector {
     }
 }
 
-/// Global data source connector.
+/// Global connector.
 static GLOBAL_CONNECTOR: LazyLock<HashMap<&'static str, DataSource>> = LazyLock::new(|| {
     let mut data_sources = HashMap::new();
     if let Some(connectors) = State::shared().config().get_array("connector") {

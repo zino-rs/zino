@@ -1,7 +1,7 @@
-use crate::Record;
+use crate::{Map, Record};
 use apache_avro::{
     schema::{Name, Schema},
-    types::Value,
+    types::Value as AvroValue,
 };
 use serde::Serialize;
 use serde_json::Value as JsonValue;
@@ -112,11 +112,17 @@ pub(super) trait ColumnExt<DB: Database> {
     /// Encodes a json value as a column value represented by `String`.
     fn encode_value(&self, value: Option<&JsonValue>) -> String;
 
-    /// Decodes a row and gets a column value represented by `Value`.
-    fn decode_row(&self, row: &Self::Row) -> Result<Value, Error>;
+    /// Decodes a row and gets a column value represented by a json value.
+    fn decode_value(&self, row: &Self::Row) -> Result<JsonValue, Error>;
+
+    /// Decodes a row and gets a column value represented by an Avro value.
+    fn decode_as_avro_value(&self, row: &Self::Row) -> Result<AvroValue, Error>;
 
     /// Parses a row as a json object.
-    fn parse_row(row: &Self::Row) -> Result<Record, Error>;
+    fn parse_row(row: &Self::Row) -> Result<Map, Error>;
+
+    /// Parses a row as an Avro record.
+    fn parse_avro_record(row: &Self::Row) -> Result<Record, Error>;
 
     /// Formats a value.
     fn format_value(&self, value: &str) -> String;

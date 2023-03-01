@@ -13,6 +13,7 @@ use datafusion::{
     },
     variable::VarType,
 };
+use serde::de::DeserializeOwned;
 use std::{
     fs::File,
     io::Write,
@@ -252,6 +253,17 @@ impl Connector for ArrowConnector {
         df.query().await
     }
 
+    async fn query_as<T: DeserializeOwned>(
+        &self,
+        query: &str,
+        params: Option<&Map>,
+    ) -> Result<Vec<T>, BoxError> {
+        let ctx = self.try_get_session_context().await?;
+        let sql = format::format_query(query, params);
+        let df = ctx.sql(&sql).await?;
+        df.query_as().await
+    }
+
     async fn query_one(
         &self,
         query: &str,
@@ -261,6 +273,17 @@ impl Connector for ArrowConnector {
         let sql = format::format_query(query, params);
         let df = ctx.sql(&sql).await?;
         df.query_one().await
+    }
+
+    async fn query_one_as<T: DeserializeOwned>(
+        &self,
+        query: &str,
+        params: Option<&Map>,
+    ) -> Result<Option<T>, BoxError> {
+        let ctx = self.try_get_session_context().await?;
+        let sql = format::format_query(query, params);
+        let df = ctx.sql(&sql).await?;
+        df.query_one_as().await
     }
 }
 
