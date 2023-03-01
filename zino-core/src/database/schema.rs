@@ -691,10 +691,10 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Executes the query in the table, and parses it as an instance of type `T`.
     async fn query_one_as<T: DeserializeOwned>(
-        sql: &str,
+        query: &str,
         params: Option<&Map>,
     ) -> Result<Option<T>, Error> {
-        if let Some(data) = Self::query_one(sql, params).await? {
+        if let Some(data) = Self::query_one(query, params).await? {
             let value = Value::Union(1, Box::new(Value::Map(data.into_avro_map())));
             apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
         } else {
@@ -715,8 +715,11 @@ pub trait Schema: 'static + Send + Sync + Model {
         );
         if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
             let record = Column::parse_row(&row)?;
-            let value = Value::Map(record.into_avro_map());
-            apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
+            let map = record
+                .try_into_map()
+                .map_err(|err| Error::Decode(Box::new(err)))?;
+            // Cann't use `apache_avro::from_value` becuase of its limitations.
+            serde_json::from_value(map.into()).map_err(|err| Error::Decode(Box::new(err)))
         } else {
             Err(Error::RowNotFound)
         }

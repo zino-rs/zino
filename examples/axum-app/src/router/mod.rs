@@ -10,7 +10,7 @@ pub(crate) fn routes() -> Vec<Router> {
     // User controller.
     let controller = Router::new()
         .route("/user/new", post(user::new))
-        .route("/user/update", post(user::update))
+        .route("/user/:id/update", post(user::update))
         .route("/user/list", get(user::list))
         .route("/user/:id/view", get(user::view));
     routes.push(controller);

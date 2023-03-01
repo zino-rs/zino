@@ -1,13 +1,7 @@
-use super::{
-    datafusion_util::{DataFrameExecutor, ScalarValueProvider},
-    Connector, DataSource,
-    DataSourceConnector::Arrow,
-};
-use crate::{
-    application::http_client,
-    extend::{ArrowSchemaExt, TomlTableExt},
-    format, BoxError, Map, Record,
-};
+//! Utilities for DataFusion.
+
+use super::{Connector, DataSource, DataSourceConnector::Arrow};
+use crate::{application::http_client, extend::TomlTableExt, format, BoxError, Map, Record};
 use datafusion::{
     arrow::{datatypes::Schema, record_batch::RecordBatch},
     dataframe::DataFrame,
@@ -26,6 +20,21 @@ use std::{
     sync::{Arc, LazyLock, OnceLock},
 };
 use toml::value::{Array, Table};
+
+mod arrow_array;
+mod arrow_field;
+mod arrow_schema;
+mod data_frame;
+mod scalar_provider;
+mod scalar_value;
+
+pub use data_frame::DataFrameExecutor;
+
+use arrow_array::ArrowArrayExt;
+use arrow_field::ArrowFieldExt;
+use arrow_schema::ArrowSchemaExt;
+use scalar_provider::ScalarValueProvider;
+use scalar_value::ScalarValueExt;
 
 /// A connector for Apache Arrow.
 pub struct ArrowConnector {

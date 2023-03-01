@@ -6,7 +6,7 @@ use serde_json::Value as JsonValue;
 use toml::Value as TomlValue;
 
 /// Extension trait for [`ScalarValue`](datafusion::scalar::ScalarValue).
-pub trait ScalarValueExt {
+pub(super) trait ScalarValueExt {
     /// Constructs an instance from a TOML value.
     fn from_toml_value(value: TomlValue) -> ScalarValue;
 

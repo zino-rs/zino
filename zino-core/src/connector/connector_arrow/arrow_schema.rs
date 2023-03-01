@@ -1,4 +1,5 @@
-use crate::{extend::ArrowFieldExt, BoxError, Record};
+use super::ArrowFieldExt;
+use crate::{BoxError, Record};
 use datafusion::arrow::{
     array::Array,
     datatypes::{DataType, Field, Schema, UnionMode},

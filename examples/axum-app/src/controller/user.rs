@@ -22,12 +22,13 @@ pub(crate) async fn new(mut req: Request) -> zino::Result {
 }
 
 pub(crate) async fn update(mut req: Request) -> zino::Result {
-    let mut user = User::new();
-    let validation = req
-        .parse_body()
+    let user_id: Uuid = req.parse_param("id")?;
+    let mut user = User::try_get_model(&user_id.to_string())
         .await
-        .map(|body| user.read_map(body))
         .extract_with_context(&req)?;
+    let validation = req.parse_body().await.map(|body| user.read_map(body))?;
+    user.update().await.extract_with_context(&req)?;
+
     let res = Response::from(validation).provide_context(&req);
     Ok(res.into())
 }
@@ -35,7 +36,7 @@ pub(crate) async fn update(mut req: Request) -> zino::Result {
 pub(crate) async fn list(req: Request) -> zino::Result {
     let mut query = Query::new();
     let mut res: Response = req.query_validation(&mut query)?;
-    let users: Vec<Map> = User::find_as(&query).await.extract_with_context(&req)?;
+    let users: Vec<User> = User::find_as(&query).await.extract_with_context(&req)?;
     let data = json!({
         "users": users,
     });
@@ -47,7 +48,7 @@ pub(crate) async fn view(mut req: Request) -> zino::Result {
     let locale_cookie = req.new_cookie("locale", "en-US", None);
     req.add_cookie(locale_cookie);
 
-    let user_id: Uuid = req.parse_param("id").extract_with_context(&req)?;
+    let user_id: Uuid = req.parse_param("id")?;
     let mut query = Query::new();
     let mut res: Response = req.query_validation(&mut query)?;
     query.insert_filter("id", user_id.to_string());

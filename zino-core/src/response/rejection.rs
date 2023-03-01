@@ -113,7 +113,7 @@ impl<'a> Rejection<'a> {
 
     /// Provides the request context for the rejection.
     #[inline]
-    pub fn provide_context<T: RequestContext>(mut self, ctx: &'a T) -> Self {
+    pub fn provide_context<T: RequestContext + ?Sized>(mut self, ctx: &'a T) -> Self {
         self.context = ctx.get_context();
         self.trace_context = Some(ctx.new_trace_context());
         self

@@ -53,8 +53,6 @@ mod connector_sqlite;
 #[cfg(feature = "connector-taos")]
 mod connector_taos;
 
-#[cfg(feature = "connector-arrow")]
-mod datafusion_util;
 #[cfg(any(
     feature = "connector-mssql",
     feature = "connector-mysql",
@@ -67,9 +65,7 @@ pub use data_source::DataSource;
 use data_source::DataSourceConnector;
 
 #[cfg(feature = "connector-arrow")]
-pub use connector_arrow::ArrowConnector;
-#[cfg(feature = "connector-arrow")]
-pub use datafusion_util::DataFrameExecutor;
+pub use connector_arrow::{ArrowConnector, DataFrameExecutor};
 
 #[cfg(feature = "connector-http")]
 pub use connector_http::HttpConnector;

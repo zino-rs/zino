@@ -1,6 +1,6 @@
 use super::column::{Column, ColumnExt};
 use crate::{Record, Uuid};
-use apache_avro::types::Value;
+use apache_avro::types::Value as AvroValue;
 use chrono::{DateTime, Local, SecondsFormat};
 use serde_json::Value as JsonValue;
 use sqlx::{postgres::PgRow, Column as _, Error, Postgres, Row, TypeInfo};
@@ -69,16 +69,14 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
         }
     }
 
-    fn decode_row(&self, row: &Self::Row) -> Result<Value, Error> {
+    fn decode_row(&self, row: &Self::Row) -> Result<AvroValue, Error> {
         let field = self.name();
         let value = match self.type_name() {
             "bool" => row.try_get_unchecked::<bool, _>(field)?.into(),
-            "u64" | "i64" | "usize" | "isize" => row.try_get_unchecked::<i64, _>(field)?.into(),
-            "u32" | "i32" | "u16" | "i16" | "u8" | "i8" => {
-                row.try_get_unchecked::<i32, _>(field)?.into()
-            }
-            "f64" => row.try_get_unchecked::<f64, _>(field)?.into(),
+            "u32" | "i32" => row.try_get_unchecked::<i32, _>(field)?.into(),
+            "u64" | "i64" => row.try_get_unchecked::<i64, _>(field)?.into(),
             "f32" => row.try_get_unchecked::<f32, _>(field)?.into(),
+            "f64" => row.try_get_unchecked::<f64, _>(field)?.into(),
             "String" => row.try_get_unchecked::<String, _>(field)?.into(),
             "DateTime" => {
                 let datetime = row.try_get_unchecked::<DateTime<Local>, _>(field)?;
@@ -91,20 +89,23 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
             "Vec<u8>" => row.try_get_unchecked::<Vec<u8>, _>(field)?.into(),
             "Vec<String>" => {
                 let values = row.try_get_unchecked::<Vec<String>, _>(field)?;
-                let vec = values.into_iter().map(Value::String).collect::<Vec<_>>();
-                Value::Array(vec)
+                let vec = values
+                    .into_iter()
+                    .map(AvroValue::String)
+                    .collect::<Vec<_>>();
+                AvroValue::Array(vec)
             }
             "Vec<Uuid>" => {
                 // deserialize Avro Uuid value wasn't supported in 0.14.0
                 let values = row.try_get_unchecked::<Vec<Uuid>, _>(field)?;
                 let vec = values
                     .into_iter()
-                    .map(|u| Value::String(u.to_string()))
+                    .map(|u| AvroValue::String(u.to_string()))
                     .collect::<Vec<_>>();
-                Value::Array(vec)
+                AvroValue::Array(vec)
             }
             "Map" => row.try_get_unchecked::<JsonValue, _>(field)?.into(),
-            _ => Value::Null,
+            _ => AvroValue::Null,
         };
         Ok(value)
     }
@@ -116,8 +117,10 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
             let field = col.name();
             let value = match col.type_info().name() {
                 "BOOL" => row.try_get_unchecked::<bool, _>(field)?.into(),
-                "INT8" | "INT4" | "INT2" => row.try_get_unchecked::<i64, _>(field)?.into(),
-                "FLOAT8" | "FLOAT4" => row.try_get_unchecked::<f64, _>(field)?.into(),
+                "INT4" => row.try_get_unchecked::<i32, _>(field)?.into(),
+                "INT8" => row.try_get_unchecked::<i64, _>(field)?.into(),
+                "FLOAT4" => row.try_get_unchecked::<f32, _>(field)?.into(),
+                "FLOAT8" => row.try_get_unchecked::<f64, _>(field)?.into(),
                 "TEXT" | "VARCHAR" => row.try_get_unchecked::<String, _>(field)?.into(),
                 "TIMESTAMPTZ" => {
                     let datetime = row.try_get_unchecked::<DateTime<Local>, _>(field)?;
@@ -130,20 +133,23 @@ impl<'a> ColumnExt<Postgres> for Column<'a> {
                 "BYTEA" => row.try_get_unchecked::<Vec<u8>, _>(field)?.into(),
                 "TEXT[]" => {
                     let values = row.try_get_unchecked::<Vec<String>, _>(field)?;
-                    let vec = values.into_iter().map(Value::String).collect::<Vec<_>>();
-                    Value::Array(vec)
+                    let vec = values
+                        .into_iter()
+                        .map(AvroValue::String)
+                        .collect::<Vec<_>>();
+                    AvroValue::Array(vec)
                 }
                 "UUID[]" => {
                     // deserialize Avro Uuid value wasn't supported in 0.14.0
                     let values = row.try_get_unchecked::<Vec<Uuid>, _>(field)?;
                     let vec = values
                         .into_iter()
-                        .map(|u| Value::String(u.to_string()))
+                        .map(|u| AvroValue::String(u.to_string()))
                         .collect::<Vec<_>>();
-                    Value::Array(vec)
+                    AvroValue::Array(vec)
                 }
                 "JSONB" | "JSON" => row.try_get_unchecked::<JsonValue, _>(field)?.into(),
-                _ => Value::Null,
+                _ => AvroValue::Null,
             };
             record.push((field.to_owned(), value));
         }

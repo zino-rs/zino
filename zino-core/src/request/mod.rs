@@ -223,7 +223,7 @@ pub trait RequestContext {
 
     /// Parses the route parameter by name as an instance of type `T`.
     /// The name should not include `:` or `*`.
-    fn parse_param<T>(&mut self, name: &str) -> Result<T, Validation>
+    fn parse_param<T>(&mut self, name: &str) -> Result<T, Rejection>
     where
         T: DeserializeOwned + Send + 'static,
     {
@@ -241,8 +241,10 @@ pub trait RequestContext {
                     .collect::<Vec<_>>()
                     .get(index)
                 {
-                    return serde_json::from_value::<T>(param.into())
-                        .map_err(|err| Validation::from_entry(name.to_owned(), err));
+                    return serde_json::from_value::<T>(param.into()).map_err(|err| {
+                        let validation = Validation::from_entry(name.to_owned(), err);
+                        Rejection::bad_request(validation).provide_context(self)
+                    });
                 }
             }
         }
@@ -251,17 +253,20 @@ pub trait RequestContext {
             name.to_owned(),
             format!("the param `{name}` does not exist"),
         );
-        Err(validation)
+        Err(Rejection::bad_request(validation).provide_context(self))
     }
 
     /// Parses the query as an instance of type `T`.
     /// Returns a default value of `T` when the query is empty.
-    fn parse_query<T>(&self) -> Result<T, Validation>
+    fn parse_query<T>(&self) -> Result<T, Rejection>
     where
         T: Default + DeserializeOwned + Send + 'static,
     {
         if let Some(query) = self.query_string() {
-            serde_qs::from_str::<T>(query).map_err(|err| Validation::from_entry("query", err))
+            serde_qs::from_str::<T>(query).map_err(|err| {
+                let validation = Validation::from_entry("query", err);
+                Rejection::bad_request(validation).provide_context(self)
+            })
         } else {
             Ok(T::default())
         }
@@ -275,40 +280,58 @@ pub trait RequestContext {
     /// - `application/msgpack`
     /// - `application/problem+json`
     /// - `application/x-www-form-urlencoded`
-    async fn parse_body<T>(&mut self) -> Result<T, Validation>
+    async fn parse_body<T>(&mut self) -> Result<T, Rejection>
     where
         T: DeserializeOwned + Send + 'static,
     {
         let data_type = self.header_map().get_data_type().unwrap_or("form".into());
         if data_type.contains('/') {
-            return Err(Validation::from_entry(
+            let validation = Validation::from_entry(
                 "data_type",
                 format!("deserialization of the data type `{data_type}` is unsupported"),
-            ));
+            );
+            return Err(Rejection::bad_request(validation).provide_context(self));
         }
-        let bytes = self
-            .read_body_bytes()
-            .await
-            .map_err(|err| Validation::from_entry("body", err))?;
+        let bytes = self.read_body_bytes().await.map_err(|err| {
+            let validation = Validation::from_entry("body", err);
+            Rejection::bad_request(validation).provide_context(self)
+        })?;
         if data_type == "form" {
-            serde_urlencoded::from_bytes(&bytes).map_err(|err| Validation::from_entry("body", err))
+            serde_urlencoded::from_bytes(&bytes).map_err(|err| {
+                let validation = Validation::from_entry("body", err);
+                Rejection::bad_request(validation).provide_context(self)
+            })
         } else if data_type == "msgpack" {
-            rmp_serde::from_slice(&bytes).map_err(|err| Validation::from_entry("body", err))
+            rmp_serde::from_slice(&bytes).map_err(|err| {
+                let validation = Validation::from_entry("body", err);
+                Rejection::bad_request(validation).provide_context(self)
+            })
         } else {
-            serde_json::from_slice(&bytes).map_err(|err| Validation::from_entry("body", err))
+            serde_json::from_slice(&bytes).map_err(|err| {
+                let validation = Validation::from_entry("body", err);
+                Rejection::bad_request(validation).provide_context(self)
+            })
         }
     }
 
     /// Parses the request body as a multipart, which is commonly used with file uploads.
-    async fn parse_multipart(&mut self) -> Result<Multipart, Validation> {
-        let content_type = self.get_header("content-type").ok_or_else(|| {
-            Validation::from_entry("content_type", "invalid `content-type` header")
-        })?;
-        let boundary = multer::parse_boundary(content_type)
-            .map_err(|err| Validation::from_entry("boundary", err))?;
-        let result = self.read_body_bytes().await;
-        let stream = futures::stream::once(async { result });
-        Ok(Multipart::new(stream, boundary))
+    async fn parse_multipart(&mut self) -> Result<Multipart, Rejection> {
+        let Some(content_type) = self.get_header("content-type") else {
+            let validation =
+                Validation::from_entry("content_type", "invalid `content-type` header");
+            return Err(Rejection::bad_request(validation).provide_context(self));
+        };
+        match multer::parse_boundary(content_type) {
+            Ok(boundary) => {
+                let result = self.read_body_bytes().await;
+                let stream = futures::stream::once(async { result });
+                Ok(Multipart::new(stream, boundary))
+            }
+            Err(err) => {
+                let validation = Validation::from_entry("boundary", err);
+                Err(Rejection::bad_request(validation).provide_context(self))
+            }
+        }
     }
 
     /// Attempts to construct an instance of `Authentication` from an HTTP request.
@@ -316,7 +339,7 @@ pub trait RequestContext {
     /// the canonicalized resource is set to the request path.
     /// You should always manually set canonicalized headers by calling
     /// `Authentication`'s method [`set_headers()`](Authentication::set_headers).
-    fn parse_authentication(&self) -> Result<Authentication, Validation> {
+    fn parse_authentication(&self) -> Result<Authentication, Rejection> {
         let method = self.request_method().as_ref();
         let query = self.parse_query::<Map>().unwrap_or_default();
         let mut authentication = Authentication::new(method);
@@ -339,7 +362,7 @@ pub trait RequestContext {
                 validation.record_fail("expires", "invalid timestamp");
             }
             if !validation.is_success() {
-                return Err(validation);
+                return Err(Rejection::bad_request(validation).provide_context(self));
             }
         } else if let Some(authorization) = self.get_header("authorization") {
             if let Some((service_name, token)) = authorization.split_once(' ') {
@@ -354,7 +377,7 @@ pub trait RequestContext {
                 validation.record_fail("authorization", "invalid service name");
             }
             if !validation.is_success() {
-                return Err(validation);
+                return Err(Rejection::bad_request(validation).provide_context(self));
             }
         }
         if let Some(content_md5) = self.get_header("content-md5") {
@@ -373,7 +396,7 @@ pub trait RequestContext {
                 }
                 Err(err) => {
                     validation.record_fail("date", err);
-                    return Err(validation);
+                    return Err(Rejection::bad_request(validation).provide_context(self));
                 }
             }
         }
@@ -384,7 +407,7 @@ pub trait RequestContext {
 
     /// Attempts to construct an instance of `SecurityToken` from an HTTP request.
     /// The value is extracted from the `x-security-token` header.
-    fn parse_security_token(&self, key: impl AsRef<[u8]>) -> Result<SecurityToken, Validation> {
+    fn parse_security_token(&self, key: impl AsRef<[u8]>) -> Result<SecurityToken, Rejection> {
         use ParseSecurityTokenError::*;
         let mut validation = Validation::new();
         if let Some(token) = self.get_header("x-security-token") {
@@ -421,17 +444,22 @@ pub trait RequestContext {
         } else {
             validation.record_fail("x-security-token", "should be nonempty");
         }
-        Err(validation)
+        Err(Rejection::bad_request(validation).provide_context(self))
     }
 
     /// Attempts to construct an instance of `SessionId` from an HTTP request.
     /// The value is extracted from the `session-id` header.
-    fn parse_session_id(&self) -> Result<SessionId, Validation> {
+    fn parse_session_id(&self) -> Result<SessionId, Rejection> {
         self.get_header("session-id")
-            .ok_or_else(|| Validation::from_entry("session-id", "should be nonempty"))
+            .ok_or_else(|| {
+                let validation = Validation::from_entry("session-id", "should be nonempty");
+                Rejection::bad_request(validation).provide_context(self)
+            })
             .and_then(|session_id| {
-                SessionId::parse(session_id)
-                    .map_err(|err| Validation::from_entry("session-id", err))
+                SessionId::parse(session_id).map_err(|err| {
+                    let validation = Validation::from_entry("session-id", err);
+                    Rejection::bad_request(validation).provide_context(self)
+                })
             })
     }
 
@@ -448,10 +476,10 @@ pub trait RequestContext {
                     let res = Response::with_context(S::OK, self);
                     Ok(res)
                 } else {
-                    Err(Rejection::bad_request(validation))
+                    Err(Rejection::bad_request(validation).provide_context(self))
                 }
             }
-            Err(validation) => Err(Rejection::bad_request(validation)),
+            Err(rejection) => Err(rejection),
         }
     }
 
@@ -464,17 +492,63 @@ pub trait RequestContext {
     where
         Self: Sized,
     {
-        match self.parse_body().await {
-            Ok(data) => {
-                let validation = model.read_map(data);
-                if validation.is_success() {
-                    let res = Response::with_context(S::OK, self);
-                    Ok(res)
-                } else {
-                    Err(Rejection::bad_request(validation))
-                }
-            }
-            Err(validation) => Err(Rejection::bad_request(validation)),
+        let data_type = self.header_map().get_data_type().unwrap_or("form".into());
+        if data_type.contains('/') {
+            let validation = Validation::from_entry(
+                "data_type",
+                format!("deserialization of the data type `{data_type}` is unsupported"),
+            );
+            return Err(Rejection::bad_request(validation).provide_context(self));
+        }
+        let bytes = self.read_body_bytes().await.map_err(|err| {
+            let validation = Validation::from_entry("body", err);
+            Rejection::bad_request(validation).provide_context(self)
+        })?;
+        if data_type == "form" {
+            serde_urlencoded::from_bytes(&bytes)
+                .map_err(|err| {
+                    let validation = Validation::from_entry("body", err);
+                    Rejection::bad_request(validation).provide_context(self)
+                })
+                .and_then(|data: Map| {
+                    let validation = model.read_map(data);
+                    if validation.is_success() {
+                        let res = Response::with_context(S::OK, self);
+                        Ok(res)
+                    } else {
+                        Err(Rejection::bad_request(validation).provide_context(self))
+                    }
+                })
+        } else if data_type == "msgpack" {
+            rmp_serde::from_slice(&bytes)
+                .map_err(|err| {
+                    let validation = Validation::from_entry("body", err);
+                    Rejection::bad_request(validation).provide_context(self)
+                })
+                .and_then(|data: Map| {
+                    let validation = model.read_map(data);
+                    if validation.is_success() {
+                        let res = Response::with_context(S::OK, self);
+                        Ok(res)
+                    } else {
+                        Err(Rejection::bad_request(validation).provide_context(self))
+                    }
+                })
+        } else {
+            serde_json::from_slice(&bytes)
+                .map_err(|err| {
+                    let validation = Validation::from_entry("body", err);
+                    Rejection::bad_request(validation).provide_context(self)
+                })
+                .and_then(|data: Map| {
+                    let validation = model.read_map(data);
+                    if validation.is_success() {
+                        let res = Response::with_context(S::OK, self);
+                        Ok(res)
+                    } else {
+                        Err(Rejection::bad_request(validation).provide_context(self))
+                    }
+                })
         }
     }
 

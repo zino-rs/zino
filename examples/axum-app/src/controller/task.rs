@@ -8,7 +8,7 @@ pub(crate) async fn execute(mut req: Request) -> zino::Result {
     let mut query = Query::new();
     let mut res: Response = req.query_validation(&mut query)?;
     let records = User::find(&query).await.extract_with_context(&req)?;
-    let body: Map = req.parse_body().await.extract_with_context(&req)?;
+    let body: Map = req.parse_body().await?;
     let connector = GlobalConnector::get("mock")
         .and_then(|data_source| data_source.get_arrow_connector())
         .ok_or("fail to get an Arrow connector for the `mock` data souce")
