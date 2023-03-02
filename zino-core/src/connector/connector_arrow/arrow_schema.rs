@@ -8,7 +8,7 @@ use std::sync::Arc;
 use toml::{Table, Value};
 
 /// Extension trait for [`Schema`](datafusion::arrow::datatypes::Schema).
-pub trait ArrowSchemaExt {
+pub(super) trait ArrowSchemaExt {
     /// Attempts to create a `Schema` from an Avro record.
     fn try_from_avro_record(record: &Record) -> Result<Schema, BoxError>;
 

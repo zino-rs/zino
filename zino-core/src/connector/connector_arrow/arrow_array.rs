@@ -1,4 +1,4 @@
-use crate::BoxError;
+use crate::{format::base64, BoxError, Map};
 use apache_avro::{types::Value as AvroValue, Days, Duration, Millis, Months};
 use datafusion::arrow::{
     array::{self, Array, ArrayAccessor, FixedSizeBinaryArray, FixedSizeListArray, StringArray},
@@ -15,7 +15,7 @@ use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 
 /// Extension trait for [`dyn Array`](datafusion::arrow::array::Array).
-pub trait ArrowArrayExt {
+pub(super) trait ArrowArrayExt {
     /// Parses the element at the index as an Avro value.
     fn parse_avro_value(&self, index: usize) -> Result<AvroValue, BoxError>;
 
@@ -175,8 +175,8 @@ impl ArrowArrayExt for dyn Array {
             }
             DataType::FixedSizeBinary(_size) => {
                 let fixed_size_array = array::downcast_array::<FixedSizeBinaryArray>(self);
-                let value = fixed_size_array.value(index).to_vec();
-                AvroValue::Fixed(value.len(), value)
+                let value = fixed_size_array.value(index);
+                AvroValue::Fixed(value.len(), value.to_vec())
             }
             DataType::List(_field) => {
                 let array = array::as_list_array(self).value(index);
@@ -328,6 +328,87 @@ impl ArrowArrayExt for dyn Array {
             }
             DataType::LargeUtf8 => {
                 let value = array::as_largestring_array(self).value(index);
+                JsonValue::String(value.to_owned())
+            }
+            DataType::Binary => {
+                let value = array::as_generic_binary_array::<i32>(self).value(index);
+                JsonValue::String(base64::encode_data_url(value))
+            }
+            DataType::LargeBinary => {
+                let value = array::as_generic_binary_array::<i64>(self).value(index);
+                JsonValue::String(base64::encode_data_url(value))
+            }
+            DataType::List(_field) => {
+                let array = array::as_list_array(self).value(index);
+                let array_length = array.len();
+                let mut values = Vec::with_capacity(array_length);
+                for i in 0..array_length {
+                    let value = array.parse_json_value(i)?;
+                    values.push(value);
+                }
+                JsonValue::Array(values)
+            }
+            DataType::LargeList(_field) => {
+                let array = array::as_large_list_array(self).value(index);
+                let array_length = array.len();
+                let mut values = Vec::with_capacity(array_length);
+                for i in 0..array_length {
+                    let value = array.parse_json_value(i)?;
+                    values.push(value);
+                }
+                JsonValue::Array(values)
+            }
+            DataType::FixedSizeList(_field, _size) => {
+                let array = array::downcast_array::<FixedSizeListArray>(self).value(index);
+                let array_length = array.len();
+                let mut values = Vec::with_capacity(array_length);
+                for i in 0..array_length {
+                    let value = array.parse_json_value(i)?;
+                    values.push(value);
+                }
+                JsonValue::Array(values)
+            }
+            DataType::Map(_field, _sorted) => {
+                let map_array = array::as_map_array(self);
+                let keys = map_array.keys();
+                let values = map_array.value(index);
+                let num_keys = keys.len();
+                let mut map = Map::with_capacity(num_keys);
+                for i in 0..num_keys {
+                    if let JsonValue::String(key) = keys.parse_json_value(i)? {
+                        let value = values.parse_json_value(i)?;
+                        map.insert(key, value);
+                    } else {
+                        let key_type = map_array.key_type();
+                        return Err(
+                            format!("json object does not support `{key_type}` keys ").into()
+                        );
+                    }
+                }
+                JsonValue::Object(map)
+            }
+            DataType::Struct(_fields) => {
+                let struct_array = array::as_struct_array(self);
+                let column_names = struct_array.column_names();
+                let columns = struct_array.columns();
+                let num_columns = struct_array.num_columns();
+                let mut map = Map::with_capacity(num_columns);
+                for i in 0..num_columns {
+                    let key = column_names[i].to_owned();
+                    let value = columns[i].parse_json_value(index)?;
+                    map.insert(key, value);
+                }
+                JsonValue::Object(map)
+            }
+            DataType::Dictionary(key_type, value_type)
+                if key_type == &Box::new(DataType::UInt32)
+                    && value_type == &Box::new(DataType::Utf8) =>
+            {
+                let dictionary_array = array::as_dictionary_array::<UInt32Type>(self);
+                let string_array = dictionary_array
+                    .downcast_dict::<StringArray>()
+                    .ok_or_else(|| "fail to downcast the dictionary to string array")?;
+                let value = string_array.value(index);
                 JsonValue::String(value.to_owned())
             }
             data_type => {

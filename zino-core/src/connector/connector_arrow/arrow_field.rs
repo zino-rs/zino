@@ -10,7 +10,7 @@ use datafusion::arrow::{
 use std::sync::Arc;
 
 /// Extension trait for [`Field`](datafusion::arrow::datatypes::Field).
-pub trait ArrowFieldExt {
+pub(super) trait ArrowFieldExt {
     /// Attempts to create a `Field` from an Avro record entry.
     fn try_from_avro_record_entry(field: &str, value: &Value) -> Result<Field, BoxError>;
 

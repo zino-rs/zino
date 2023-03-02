@@ -173,3 +173,10 @@ features = [
     "v4",
     "v7",
 ]
+
+[dev-dependencies]
+criterion = "0.4.0"
+
+[[bench]]
+name = "criterion_main"
+harness = false
