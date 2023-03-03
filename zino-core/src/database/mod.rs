@@ -1,31 +1,35 @@
 //! Database schema and ORM.
 
 use crate::{extend::TomlTableExt, state::State};
-use sqlx::postgres::{PgConnectOptions, PgPool, PgPoolOptions};
+use sqlx::{
+    postgres::{PgConnectOptions, PgPool, PgPoolOptions},
+    Database, Pool, Postgres,
+};
 use std::{sync::LazyLock, time::Duration};
 use toml::value::Table;
 
-mod column;
 mod mutation;
 mod postgres;
 mod query;
 mod schema;
 
-pub use column::Column;
 pub use schema::Schema;
 
 /// A database connection pool.
 #[derive(Debug, Clone)]
-pub struct ConnectionPool {
+pub struct ConnectionPool<DB = Postgres>
+where
+    DB: Database,
+{
     /// Name.
     name: &'static str,
     /// Database.
     database: &'static str,
     /// Pool.
-    pool: PgPool,
+    pool: Pool<DB>,
 }
 
-impl ConnectionPool {
+impl ConnectionPool<Postgres> {
     /// Connects lazily to the database according to the config.
     pub fn connect_lazy(application_name: &str, config: &'static Table) -> Self {
         // Connect options.

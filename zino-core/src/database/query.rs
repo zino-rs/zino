@@ -1,12 +1,14 @@
-use super::{
-    column::{Column, ColumnExt},
-    Schema,
+use super::Schema;
+use crate::{
+    model::{EncodeColumn, Query},
+    request::Validation,
+    Map,
 };
-use crate::{model::Query, request::Validation, Map};
 use serde_json::Value;
+use sqlx::Postgres;
 
 /// Extension trait for [`Query`](crate::model::Query).
-pub(super) trait QueryExt {
+pub(super) trait QueryExt<DB> {
     /// Formats projection fields.
     fn format_fields(&self) -> String;
 
@@ -26,7 +28,7 @@ pub(super) trait QueryExt {
     fn parse_text_search(filter: &Map) -> Option<String>;
 }
 
-impl QueryExt for Query {
+impl QueryExt<Postgres> for Query {
     #[inline]
     fn format_fields(&self) -> String {
         let fields = self.fields();
@@ -95,10 +97,10 @@ impl QueryExt for Query {
                         let condition = if key == sort_by {
                             // Use the filter condition to optimize pagination offset.
                             let operator = if ascending { ">" } else { "<" };
-                            let value = col.encode_value(Some(value));
+                            let value = Postgres::encode_value(col, Some(value));
                             format!("{key} {operator} {value}")
                         } else {
-                            col.format_filter(key, value)
+                            Postgres::format_filter(col, key, value)
                         };
                         conditions.push(condition);
                     }
@@ -179,7 +181,7 @@ impl QueryExt for Query {
                 }
                 _ => {
                     if let Some(col) = M::get_column(key) {
-                        let condition = col.format_filter(key, value);
+                        let condition = Postgres::format_filter(col, key, value);
                         conditions.push(condition);
                     }
                 }
@@ -199,7 +201,7 @@ impl QueryExt for Query {
                 let column = columns.join(" || ' ' || ");
                 let language = Validation::parse_string(filter.get("$language"))
                     .unwrap_or_else(|| "english".to_owned());
-                let search = Column::format_string(&search);
+                let search = Postgres::format_string(&search);
                 let condition = format!(
                     "to_tsvector('{language}', {column}) @@ websearch_to_tsquery('{language}', '{search}')",
                 );

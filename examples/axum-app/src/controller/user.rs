@@ -1,10 +1,6 @@
-use fluent::fluent_args;
+use crate::service::user;
 use serde_json::json;
-use std::time::Instant;
-use zino::{
-    ExtractRejection, JsonObjectExt, Map, Model, Query, Request, RequestContext, Response, Schema,
-    Uuid,
-};
+use zino::{ExtractRejection, Map, Model, Query, Request, RequestContext, Response, Schema, Uuid};
 use zino_model::User;
 
 pub(crate) async fn new(mut req: Request) -> zino::Result {
@@ -36,7 +32,7 @@ pub(crate) async fn update(mut req: Request) -> zino::Result {
 pub(crate) async fn list(req: Request) -> zino::Result {
     let mut query = Query::new();
     let mut res: Response = req.query_validation(&mut query)?;
-    let users: Vec<Map> = User::find_as(&query).await.extract_with_context(&req)?;
+    let users: Vec<Map> = User::find(&query).await.extract_with_context(&req)?;
     let data = json!({
         "users": users,
     });
@@ -59,21 +55,10 @@ pub(crate) async fn view(mut req: Request) -> zino::Result {
     let event = req.cloud_event("message", message);
     req.try_send(event)?;
 
-    let db_query_start_time = Instant::now();
-    let user: Map = User::find_one_as(&query).await.extract_with_context(&req)?;
-    res.record_server_timing("db", None, Some(db_query_start_time.elapsed()));
-
-    let args = fluent_args![
-        "name" => user.get_str("name").unwrap_or_default()
-    ];
-    let user_intro = req
-        .translate("user-intro", Some(args))
+    let (db_query_duration, data) = user::view_profile(&req, &query)
+        .await
         .extract_with_context(&req)?;
-    let data = json!({
-        "schema": User::schema(),
-        "intro": user_intro,
-        "user": user,
-    });
+    res.record_server_timing("db", None, Some(db_query_duration));
     res.set_data(&data);
     Ok(res.into())
 }

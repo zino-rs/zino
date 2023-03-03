@@ -100,7 +100,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                     quote! { None }
                 };
                 let column = quote! {
-                    zino_core::database::Column::new(#name, #type_name, #quote_value, #not_null, #quote_index)
+                    zino_core::model::Column::new(#name, #type_name, #quote_value, #not_null, #quote_index)
                 };
                 columns.push(column);
             }
@@ -123,7 +123,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     let columns_len = columns.len();
     let output = quote! {
         use std::{collections::BTreeMap, sync::{LazyLock, OnceLock}};
-        use zino_core::database::{Column, ConnectionPool, Schema};
+        use zino_core::{database::{ConnectionPool, Schema}, model::Column};
 
         static #avro_schema: LazyLock<apache_avro::Schema> = LazyLock::new(|| {
             use apache_avro::schema::{Name, RecordField, RecordFieldOrder, Schema};

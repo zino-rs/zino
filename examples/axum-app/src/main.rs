@@ -1,6 +1,7 @@
 mod controller;
 mod router;
 mod schedule;
+mod service;
 
 use zino::Application;
 

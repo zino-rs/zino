@@ -1,11 +1,6 @@
-use crate::{Map, Record};
-use apache_avro::{
-    schema::{Name, Schema},
-    types::Value as AvroValue,
-};
+use apache_avro::schema::{Name, Schema};
 use serde::Serialize;
-use serde_json::Value as JsonValue;
-use sqlx::{Database, Error, Row};
+use serde_json::Value;
 
 /// A model field with associated metadata.
 #[derive(Debug, Clone, Serialize)]
@@ -101,37 +96,21 @@ impl<'a> Column<'a> {
     }
 }
 
-/// Extension trait for [`Column`](crate::database::Column).
-pub(super) trait ColumnExt<DB: Database> {
-    /// A database row type.
-    type Row: Row;
-
-    /// Returns the corresponding column type for the database.
-    fn column_type(&self) -> &str;
+/// A type for encoding the column.
+pub trait EncodeColumn<'a> {
+    /// Returns the corresponding column type.
+    fn column_type(column: &Column<'a>) -> &'a str;
 
     /// Encodes a json value as a column value represented by `String`.
-    fn encode_value(&self, value: Option<&JsonValue>) -> String;
+    fn encode_value(column: &Column<'a>, value: Option<&Value>) -> String;
 
-    /// Decodes a row and gets a column value represented by a json value.
-    fn decode_value(&self, row: &Self::Row) -> Result<JsonValue, Error>;
-
-    /// Decodes a row and gets a column value represented by an Avro value.
-    fn decode_as_avro_value(&self, row: &Self::Row) -> Result<AvroValue, Error>;
-
-    /// Parses a row as a json object.
-    fn parse_row(row: &Self::Row) -> Result<Map, Error>;
-
-    /// Parses a row as an Avro record.
-    fn parse_avro_record(row: &Self::Row) -> Result<Record, Error>;
-
-    /// Formats a value.
-    fn format_value(&self, value: &str) -> String;
+    /// Formats a string value for the column.
+    fn format_value(column: &Column<'a>, value: &str) -> String;
 
     /// Formats a column filter.
-    fn format_filter(&self, key: &str, value: &JsonValue) -> String;
+    fn format_filter(column: &Column<'a>, key: &str, value: &Value) -> String;
 
     /// Formats a string.
-    #[inline]
     fn format_string(value: &str) -> String {
         format!("'{}'", value.replace('\'', "''"))
     }
