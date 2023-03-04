@@ -1,6 +1,6 @@
 use crate::{request::Validation, Map};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 /// A mutation type of the model.
 pub struct Mutation {
     // Editable fields.
@@ -11,22 +11,23 @@ pub struct Mutation {
 
 impl Mutation {
     /// Creates a new instance.
-    pub fn new() -> Self {
+    #[inline]
+    pub fn new(updates: Map) -> Self {
         Self {
             fields: Vec::new(),
-            updates: Map::new(),
+            updates,
         }
     }
 
     /// Updates the mutation using the json object and returns the validation result.
     #[must_use]
-    pub fn read_map(&mut self, data: Map) -> Validation {
+    pub fn read_map(&mut self, data: &Map) -> Validation {
         let mut validation = Validation::new();
         let updates = &mut self.updates;
-        for (key, value) in data.into_iter() {
+        for (key, value) in data {
             match key.as_str() {
                 "fields" => {
-                    if let Some(fields) = Validation::parse_array(&value) {
+                    if let Some(fields) = Validation::parse_array(value) {
                         if fields.is_empty() {
                             validation.record_fail("fields", "must be nonempty");
                         } else {
@@ -36,7 +37,7 @@ impl Mutation {
                 }
                 _ => {
                     if !key.starts_with('$') && value != "" {
-                        updates.insert(key, value);
+                        updates.insert(key.to_owned(), value.to_owned());
                     }
                 }
             }
@@ -69,7 +70,7 @@ impl Mutation {
         })
     }
 
-    /// Appends to the updates.
+    /// Moves all elements from the `updates` into `self`.
     #[inline]
     pub fn append_updates(&mut self, updates: &mut Map) {
         self.updates.append(updates);
@@ -85,5 +86,14 @@ impl Mutation {
     #[inline]
     pub fn updates(&self) -> &Map {
         &self.updates
+    }
+}
+
+impl Default for Mutation {
+    fn default() -> Self {
+        Self {
+            fields: Vec::new(),
+            updates: Map::new(),
+        }
     }
 }

@@ -242,18 +242,17 @@ pub trait RequestContext {
                     .get(index)
                 {
                     return serde_json::from_value::<T>(param.into()).map_err(|err| {
-                        let validation = Validation::from_entry(name.to_owned(), err);
-                        Rejection::bad_request(validation).provide_context(self)
+                        Rejection::from_validation_entry(name.to_owned(), err).provide_context(self)
                     });
                 }
             }
         }
 
-        let validation = Validation::from_entry(
+        Err(Rejection::from_validation_entry(
             name.to_owned(),
             format!("the param `{name}` does not exist"),
-        );
-        Err(Rejection::bad_request(validation).provide_context(self))
+        )
+        .provide_context(self))
     }
 
     /// Parses the query as an instance of type `T`.
@@ -263,10 +262,8 @@ pub trait RequestContext {
         T: Default + DeserializeOwned + Send + 'static,
     {
         if let Some(query) = self.query_string() {
-            serde_qs::from_str::<T>(query).map_err(|err| {
-                let validation = Validation::from_entry("query", err);
-                Rejection::bad_request(validation).provide_context(self)
-            })
+            serde_qs::from_str::<T>(query)
+                .map_err(|err| Rejection::from_validation_entry("query", err).provide_context(self))
         } else {
             Ok(T::default())
         }
@@ -286,40 +283,35 @@ pub trait RequestContext {
     {
         let data_type = self.header_map().get_data_type().unwrap_or("form".into());
         if data_type.contains('/') {
-            let validation = Validation::from_entry(
+            return Err(Rejection::from_validation_entry(
                 "data_type",
                 format!("deserialization of the data type `{data_type}` is unsupported"),
-            );
-            return Err(Rejection::bad_request(validation).provide_context(self));
+            )
+            .provide_context(self));
         }
-        let bytes = self.read_body_bytes().await.map_err(|err| {
-            let validation = Validation::from_entry("body", err);
-            Rejection::bad_request(validation).provide_context(self)
-        })?;
+        let bytes = self
+            .read_body_bytes()
+            .await
+            .map_err(|err| Rejection::from_validation_entry("body", err).provide_context(self))?;
         if data_type == "form" {
-            serde_urlencoded::from_bytes(&bytes).map_err(|err| {
-                let validation = Validation::from_entry("body", err);
-                Rejection::bad_request(validation).provide_context(self)
-            })
+            serde_urlencoded::from_bytes(&bytes)
+                .map_err(|err| Rejection::from_validation_entry("body", err).provide_context(self))
         } else if data_type == "msgpack" {
-            rmp_serde::from_slice(&bytes).map_err(|err| {
-                let validation = Validation::from_entry("body", err);
-                Rejection::bad_request(validation).provide_context(self)
-            })
+            rmp_serde::from_slice(&bytes)
+                .map_err(|err| Rejection::from_validation_entry("body", err).provide_context(self))
         } else {
-            serde_json::from_slice(&bytes).map_err(|err| {
-                let validation = Validation::from_entry("body", err);
-                Rejection::bad_request(validation).provide_context(self)
-            })
+            serde_json::from_slice(&bytes)
+                .map_err(|err| Rejection::from_validation_entry("body", err).provide_context(self))
         }
     }
 
     /// Parses the request body as a multipart, which is commonly used with file uploads.
     async fn parse_multipart(&mut self) -> Result<Multipart, Rejection> {
         let Some(content_type) = self.get_header("content-type") else {
-            let validation =
-                Validation::from_entry("content_type", "invalid `content-type` header");
-            return Err(Rejection::bad_request(validation).provide_context(self));
+            return Err(Rejection::from_validation_entry(
+                "content_type",
+                "invalid `content-type` header",
+            ).provide_context(self));
         };
         match multer::parse_boundary(content_type) {
             Ok(boundary) => {
@@ -328,8 +320,7 @@ pub trait RequestContext {
                 Ok(Multipart::new(stream, boundary))
             }
             Err(err) => {
-                let validation = Validation::from_entry("boundary", err);
-                Err(Rejection::bad_request(validation).provide_context(self))
+                Err(Rejection::from_validation_entry("boundary", err).provide_context(self))
             }
         }
     }
@@ -452,13 +443,12 @@ pub trait RequestContext {
     fn parse_session_id(&self) -> Result<SessionId, Rejection> {
         self.get_header("session-id")
             .ok_or_else(|| {
-                let validation = Validation::from_entry("session-id", "should be nonempty");
-                Rejection::bad_request(validation).provide_context(self)
+                Rejection::from_validation_entry("session-id", "should be nonempty")
+                    .provide_context(self)
             })
             .and_then(|session_id| {
                 SessionId::parse(session_id).map_err(|err| {
-                    let validation = Validation::from_entry("session-id", err);
-                    Rejection::bad_request(validation).provide_context(self)
+                    Rejection::from_validation_entry("session-id", err).provide_context(self)
                 })
             })
     }
@@ -471,10 +461,9 @@ pub trait RequestContext {
     {
         match self.parse_query() {
             Ok(data) => {
-                let validation = query.read_map(data);
+                let validation = query.read_map(&data);
                 if validation.is_success() {
-                    let res = Response::with_context(S::OK, self);
-                    Ok(res)
+                    Ok(Response::with_context(S::OK, self))
                 } else {
                     Err(Rejection::bad_request(validation).provide_context(self))
                 }
@@ -494,57 +483,45 @@ pub trait RequestContext {
     {
         let data_type = self.header_map().get_data_type().unwrap_or("form".into());
         if data_type.contains('/') {
-            let validation = Validation::from_entry(
+            return Err(Rejection::from_validation_entry(
                 "data_type",
                 format!("deserialization of the data type `{data_type}` is unsupported"),
-            );
-            return Err(Rejection::bad_request(validation).provide_context(self));
+            )
+            .provide_context(self));
         }
-        let bytes = self.read_body_bytes().await.map_err(|err| {
-            let validation = Validation::from_entry("body", err);
-            Rejection::bad_request(validation).provide_context(self)
-        })?;
+        let bytes = self
+            .read_body_bytes()
+            .await
+            .map_err(|err| Rejection::from_validation_entry("body", err).provide_context(self))?;
         if data_type == "form" {
             serde_urlencoded::from_bytes(&bytes)
-                .map_err(|err| {
-                    let validation = Validation::from_entry("body", err);
-                    Rejection::bad_request(validation).provide_context(self)
-                })
+                .map_err(|err| Rejection::from_validation_entry("body", err).provide_context(self))
                 .and_then(|data: Map| {
-                    let validation = model.read_map(data);
+                    let validation = model.read_map(&data);
                     if validation.is_success() {
-                        let res = Response::with_context(S::OK, self);
-                        Ok(res)
+                        Ok(Response::with_context(S::OK, self))
                     } else {
                         Err(Rejection::bad_request(validation).provide_context(self))
                     }
                 })
         } else if data_type == "msgpack" {
             rmp_serde::from_slice(&bytes)
-                .map_err(|err| {
-                    let validation = Validation::from_entry("body", err);
-                    Rejection::bad_request(validation).provide_context(self)
-                })
+                .map_err(|err| Rejection::from_validation_entry("body", err).provide_context(self))
                 .and_then(|data: Map| {
-                    let validation = model.read_map(data);
+                    let validation = model.read_map(&data);
                     if validation.is_success() {
-                        let res = Response::with_context(S::OK, self);
-                        Ok(res)
+                        Ok(Response::with_context(S::OK, self))
                     } else {
                         Err(Rejection::bad_request(validation).provide_context(self))
                     }
                 })
         } else {
             serde_json::from_slice(&bytes)
-                .map_err(|err| {
-                    let validation = Validation::from_entry("body", err);
-                    Rejection::bad_request(validation).provide_context(self)
-                })
+                .map_err(|err| Rejection::from_validation_entry("body", err).provide_context(self))
                 .and_then(|data: Map| {
-                    let validation = model.read_map(data);
+                    let validation = model.read_map(&data);
                     if validation.is_success() {
-                        let res = Response::with_context(S::OK, self);
-                        Ok(res)
+                        Ok(Response::with_context(S::OK, self))
                     } else {
                         Err(Rejection::bad_request(validation).provide_context(self))
                     }

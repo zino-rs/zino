@@ -3,7 +3,7 @@ use super::Response;
 use crate::{
     request::{Context, RequestContext, Validation},
     trace::TraceContext,
-    BoxError,
+    BoxError, SharedString,
 };
 use bytes::Bytes;
 use http::StatusCode;
@@ -109,6 +109,13 @@ impl<'a> Rejection<'a> {
             context: None,
             trace_context: None,
         }
+    }
+
+    /// Creates a new instance with the validation entry.
+    #[inline]
+    pub fn from_validation_entry(key: impl Into<SharedString>, err: impl Into<BoxError>) -> Self {
+        let validation = Validation::from_entry(key, err);
+        Self::bad_request(validation)
     }
 
     /// Provides the request context for the rejection.

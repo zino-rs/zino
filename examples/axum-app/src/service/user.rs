@@ -1,13 +1,31 @@
 use fluent::fluent_args;
 use serde_json::{json, Value};
 use std::time::{Duration, Instant};
-use zino::{BoxError, JsonObjectExt, Map, Query, Request, RequestContext, Schema};
-use zino_model::User;
+use zino::{
+    BoxError, JsonObjectExt, Map, Model, Mutation, Query, Request, RequestContext, Schema, Uuid,
+    Validation,
+};
+use zino_model::{ModelAccessor, User};
 
-pub(crate) async fn view_profile(
-    req: &Request,
-    query: &Query,
-) -> Result<(Duration, Value), BoxError> {
+pub(crate) async fn update(user_id: Uuid, mut body: Map) -> Result<(Validation, Value), BoxError> {
+    let user_id = user_id.to_string();
+    let mut user = User::try_get_model(&user_id).await?;
+    let validation = user.read_map(&body);
+    if !validation.is_success() {
+        return Ok((validation, Value::Null));
+    }
+
+    let filters = user.current_version_filters();
+    body.append(&mut user.next_version_updates());
+    User::update_one(&Query::new(filters), &Mutation::new(body)).await?;
+
+    let data = json!({
+        "user": user.next_version_filters(),
+    });
+    Ok((validation, data))
+}
+
+pub(crate) async fn view(req: &Request, query: &Query) -> Result<(Duration, Value), BoxError> {
     let db_query_start_time = Instant::now();
     let user: Map = User::find_one(&query).await?.ok_or("user does not exist")?;
     let db_query_duration = db_query_start_time.elapsed();

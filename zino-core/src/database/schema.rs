@@ -10,6 +10,7 @@ use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use serde_json::json;
 use sqlx::{postgres::PgRow, Error, Postgres, Row};
+use std::io;
 
 /// Database schema.
 pub trait Schema: 'static + Send + Sync + Model {
@@ -170,7 +171,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     }
 
     /// Inserts the model into the table.
-    async fn insert(self) -> Result<u64, Error> {
+    async fn insert(self) -> Result<(), Error> {
         let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let map = self.into_map();
@@ -187,7 +188,14 @@ pub trait Schema: 'static + Send + Sync + Model {
         let values = values.join(",");
         let sql = format!("INSERT INTO {table_name} ({columns}) VALUES ({values});");
         let query_result = sqlx::query(&sql).execute(pool).await?;
-        Ok(query_result.rows_affected())
+        let rows_affected = query_result.rows_affected();
+        if rows_affected == 1 {
+            Ok(())
+        } else {
+            Err(Error::Io(io::Error::other(format!(
+                "{rows_affected} rows are affected while it is expected to affect 1 row"
+            ))))
+        }
     }
 
     /// Inserts many models into the table.
@@ -216,7 +224,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     }
 
     /// Updates the model in the table.
-    async fn update(self) -> Result<u64, Error> {
+    async fn update(self) -> Result<(), Error> {
         let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
@@ -236,40 +244,54 @@ pub trait Schema: 'static + Send + Sync + Model {
             "UPDATE {table_name} SET {mutations} WHERE {primary_key_name} = '{primary_key}';"
         );
         let query_result = sqlx::query(&sql).execute(pool).await?;
-        Ok(query_result.rows_affected())
+        let rows_affected = query_result.rows_affected();
+        if rows_affected == 1 {
+            Ok(())
+        } else {
+            Err(Error::Io(io::Error::other(format!(
+                "{rows_affected} rows are affected while it is expected to affect 1 row"
+            ))))
+        }
     }
 
     /// Updates at most one model selected by the query in the table.
-    async fn update_one(query: &Query, mutation: &Mutation) -> Result<u64, Error> {
+    async fn update_one(query: &Query, mutation: &Mutation) -> Result<(), Error> {
         let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let filter = query.format_filter::<Self>();
+        let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let updates = mutation.format_updates::<Self>();
         let sql = format!(
             "
-                UPDATE {table_name} {updates} WHERE {primary_key_name} IN
-                (SELECT {primary_key_name} FROM {table_name} {filter} {sort} LIMIT 1);
+                UPDATE {table_name} SET {updates} WHERE {primary_key_name} IN
+                (SELECT {primary_key_name} FROM {table_name} {filters} {sort} LIMIT 1);
             "
         );
         let query_result = sqlx::query(&sql).execute(pool).await?;
-        Ok(query_result.rows_affected())
+        let rows_affected = query_result.rows_affected();
+        if rows_affected <= 1 {
+            Ok(())
+        } else {
+            Err(Error::Io(io::Error::other(format!(
+                "{rows_affected} rows are affected while it is expected to affect at most 1 row"
+            ))))
+        }
     }
 
     /// Updates many models selected by the query in the table.
     async fn update_many(query: &Query, mutation: &Mutation) -> Result<u64, Error> {
         let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
-        let filter = query.format_filter::<Self>();
+        let filters = query.format_filters::<Self>();
         let updates = mutation.format_updates::<Self>();
-        let sql = format!("UPDATE {table_name} {updates} {filter};");
+        let sql = format!("UPDATE {table_name} SET {updates} {filters};");
         let query_result = sqlx::query(&sql).execute(pool).await?;
         Ok(query_result.rows_affected())
     }
 
     /// Updates or inserts the model into the table.
-    async fn upsert(self) -> Result<u64, Error> {
+    async fn upsert(self) -> Result<(), Error> {
         let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
@@ -297,43 +319,64 @@ pub trait Schema: 'static + Send + Sync + Model {
             "
         );
         let query_result = sqlx::query(&sql).execute(pool).await?;
-        Ok(query_result.rows_affected())
+        let rows_affected = query_result.rows_affected();
+        if rows_affected == 1 {
+            Ok(())
+        } else {
+            Err(Error::Io(io::Error::other(format!(
+                "{rows_affected} rows are affected while it is expected to affect 1 row"
+            ))))
+        }
     }
 
     /// Deletes the model in the table.
-    async fn delete(self) -> Result<u64, Error> {
+    async fn delete(&self) -> Result<(), Error> {
         let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let primary_key = self.primary_key();
         let sql = format!("DELETE FROM {table_name} WHERE {primary_key_name} = '{primary_key}';");
         let query_result = sqlx::query(&sql).execute(pool).await?;
-        Ok(query_result.rows_affected())
+        let rows_affected = query_result.rows_affected();
+        if rows_affected == 1 {
+            Ok(())
+        } else {
+            Err(Error::Io(io::Error::other(format!(
+                "{rows_affected} rows are affected while it is expected to affect 1 row"
+            ))))
+        }
     }
 
     /// Deletes at most one model selected by the query in the table.
-    async fn delete_one(query: &Query) -> Result<u64, Error> {
+    async fn delete_one(query: &Query) -> Result<(), Error> {
         let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let filter = query.format_filter::<Self>();
+        let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let sql = format!(
             "
                 DELETE FROM {table_name} WHERE {primary_key_name} IN
-                (SELECT {primary_key_name} FROM {table_name} {filter} {sort} LIMIT 1);
+                (SELECT {primary_key_name} FROM {table_name} {filters} {sort} LIMIT 1);
             "
         );
         let query_result = sqlx::query(&sql).execute(pool).await?;
-        Ok(query_result.rows_affected())
+        let rows_affected = query_result.rows_affected();
+        if rows_affected <= 1 {
+            Ok(())
+        } else {
+            Err(Error::Io(io::Error::other(format!(
+                "{rows_affected} rows are affected while it is expected to affect at most 1 row"
+            ))))
+        }
     }
 
     /// Deletes many models selected by the query in the table.
     async fn delete_many(query: &Query) -> Result<u64, Error> {
         let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
-        let filter = query.format_filter::<Self>();
-        let sql = format!("DELETE FROM {table_name} {filter};");
+        let filters = query.format_filters::<Self>();
+        let sql = format!("DELETE FROM {table_name} {filters};");
         let query_result = sqlx::query(&sql).execute(pool).await?;
         Ok(query_result.rows_affected())
     }
@@ -344,10 +387,10 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let projection = query.format_fields();
-        let filter = query.format_filter::<Self>();
+        let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let pagination = query.format_pagination();
-        let sql = format!("SELECT {projection} FROM {table_name} {filter} {sort} {pagination};");
+        let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} {pagination};");
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
         while let Some(row) = rows.try_next().await? {
@@ -371,9 +414,9 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let projection = query.format_fields();
-        let filter = query.format_filter::<Self>();
+        let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
-        let sql = format!("SELECT {projection} FROM {table_name} {filter} {sort} LIMIT 1;");
+        let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} LIMIT 1;");
         let data = if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
             Some(T::decode_row(&row)?)
         } else {
@@ -396,7 +439,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Finds the related data in the corresponding `columns` for `Vec<Map>` using
     /// a merged select on the primary key, which solves the `N+1` problem.
     async fn find_related<const N: usize>(
-        mut query: Query,
+        query: &mut Query,
         data: &mut Vec<Map>,
         columns: [&str; N],
     ) -> Result<u64, Error> {
@@ -419,12 +462,12 @@ pub trait Schema: 'static + Send + Sync + Model {
                     "$in": values,
                 }),
             );
-            query.append_filter(&mut primary_key_filter);
+            query.append_filters(&mut primary_key_filter);
         }
 
         let projection = query.format_fields();
-        let filter = query.format_filter::<Self>();
-        let sql = format!("SELECT {projection} FROM {table_name} {filter};");
+        let filters = query.format_filters::<Self>();
+        let sql = format!("SELECT {projection} FROM {table_name} {filters};");
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut associations = Map::new();
         while let Some(row) = rows.try_next().await? {
@@ -457,10 +500,10 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Finds the related data in the corresponding `columns` for `Map` using
     /// a merged select on the primary key, which solves the `N+1` problem.
     async fn find_related_one<const N: usize>(
-        mut query: Query,
+        query: &mut Query,
         data: &mut Map,
         columns: [&str; N],
-    ) -> Result<u64, Error> {
+    ) -> Result<(), Error> {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
@@ -478,12 +521,12 @@ pub trait Schema: 'static + Send + Sync + Model {
                     "$in": values,
                 }),
             );
-            query.append_filter(&mut primary_key_filter);
+            query.append_filters(&mut primary_key_filter);
         }
 
         let projection = query.format_fields();
-        let filter = query.format_filter::<Self>();
-        let sql = format!("SELECT {projection} FROM {table_name} {filter};");
+        let filters = query.format_filters::<Self>();
+        let sql = format!("SELECT {projection} FROM {table_name} {filters};");
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut associations = Map::new();
         while let Some(row) = rows.try_next().await? {
@@ -508,7 +551,7 @@ pub trait Schema: 'static + Send + Sync + Model {
                 }
             }
         }
-        u64::try_from(associations.len()).map_err(|err| Error::Decode(Box::new(err)))
+        Ok(())
     }
 
     /// Counts the number of rows selected by the query in the table.
@@ -519,7 +562,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     ) -> Result<T, Error> {
         let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
-        let filter = query.format_filter::<Self>();
+        let filters = query.format_filters::<Self>();
         let projection = columns
             .iter()
             .map(|&(key, distinct)| {
@@ -535,7 +578,7 @@ pub trait Schema: 'static + Send + Sync + Model {
             })
             .intersperse(",".to_owned())
             .collect::<String>();
-        let sql = format!("SELECT {projection} FROM {table_name} {filter};");
+        let sql = format!("SELECT {projection} FROM {table_name} {filters};");
         let row = sqlx::query(&sql).fetch_one(pool).await?;
         T::decode_row(&row)
     }
@@ -615,10 +658,9 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let primary_key = Postgres::format_string(primary_key);
         let sql = format!(
             "
-                SELECT * FROM {table_name} WHERE {primary_key_name} = {primary_key};
+                SELECT * FROM {table_name} WHERE {primary_key_name} = '{primary_key}';
             "
         );
         if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {

@@ -38,9 +38,9 @@ pub struct Resource {
     // Revisions.
     manager_id: Uuid,    // user.id
     maintainer_id: Uuid, // user.id
-    #[schema(index = "btree")]
+    #[schema(default = "now", index = "btree")]
     created_at: DateTime,
-    #[schema(index = "btree")]
+    #[schema(default = "now", index = "btree")]
     updated_at: DateTime,
     version: u64,
     edition: u32,
@@ -54,7 +54,7 @@ impl Model for Resource {
         }
     }
 
-    fn read_map(&mut self, data: Map) -> Validation {
+    fn read_map(&mut self, data: &Map) -> Validation {
         let mut validation = Validation::new();
         if let Some(result) = Validation::parse_uuid(data.get("id")) {
             match result {
@@ -71,3 +71,22 @@ impl Model for Resource {
         validation
     }
 }
+
+super::impl_model_accessor!(
+    Resource,
+    id,
+    name,
+    namespace,
+    visibility,
+    status,
+    description,
+    content,
+    metrics,
+    extras,
+    manager_id,
+    maintainer_id,
+    created_at,
+    updated_at,
+    version,
+    edition
+);

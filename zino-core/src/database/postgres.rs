@@ -54,7 +54,7 @@ impl<'a> EncodeColumn<'a> for Postgres {
                     let values = value
                         .iter()
                         .map(|v| match v {
-                            JsonValue::String(v) => Self::format_string(v),
+                            JsonValue::String(v) => format_string(v),
                             _ => Self::encode_value(column, Some(v)),
                         })
                         .collect::<Vec<_>>();
@@ -99,23 +99,27 @@ impl<'a> EncodeColumn<'a> for Postgres {
                 };
                 value.to_owned()
             }
-            "String" | "DateTime" | "Uuid" | "Option<Uuid>" => Self::format_string(value),
+            "String" | "Uuid" | "Option<Uuid>" => format_string(value),
+            "DateTime" => match value {
+                "now" => "now()".to_owned(),
+                "today" => "date_trunc('day', now())".to_owned(),
+                "tomorrow" => "date_trunc('day', now()) + '1 day'::interval".to_owned(),
+                "yesterday" => "date_trunc('day', now()) - '1 day'::interval".to_owned(),
+                _ => format_string(value),
+            },
             "Vec<u8>" => format!("'\\x{value}'"),
             "Vec<String>" | "Vec<Uuid>" => {
                 let column_type = Self::column_type(column);
                 if value.contains(',') {
-                    let values = value
-                        .split(',')
-                        .map(Self::format_string)
-                        .collect::<Vec<_>>();
+                    let values = value.split(',').map(format_string).collect::<Vec<_>>();
                     format!("ARRAY[{}]::{}", values.join(","), column_type)
                 } else {
-                    let value = Self::format_string(value);
+                    let value = format_string(value);
                     format!("ARRAY[{value}]::{column_type}")
                 }
             }
             "Map" => {
-                let value = Self::format_string(value);
+                let value = format_string(value);
                 format!("{value}::jsonb")
             }
             _ => "NULL".to_owned(),
@@ -216,10 +220,10 @@ impl<'a> EncodeColumn<'a> for Postgres {
                         let index = value.find(|ch| !"!~*".contains(ch)).unwrap_or(0);
                         if index > 0 {
                             let (operator, value) = value.split_at(index);
-                            let value = Self::format_string(value);
+                            let value = format_string(value);
                             format!("{field} {operator} {value}")
                         } else {
-                            let value = Self::format_string(value);
+                            let value = format_string(value);
                             format!("{field} = {value}")
                         }
                     }
@@ -237,12 +241,12 @@ impl<'a> EncodeColumn<'a> for Postgres {
                     } else if value.contains(',') {
                         let value = value
                             .split(',')
-                            .map(Self::format_string)
+                            .map(format_string)
                             .collect::<Vec<_>>()
                             .join(",");
                         format!("{field} IN ({value})")
                     } else {
-                        let value = Self::format_string(value);
+                        let value = format_string(value);
                         format!("{field} = {value}")
                     }
                 } else {
@@ -278,7 +282,7 @@ impl<'a> EncodeColumn<'a> for Postgres {
             "Map" => {
                 if let Some(value) = value.as_str() {
                     // JSON path operator is supported in Postgres 12+
-                    let value = Self::format_string(value);
+                    let value = format_string(value);
                     format!("{field} @@ {value}")
                 } else {
                     let value = Self::encode_value(column, Some(value));
@@ -290,11 +294,6 @@ impl<'a> EncodeColumn<'a> for Postgres {
                 format!("{field} = {value}")
             }
         }
-    }
-
-    #[inline]
-    fn format_string(value: &str) -> String {
-        format!("'{}'", value.replace('\'', "''"))
     }
 }
 
@@ -388,4 +387,10 @@ impl DecodeRow<PgRow> for Record {
         }
         Ok(record)
     }
+}
+
+/// Formats a string.
+#[inline]
+fn format_string(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "''"))
 }

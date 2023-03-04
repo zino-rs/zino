@@ -82,6 +82,10 @@ impl CloudEvent {
     }
 
     /// Consumes the event and returns as a json object.
+    ///
+    /// # Panics
+    ///
+    /// It will panic if the model cann't be converted to a json object.
     #[must_use]
     pub fn into_map(self) -> Map {
         match serde_json::to_value(self) {

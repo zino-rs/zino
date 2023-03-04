@@ -19,18 +19,17 @@ pub(crate) async fn new(mut req: Request) -> zino::Result {
 
 pub(crate) async fn update(mut req: Request) -> zino::Result {
     let user_id: Uuid = req.parse_param("id")?;
-    let mut user = User::try_get_model(&user_id.to_string())
+    let body: Map = req.parse_body().await?;
+    let (validation, data) = user::update(user_id, body)
         .await
         .extract_with_context(&req)?;
-    let validation = req.parse_body().await.map(|body| user.read_map(body))?;
-    user.update().await.extract_with_context(&req)?;
-
-    let res = Response::from(validation).provide_context(&req);
+    let mut res = Response::from(validation).provide_context(&req);
+    res.set_data(&data);
     Ok(res.into())
 }
 
 pub(crate) async fn list(req: Request) -> zino::Result {
-    let mut query = Query::new();
+    let mut query = Query::default();
     let mut res: Response = req.query_validation(&mut query)?;
     let users: Vec<Map> = User::find(&query).await.extract_with_context(&req)?;
     let data = json!({
@@ -45,7 +44,7 @@ pub(crate) async fn view(mut req: Request) -> zino::Result {
     req.add_cookie(locale_cookie);
 
     let user_id: Uuid = req.parse_param("id")?;
-    let mut query = Query::new();
+    let mut query = Query::default();
     let mut res: Response = req.query_validation(&mut query)?;
     query.insert_filter("id", user_id.to_string());
 
@@ -55,9 +54,7 @@ pub(crate) async fn view(mut req: Request) -> zino::Result {
     let event = req.cloud_event("message", message);
     req.try_send(event)?;
 
-    let (db_query_duration, data) = user::view_profile(&req, &query)
-        .await
-        .extract_with_context(&req)?;
+    let (db_query_duration, data) = user::view(&req, &query).await.extract_with_context(&req)?;
     res.record_server_timing("db", None, Some(db_query_duration));
     res.set_data(&data);
     Ok(res.into())

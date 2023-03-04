@@ -44,8 +44,8 @@ pub use zino_core::{
     database::Schema,
     datetime::DateTime,
     extend::JsonObjectExt,
-    model::{Model, Query},
-    request::RequestContext,
+    model::{Model, Mutation, Query},
+    request::{RequestContext, Validation},
     response::ExtractRejection,
     schedule::{AsyncCronJob, CronJob},
     BoxError, BoxFuture, Map, Record, Uuid,
@@ -56,15 +56,15 @@ pub use cluster::axum_cluster::AxumCluster;
 #[cfg(feature = "axum")]
 pub use request::axum_request::AxumExtractor;
 
-#[cfg(feature = "axum")]
 /// A specialized request extractor for `axum`.
+#[cfg(feature = "axum")]
 pub type Request = AxumExtractor<axum::http::Request<axum::body::Body>>;
 
-#[cfg(feature = "axum")]
 /// A specialized response for `axum`.
+#[cfg(feature = "axum")]
 pub type Response = zino_core::response::Response<axum::http::StatusCode>;
 
-#[cfg(feature = "axum")]
 /// A specialized `Result` type for `axum`.
+#[cfg(feature = "axum")]
 pub type Result<T = axum::http::Response<axum::body::Full<axum::body::Bytes>>> =
     std::result::Result<T, T>;

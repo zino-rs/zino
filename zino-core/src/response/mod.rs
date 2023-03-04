@@ -142,8 +142,8 @@ impl<S: ResponseCode> Response<S> {
         self
     }
 
-    #[cfg(feature = "view")]
     /// Renders a template and sets it as the reponse data.
+    #[cfg(feature = "view")]
     pub fn render<T: Serialize>(mut self, template_name: &str, data: T) -> Self {
         let result = serde_json::to_value(data)
             .map_err(|err| err.into())

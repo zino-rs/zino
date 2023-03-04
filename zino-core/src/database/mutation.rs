@@ -12,11 +12,12 @@ pub(super) trait MutationExt<DB> {
 impl MutationExt<Postgres> for Mutation {
     fn format_updates<M: Schema>(&self) -> String {
         let updates = self.updates();
-        let fields = self.fields();
-        if updates.is_empty() || fields.is_empty() {
+        if updates.is_empty() {
             return String::new();
         }
 
+        let fields = self.fields();
+        let permissive = fields.is_empty();
         let mut mutations = Vec::new();
         for (key, value) in updates.iter() {
             match key.as_str() {
@@ -98,7 +99,7 @@ impl MutationExt<Postgres> for Mutation {
                         }
                     }
                     _ => {
-                        if fields.contains(key) && let Some(col) = M::get_column(key) {
+                        if (permissive || fields.contains(key)) && let Some(col) = M::get_column(key) {
                             let value = Postgres::encode_value(col, Some(value));
                             let mutation = format!("{key} = {value}");
                             mutations.push(mutation);
@@ -106,10 +107,6 @@ impl MutationExt<Postgres> for Mutation {
                     }
                 }
         }
-        if mutations.is_empty() {
-            String::new()
-        } else {
-            "SET ".to_owned() + &mutations.join(",")
-        }
+        mutations.join(", ")
     }
 }

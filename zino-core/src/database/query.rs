@@ -12,8 +12,8 @@ pub(super) trait QueryExt<DB> {
     /// Formats projection fields.
     fn format_fields(&self) -> String;
 
-    /// Formats the query filter to generate SQL `WHERE` expression.
-    fn format_filter<M: Schema>(&self) -> String;
+    /// Formats the query filters to generate SQL `WHERE` expression.
+    fn format_filters<M: Schema>(&self) -> String;
 
     /// Formats the query sort to generate SQL `ORDER BY` expression.
     fn format_sort(&self) -> String;
@@ -39,16 +39,16 @@ impl QueryExt<Postgres> for Query {
         }
     }
 
-    fn format_filter<M: Schema>(&self) -> String {
-        let filter = self.filter();
-        if filter.is_empty() {
+    fn format_filters<M: Schema>(&self) -> String {
+        let filters = self.filters();
+        if filters.is_empty() {
             return String::new();
         }
 
         let (sort_by, ascending) = self.sort_order();
         let mut expression = " ".to_owned();
         let mut conditions = Vec::new();
-        for (key, value) in filter {
+        for (key, value) in filters {
             match key.as_str() {
                 "sample" => {
                     if let Some(Ok(value)) = Validation::parse_f64(value) {
@@ -110,9 +110,9 @@ impl QueryExt<Postgres> for Query {
         if !conditions.is_empty() {
             expression += &format!("WHERE {}", conditions.join(" AND "));
         };
-        if let Some(Value::String(group_by)) = filter.get("group_by") {
+        if let Some(Value::String(group_by)) = filters.get("group_by") {
             expression += &format!("GROUP BY {group_by}");
-            if let Some(Value::Object(selection)) = filter.get("having") {
+            if let Some(Value::Object(selection)) = filters.get("having") {
                 let condition = Self::format_selection::<M>(selection, " AND ");
                 expression += &format!("HAVING {condition}");
             }
@@ -137,7 +137,7 @@ impl QueryExt<Postgres> for Query {
 
     fn format_pagination(&self) -> String {
         let (sort_by, _) = self.sort_order();
-        if self.filter().contains_key(sort_by) {
+        if self.filters().contains_key(sort_by) {
             format!("LIMIT {}", self.limit())
         } else {
             format!("LIMIT {} OFFSET {}", self.limit(), self.offset())
@@ -195,19 +195,12 @@ impl QueryExt<Postgres> for Query {
     }
 
     fn parse_text_search(filter: &Map) -> Option<String> {
-        let columns: Option<Vec<String>> = Validation::parse_array(filter.get("$columns"));
-        if let Some(columns) = columns {
-            if let Some(search) = Validation::parse_string(filter.get("$search")) {
-                let column = columns.join(" || ' ' || ");
-                let language = Validation::parse_string(filter.get("$language"))
-                    .unwrap_or_else(|| "english".to_owned());
-                let search = Postgres::format_string(&search);
-                let condition = format!(
-                    "to_tsvector('{language}', {column}) @@ websearch_to_tsquery('{language}', '{search}')",
-                );
-                return Some(condition);
-            }
-        }
-        None
+        let columns: Vec<String> = Validation::parse_array(filter.get("$columns"))?;
+        Validation::parse_string(filter.get("$search")).map(|search| {
+            let col = columns.join(" || ' ' || ");
+            let lang = Validation::parse_string(filter.get("$language"))
+                .unwrap_or_else(|| "english".to_owned());
+            format!("to_tsvector('{lang}', {col}) @@ websearch_to_tsquery('{lang}', '{search}')")
+        })
     }
 }

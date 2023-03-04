@@ -1,4 +1,4 @@
-use crate::{extend::JsonObjectExt, request::Validation, Map, SharedString};
+use crate::{extend::JsonObjectExt, request::Validation, Map};
 use serde_json::Value;
 
 #[derive(Debug, Clone)]
@@ -6,10 +6,10 @@ use serde_json::Value;
 pub struct Query {
     // Projection fields.
     fields: Vec<String>,
-    // Filter.
-    filter: Map,
+    // Filters.
+    filters: Map,
     // Sort order.
-    sort_order: (SharedString, bool),
+    sort_order: (Option<String>, bool),
     // Limit.
     limit: u64,
     // Offset.
@@ -18,11 +18,12 @@ pub struct Query {
 
 impl Query {
     /// Creates a new instance.
-    pub fn new() -> Self {
+    #[inline]
+    pub fn new(filters: Map) -> Self {
         Self {
             fields: Vec::new(),
-            filter: Map::new(),
-            sort_order: ("".into(), false),
+            filters,
+            sort_order: (None, false),
             limit: 10,
             offset: 0,
         }
@@ -30,28 +31,28 @@ impl Query {
 
     /// Updates the query using the json object and returns the validation result.
     #[must_use]
-    pub fn read_map(&mut self, data: Map) -> Validation {
+    pub fn read_map(&mut self, data: &Map) -> Validation {
         let mut validation = Validation::new();
-        let filter = &mut self.filter;
-        for (key, value) in data.into_iter() {
+        let filters = &mut self.filters;
+        for (key, value) in data {
             match key.as_str() {
                 "fields" => {
-                    if let Some(fields) = Validation::parse_array(&value) {
+                    if let Some(fields) = Validation::parse_array(value) {
                         self.fields = fields;
                     }
                 }
                 "sort" | "sort_by" | "order_by" => {
-                    if let Some(sort_by) = Validation::parse_string(&value) {
+                    if let Some(sort_by) = Validation::parse_string(value) {
                         self.sort_order.0 = sort_by.into();
                     }
                 }
                 "ascending" => {
-                    if let Some(Ok(ascending)) = Validation::parse_bool(&value) {
+                    if let Some(Ok(ascending)) = Validation::parse_bool(value) {
                         self.sort_order.1 = ascending;
                     }
                 }
                 "limit" => {
-                    if let Some(result) = Validation::parse_u64(&value) {
+                    if let Some(result) = Validation::parse_u64(value) {
                         match result {
                             Ok(limit) => self.limit = limit,
                             Err(err) => validation.record_fail("limit", err),
@@ -59,7 +60,7 @@ impl Query {
                     }
                 }
                 "offset" | "skip" => {
-                    if let Some(result) = Validation::parse_u64(&value) {
+                    if let Some(result) = Validation::parse_u64(value) {
                         match result {
                             Ok(offset) => self.offset = offset,
                             Err(err) => validation.record_fail("offset", err),
@@ -72,31 +73,31 @@ impl Query {
                         if key.contains('.') {
                             if let Some((key, path)) = key.split_once('.') {
                                 if let Ok(index) = path.parse::<usize>() {
-                                    if let Some(vec) = filter.get_mut(key) {
+                                    if let Some(vec) = filters.get_mut(key) {
                                         if let Some(vec) = vec.as_array_mut() {
                                             if index > vec.len() {
                                                 vec.resize(index, Value::Null);
                                             }
-                                            vec.insert(index, value);
+                                            vec.insert(index, value.to_owned());
                                         }
                                     } else {
                                         let mut vec = Vec::new();
                                         vec.resize(index, Value::Null);
-                                        vec.insert(index, value);
-                                        filter.upsert(key, vec);
+                                        vec.insert(index, value.to_owned());
+                                        filters.upsert(key, vec);
                                     }
-                                } else if let Some(map) = filter.get_mut(key) {
+                                } else if let Some(map) = filters.get_mut(key) {
                                     if let Some(map) = map.as_object_mut() {
-                                        map.upsert(path, value);
+                                        map.upsert(path, value.to_owned());
                                     }
                                 } else {
                                     let mut map = Map::new();
-                                    map.upsert(path, value);
-                                    filter.upsert(key, map);
+                                    map.upsert(path, value.to_owned());
+                                    filters.upsert(key, map);
                                 }
                             }
                         } else if value != "" && value != "all" {
-                            filter.insert(key, value);
+                            filters.insert(key.to_owned(), value.to_owned());
                         }
                     }
                 }
@@ -130,21 +131,21 @@ impl Query {
         })
     }
 
-    /// Appends to the query filter.
+    /// Moves all elements from the `filters` into `self`.
     #[inline]
-    pub fn append_filter(&mut self, filter: &mut Map) {
-        self.filter.append(filter);
+    pub fn append_filters(&mut self, filters: &mut Map) {
+        self.filters.append(filters);
     }
 
-    /// Inserts a key-value pair into the query filter.
+    /// Inserts a key-value pair into the query filters.
     #[inline]
     pub fn insert_filter(&mut self, key: impl Into<String>, value: impl Into<Value>) {
-        self.filter.upsert(key, value);
+        self.filters.upsert(key, value);
     }
 
     /// Sets the sort order.
     #[inline]
-    pub fn set_sort_order(&mut self, sort_by: impl Into<SharedString>, ascending: bool) {
+    pub fn set_sort_order(&mut self, sort_by: impl Into<Option<String>>, ascending: bool) {
         self.sort_order = (sort_by.into(), ascending);
     }
 
@@ -166,17 +167,17 @@ impl Query {
         self.fields.as_slice()
     }
 
-    /// Returns a reference to the filter.
+    /// Returns a reference to the filters.
     #[inline]
-    pub fn filter(&self) -> &Map {
-        &self.filter
+    pub fn filters(&self) -> &Map {
+        &self.filters
     }
 
     /// Returns the sort order.
     #[inline]
     pub fn sort_order(&self) -> (&str, bool) {
         let sort_order = &self.sort_order;
-        (sort_order.0.as_ref(), sort_order.1)
+        (sort_order.0.as_deref().unwrap_or_default(), sort_order.1)
     }
 
     /// Returns the query limit.
@@ -195,6 +196,12 @@ impl Query {
 impl Default for Query {
     #[inline]
     fn default() -> Self {
-        Self::new()
+        Self {
+            fields: Vec::new(),
+            filters: Map::new(),
+            sort_order: (None, false),
+            limit: 10,
+            offset: 0,
+        }
     }
 }

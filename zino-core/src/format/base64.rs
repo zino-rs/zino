@@ -13,8 +13,8 @@ pub(crate) fn decode(data: impl AsRef<[u8]>) -> Result<Vec<u8>, DecodeError> {
     STANDARD_NO_PAD.decode(data)
 }
 
-#[cfg(feature = "connector-arrow")]
 /// Encodes the data as base64-encoded data URL string.
+#[cfg(feature = "connector-arrow")]
 pub(crate) fn encode_data_url(data: impl AsRef<[u8]>) -> String {
     let bytes = data.as_ref();
     let mut data = String::with_capacity(bytes.len() * 3 / 4);

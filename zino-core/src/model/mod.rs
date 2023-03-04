@@ -13,14 +13,14 @@ pub use mutation::Mutation;
 pub use query::Query;
 pub use row::DecodeRow;
 
-/// A type for data model.
+/// General data model.
 pub trait Model: Default + Serialize + DeserializeOwned {
     /// Creates a new instance.
     fn new() -> Self;
 
     /// Updates the model using the json object and returns the validation result.
     #[must_use]
-    fn read_map(&mut self, data: Map) -> Validation;
+    fn read_map(&mut self, data: &Map) -> Validation;
 
     /// Attempts to construct a model from a json object.
     #[inline]
@@ -29,6 +29,10 @@ pub trait Model: Default + Serialize + DeserializeOwned {
     }
 
     /// Consumes the model and returns as a json object.
+    ///
+    /// # Panics
+    ///
+    /// It will panic if the model cann't be converted to a json object.
     #[must_use]
     fn into_map(self) -> Map {
         match serde_json::to_value(self) {

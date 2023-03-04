@@ -21,26 +21,26 @@ use taos::TaosPool;
 /// Supported data source connectors.
 #[non_exhaustive]
 pub(super) enum DataSourceConnector {
-    #[cfg(feature = "connector-arrow")]
     /// Apache Arrow
+    #[cfg(feature = "connector-arrow")]
     Arrow(ArrowConnector),
-    #[cfg(feature = "connector-http")]
     /// HTTP
+    #[cfg(feature = "connector-http")]
     Http(HttpConnector),
-    #[cfg(feature = "connector-mssql")]
     /// MSSQL
+    #[cfg(feature = "connector-mssql")]
     Mssql(MssqlPool),
-    #[cfg(feature = "connector-mysql")]
     /// MySQL
+    #[cfg(feature = "connector-mysql")]
     MySql(MySqlPool),
-    #[cfg(feature = "connector-postgres")]
     /// Postgres
+    #[cfg(feature = "connector-postgres")]
     Postgres(PgPool),
-    #[cfg(feature = "connector-sqlite")]
     /// SQLite
+    #[cfg(feature = "connector-sqlite")]
     Sqlite(SqlitePool),
-    #[cfg(feature = "connector-taos")]
     /// TDengine
+    #[cfg(feature = "connector-taos")]
     Taos(TaosPool),
 }
 
@@ -134,9 +134,9 @@ impl DataSource {
         self.catalog.as_str()
     }
 
-    #[cfg(feature = "connector-arrow")]
     /// Returns a reference to the inner connector if it is of type `ArrowConnector`,
     /// or `None` if it isn’t.
+    #[cfg(feature = "connector-arrow")]
     #[inline]
     pub fn get_arrow_connector(&self) -> Option<&ArrowConnector> {
         if let Arrow(connector) = &self.connector {
@@ -146,9 +146,9 @@ impl DataSource {
         }
     }
 
-    #[cfg(feature = "connector-http")]
     /// Returns a reference to the inner connector if it is of type `HttpConnector`,
     /// or `None` if it isn’t.
+    #[cfg(feature = "connector-http")]
     #[inline]
     pub fn get_http_connector(&self) -> Option<&HttpConnector> {
         if let Http(connector) = &self.connector {

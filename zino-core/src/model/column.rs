@@ -96,7 +96,7 @@ impl<'a> Column<'a> {
     }
 }
 
-/// A type for encoding the column.
+/// A backend type for encoding the column.
 pub trait EncodeColumn<'a> {
     /// Returns the corresponding column type.
     fn column_type(column: &Column<'a>) -> &'a str;
@@ -109,9 +109,4 @@ pub trait EncodeColumn<'a> {
 
     /// Formats a column filter.
     fn format_filter(column: &Column<'a>, key: &str, value: &Value) -> String;
-
-    /// Formats a string.
-    fn format_string(value: &str) -> String {
-        format!("'{}'", value.replace('\'', "''"))
-    }
 }

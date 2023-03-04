@@ -37,6 +37,16 @@ pub struct Log {
     content: Map,
     metrics: Map,
     extras: Map,
+
+    // Revisions.
+    manager_id: Uuid,    // user.id
+    maintainer_id: Uuid, // user.id
+    #[schema(default = "now", index = "btree")]
+    created_at: DateTime,
+    #[schema(default = "now", index = "btree")]
+    updated_at: DateTime,
+    version: u64,
+    edition: u32,
 }
 
 impl Model for Log {
@@ -47,7 +57,7 @@ impl Model for Log {
         }
     }
 
-    fn read_map(&mut self, data: Map) -> Validation {
+    fn read_map(&mut self, data: &Map) -> Validation {
         let mut validation = Validation::new();
         if let Some(result) = Validation::parse_uuid(data.get("id")) {
             match result {
@@ -64,3 +74,22 @@ impl Model for Log {
         validation
     }
 }
+
+super::impl_model_accessor!(
+    Log,
+    id,
+    name,
+    namespace,
+    visibility,
+    status,
+    description,
+    content,
+    metrics,
+    extras,
+    manager_id,
+    maintainer_id,
+    created_at,
+    updated_at,
+    version,
+    edition
+);
