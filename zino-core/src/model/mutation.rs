@@ -1,6 +1,6 @@
 use crate::{request::Validation, Map};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 /// A mutation type of the model.
 pub struct Mutation {
     // Editable fields.
@@ -86,14 +86,5 @@ impl Mutation {
     #[inline]
     pub fn updates(&self) -> &Map {
         &self.updates
-    }
-}
-
-impl Default for Mutation {
-    fn default() -> Self {
-        Self {
-            fields: Vec::new(),
-            updates: Map::new(),
-        }
     }
 }

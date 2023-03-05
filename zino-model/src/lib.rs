@@ -1,13 +1,22 @@
+//! [![github]](https://github.com/photino/zino)
+//! [![crates-io]](https://crates.io/crates/zino-model)
+//! [![docs-rs]](https://docs.rs/zino-model)
+//!
+//! [github]: https://img.shields.io/badge/github-8da0cb?labelColor=555555&logo=github
+//! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?labelColor=555555&logo=rust
+//! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?labelColor=555555&logo=docs.rs
+//!
 //! Model types for [`zino`].
 //!
 //! [`zino`]: https://github.com/photino/zino
 
 #![feature(async_fn_in_trait)]
 #![feature(decl_macro)]
+#![feature(let_chains)]
 #![feature(once_cell)]
 #![forbid(unsafe_code)]
 
-use zino_core::{datetime::DateTime, extend::JsonObjectExt, Map, Uuid};
+use zino_core::{datetime::DateTime, extend::JsonObjectExt, model::Model, Map, Uuid};
 
 mod group;
 mod policy;
@@ -44,7 +53,7 @@ pub use log::Log;
 pub use record::Record;
 
 /// Access model fields.
-pub trait ModelAccessor {
+pub trait ModelAccessor: Model {
     /// Returns the `id` field.
     fn id(&self) -> Uuid;
 

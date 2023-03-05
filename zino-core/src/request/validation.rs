@@ -14,7 +14,7 @@ use url::{self, Url};
 use uuid::Uuid;
 
 /// A record of validation results.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Validation {
     failed_entries: Vec<(SharedString, BoxError)>,
 }
@@ -39,6 +39,12 @@ impl Validation {
     #[inline]
     pub fn record_fail(&mut self, key: impl Into<SharedString>, err: impl Into<BoxError>) {
         self.failed_entries.push((key.into(), err.into()));
+    }
+
+    /// Returns true if the validation contains an error value for the specified key.
+    #[inline]
+    pub fn contains_key(&self, key: &str) -> bool {
+        self.failed_entries.iter().any(|(field, _)| field == key)
     }
 
     /// Returns `true` if the validation is success.
@@ -194,12 +200,5 @@ impl Validation {
         value: impl Into<Option<&'a Value>>,
     ) -> Option<Result<Ipv6Addr, AddrParseError>> {
         value.into().and_then(|v| v.as_str()).map(|s| s.parse())
-    }
-}
-
-impl Default for Validation {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
     }
 }

@@ -1,3 +1,11 @@
+//! [![github]](https://github.com/photino/zino)
+//! [![crates-io]](https://crates.io/crates/zino-core)
+//! [![docs-rs]](https://docs.rs/zino-core)
+//!
+//! [github]: https://img.shields.io/badge/github-8da0cb?labelColor=555555&logo=github
+//! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?labelColor=555555&logo=rust
+//! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?labelColor=555555&logo=docs.rs
+//!
 //! Core types and traits for [`zino`].
 //!
 //! [`zino`]: https://github.com/photino/zino
@@ -33,6 +41,7 @@ pub mod application;
 pub mod authentication;
 pub mod channel;
 pub mod datetime;
+pub mod error;
 pub mod extend;
 pub mod i18n;
 pub mod model;
