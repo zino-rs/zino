@@ -1,9 +1,10 @@
 //! Constructing responses and rejections.
 
 use crate::{
+    error::Error,
     request::{RequestContext, Validation},
     trace::{ServerTiming, TimingMetric, TraceContext},
-    BoxError, SharedString, Uuid,
+    SharedString, Uuid,
 };
 use bytes::Bytes;
 use http::header::{self, HeaderValue};
@@ -155,7 +156,7 @@ impl<S: ResponseCode> Response<S> {
                         serde_json::value::to_raw_value(&data).map_err(|err| err.into())
                     })
                 } else {
-                    Err("invalid template data".into())
+                    Err(Error::new("invalid template data"))
                 }
             });
         match result {
@@ -216,7 +217,7 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Sets the error message.
-    pub fn set_error_message(&mut self, error: impl Into<BoxError>) {
+    pub fn set_error_message(&mut self, error: impl Into<Error>) {
         let message = error.into().to_string().into();
         if self.is_success() {
             self.detail = None;

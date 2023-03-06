@@ -1,7 +1,7 @@
 use self::ParseSecurityTokenError::*;
 use super::AccessKeyId;
-use crate::{crypto, datetime::DateTime, format::base64, BoxError};
-use std::{error::Error, fmt};
+use crate::{crypto, datetime::DateTime, error::Error, format::base64};
+use std::{error, fmt};
 
 /// Security token.
 #[derive(Debug, Clone)]
@@ -88,7 +88,7 @@ impl SecurityToken {
         match base64::decode(&token) {
             Ok(data) => {
                 let authorization = crypto::decrypt(key, &data)
-                    .map_err(|_| DecodeError("failed to decrypt authorization".into()))?;
+                    .map_err(|_| DecodeError(Error::new("failed to decrypt authorization")))?;
                 if let Some((assignee_id, timestamp)) = authorization.split_once(':') {
                     match timestamp.parse() {
                         Ok(secs) => {
@@ -96,7 +96,7 @@ impl SecurityToken {
                                 let expires = DateTime::from_timestamp(secs);
                                 let grantor_id = crypto::decrypt(key, assignee_id.as_ref())
                                     .map_err(|_| {
-                                        DecodeError("failed to decrypt grantor id".into())
+                                        DecodeError(Error::new("failed to decrypt grantor id"))
                                     })?;
                                 Ok(Self {
                                     grantor_id: grantor_id.into(),
@@ -108,13 +108,13 @@ impl SecurityToken {
                                 Err(ValidPeriodExpired)
                             }
                         }
-                        Err(err) => Err(ParseExpiresError(Box::new(err))),
+                        Err(err) => Err(ParseExpiresError(err.into())),
                     }
                 } else {
                     Err(InvalidFormat)
                 }
             }
-            Err(err) => Err(DecodeError(Box::new(err))),
+            Err(err) => Err(DecodeError(err.into())),
         }
     }
 }
@@ -137,9 +137,9 @@ impl AsRef<[u8]> for SecurityToken {
 #[derive(Debug)]
 pub(crate) enum ParseSecurityTokenError {
     /// An error that can occur while decoding.
-    DecodeError(BoxError),
+    DecodeError(Error),
     /// An error which can occur while parsing a expires timestamp.
-    ParseExpiresError(BoxError),
+    ParseExpiresError(Error),
     /// Valid period expired.
     ValidPeriodExpired,
     /// Invalid format.
@@ -157,4 +157,4 @@ impl fmt::Display for ParseSecurityTokenError {
     }
 }
 
-impl Error for ParseSecurityTokenError {}
+impl error::Error for ParseSecurityTokenError {}

@@ -1,4 +1,4 @@
-use crate::{format, BoxError, Map, Record};
+use crate::{error::Error, format, Map, Record};
 use apache_avro::types::Value;
 use futures::TryStreamExt;
 use serde::{
@@ -54,14 +54,14 @@ fn map_serialize<'r, M: SerializeMap, DB: Database, T: Decode<'r, DB> + Serializ
 }
 
 pub(super) macro impl_sqlx_connector($pool:ty) {
-    async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, BoxError> {
+    async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, Error> {
         let sql = format::format_query(query, params);
         let query = sqlx::query(sql.as_ref());
         let query_result = query.execute(self).await?;
         Ok(Some(query_result.rows_affected()))
     }
 
-    async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, BoxError> {
+    async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, Error> {
         let sql = format::format_query(query, params);
         let query = sqlx::query(sql.as_ref());
         let mut rows = query.fetch(self);
@@ -79,7 +79,7 @@ pub(super) macro impl_sqlx_connector($pool:ty) {
         &self,
         query: &str,
         params: Option<&Map>,
-    ) -> Result<Vec<T>, BoxError> {
+    ) -> Result<Vec<T>, Error> {
         let sql = format::format_query(query, params);
         let query = sqlx::query(sql.as_ref());
         let mut rows = query.fetch(self);
@@ -92,11 +92,7 @@ pub(super) macro impl_sqlx_connector($pool:ty) {
         Ok(data)
     }
 
-    async fn query_one(
-        &self,
-        query: &str,
-        params: Option<&Map>,
-    ) -> Result<Option<Record>, BoxError> {
+    async fn query_one(&self, query: &str, params: Option<&Map>) -> Result<Option<Record>, Error> {
         let sql = format::format_query(query, params);
         let query = sqlx::query(sql.as_ref());
         let data = if let Some(row) = query.fetch_optional(self).await? {
@@ -116,12 +112,12 @@ pub(super) macro impl_sqlx_connector($pool:ty) {
         &self,
         query: &str,
         params: Option<&Map>,
-    ) -> Result<Option<T>, BoxError> {
+    ) -> Result<Option<T>, Error> {
         let sql = format::format_query(query, params);
         let query = sqlx::query(sql.as_ref());
         if let Some(row) = query.fetch_optional(self).await? {
             let json_value = serde_json::to_value(&SerializeRow(row))?;
-            serde_json::from_value(json_value).map_err(BoxError::from)
+            serde_json::from_value(json_value).map_err(Error::from)
         } else {
             Ok(None)
         }

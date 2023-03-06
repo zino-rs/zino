@@ -29,7 +29,7 @@ impl Mutation {
                 "fields" => {
                     if let Some(fields) = Validation::parse_array(value) {
                         if fields.is_empty() {
-                            validation.record_fail("fields", "must be nonempty");
+                            validation.record("fields", "must be nonempty");
                         } else {
                             self.fields = fields;
                         }

@@ -1,14 +1,14 @@
 //! Building HTML views using templates.
 
-use crate::{application::Application, extend::TomlTableExt, BoxError, Map};
+use crate::{application::Application, error::Error, extend::TomlTableExt, Map};
 use std::{path::Path, sync::OnceLock};
 use tera::{Context, Tera};
 
 /// Renders a template with the given data using [`tera`](https://crates.io/crates/tera).
-pub fn render(template_name: &str, data: Map) -> Result<String, BoxError> {
+pub fn render(template_name: &str, data: Map) -> Result<String, Error> {
     let view_engine = SHARED_VIEW_ENGINE
         .get()
-        .ok_or("failed to get view engine")?;
+        .ok_or_else(|| Error::new("failed to get view engine"))?;
     let context = Context::from_value(data.into())?;
     view_engine
         .render(template_name, &context)

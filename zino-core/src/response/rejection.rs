@@ -1,9 +1,10 @@
 use self::RejectionKind::*;
 use super::Response;
 use crate::{
+    error::Error,
     request::{Context, RequestContext, Validation},
     trace::TraceContext,
-    BoxError, SharedString,
+    SharedString,
 };
 use bytes::Bytes;
 use http::StatusCode;
@@ -27,17 +28,17 @@ enum RejectionKind {
     /// 400 Bad Request
     BadRequest(Validation),
     /// 401 Unauthorized
-    Unauthorized(BoxError),
+    Unauthorized(Error),
     /// 403 Forbidden
-    Forbidden(BoxError),
+    Forbidden(Error),
     /// 404 NotFound
-    NotFound(BoxError),
+    NotFound(Error),
     /// 405 Method Not Allowed
-    MethodNotAllowed(BoxError),
+    MethodNotAllowed(Error),
     /// 409 Conflict
-    Conflict(BoxError),
+    Conflict(Error),
     /// 500 Internal Server Error
-    InternalServerError(BoxError),
+    InternalServerError(Error),
 }
 
 impl<'a> Rejection<'a> {
@@ -53,7 +54,7 @@ impl<'a> Rejection<'a> {
 
     /// Creates an `Unauthorized` rejection.
     #[inline]
-    pub fn unauthorized(err: impl Into<BoxError>) -> Self {
+    pub fn unauthorized(err: impl Into<Error>) -> Self {
         Self {
             kind: Unauthorized(err.into()),
             context: None,
@@ -63,7 +64,7 @@ impl<'a> Rejection<'a> {
 
     /// Creates a `Forbidden` rejection.
     #[inline]
-    pub fn forbidden(err: impl Into<BoxError>) -> Self {
+    pub fn forbidden(err: impl Into<Error>) -> Self {
         Self {
             kind: Forbidden(err.into()),
             context: None,
@@ -73,7 +74,7 @@ impl<'a> Rejection<'a> {
 
     /// Creates a `NotFound` rejection.
     #[inline]
-    pub fn not_found(err: impl Into<BoxError>) -> Self {
+    pub fn not_found(err: impl Into<Error>) -> Self {
         Self {
             kind: NotFound(err.into()),
             context: None,
@@ -83,7 +84,7 @@ impl<'a> Rejection<'a> {
 
     /// Creates a `MethodNotAllowed` rejection.
     #[inline]
-    pub fn method_not_allowed(err: impl Into<BoxError>) -> Self {
+    pub fn method_not_allowed(err: impl Into<Error>) -> Self {
         Self {
             kind: MethodNotAllowed(err.into()),
             context: None,
@@ -93,7 +94,7 @@ impl<'a> Rejection<'a> {
 
     /// Creates a `Conflict` rejection.
     #[inline]
-    pub fn conflict(err: impl Into<BoxError>) -> Self {
+    pub fn conflict(err: impl Into<Error>) -> Self {
         Self {
             kind: Conflict(err.into()),
             context: None,
@@ -103,7 +104,7 @@ impl<'a> Rejection<'a> {
 
     /// Creates an `InternalServerError` rejection.
     #[inline]
-    pub fn internal_server_error(err: impl Into<BoxError>) -> Self {
+    pub fn internal_server_error(err: impl Into<Error>) -> Self {
         Self {
             kind: InternalServerError(err.into()),
             context: None,
@@ -113,7 +114,7 @@ impl<'a> Rejection<'a> {
 
     /// Creates a new instance with the validation entry.
     #[inline]
-    pub fn from_validation_entry(key: impl Into<SharedString>, err: impl Into<BoxError>) -> Self {
+    pub fn from_validation_entry(key: impl Into<SharedString>, err: impl Into<Error>) -> Self {
         let validation = Validation::from_entry(key, err);
         Self::bad_request(validation)
     }
@@ -199,17 +200,17 @@ impl<'a, T> ExtractRejection<'a, T> for Result<T, Validation> {
     }
 }
 
-impl<'a, T, E: Into<BoxError>> ExtractRejection<'a, T> for Result<T, E> {
+impl<'a, T, E: Into<Error>> ExtractRejection<'a, T> for Result<T, E> {
     #[inline]
     fn extract(self) -> Result<T, Rejection<'a>> {
         self.map_err(Rejection::internal_server_error)
     }
 }
 
-impl<'a, T, E: Into<BoxError>> ExtractRejection<'a, T> for Result<Option<T>, E> {
+impl<'a, T, E: Into<Error>> ExtractRejection<'a, T> for Result<Option<T>, E> {
     #[inline]
     fn extract(self) -> Result<T, Rejection<'a>> {
         self.map_err(Rejection::internal_server_error)?
-            .ok_or_else(|| Rejection::not_found("resource does not exit"))
+            .ok_or_else(|| Rejection::not_found(Error::new("resource does not exit")))
     }
 }

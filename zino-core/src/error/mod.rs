@@ -1,4 +1,4 @@
-//! Type-erased errors with backtraces.
+//! Type-erased errors with tracing functionalities.
 use crate::SharedString;
 use std::{error, fmt};
 
@@ -12,12 +12,30 @@ pub struct Error {
 }
 
 impl Error {
-    /// Creates a new instance with the error message.
+    /// Creates a new instance with the supplied message.
     #[inline]
     pub fn new(message: impl Into<SharedString>) -> Self {
         Self {
             message: message.into(),
             source: None,
+        }
+    }
+
+    /// Creates a new instance with the supplied message and the error source.
+    #[inline]
+    pub fn with_source(message: impl Into<SharedString>, source: impl Into<Error>) -> Self {
+        Self {
+            message: message.into(),
+            source: Some(Box::new(source.into())),
+        }
+    }
+
+    /// Returns a new instance with the supplied message and `self` as the error source.
+    #[inline]
+    pub fn wrap(self, message: impl Into<SharedString>) -> Self {
+        Self {
+            message: message.into(),
+            source: Some(Box::new(self)),
         }
     }
 
@@ -41,6 +59,13 @@ impl<E: error::Error + 'static> From<E> for Error {
 impl fmt::Display for Error {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&self.message, f)
+        let message = &self.message;
+        if let Some(source) = &self.source {
+            tracing::error!(source = source.to_string(), "{message}");
+            write!(f, "{message}: {source}")
+        } else {
+            tracing::error!("{message}");
+            write!(f, "{message}")
+        }
     }
 }

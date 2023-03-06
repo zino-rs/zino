@@ -1,7 +1,7 @@
 use super::AccessKeyId;
-use crate::{format::base64, request::Validation, BoxError, SharedString};
+use crate::{error::Error, format::base64, request::Validation, SharedString};
 use hmac::digest::{Digest, FixedOutput, HashMarker, Update};
-use std::{error::Error, fmt};
+use std::{error, fmt};
 
 /// Session Identification URI.
 /// See [the spec](https://www.w3.org/TR/WD-session-id).
@@ -55,7 +55,7 @@ impl SessionId {
                 hasher.update(data.as_ref());
 
                 if hasher.finalize().as_slice() != hash {
-                    validation.record_fail("identifier", "invalid session identifier");
+                    validation.record("identifier", "invalid session identifier");
                 }
             }
             Err(err) => {
@@ -109,10 +109,10 @@ impl SessionId {
                 if let Some((identifier, s)) = s.split_once('-') {
                     if let Some((thread, count)) = s.split_once(':') {
                         return u8::from_str_radix(thread, 16)
-                            .map_err(|err| ParseThreadError(Box::new(err)))
+                            .map_err(|err| ParseThreadError(err.into()))
                             .and_then(|thread| {
                                 u8::from_str_radix(count, 16)
-                                    .map_err(|err| ParseCountError(Box::new(err)))
+                                    .map_err(|err| ParseCountError(err.into()))
                                     .map(|count| Self {
                                         realm: realm.to_owned().into(),
                                         identifier: identifier.to_owned(),
@@ -122,7 +122,7 @@ impl SessionId {
                             });
                     } else {
                         return u8::from_str_radix(s, 16)
-                            .map_err(|err| ParseThreadError(Box::new(err)))
+                            .map_err(|err| ParseThreadError(err.into()))
                             .map(|thread| Self {
                                 realm: realm.to_owned().into(),
                                 identifier: identifier.to_owned(),
@@ -132,7 +132,7 @@ impl SessionId {
                     }
                 } else if let Some((identifier, count)) = s.split_once(':') {
                     return u8::from_str_radix(count, 16)
-                        .map_err(|err| ParseCountError(Box::new(err)))
+                        .map_err(|err| ParseCountError(err.into()))
                         .map(|count| Self {
                             realm: realm.to_owned().into(),
                             identifier: identifier.to_owned(),
@@ -177,9 +177,9 @@ impl fmt::Display for SessionId {
 #[derive(Debug)]
 pub(crate) enum ParseSessionIdError {
     /// An error that can occur when parsing thread.
-    ParseThreadError(BoxError),
+    ParseThreadError(Error),
     /// An error that can occur when parsing count.
-    ParseCountError(BoxError),
+    ParseCountError(Error),
     /// Invalid format.
     InvalidFormat,
 }
@@ -195,4 +195,4 @@ impl fmt::Display for ParseSessionIdError {
     }
 }
 
-impl Error for ParseSessionIdError {}
+impl error::Error for ParseSessionIdError {}

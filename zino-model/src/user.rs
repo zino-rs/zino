@@ -75,7 +75,7 @@ impl Model for User {
             self.name = name;
         }
         if self.name.is_empty() {
-            validation.record_fail("name", "should be nonempty");
+            validation.record("name", "should be nonempty");
         }
         if let Some(roles) = Validation::parse_array(data.get("roles")) {
             if let Err(err) = self.set_roles(roles) {
@@ -83,7 +83,7 @@ impl Model for User {
             }
         }
         if self.roles.is_empty() && !validation.contains_key("roles") {
-            validation.record_fail("roles", "should be nonempty");
+            validation.record("roles", "should be nonempty");
         }
         validation
     }

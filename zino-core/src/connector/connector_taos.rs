@@ -1,12 +1,12 @@
 use super::{Connector, DataSource, DataSourceConnector::Taos};
-use crate::{extend::TomlTableExt, format, state::State, BoxError, Map, Record};
+use crate::{error::Error, extend::TomlTableExt, format, state::State, Map, Record};
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use taos::{AsyncFetchable, AsyncQueryable, PoolBuilder, TBuilder, TaosBuilder, TaosPool};
 use toml::Table;
 
 impl Connector for TaosPool {
-    fn try_new_data_source(config: &Table) -> Result<DataSource, BoxError> {
+    fn try_new_data_source(config: &Table) -> Result<DataSource, Error> {
         let name = config.get_str("name").unwrap_or("taos");
         let database = config.get_str("database").unwrap_or(name);
         let authority = State::format_authority(config, Some(6041));
@@ -23,14 +23,14 @@ impl Connector for TaosPool {
         Ok(data_source)
     }
 
-    async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, BoxError> {
+    async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, Error> {
         let taos = self.get()?;
         let sql = format::format_query(query, params);
         let affected_rows = taos.exec(sql).await?;
         Ok(affected_rows.try_into().ok())
     }
 
-    async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, BoxError> {
+    async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, Error> {
         let taos = self.get()?;
         let sql = format::format_query(query, params);
         let mut result = taos.query(sql).await?;
@@ -50,7 +50,7 @@ impl Connector for TaosPool {
         &self,
         query: &str,
         params: Option<&Map>,
-    ) -> Result<Vec<T>, BoxError> {
+    ) -> Result<Vec<T>, Error> {
         let taos = self.get()?;
         let sql = format::format_query(query, params);
         let mut result = taos.query(sql).await?;
@@ -63,14 +63,10 @@ impl Connector for TaosPool {
             }
             data.push(map);
         }
-        serde_json::from_value(data.into()).map_err(BoxError::from)
+        serde_json::from_value(data.into()).map_err(Error::from)
     }
 
-    async fn query_one(
-        &self,
-        query: &str,
-        params: Option<&Map>,
-    ) -> Result<Option<Record>, BoxError> {
+    async fn query_one(&self, query: &str, params: Option<&Map>) -> Result<Option<Record>, Error> {
         let taos = self.get()?;
         let sql = format::format_query(query, params);
         let mut result = taos.query(sql).await?;
@@ -88,7 +84,7 @@ impl Connector for TaosPool {
         &self,
         query: &str,
         params: Option<&Map>,
-    ) -> Result<Option<T>, BoxError> {
+    ) -> Result<Option<T>, Error> {
         let taos = self.get()?;
         let sql = format::format_query(query, params);
         let mut result = taos.query(sql).await?;
@@ -97,7 +93,7 @@ impl Connector for TaosPool {
             for (name, value) in row {
                 map.insert(name.to_owned(), value.to_json_value());
             }
-            serde_json::from_value(map.into()).map_err(BoxError::from)
+            serde_json::from_value(map.into()).map_err(Error::from)
         } else {
             Ok(None)
         }

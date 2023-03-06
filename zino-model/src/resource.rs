@@ -66,7 +66,7 @@ impl Model for Resource {
             self.name = name;
         }
         if self.name.is_empty() {
-            validation.record_fail("name", "should be nonempty");
+            validation.record("name", "should be nonempty");
         }
         validation
     }

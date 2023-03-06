@@ -63,9 +63,6 @@ pub type Uuid = uuid::Uuid;
 /// An allocation-optimized string.
 pub type SharedString = std::borrow::Cow<'static, str>;
 
-/// A type-erased error type.
-pub type BoxError = Box<dyn std::error::Error + Sync + Send + 'static>;
-
 /// An owned dynamically typed future.
 pub type BoxFuture<'a, T = ()> =
     std::pin::Pin<Box<dyn std::future::Future<Output = T> + Send + 'a>>;

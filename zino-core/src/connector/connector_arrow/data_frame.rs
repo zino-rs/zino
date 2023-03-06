@@ -1,36 +1,36 @@
 use super::ArrowArrayExt;
-use crate::{BoxError, Map, Record};
+use crate::{error::Error, Map, Record};
 use datafusion::{arrow::util, dataframe::DataFrame};
 use serde::de::DeserializeOwned;
 
 /// Executor trait for [`DataFrame`](datafusion::dataframe::DataFrame).
 pub trait DataFrameExecutor {
     /// Executes the `DataFrame` and returns the total number of rows affected.
-    async fn execute(self) -> Result<Option<u64>, BoxError>;
+    async fn execute(self) -> Result<Option<u64>, Error>;
 
     /// Executes the `DataFrame` and parses it as `Vec<Record>`.
-    async fn query(self) -> Result<Vec<Record>, BoxError>;
+    async fn query(self) -> Result<Vec<Record>, Error>;
 
     /// Executes the `DataFrame` and parses it as `Vec<T>`.
-    async fn query_as<T: DeserializeOwned>(self) -> Result<Vec<T>, BoxError>;
+    async fn query_as<T: DeserializeOwned>(self) -> Result<Vec<T>, Error>;
 
     /// Executes the `DataFrame` and parses it as a `Record`.
-    async fn query_one(self) -> Result<Option<Record>, BoxError>;
+    async fn query_one(self) -> Result<Option<Record>, Error>;
 
     /// Executes the `DataFrame` and parses it as an instance of type `T`.
-    async fn query_one_as<T: DeserializeOwned>(self) -> Result<Option<T>, BoxError>;
+    async fn query_one_as<T: DeserializeOwned>(self) -> Result<Option<T>, Error>;
 
     /// Executes the `DataFrame` and creates a visual representation of record batches.
-    async fn output(self) -> Result<String, BoxError>;
+    async fn output(self) -> Result<String, Error>;
 }
 
 impl DataFrameExecutor for DataFrame {
-    async fn execute(self) -> Result<Option<u64>, BoxError> {
+    async fn execute(self) -> Result<Option<u64>, Error> {
         self.collect().await?;
         Ok(None)
     }
 
-    async fn query(self) -> Result<Vec<Record>, BoxError> {
+    async fn query(self) -> Result<Vec<Record>, Error> {
         let batches = self.collect().await?;
         let mut records = Vec::new();
         let mut max_rows = 0;
@@ -54,7 +54,7 @@ impl DataFrameExecutor for DataFrame {
         Ok(records)
     }
 
-    async fn query_as<T: DeserializeOwned>(self) -> Result<Vec<T>, BoxError> {
+    async fn query_as<T: DeserializeOwned>(self) -> Result<Vec<T>, Error> {
         let batches = self.collect().await?;
         let mut data = Vec::new();
         let mut max_rows = 0;
@@ -75,10 +75,10 @@ impl DataFrameExecutor for DataFrame {
                 }
             }
         }
-        serde_json::from_value(data.into()).map_err(BoxError::from)
+        serde_json::from_value(data.into()).map_err(Error::from)
     }
 
-    async fn query_one(self) -> Result<Option<Record>, BoxError> {
+    async fn query_one(self) -> Result<Option<Record>, Error> {
         let batches = self.limit(0, Some(1))?.collect().await?;
         let mut record = Record::new();
         for batch in batches {
@@ -93,7 +93,7 @@ impl DataFrameExecutor for DataFrame {
         Ok(Some(record))
     }
 
-    async fn query_one_as<T: DeserializeOwned>(self) -> Result<Option<T>, BoxError> {
+    async fn query_one_as<T: DeserializeOwned>(self) -> Result<Option<T>, Error> {
         let batches = self.limit(0, Some(1))?.collect().await?;
         let mut map = Map::new();
         for batch in batches {
@@ -105,10 +105,10 @@ impl DataFrameExecutor for DataFrame {
                 }
             }
         }
-        serde_json::from_value(map.into()).map_err(BoxError::from)
+        serde_json::from_value(map.into()).map_err(Error::from)
     }
 
-    async fn output(self) -> Result<String, BoxError> {
+    async fn output(self) -> Result<String, Error> {
         let batches = self.collect().await?;
         let data = util::pretty::pretty_format_batches(&batches)?;
         Ok(data.to_string())

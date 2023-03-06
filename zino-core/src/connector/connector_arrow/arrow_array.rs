@@ -1,4 +1,4 @@
-use crate::{format::base64, BoxError, Map};
+use crate::{error::Error, format::base64, Map};
 use apache_avro::{types::Value as AvroValue, Days, Duration, Millis, Months};
 use datafusion::arrow::{
     array::{self, Array, ArrayAccessor, FixedSizeBinaryArray, FixedSizeListArray, StringArray},
@@ -17,14 +17,14 @@ use std::collections::HashMap;
 /// Extension trait for [`dyn Array`](datafusion::arrow::array::Array).
 pub(super) trait ArrowArrayExt {
     /// Parses the element at the index as an Avro value.
-    fn parse_avro_value(&self, index: usize) -> Result<AvroValue, BoxError>;
+    fn parse_avro_value(&self, index: usize) -> Result<AvroValue, Error>;
 
     /// Parses the element at the index as a JSON value.
-    fn parse_json_value(&self, index: usize) -> Result<JsonValue, BoxError>;
+    fn parse_json_value(&self, index: usize) -> Result<JsonValue, Error>;
 }
 
 impl ArrowArrayExt for dyn Array {
-    fn parse_avro_value(&self, index: usize) -> Result<AvroValue, BoxError> {
+    fn parse_avro_value(&self, index: usize) -> Result<AvroValue, Error> {
         if self.is_null(index) {
             return Ok(AvroValue::Null);
         }
@@ -220,7 +220,8 @@ impl ArrowArrayExt for dyn Array {
                         hashmap.insert(key, value);
                     } else {
                         let key_type = map_array.key_type();
-                        return Err(format!("Avro map does not support `{key_type}` keys ").into());
+                        let message = format!("Avro map does not support `{key_type}` keys ");
+                        return Err(Error::new(message));
                     }
                 }
                 AvroValue::Map(hashmap)
@@ -243,7 +244,9 @@ impl ArrowArrayExt for dyn Array {
                 let type_id = union_array.type_id(index);
                 let position = types.iter().position(|&ty| type_id == ty).ok_or_else(|| {
                     let type_names = union_array.type_names();
-                    format!("invalid slot `{type_id}` for the union types `{type_names:?}`")
+                    let message =
+                        format!("invalid slot `{type_id}` for the union types `{type_names:?}`");
+                    Error::new(message)
                 })?;
                 let value = union_array.value(index).parse_avro_value(0)?;
                 AvroValue::Union(position.try_into()?, Box::new(value))
@@ -255,24 +258,22 @@ impl ArrowArrayExt for dyn Array {
                 let dictionary_array = array::as_dictionary_array::<UInt32Type>(self);
                 let string_array = dictionary_array
                     .downcast_dict::<StringArray>()
-                    .ok_or_else(|| "fail to downcast the dictionary to string array")?;
+                    .ok_or_else(|| Error::new("fail to downcast the dictionary to string array"))?;
                 let value = string_array.value(index);
-                let position = dictionary_array
-                    .lookup_key(value)
-                    .ok_or_else(|| format!("value `{value}` is not in the dictionary"))?;
+                let position = dictionary_array.lookup_key(value).ok_or_else(|| {
+                    Error::new(format!("value `{value}` is not in the dictionary"))
+                })?;
                 AvroValue::Enum(position.try_into()?, value.to_owned())
             }
             data_type => {
-                return Err(format!(
-                    "conversion of the `{data_type}` value to an Avro value is unsupported"
-                )
-                .into())
+                let message = format!("cannot convert the `{data_type}` value to an Avro value");
+                return Err(Error::new(message));
             }
         };
         Ok(value)
     }
 
-    fn parse_json_value(&self, index: usize) -> Result<JsonValue, BoxError> {
+    fn parse_json_value(&self, index: usize) -> Result<JsonValue, Error> {
         if self.is_null(index) {
             return Ok(JsonValue::Null);
         }
@@ -380,9 +381,8 @@ impl ArrowArrayExt for dyn Array {
                         map.insert(key, value);
                     } else {
                         let key_type = map_array.key_type();
-                        return Err(
-                            format!("json object does not support `{key_type}` keys ").into()
-                        );
+                        let message = format!("json object does not support `{key_type}` keys ");
+                        return Err(Error::new(message));
                     }
                 }
                 JsonValue::Object(map)
@@ -407,15 +407,13 @@ impl ArrowArrayExt for dyn Array {
                 let dictionary_array = array::as_dictionary_array::<UInt32Type>(self);
                 let string_array = dictionary_array
                     .downcast_dict::<StringArray>()
-                    .ok_or_else(|| "fail to downcast the dictionary to string array")?;
+                    .ok_or_else(|| Error::new("fail to downcast the dictionary to string array"))?;
                 let value = string_array.value(index);
                 JsonValue::String(value.to_owned())
             }
             data_type => {
-                return Err(format!(
-                    "conversion of the `{data_type}` value to a json value is unsupported"
-                )
-                .into())
+                let message = format!("cannot convert the `{data_type}` value to a json value");
+                return Err(Error::new(message));
             }
         };
         Ok(value)

@@ -1,6 +1,8 @@
-use zino_core::{error::Error, BoxError};
+use zino_core::error::Error;
 
 pub fn bench(c: &mut criterion::Criterion) {
+    type BoxError = Box<dyn std::error::Error + 'static>;
+
     c.bench_function("static_str_into_box_error", |b| {
         b.iter(|| {
             let message = "a string error";

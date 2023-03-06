@@ -1,5 +1,5 @@
 use super::ArrowFieldExt;
-use crate::{BoxError, Record};
+use crate::{error::Error, Record};
 use datafusion::arrow::{
     array::Array,
     datatypes::{DataType, Field, Schema, UnionMode},
@@ -10,10 +10,10 @@ use toml::{Table, Value};
 /// Extension trait for [`Schema`](datafusion::arrow::datatypes::Schema).
 pub(super) trait ArrowSchemaExt {
     /// Attempts to create a `Schema` from an Avro record.
-    fn try_from_avro_record(record: &Record) -> Result<Schema, BoxError>;
+    fn try_from_avro_record(record: &Record) -> Result<Schema, Error>;
 
     /// Attempts to create a `Schema` from the TOML table configuration.
-    fn try_from_toml_table(table: &Table) -> Result<Schema, BoxError>;
+    fn try_from_toml_table(table: &Table) -> Result<Schema, Error>;
 
     /// Collects columns in the Avro records.
     fn collect_columns_from_avro_records(
@@ -23,7 +23,7 @@ pub(super) trait ArrowSchemaExt {
 }
 
 impl ArrowSchemaExt for Schema {
-    fn try_from_avro_record(record: &Record) -> Result<Schema, BoxError> {
+    fn try_from_avro_record(record: &Record) -> Result<Schema, Error> {
         let mut fields = Vec::with_capacity(record.len());
         for (field, value) in record {
             let field = Field::try_from_avro_record_entry(field, value)?;
@@ -32,7 +32,7 @@ impl ArrowSchemaExt for Schema {
         Ok(Schema::new(fields))
     }
 
-    fn try_from_toml_table(table: &Table) -> Result<Schema, BoxError> {
+    fn try_from_toml_table(table: &Table) -> Result<Schema, Error> {
         let mut fields = Vec::new();
         for (key, value) in table {
             let name = key.to_owned();
@@ -57,14 +57,14 @@ impl ArrowSchemaExt for Schema {
                         }
                         DataType::Union(fields, positions, UnionMode::Dense)
                     } else {
-                        return Err(format!("schema for `{key}` should be nonempty").into());
+                        return Err(Error::new(format!("schema for `{key}` should be nonempty")));
                     }
                 }
                 Value::Table(table) => {
                     let schema = Self::try_from_toml_table(table)?;
                     DataType::Struct(schema.fields)
                 }
-                _ => return Err(format!("schema for `{key}` is invalid").into()),
+                _ => return Err(Error::new(format!("schema for `{key}` is invalid"))),
             };
             fields.push(Field::new(name, data_type, true));
         }
@@ -86,7 +86,7 @@ impl ArrowSchemaExt for Schema {
 }
 
 /// Parses the arrow data type.
-fn parse_arrow_data_type(value_type: &str) -> Result<DataType, BoxError> {
+fn parse_arrow_data_type(value_type: &str) -> Result<DataType, Error> {
     let data_type = match value_type {
         "null" => DataType::Null,
         "boolean" => DataType::Boolean,
@@ -97,7 +97,8 @@ fn parse_arrow_data_type(value_type: &str) -> Result<DataType, BoxError> {
         "bytes" => DataType::Binary,
         "string" => DataType::Utf8,
         _ => {
-            return Err(format!("parsing `{value_type}` as Arrow data type is unsupported").into());
+            let message = format!("parsing `{value_type}` as Arrow data type is unsupported");
+            return Err(Error::new(message));
         }
     };
     Ok(data_type)

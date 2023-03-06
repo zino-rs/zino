@@ -1,15 +1,16 @@
 use super::Application;
 use crate::{
+    error::Error,
     extend::{HeaderMapExt, JsonObjectExt, TomlTableExt},
     trace::TraceContext,
-    BoxError, Map, Uuid,
+    Map, Uuid,
 };
 use reqwest::{
     header::{self, HeaderMap, HeaderName},
     multipart::Form,
     Certificate, Client, Method, Request, Response, Url,
 };
-use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, Error, RequestBuilder};
+use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, RequestBuilder};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use reqwest_tracing::{ReqwestOtelSpanBackend, TracingMiddleware};
 use serde_json::Value;
@@ -98,11 +99,11 @@ pub(super) fn init<APP: Application + ?Sized>() {
 pub(crate) fn request_builder(
     resource: &str,
     options: Option<&Map>,
-) -> Result<RequestBuilder, BoxError> {
+) -> Result<RequestBuilder, Error> {
     if options.is_none() || options.is_some_and(|map| map.is_empty()) {
         let request_builder = SHARED_HTTP_CLIENT
             .get()
-            .ok_or("failed to get the global http client")?
+            .ok_or_else(|| Error::new("failed to get the global http client"))?
             .request(Method::GET, resource);
         return Ok(request_builder);
     }
@@ -114,7 +115,7 @@ pub(crate) fn request_builder(
         .unwrap_or(Method::GET);
     let mut request_builder = SHARED_HTTP_CLIENT
         .get()
-        .ok_or("failed to get the global http client")?
+        .ok_or_else(|| Error::new("failed to get the global http client"))?
         .request(method, resource);
     let mut headers = HeaderMap::new();
     if let Some(query) = options.get("query") {
@@ -206,7 +207,11 @@ impl ReqwestOtelSpanBackend for RequestTiming {
         )
     }
 
-    fn on_request_end(span: &Span, outcome: &Result<Response, Error>, extensions: &mut Extensions) {
+    fn on_request_end(
+        span: &Span,
+        outcome: &Result<Response, reqwest_middleware::Error>,
+        extensions: &mut Extensions,
+    ) {
         let latency_millis = extensions
             .get::<Instant>()
             .and_then(|t| u64::try_from(t.elapsed().as_millis()).ok());
@@ -231,7 +236,7 @@ impl ReqwestOtelSpanBackend for RequestTiming {
                 tracing::info!("finished HTTP request");
             }
             Err(err) => {
-                if let Error::Reqwest(err) = err {
+                if let reqwest_middleware::Error::Reqwest(err) = err {
                     span.record(
                         "http.status_code",
                         err.status().map(|status_code| status_code.as_u16()),

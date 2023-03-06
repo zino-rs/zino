@@ -1,7 +1,7 @@
 //! Utilities for DataFusion.
 
 use super::{Connector, DataSource, DataSourceConnector::Arrow};
-use crate::{application::http_client, extend::TomlTableExt, format, BoxError, Map, Record};
+use crate::{application::http_client, error::Error, extend::TomlTableExt, format, Map, Record};
 use datafusion::{
     arrow::{datatypes::Schema, record_batch::RecordBatch},
     dataframe::DataFrame,
@@ -100,7 +100,7 @@ impl ArrowConnector {
     }
 
     /// Attempts to get the session context.
-    pub async fn try_get_session_context(&self) -> Result<&SessionContext, BoxError> {
+    pub async fn try_get_session_context(&self) -> Result<&SessionContext, Error> {
         if let Some(ctx) = self.context.get() {
             return Ok(ctx);
         };
@@ -111,10 +111,10 @@ impl ArrowConnector {
             for table in tables.iter().filter_map(|v| v.as_table()) {
                 let data_type = table
                     .get_str("type")
-                    .ok_or("the `type` field should be a str")?;
+                    .ok_or_else(|| Error::new("the `type` field should be a str"))?;
                 let table_name = table
                     .get_str("name")
-                    .ok_or("the `name` field should be a str")?;
+                    .ok_or_else(|| Error::new("the `name` field should be a str"))?;
                 let table_path = if let Some(url) = table.get_str("url") {
                     let table_file_path = root.join(format!("{table_name}.{data_type}"));
                     let mut table_file = File::create(&table_file_path)?;
@@ -127,7 +127,9 @@ impl ArrowConnector {
                     table
                         .get_str("path")
                         .map(|path| root.join(path).to_string_lossy().into_owned())
-                        .ok_or_else(|| format!("the path for the table `{table_name}` is absent"))?
+                        .ok_or_else(|| {
+                            Error::new(format!("the path for the table `{table_name}` is absent"))
+                        })?
                 };
                 let table_schema = if let Some(schema) = table.get_table("schema") {
                     Some(Schema::try_from_toml_table(schema)?)
@@ -198,7 +200,11 @@ impl ArrowConnector {
                         ctx.register_parquet(table_name, &table_path, options)
                             .await?;
                     }
-                    _ => return Err(format!("data type `{data_type}` is unsupported").into()),
+                    _ => {
+                        return Err(Error::new(format!(
+                            "data type `{data_type}` is unsupported"
+                        )))
+                    }
                 }
             }
         }
@@ -209,7 +215,7 @@ impl ArrowConnector {
 
     /// Attempts to create a [`DateFrame`](datafusion::dataframe::DataFrame)
     /// from reading Avro records.
-    pub async fn read_avro_records(&self, records: &[Record]) -> Result<DataFrame, BoxError> {
+    pub async fn read_avro_records(&self, records: &[Record]) -> Result<DataFrame, Error> {
         let ctx = self.try_get_session_context().await?;
         let schema = if let Some(record) = records.first() {
             Schema::try_from_avro_record(record)?
@@ -219,7 +225,7 @@ impl ArrowConnector {
 
         let columns = schema.collect_columns_from_avro_records(records);
         let batch = RecordBatch::try_new(Arc::new(schema), columns)?;
-        ctx.read_batch(batch).map_err(BoxError::from)
+        ctx.read_batch(batch).map_err(Error::from)
     }
 }
 
@@ -230,7 +236,7 @@ impl Default for ArrowConnector {
 }
 
 impl Connector for ArrowConnector {
-    fn try_new_data_source(config: &Table) -> Result<DataSource, BoxError> {
+    fn try_new_data_source(config: &Table) -> Result<DataSource, Error> {
         let name = config.get_str("name").unwrap_or("arrow");
         let catalog = config.get_str("catalog").unwrap_or(name);
 
@@ -239,14 +245,14 @@ impl Connector for ArrowConnector {
         Ok(data_source)
     }
 
-    async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, BoxError> {
+    async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, Error> {
         let ctx = self.try_get_session_context().await?;
         let sql = format::format_query(query, params);
         let df = ctx.sql(&sql).await?;
         df.execute().await
     }
 
-    async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, BoxError> {
+    async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, Error> {
         let ctx = self.try_get_session_context().await?;
         let sql = format::format_query(query, params);
         let df = ctx.sql(&sql).await?;
@@ -257,18 +263,14 @@ impl Connector for ArrowConnector {
         &self,
         query: &str,
         params: Option<&Map>,
-    ) -> Result<Vec<T>, BoxError> {
+    ) -> Result<Vec<T>, Error> {
         let ctx = self.try_get_session_context().await?;
         let sql = format::format_query(query, params);
         let df = ctx.sql(&sql).await?;
         df.query_as().await
     }
 
-    async fn query_one(
-        &self,
-        query: &str,
-        params: Option<&Map>,
-    ) -> Result<Option<Record>, BoxError> {
+    async fn query_one(&self, query: &str, params: Option<&Map>) -> Result<Option<Record>, Error> {
         let ctx = self.try_get_session_context().await?;
         let sql = format::format_query(query, params);
         let df = ctx.sql(&sql).await?;
@@ -279,7 +281,7 @@ impl Connector for ArrowConnector {
         &self,
         query: &str,
         params: Option<&Map>,
-    ) -> Result<Option<T>, BoxError> {
+    ) -> Result<Option<T>, Error> {
         let ctx = self.try_get_session_context().await?;
         let sql = format::format_query(query, params);
         let df = ctx.sql(&sql).await?;

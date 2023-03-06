@@ -1,6 +1,6 @@
 use self::DataSourceConnector::*;
 use super::Connector;
-use crate::{extend::TomlTableExt, BoxError, Map, Record};
+use crate::{error::Error, extend::TomlTableExt, Map, Record};
 use toml::Table;
 
 #[cfg(feature = "connector-arrow")]
@@ -89,7 +89,7 @@ impl DataSource {
     /// - `postgres`
     /// - `sqlite`
     /// - `taos`
-    pub fn try_new(protocol: &'static str, config: &Table) -> Result<DataSource, BoxError> {
+    pub fn try_new(protocol: &'static str, config: &Table) -> Result<DataSource, Error> {
         let mut data_source = match protocol {
             #[cfg(feature = "connector-arrow")]
             "arrow" => ArrowConnector::try_new_data_source(config)?,
@@ -105,7 +105,11 @@ impl DataSource {
             "sqlite" => SqlitePool::try_new_data_source(config)?,
             #[cfg(feature = "connector-taos")]
             "taos" => TaosPool::try_new_data_source(config)?,
-            _ => return Err(format!("data source protocol `{protocol}` is unsupported").into()),
+            _ => {
+                return Err(Error::new(format!(
+                    "data source protocol `{protocol}` is unsupported"
+                )))
+            }
         };
         let source_type = config.get_str("type").unwrap_or(protocol);
         data_source.source_type = source_type.to_owned();
@@ -160,7 +164,7 @@ impl DataSource {
 }
 
 impl Connector for DataSource {
-    fn try_new_data_source(config: &Table) -> Result<DataSource, BoxError> {
+    fn try_new_data_source(config: &Table) -> Result<DataSource, Error> {
         let source_type = config.get_str("type").unwrap_or("unkown");
         let protocol = match source_type {
             "arrow" => "arrow",
@@ -175,14 +179,15 @@ impl Connector for DataSource {
                 if let Some(protocol) = config.get_str("protocol") {
                     protocol.to_owned().leak()
                 } else {
-                    return Err(format!("data source type `{source_type}` is unsupported").into());
+                    let message = format!("data source type `{source_type}` is unsupported");
+                    return Err(Error::new(message));
                 }
             }
         };
         Self::try_new(protocol, config)
     }
 
-    async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, BoxError> {
+    async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, Error> {
         match &self.connector {
             #[cfg(feature = "connector-arrow")]
             Arrow(connector) => connector.execute(query, params).await,
@@ -201,7 +206,7 @@ impl Connector for DataSource {
         }
     }
 
-    async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, BoxError> {
+    async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, Error> {
         match &self.connector {
             #[cfg(feature = "connector-arrow")]
             Arrow(connector) => connector.query(query, params).await,
@@ -220,11 +225,7 @@ impl Connector for DataSource {
         }
     }
 
-    async fn query_one(
-        &self,
-        query: &str,
-        params: Option<&Map>,
-    ) -> Result<Option<Record>, BoxError> {
+    async fn query_one(&self, query: &str, params: Option<&Map>) -> Result<Option<Record>, Error> {
         match &self.connector {
             #[cfg(feature = "connector-arrow")]
             Arrow(connector) => connector.query_one(query, params).await,

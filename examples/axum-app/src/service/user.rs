@@ -2,12 +2,12 @@ use fluent::fluent_args;
 use serde_json::{json, Value};
 use std::time::{Duration, Instant};
 use zino::{
-    BoxError, JsonObjectExt, Map, Model, Mutation, Query, Request, RequestContext, Schema, Uuid,
+    Error, JsonObjectExt, Map, Model, Mutation, Query, Request, RequestContext, Schema, Uuid,
     Validation,
 };
 use zino_model::{ModelAccessor, User};
 
-pub(crate) async fn update(user_id: Uuid, mut body: Map) -> Result<(Validation, Value), BoxError> {
+pub(crate) async fn update(user_id: Uuid, mut body: Map) -> Result<(Validation, Value), Error> {
     let user_id = user_id.to_string();
     let mut user = User::try_get_model(&user_id).await?;
     let validation = user.read_map(&body);
@@ -25,9 +25,11 @@ pub(crate) async fn update(user_id: Uuid, mut body: Map) -> Result<(Validation, 
     Ok((validation, data))
 }
 
-pub(crate) async fn view(req: &Request, query: &Query) -> Result<(Duration, Value), BoxError> {
+pub(crate) async fn view(req: &Request, query: &Query) -> Result<(Duration, Value), Error> {
     let db_query_start_time = Instant::now();
-    let user: Map = User::find_one(&query).await?.ok_or("user does not exist")?;
+    let user: Map = User::find_one(&query)
+        .await?
+        .ok_or_else(|| Error::new("user does not exist"))?;
     let db_query_duration = db_query_start_time.elapsed();
 
     let args = fluent_args![

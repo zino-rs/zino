@@ -1,10 +1,11 @@
 use super::{Connector, DataSource, DataSourceConnector::Http};
 use crate::{
     application::http_client,
+    error::Error,
     extend::{AvroRecordExt, HeaderMapExt, JsonObjectExt, TomlTableExt},
     format,
     trace::TraceContext,
-    BoxError, Map, Record,
+    Map, Record,
 };
 use http::{
     header::{HeaderMap, HeaderName},
@@ -30,7 +31,7 @@ pub struct HttpConnector {
 
 impl HttpConnector {
     /// Constructs a new instance, returning an error if it fails.
-    pub fn try_new(method: &str, base_url: &str) -> Result<Self, BoxError> {
+    pub fn try_new(method: &str, base_url: &str) -> Result<Self, Error> {
         Ok(Self {
             method: method.parse()?,
             base_url: base_url.parse()?,
@@ -52,7 +53,7 @@ impl HttpConnector {
     }
 
     /// Makes an HTTP request with the given query and params.
-    pub async fn fetch(&self, query: &str, params: Option<&Map>) -> Result<Response, BoxError> {
+    pub async fn fetch(&self, query: &str, params: Option<&Map>) -> Result<Response, Error> {
         let url = self.base_url.join(query)?;
         let resource = format::format_query(url.as_str(), params);
         let mut options = Map::new();
@@ -84,7 +85,7 @@ impl HttpConnector {
             .header("tracestate", trace_context.tracestate())
             .send()
             .await
-            .map_err(BoxError::from)
+            .map_err(Error::from)
     }
 
     /// Makes an HTTP request with the given query and params,
@@ -93,7 +94,7 @@ impl HttpConnector {
         &self,
         query: &str,
         params: Option<&Map>,
-    ) -> Result<T, BoxError> {
+    ) -> Result<T, Error> {
         let response = self.fetch(query, params).await?.error_for_status()?;
         let data = if response.headers().has_json_content_type() {
             response.json().await?
@@ -106,7 +107,7 @@ impl HttpConnector {
 }
 
 impl Connector for HttpConnector {
-    fn try_new_data_source(config: &Table) -> Result<DataSource, BoxError> {
+    fn try_new_data_source(config: &Table) -> Result<DataSource, Error> {
         let name = config.get_str("name").unwrap_or("http");
         let catalog = config.get_str("catalog").unwrap_or(name);
 
@@ -117,7 +118,7 @@ impl Connector for HttpConnector {
         Ok(data_source)
     }
 
-    async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, BoxError> {
+    async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, Error> {
         if let Value::Object(map) = self.fetch_json(query, params).await? &&
             let Some(rows_affected) = map
                 .get_u64("rows_affected")
@@ -129,7 +130,7 @@ impl Connector for HttpConnector {
         }
     }
 
-    async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, BoxError> {
+    async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, Error> {
         let records = match self.fetch_json(query, params).await? {
             Value::Array(vec) => vec
                 .into_iter()
@@ -162,7 +163,7 @@ impl Connector for HttpConnector {
                     vec![map.into_avro_record()]
                 }
             }
-            _ => return Err("invalid data format".into()),
+            _ => return Err(Error::new("invalid data format")),
         };
         Ok(records)
     }
@@ -171,7 +172,7 @@ impl Connector for HttpConnector {
         &self,
         query: &str,
         params: Option<&Map>,
-    ) -> Result<Vec<T>, BoxError> {
+    ) -> Result<Vec<T>, Error> {
         let data = match self.fetch_json(query, params).await? {
             Value::Array(vec) => vec
                 .into_iter()
@@ -204,16 +205,12 @@ impl Connector for HttpConnector {
                     vec![map]
                 }
             }
-            _ => return Err("invalid data format".into()),
+            _ => return Err(Error::new("invalid data format")),
         };
-        serde_json::from_value(data.into()).map_err(BoxError::from)
+        serde_json::from_value(data.into()).map_err(Error::from)
     }
 
-    async fn query_one(
-        &self,
-        query: &str,
-        params: Option<&Map>,
-    ) -> Result<Option<Record>, BoxError> {
+    async fn query_one(&self, query: &str, params: Option<&Map>) -> Result<Option<Record>, Error> {
         let record = match self.fetch_json(query, params).await? {
             Value::Object(mut map) => {
                 if let Some(value) = map.remove("data").or_else(|| map.remove("result")) {
@@ -228,7 +225,7 @@ impl Connector for HttpConnector {
                     map.into_avro_record()
                 }
             }
-            _ => return Err("invalid data format".into()),
+            _ => return Err(Error::new("invalid data format")),
         };
         Ok(Some(record))
     }
@@ -237,15 +234,15 @@ impl Connector for HttpConnector {
         &self,
         query: &str,
         params: Option<&Map>,
-    ) -> Result<Option<T>, BoxError> {
+    ) -> Result<Option<T>, Error> {
         if let Value::Object(mut map) = self.fetch_json(query, params).await? {
             if let Some(value) = map.remove("data").or_else(|| map.remove("result")) {
-                serde_json::from_value(value).map_err(BoxError::from)
+                serde_json::from_value(value).map_err(Error::from)
             } else {
-                serde_json::from_value(map.into()).map_err(BoxError::from)
+                serde_json::from_value(map.into()).map_err(Error::from)
             }
         } else {
-            Err("invalid data format".into())
+            Err(Error::new("invalid data format"))
         }
     }
 }

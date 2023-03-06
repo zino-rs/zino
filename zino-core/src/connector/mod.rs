@@ -25,7 +25,7 @@
 //! | `timescaledb`    | TimescaleDB            | `connector-postgres`   |
 //!
 
-use crate::{extend::TomlTableExt, state::State, BoxError, Map, Record};
+use crate::{error::Error, extend::TomlTableExt, state::State, Map, Record};
 use apache_avro::types::Value;
 use serde::de::DeserializeOwned;
 use std::{collections::HashMap, sync::LazyLock};
@@ -70,20 +70,20 @@ pub use connector_http::HttpConnector;
 pub trait Connector {
     /// Constructs a new data source with the configuration,
     /// returning an error if it fails.
-    fn try_new_data_source(config: &Table) -> Result<DataSource, BoxError>;
+    fn try_new_data_source(config: &Table) -> Result<DataSource, Error>;
 
     /// Executes the query and returns the total number of rows affected.
-    async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, BoxError>;
+    async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, Error>;
 
     /// Executes the query and parses it as `Vec<Record>`.
-    async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, BoxError>;
+    async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, Error>;
 
     /// Executes the query and parses it as `Vec<T>`.
     async fn query_as<T: DeserializeOwned>(
         &self,
         query: &str,
         params: Option<&Map>,
-    ) -> Result<Vec<T>, BoxError> {
+    ) -> Result<Vec<T>, Error> {
         let data = self.query(query, params).await?;
         let value = data
             .into_iter()
@@ -93,18 +93,14 @@ pub trait Connector {
     }
 
     /// Executes the query and parses it as a `Record`.
-    async fn query_one(
-        &self,
-        query: &str,
-        params: Option<&Map>,
-    ) -> Result<Option<Record>, BoxError>;
+    async fn query_one(&self, query: &str, params: Option<&Map>) -> Result<Option<Record>, Error>;
 
     /// Executes the query and parses it as an instance of type `T`.
     async fn query_one_as<T: DeserializeOwned>(
         &self,
         query: &str,
         params: Option<&Map>,
-    ) -> Result<Option<T>, BoxError> {
+    ) -> Result<Option<T>, Error> {
         if let Some(record) = self.query_one(query, params).await? {
             let value = Value::Union(1, Box::new(Value::Record(record)));
             apache_avro::from_value(&value).map_err(|err| err.into())

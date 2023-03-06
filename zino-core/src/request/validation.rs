@@ -1,7 +1,8 @@
 use crate::{
     datetime::{self, DateTime},
+    error::Error,
     extend::JsonObjectExt,
-    BoxError, Map, SharedString,
+    Map, SharedString,
 };
 use serde_json::Value;
 use std::{
@@ -16,7 +17,7 @@ use uuid::Uuid;
 /// A record of validation results.
 #[derive(Debug, Default)]
 pub struct Validation {
-    failed_entries: Vec<(SharedString, BoxError)>,
+    failed_entries: Vec<(SharedString, Error)>,
 }
 
 impl Validation {
@@ -28,20 +29,26 @@ impl Validation {
         }
     }
 
-    /// Creates a new instance with the failed entry.
+    /// Creates a new instance with the entry.
     #[inline]
-    pub fn from_entry(key: impl Into<SharedString>, err: impl Into<BoxError>) -> Self {
+    pub fn from_entry(key: impl Into<SharedString>, err: impl Into<Error>) -> Self {
         let failed_entries = vec![(key.into(), err.into())];
         Self { failed_entries }
     }
 
-    /// Records a failed entry.
+    /// Records an entry with the message.
     #[inline]
-    pub fn record_fail(&mut self, key: impl Into<SharedString>, err: impl Into<BoxError>) {
+    pub fn record(&mut self, key: impl Into<SharedString>, message: impl Into<SharedString>) {
+        self.failed_entries.push((key.into(), Error::new(message)));
+    }
+
+    /// Records an entry for the error.
+    #[inline]
+    pub fn record_fail(&mut self, key: impl Into<SharedString>, err: impl Into<Error>) {
         self.failed_entries.push((key.into(), err.into()));
     }
 
-    /// Returns true if the validation contains an error value for the specified key.
+    /// Returns true if the validation contains a value for the specified key.
     #[inline]
     pub fn contains_key(&self, key: &str) -> bool {
         self.failed_entries.iter().any(|(field, _)| field == key)

@@ -1,12 +1,12 @@
 use self::ParseDurationError::*;
-use crate::BoxError;
-use std::{error::Error, fmt, time::Duration};
+use crate::error::Error;
+use std::{error, fmt, time::Duration};
 
 /// An error resulting from parsing a duration from a string.
 #[derive(Debug)]
 pub enum ParseDurationError {
     /// Invalid number.
-    InvalidNumber(BoxError),
+    InvalidNumber(Error),
     /// Invalid unit.
     InvalidUnit(String),
     /// Invalid format.
@@ -23,7 +23,7 @@ impl fmt::Display for ParseDurationError {
     }
 }
 
-impl Error for ParseDurationError {}
+impl error::Error for ParseDurationError {}
 
 /// Parses a duration from a string.
 ///

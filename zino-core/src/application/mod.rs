@@ -2,11 +2,12 @@
 
 use crate::{
     datetime::DateTime,
+    error::Error,
     extend::{HeaderMapExt, JsonObjectExt, TomlTableExt},
     schedule::{AsyncCronJob, CronJob, Job, JobScheduler},
     state::State,
     trace::TraceContext,
-    BoxError, Map,
+    Map,
 };
 use reqwest::Response;
 use serde::de::DeserializeOwned;
@@ -130,7 +131,7 @@ pub trait Application {
 
     /// Makes an HTTP request to the provided resource
     /// using [`reqwest`](https://crates.io/crates/reqwest).
-    async fn fetch(resource: &str, options: Option<&Map>) -> Result<Response, BoxError> {
+    async fn fetch(resource: &str, options: Option<&Map>) -> Result<Response, Error> {
         let mut trace_context = TraceContext::new();
         let span_id = trace_context.span_id();
         trace_context
@@ -141,7 +142,7 @@ pub trait Application {
             .header("tracestate", trace_context.tracestate())
             .send()
             .await
-            .map_err(BoxError::from)
+            .map_err(Error::from)
     }
 
     /// Makes an HTTP request to the provided resource and
@@ -149,7 +150,7 @@ pub trait Application {
     async fn fetch_json<T: DeserializeOwned>(
         resource: &str,
         options: Option<&Map>,
-    ) -> Result<T, BoxError> {
+    ) -> Result<T, Error> {
         let response = Self::fetch(resource, options).await?.error_for_status()?;
         let data = if response.headers().has_json_content_type() {
             response.json().await?

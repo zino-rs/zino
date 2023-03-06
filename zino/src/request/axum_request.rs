@@ -17,11 +17,12 @@ use tower_cookies::{Cookie, Cookies, Key};
 use zino_core::{
     application::Application,
     channel::CloudEvent,
+    error::Error,
     extend::HeaderMapExt,
     request::{Context, RequestContext},
     response::Rejection,
     state::State,
-    BoxError, Map,
+    Map,
 };
 
 /// An HTTP request extractor for `axum`.
@@ -155,7 +156,7 @@ impl RequestContext for AxumExtractor<Request<Body>> {
             .map_err(Rejection::internal_server_error)
     }
 
-    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, BoxError> {
+    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error> {
         let buffer_size = self.size_hint().lower().try_into().unwrap_or(128);
         let body = body::aggregate(self.body_mut()).await?;
         let mut bytes = Vec::with_capacity(buffer_size);

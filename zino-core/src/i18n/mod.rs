@@ -1,6 +1,6 @@
 //! Internationalization and localization.
 
-use crate::{application, extend::TomlTableExt, state::State, BoxError, SharedString};
+use crate::{application, error::Error, extend::TomlTableExt, state::State, SharedString};
 use fluent::{bundle::FluentBundle, FluentArgs, FluentResource};
 use intl_memoizer::concurrent::IntlLangMemoizer;
 use std::{collections::HashMap, fs, sync::LazyLock};
@@ -11,7 +11,7 @@ pub fn translate(
     locale: &LanguageIdentifier,
     message: &str,
     args: Option<FluentArgs<'_>>,
-) -> Result<SharedString, BoxError> {
+) -> Result<SharedString, Error> {
     let bundle = LOCALIZATION
         .get(locale)
         .or_else(|| {
@@ -21,12 +21,20 @@ pub fn translate(
                 .find_map(|(locale, bundle)| (locale.language == lang).then_some(bundle))
         })
         .or_else(|| LOCALIZATION.get(&langid!("en-US")))
-        .ok_or("the localization bundle does not exits")?;
+        .ok_or_else(|| Error::new("the localization bundle does not exits"))?;
     let pattern = bundle
         .get_message(message)
-        .ok_or_else(|| format!("failed to get the localization message for `{message}`"))?
+        .ok_or_else(|| {
+            Error::new(format!(
+                "failed to get the localization message for `{message}`"
+            ))
+        })?
         .value()
-        .ok_or_else(|| format!("failed to retrieve an option of the pattern for `{message}`"))?;
+        .ok_or_else(|| {
+            Error::new(format!(
+                "failed to retrieve an option of the pattern for `{message}`"
+            ))
+        })?;
 
     let mut errors = vec![];
     if let Some(args) = args {
@@ -35,14 +43,14 @@ pub fn translate(
         if errors.is_empty() {
             Ok(value.into())
         } else {
-            Err(format!("{errors:?}").into())
+            Err(Error::new(format!("{errors:?}")))
         }
     } else {
         let value = bundle.format_pattern(pattern, None, &mut errors);
         if errors.is_empty() {
             Ok(value)
         } else {
-            Err(format!("{errors:?}").into())
+            Err(Error::new(format!("{errors:?}")))
         }
     }
 }

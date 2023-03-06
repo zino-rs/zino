@@ -5,12 +5,13 @@ use crate::{
     authentication::{Authentication, ParseSecurityTokenError, SecurityToken, SessionId},
     channel::{CloudEvent, Subscription},
     datetime::DateTime,
+    error::Error,
     extend::HeaderMapExt,
     i18n,
     model::{Model, Query},
     response::{Rejection, Response, ResponseCode},
     trace::{TraceContext, TraceState},
-    BoxError, Map, SharedString, Uuid,
+    Map, SharedString, Uuid,
 };
 use cookie::{Cookie, SameSite};
 use fluent::FluentArgs;
@@ -83,7 +84,7 @@ pub trait RequestContext {
     fn try_send(&self, message: CloudEvent) -> Result<(), Rejection>;
 
     /// Reads the entire request body into a byte buffer.
-    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, BoxError>;
+    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error>;
 
     /// Creates a new request context.
     fn new_context(&self) -> Context {
@@ -250,7 +251,7 @@ pub trait RequestContext {
 
         Err(Rejection::from_validation_entry(
             name.to_owned(),
-            format!("the param `{name}` does not exist"),
+            Error::new(format!("the param `{name}` does not exist")),
         )
         .provide_context(self))
     }
@@ -285,7 +286,9 @@ pub trait RequestContext {
         if data_type.contains('/') {
             return Err(Rejection::from_validation_entry(
                 "data_type",
-                format!("deserialization of the data type `{data_type}` is unsupported"),
+                Error::new(format!(
+                    "deserialization of the data type `{data_type}` is unsupported"
+                )),
             )
             .provide_context(self));
         }
@@ -310,12 +313,12 @@ pub trait RequestContext {
         let Some(content_type) = self.get_header("content-type") else {
             return Err(Rejection::from_validation_entry(
                 "content_type",
-                "invalid `content-type` header",
+                Error::new("invalid `content-type` header"),
             ).provide_context(self));
         };
         match multer::parse_boundary(content_type) {
             Ok(boundary) => {
-                let result = self.read_body_bytes().await;
+                let result = self.read_body_bytes().await.map_err(|err| err.to_string());
                 let stream = futures::stream::once(async { result });
                 Ok(Multipart::new(stream, boundary))
             }
@@ -340,17 +343,17 @@ pub trait RequestContext {
             if let Some(access_key_id) = Validation::parse_string(query.get("access_key_id")) {
                 authentication.set_access_key_id(access_key_id);
             } else {
-                validation.record_fail("access_key_id", "should be nonempty");
+                validation.record("access_key_id", "should be nonempty");
             }
             if let Some(Ok(secs)) = Validation::parse_i64(query.get("expires")) {
                 if DateTime::now().timestamp() <= secs {
                     let expires = DateTime::from_timestamp(secs);
                     authentication.set_expires(Some(expires));
                 } else {
-                    validation.record_fail("expires", "valid period has expired");
+                    validation.record("expires", "valid period has expired");
                 }
             } else {
-                validation.record_fail("expires", "invalid timestamp");
+                validation.record("expires", "invalid timestamp");
             }
             if !validation.is_success() {
                 return Err(Rejection::bad_request(validation).provide_context(self));
@@ -362,10 +365,10 @@ pub trait RequestContext {
                     authentication.set_access_key_id(access_key_id);
                     authentication.set_signature(signature.to_owned());
                 } else {
-                    validation.record_fail("authorization", "invalid header value");
+                    validation.record("authorization", "invalid header value");
                 }
             } else {
-                validation.record_fail("authorization", "invalid service name");
+                validation.record("authorization", "invalid service name");
             }
             if !validation.is_success() {
                 return Err(Rejection::bad_request(validation).provide_context(self));
@@ -382,7 +385,7 @@ pub trait RequestContext {
                     if date >= current - max_tolerance && date <= current + max_tolerance {
                         authentication.set_date_header("date", date);
                     } else {
-                        validation.record_fail("date", "untrusted date");
+                        validation.record("date", "untrusted date");
                     }
                 }
                 Err(err) => {
@@ -408,17 +411,17 @@ pub trait RequestContext {
                     if let Some(assignee_id) = Validation::parse_string(query.get("access_key_id"))
                     {
                         if security_token.assignee_id().as_str() != assignee_id {
-                            validation.record_fail("access_key_id", "untrusted access key ID");
+                            validation.record("access_key_id", "untrusted access key ID");
                         }
                     } else {
-                        validation.record_fail("access_key_id", "should be nonempty");
+                        validation.record("access_key_id", "should be nonempty");
                     }
                     if let Some(Ok(expires)) = Validation::parse_i64(query.get("expires")) {
                         if security_token.expires().timestamp() != expires {
-                            validation.record_fail("expires", "untrusted timestamp");
+                            validation.record("expires", "untrusted timestamp");
                         }
                     } else {
-                        validation.record_fail("expires", "invalid timestamp");
+                        validation.record("expires", "invalid timestamp");
                     }
                     if validation.is_success() {
                         return Ok(security_token);
@@ -429,11 +432,11 @@ pub trait RequestContext {
                         DecodeError(_) | InvalidFormat => "x-security-token",
                         ParseExpiresError(_) | ValidPeriodExpired => "expires",
                     };
-                    validation.record_fail(field, err.to_string());
+                    validation.record_fail(field, err);
                 }
             }
         } else {
-            validation.record_fail("x-security-token", "should be nonempty");
+            validation.record("x-security-token", "should be nonempty");
         }
         Err(Rejection::bad_request(validation).provide_context(self))
     }
@@ -443,7 +446,7 @@ pub trait RequestContext {
     fn parse_session_id(&self) -> Result<SessionId, Rejection> {
         self.get_header("session-id")
             .ok_or_else(|| {
-                Rejection::from_validation_entry("session-id", "should be nonempty")
+                Rejection::from_validation_entry("session-id", Error::new("should be nonempty"))
                     .provide_context(self)
             })
             .and_then(|session_id| {
@@ -485,7 +488,9 @@ pub trait RequestContext {
         if data_type.contains('/') {
             return Err(Rejection::from_validation_entry(
                 "data_type",
-                format!("deserialization of the data type `{data_type}` is unsupported"),
+                Error::new(format!(
+                    "deserialization of the data type `{data_type}` is unsupported"
+                )),
             )
             .provide_context(self));
         }
@@ -535,14 +540,14 @@ pub trait RequestContext {
         &self,
         resource: &str,
         options: Option<&Map>,
-    ) -> Result<reqwest::Response, BoxError> {
+    ) -> Result<reqwest::Response, Error> {
         let trace_context = self.new_trace_context();
         http_client::request_builder(resource, options)?
             .header("traceparent", trace_context.traceparent())
             .header("tracestate", trace_context.tracestate())
             .send()
             .await
-            .map_err(BoxError::from)
+            .map_err(Error::from)
     }
 
     /// Makes an HTTP request to the provided resource and
@@ -551,7 +556,7 @@ pub trait RequestContext {
         &self,
         resource: &str,
         options: Option<&Map>,
-    ) -> Result<T, BoxError> {
+    ) -> Result<T, Error> {
         let response = self.fetch(resource, options).await?.error_for_status()?;
         let data = if response.headers().has_json_content_type() {
             response.json().await?
@@ -563,7 +568,7 @@ pub trait RequestContext {
     }
 
     /// Translates the localization message.
-    fn translate(&self, message: &str, args: Option<FluentArgs>) -> Result<SharedString, BoxError> {
+    fn translate(&self, message: &str, args: Option<FluentArgs>) -> Result<SharedString, Error> {
         if let Some(locale) = self.locale() {
             i18n::translate(locale, message, args)
         } else {

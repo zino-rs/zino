@@ -1,4 +1,4 @@
-use crate::{extend::AvroRecordExt, BoxError, Record};
+use crate::{error::Error, extend::AvroRecordExt, Record};
 use apache_avro::types::Value;
 use datafusion::arrow::{
     array::{
@@ -12,14 +12,14 @@ use std::sync::Arc;
 /// Extension trait for [`Field`](datafusion::arrow::datatypes::Field).
 pub(super) trait ArrowFieldExt {
     /// Attempts to create a `Field` from an Avro record entry.
-    fn try_from_avro_record_entry(field: &str, value: &Value) -> Result<Field, BoxError>;
+    fn try_from_avro_record_entry(field: &str, value: &Value) -> Result<Field, Error>;
 
     /// Collects values in the Avro records with the specific field.
     fn collect_values_from_avro_records(&self, records: &[Record]) -> Arc<dyn Array + 'static>;
 }
 
 impl ArrowFieldExt for Field {
-    fn try_from_avro_record_entry(field: &str, value: &Value) -> Result<Field, BoxError> {
+    fn try_from_avro_record_entry(field: &str, value: &Value) -> Result<Field, Error> {
         let data_type = match value {
             Value::Boolean(_) => DataType::Boolean,
             Value::Int(_) => DataType::Int32,
@@ -30,7 +30,7 @@ impl ArrowFieldExt for Field {
             Value::String(_) | Value::Uuid(_) => DataType::Utf8,
             _ => {
                 let message = format!("fail to construct an Arrow field for the `{field}` field");
-                return Err(message.into());
+                return Err(Error::new(message));
             }
         };
         Ok(Field::new(field, data_type, true))

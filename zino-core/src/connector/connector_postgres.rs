@@ -1,11 +1,11 @@
 use super::{Connector, DataSource, DataSourceConnector::Postgres};
-use crate::{extend::TomlTableExt, state::State, BoxError};
+use crate::{error::Error, extend::TomlTableExt, state::State};
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use std::time::Duration;
 use toml::Table;
 
 impl Connector for PgPool {
-    fn try_new_data_source(config: &Table) -> Result<DataSource, BoxError> {
+    fn try_new_data_source(config: &Table) -> Result<DataSource, Error> {
         let name = config.get_str("name").unwrap_or("postgres");
         let database = config.get_str("database").unwrap_or("postgres");
         let authority = State::format_authority(config, Some(5432));

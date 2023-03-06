@@ -51,12 +51,13 @@ pub use zino_core::{
     application::Application,
     database::Schema,
     datetime::DateTime,
+    error::Error,
     extend::JsonObjectExt,
     model::{Model, Mutation, Query},
     request::{RequestContext, Validation},
     response::ExtractRejection,
     schedule::{AsyncCronJob, CronJob},
-    BoxError, BoxFuture, Map, Record, Uuid,
+    BoxFuture, Map, Record, Uuid,
 };
 
 #[cfg(feature = "axum")]

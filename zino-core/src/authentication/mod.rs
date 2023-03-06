@@ -267,17 +267,17 @@ impl Authentication {
         if date < current && date < current - max_tolerance
             || date > current && date > current + max_tolerance
         {
-            validation.record_fail("date", "untrusted date");
+            validation.record("date", "untrusted date");
         }
         if let Some(expires) = self.expires {
             if current > expires {
-                validation.record_fail("expires", "valid period has expired");
+                validation.record("expires", "valid period has expired");
             }
         }
 
         let signature = self.signature();
         if signature.is_empty() || self.sign_with::<H>(secret_access_key) != signature {
-            validation.record_fail("signature", "invalid signature");
+            validation.record("signature", "invalid signature");
         }
         validation
     }
