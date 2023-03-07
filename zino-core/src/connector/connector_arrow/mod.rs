@@ -201,9 +201,8 @@ impl ArrowConnector {
                             .await?;
                     }
                     _ => {
-                        return Err(Error::new(format!(
-                            "data type `{data_type}` is unsupported"
-                        )))
+                        let message = format!("data type `{data_type}` is unsupported");
+                        return Err(Error::new(message));
                     }
                 }
             }

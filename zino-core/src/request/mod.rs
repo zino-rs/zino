@@ -284,13 +284,10 @@ pub trait RequestContext {
     {
         let data_type = self.header_map().get_data_type().unwrap_or("form".into());
         if data_type.contains('/') {
-            return Err(Rejection::from_validation_entry(
-                "data_type",
-                Error::new(format!(
-                    "deserialization of the data type `{data_type}` is unsupported"
-                )),
-            )
-            .provide_context(self));
+            let message = format!("deserialization of the data type `{data_type}` is unsupported");
+            let rejection = Rejection::from_validation_entry("data_type", Error::new(message))
+                .provide_context(self);
+            return Err(rejection);
         }
         let bytes = self
             .read_body_bytes()
@@ -486,13 +483,10 @@ pub trait RequestContext {
     {
         let data_type = self.header_map().get_data_type().unwrap_or("form".into());
         if data_type.contains('/') {
-            return Err(Rejection::from_validation_entry(
-                "data_type",
-                Error::new(format!(
-                    "deserialization of the data type `{data_type}` is unsupported"
-                )),
-            )
-            .provide_context(self));
+            let message = format!("deserialization of the data type `{data_type}` is unsupported");
+            let rejection = Rejection::from_validation_entry("data_type", Error::new(message))
+                .provide_context(self);
+            return Err(rejection);
         }
         let bytes = self
             .read_body_bytes()

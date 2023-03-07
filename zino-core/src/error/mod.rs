@@ -2,6 +2,10 @@
 use crate::SharedString;
 use std::{error, fmt};
 
+mod chain;
+
+pub use chain::Chain;
+
 /// A error type backed by an allocation-optimized string.
 #[derive(Debug)]
 pub struct Error {
@@ -30,19 +34,39 @@ impl Error {
         }
     }
 
-    /// Returns a new instance with the supplied message and `self` as the error source.
+    /// Wraps the error value with additional contextual message.
     #[inline]
-    pub fn wrap(self, message: impl Into<SharedString>) -> Self {
+    pub fn context(self, message: impl Into<SharedString>) -> Self {
         Self {
             message: message.into(),
             source: Some(Box::new(self)),
         }
     }
 
-    /// Returns the source.
+    /// Returns the error message.
+    #[inline]
+    pub fn message(&self) -> &str {
+        self.message.as_ref()
+    }
+
+    /// Returns the error source.
     #[inline]
     pub fn source(&self) -> Option<&Error> {
         self.source.as_deref()
+    }
+
+    /// Returns an iterator of the chain of source errors contained by `self`.
+    #[inline]
+    pub fn chain(&self) -> Chain<'_> {
+        Chain::new(self)
+    }
+
+    /// Returns the lowest level source of `self`.
+    ///
+    /// The root source is the last error in the iterator produced by [`chain()`](Error::chain).
+    #[inline]
+    pub fn root_source(&self) -> Option<&Error> {
+        self.chain().last()
     }
 }
 
@@ -61,7 +85,9 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = &self.message;
         if let Some(source) = &self.source {
-            tracing::error!(source = source.to_string(), "{message}");
+            let source = source.message();
+            let root_source = self.root_source().map(|err| err.message());
+            tracing::error!(root_source, "{message}: {source}");
             write!(f, "{message}: {source}")
         } else {
             tracing::error!("{message}");

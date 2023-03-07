@@ -25,15 +25,13 @@ pub fn translate(
     let pattern = bundle
         .get_message(message)
         .ok_or_else(|| {
-            Error::new(format!(
-                "failed to get the localization message for `{message}`"
-            ))
+            let message = format!("failed to get the localization message for `{message}`");
+            Error::new(message)
         })?
         .value()
         .ok_or_else(|| {
-            Error::new(format!(
-                "failed to retrieve an option of the pattern for `{message}`"
-            ))
+            let message = format!("failed to retrieve an option of the pattern for `{message}`");
+            Error::new(message)
         })?;
 
     let mut errors = vec![];

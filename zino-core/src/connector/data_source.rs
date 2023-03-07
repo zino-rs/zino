@@ -106,9 +106,8 @@ impl DataSource {
             #[cfg(feature = "connector-taos")]
             "taos" => TaosPool::try_new_data_source(config)?,
             _ => {
-                return Err(Error::new(format!(
-                    "data source protocol `{protocol}` is unsupported"
-                )))
+                let message = format!("data source protocol `{protocol}` is unsupported");
+                return Err(Error::new(message));
             }
         };
         let source_type = config.get_str("type").unwrap_or(protocol);

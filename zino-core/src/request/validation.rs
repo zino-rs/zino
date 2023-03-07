@@ -36,7 +36,7 @@ impl Validation {
         Self { failed_entries }
     }
 
-    /// Records an entry with the message.
+    /// Records an entry with the supplied message.
     #[inline]
     pub fn record(&mut self, key: impl Into<SharedString>, message: impl Into<SharedString>) {
         self.failed_entries.push((key.into(), Error::new(message)));
