@@ -7,9 +7,9 @@ edition = "2021"
 publish = false
 
 [dependencies]
-axum = "0.6.9"
+axum = "0.6.10"
 fluent = "0.16.0"
-serde_json = "1.0.93"
+serde_json = "1.0.94"
 tracing = "0.1.37"
 
 [dependencies.zino]
