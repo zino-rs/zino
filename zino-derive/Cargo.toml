@@ -1,8 +1,8 @@
 [package]
 name = "zino-derive"
 description = "Derived traits for zino."
-version = "0.4.4"
-rust-version = "1.68"
+version = "0.4.5"
+rust-version = "1.70"
 edition = "2021"
 license = "MIT"
 homepage = "https://github.com/photino/zino"
@@ -14,11 +14,11 @@ readme = "README.md"
 proc-macro = true
 
 [dependencies]
-proc-macro2 = "1.0.51"
-quote = "1.0.23"
+proc-macro2 = "1.0.44"
+quote = "1.0.26"
 syn = "1.0.109"
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.7.0"
+version = "0.7.1"
 features = ["orm"]

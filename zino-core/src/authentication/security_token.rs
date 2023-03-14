@@ -66,7 +66,7 @@ impl SecurityToken {
     /// Encrypts the plaintext using AES-GCM-SIV.
     pub fn encrypt(key: impl AsRef<[u8]>, plaintext: impl AsRef<[u8]>) -> Option<String> {
         crypto::encrypt(key.as_ref(), plaintext.as_ref())
-            .inspect_err(|_| tracing::error!("failed to encrypt the plaintext"))
+            .inspect_err(|_| tracing::error!("fail to encrypt the plaintext"))
             .ok()
             .map(base64::encode)
     }
@@ -74,11 +74,11 @@ impl SecurityToken {
     /// Decrypts the data using AES-GCM-SIV.
     pub fn decrypt(key: impl AsRef<[u8]>, data: impl AsRef<[u8]>) -> Option<String> {
         base64::decode(data)
-            .inspect_err(|_| tracing::error!("failed to encode the data with base64"))
+            .inspect_err(|_| tracing::error!("fail to encode the data with base64"))
             .ok()
             .and_then(|cipher| {
                 crypto::decrypt(key.as_ref(), &cipher)
-                    .inspect_err(|_| tracing::error!("failed to decrypt the data"))
+                    .inspect_err(|_| tracing::error!("fail to decrypt the data"))
                     .ok()
             })
     }
@@ -88,7 +88,7 @@ impl SecurityToken {
         match base64::decode(&token) {
             Ok(data) => {
                 let authorization = crypto::decrypt(key, &data)
-                    .map_err(|_| DecodeError(Error::new("failed to decrypt authorization")))?;
+                    .map_err(|_| DecodeError(Error::new("fail to decrypt authorization")))?;
                 if let Some((assignee_id, timestamp)) = authorization.split_once(':') {
                     match timestamp.parse() {
                         Ok(secs) => {
@@ -96,7 +96,7 @@ impl SecurityToken {
                                 let expires = DateTime::from_timestamp(secs);
                                 let grantor_id = crypto::decrypt(key, assignee_id.as_ref())
                                     .map_err(|_| {
-                                        DecodeError(Error::new("failed to decrypt grantor id"))
+                                        DecodeError(Error::new("fail to decrypt grantor id"))
                                     })?;
                                 Ok(Self {
                                     grantor_id: grantor_id.into(),

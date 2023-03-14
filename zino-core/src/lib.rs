@@ -17,7 +17,6 @@
 #![feature(is_some_and)]
 #![feature(iter_intersperse)]
 #![feature(let_chains)]
-#![feature(nonzero_min_max)]
 #![feature(once_cell)]
 #![feature(result_option_inspect)]
 #![feature(string_leak)]

@@ -1,8 +1,8 @@
 [package]
 name = "zino-model"
 description = "Model types for zino."
-version = "0.4.4"
-rust-version = "1.68"
+version = "0.4.5"
+rust-version = "1.70"
 edition = "2021"
 license = "MIT"
 categories = ["web-programming", "orm"]
@@ -17,14 +17,14 @@ apache-avro = "0.14.0"
 regex = "1.7.1"
 
 [dependencies.serde]
-version = "1.0.152"
+version = "1.0.155"
 features = ["derive"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.7.0"
+version = "0.7.1"
 features = ["orm"]
 
 [dependencies.zino-derive]
 path = "../zino-derive"
-version = "0.4.4"
+version = "0.4.5"

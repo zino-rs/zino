@@ -55,7 +55,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
         if !log_dir.exists() {
             fs::create_dir(log_dir.as_path()).unwrap_or_else(|err| {
                 let log_dir = log_dir.to_string_lossy();
-                panic!("failed to create the log directory `{log_dir}`: {err}");
+                panic!("fail to create the log directory `{log_dir}`: {err}");
             });
         }
         log_dir
@@ -84,7 +84,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
     TRACING_APPENDER_GUARD
         .set(worker_guard)
-        .expect("failed to set the worker guard for the tracing appender");
+        .expect("fail to set the worker guard for the tracing appender");
 }
 
 /// Tracing appender guard.

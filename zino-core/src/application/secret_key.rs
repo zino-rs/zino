@@ -10,8 +10,8 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .get_str("checksum")
         .and_then(|checksum| checksum.as_bytes().try_into().ok())
         .unwrap_or_else(|| {
-            let pkg_name = env::var("CARGO_PKG_NAME").expect("failed to get crate name");
-            let pkg_version = env::var("CARGO_PKG_VERSION").expect("failed to get crate version");
+            let pkg_name = env::var("CARGO_PKG_NAME").expect("fail to get crate name");
+            let pkg_version = env::var("CARGO_PKG_VERSION").expect("fail to get crate version");
             let pkg_description = env::var("CARGO_PKG_DESCRIPTION").unwrap_or_default();
             let pkg_key = format!("{pkg_name}@{pkg_version}:{pkg_description}");
             let mut hasher = Sha256::new();
@@ -28,7 +28,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .expect("invalid length for Sha256 to output");
     SECRET_KEY
         .set(secret_key)
-        .expect("failed to set the secret key");
+        .expect("fail to set the secret key");
 }
 
 /// Secret key.

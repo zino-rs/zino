@@ -1,8 +1,8 @@
 [package]
 name = "zino"
 description = "Full-featured web application framework for Rust."
-version = "0.6.0"
-rust-version = "1.68"
+version = "0.6.1"
+rust-version = "1.70"
 edition = "2021"
 license = "MIT"
 categories = ["asynchronous", "network-programming", "web-programming::http-server"]
@@ -27,20 +27,20 @@ axum = [
 
 [dependencies]
 async-trait = "0.1.66"
-futures = "0.3.26"
-hyper = "0.14.24"
+futures = "0.3.27"
+hyper = "0.14.25"
 parking_lot = "0.12.1"
 serde_json = "1.0.94"
-toml = "0.7.2"
+toml = "0.7.3"
 tracing = "0.1.37"
 
 [dependencies.axum]
-version = "0.6.10"
+version = "0.6.11"
 optional = true
 features = ["ws"]
 
 [dependencies.serde]
-version = "1.0.152"
+version = "1.0.155"
 
 [dependencies.tokio]
 version = "1.26.0"
@@ -77,5 +77,5 @@ features = [
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.7.0"
+version = "0.7.1"
 features = ["orm", "view"]

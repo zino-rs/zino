@@ -15,7 +15,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
                     .unwrap_or_else(|| Duration::from_secs(60));
                 PrometheusBuilder::new()
                     .with_push_gateway(endpoint, interval)
-                    .expect("failed to configure the exporter to run in push gateway mode")
+                    .expect("fail to configure the exporter to run in push gateway mode")
             } else {
                 let host = metrics.get_str("host").unwrap_or("127.0.0.1");
                 let port = metrics.get_u16("port").unwrap_or(9000);
@@ -68,7 +68,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
             }
             builder
                 .install()
-                .expect("failed to install Prometheus exporter");
+                .expect("fail to install Prometheus exporter");
         } else if exporter == "tcp" {
             let host = metrics.get_str("host").unwrap_or("127.0.0.1");
             let port = metrics.get_u16("port").unwrap_or(9000);
@@ -80,7 +80,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
                 .listen_address((host_addr, port))
                 .buffer_size(Some(buffer_size))
                 .install()
-                .expect("failed to install TCP exporter");
+                .expect("fail to install TCP exporter");
         }
     }
 }

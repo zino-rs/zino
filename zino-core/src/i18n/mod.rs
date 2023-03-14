@@ -25,12 +25,12 @@ pub fn translate(
     let pattern = bundle
         .get_message(message)
         .ok_or_else(|| {
-            let message = format!("failed to get the localization message for `{message}`");
+            let message = format!("fail to get the localization message for `{message}`");
             Error::new(message)
         })?
         .value()
         .ok_or_else(|| {
-            let message = format!("failed to retrieve an option of the pattern for `{message}`");
+            let message = format!("fail to retrieve an option of the pattern for `{message}`");
             Error::new(message)
         })?;
 
@@ -67,10 +67,10 @@ static LOCALIZATION: LazyLock<HashMap<LanguageIdentifier, Translation>> = LazyLo
                 let locale_file = file.path();
                 let ftl_string = fs::read_to_string(&locale_file).unwrap_or_else(|err| {
                     let locale_file = locale_file.to_string_lossy();
-                    panic!("failed to read `{locale_file}`: {err}");
+                    panic!("fail to read `{locale_file}`: {err}");
                 });
                 let resource =
-                    FluentResource::try_new(ftl_string).expect("failed to parse an FTL string");
+                    FluentResource::try_new(ftl_string).expect("fail to parse an FTL string");
                 if let Some(locale) = file
                     .file_name()
                     .to_str()
@@ -78,12 +78,12 @@ static LOCALIZATION: LazyLock<HashMap<LanguageIdentifier, Translation>> = LazyLo
                 {
                     let lang = locale
                         .parse::<LanguageIdentifier>()
-                        .unwrap_or_else(|_| panic!("failed to language identifier `{locale}`"));
+                        .unwrap_or_else(|_| panic!("fail to language identifier `{locale}`"));
 
                     let mut bundle = FluentBundle::new_concurrent(vec![lang.clone()]);
                     bundle
                         .add_resource(resource)
-                        .expect("failed to add FTL resources to the bundle");
+                        .expect("fail to add FTL resources to the bundle");
                     locales.insert(lang, bundle);
                 }
             }

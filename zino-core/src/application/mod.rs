@@ -110,7 +110,7 @@ pub trait Application {
     /// It should have at least 64 bytes.
     #[inline]
     fn secret_key() -> &'static [u8] {
-        SECRET_KEY.get().expect("failed to get the secret key")
+        SECRET_KEY.get().expect("fail to get the secret key")
     }
 
     /// Spawns a new thread to run cron jobs.

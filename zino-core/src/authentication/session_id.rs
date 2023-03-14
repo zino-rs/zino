@@ -188,8 +188,8 @@ impl fmt::Display for ParseSessionIdError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use ParseSessionIdError::*;
         match self {
-            ParseThreadError(err) => write!(f, "failed to parse thread: {err}"),
-            ParseCountError(err) => write!(f, "failed to parse count: {err}"),
+            ParseThreadError(err) => write!(f, "fail to parse thread: {err}"),
+            ParseCountError(err) => write!(f, "fail to parse count: {err}"),
             InvalidFormat => write!(f, "invalid format"),
         }
     }

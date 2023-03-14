@@ -130,7 +130,7 @@ static GLOBAL_CONNECTOR: LazyLock<HashMap<&'static str, DataSource>> = LazyLock:
             let data_source_type = connector.get_str("type").unwrap_or("unkown");
             let name = connector.get_str("name").unwrap_or(data_source_type);
             let data_source = DataSource::try_new_data_source(connector)
-                .unwrap_or_else(|err| panic!("failed to connect data source `{name}`: {err}"));
+                .unwrap_or_else(|err| panic!("fail to connect data source `{name}`: {err}"));
             data_sources.insert(name, data_source);
         }
     }

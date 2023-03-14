@@ -55,7 +55,7 @@ impl Application for AxumCluster {
             .global_queue_interval(61)
             .enable_all()
             .build()
-            .expect("failed to build Tokio runtime with the multi thread scheduler selected");
+            .expect("fail to build Tokio runtime with the multi thread scheduler selected");
         let mut scheduler = JobScheduler::new();
         for (cron_expr, exec) in async_jobs {
             scheduler.add(Job::new_async(cron_expr, exec));

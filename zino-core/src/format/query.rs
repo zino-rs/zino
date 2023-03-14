@@ -31,7 +31,7 @@ pub(crate) fn format_query<'a>(query: &'a str, params: Option<&'a Map>) -> Cow<'
 /// Query parameter pattern.
 static QUERY_PARAMETER_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"\$\{\s*([a-zA-Z]+[\w\.]*)\s*\}")
-        .expect("failed to create the query parameter pattern")
+        .expect("fail to create the query parameter pattern")
 });
 
 #[cfg(test)]

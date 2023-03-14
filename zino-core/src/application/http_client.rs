@@ -62,18 +62,18 @@ pub(super) fn init<APP: Application + ?Sized>() {
                                 Ok(cert) => {
                                     client_builder = client_builder.add_root_certificate(cert);
                                 }
-                                Err(err) => panic!("failed to read a DER encoded cert: {err}"),
+                                Err(err) => panic!("fail to read a DER encoded cert: {err}"),
                             }
                         } else if root_cert.ends_with(".pem") {
                             match Certificate::from_pem(&bytes) {
                                 Ok(cert) => {
                                     client_builder = client_builder.add_root_certificate(cert);
                                 }
-                                Err(err) => panic!("failed to read a PEM encoded cert: {err}"),
+                                Err(err) => panic!("fail to read a PEM encoded cert: {err}"),
                             }
                         }
                     }
-                    Err(err) => panic!("failed to read cert file: {err}"),
+                    Err(err) => panic!("fail to read cert file: {err}"),
                 }
             }
         }
@@ -85,14 +85,14 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let retry_policy = ExponentialBackoff::builder().build_with_max_retries(max_retries);
     let reqwest_client = client_builder
         .build()
-        .unwrap_or_else(|err| panic!("failed to create an HTTP client: {err}"));
+        .unwrap_or_else(|err| panic!("fail to create an HTTP client: {err}"));
     let client = ClientBuilder::new(reqwest_client)
         .with(TracingMiddleware::<RequestTiming>::new())
         .with(RetryTransientMiddleware::new_with_policy(retry_policy))
         .build();
     SHARED_HTTP_CLIENT
         .set(client)
-        .expect("failed to set an HTTP client for the application");
+        .expect("fail to set an HTTP client for the application");
 }
 
 /// Constructs a request builder.
@@ -103,7 +103,7 @@ pub(crate) fn request_builder(
     if options.is_none() || options.is_some_and(|map| map.is_empty()) {
         let request_builder = SHARED_HTTP_CLIENT
             .get()
-            .ok_or_else(|| Error::new("failed to get the global http client"))?
+            .ok_or_else(|| Error::new("fail to get the global http client"))?
             .request(Method::GET, resource);
         return Ok(request_builder);
     }
@@ -115,7 +115,7 @@ pub(crate) fn request_builder(
         .unwrap_or(Method::GET);
     let mut request_builder = SHARED_HTTP_CLIENT
         .get()
-        .ok_or_else(|| Error::new("failed to get the global http client"))?
+        .ok_or_else(|| Error::new("fail to get the global http client"))?
         .request(method, resource);
     let mut headers = HeaderMap::new();
     if let Some(query) = options.get("query") {

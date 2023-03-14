@@ -2,11 +2,11 @@
 use crate::SharedString;
 use std::{error, fmt};
 
-mod chain;
+mod source;
 
-pub use chain::Chain;
+pub use source::Source;
 
-/// A error type backed by an allocation-optimized string.
+/// An error type backed by an allocation-optimized string.
 #[derive(Debug)]
 pub struct Error {
     /// Error message.
@@ -55,18 +55,18 @@ impl Error {
         self.source.as_deref()
     }
 
-    /// Returns an iterator of the chain of source errors contained by `self`.
+    /// Returns an iterator of the source errors contained by `self`.
     #[inline]
-    pub fn chain(&self) -> Chain<'_> {
-        Chain::new(self)
+    pub fn sources(&self) -> Source<'_> {
+        Source::new(self)
     }
 
     /// Returns the lowest level source of `self`.
     ///
-    /// The root source is the last error in the iterator produced by [`chain()`](Error::chain).
+    /// The root source is the last error in the iterator produced by [`sources()`](Error::sources).
     #[inline]
     pub fn root_source(&self) -> Option<&Error> {
-        self.chain().last()
+        self.sources().last()
     }
 }
 

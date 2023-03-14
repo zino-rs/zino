@@ -204,7 +204,7 @@ impl User {
 
 /// User role pattern.
 static USER_ROLE_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^[a-z]+[a-z:]+[a-z]+$").expect("failed to create the user role pattern")
+    Regex::new(r"^[a-z]+[a-z:]+[a-z]+$").expect("fail to create the user role pattern")
 });
 
 #[cfg(test)]

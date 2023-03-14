@@ -1,12 +1,12 @@
 use super::Error;
 
-/// Iterator of a chain of source errors created by [`chain()`](Error::chain).
-pub struct Chain<'a> {
+/// An iterator of source errors created by [`sources()`](Error::sources).
+pub struct Source<'a> {
     /// Next source error.
     next: Option<&'a Error>,
 }
 
-impl<'a> Chain<'a> {
+impl<'a> Source<'a> {
     /// Creates a new instance.
     #[inline]
     pub(super) fn new(error: &'a Error) -> Self {
@@ -14,7 +14,7 @@ impl<'a> Chain<'a> {
     }
 }
 
-impl<'a> Iterator for Chain<'a> {
+impl<'a> Iterator for Source<'a> {
     type Item = &'a Error;
 
     #[inline]

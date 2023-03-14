@@ -38,10 +38,10 @@ impl State {
         let config: Value = fs::read_to_string(&config_file)
             .unwrap_or_else(|err| {
                 let config_file = config_file.to_string_lossy();
-                panic!("failed to read the config file `{config_file}`: {err}");
+                panic!("fail to read the config file `{config_file}`: {err}");
             })
             .parse()
-            .expect("failed to parse toml value");
+            .expect("fail to parse toml value");
         match config {
             Value::Table(table) => self.config = table,
             _ => panic!("toml config file should be a table"),
@@ -124,7 +124,7 @@ impl State {
                 Some(password.into())
             } else {
                 crypto::encrypt(key, password.as_bytes())
-                    .inspect_err(|_| tracing::error!("failed to encrypt the password"))
+                    .inspect_err(|_| tracing::error!("fail to encrypt the password"))
                     .ok()
                     .map(|bytes| base64::encode(bytes).into())
             }

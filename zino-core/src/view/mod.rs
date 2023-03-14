@@ -8,7 +8,7 @@ use tera::{Context, Tera};
 pub fn render(template_name: &str, data: Map) -> Result<String, Error> {
     let view_engine = SHARED_VIEW_ENGINE
         .get()
-        .ok_or_else(|| Error::new("failed to get view engine"))?;
+        .ok_or_else(|| Error::new("fail to get view engine"))?;
     let context = Context::from_value(data.into())?;
     view_engine
         .render(template_name, &context)
@@ -34,16 +34,16 @@ pub(crate) fn init<APP: Application + ?Sized>() {
     };
     let template_dir_glob = template_dir + "/**/*";
     let mut view_engine =
-        Tera::new(template_dir_glob.as_str()).expect("failed to parse html templates");
+        Tera::new(template_dir_glob.as_str()).expect("fail to parse html templates");
     view_engine.autoescape_on(vec![".html", ".html.tera", ".tera"]);
     if APP::env() == "dev" {
         view_engine
             .full_reload()
-            .expect("failed to reload html templates");
+            .expect("fail to reload html templates");
     }
     SHARED_VIEW_ENGINE
         .set(view_engine)
-        .expect("failed to set view engine");
+        .expect("fail to set view engine");
 }
 
 /// Shared view engine.
