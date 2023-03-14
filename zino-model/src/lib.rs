@@ -12,6 +12,7 @@
 
 #![feature(async_fn_in_trait)]
 #![feature(decl_macro)]
+#![feature(is_some_and)]
 #![feature(let_chains)]
 #![feature(once_cell)]
 #![forbid(unsafe_code)]
@@ -98,6 +99,14 @@ pub trait ModelAccessor: Model {
 
     /// Returns the `edition` field.
     fn edition(&self) -> u32;
+
+    /// Returns `true` if `self` has the namespace prefix.
+    #[inline]
+    fn has_namespace(&self, namespace: &str) -> bool {
+        self.namespace()
+            .strip_prefix(namespace)
+            .is_some_and(|s| s == "" || s.starts_with(':'))
+    }
 
     /// Returns `true` if the `visibility` is `public`.
     #[inline]

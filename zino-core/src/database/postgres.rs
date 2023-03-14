@@ -101,6 +101,7 @@ impl<'a> EncodeColumn<'a> for Postgres {
             }
             "String" | "Uuid" | "Option<Uuid>" => format_string(value),
             "DateTime" => match value {
+                "epoch" => "'epoch'".to_owned(),
                 "now" => "now()".to_owned(),
                 "today" => "date_trunc('day', now())".to_owned(),
                 "tomorrow" => "date_trunc('day', now()) + '1 day'::interval".to_owned(),

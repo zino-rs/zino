@@ -89,7 +89,7 @@ impl HttpConnector {
     }
 
     /// Makes an HTTP request with the given query and params,
-    /// and deserializes the response body as JSON.
+    /// and deserializes the response body via JSON.
     pub async fn fetch_json<T: DeserializeOwned>(
         &self,
         query: &str,

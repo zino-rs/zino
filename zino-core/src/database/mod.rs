@@ -5,7 +5,13 @@ use sqlx::{
     postgres::{PgConnectOptions, PgPool, PgPoolOptions},
     Database, Pool, Postgres,
 };
-use std::{sync::LazyLock, time::Duration};
+use std::{
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        LazyLock,
+    },
+    time::Duration,
+};
 use toml::value::Table;
 
 mod mutation;
@@ -16,7 +22,7 @@ mod schema;
 pub use schema::Schema;
 
 /// A database connection pool.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ConnectionPool<DB = Postgres>
 where
     DB: Database,
@@ -27,9 +33,23 @@ where
     database: &'static str,
     /// Pool.
     pool: Pool<DB>,
+    /// Availability.
+    available: AtomicBool,
 }
 
 impl ConnectionPool<Postgres> {
+    /// Returns `true` if the connection pool is available.
+    #[inline]
+    pub fn is_available(&self) -> bool {
+        self.available.load(Ordering::Relaxed)
+    }
+
+    /// Stores the value into the availability of the connection pool.
+    #[inline]
+    pub fn store_availability(&self, available: bool) {
+        self.available.store(available, Ordering::Relaxed);
+    }
+
     /// Connects lazily to the database according to the config.
     pub fn connect_lazy(application_name: &str, config: &'static Table) -> Self {
         // Connect options.
@@ -85,6 +105,7 @@ impl ConnectionPool<Postgres> {
             name,
             database,
             pool,
+            available: AtomicBool::new(true),
         }
     }
 
@@ -115,7 +136,7 @@ impl ConnectionPools {
     /// Returns a connection pool with the specific name.
     #[inline]
     pub(crate) fn get_pool(&self, name: &str) -> Option<&ConnectionPool> {
-        self.0.iter().find(|c| c.name() == name)
+        self.0.iter().find(|c| c.name() == name && c.is_available())
     }
 }
 

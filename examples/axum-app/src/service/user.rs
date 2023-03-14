@@ -27,7 +27,7 @@ pub(crate) async fn update(user_id: Uuid, mut body: Map) -> Result<(Validation, 
 
 pub(crate) async fn view(req: &Request, query: &Query) -> Result<(Duration, Value), Error> {
     let db_query_start_time = Instant::now();
-    let user: Map = User::find_one(&query)
+    let user: Map = User::find_one(query)
         .await?
         .ok_or_else(|| Error::new("user does not exist"))?;
     let db_query_duration = db_query_start_time.elapsed();

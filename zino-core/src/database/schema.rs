@@ -1,16 +1,15 @@
 use super::{mutation::MutationExt, query::QueryExt, ConnectionPool};
 use crate::{
+    error::Error,
     format,
     model::{Column, DecodeRow, EncodeColumn, Model, Mutation, Query},
     request::Validation,
     Map, Record,
 };
-use apache_avro::types::Value;
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use serde_json::json;
-use sqlx::{postgres::PgRow, Error, Postgres, Row};
-use std::io;
+use sqlx::{postgres::PgRow, Postgres, Row};
 
 /// Database schema.
 pub trait Schema: 'static + Send + Sync + Model {
@@ -34,11 +33,11 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Returns the primary key value as a `String`.
     fn primary_key(&self) -> String;
 
-    /// Gets the model reader.
-    async fn get_reader() -> Option<&'static ConnectionPool>;
+    /// Retrieves a connection pool for the model reader.
+    async fn acquire_reader() -> Result<&'static ConnectionPool, Error>;
 
-    /// Gets the model writer.
-    async fn get_writer() -> Option<&'static ConnectionPool>;
+    /// Retrieves a connection pool for the model writer.
+    async fn acquire_writer() -> Result<&'static ConnectionPool, Error>;
 
     /// Returns the model name.
     #[inline]
@@ -72,7 +71,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     fn init_reader() -> Result<&'static ConnectionPool, Error> {
         super::SHARED_CONNECTION_POOLS
             .get_pool(Self::READER_NAME)
-            .ok_or(Error::PoolClosed)
+            .ok_or_else(|| Error::new("connection to the database is not available"))
     }
 
     /// Initializes the model writer.
@@ -80,11 +79,11 @@ pub trait Schema: 'static + Send + Sync + Model {
     fn init_writer() -> Result<&'static ConnectionPool, Error> {
         super::SHARED_CONNECTION_POOLS
             .get_pool(Self::WRITER_NAME)
-            .ok_or(Error::PoolClosed)
+            .ok_or_else(|| Error::new("connection to the database is not available"))
     }
 
     /// Creates table for the model.
-    async fn create_table() -> Result<u64, Error> {
+    async fn create_table() -> Result<(), Error> {
         let pool = Self::init_writer()?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
@@ -113,8 +112,8 @@ pub trait Schema: 'static + Send + Sync + Model {
         if let Some(column_name) = Self::DISTRIBUTION_COLUMN {
             sql += &format!("\n SELECT create_distributed_table('{table_name}', '{column_name}');");
         }
-        let query_result = sqlx::query(&sql).execute(pool).await?;
-        Ok(query_result.rows_affected())
+        sqlx::query(&sql).execute(pool).await?;
+        Ok(())
     }
 
     /// Creates indexes for the model.
@@ -172,7 +171,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Inserts the model into the table.
     async fn insert(self) -> Result<(), Error> {
-        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let map = self.into_map();
         let mut columns = Vec::new();
@@ -192,15 +191,15 @@ pub trait Schema: 'static + Send + Sync + Model {
         if rows_affected == 1 {
             Ok(())
         } else {
-            Err(Error::Io(io::Error::other(format!(
+            Err(Error::new(format!(
                 "{rows_affected} rows are affected while it is expected to affect 1 row"
-            ))))
+            )))
         }
     }
 
     /// Inserts many models into the table.
     async fn insert_many(models: Vec<Self>) -> Result<u64, Error> {
-        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let mut columns = Vec::new();
         let mut values = Vec::new();
@@ -225,7 +224,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Updates the model in the table.
     async fn update(self) -> Result<(), Error> {
-        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let primary_key = self.primary_key();
@@ -248,15 +247,15 @@ pub trait Schema: 'static + Send + Sync + Model {
         if rows_affected == 1 {
             Ok(())
         } else {
-            Err(Error::Io(io::Error::other(format!(
+            Err(Error::new(format!(
                 "{rows_affected} rows are affected while it is expected to affect 1 row"
-            ))))
+            )))
         }
     }
 
     /// Updates at most one model selected by the query in the table.
     async fn update_one(query: &Query, mutation: &Mutation) -> Result<(), Error> {
-        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let filters = query.format_filters::<Self>();
@@ -273,15 +272,15 @@ pub trait Schema: 'static + Send + Sync + Model {
         if rows_affected <= 1 {
             Ok(())
         } else {
-            Err(Error::Io(io::Error::other(format!(
+            Err(Error::new(format!(
                 "{rows_affected} rows are affected while it is expected to affect at most 1 row"
-            ))))
+            )))
         }
     }
 
     /// Updates many models selected by the query in the table.
     async fn update_many(query: &Query, mutation: &Mutation) -> Result<u64, Error> {
-        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let filters = query.format_filters::<Self>();
         let updates = mutation.format_updates::<Self>();
@@ -292,7 +291,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Updates or inserts the model into the table.
     async fn upsert(self) -> Result<(), Error> {
-        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let map = self.into_map();
@@ -323,15 +322,15 @@ pub trait Schema: 'static + Send + Sync + Model {
         if rows_affected == 1 {
             Ok(())
         } else {
-            Err(Error::Io(io::Error::other(format!(
+            Err(Error::new(format!(
                 "{rows_affected} rows are affected while it is expected to affect 1 row"
-            ))))
+            )))
         }
     }
 
     /// Deletes the model in the table.
     async fn delete(&self) -> Result<(), Error> {
-        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let primary_key = self.primary_key();
@@ -341,15 +340,15 @@ pub trait Schema: 'static + Send + Sync + Model {
         if rows_affected == 1 {
             Ok(())
         } else {
-            Err(Error::Io(io::Error::other(format!(
+            Err(Error::new(format!(
                 "{rows_affected} rows are affected while it is expected to affect 1 row"
-            ))))
+            )))
         }
     }
 
     /// Deletes at most one model selected by the query in the table.
     async fn delete_one(query: &Query) -> Result<(), Error> {
-        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let filters = query.format_filters::<Self>();
@@ -365,15 +364,15 @@ pub trait Schema: 'static + Send + Sync + Model {
         if rows_affected <= 1 {
             Ok(())
         } else {
-            Err(Error::Io(io::Error::other(format!(
+            Err(Error::new(format!(
                 "{rows_affected} rows are affected while it is expected to affect at most 1 row"
-            ))))
+            )))
         }
     }
 
     /// Deletes many models selected by the query in the table.
     async fn delete_many(query: &Query) -> Result<u64, Error> {
-        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let filters = query.format_filters::<Self>();
         let sql = format!("DELETE FROM {table_name} {filters};");
@@ -383,8 +382,10 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Finds models selected by the query in the table,
     /// and decodes it as `Vec<T>`.
-    async fn find<T: DecodeRow<PgRow, Error = Error>>(query: &Query) -> Result<Vec<T>, Error> {
-        let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
+    async fn find<T: DecodeRow<PgRow, Error = sqlx::Error>>(
+        query: &Query,
+    ) -> Result<Vec<T>, Error> {
+        let pool = Self::acquire_reader().await?.pool();
         let table_name = Self::table_name();
         let projection = query.format_fields();
         let filters = query.format_filters::<Self>();
@@ -403,15 +404,15 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// and parses it as `Vec<T>`.
     async fn find_as<T: DeserializeOwned>(query: &Query) -> Result<Vec<T>, Error> {
         let data = Self::find::<Map>(query).await?;
-        serde_json::from_value(data.into()).map_err(|err| Error::Decode(Box::new(err)))
+        serde_json::from_value(data.into()).map_err(Error::from)
     }
 
     /// Finds one model selected by the query in the table,
     /// and decodes it as an instance of type `T`.
-    async fn find_one<T: DecodeRow<PgRow, Error = Error>>(
+    async fn find_one<T: DecodeRow<PgRow, Error = sqlx::Error>>(
         query: &Query,
     ) -> Result<Option<T>, Error> {
-        let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_reader().await?.pool();
         let table_name = Self::table_name();
         let projection = query.format_fields();
         let filters = query.format_filters::<Self>();
@@ -429,9 +430,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// and parses it as an instance of type `T`.
     async fn find_one_as<T: DeserializeOwned>(query: &Query) -> Result<Option<T>, Error> {
         match Self::find_one::<Map>(query).await? {
-            Some(data) => {
-                serde_json::from_value(data.into()).map_err(|err| Error::Decode(Box::new(err)))
-            }
+            Some(data) => serde_json::from_value(data.into()).map_err(Error::from),
             None => Ok(None),
         }
     }
@@ -443,7 +442,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         data: &mut Vec<Map>,
         columns: [&str; N],
     ) -> Result<u64, Error> {
-        let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_reader().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values: Vec<String> = Vec::new();
@@ -494,7 +493,7 @@ pub trait Schema: 'static + Send + Sync + Model {
                 }
             }
         }
-        u64::try_from(associations.len()).map_err(|err| Error::Decode(Box::new(err)))
+        u64::try_from(associations.len()).map_err(Error::from)
     }
 
     /// Finds the related data in the corresponding `columns` for `Map` using
@@ -504,7 +503,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         data: &mut Map,
         columns: [&str; N],
     ) -> Result<(), Error> {
-        let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_reader().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values: Vec<String> = Vec::new();
@@ -556,11 +555,11 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Counts the number of rows selected by the query in the table.
     /// The boolean value `true` denotes that it only counts distinct values in the column.
-    async fn count<T: DecodeRow<PgRow, Error = Error>>(
+    async fn count<T: DecodeRow<PgRow, Error = sqlx::Error>>(
         query: &Query,
         columns: &[(&str, bool)],
     ) -> Result<T, Error> {
-        let pool = Self::get_writer().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let filters = query.format_filters::<Self>();
         let projection = columns
@@ -580,7 +579,7 @@ pub trait Schema: 'static + Send + Sync + Model {
             .collect::<String>();
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
         let row = sqlx::query(&sql).fetch_one(pool).await?;
-        T::decode_row(&row)
+        T::decode_row(&row).map_err(Error::from)
     }
 
     /// Counts the number of rows selected by the query in the table,
@@ -590,23 +589,23 @@ pub trait Schema: 'static + Send + Sync + Model {
         columns: &[(&str, bool)],
     ) -> Result<T, Error> {
         let map = Self::count::<Map>(query, columns).await?;
-        serde_json::from_value(map.into()).map_err(|err| Error::Decode(Box::new(err)))
+        serde_json::from_value(map.into()).map_err(Error::from)
     }
 
     /// Executes the query in the table, and returns the total number of rows affected.
     async fn execute(query: &str, params: Option<&Map>) -> Result<u64, Error> {
-        let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_reader().await?.pool();
         let sql = format::format_query(query, params);
         let query_result = sqlx::query(&sql).execute(pool).await?;
         Ok(query_result.rows_affected())
     }
 
     /// Executes the query in the table, and decodes it as `Vec<T>`.
-    async fn query<T: DecodeRow<PgRow, Error = Error>>(
+    async fn query<T: DecodeRow<PgRow, Error = sqlx::Error>>(
         query: &str,
         params: Option<&Map>,
     ) -> Result<Vec<T>, Error> {
-        let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_reader().await?.pool();
         let sql = format::format_query(query, params);
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
@@ -622,15 +621,15 @@ pub trait Schema: 'static + Send + Sync + Model {
         params: Option<&Map>,
     ) -> Result<Vec<T>, Error> {
         let data = Self::query::<Map>(query, params).await?;
-        serde_json::from_value(data.into()).map_err(|err| Error::Decode(Box::new(err)))
+        serde_json::from_value(data.into()).map_err(Error::from)
     }
 
     /// Executes the query in the table, and decodes it as an instance of type `T`.
-    async fn query_one<T: DecodeRow<PgRow, Error = Error>>(
+    async fn query_one<T: DecodeRow<PgRow, Error = sqlx::Error>>(
         query: &str,
         params: Option<&Map>,
     ) -> Result<Option<T>, Error> {
-        let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_reader().await?.pool();
         let sql = format::format_query(query, params);
         let data = if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
             Some(T::decode_row(&row)?)
@@ -646,16 +645,14 @@ pub trait Schema: 'static + Send + Sync + Model {
         params: Option<&Map>,
     ) -> Result<Option<T>, Error> {
         match Self::query_one::<Map>(query, params).await? {
-            Some(data) => {
-                serde_json::from_value(data.into()).map_err(|err| Error::Decode(Box::new(err)))
-            }
+            Some(data) => serde_json::from_value(data.into()).map_err(Error::from),
             None => Ok(None),
         }
     }
 
     /// Finds one model selected by the primary key in the table, and parses it as `Self`.
     async fn try_get_model(primary_key: &str) -> Result<Self, Error> {
-        let pool = Self::get_reader().await.ok_or(Error::PoolClosed)?.pool();
+        let pool = Self::acquire_reader().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let sql = format!(
@@ -665,10 +662,12 @@ pub trait Schema: 'static + Send + Sync + Model {
         );
         if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
             let record = Record::decode_row(&row)?;
-            let value = Value::Record(record);
-            apache_avro::from_value(&value).map_err(|err| Error::Decode(Box::new(err)))
+            Self::try_from_avro_record(record).map_err(Error::from)
         } else {
-            Err(Error::RowNotFound)
+            let model_name = Self::TYPE_NAME;
+            Err(Error::new(format!(
+                "no rows found for the model `{model_name}` with primary key `{primary_key}`"
+            )))
         }
     }
 }

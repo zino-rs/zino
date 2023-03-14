@@ -131,7 +131,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     let columns_len = columns.len();
     let output = quote! {
         use std::{collections::BTreeMap, sync::{LazyLock, OnceLock}};
-        use zino_core::{database::{ConnectionPool, Schema}, model::Column};
+        use zino_core::{database::{ConnectionPool, Schema}, error::Error as ZinoError, model::Column};
 
         static #avro_schema: LazyLock<apache_avro::Schema> = LazyLock::new(|| {
             use apache_avro::schema::{Name, RecordField, RecordFieldOrder, Schema};
@@ -176,60 +176,68 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
         static #schema_writer: OnceLock<&ConnectionPool> = OnceLock::new();
 
         impl Schema for #name {
-            /// Type name.
             const TYPE_NAME: &'static str = #type_name_lowercase;
-            /// Primary key name.
             const PRIMARY_KEY_NAME: &'static str = #primary_key_name;
-            /// Reader name.
             const READER_NAME: &'static str = #reader_name;
-            /// Writer name.
             const WRITER_NAME: &'static str = #writer_name;
-            /// Distribution column.
             const DISTRIBUTION_COLUMN: Option<&'static str> = #quote_distribution_column;
 
-            /// Returns a reference to the Avro schema.
             fn schema() -> &'static apache_avro::Schema {
                 LazyLock::force(&#avro_schema)
             }
 
-            /// Returns a reference to the columns.
             #[inline]
             fn columns() -> &'static [Column<'static>] {
                 LazyLock::force(&#schema_columns).as_slice()
             }
 
-            /// Returns the primary key value as a `String`.
             #[inline]
             fn primary_key(&self) -> String {
                 self.#schema_primary_key.to_string()
             }
 
-            /// Gets the model reader.
-            async fn get_reader() -> Option<&'static ConnectionPool> {
-                let connection_pool = if let Some(connection_pool) = #schema_reader.get() {
-                    *connection_pool
+            async fn acquire_reader() -> Result<&'static ConnectionPool, ZinoError> {
+                if let Some(connection_pool) = #schema_reader.get() {
+                    Ok(*connection_pool)
                 } else {
-                    let connection_pool = Self::init_reader().ok()?;
-                    let _ = Self::create_table().await.ok()?;
-                    let _ = Self::create_indexes().await.ok()?;
-                    let _ = #schema_reader.set(connection_pool).ok()?;
-                    connection_pool
-                };
-                Some(connection_pool)
+                    let connection_pool = Self::init_reader()?;
+                    if let Err(err) = Self::create_table().await {
+                        let message = format!("fail to acquire reader for the model `{}`", Self::TYPE_NAME);
+                        connection_pool.store_availability(false);
+                        return Err(err.context(message));
+                    }
+                    if let Err(err) = Self::create_indexes().await {
+                        let message = format!("fail to acquire reader for the model `{}`", Self::TYPE_NAME);
+                        connection_pool.store_availability(false);
+                        return Err(err.context(message));
+                    }
+                    #schema_reader.set(connection_pool).map_err(|_| {
+                        ZinoError::new(format!("fail to acquire reader for the model `{}`", Self::TYPE_NAME))
+                    })?;
+                    Ok(connection_pool)
+                }
             }
 
-            /// Gets the model writer.
-            async fn get_writer() -> Option<&'static ConnectionPool> {
-                let connection_pool = if let Some(connection_pool) = #schema_writer.get() {
-                    *connection_pool
+            async fn acquire_writer() -> Result<&'static ConnectionPool, ZinoError> {
+                if let Some(connection_pool) = #schema_writer.get() {
+                    Ok(*connection_pool)
                 } else {
-                    let connection_pool = Self::init_writer().ok()?;
-                    let _ = Self::create_table().await.ok()?;
-                    let _ = Self::create_indexes().await.ok()?;
-                    let _ = #schema_writer.set(connection_pool).ok()?;
-                    connection_pool
-                };
-                Some(connection_pool)
+                    let connection_pool = Self::init_writer()?;
+                    if let Err(err) = Self::create_table().await {
+                        let message = format!("fail to acquire writer for the model `{}`", Self::TYPE_NAME);
+                        connection_pool.store_availability(false);
+                        return Err(err.context(message));
+                    }
+                    if let Err(err) = Self::create_indexes().await {
+                        let message = format!("fail to acquire writer for the model `{}`", Self::TYPE_NAME);
+                        connection_pool.store_availability(false);
+                        return Err(err.context(message));
+                    }
+                    #schema_writer.set(connection_pool).map_err(|_| {
+                        ZinoError::new(format!("fail to acquire writer for the model `{}`", Self::TYPE_NAME))
+                    })?;
+                    Ok(connection_pool)
+                }
             }
         }
 

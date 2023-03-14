@@ -545,7 +545,7 @@ pub trait RequestContext {
     }
 
     /// Makes an HTTP request to the provided resource and
-    /// deserializes the response body as JSON.
+    /// deserializes the response body via JSON.
     async fn fetch_json<T: DeserializeOwned>(
         &self,
         resource: &str,

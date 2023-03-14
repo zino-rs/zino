@@ -7,11 +7,10 @@ pub(crate) async fn new(mut req: Request) -> zino::Result {
     let mut user = User::new();
     let mut res: Response = req.model_validation(&mut user).await?;
 
-    let rows = user.upsert().await.extract_with_context(&req)?;
+    user.upsert().await.extract_with_context(&req)?;
     let data = json!({
         "method": req.request_method().as_ref(),
         "path": req.request_path(),
-        "rows": rows,
     });
     res.set_data(&data);
     Ok(res.into())

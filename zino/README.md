@@ -10,6 +10,7 @@ productivity and performance.
 - ⚡ Embrace practical conventions to get the best performance.
 - 🐘 Highly optimized ORM for PostgreSQL built on top of [`sqlx`].
 - 🕗 Lightweight scheduler for sync and async cron jobs.
+- 💠 Unified access to storage services and data sources.
 - 📊 Support for [`tracing`], [`metrics`] and logging.
 
 ## Getting started

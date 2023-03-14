@@ -1,7 +1,8 @@
 //! Application specific models.
-use crate::{request::Validation, Map};
+use crate::{request::Validation, Map, Record};
+use apache_avro::types::Value as AvroValue;
 use serde::{de::DeserializeOwned, Serialize};
-use serde_json::{Error, Value};
+use serde_json::Value as JsonValue;
 
 mod column;
 mod mutation;
@@ -24,8 +25,14 @@ pub trait Model: Default + Serialize + DeserializeOwned {
 
     /// Attempts to construct a model from a json object.
     #[inline]
-    fn try_from_map(data: Map) -> Result<Self, Error> {
-        serde_json::from_value(Value::from(data))
+    fn try_from_map(data: Map) -> Result<Self, serde_json::Error> {
+        serde_json::from_value(JsonValue::from(data))
+    }
+
+    /// Attempts to construct a model from an Avro record.
+    #[inline]
+    fn try_from_avro_record(data: Record) -> Result<Self, apache_avro::Error> {
+        apache_avro::from_value(&AvroValue::Record(data))
     }
 
     /// Consumes the model and returns as a json object.
@@ -36,8 +43,21 @@ pub trait Model: Default + Serialize + DeserializeOwned {
     #[must_use]
     fn into_map(self) -> Map {
         match serde_json::to_value(self) {
-            Ok(Value::Object(map)) => map,
+            Ok(JsonValue::Object(map)) => map,
             _ => panic!("the model cann't be converted to a json object"),
+        }
+    }
+
+    /// Consumes the model and returns as an Avro record.
+    ///
+    /// # Panics
+    ///
+    /// It will panic if the model cann't be converted to an Avro record.
+    #[must_use]
+    fn into_avro_record(self) -> Record {
+        match apache_avro::to_value(self) {
+            Ok(AvroValue::Record(record)) => record,
+            _ => panic!("the model cann't be converted to an Avro record"),
         }
     }
 }
