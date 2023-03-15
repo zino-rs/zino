@@ -6,6 +6,7 @@ use apache_avro::types::Value as AvroValue;
 use chrono::{DateTime, Local, SecondsFormat};
 use serde_json::Value as JsonValue;
 use sqlx::{postgres::PgRow, Column as _, Error, Postgres, Row, TypeInfo};
+use std::borrow::Cow;
 
 impl<'a> EncodeColumn<'a> for Postgres {
     fn column_type(column: &Column<'a>) -> &'a str {
@@ -28,24 +29,24 @@ impl<'a> EncodeColumn<'a> for Postgres {
         }
     }
 
-    fn encode_value(column: &Column<'a>, value: Option<&JsonValue>) -> String {
+    fn encode_value<'b>(column: &Column<'a>, value: Option<&'b JsonValue>) -> Cow<'b, str> {
         if let Some(value) = value {
             match value {
-                JsonValue::Null => "NULL".to_owned(),
+                JsonValue::Null => "NULL".into(),
                 JsonValue::Bool(value) => {
                     let value = if *value { "TRUE" } else { "FALSE" };
-                    value.to_owned()
+                    value.into()
                 }
-                JsonValue::Number(value) => value.to_string(),
+                JsonValue::Number(value) => value.to_string().into(),
                 JsonValue::String(value) => {
                     if value.is_empty() {
                         if let Some(value) = column.default_value() {
-                            Self::format_value(column, value)
+                            Self::format_value(column, value).into_owned().into()
                         } else {
-                            "''".to_owned()
+                            "''".into()
                         }
                     } else if value == "null" {
-                        "NULL".to_owned()
+                        "NULL".into()
                     } else {
                         Self::format_value(column, value)
                     }
@@ -55,75 +56,74 @@ impl<'a> EncodeColumn<'a> for Postgres {
                         .iter()
                         .map(|v| match v {
                             JsonValue::String(v) => format_string(v),
-                            _ => Self::encode_value(column, Some(v)),
+                            _ => Self::encode_value(column, Some(v)).into_owned(),
                         })
                         .collect::<Vec<_>>();
-                    format!("ARRAY[{}]::{}", values.join(","), Self::column_type(column))
+                    format!("ARRAY[{}]::{}", values.join(","), Self::column_type(column)).into()
                 }
-                JsonValue::Object(_) => format!("'{}'::{}", value, Self::column_type(column)),
+                JsonValue::Object(_) => {
+                    format!("'{}'::{}", value, Self::column_type(column)).into()
+                }
             }
         } else if column.default_value().is_some() {
-            "DEFAULT".to_owned()
+            "DEFAULT".into()
         } else {
-            "NULL".to_owned()
+            "NULL".into()
         }
     }
 
-    fn format_value(column: &Column<'a>, value: &str) -> String {
+    fn format_value<'b>(column: &Column<'a>, value: &'b str) -> Cow<'b, str> {
         match column.type_name() {
             "bool" => {
                 let value = if value == "true" { "TRUE" } else { "FALSE" };
-                value.to_owned()
+                value.into()
             }
             "u64" | "u32" | "u16" | "u8" | "usize" => {
-                let value = if value.parse::<u64>().is_ok() {
-                    value
+                if value.parse::<u64>().is_ok() {
+                    value.into()
                 } else {
-                    "NULL"
-                };
-                value.to_owned()
+                    "NULL".into()
+                }
             }
             "i64" | "i32" | "i16" | "i8" | "isize" => {
-                let value = if value.parse::<i64>().is_ok() {
-                    value
+                if value.parse::<i64>().is_ok() {
+                    value.into()
                 } else {
-                    "NULL"
-                };
-                value.to_owned()
+                    "NULL".into()
+                }
             }
             "f64" | "f32" => {
-                let value = if value.parse::<f64>().is_ok() {
-                    value
+                if value.parse::<f64>().is_ok() {
+                    value.into()
                 } else {
-                    "NULL"
-                };
-                value.to_owned()
+                    "NULL".into()
+                }
             }
-            "String" | "Uuid" | "Option<Uuid>" => format_string(value),
+            "String" | "Uuid" | "Option<Uuid>" => format_string(value).into(),
             "DateTime" => match value {
-                "epoch" => "'epoch'".to_owned(),
-                "now" => "now()".to_owned(),
-                "today" => "date_trunc('day', now())".to_owned(),
-                "tomorrow" => "date_trunc('day', now()) + '1 day'::interval".to_owned(),
-                "yesterday" => "date_trunc('day', now()) - '1 day'::interval".to_owned(),
-                _ => format_string(value),
+                "epoch" => "'epoch'".into(),
+                "now" => "now()".into(),
+                "today" => "date_trunc('day', now())".into(),
+                "tomorrow" => "date_trunc('day', now()) + '1 day'::interval".into(),
+                "yesterday" => "date_trunc('day', now()) - '1 day'::interval".into(),
+                _ => format_string(value).into(),
             },
-            "Vec<u8>" => format!("'\\x{value}'"),
+            "Vec<u8>" => format!("'\\x{value}'").into(),
             "Vec<String>" | "Vec<Uuid>" => {
                 let column_type = Self::column_type(column);
                 if value.contains(',') {
                     let values = value.split(',').map(format_string).collect::<Vec<_>>();
-                    format!("ARRAY[{}]::{}", values.join(","), column_type)
+                    format!("ARRAY[{}]::{}", values.join(","), column_type).into()
                 } else {
                     let value = format_string(value);
-                    format!("ARRAY[{value}]::{column_type}")
+                    format!("ARRAY[{value}]::{column_type}").into()
                 }
             }
             "Map" => {
                 let value = format_string(value);
-                format!("{value}::jsonb")
+                format!("{value}::jsonb").into()
             }
-            _ => "NULL".to_owned(),
+            _ => "NULL".into(),
         }
     }
 
@@ -262,13 +262,15 @@ impl<'a> EncodeColumn<'a> for Postgres {
                             value
                                 .split(',')
                                 .map(|v| {
-                                    let value = Self::format_value(column, &v.replace(';', ","));
+                                    let s = v.replace(';', ",");
+                                    let value = Self::format_value(column, &s);
                                     format!("{field} @> {value}")
                                 })
                                 .collect::<Vec<_>>()
                                 .join(" OR ")
                         } else {
-                            let value = Self::format_value(column, &value.replace(';', ","));
+                            let s = value.replace(';', ",");
+                            let value = Self::format_value(column, &s);
                             format!("{field} @> {value}")
                         }
                     } else {

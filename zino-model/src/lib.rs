@@ -105,7 +105,7 @@ pub trait ModelAccessor: Model {
     fn has_namespace(&self, namespace: &str) -> bool {
         self.namespace()
             .strip_prefix(namespace)
-            .is_some_and(|s| s == "" || s.starts_with(':'))
+            .is_some_and(|s| s.is_empty() || s.starts_with(':'))
     }
 
     /// Returns `true` if the `visibility` is `public`.

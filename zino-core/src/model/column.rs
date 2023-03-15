@@ -1,6 +1,7 @@
 use apache_avro::schema::{Name, Schema};
 use serde::Serialize;
 use serde_json::Value;
+use std::borrow::Cow;
 
 /// A model field with associated metadata.
 #[derive(Debug, Clone, Serialize)]
@@ -101,11 +102,11 @@ pub trait EncodeColumn<'a> {
     /// Returns the corresponding column type.
     fn column_type(column: &Column<'a>) -> &'a str;
 
-    /// Encodes a json value as a column value represented by `String`.
-    fn encode_value(column: &Column<'a>, value: Option<&Value>) -> String;
+    /// Encodes a json value as a column value represented by a str.
+    fn encode_value<'b>(column: &Column<'a>, value: Option<&'b Value>) -> Cow<'b, str>;
 
     /// Formats a string value for the column.
-    fn format_value(column: &Column<'a>, value: &str) -> String;
+    fn format_value<'b>(column: &Column<'a>, value: &'b str) -> Cow<'b, str>;
 
     /// Formats a column filter.
     fn format_filter(column: &Column<'a>, key: &str, value: &Value) -> String;
