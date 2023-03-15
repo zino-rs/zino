@@ -23,6 +23,7 @@ accessor-ipfs = ["accessor", "opendal/services-ipfs"]
 accessor-memcached = ["accessor", "opendal/services-memcached"]
 accessor-moka = ["accessor", "opendal/services-moka"]
 accessor-redis = ["accessor", "opendal/services-redis"]
+accessor-sled = ["accessor", "opendal/services-sled"]
 all-accessors = [
     "accessor",
     "accessor-dashmap",
@@ -31,6 +32,7 @@ all-accessors = [
     "accessor-memcached",
     "accessor-moka",
     "accessor-redis",
+    "accessor-sled",
 ]
 all-connectors = [
     "connector",

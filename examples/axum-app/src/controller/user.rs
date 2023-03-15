@@ -1,9 +1,11 @@
 use crate::service::user;
 use serde_json::json;
-use zino::{ExtractRejection, Map, Model, Query, Request, RequestContext, Response, Schema, Uuid};
+use zino::{
+    ExtractRejection, Map, Model, Query, Request, RequestContext, Response, Result, Schema, Uuid,
+};
 use zino_model::User;
 
-pub(crate) async fn new(mut req: Request) -> zino::Result {
+pub(crate) async fn new(mut req: Request) -> Result {
     let mut user = User::new();
     let mut res: Response = req.model_validation(&mut user).await?;
 
@@ -16,7 +18,7 @@ pub(crate) async fn new(mut req: Request) -> zino::Result {
     Ok(res.into())
 }
 
-pub(crate) async fn update(mut req: Request) -> zino::Result {
+pub(crate) async fn update(mut req: Request) -> Result {
     let user_id: Uuid = req.parse_param("id")?;
     let body: Map = req.parse_body().await?;
     let (validation, data) = user::update(user_id, body)
@@ -27,7 +29,7 @@ pub(crate) async fn update(mut req: Request) -> zino::Result {
     Ok(res.into())
 }
 
-pub(crate) async fn list(req: Request) -> zino::Result {
+pub(crate) async fn list(req: Request) -> Result {
     let mut query = Query::default();
     let mut res: Response = req.query_validation(&mut query)?;
     let users: Vec<Map> = User::find(&query).await.extract_with_context(&req)?;
@@ -38,7 +40,7 @@ pub(crate) async fn list(req: Request) -> zino::Result {
     Ok(res.into())
 }
 
-pub(crate) async fn view(mut req: Request) -> zino::Result {
+pub(crate) async fn view(mut req: Request) -> Result {
     let locale_cookie = req.new_cookie("locale", "en-US", None);
     req.add_cookie(locale_cookie);
 

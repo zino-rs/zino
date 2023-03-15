@@ -21,6 +21,7 @@
 //! | `oss`         | Aliyun Object Storage Service.           | `accessor`            |
 //! | `redis`       | Redis services.                          | `accessor-redis`      |
 //! | `s3`          | AWS S3 alike services.                   | `accessor`            |
+//! | `sled`        | Sled services.                           | `accessor-sled`       |
 //! | `webdav`      | WebDAV services.                         | `accessor`            |
 //! | `webhdfs`     | WebHDFS services.                        | `accessor`            |
 //!
@@ -28,7 +29,7 @@
 use crate::{extend::TomlTableExt, state::State};
 use opendal::{
     layers::{MetricsLayer, RetryLayer, TracingLayer},
-    services::{Azblob, Azdfs, Fs, Gcs, Ghac, Ipmfs, Memory, Obs, Oss, Webdav, Webhdfs, S3},
+    services::{Azblob, Azdfs, Fs, Gcs, Ghac, Ipmfs, Memory, Obs, Oss, Sled, Webdav, Webhdfs, S3},
     Error,
     ErrorKind::Unsupported,
     Operator,
@@ -314,6 +315,14 @@ impl GlobalAccessor {
                 }
                 if let Some(external_id) = config.get_str("external-id") {
                     builder.external_id(external_id);
+                }
+                Ok(Operator::new(builder)?.finish())
+            }
+            #[cfg(feature = "accessor-sled")]
+            "sled" => {
+                let mut builder = Sled::default();
+                if let Some(dir) = config.get_str("data-dir") {
+                    builder.datadir(dir);
                 }
                 Ok(Operator::new(builder)?.finish())
             }

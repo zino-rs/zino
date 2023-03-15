@@ -1,7 +1,7 @@
 use serde_json::json;
-use zino::{Application, AxumCluster, Request, Response};
+use zino::{Application, AxumCluster, Request, Response, Result};
 
-pub(crate) async fn index(req: Request) -> zino::Result {
+pub(crate) async fn index(req: Request) -> Result {
     let res = Response::default().provide_context(&req);
     let stats = json!({
         "method": "GET",
