@@ -29,7 +29,7 @@
 use crate::{extend::TomlTableExt, state::State};
 use opendal::{
     layers::{MetricsLayer, RetryLayer, TracingLayer},
-    services::{Azblob, Azdfs, Fs, Gcs, Ghac, Ipmfs, Memory, Obs, Oss, Sled, Webdav, Webhdfs, S3},
+    services::{Azblob, Azdfs, Fs, Gcs, Ghac, Ipmfs, Memory, Obs, Oss, Webdav, Webhdfs, S3},
     Error,
     ErrorKind::Unsupported,
     Operator,
@@ -49,6 +49,8 @@ use opendal::services::Memcached;
 use opendal::services::Moka;
 #[cfg(feature = "accessor-redis")]
 use opendal::services::Redis;
+#[cfg(feature = "accessor-sled")]
+use opendal::services::Sled;
 
 /// Global storage accessor built on the top of [`opendal`](https://crates.io/crates/opendal).
 #[derive(Debug, Clone, Copy, Default)]

@@ -248,6 +248,7 @@ impl ReqwestOtelSpanBackend for RequestTiming {
     }
 }
 
+/// Removes the username/password in the url.
 fn remove_credentials(url: &Url) -> Cow<'_, str> {
     if !url.username().is_empty() || url.password().is_some() {
         let mut url = url.clone();
