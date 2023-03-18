@@ -1,8 +1,6 @@
 use crate::service::user;
 use serde_json::json;
-use zino::{
-    ExtractRejection, Map, Model, Query, Request, RequestContext, Response, Result, Schema, Uuid,
-};
+use zino::{ExtractRejection, Map, Model, Request, RequestContext, Response, Result, Schema, Uuid};
 use zino_model::User;
 
 pub(crate) async fn new(mut req: Request) -> Result {
@@ -30,7 +28,7 @@ pub(crate) async fn update(mut req: Request) -> Result {
 }
 
 pub(crate) async fn list(req: Request) -> Result {
-    let mut query = Query::default();
+    let mut query = User::default_query();
     let mut res: Response = req.query_validation(&mut query)?;
     let users: Vec<Map> = User::find(&query).await.extract_with_context(&req)?;
     let data = json!({
@@ -45,7 +43,7 @@ pub(crate) async fn view(mut req: Request) -> Result {
     req.add_cookie(locale_cookie);
 
     let user_id: Uuid = req.parse_param("id")?;
-    let mut query = Query::default();
+    let mut query = User::default_query();
     let mut res: Response = req.query_validation(&mut query)?;
     query.insert_filter("id", user_id.to_string());
 

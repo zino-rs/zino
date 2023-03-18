@@ -16,7 +16,9 @@ pub fn bench(c: &mut criterion::Criterion) {
             vec.push(("en-US", "Welcome!"));
             vec.push(("zh-CN", "欢迎！"));
             vec.push(("zh-HK", "歡迎！"));
-            vec.iter().find_map(|(lang, text)| (lang == &"zh-CN").then_some(text)).is_some()
+            vec.iter()
+                .find_map(|(lang, text)| (lang == &"zh-CN").then_some(text))
+                .is_some()
         })
     });
 }

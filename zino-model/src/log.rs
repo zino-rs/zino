@@ -8,6 +8,7 @@ use zino_derive::Schema;
 #[serde(default)]
 pub struct Log {
     // Basic fields.
+    #[schema(readonly)]
     id: Uuid,
     #[schema(not_null, index = "text")]
     name: String,
@@ -21,19 +22,24 @@ pub struct Log {
     description: String,
 
     // Info fields.
-    #[schema(not_null)]
+    #[schema(not_null, readonly)]
     service: String,
+    #[schema(readonly)]
     server_host: String,
+    #[schema(readonly)]
     client_ip: String,
     topic: String,
+    #[schema(readonly)]
     level: String,
-    #[schema(index = "text")]
+    #[schema(readonly, index = "text")]
     message: String,
+    #[schema(readonly)]
     source: String,
-    #[schema(index = "btree")]
+    #[schema(readonly, index = "btree")]
     recorded_at: DateTime,
 
     // Extensions.
+    #[schema(readonly)]
     content: Map,
     metrics: Map,
     extras: Map,
@@ -41,7 +47,7 @@ pub struct Log {
     // Revisions.
     manager_id: Uuid,    // user.id
     maintainer_id: Uuid, // user.id
-    #[schema(default = "now", index = "btree")]
+    #[schema(readonly, default = "now", index = "btree")]
     created_at: DateTime,
     #[schema(default = "now", index = "btree")]
     updated_at: DateTime,
@@ -50,6 +56,7 @@ pub struct Log {
 }
 
 impl Model for Log {
+    #[inline]
     fn new() -> Self {
         Self {
             id: Uuid::new_v4(),

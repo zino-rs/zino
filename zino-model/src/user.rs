@@ -1,5 +1,6 @@
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::sync::LazyLock;
 use zino_core::{
     authentication::AccessKeyId, datetime::DateTime, error::Error, model::Model,
     request::Validation, Map, Uuid,
@@ -12,6 +13,7 @@ use zino_derive::Schema;
 #[serde(default)]
 pub struct User {
     // Basic fields.
+    #[schema(readonly)]
     id: Uuid,
     #[schema(not_null, index = "text")]
     name: String,
@@ -25,11 +27,11 @@ pub struct User {
     description: String,
 
     // Info fields.
-    #[schema(not_null)]
+    #[schema(not_null, writeonly)]
     access_key_id: String,
-    #[schema(not_null)]
+    #[schema(not_null, writeonly)]
     account: String,
-    #[schema(not_null)]
+    #[schema(not_null, writeonly)]
     password: String,
     mobile: String,
     email: String,
@@ -46,7 +48,7 @@ pub struct User {
     // Revisions.
     manager_id: Uuid,    // user.id
     maintainer_id: Uuid, // user.id
-    #[schema(default = "now", index = "btree")]
+    #[schema(readonly, default = "now", index = "btree")]
     created_at: DateTime,
     #[schema(default = "now", index = "btree")]
     updated_at: DateTime,
@@ -55,6 +57,7 @@ pub struct User {
 }
 
 impl Model for User {
+    #[inline]
     fn new() -> Self {
         Self {
             id: Uuid::new_v4(),

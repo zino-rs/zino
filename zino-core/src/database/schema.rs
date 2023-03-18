@@ -30,6 +30,15 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Returns a reference to the columns.
     fn columns() -> &'static [Column<'static>];
 
+    /// Returns a reference to the column fields.
+    fn fields() -> &'static [&'static str];
+
+    /// Returns a reference to the readonly column fields.
+    fn readonly_fields() -> &'static [&'static str];
+
+    /// Returns a reference to the writeonly column fields.
+    fn writeonly_fields() -> &'static [&'static str];
+
     /// Returns the primary key value as a `String`.
     fn primary_key(&self) -> String;
 
@@ -58,6 +67,24 @@ pub trait Schema: 'static + Send + Sync + Model {
             .join("_")
             .replace(':', "_")
             .leak()
+    }
+
+    /// Constructs a default `Query` for the model.
+    #[inline]
+    fn default_query() -> Query {
+        let mut query = Query::default();
+        query.allow_fields(Self::fields());
+        query.deny_fields(Self::writeonly_fields());
+        query
+    }
+
+    /// Constructs a default `Mutation` for the model.
+    #[inline]
+    fn default_mutation() -> Mutation {
+        let mut mutation = Mutation::default();
+        mutation.allow_fields(Self::fields());
+        mutation.deny_fields(Self::readonly_fields());
+        mutation
     }
 
     /// Gets a column for the field.

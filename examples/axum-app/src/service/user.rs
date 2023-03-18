@@ -2,12 +2,12 @@ use fluent::fluent_args;
 use serde_json::{json, Value};
 use std::time::{Duration, Instant};
 use zino::{
-    Error, JsonObjectExt, Map, Model, Mutation, Query, Request, RequestContext, Schema, Uuid,
+    Error, JsonObjectExt, Map, Model, Query, Request, RequestContext, Schema, Uuid,
     Validation,
 };
 use zino_model::{ModelAccessor, User};
 
-pub(crate) async fn update(user_id: Uuid, mut body: Map) -> Result<(Validation, Value), Error> {
+pub(crate) async fn update(user_id: Uuid, body: Map) -> Result<(Validation, Value), Error> {
     let user_id = user_id.to_string();
     let mut user = User::try_get_model(&user_id).await?;
     let validation = user.read_map(&body);
@@ -15,9 +15,9 @@ pub(crate) async fn update(user_id: Uuid, mut body: Map) -> Result<(Validation, 
         return Ok((validation, Value::Null));
     }
 
-    let filters = user.current_version_filters();
-    body.append(&mut user.next_version_updates());
-    User::update_one(&Query::new(filters), &Mutation::new(body)).await?;
+    let query = user.current_version_query();
+    let mutation = user.next_version_mutation(body);
+    User::update_one(&query, &mutation).await?;
 
     let data = json!({
         "user": user.next_version_filters(),

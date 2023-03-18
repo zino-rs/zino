@@ -40,16 +40,23 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     for attr in input.attrs.iter() {
         for (key, value) in parser::parse_attr(attr).into_iter() {
             if let Some(value) = value {
-                if key == "type_name" {
-                    type_name = value;
-                } else if key == "primary_key" {
-                    primary_key_name = value;
-                } else if key == "reader_name" {
-                    reader_name = value;
-                } else if key == "writer_name" {
-                    writer_name = value;
-                } else if key == "distribution_column" {
-                    distribution_column = Some(value);
+                match key.as_str() {
+                    "type_name" => {
+                        type_name = value;
+                    }
+                    "primary_key" => {
+                        primary_key_name = value;
+                    }
+                    "reader_name" => {
+                        reader_name = value;
+                    }
+                    "writer_name" => {
+                        writer_name = value;
+                    }
+                    "distribution_column" => {
+                        distribution_column = Some(value);
+                    }
+                    _ => panic!("struct attribute `{key}` is not supported"),
                 }
             }
         }
@@ -57,6 +64,9 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
 
     // Columns
     let mut columns = Vec::new();
+    let mut column_fields = Vec::new();
+    let mut readonly_fields = Vec::new();
+    let mut writeonly_fields = Vec::new();
     if let Data::Struct(data) = input.data && let Fields::Named(fields) = data.fields {
         for field in fields.named.into_iter() {
             let mut type_name = parser::get_type_name(&field.ty);
@@ -67,16 +77,33 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 let mut index_type = None;
                 for attr in field.attrs.iter() {
                     for (key, value) in parser::parse_attr(attr).into_iter() {
-                        if key == "type_name" {
-                            if let Some(value) = value {
-                                type_name = value;
+                        match key.as_str() {
+                            "type_name" => {
+                                if let Some(value) = value {
+                                    type_name = value;
+                                }
                             }
-                        } else if key == "not_null" {
-                            not_null = true;
-                        } else if key == "default" {
-                            default_value = value;
-                        } else if key == "index" {
-                            index_type = value;
+                            "not_null" => {
+                                not_null = true;
+                            }
+                            "default" => {
+                                default_value = value;
+                            }
+                            "index" => {
+                                index_type = value;
+                            }
+                            "readonly" => {
+                                readonly_fields.push(quote!{ #name });
+                            }
+                            "writeonly" => {
+                                writeonly_fields.push(quote!{ #name });
+                            }
+                            "readwrite" => (),
+                            "internal" => {
+                                readonly_fields.push(quote!{ #name });
+                                writeonly_fields.push(quote!{ #name });
+                            },
+                            _ => panic!("field attribute `{key}` is not supported"),
                         }
                     }
                 }
@@ -111,6 +138,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                     zino_core::model::Column::new(#name, #type_name, #quote_value, #not_null, #quote_index)
                 };
                 columns.push(column);
+                column_fields.push(quote!{ #name });
             }
         }
     }
@@ -125,15 +153,23 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     };
     let schema_primary_key = format_ident!("{}", primary_key_name);
     let schema_columns = format_ident!("{}_COLUMNS", type_name_uppercase);
+    let schema_fields = format_ident!("{}_FIELDS", type_name_uppercase);
+    let schema_readonly_fields = format_ident!("{}_READONLY_FIELDS", type_name_uppercase);
+    let schema_writeonly_fields = format_ident!("{}_WRITEONLY_FIELDS", type_name_uppercase);
     let schema_reader = format_ident!("{}_READER", type_name_uppercase);
     let schema_writer = format_ident!("{}_WRITER", type_name_uppercase);
     let avro_schema = format_ident!("{}_AVRO_SCHEMA", type_name_uppercase);
     let columns_len = columns.len();
+    let readonly_fields_len = readonly_fields.len();
+    let writeonly_fields_len = writeonly_fields.len();
     let output = quote! {
-        use std::{collections::BTreeMap, sync::{LazyLock, OnceLock}};
-        use zino_core::{database::{ConnectionPool, Schema}, error::Error as ZinoError, model::Column};
+        use zino_core::{
+            database::{ConnectionPool, Schema},
+            error::Error as ZinoError,
+            model::Column,
+        };
 
-        static #avro_schema: LazyLock<apache_avro::Schema> = LazyLock::new(|| {
+        static #avro_schema: std::sync::LazyLock<apache_avro::Schema> = std::sync::LazyLock::new(|| {
             use apache_avro::schema::{Name, RecordField, RecordFieldOrder, Schema};
             let mut fields = #schema_columns.iter().enumerate()
                 .map(|(index, col)| {
@@ -166,14 +202,19 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 aliases: None,
                 doc: None,
                 fields,
-                lookup: BTreeMap::new(),
+                lookup: std::collections::BTreeMap::new(),
             }
         });
-        static #schema_columns: LazyLock<[Column; #columns_len]> = LazyLock::new(|| {
-            [#(#columns),*]
-        });
-        static #schema_reader: OnceLock<&ConnectionPool> = OnceLock::new();
-        static #schema_writer: OnceLock<&ConnectionPool> = OnceLock::new();
+        static #schema_columns: std::sync::LazyLock<[Column; #columns_len]> =
+            std::sync::LazyLock::new(|| [#(#columns),*]);
+        static #schema_fields: std::sync::LazyLock<[&'static str; #columns_len]> =
+            std::sync::LazyLock::new(|| [#(#column_fields),*]);
+        static #schema_readonly_fields: std::sync::LazyLock<[&'static str; #readonly_fields_len]> =
+            std::sync::LazyLock::new(|| [#(#readonly_fields),*]);
+        static #schema_writeonly_fields: std::sync::LazyLock<[&'static str; #writeonly_fields_len]> =
+            std::sync::LazyLock::new(|| [#(#writeonly_fields),*]);
+        static #schema_reader: std::sync::OnceLock<&ConnectionPool> = std::sync::OnceLock::new();
+        static #schema_writer: std::sync::OnceLock<&ConnectionPool> = std::sync::OnceLock::new();
 
         impl Schema for #name {
             const TYPE_NAME: &'static str = #type_name_lowercase;
@@ -183,12 +224,27 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
             const DISTRIBUTION_COLUMN: Option<&'static str> = #quote_distribution_column;
 
             fn schema() -> &'static apache_avro::Schema {
-                LazyLock::force(&#avro_schema)
+                std::sync::LazyLock::force(&#avro_schema)
             }
 
             #[inline]
             fn columns() -> &'static [Column<'static>] {
-                LazyLock::force(&#schema_columns).as_slice()
+                #schema_columns.as_slice()
+            }
+
+            #[inline]
+            fn fields() -> &'static [&'static str] {
+                #schema_fields.as_slice()
+            }
+
+            #[inline]
+            fn readonly_fields() -> &'static [&'static str] {
+                #schema_readonly_fields.as_slice()
+            }
+
+            #[inline]
+            fn writeonly_fields() -> &'static [&'static str] {
+                #schema_writeonly_fields.as_slice()
             }
 
             #[inline]

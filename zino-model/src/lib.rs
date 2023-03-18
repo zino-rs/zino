@@ -17,7 +17,13 @@
 #![feature(once_cell)]
 #![forbid(unsafe_code)]
 
-use zino_core::{datetime::DateTime, extend::JsonObjectExt, model::Model, Map, Uuid};
+use zino_core::{
+    database::Schema,
+    datetime::DateTime,
+    extend::JsonObjectExt,
+    model::{Mutation, Query},
+    Map, Uuid,
+};
 
 mod group;
 mod policy;
@@ -54,7 +60,7 @@ pub use log::Log;
 pub use record::Record;
 
 /// Access model fields.
-pub trait ModelAccessor: Model {
+pub trait ModelAccessor: Schema {
     /// Returns the `id` field.
     fn id(&self) -> Uuid;
 
@@ -164,12 +170,11 @@ pub trait ModelAccessor: Model {
         filters
     }
 
-    /// Constructs the mutation updates for the model of the next version.
-    fn next_version_updates(&self) -> Map {
-        let mut updates = Map::with_capacity(2);
-        updates.upsert("updated_at", DateTime::now().to_string());
-        updates.upsert("version", self.next_version());
-        updates
+    /// Constructs the `Query` for the model of the current version.
+    fn current_version_query(&self) -> Query {
+        let mut query = Self::default_query();
+        query.append_filters(&mut self.current_version_filters());
+        query
     }
 
     /// Constructs the query filters for the model of the next version.
@@ -178,6 +183,22 @@ pub trait ModelAccessor: Model {
         filters.upsert("id", self.id().to_string());
         filters.upsert("version", self.next_version());
         filters
+    }
+
+    /// Constructs the mutation updates for the model of the next version.
+    fn next_version_updates(&self) -> Map {
+        let mut updates = Map::with_capacity(2);
+        updates.upsert("updated_at", DateTime::now().to_string());
+        updates.upsert("version", self.next_version());
+        updates
+    }
+
+    /// Constructs the `Mutation` for the model of the next version.
+    fn next_version_mutation(&self, mut updates: Map) -> Mutation {
+        let mut mutation = Self::default_mutation();
+        updates.append(&mut self.next_version_updates());
+        mutation.append_updates(&mut updates);
+        mutation
     }
 
     /// Returns the next edition for the model.
@@ -194,6 +215,21 @@ pub trait ModelAccessor: Model {
         filters
     }
 
+    /// Constructs the `Query` for the model of the current edition.
+    fn current_edition_query(&self) -> Query {
+        let mut query = Self::default_query();
+        query.append_filters(&mut self.current_edition_filters());
+        query
+    }
+
+    /// Constructs the query filters for the model of the next edition.
+    fn next_edition_filters(&self) -> Map {
+        let mut filters = Map::with_capacity(2);
+        filters.upsert("id", self.id().to_string());
+        filters.upsert("edition", self.next_edition());
+        filters
+    }
+
     /// Constructs the mutation updates for the model of the next edition.
     fn next_edition_updates(&self) -> Map {
         let mut updates = Map::with_capacity(2);
@@ -203,12 +239,12 @@ pub trait ModelAccessor: Model {
         updates
     }
 
-    /// Constructs the query filters for the model of the next edition.
-    fn next_edition_filters(&self) -> Map {
-        let mut filters = Map::with_capacity(2);
-        filters.upsert("id", self.id().to_string());
-        filters.upsert("edition", self.next_edition());
-        filters
+    /// Constructs the `Mutation` for the model of the next edition.
+    fn next_edition_mutation(&self, mut updates: Map) -> Mutation {
+        let mut mutation = Self::default_mutation();
+        updates.append(&mut self.next_edition_updates());
+        mutation.append_updates(&mut updates);
+        mutation
     }
 }
 

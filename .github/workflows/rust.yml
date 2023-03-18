@@ -24,5 +24,3 @@ jobs:
       run: cargo build --features axum,full --verbose
     - name: Run tests
       run: cargo test --verbose
-    - name: Run benches
-      run: cargo bench --verbose

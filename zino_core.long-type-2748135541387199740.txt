@@ -1,1 +1,0 @@
-std::result::Result<&fluent::bundle::FluentBundle<fluent::FluentResource, intl_memoizer::concurrent::IntlLangMemoizer>, &&fluent::bundle::FluentBundle<fluent::FluentResource, intl_memoizer::concurrent::IntlLangMemoizer>>

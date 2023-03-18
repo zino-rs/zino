@@ -8,6 +8,7 @@ use zino_derive::Schema;
 #[serde(default)]
 pub struct Resource {
     // Basic fields.
+    #[schema(readonly)]
     id: Uuid,
     #[schema(not_null, index = "text")]
     name: String,
@@ -38,7 +39,7 @@ pub struct Resource {
     // Revisions.
     manager_id: Uuid,    // user.id
     maintainer_id: Uuid, // user.id
-    #[schema(default = "now", index = "btree")]
+    #[schema(readonly, default = "now", index = "btree")]
     created_at: DateTime,
     #[schema(default = "now", index = "btree")]
     updated_at: DateTime,
@@ -47,6 +48,7 @@ pub struct Resource {
 }
 
 impl Model for Resource {
+    #[inline]
     fn new() -> Self {
         Self {
             id: Uuid::new_v4(),
