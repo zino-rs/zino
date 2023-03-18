@@ -3,8 +3,8 @@
 use crate::{application, error::Error, extend::TomlTableExt, state::State, SharedString};
 use fluent::{bundle::FluentBundle, FluentArgs, FluentResource};
 use intl_memoizer::concurrent::IntlLangMemoizer;
-use std::{collections::HashMap, fs, sync::LazyLock};
-use unic_langid::{langid, LanguageIdentifier};
+use std::{fs, sync::LazyLock};
+use unic_langid::LanguageIdentifier;
 
 /// Translates the localization message.
 pub fn translate(
@@ -13,14 +13,15 @@ pub fn translate(
     args: Option<FluentArgs<'_>>,
 ) -> Result<SharedString, Error> {
     let bundle = LOCALIZATION
-        .get(locale)
+        .iter()
+        .find_map(|(lang_id, bundle)| (lang_id == locale).then_some(bundle))
         .or_else(|| {
             let lang = locale.language;
             LOCALIZATION
                 .iter()
-                .find_map(|(locale, bundle)| (locale.language == lang).then_some(bundle))
+                .find_map(|(lang_id, bundle)| (lang_id.language == lang).then_some(bundle))
         })
-        .or_else(|| LOCALIZATION.get(&langid!("en-US")))
+        .or_else(|| *DEFAULT_BUNDLE)
         .ok_or_else(|| Error::new("the localization bundle does not exits"))?;
     let pattern = bundle
         .get_message(message)
@@ -57,8 +58,8 @@ pub fn translate(
 type Translation = FluentBundle<FluentResource, IntlLangMemoizer>;
 
 /// Localization.
-static LOCALIZATION: LazyLock<HashMap<LanguageIdentifier, Translation>> = LazyLock::new(|| {
-    let mut locales = HashMap::new();
+static LOCALIZATION: LazyLock<Vec<(LanguageIdentifier, Translation)>> = LazyLock::new(|| {
+    let mut locales = Vec::new();
     let locale_dir = application::PROJECT_DIR.join("./config/locale");
     match fs::read_dir(locale_dir) {
         Ok(entries) => {
@@ -84,7 +85,7 @@ static LOCALIZATION: LazyLock<HashMap<LanguageIdentifier, Translation>> = LazyLo
                     bundle
                         .add_resource(resource)
                         .expect("fail to add FTL resources to the bundle");
-                    locales.insert(lang, bundle);
+                    locales.push((lang, bundle));
                 }
             }
         }
@@ -96,12 +97,20 @@ static LOCALIZATION: LazyLock<HashMap<LanguageIdentifier, Translation>> = LazyLo
 /// Supported locales.
 pub(crate) static SUPPORTED_LOCALES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
     LOCALIZATION
-        .keys()
-        .map(|key| {
+        .iter()
+        .map(|(key, _)| {
             let language: &'static str = key.to_string().leak();
             language
         })
         .collect::<Vec<_>>()
+});
+
+/// Default bundle.
+pub(crate) static DEFAULT_BUNDLE: LazyLock<Option<&'static Translation>> = LazyLock::new(|| {
+    let default_locale = LazyLock::force(&DEFAULT_LOCALE);
+    LOCALIZATION
+        .iter()
+        .find_map(|(lang_id, bundle)| (lang_id == default_locale).then_some(bundle))
 });
 
 /// Default locale.

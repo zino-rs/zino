@@ -21,7 +21,7 @@ jobs:
     - name: Set default toolchain
       run: rustup default nightly
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --features axum,full --verbose
     - name: Run tests
       run: cargo test --verbose
     - name: Run benches

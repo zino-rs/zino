@@ -34,7 +34,7 @@ use opendal::{
     ErrorKind::Unsupported,
     Operator,
 };
-use std::{collections::HashMap, sync::LazyLock};
+use std::sync::LazyLock;
 use toml::Table;
 
 #[cfg(feature = "accessor-dashmap")]
@@ -369,20 +369,22 @@ impl GlobalAccessor {
     /// Gets the operator for the specific storage service.
     #[inline]
     pub fn get(name: &'static str) -> Option<&'static Operator> {
-        GLOBAL_ACCESSOR.get(name)
+        GLOBAL_ACCESSOR
+            .iter()
+            .find_map(|(key, operator)| (key == &name).then_some(operator))
     }
 }
 
 /// Global storage accessor.
-static GLOBAL_ACCESSOR: LazyLock<HashMap<&'static str, Operator>> = LazyLock::new(|| {
-    let mut operators = HashMap::new();
+static GLOBAL_ACCESSOR: LazyLock<Vec<(&'static str, Operator)>> = LazyLock::new(|| {
+    let mut operators = Vec::new();
     let memory_operator = Operator::new(Memory::default())
         .expect("fail to create an operator for the memory accessor")
         .layer(TracingLayer)
         .layer(MetricsLayer)
         .layer(RetryLayer::new())
         .finish();
-    operators.insert("memory", memory_operator);
+    operators.push(("memory", memory_operator));
 
     if let Some(accessors) = State::shared().config().get_array("accessor") {
         for accessor in accessors.iter().filter_map(|v| v.as_table()) {
@@ -390,7 +392,7 @@ static GLOBAL_ACCESSOR: LazyLock<HashMap<&'static str, Operator>> = LazyLock::ne
             let name = accessor.get_str("name").unwrap_or(scheme);
             let operator = GlobalAccessor::try_new_operator(scheme, accessor)
                 .unwrap_or_else(|err| panic!("fail to build `{scheme}` operator: {err}"));
-            operators.insert(name, operator);
+            operators.push((name, operator));
         }
     }
     operators

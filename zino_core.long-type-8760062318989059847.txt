@@ -1,0 +1,1 @@
+std::sync::LazyLock<std::vec::Vec<(unic_langid::LanguageIdentifier, fluent::bundle::FluentBundle<fluent::FluentResource, intl_memoizer::concurrent::IntlLangMemoizer>)>>

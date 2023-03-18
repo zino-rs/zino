@@ -28,7 +28,7 @@
 use crate::{error::Error, extend::TomlTableExt, state::State, Map, Record};
 use apache_avro::types::Value;
 use serde::de::DeserializeOwned;
-use std::{collections::HashMap, sync::LazyLock};
+use std::sync::LazyLock;
 use toml::Table;
 
 mod data_source;
@@ -118,20 +118,22 @@ impl GlobalConnector {
     /// Gets the data source for the specific database service.
     #[inline]
     pub fn get(name: &'static str) -> Option<&'static DataSource> {
-        GLOBAL_CONNECTOR.get(name)
+        GLOBAL_CONNECTOR
+            .iter()
+            .find_map(|(key, connector)| (key == &name).then_some(connector))
     }
 }
 
 /// Global connector.
-static GLOBAL_CONNECTOR: LazyLock<HashMap<&'static str, DataSource>> = LazyLock::new(|| {
-    let mut data_sources = HashMap::new();
+static GLOBAL_CONNECTOR: LazyLock<Vec<(&'static str, DataSource)>> = LazyLock::new(|| {
+    let mut data_sources = Vec::new();
     if let Some(connectors) = State::shared().config().get_array("connector") {
         for connector in connectors.iter().filter_map(|v| v.as_table()) {
             let data_source_type = connector.get_str("type").unwrap_or("unkown");
             let name = connector.get_str("name").unwrap_or(data_source_type);
             let data_source = DataSource::try_new_data_source(connector)
                 .unwrap_or_else(|err| panic!("fail to connect data source `{name}`: {err}"));
-            data_sources.insert(name, data_source);
+            data_sources.push((name, data_source));
         }
     }
     data_sources
