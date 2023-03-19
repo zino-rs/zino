@@ -8,7 +8,6 @@ productivity and performance.
 [![Downloads](https://img.shields.io/crates/d/zino)][zino]
 [![License](https://img.shields.io/crates/l/zino)][license]
 
-
 ## Highlights
 
 - 🚀 Out-of-the-box features for rapid application development.
@@ -35,7 +34,6 @@ You can start with the example [`axum-app`].
 
 This project is licensed under the [MIT license][license].
 
-[`zino`]: https://github.com/photino/zino/tree/main/zino
 [`zino-core`]: https://github.com/photino/zino/tree/main/zino-core
 [`zino-derive`]: https://github.com/photino/zino/tree/main/zino-derive
 [`zino-model`]: https://github.com/photino/zino/tree/main/zino-model

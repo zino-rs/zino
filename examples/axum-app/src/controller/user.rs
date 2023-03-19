@@ -38,7 +38,7 @@ pub(crate) async fn list(req: Request) -> Result {
     Ok(res.into())
 }
 
-pub(crate) async fn view(mut req: Request) -> Result {
+pub(crate) async fn view(req: Request) -> Result {
     let locale_cookie = req.new_cookie("locale", "en-US", None);
     req.add_cookie(locale_cookie);
 

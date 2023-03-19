@@ -2,8 +2,7 @@ use fluent::fluent_args;
 use serde_json::{json, Value};
 use std::time::{Duration, Instant};
 use zino::{
-    Error, JsonObjectExt, Map, Model, Query, Request, RequestContext, Schema, Uuid,
-    Validation,
+    Error, JsonObjectExt, Map, Model, Query, Request, RequestContext, Schema, Uuid, Validation,
 };
 use zino_model::{ModelAccessor, User};
 

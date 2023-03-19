@@ -97,7 +97,7 @@ pub trait ModelAccessor: Schema {
     /// Returns the `created_at` field.
     fn created_at(&self) -> DateTime;
 
-    /// Returns the `version` field.
+    /// Returns the `updated_at` field.
     fn updated_at(&self) -> DateTime;
 
     /// Returns the `version` field.

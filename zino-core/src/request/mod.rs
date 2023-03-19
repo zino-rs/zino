@@ -223,12 +223,12 @@ pub trait RequestContext {
     }
 
     /// Parses the route parameter by name as an instance of type `T`.
-    /// The name should not include `:` or `*`.
-    fn parse_param<T>(&mut self, name: &str) -> Result<T, Rejection>
+    /// The name should not include `:`, `*`, `{` or `}`.
+    fn parse_param<T>(&self, name: &str) -> Result<T, Rejection>
     where
         T: DeserializeOwned + Send + 'static,
     {
-        const CAPTURES: [char; 2] = [':', '*'];
+        const CAPTURES: [char; 4] = [':', '*', '{', '}'];
         let route = self.matched_route();
         if route.contains(CAPTURES) {
             let segments = route.split('/').collect::<Vec<_>>();
