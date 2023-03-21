@@ -21,6 +21,11 @@ productivity and performance.
 ## Getting started
 
 You can start with the example [`axum-app`].
+Currently, it requires rustc **nightly** to build the project.
+
+```shell
+cargo run -- --env=dev
+```
 
 ## Crates
 
