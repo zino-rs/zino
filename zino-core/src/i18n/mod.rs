@@ -21,7 +21,7 @@ pub fn translate(
                 .iter()
                 .find_map(|(lang_id, bundle)| (lang_id.language == lang).then_some(bundle))
         })
-        .or_else(|| *DEFAULT_BUNDLE)
+        .or(*DEFAULT_BUNDLE)
         .ok_or_else(|| Error::new("the localization bundle does not exits"))?;
     let pattern = bundle
         .get_message(message)

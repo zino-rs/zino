@@ -45,7 +45,7 @@ pub(crate) async fn view(req: Request) -> Result {
     let user_id: Uuid = req.parse_param("id")?;
     let mut query = User::default_query();
     let mut res: Response = req.query_validation(&mut query)?;
-    query.insert_filter("id", user_id.to_string());
+    query.add_filter("id", user_id.to_string());
 
     let message = json!({
         "path": req.request_path(),

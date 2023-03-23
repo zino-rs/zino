@@ -1,4 +1,6 @@
-use syn::{Attribute, GenericArgument, Lit, Meta, NestedMeta, PathArguments, Type};
+use syn::{
+    punctuated::Punctuated, Attribute, Expr, GenericArgument, Lit, Meta, PathArguments, Token, Type,
+};
 
 /// Returns the Postgres type name as a str.
 pub(crate) fn get_type_name(ty: &Type) -> String {
@@ -17,31 +19,28 @@ pub(crate) fn get_type_name(ty: &Type) -> String {
 
 /// Parses an attribute and returns a list of arguments
 pub(crate) fn parse_attr(attr: &Attribute) -> Vec<(String, Option<String>)> {
-    if let Ok(meta) = attr.parse_meta() {
-        if let Some(ident) = meta.path().get_ident() && *ident != "schema" {
-            return Vec::new();
-        }
-        if let Meta::List(list) = meta {
-            let mut arguments = Vec::new();
-            for nested_meta in list.nested.iter() {
-                if let NestedMeta::Meta(meta) = nested_meta {
-                    if let Some(ident) = meta.path().get_ident() {
-                        let key = ident.to_string();
-                        let value = match meta {
-                            Meta::NameValue(value) => match value.lit {
-                                Lit::Str(ref lit_str) => Some(lit_str.value()),
-                                Lit::Bool(ref lit_bool) => Some(lit_bool.value.to_string()),
-                                Lit::Int(ref lit_int) => Some(lit_int.base10_digits().to_string()),
-                                _ => None,
-                            },
+    let mut arguments = Vec::new();
+    if attr.path().is_ident("schema") {
+        if let Ok(nested) = attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated) {
+            for meta in nested {
+                if let Some(ident) = meta.path().get_ident() {
+                    let key = ident.to_string();
+                    let value = if let Meta::NameValue(name_value) = meta &&
+                        let Expr::Lit(expr_lit) = name_value.value
+                    {
+                        match expr_lit.lit {
+                            Lit::Str(ref lit_str) => Some(lit_str.value()),
+                            Lit::Bool(ref lit_bool) => Some(lit_bool.value.to_string()),
+                            Lit::Int(ref lit_int) => Some(lit_int.base10_digits().to_string()),
                             _ => None,
-                        };
-                        arguments.push((key, value));
-                    }
+                        }
+                    } else {
+                        None
+                    };
+                    arguments.push((key, value));
                 }
             }
-            return arguments;
         }
     }
-    Vec::new()
+    arguments
 }

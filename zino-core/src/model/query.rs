@@ -81,9 +81,9 @@ impl Query {
                                             vec.insert(index, value.to_owned());
                                         }
                                     } else {
-                                        let mut vec = Vec::new();
+                                        let mut vec = Vec::with_capacity(index);
                                         vec.resize(index, Value::Null);
-                                        vec.insert(index, value.to_owned());
+                                        vec.push(value.to_owned());
                                         filters.upsert(key, vec);
                                     }
                                 } else if let Some(map) = filters.get_mut(key) {
@@ -91,9 +91,7 @@ impl Query {
                                         map.upsert(path, value.to_owned());
                                     }
                                 } else {
-                                    let mut map = Map::new();
-                                    map.upsert(path, value.to_owned());
-                                    filters.upsert(key, map);
+                                    filters.upsert(key, Map::from_entry(path, value.to_owned()));
                                 }
                             }
                         } else if value != "" && value != "all" {
@@ -131,16 +129,16 @@ impl Query {
         })
     }
 
+    /// Adds a key-value pair to the query filters.
+    #[inline]
+    pub fn add_filter(&mut self, key: impl Into<String>, value: impl Into<Value>) {
+        self.filters.upsert(key, value);
+    }
+
     /// Moves all elements from the `filters` into `self`.
     #[inline]
     pub fn append_filters(&mut self, filters: &mut Map) {
         self.filters.append(filters);
-    }
-
-    /// Inserts a key-value pair into the query filters.
-    #[inline]
-    pub fn insert_filter(&mut self, key: impl Into<String>, value: impl Into<Value>) {
-        self.filters.upsert(key, value);
     }
 
     /// Sets the sort order.

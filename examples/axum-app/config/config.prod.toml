@@ -1,7 +1,7 @@
 # --env=prod
 
 name = "data-cube"
-version = "0.5.1"
+version = "0.5.2"
 
 [main]
 host = "127.0.0.1"
@@ -24,7 +24,7 @@ host = "127.0.0.1"
 port = 5432
 database = "data_cube"
 username = "postgres"
-password = "tcvmn5PfvB7KEFMZi1oQYoB9mJR4PJjZW/p2ebY/v7HOb8d4"
+password = "ktr1aeTnUnhRDgugWY5wCpFBkb0oLrKo9mkhbIAQi8n30AxB"
 
 [tracing]
 filter = "info,sqlx=warn"

@@ -48,6 +48,9 @@ pub trait JsonObjectExt {
 
     /// Consumes `self` and constructs an Avro record value.
     fn into_avro_record(self) -> Record;
+
+    /// Creates a new instance with the entry.
+    fn from_entry(key: impl Into<String>, value: impl Into<Value>) -> Self;
 }
 
 impl JsonObjectExt for Map {
@@ -125,5 +128,12 @@ impl JsonObjectExt for Map {
             record.push((field, value.into()));
         }
         record
+    }
+
+    #[inline]
+    fn from_entry(key: impl Into<String>, value: impl Into<Value>) -> Self {
+        let mut map = Map::new();
+        map.insert(key.into(), value.into());
+        map
     }
 }

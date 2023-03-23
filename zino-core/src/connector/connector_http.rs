@@ -56,8 +56,7 @@ impl HttpConnector {
     pub async fn fetch(&self, query: &str, params: Option<&Map>) -> Result<Response, Error> {
         let url = self.base_url.join(query)?;
         let resource = format::format_query(url.as_str(), params);
-        let mut options = Map::new();
-        options.upsert("method", self.method());
+        let mut options = Map::from_entry("method", self.method());
         if let Some(body) = self.body() {
             options.upsert("body", format::format_query(body, params));
         }
@@ -120,11 +119,12 @@ impl Connector for HttpConnector {
 
     async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, Error> {
         if let Value::Object(map) = self.fetch_json(query, params).await? &&
-            let Some(rows_affected) = map
-                .get_u64("rows_affected")
+            let Some(total) = map
+                .get_u64("total")
                 .or_else(|| map.get_u64("total_rows"))
+                .or_else(|| map.get_u64("rows_affected"))
         {
-            Ok(Some(rows_affected))
+            Ok(Some(total))
         } else {
             Ok(None)
         }
@@ -155,9 +155,7 @@ impl Connector for HttpConnector {
                             })
                             .collect::<Vec<_>>()
                     } else {
-                        let mut record = Record::new();
-                        record.upsert("data", value);
-                        vec![record]
+                        vec![Record::from_entry("data", value)]
                     }
                 } else {
                     vec![map.into_avro_record()]
@@ -197,9 +195,7 @@ impl Connector for HttpConnector {
                             })
                             .collect::<Vec<_>>()
                     } else {
-                        let mut map = Map::new();
-                        map.upsert("data", value);
-                        vec![map]
+                        vec![Map::from_entry("data", value)]
                     }
                 } else {
                     vec![map]
@@ -217,9 +213,7 @@ impl Connector for HttpConnector {
                     if let Value::Object(data) = value {
                         data.into_avro_record()
                     } else {
-                        let mut record = Record::new();
-                        record.upsert("data", value);
-                        record
+                        Record::from_entry("data", value)
                     }
                 } else {
                     map.into_avro_record()

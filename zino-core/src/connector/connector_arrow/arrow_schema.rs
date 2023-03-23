@@ -33,7 +33,7 @@ impl ArrowSchemaExt for Schema {
     }
 
     fn try_from_toml_table(table: &Table) -> Result<Schema, Error> {
-        let mut fields = Vec::new();
+        let mut fields = Vec::with_capacity(table.len());
         for (key, value) in table {
             let name = key.to_owned();
             let data_type = match value {

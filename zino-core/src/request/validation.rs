@@ -63,8 +63,9 @@ impl Validation {
     /// Consumes the validation and returns as a json object.
     #[must_use]
     pub fn into_map(self) -> Map {
-        let mut map = Map::new();
-        for (key, err) in self.failed_entries {
+        let failed_entries = self.failed_entries;
+        let mut map = Map::with_capacity(failed_entries.len());
+        for (key, err) in failed_entries {
             map.upsert(key, err.to_string());
         }
         map

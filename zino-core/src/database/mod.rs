@@ -150,14 +150,14 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
         .expect("the `name` field should be a str");
 
     // Database connection pools.
-    let mut pools = Vec::new();
     let databases = config
         .get_array("postgres")
         .expect("the `postgres` field should be an array of tables");
-    for database in databases.iter().filter_map(|v| v.as_table()) {
-        let pool = ConnectionPool::connect_lazy(application_name, database);
-        pools.push(pool);
-    }
+    let pools = databases
+        .iter()
+        .filter_map(|v| v.as_table())
+        .map(|database| ConnectionPool::connect_lazy(application_name, database))
+        .collect::<Vec<_>>();
     ConnectionPools(pools)
 });
 

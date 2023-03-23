@@ -115,7 +115,7 @@ impl User {
     /// Sets the `roles` of the user.
     pub fn set_roles(&mut self, roles: Vec<String>) -> Result<(), Error> {
         let num_roles = roles.len();
-        let special_roles = ["superuser", "guest"];
+        let special_roles = ["superuser", "user", "guest"];
         for role in &roles {
             let role = role.as_str();
             if special_roles.contains(&role) && num_roles != 1 {
@@ -142,6 +142,12 @@ impl User {
         self.roles() == ["superuser"]
     }
 
+    /// Returns `true` if the user has a role of `user`.
+    #[inline]
+    pub fn is_user(&self) -> bool {
+        self.roles() == ["user"]
+    }
+
     /// Returns `true` if the user has a role of `guest`.
     #[inline]
     pub fn is_guest(&self) -> bool {
@@ -162,6 +168,10 @@ impl User {
 
     /// Returns `true` if the user has a role of `worker`.
     pub fn is_worker(&self) -> bool {
+        if self.is_superuser() {
+            return true;
+        }
+
         let role = "worker";
         let role_prefix = format!("{role}:");
         for r in &self.roles {
@@ -174,6 +184,10 @@ impl User {
 
     /// Returns `true` if the user has a role of `auditor`.
     pub fn is_auditor(&self) -> bool {
+        if self.is_superuser() {
+            return true;
+        }
+
         let role = "auditor";
         let role_prefix = format!("{role}:");
         for r in &self.roles {
@@ -182,6 +196,31 @@ impl User {
             }
         }
         false
+    }
+
+    /// Returns `true` if the user has one of the roles: `superuser`, `user`,
+    /// `admin`, `worker` and `auditor`.
+    pub fn has_user_role(&self) -> bool {
+        self.is_superuser()
+            || self.is_user()
+            || self.is_admin()
+            || self.is_worker()
+            || self.is_auditor()
+    }
+
+    /// Returns `true` if the user has a role of `superuser` or `admin`.
+    pub fn has_admin_role(&self) -> bool {
+        self.is_superuser() || self.is_admin()
+    }
+
+    /// Returns `true` if the user has a role of `superuser` or `worker`.
+    pub fn has_worker_role(&self) -> bool {
+        self.is_superuser() || self.is_worker()
+    }
+
+    /// Returns `true` if the user has a role of `superuser` or `auditor`.
+    pub fn has_auditor_role(&self) -> bool {
+        self.is_superuser() || self.is_auditor()
     }
 
     /// Returns `true` if the user has the specific `role`.

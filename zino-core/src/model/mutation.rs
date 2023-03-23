@@ -1,4 +1,5 @@
-use crate::{request::Validation, Map};
+use crate::{extend::JsonObjectExt, request::Validation, Map};
+use serde_json::Value;
 
 #[derive(Debug, Clone, Default)]
 /// A mutation type of the model.
@@ -68,6 +69,12 @@ impl Mutation {
                 .iter()
                 .any(|key| field == key || field.ends_with(&format!(" {key}")))
         })
+    }
+
+    /// Adds a key-value pair to the mutation updates.
+    #[inline]
+    pub fn add_update(&mut self, key: impl Into<String>, value: impl Into<Value>) {
+        self.updates.upsert(key, value);
     }
 
     /// Moves all elements from the `updates` into `self`.

@@ -196,8 +196,8 @@ pub trait ModelAccessor: Schema {
     /// Constructs the `Mutation` for the model of the next version.
     fn next_version_mutation(&self, mut updates: Map) -> Mutation {
         let mut mutation = Self::default_mutation();
-        updates.append(&mut self.next_version_updates());
         mutation.append_updates(&mut updates);
+        mutation.append_updates(&mut self.next_version_updates());
         mutation
     }
 
@@ -242,9 +242,27 @@ pub trait ModelAccessor: Schema {
     /// Constructs the `Mutation` for the model of the next edition.
     fn next_edition_mutation(&self, mut updates: Map) -> Mutation {
         let mut mutation = Self::default_mutation();
-        updates.append(&mut self.next_edition_updates());
+        mutation.append_updates(&mut updates);
+        mutation.append_updates(&mut self.next_edition_updates());
+        mutation
+    }
+
+    /// Constructs the `Mutation` for a soft delete of the model.
+    fn soft_delete_mutation(&self) -> Mutation {
+        let mut mutation = Self::default_mutation();
+        let mut updates = self.next_edition_updates();
+        updates.upsert("status", "deleted");
         mutation.append_updates(&mut updates);
         mutation
+    }
+
+    /// Constructs a default list `Query` for the model.
+    #[inline]
+    fn default_list_query() -> Query {
+        let mut query = Self::default_query();
+        query.add_filter("status", Map::from_entry("$ne", "deleted"));
+        query.set_sort_order("updated_at".to_owned(), false);
+        query
     }
 }
 

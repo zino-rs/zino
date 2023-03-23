@@ -47,7 +47,7 @@ impl QueryExt<Postgres> for Query {
 
         let (sort_by, ascending) = self.sort_order();
         let mut expression = " ".to_owned();
-        let mut conditions = Vec::new();
+        let mut conditions = Vec::with_capacity(filters.len());
         for (key, value) in filters {
             match key.as_str() {
                 "sample" => {
@@ -145,7 +145,7 @@ impl QueryExt<Postgres> for Query {
     }
 
     fn format_selection<M: Schema>(selection: &Map, operator: &str) -> String {
-        let mut conditions = Vec::new();
+        let mut conditions = Vec::with_capacity(selection.len());
         for (key, value) in selection {
             match key.as_str() {
                 "$and" => {

@@ -64,6 +64,9 @@ pub trait AvroRecordExt {
 
     /// Consumes `self` and attempts to construct a json object.
     fn try_into_map(self) -> Result<Map, Error>;
+
+    /// Creates a new instance with the entry.
+    fn from_entry(key: impl Into<String>, value: impl Into<Value>) -> Self;
 }
 
 impl AvroRecordExt for Record {
@@ -234,5 +237,10 @@ impl AvroRecordExt for Record {
             map.insert(key, value.try_into()?);
         }
         Ok(map)
+    }
+
+    #[inline]
+    fn from_entry(key: impl Into<String>, value: impl Into<Value>) -> Self {
+        vec![(key.into(), value.into())]
     }
 }

@@ -34,10 +34,11 @@ impl Connector for TaosPool {
         let taos = self.get()?;
         let sql = format::format_query(query, params);
         let mut result = taos.query(sql).await?;
+        let num_fields = result.num_of_fields();
         let mut rows = result.rows();
         let mut records = Vec::new();
         while let Some(row) = rows.try_next().await? {
-            let mut record = Record::new();
+            let mut record = Record::with_capacity(num_fields);
             for (name, value) in row {
                 record.push((name.to_owned(), value.to_json_value().into()));
             }
@@ -54,10 +55,11 @@ impl Connector for TaosPool {
         let taos = self.get()?;
         let sql = format::format_query(query, params);
         let mut result = taos.query(sql).await?;
+        let num_fields = result.num_of_fields();
         let mut rows = result.rows();
         let mut data = Vec::new();
         while let Some(row) = rows.try_next().await? {
-            let mut map = Map::new();
+            let mut map = Map::with_capacity(num_fields);
             for (name, value) in row {
                 map.insert(name.to_owned(), value.to_json_value());
             }
@@ -70,8 +72,9 @@ impl Connector for TaosPool {
         let taos = self.get()?;
         let sql = format::format_query(query, params);
         let mut result = taos.query(sql).await?;
+        let num_fields = result.num_of_fields();
         let data = result.rows().try_next().await?.map(|row| {
-            let mut record = Record::new();
+            let mut record = Record::with_capacity(num_fields);
             for (name, value) in row {
                 record.push((name.to_owned(), value.to_json_value().into()));
             }
@@ -88,8 +91,9 @@ impl Connector for TaosPool {
         let taos = self.get()?;
         let sql = format::format_query(query, params);
         let mut result = taos.query(sql).await?;
+        let num_fields = result.num_of_fields();
         if let Some(row) = result.rows().try_next().await? {
-            let mut map = Map::new();
+            let mut map = Map::with_capacity(num_fields);
             for (name, value) in row {
                 map.insert(name.to_owned(), value.to_json_value());
             }

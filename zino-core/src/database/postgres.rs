@@ -134,7 +134,7 @@ impl<'a> EncodeColumn<'a> for Postgres {
                 let value = Self::encode_value(column, Some(value));
                 return format!("{field} @> {value}");
             } else {
-                let mut conditions = Vec::new();
+                let mut conditions = Vec::with_capacity(filter.len());
                 for (name, value) in filter {
                     let operator = match name.as_str() {
                         "$eq" => "=",

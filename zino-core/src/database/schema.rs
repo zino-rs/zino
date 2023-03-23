@@ -1,6 +1,7 @@
 use super::{mutation::MutationExt, query::QueryExt, ConnectionPool};
 use crate::{
     error::Error,
+    extend::JsonObjectExt,
     format,
     model::{Column, DecodeRow, EncodeColumn, Model, Mutation, Query},
     request::Validation,
@@ -8,7 +9,6 @@ use crate::{
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
-use serde_json::json;
 use sqlx::{postgres::PgRow, Postgres, Row};
 
 /// Database schema.
@@ -114,20 +114,21 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::init_writer()?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let mut columns = Vec::new();
-        for col in Self::columns() {
-            let name = col.name();
-            let column_type = Postgres::column_type(col);
-            let mut column = format!("{name} {column_type}");
-            if let Some(value) = col.default_value() {
-                column = column + " DEFAULT " + &Postgres::format_value(col, value);
-            } else if col.is_not_null() {
-                column += " NOT NULL";
-            }
-            columns.push(column);
-        }
-
-        let columns = columns.join(",\n");
+        let columns = Self::columns()
+            .iter()
+            .map(|col| {
+                let name = col.name();
+                let column_type = Postgres::column_type(col);
+                let mut column = format!("{name} {column_type}");
+                if let Some(value) = col.default_value() {
+                    column = column + " DEFAULT " + &Postgres::format_value(col, value);
+                } else if col.is_not_null() {
+                    column += " NOT NULL";
+                }
+                column
+            })
+            .collect::<Vec<_>>()
+            .join(",\n");
         let mut sql = format!(
             "
                 CREATE TABLE IF NOT EXISTS {table_name} (
@@ -201,18 +202,13 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let map = self.into_map();
-        let mut columns = Vec::new();
-        let mut values = Vec::new();
-        for col in Self::columns() {
-            let column = col.name();
-            let value = Postgres::encode_value(col, map.get(column));
-            columns.push(column);
-            values.push(value);
-        }
-
-        let columns = columns.join(",");
-        let values = values.join(",");
-        let sql = format!("INSERT INTO {table_name} ({columns}) VALUES ({values});");
+        let values = Self::columns()
+            .iter()
+            .map(|col| Postgres::encode_value(col, map.get(col.name())))
+            .collect::<Vec<_>>()
+            .join(",");
+        let fields = Self::fields().join(",");
+        let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({values});");
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
         if rows_affected == 1 {
@@ -228,23 +224,20 @@ pub trait Schema: 'static + Send + Sync + Model {
     async fn insert_many(models: Vec<Self>) -> Result<u64, Error> {
         let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
-        let mut columns = Vec::new();
-        let mut values = Vec::new();
+        let columns = Self::columns();
+        let mut values = Vec::with_capacity(models.len());
         for model in models.into_iter() {
             let map = model.into_map();
-            let mut entries = Vec::new();
-            for col in Self::columns() {
-                let column = col.name();
-                let value = Postgres::encode_value(col, map.get(column));
-                columns.push(column);
-                entries.push(value);
-            }
+            let entries = columns
+                .iter()
+                .map(|col| Postgres::encode_value(col, map.get(col.name())))
+                .collect::<Vec<_>>();
             values.push(format!("({})", entries.join(",")));
         }
 
-        let columns = columns.join(",");
+        let fields = Self::fields().join(",");
         let values = values.join(",");
-        let sql = format!("INSERT INTO {table_name} ({columns}) VALUES ({values});");
+        let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({values});");
         let query_result = sqlx::query(&sql).execute(pool).await?;
         Ok(query_result.rows_affected())
     }
@@ -256,12 +249,14 @@ pub trait Schema: 'static + Send + Sync + Model {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let primary_key = self.primary_key();
         let map = self.into_map();
-        let mut mutations = Vec::new();
+        let num_fields = Self::fields().len();
+        let readonly_fields = Self::readonly_fields();
+        let mut mutations = Vec::with_capacity(num_fields - readonly_fields.len());
         for col in Self::columns() {
-            let column = col.name();
-            if column != primary_key_name {
-                let value = Postgres::encode_value(col, map.get(column));
-                mutations.push(format!("{column} = {value}"));
+            let field = col.name();
+            if !readonly_fields.contains(&field) {
+                let value = Postgres::encode_value(col, map.get(field));
+                mutations.push(format!("{field} = {value}"));
             }
         }
 
@@ -322,25 +317,26 @@ pub trait Schema: 'static + Send + Sync + Model {
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let map = self.into_map();
-        let mut columns = Vec::new();
-        let mut values = Vec::new();
-        let mut mutations = Vec::new();
+        let fields = Self::fields();
+        let num_fields = fields.len();
+        let readonly_fields = Self::readonly_fields();
+        let mut values = Vec::with_capacity(num_fields);
+        let mut mutations = Vec::with_capacity(num_fields - readonly_fields.len());
         for col in Self::columns() {
-            let column = col.name();
-            let value = Postgres::encode_value(col, map.get(column));
-            if column != primary_key_name {
-                mutations.push(format!("{column} = {value}"));
+            let field = col.name();
+            let value = Postgres::encode_value(col, map.get(field));
+            if !readonly_fields.contains(&field) {
+                mutations.push(format!("{field} = {value}"));
             }
-            columns.push(column);
             values.push(value);
         }
 
-        let columns = columns.join(",");
+        let fields = fields.join(",");
         let values = values.join(",");
         let mutations = mutations.join(",");
         let sql = format!(
             "
-                INSERT INTO {table_name} ({columns}) VALUES ({values})
+                INSERT INTO {table_name} ({fields}) VALUES ({values})
                 ON CONFLICT ({primary_key_name}) DO UPDATE SET {mutations};
             "
         );
@@ -481,14 +477,8 @@ pub trait Schema: 'static + Send + Sync + Model {
             }
         }
         if !values.is_empty() {
-            let mut primary_key_filter = Map::new();
-            primary_key_filter.insert(
-                primary_key_name.to_owned(),
-                json!({
-                    "$in": values,
-                }),
-            );
-            query.append_filters(&mut primary_key_filter);
+            let primary_key_values = Map::from_entry("$in", values);
+            query.append_filters(&mut Map::from_entry(primary_key_name, primary_key_values));
         }
 
         let projection = query.format_fields();
@@ -540,14 +530,8 @@ pub trait Schema: 'static + Send + Sync + Model {
             }
         }
         if !values.is_empty() {
-            let mut primary_key_filter = Map::new();
-            primary_key_filter.insert(
-                primary_key_name.to_owned(),
-                json!({
-                    "$in": values,
-                }),
-            );
-            query.append_filters(&mut primary_key_filter);
+            let primary_key_values = Map::from_entry("$in", values);
+            query.append_filters(&mut Map::from_entry(primary_key_name, primary_key_values));
         }
 
         let projection = query.format_fields();
