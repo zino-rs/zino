@@ -1,6 +1,3 @@
 [toolchain]
 profile = "default"
 channel = "nightly"
-# https://rust-lang.github.io/rustup/concepts/components.html
-#components = ["rustfmt", "clippy", "rust-std", "rust-docs", "miri", "rust-src", "rls", "rust-analysis"]
-# targets = ["wasm32-unknown-unknown"]

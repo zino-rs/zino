@@ -37,8 +37,8 @@ impl fmt::Display for ServerTiming {
             .metrics
             .iter()
             .map(|metric| metric.to_string())
-            .intersperse(", ".to_owned())
-            .collect::<String>();
+            .collect::<Vec<_>>()
+            .join(", ");
         write!(f, "{output}")
     }
 }

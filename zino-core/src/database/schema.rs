@@ -586,8 +586,8 @@ pub trait Schema: 'static + Send + Sync + Model {
                     "count(*)".to_owned()
                 }
             })
-            .intersperse(",".to_owned())
-            .collect::<String>();
+            .collect::<Vec<_>>()
+            .join(",");
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
         let row = sqlx::query(&sql).fetch_one(pool).await?;
         T::decode_row(&row).map_err(Error::from)

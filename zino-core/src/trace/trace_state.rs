@@ -56,8 +56,8 @@ impl fmt::Display for TraceState {
             .states
             .iter()
             .map(|(key, value)| format!("{key}={value}"))
-            .intersperse(",".to_owned())
-            .collect::<String>();
+            .collect::<Vec<_>>()
+            .join(",");
         write!(f, "{output}")
     }
 }

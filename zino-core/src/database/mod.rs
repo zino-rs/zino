@@ -3,7 +3,7 @@
 use crate::{extend::TomlTableExt, state::State};
 use sqlx::{
     postgres::{PgConnectOptions, PgPool, PgPoolOptions},
-    Database, Pool, Postgres,
+    Connection, Database, Pool, Postgres,
 };
 use std::{
     sync::{
@@ -51,7 +51,9 @@ impl ConnectionPool<Postgres> {
     }
 
     /// Connects lazily to the database according to the config.
-    pub fn connect_lazy(application_name: &str, config: &'static Table) -> Self {
+    pub fn connect_lazy(application_name: &'static str, config: &'static Table) -> Self {
+        let name = config.get_str("name").unwrap_or("main");
+
         // Connect options.
         let statement_cache_capacity = config.get_usize("statement-cache-capacity").unwrap_or(100);
         let host = config.get_str("host").unwrap_or("127.0.0.1");
@@ -98,9 +100,24 @@ impl ConnectionPool<Postgres> {
             .max_lifetime(max_lifetime)
             .idle_timeout(idle_timeout)
             .acquire_timeout(acquire_timeout)
+            .test_before_acquire(false)
+            .before_acquire(move |conn, meta| {
+                Box::pin(async move {
+                    if meta.idle_for.as_secs() > 60 &&
+                        let Some(pool) = SHARED_CONNECTION_POOLS.get_pool(name)
+                    {
+                        if let Err(err) = conn.ping().await {
+                            pool.store_availability(false);
+                            return Err(err);
+                        } else {
+                            pool.store_availability(true);
+                        }
+                    }
+                    Ok(true)
+                })
+            })
             .connect_lazy_with(connect_options);
 
-        let name = config.get_str("name").unwrap_or("main");
         Self {
             name,
             database,
