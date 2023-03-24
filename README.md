@@ -24,8 +24,8 @@ You can start with the example [`axum-app`].
 Currently, it requires rustc **nightly** to build the project.
 
 ```shell
-cd examples/axum-app
-cargo run -- --env=dev
+cd examples/
+cargo run -p axum-app -- --env=dev
 ```
 
 ## Crates
