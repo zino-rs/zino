@@ -2,7 +2,7 @@ use crate::{extend::JsonObjectExt, request::Validation, Map};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Default)]
-/// A mutation type of the model.
+/// A mutation type for models.
 pub struct Mutation {
     // Editable fields.
     fields: Vec<String>,
@@ -28,11 +28,11 @@ impl Mutation {
         for (key, value) in data {
             match key.as_str() {
                 "fields" => {
-                    if let Some(fields) = Validation::parse_array(value) {
+                    if let Some(fields) = Validation::parse_string_array(value) {
                         if fields.is_empty() {
                             validation.record("fields", "must be nonempty");
                         } else {
-                            self.fields = fields;
+                            self.fields = fields.into_iter().map(|s| s.to_owned()).collect();
                         }
                     }
                 }
@@ -53,22 +53,16 @@ impl Mutation {
         if self.fields.is_empty() {
             self.fields = fields.iter().map(|&key| key.to_owned()).collect::<Vec<_>>();
         } else {
-            self.fields.retain(|field| {
-                fields
-                    .iter()
-                    .any(|key| field == key || field.ends_with(&format!(" {key}")))
-            })
+            self.fields
+                .retain(|field| fields.iter().any(|key| field == key))
         }
     }
 
     /// Removes the editable fields in the deny list.
     #[inline]
     pub fn deny_fields(&mut self, fields: &[&str]) {
-        self.fields.retain(|field| {
-            !fields
-                .iter()
-                .any(|key| field == key || field.ends_with(&format!(" {key}")))
-        })
+        self.fields
+            .retain(|field| !fields.iter().any(|key| field == key))
     }
 
     /// Adds a key-value pair to the mutation updates.

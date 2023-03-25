@@ -176,12 +176,12 @@ pub trait Schema: 'static + Send + Sync + Model {
             }
         }
         for language in text_search_languages {
-            let column = text_search_columns
+            let text = text_search_columns
                 .iter()
                 .filter_map(|col| (col.0 == language).then_some(col.1.as_str()))
                 .intersperse(" || ' ' || ")
                 .collect::<String>();
-            let text_search = format!("to_tsvector('{language}', {column})");
+            let text_search = format!("to_tsvector('{language}', {text})");
             let sql = format!(
                 "
                     CREATE INDEX CONCURRENTLY IF NOT EXISTS {table_name}_text_search_{language}_index
@@ -468,10 +468,10 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::acquire_reader().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let mut values: Vec<String> = Vec::new();
+        let mut values = Vec::new();
         for row in data.iter() {
             for col in columns {
-                if let Some(mut vec) = Validation::parse_array(row.get(col)) {
+                if let Some(mut vec) = Validation::parse_string_array(row.get(col)) {
                     values.append(&mut vec);
                 }
             }
@@ -523,9 +523,9 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::acquire_reader().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let mut values: Vec<String> = Vec::new();
+        let mut values = Vec::new();
         for col in columns {
-            if let Some(mut vec) = Validation::parse_array(data.get(col)) {
+            if let Some(mut vec) = Validation::parse_string_array(data.get(col)) {
                 values.append(&mut vec);
             }
         }
@@ -564,8 +564,58 @@ pub trait Schema: 'static + Send + Sync + Model {
         Ok(())
     }
 
+    /// Performs a left outer join to another table to filter rows in the "joined" table,
+    /// and decodes it as `Vec<T>`.
+    async fn lookup<M: Schema, T: DecodeRow<PgRow, Error = sqlx::Error>>(
+        query: &Query,
+        left_columns: &[&str],
+        right_columns: &[&str],
+    ) -> Result<Vec<T>, Error> {
+        let pool = Self::acquire_reader().await?.pool();
+        let table_name = Self::table_name();
+        let model_name = Self::model_name();
+        let other_table_name = M::table_name();
+        let other_model_name = M::model_name();
+        let projection = query.format_fields();
+        let filters = query.format_filters::<Self>();
+        let sort = query.format_sort();
+        let pagination = query.format_pagination();
+        let on_expressions = left_columns
+            .iter()
+            .zip(right_columns.iter())
+            .map(|(left_col, right_col)| {
+                format!(r#""{model_name}".{left_col} = "{other_model_name}".{right_col}"#)
+            })
+            .collect::<Vec<_>>()
+            .join(" AND ");
+        let sql = format!(
+            r#"
+                SELECT {projection} FROM {table_name} "{model_name}"
+                LEFT OUTER JOIN {other_table_name} "{other_model_name}"
+                ON {on_expressions} {filters} {sort} {pagination};
+            "#
+        );
+        let mut rows = sqlx::query(&sql).fetch(pool);
+        let mut data = Vec::new();
+        while let Some(row) = rows.try_next().await? {
+            data.push(T::decode_row(&row)?);
+        }
+        Ok(data)
+    }
+
+    /// Performs a left outer join to another table to filter rows in the "joined" table,
+    /// and parses it as `Vec<T>`.
+    async fn lookup_as<M: Schema, T: DeserializeOwned>(
+        query: &Query,
+        left_columns: &[&str],
+        right_columns: &[&str],
+    ) -> Result<Vec<T>, Error> {
+        let data = Self::lookup::<M, Map>(query, left_columns, right_columns).await?;
+        serde_json::from_value(data.into()).map_err(Error::from)
+    }
+
     /// Counts the number of rows selected by the query in the table.
-    /// The boolean value `true` denotes that it only counts distinct values in the column.
+    /// The boolean value determines whether it only counts distinct values or not.
     async fn count<T: DecodeRow<PgRow, Error = sqlx::Error>>(
         query: &Query,
         columns: &[(&str, bool)],
@@ -578,9 +628,9 @@ pub trait Schema: 'static + Send + Sync + Model {
             .map(|&(key, distinct)| {
                 if key != "*" {
                     if distinct {
-                        format!("count(distinct {key}) as {key}_count_distinct")
+                        format!(r#"count(distinct "{key}") as {key}_count_distinct"#)
                     } else {
-                        format!("count({key}) as {key}_count")
+                        format!(r#"count("{key}") as {key}_count"#)
                     }
                 } else {
                     "count(*)".to_owned()
@@ -677,7 +727,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         } else {
             let model_name = Self::TYPE_NAME;
             Err(Error::new(format!(
-                "no rows found for the model `{model_name}` with primary key `{primary_key}`"
+                "no rows found for the model `{model_name}` with the primary key `{primary_key}`"
             )))
         }
     }

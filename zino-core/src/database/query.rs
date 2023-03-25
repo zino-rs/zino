@@ -29,13 +29,22 @@ pub(super) trait QueryExt<DB> {
 }
 
 impl QueryExt<Postgres> for Query {
-    #[inline]
     fn format_fields(&self) -> String {
         let fields = self.fields();
         if fields.is_empty() {
             "*".to_owned()
         } else {
-            fields.join(", ")
+            fields
+                .iter()
+                .map(|field| {
+                    if let Some((expr, alias)) = field.rsplit_once("=>") {
+                        format!(r#"{expr} AS "{alias}""#)
+                    } else {
+                        format!(r#""{field}""#)
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(", ")
         }
     }
 
@@ -50,21 +59,9 @@ impl QueryExt<Postgres> for Query {
         let mut conditions = Vec::with_capacity(filters.len());
         for (key, value) in filters {
             match key.as_str() {
-                "sample" => {
-                    if let Some(Ok(value)) = Validation::parse_f64(value) {
-                        let condition = format!("random() < {value}");
-                        conditions.push(condition);
-                    }
-                }
                 "$and" => {
                     if let Some(selection) = value.as_object() {
                         let condition = Self::format_selection::<M>(selection, " AND ");
-                        conditions.push(condition);
-                    }
-                }
-                "$or" => {
-                    if let Some(selection) = value.as_object() {
-                        let condition = Self::format_selection::<M>(selection, " OR ");
                         conditions.push(condition);
                     }
                 }
@@ -80,16 +77,23 @@ impl QueryExt<Postgres> for Query {
                         conditions.push(format!("NOT {condition}"));
                     }
                 }
+                "$or" => {
+                    if let Some(selection) = value.as_object() {
+                        let condition = Self::format_selection::<M>(selection, " OR ");
+                        conditions.push(condition);
+                    }
+                }
+                "$rand" => {
+                    if let Some(Ok(value)) = Validation::parse_f64(value) {
+                        let condition = format!("random() < {value}");
+                        conditions.push(condition);
+                    }
+                }
                 "$text" => {
                     if let Some(value) = value.as_object() {
                         if let Some(condition) = Self::parse_text_search(value) {
                             conditions.push(condition);
                         }
-                    }
-                }
-                "$join" => {
-                    if let Some(value) = value.as_str() {
-                        expression += value;
                     }
                 }
                 _ => {
@@ -98,7 +102,7 @@ impl QueryExt<Postgres> for Query {
                             // Use the filter condition to optimize pagination offset.
                             let operator = if ascending { ">" } else { "<" };
                             let value = Postgres::encode_value(col, Some(value));
-                            format!("{key} {operator} {value}")
+                            format!(r#""{key}" {operator} {value}"#)
                         } else {
                             Postgres::format_filter(col, key, value)
                         };
@@ -110,9 +114,12 @@ impl QueryExt<Postgres> for Query {
         if !conditions.is_empty() {
             expression += &format!("WHERE {}", conditions.join(" AND "));
         };
-        if let Some(Value::String(group_by)) = filters.get("group_by") {
-            expression += &format!("GROUP BY {group_by}");
-            if let Some(Value::Object(selection)) = filters.get("having") {
+        if let Some(group) = filters.get("$group") {
+            let groups = Validation::parse_string_array(group)
+                .unwrap_or_default()
+                .join(", ");
+            expression += &format!("GROUP BY {groups}");
+            if let Some(Value::Object(selection)) = filters.get("$match") {
                 let condition = Self::format_selection::<M>(selection, " AND ");
                 expression += &format!("HAVING {condition}");
             }
@@ -154,12 +161,6 @@ impl QueryExt<Postgres> for Query {
                         conditions.push(condition);
                     }
                 }
-                "$or" => {
-                    if let Some(selection) = value.as_object() {
-                        let condition = Self::format_selection::<M>(selection, " OR ");
-                        conditions.push(condition);
-                    }
-                }
                 "$not" => {
                     if let Some(selection) = value.as_object() {
                         let condition = Self::format_selection::<M>(selection, " AND ");
@@ -170,6 +171,12 @@ impl QueryExt<Postgres> for Query {
                     if let Some(selection) = value.as_object() {
                         let condition = Self::format_selection::<M>(selection, " OR ");
                         conditions.push(format!("(NOT {condition})"));
+                    }
+                }
+                "$or" => {
+                    if let Some(selection) = value.as_object() {
+                        let condition = Self::format_selection::<M>(selection, " OR ");
+                        conditions.push(condition);
                     }
                 }
                 "$text" => {
@@ -195,12 +202,12 @@ impl QueryExt<Postgres> for Query {
     }
 
     fn parse_text_search(filter: &Map) -> Option<String> {
-        let columns: Vec<String> = Validation::parse_array(filter.get("$columns"))?;
+        let fields = Validation::parse_string_array(filter.get("$fields"))?;
         Validation::parse_string(filter.get("$search")).map(|search| {
-            let col = columns.join(" || ' ' || ");
+            let text = fields.join(" || ' ' || ");
             let lang = Validation::parse_string(filter.get("$language"))
-                .unwrap_or_else(|| "english".to_owned());
-            format!("to_tsvector('{lang}', {col}) @@ websearch_to_tsquery('{lang}', '{search}')")
+                .unwrap_or_else(|| "english".into());
+            format!("to_tsvector('{lang}', {text}) @@ websearch_to_tsquery('{lang}', '{search}')")
         })
     }
 }

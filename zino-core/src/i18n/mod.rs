@@ -82,6 +82,7 @@ static LOCALIZATION: LazyLock<Vec<(LanguageIdentifier, Translation)>> = LazyLock
                         .unwrap_or_else(|_| panic!("fail to language identifier `{locale}`"));
 
                     let mut bundle = FluentBundle::new_concurrent(vec![lang.clone()]);
+                    bundle.set_use_isolating(false);
                     bundle
                         .add_resource(resource)
                         .expect("fail to add FTL resources to the bundle");

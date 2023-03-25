@@ -75,12 +75,12 @@ impl Model for User {
             }
         }
         if let Some(name) = Validation::parse_string(data.get("name")) {
-            self.name = name;
+            self.name = name.into_owned();
         }
         if self.name.is_empty() {
             validation.record("name", "should be nonempty");
         }
-        if let Some(roles) = Validation::parse_array(data.get("roles")) {
+        if let Some(roles) = Validation::parse_string_array(data.get("roles")) {
             if let Err(err) = self.set_roles(roles) {
                 validation.record_fail("roles", err);
             }
@@ -113,12 +113,11 @@ super::impl_model_accessor!(
 
 impl User {
     /// Sets the `roles` of the user.
-    pub fn set_roles(&mut self, roles: Vec<String>) -> Result<(), Error> {
+    pub fn set_roles(&mut self, roles: Vec<&str>) -> Result<(), Error> {
         let num_roles = roles.len();
         let special_roles = ["superuser", "user", "guest"];
         for role in &roles {
-            let role = role.as_str();
-            if special_roles.contains(&role) && num_roles != 1 {
+            if special_roles.contains(role) && num_roles != 1 {
                 let message = format!("the special role `{role}` is exclusive");
                 return Err(Error::new(message));
             } else if !USER_ROLE_PATTERN.is_match(role) {
@@ -126,7 +125,7 @@ impl User {
                 return Err(Error::new(message));
             }
         }
-        self.roles = roles;
+        self.roles = roles.into_iter().map(|s| s.to_owned()).collect();
         Ok(())
     }
 
@@ -168,10 +167,6 @@ impl User {
 
     /// Returns `true` if the user has a role of `worker`.
     pub fn is_worker(&self) -> bool {
-        if self.is_superuser() {
-            return true;
-        }
-
         let role = "worker";
         let role_prefix = format!("{role}:");
         for r in &self.roles {
@@ -184,10 +179,6 @@ impl User {
 
     /// Returns `true` if the user has a role of `auditor`.
     pub fn is_auditor(&self) -> bool {
-        if self.is_superuser() {
-            return true;
-        }
-
         let role = "auditor";
         let role_prefix = format!("{role}:");
         for r in &self.roles {

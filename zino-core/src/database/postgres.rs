@@ -108,7 +108,7 @@ impl<'a> EncodeColumn<'a> for Postgres {
                 "yesterday" => "date_trunc('day', now()) - '1 day'::interval".into(),
                 _ => format_string(value).into(),
             },
-            "Vec<u8>" => format!("'\\x{value}'").into(),
+            "Vec<u8>" => format!(r"'\x{value}'").into(),
             "Vec<String>" | "Vec<Uuid>" => {
                 let column_type = Self::column_type(column);
                 if value.contains(',') {
@@ -132,7 +132,7 @@ impl<'a> EncodeColumn<'a> for Postgres {
         if let Some(filter) = value.as_object() {
             if type_name == "Map" {
                 let value = Self::encode_value(column, Some(value));
-                return format!("{field} @> {value}");
+                return format!(r#""{field}" @> {value}"#);
             } else {
                 let mut conditions = Vec::with_capacity(filter.len());
                 for (name, value) in filter {
@@ -151,23 +151,21 @@ impl<'a> EncodeColumn<'a> for Postgres {
                     };
                     if operator == "array_length" {
                         let value = Self::encode_value(column, Some(value));
-                        let condition = format!("array_length({field}, 1) = {value}");
+                        let condition = format!(r#"array_length("{field}", 1) = {value}"#);
                         conditions.push(condition);
                     } else if operator == "IN" || operator == "NOT IN" {
-                        if let Some(value) = value.as_array() {
-                            if !value.is_empty() {
-                                let value = value
-                                    .iter()
-                                    .map(|v| Self::encode_value(column, Some(v)))
-                                    .collect::<Vec<_>>()
-                                    .join(",");
-                                let condition = format!("{field} {operator} ({value})");
-                                conditions.push(condition);
-                            }
+                        if let Some(value) = value.as_array() && !value.is_empty() {
+                            let value = value
+                                .iter()
+                                .map(|v| Self::encode_value(column, Some(v)))
+                                .collect::<Vec<_>>()
+                                .join(",");
+                            let condition = format!(r#""{field}" {operator} ({value})"#);
+                            conditions.push(condition);
                         }
                     } else {
                         let value = Self::encode_value(column, Some(value));
-                        let condition = format!("{field} {operator} {value}");
+                        let condition = format!(r#""{field}" {operator} {value}"#);
                         conditions.push(condition);
                     }
                 }
@@ -182,9 +180,9 @@ impl<'a> EncodeColumn<'a> for Postgres {
             "bool" => {
                 let value = Self::encode_value(column, Some(value));
                 if value == "TRUE" {
-                    format!("{field} IS TRUE")
+                    format!(r#""{field}" IS TRUE"#)
                 } else {
-                    format!("{field} IS NOT TRUE")
+                    format!(r#""{field}" IS NOT TRUE"#)
                 }
             }
             "u64" | "i64" | "u32" | "i32" | "u16" | "i16" | "u8" | "i8" | "usize" | "isize"
@@ -193,66 +191,66 @@ impl<'a> EncodeColumn<'a> for Postgres {
                     if let Some((min_value, max_value)) = value.split_once(',') {
                         let min_value = Self::format_value(column, min_value);
                         let max_value = Self::format_value(column, max_value);
-                        format!("{field} >= {min_value} AND {field} < {max_value}")
+                        format!(r#""{field}" >= {min_value} AND "{field}" < {max_value}"#)
                     } else {
                         let index = value.find(|ch| !"<>=".contains(ch)).unwrap_or(0);
                         if index > 0 {
                             let (operator, value) = value.split_at(index);
                             let value = Self::format_value(column, value);
-                            format!("{field} {operator} {value}")
+                            format!(r#""{field}" {operator} {value}"#)
                         } else {
                             let value = Self::format_value(column, value);
-                            format!("{field} = {value}")
+                            format!(r#""{field}" = {value}"#)
                         }
                     }
                 } else {
                     let value = Self::encode_value(column, Some(value));
-                    format!("{field} = {value}")
+                    format!(r#""{field}" = {value}"#)
                 }
             }
             "String" => {
                 if let Some(value) = value.as_str() {
                     if value == "null" {
                         // either NULL or empty
-                        format!("({field} = '') IS NOT FALSE")
+                        format!(r#"("{field}" = '') IS NOT FALSE"#)
                     } else if value == "notnull" {
-                        format!("({field} = '') IS FALSE")
+                        format!(r#"("{field}" = '') IS FALSE"#)
                     } else {
                         let index = value.find(|ch| !"!~*".contains(ch)).unwrap_or(0);
                         if index > 0 {
                             let (operator, value) = value.split_at(index);
                             let value = format_string(value);
-                            format!("{field} {operator} {value}")
+                            format!(r#""{field}" {operator} {value}"#)
                         } else {
                             let value = format_string(value);
-                            format!("{field} = {value}")
+                            format!(r#""{field}" = {value}"#)
                         }
                     }
                 } else {
                     let value = Self::encode_value(column, Some(value));
-                    format!("{field} = {value}")
+                    format!(r#""{field}" = {value}"#)
                 }
             }
             "Uuid" | "Option<Uuid>" => {
                 if let Some(value) = value.as_str() {
                     if value == "null" {
-                        format!("{field} IS NULL")
+                        format!(r#""{field}" IS NULL"#)
                     } else if value == "notnull" {
-                        format!("{field} IS NOT NULL")
+                        format!(r#""{field}" IS NOT NULL"#)
                     } else if value.contains(',') {
                         let value = value
                             .split(',')
                             .map(format_string)
                             .collect::<Vec<_>>()
                             .join(",");
-                        format!("{field} IN ({value})")
+                        format!(r#""{field}" IN ({value})"#)
                     } else {
                         let value = format_string(value);
-                        format!("{field} = {value}")
+                        format!(r#""{field}" = {value}"#)
                     }
                 } else {
                     let value = Self::encode_value(column, Some(value));
-                    format!("{field} = {value}")
+                    format!(r#""{field}" = {value}"#)
                 }
             }
             "Vec<String>" | "Vec<Uuid>" => {
@@ -264,37 +262,37 @@ impl<'a> EncodeColumn<'a> for Postgres {
                                 .map(|v| {
                                     let s = v.replace(';', ",");
                                     let value = Self::format_value(column, &s);
-                                    format!("{field} @> {value}")
+                                    format!(r#""{field}" @> {value}"#)
                                 })
                                 .collect::<Vec<_>>()
                                 .join(" OR ")
                         } else {
                             let s = value.replace(';', ",");
                             let value = Self::format_value(column, &s);
-                            format!("{field} @> {value}")
+                            format!(r#""{field}" @> {value}"#)
                         }
                     } else {
                         let value = Self::format_value(column, value);
-                        format!("{field} && {value}")
+                        format!(r#""{field}" && {value}"#)
                     }
                 } else {
                     let value = Self::encode_value(column, Some(value));
-                    format!("{field} && {value}")
+                    format!(r#""{field}" && {value}"#)
                 }
             }
             "Map" => {
                 if let Some(value) = value.as_str() {
                     // JSON path operator is supported in Postgres 12+
                     let value = format_string(value);
-                    format!("{field} @@ {value}")
+                    format!(r#""{field}" @@ {value}"#)
                 } else {
                     let value = Self::encode_value(column, Some(value));
-                    format!("{field} @> {value}")
+                    format!(r#""{field}" @> {value}"#)
                 }
             }
             _ => {
                 let value = Self::encode_value(column, Some(value));
-                format!("{field} = {value}")
+                format!(r#""{field}" = {value}"#)
             }
         }
     }

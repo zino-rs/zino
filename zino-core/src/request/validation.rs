@@ -2,10 +2,12 @@ use crate::{
     datetime::{self, DateTime},
     error::Error,
     extend::JsonObjectExt,
+    format::string_array,
     Map, SharedString,
 };
 use serde_json::Value;
 use std::{
+    borrow::Cow,
     net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr},
     num::{ParseFloatError, ParseIntError},
     str::{FromStr, ParseBoolError},
@@ -115,14 +117,14 @@ impl Validation {
             .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
     }
 
-    /// Parses a json value as `String`. If the `String` is empty, it also returns `None`.
-    pub fn parse_string<'a>(value: impl Into<Option<&'a Value>>) -> Option<String> {
+    /// Parses a json value as `Cow<'_, str>`. If the str is empty, it also returns `None`.
+    pub fn parse_string<'a>(value: impl Into<Option<&'a Value>>) -> Option<Cow<'a, str>> {
         value
             .into()
             .and_then(|v| {
                 v.as_str()
-                    .map(|s| s.to_owned())
-                    .or_else(|| Some(v.to_string()))
+                    .map(|s| Cow::Borrowed(s.trim()))
+                    .or_else(|| Some(v.to_string().into()))
             })
             .filter(|s| !s.is_empty())
     }
@@ -132,7 +134,7 @@ impl Validation {
         value
             .into()
             .and_then(|v| match v {
-                Value::String(s) => Some(s.split(',').collect::<Vec<_>>()),
+                Value::String(s) => Some(string_array::parse_string_array(s)),
                 Value::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
                 _ => None,
             })
@@ -140,6 +142,25 @@ impl Validation {
                 let vec = values
                     .iter()
                     .filter_map(|s| if s.is_empty() { None } else { s.parse().ok() })
+                    .collect::<Vec<_>>();
+                (!vec.is_empty()).then_some(vec)
+            })
+    }
+
+    /// Parses a json value as `Vec<&str>`. If the vec is empty, it also returns `None`.
+    pub fn parse_string_array<'a>(value: impl Into<Option<&'a Value>>) -> Option<Vec<&'a str>> {
+        value
+            .into()
+            .and_then(|v| match v {
+                Value::String(s) => Some(string_array::parse_string_array(s)),
+                Value::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
+                _ => None,
+            })
+            .and_then(|values| {
+                let vec = values
+                    .iter()
+                    .map(|s| s.trim())
+                    .filter(|s| !s.is_empty())
                     .collect::<Vec<_>>();
                 (!vec.is_empty()).then_some(vec)
             })

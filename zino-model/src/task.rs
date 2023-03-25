@@ -70,7 +70,7 @@ impl Model for Task {
             }
         }
         if let Some(name) = Validation::parse_string(data.get("name")) {
-            self.name = name;
+            self.name = name.into_owned();
         }
         if self.name.is_empty() {
             validation.record("name", "should be nonempty");

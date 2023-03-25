@@ -151,9 +151,18 @@ struct ConnectionPools(Vec<ConnectionPool>);
 
 impl ConnectionPools {
     /// Returns a connection pool with the specific name.
-    #[inline]
     pub(crate) fn get_pool(&self, name: &str) -> Option<&ConnectionPool> {
-        self.0.iter().find(|c| c.name() == name && c.is_available())
+        let mut pool = None;
+        for c in self.0.iter() {
+            if c.name() == name {
+                if c.is_available() {
+                    return Some(c);
+                } else {
+                    pool = Some(c);
+                }
+            }
+        }
+        pool
     }
 }
 

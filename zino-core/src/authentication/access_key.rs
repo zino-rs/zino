@@ -4,7 +4,7 @@ use hmac::{
     Mac,
 };
 use rand::{distributions::Alphanumeric, Rng};
-use std::{fmt, iter};
+use std::{borrow::Cow, fmt, iter};
 
 /// Access key ID.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -54,6 +54,13 @@ impl From<&str> for AccessKeyId {
     #[inline]
     fn from(s: &str) -> Self {
         Self(s.to_owned())
+    }
+}
+
+impl<'a> From<Cow<'a, str>> for AccessKeyId {
+    #[inline]
+    fn from(s: Cow<'a, str>) -> Self {
+        Self(s.into_owned())
     }
 }
 

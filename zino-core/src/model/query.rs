@@ -2,7 +2,7 @@ use crate::{extend::JsonObjectExt, request::Validation, Map};
 use serde_json::Value;
 
 #[derive(Debug, Clone)]
-/// A query type of the model.
+/// A query type for models.
 pub struct Query {
     // Projection fields.
     fields: Vec<String>,
@@ -37,13 +37,13 @@ impl Query {
         for (key, value) in data {
             match key.as_str() {
                 "fields" => {
-                    if let Some(fields) = Validation::parse_array(value) {
-                        self.fields = fields;
+                    if let Some(fields) = Validation::parse_string_array(value) {
+                        self.fields = fields.into_iter().map(|s| s.to_owned()).collect();
                     }
                 }
                 "sort" | "sort_by" | "order_by" => {
                     if let Some(sort_by) = Validation::parse_string(value) {
-                        self.sort_order.0 = sort_by.into();
+                        self.sort_order.0 = Some(sort_by.into_owned());
                     }
                 }
                 "ascending" => {
@@ -114,7 +114,7 @@ impl Query {
             self.fields.retain(|field| {
                 fields
                     .iter()
-                    .any(|key| field == key || field.ends_with(&format!(" {key}")))
+                    .any(|key| field == key || field.ends_with(&format!("=>{key}")))
             })
         }
     }
@@ -125,7 +125,7 @@ impl Query {
         self.fields.retain(|field| {
             !fields
                 .iter()
-                .any(|key| field == key || field.ends_with(&format!(" {key}")))
+                .any(|key| field == key || field.ends_with(&format!("=>{key}")))
         })
     }
 

@@ -188,8 +188,9 @@ pub(crate) static APP_DOMAIN: LazyLock<&'static str> = LazyLock::new(|| {
 
 /// Project directory.
 pub(crate) static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
-    env::current_dir()
-        .expect("the project directory does not exist or permissions are insufficient")
+    env::var("CARGO_MANIFEST_DIR")
+        .expect("fail to get the environment variable `CARGO_MANIFEST_DIR`")
+        .into()
 });
 
 /// Shared app state.
