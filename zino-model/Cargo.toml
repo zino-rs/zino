@@ -14,10 +14,10 @@ readme = "README.md"
 
 [dependencies]
 apache-avro = "0.14.0"
-regex = "1.7.2"
+regex = "1.7.3"
 
 [dependencies.serde]
-version = "1.0.155"
+version = "1.0.159"
 features = ["derive"]
 
 [dependencies.zino-core]

@@ -26,24 +26,24 @@ axum = [
 ]
 
 [dependencies]
-async-trait = "0.1.67"
+async-trait = "0.1.68"
 futures = "0.3.27"
 hyper = "0.14.25"
 parking_lot = "0.12.1"
-serde_json = "1.0.94"
+serde_json = "1.0.95"
 toml = "0.7.3"
 tracing = "0.1.37"
 
 [dependencies.axum]
-version = "0.6.11"
+version = "0.6.12"
 optional = true
 features = ["ws"]
 
 [dependencies.serde]
-version = "1.0.158"
+version = "1.0.159"
 
 [dependencies.tokio]
-version = "1.26.0"
+version = "1.27.0"
 optional = true
 features = ["parking_lot", "rt-multi-thread"]
 

@@ -10,7 +10,6 @@
 //!
 //! [`zino`]: https://github.com/photino/zino
 
-#![feature(array_windows)]
 #![feature(async_fn_in_trait)]
 #![feature(decl_macro)]
 #![feature(doc_auto_cfg)]

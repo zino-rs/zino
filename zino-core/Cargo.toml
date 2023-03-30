@@ -76,7 +76,7 @@ view = ["dep:tera"]
 [dependencies]
 aes-gcm-siv = "0.11.1"
 apache-avro = "0.14.0"
-async-trait = "0.1.67"
+async-trait = "0.1.68"
 base64 = "0.21.0"
 bytes = "1.4.0"
 cookie = "0.17.0"
@@ -94,7 +94,7 @@ metrics-exporter-tcp = "0.7.0"
 multer = "2.0.4"
 parking_lot = "0.12.1"
 rand = "0.8.5"
-regex = "1.7.2"
+regex = "1.7.3"
 reqwest-middleware = "0.2.1"
 reqwest-retry = "0.2.2"
 reqwest-tracing = "0.4.1"
@@ -102,7 +102,7 @@ rmp-serde = "1.1.1"
 serde_qs = "0.12.0"
 serde_urlencoded = "0.7.1"
 sha2 = "0.10.6"
-sysinfo = "0.28.3"
+sysinfo = "0.28.4"
 task-local-extensions = "0.1.4"
 toml = "0.7.3"
 tracing = "0.1.37"
@@ -114,7 +114,7 @@ version = "0.4.24"
 features = ["serde"]
 
 [dependencies.datafusion]
-version = "20.0.0"
+version = "21.0.0"
 optional = true
 
 [dependencies.lru]
@@ -122,12 +122,12 @@ version = "0.10.0"
 optional = true
 
 [dependencies.opendal]
-version = "0.30.3"
+version = "0.30.4"
 optional = true
 features = ["layers-all", "native-tls"]
 
 [dependencies.reqwest]
-version = "0.11.15"
+version = "0.11.16"
 features = [
     "cookies",
     "gzip",
@@ -138,7 +138,7 @@ features = [
 ]
 
 [dependencies.serde]
-version = "1.0.158"
+version = "1.0.159"
 features = ["derive"]
 
 [dependencies.serde_json]
@@ -150,7 +150,7 @@ version = "0.6.3"
 optional = true
 
 [dependencies.taos]
-version = "0.5.9"
+version = "0.5.12"
 optional = true
 default-features = false
 features = ["ws"]

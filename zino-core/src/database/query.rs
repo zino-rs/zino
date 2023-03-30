@@ -1,4 +1,4 @@
-use super::Schema;
+use super::{postgres, Schema};
 use crate::{
     model::{EncodeColumn, Query},
     request::Validation,
@@ -37,10 +37,10 @@ impl QueryExt<Postgres> for Query {
             fields
                 .iter()
                 .map(|field| {
-                    if let Some((expr, alias)) = field.rsplit_once("=>") {
+                    if let Some((expr, alias)) = field.rsplit_once("->") {
                         format!(r#"{expr} AS "{alias}""#)
                     } else {
-                        format!(r#""{field}""#)
+                        postgres::format_field(field)
                     }
                 })
                 .collect::<Vec<_>>()
@@ -100,9 +100,10 @@ impl QueryExt<Postgres> for Query {
                     if let Some(col) = M::get_column(key) {
                         let condition = if key == sort_by {
                             // Use the filter condition to optimize pagination offset.
+                            let key = postgres::format_field(key);
                             let operator = if ascending { ">" } else { "<" };
                             let value = Postgres::encode_value(col, Some(value));
-                            format!(r#""{key}" {operator} {value}"#)
+                            format!(r#"{key} {operator} {value}"#)
                         } else {
                             Postgres::format_filter(col, key, value)
                         };
@@ -133,12 +134,7 @@ impl QueryExt<Postgres> for Query {
             String::new()
         } else {
             let sort_order = if ascending { "ASC" } else { "DESC" };
-            if sort_by.contains('.') {
-                let sort_by = sort_by.replace('.', "->'") + "'";
-                format!("ORDER BY {sort_by} {sort_order} NULLS LAST")
-            } else {
-                format!("ORDER BY {sort_by} {sort_order} NULLS LAST")
-            }
+            format!("ORDER BY {sort_by} {sort_order} NULLS LAST")
         }
     }
 
