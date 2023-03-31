@@ -28,6 +28,8 @@ mod format;
 pub mod accessor;
 #[cfg(feature = "cache")]
 pub mod cache;
+#[cfg(feature = "chatbot")]
+pub mod chatbot;
 #[cfg(feature = "connector")]
 pub mod connector;
 #[cfg(feature = "orm")]

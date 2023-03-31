@@ -14,6 +14,10 @@ pub trait JsonObjectExt {
     fn get_i64(&self, key: &str) -> Option<i64>;
 
     /// Extracts the integer value corresponding to the key and
+    /// represents it as `u8` if possible.
+    fn get_u8(&self, key: &str) -> Option<u8>;
+
+    /// Extracts the integer value corresponding to the key and
     /// represents it as `u16` if possible.
     fn get_u16(&self, key: &str) -> Option<u16>;
 
@@ -28,6 +32,10 @@ pub trait JsonObjectExt {
     /// Extracts the integer value corresponding to the key and
     /// represents it as `usize` if possible.
     fn get_usize(&self, key: &str) -> Option<usize>;
+
+    /// Extracts the float value corresponding to the key and
+    /// represents it as `f32` if possible.
+    fn get_f32(&self, key: &str) -> Option<f32>;
 
     /// Extracts the float value corresponding to the key.
     fn get_f64(&self, key: &str) -> Option<f64>;
@@ -72,6 +80,13 @@ impl JsonObjectExt for Map {
     }
 
     #[inline]
+    fn get_u8(&self, key: &str) -> Option<u8> {
+        self.get(key)
+            .and_then(|v| v.as_u64())
+            .and_then(|i| u8::try_from(i).ok())
+    }
+
+    #[inline]
     fn get_u16(&self, key: &str) -> Option<u16> {
         self.get(key)
             .and_then(|v| v.as_u64())
@@ -95,6 +110,11 @@ impl JsonObjectExt for Map {
         self.get(key)
             .and_then(|v| v.as_u64())
             .and_then(|i| usize::try_from(i).ok())
+    }
+
+    #[inline]
+    fn get_f32(&self, key: &str) -> Option<f32> {
+        self.get(key).and_then(|v| v.as_f64()).map(|f| f as f32)
     }
 
     #[inline]

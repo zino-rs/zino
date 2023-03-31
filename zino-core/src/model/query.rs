@@ -37,7 +37,7 @@ impl Query {
         for (key, value) in data {
             match key.as_str() {
                 "fields" => {
-                    if let Some(fields) = Validation::parse_string_array(value) {
+                    if let Some(fields) = Validation::parse_str_array(value) {
                         self.fields = fields.into_iter().map(|s| s.to_owned()).collect();
                     }
                 }

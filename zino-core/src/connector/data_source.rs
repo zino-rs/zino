@@ -116,11 +116,13 @@ impl DataSource {
     }
 
     /// Returns the protocol.
+    #[inline]
     pub fn protocol(&self) -> &'static str {
         &self.protocol
     }
 
     /// Returns the data source type.
+    #[inline]
     pub fn source_type(&self) -> &str {
         self.source_type.as_str()
     }

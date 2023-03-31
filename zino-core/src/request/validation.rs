@@ -2,7 +2,7 @@ use crate::{
     datetime::{self, DateTime},
     error::Error,
     extend::JsonObjectExt,
-    format::string_array,
+    format::str_array,
     Map, SharedString,
 };
 use serde_json::Value;
@@ -129,12 +129,12 @@ impl Validation {
             .filter(|s| !s.is_empty())
     }
 
-    /// Parses a json value as `Vec`. If the vec is empty, it also returns `None`.
+    /// Parses a json value as `Vec<T>`. If the vec is empty, it also returns `None`.
     pub fn parse_array<'a, T: FromStr>(value: impl Into<Option<&'a Value>>) -> Option<Vec<T>> {
         value
             .into()
             .and_then(|v| match v {
-                Value::String(s) => Some(string_array::parse_string_array(s)),
+                Value::String(s) => Some(str_array::parse_str_array(s)),
                 Value::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
                 _ => None,
             })
@@ -148,11 +148,11 @@ impl Validation {
     }
 
     /// Parses a json value as `Vec<&str>`. If the vec is empty, it also returns `None`.
-    pub fn parse_string_array<'a>(value: impl Into<Option<&'a Value>>) -> Option<Vec<&'a str>> {
+    pub fn parse_str_array<'a>(value: impl Into<Option<&'a Value>>) -> Option<Vec<&'a str>> {
         value
             .into()
             .and_then(|v| match v {
-                Value::String(s) => Some(string_array::parse_string_array(s)),
+                Value::String(s) => Some(str_array::parse_str_array(s)),
                 Value::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
                 _ => None,
             })

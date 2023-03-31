@@ -1,7 +1,7 @@
 //! Utilities for formatting and parsing.
 
 pub(crate) mod base64;
-pub(crate) mod string_array;
+pub(crate) mod str_array;
 
 #[cfg(any(feature = "connector", feature = "orm"))]
 mod query;

@@ -82,17 +82,21 @@ pub(super) fn init<APP: Application + ?Sized>() {
         }
     }
 
-    let retry_policy = ExponentialBackoff::builder().build_with_max_retries(max_retries);
     let reqwest_client = client_builder
         .build()
         .unwrap_or_else(|err| panic!("fail to create an HTTP client: {err}"));
+    SHARED_HTTP_CLIENT
+        .set(reqwest_client.clone())
+        .expect("fail to set an HTTP client for the application");
+
+    let retry_policy = ExponentialBackoff::builder().build_with_max_retries(max_retries);
     let client = ClientBuilder::new(reqwest_client)
         .with(TracingMiddleware::<RequestTiming>::new())
         .with(RetryTransientMiddleware::new_with_policy(retry_policy))
         .build();
-    SHARED_HTTP_CLIENT
+    SHARED_HTTP_CLIENT_WITH_MIDDLEWARE
         .set(client)
-        .expect("fail to set an HTTP client for the application");
+        .expect("fail to set an HTTP client with middleware for the application");
 }
 
 /// Constructs a request builder.
@@ -101,7 +105,7 @@ pub(crate) fn request_builder(
     options: Option<&Map>,
 ) -> Result<RequestBuilder, Error> {
     if options.is_none() || options.is_some_and(|map| map.is_empty()) {
-        let request_builder = SHARED_HTTP_CLIENT
+        let request_builder = SHARED_HTTP_CLIENT_WITH_MIDDLEWARE
             .get()
             .ok_or_else(|| Error::new("fail to get the global http client"))?
             .request(Method::GET, resource);
@@ -113,7 +117,7 @@ pub(crate) fn request_builder(
         .get_str("method")
         .and_then(|s| s.parse().ok())
         .unwrap_or(Method::GET);
-    let mut request_builder = SHARED_HTTP_CLIENT
+    let mut request_builder = SHARED_HTTP_CLIENT_WITH_MIDDLEWARE
         .get()
         .ok_or_else(|| Error::new("fail to get the global http client"))?
         .request(method, resource);
@@ -262,4 +266,7 @@ fn remove_credentials(url: &Url) -> Cow<'_, str> {
 }
 
 /// Shared HTTP client.
-static SHARED_HTTP_CLIENT: OnceLock<ClientWithMiddleware> = OnceLock::new();
+pub(crate) static SHARED_HTTP_CLIENT: OnceLock<Client> = OnceLock::new();
+
+/// Shared HTTP client with middleware.
+static SHARED_HTTP_CLIENT_WITH_MIDDLEWARE: OnceLock<ClientWithMiddleware> = OnceLock::new();

@@ -288,7 +288,7 @@ impl Connector for ArrowConnector {
     }
 }
 
-/// Shared session state for Arrow.
+/// Shared session state for DataFusion.
 static SHARED_SESSION_STATE: LazyLock<SessionState> = LazyLock::new(|| {
     let config = SessionConfig::new();
     let runtime = Arc::new(RuntimeEnv::default());

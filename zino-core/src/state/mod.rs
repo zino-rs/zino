@@ -191,7 +191,7 @@ impl Default for State {
 }
 
 /// Shared application state.
-pub(crate) static SHARED_STATE: LazyLock<State> = LazyLock::new(|| {
+static SHARED_STATE: LazyLock<State> = LazyLock::new(|| {
     let mut app_env = "dev";
     for arg in env::args().skip(1) {
         if let Some(value) = arg.strip_prefix("--env=") {

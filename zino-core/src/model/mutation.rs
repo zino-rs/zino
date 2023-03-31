@@ -28,7 +28,7 @@ impl Mutation {
         for (key, value) in data {
             match key.as_str() {
                 "fields" => {
-                    if let Some(fields) = Validation::parse_string_array(value) {
+                    if let Some(fields) = Validation::parse_str_array(value) {
                         if fields.is_empty() {
                             validation.record("fields", "must be nonempty");
                         } else {

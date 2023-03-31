@@ -116,7 +116,7 @@ impl QueryExt<Postgres> for Query {
             expression += &format!("WHERE {}", conditions.join(" AND "));
         };
         if let Some(group) = filters.get("$group") {
-            let groups = Validation::parse_string_array(group)
+            let groups = Validation::parse_str_array(group)
                 .unwrap_or_default()
                 .join(", ");
             expression += &format!("GROUP BY {groups}");
@@ -198,7 +198,7 @@ impl QueryExt<Postgres> for Query {
     }
 
     fn parse_text_search(filter: &Map) -> Option<String> {
-        let fields = Validation::parse_string_array(filter.get("$fields"))?;
+        let fields = Validation::parse_str_array(filter.get("$fields"))?;
         Validation::parse_string(filter.get("$search")).map(|search| {
             let text = fields.join(" || ' ' || ");
             let lang = Validation::parse_string(filter.get("$language"))

@@ -473,7 +473,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let mut values = Vec::new();
         for row in data.iter() {
             for col in columns {
-                if let Some(mut vec) = Validation::parse_string_array(row.get(col)) {
+                if let Some(mut vec) = Validation::parse_str_array(row.get(col)) {
                     values.append(&mut vec);
                 }
             }
@@ -527,7 +527,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
         for col in columns {
-            if let Some(mut vec) = Validation::parse_string_array(data.get(col)) {
+            if let Some(mut vec) = Validation::parse_str_array(data.get(col)) {
                 values.append(&mut vec);
             }
         }
