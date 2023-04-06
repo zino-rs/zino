@@ -15,8 +15,6 @@ use sqlx::mysql::MySqlPool;
 use sqlx::postgres::PgPool;
 #[cfg(feature = "connector-sqlite")]
 use sqlx::sqlite::SqlitePool;
-#[cfg(feature = "connector-taos")]
-use taos::TaosPool;
 
 /// Supported data source connectors.
 #[non_exhaustive]
@@ -39,9 +37,6 @@ pub(super) enum DataSourceConnector {
     /// SQLite
     #[cfg(feature = "connector-sqlite")]
     Sqlite(SqlitePool),
-    /// TDengine
-    #[cfg(feature = "connector-taos")]
-    Taos(TaosPool),
 }
 
 /// Data sources.
@@ -88,7 +83,6 @@ impl DataSource {
     /// - `mysql`
     /// - `postgres`
     /// - `sqlite`
-    /// - `taos`
     pub fn try_new(protocol: &'static str, config: &Table) -> Result<DataSource, Error> {
         let mut data_source = match protocol {
             #[cfg(feature = "connector-arrow")]
@@ -103,8 +97,6 @@ impl DataSource {
             "postgres" => PgPool::try_new_data_source(config)?,
             #[cfg(feature = "connector-sqlite")]
             "sqlite" => SqlitePool::try_new_data_source(config)?,
-            #[cfg(feature = "connector-taos")]
-            "taos" => TaosPool::try_new_data_source(config)?,
             _ => {
                 let message = format!("data source protocol `{protocol}` is unsupported");
                 return Err(Error::new(message));
@@ -175,7 +167,6 @@ impl Connector for DataSource {
             "postgres" | "citus" | "greptimedb" | "hologres" | "opengauss" | "postgis"
             | "timescaledb" => "postgres",
             "sqlite" => "sqlite",
-            "taos" => "taos",
             _ => {
                 if let Some(protocol) = config.get_str("protocol") {
                     protocol.to_owned().leak()
@@ -202,8 +193,6 @@ impl Connector for DataSource {
             Postgres(pool) => pool.execute(query, params).await,
             #[cfg(feature = "connector-sqlite")]
             Sqlite(pool) => pool.execute(query, params).await,
-            #[cfg(feature = "connector-taos")]
-            Taos(pool) => pool.execute(query, params).await,
         }
     }
 
@@ -221,8 +210,6 @@ impl Connector for DataSource {
             Postgres(pool) => pool.query(query, params).await,
             #[cfg(feature = "connector-sqlite")]
             Sqlite(pool) => pool.query(query, params).await,
-            #[cfg(feature = "connector-taos")]
-            Taos(pool) => pool.query(query, params).await,
         }
     }
 
@@ -240,8 +227,6 @@ impl Connector for DataSource {
             Postgres(pool) => pool.query_one(query, params).await,
             #[cfg(feature = "connector-sqlite")]
             Sqlite(pool) => pool.query_one(query, params).await,
-            #[cfg(feature = "connector-taos")]
-            Taos(pool) => pool.query_one(query, params).await,
         }
     }
 }

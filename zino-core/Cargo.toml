@@ -42,7 +42,6 @@ all-connectors = [
     "connector-mysql",
     "connector-postgres",
     "connector-sqlite",
-    "connector-taos",
 ]
 cache = ["dep:lru"]
 chatbot = []
@@ -55,7 +54,6 @@ connector-mssql = ["connector", "sqlx", "sqlx/mssql"]
 connector-mysql = ["connector", "sqlx", "sqlx/mysql"]
 connector-postgres = ["connector", "sqlx", "sqlx/postgres"]
 connector-sqlite = ["connector", "sqlx", "sqlx/sqlite"]
-connector-taos = ["connector", "dep:taos"]
 default = ["runtime-tokio"]
 full = [
     "all-accessors",
@@ -86,7 +84,7 @@ bytes = "1.4.0"
 cookie = "0.17.0"
 cron = "0.12.0"
 fluent = "0.16.0"
-futures = "0.3.27"
+futures = "0.3.28"
 hkdf = "0.12.3"
 hmac = "0.12.1"
 http = "0.2.9"
@@ -95,7 +93,7 @@ intl-memoizer = "0.5.1"
 metrics = "0.20.1"
 metrics-exporter-prometheus = "0.11.0"
 metrics-exporter-tcp = "0.7.0"
-multer = "2.0.4"
+multer = "2.1.0"
 parking_lot = "0.12.1"
 rand = "0.8.5"
 regex = "1.7.3"
@@ -114,7 +112,7 @@ tracing-appender = "0.2.2"
 url = "2.3.1"
 
 [dependencies.async-openai]
-version = "0.10.1"
+version = "0.10.2"
 optional = true
 
 [dependencies.chrono]
@@ -122,7 +120,7 @@ version = "0.4.24"
 features = ["serde"]
 
 [dependencies.datafusion]
-version = "21.0.0"
+version = "21.1.0"
 optional = true
 
 [dependencies.lru]
@@ -130,7 +128,7 @@ version = "0.10.0"
 optional = true
 
 [dependencies.opendal]
-version = "0.30.4"
+version = "0.30.5"
 optional = true
 features = ["layers-all", "native-tls"]
 
@@ -156,12 +154,6 @@ features = ["raw_value"]
 [dependencies.sqlx]
 version = "0.6.3"
 optional = true
-
-[dependencies.taos]
-version = "0.5.12"
-optional = true
-default-features = false
-features = ["ws"]
 
 [dependencies.tera]
 version = "1.18.1"

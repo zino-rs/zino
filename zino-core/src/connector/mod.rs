@@ -20,7 +20,6 @@
 //! | `postgres`       | PostgreSQL             | `connector-postgres`   |
 //! | `rest`           | RESTful API            | `connector-http`       |
 //! | `sqlite`         | SQLite                 | `connector-sqlite`     |
-//! | `taos`           | TDengine               | `connector-taos`       |
 //! | `tidb`           | TiDB                   | `connector-mysql`      |
 //! | `timescaledb`    | TimescaleDB            | `connector-postgres`   |
 //!
