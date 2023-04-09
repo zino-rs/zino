@@ -1,7 +1,7 @@
 use crate::{
     datetime::{self, DateTime},
     error::Error,
-    extend::JsonObjectExt,
+    extension::JsonObjectExt,
     format::str_array,
     Map, SharedString,
 };

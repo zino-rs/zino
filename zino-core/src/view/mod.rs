@@ -1,6 +1,6 @@
 //! Building HTML views using templates.
 
-use crate::{application::Application, error::Error, extend::TomlTableExt, Map};
+use crate::{application::Application, error::Error, extension::TomlTableExt, Map};
 use std::{path::Path, sync::OnceLock};
 use tera::{Context, Tera};
 

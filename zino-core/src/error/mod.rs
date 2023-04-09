@@ -81,7 +81,6 @@ impl<E: error::Error + 'static> From<E> for Error {
 }
 
 impl fmt::Display for Error {
-    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let message = &self.message;
         if let Some(source) = &self.source {

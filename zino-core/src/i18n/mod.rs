@@ -1,6 +1,6 @@
 //! Internationalization and localization.
 
-use crate::{application, error::Error, extend::TomlTableExt, state::State, SharedString};
+use crate::{application, error::Error, extension::TomlTableExt, state::State, SharedString};
 use fluent::{bundle::FluentBundle, FluentArgs, FluentResource};
 use intl_memoizer::concurrent::IntlLangMemoizer;
 use std::{fs, sync::LazyLock};

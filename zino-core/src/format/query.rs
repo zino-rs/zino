@@ -37,7 +37,7 @@ static QUERY_PARAMETER_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
 #[cfg(test)]
 mod tests {
     use super::format_query;
-    use crate::{extend::JsonObjectExt, Map};
+    use crate::{extension::JsonObjectExt, Map};
 
     #[test]
     fn it_formats_query_params() {

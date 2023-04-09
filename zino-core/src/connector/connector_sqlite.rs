@@ -1,5 +1,5 @@
 use super::{Connector, DataSource, DataSourceConnector::Sqlite};
-use crate::{error::Error, extend::TomlTableExt};
+use crate::{error::Error, extension::TomlTableExt};
 use sqlx::sqlite::{SqlitePool, SqlitePoolOptions};
 use std::time::Duration;
 use toml::Table;

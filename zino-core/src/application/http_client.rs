@@ -1,7 +1,7 @@
 use super::Application;
 use crate::{
     error::Error,
-    extend::{HeaderMapExt, JsonObjectExt, TomlTableExt},
+    extension::{HeaderMapExt, JsonObjectExt, TomlTableExt},
     trace::TraceContext,
     Map, Uuid,
 };

@@ -1,7 +1,7 @@
 use super::{mutation::MutationExt, postgres, query::QueryExt, ConnectionPool};
 use crate::{
     error::Error,
-    extend::JsonObjectExt,
+    extension::JsonObjectExt,
     format,
     model::{Column, DecodeRow, EncodeColumn, Model, Mutation, Query},
     request::Validation,

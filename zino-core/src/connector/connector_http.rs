@@ -2,7 +2,7 @@ use super::{Connector, DataSource, DataSourceConnector::Http};
 use crate::{
     application::http_client,
     error::Error,
-    extend::{AvroRecordExt, HeaderMapExt, JsonObjectExt, TomlTableExt},
+    extension::{AvroRecordExt, HeaderMapExt, JsonObjectExt, TomlTableExt},
     format,
     trace::TraceContext,
     Map, Record,

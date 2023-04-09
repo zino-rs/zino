@@ -1,5 +1,5 @@
 use super::{Connector, DataSource, DataSourceConnector::MySql};
-use crate::{error::Error, extend::TomlTableExt, state::State};
+use crate::{error::Error, extension::TomlTableExt, state::State};
 use sqlx::mysql::{MySqlPool, MySqlPoolOptions};
 use std::time::Duration;
 use toml::Table;

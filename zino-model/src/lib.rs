@@ -12,15 +12,14 @@
 
 #![feature(async_fn_in_trait)]
 #![feature(decl_macro)]
-#![feature(is_some_and)]
+#![feature(lazy_cell)]
 #![feature(let_chains)]
-#![feature(once_cell)]
 #![forbid(unsafe_code)]
 
 use zino_core::{
     database::Schema,
     datetime::DateTime,
-    extend::JsonObjectExt,
+    extension::JsonObjectExt,
     model::{Mutation, Query},
     Map, Uuid,
 };

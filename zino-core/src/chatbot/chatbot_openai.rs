@@ -2,7 +2,7 @@ use super::{chatbot::ChatbotClient::OpenAi, Chatbot, ChatbotService};
 use crate::{
     application::http_client,
     error::Error,
-    extend::{JsonObjectExt, TomlTableExt},
+    extension::{JsonObjectExt, TomlTableExt},
     Map,
 };
 use async_openai::{

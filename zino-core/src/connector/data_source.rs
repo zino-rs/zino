@@ -1,6 +1,6 @@
 use self::DataSourceConnector::*;
 use super::Connector;
-use crate::{error::Error, extend::TomlTableExt, Map, Record};
+use crate::{error::Error, extension::TomlTableExt, Map, Record};
 use toml::Table;
 
 #[cfg(feature = "connector-arrow")]

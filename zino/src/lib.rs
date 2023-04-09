@@ -36,7 +36,7 @@
 
 #![feature(async_fn_in_trait)]
 #![feature(doc_auto_cfg)]
-#![feature(once_cell)]
+#![feature(lazy_cell)]
 #![feature(result_option_inspect)]
 #![feature(string_leak)]
 #![forbid(unsafe_code)]
@@ -53,7 +53,7 @@ pub use zino_core::{
     database::Schema,
     datetime::DateTime,
     error::Error,
-    extend::JsonObjectExt,
+    extension::JsonObjectExt,
     model::{Model, Mutation, Query},
     request::{RequestContext, Validation},
     response::ExtractRejection,

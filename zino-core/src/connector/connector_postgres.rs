@@ -1,5 +1,5 @@
 use super::{Connector, DataSource, DataSourceConnector::Postgres};
-use crate::{error::Error, extend::TomlTableExt, state::State};
+use crate::{error::Error, extension::TomlTableExt, state::State};
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use std::time::Duration;
 use toml::Table;

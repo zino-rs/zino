@@ -1,6 +1,6 @@
 //! Database schema and ORM.
 
-use crate::{extend::TomlTableExt, state::State};
+use crate::{extension::TomlTableExt, state::State};
 use sqlx::{
     postgres::{PgConnectOptions, PgPool, PgPoolOptions},
     Connection, Database, Pool, Postgres,

@@ -1,5 +1,5 @@
 use super::Application;
-use crate::extend::TomlTableExt;
+use crate::extension::TomlTableExt;
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
 use metrics_exporter_tcp::TcpBuilder;
 use std::{net::IpAddr, time::Duration};

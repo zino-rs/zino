@@ -7,7 +7,7 @@
 //! | `openai`         | OpenAI                 | `chatbot-openai`       |
 //!
 
-use crate::{error::Error, extend::TomlTableExt, state::State, Map};
+use crate::{error::Error, extension::TomlTableExt, state::State, Map};
 use std::sync::LazyLock;
 use toml::Table;
 

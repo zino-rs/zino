@@ -80,7 +80,7 @@ impl Model for User {
         if self.name.is_empty() {
             validation.record("name", "should be nonempty");
         }
-        if let Some(roles) = Validation::parse_string_array(data.get("roles")) {
+        if let Some(roles) = Validation::parse_str_array(data.get("roles")) {
             if let Err(err) = self.set_roles(roles) {
                 validation.record_fail("roles", err);
             }
@@ -243,7 +243,7 @@ static USER_ROLE_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
 #[cfg(test)]
 mod tests {
     use super::User;
-    use zino_core::{extend::JsonObjectExt, model::Model, Map};
+    use zino_core::{extension::JsonObjectExt, model::Model, Map};
 
     #[test]
     fn it_checks_user_roles() {

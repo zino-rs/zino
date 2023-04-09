@@ -1,7 +1,7 @@
 //! Utilities for DataFusion.
 
 use super::{Connector, DataSource, DataSourceConnector::Arrow};
-use crate::{application::http_client, error::Error, extend::TomlTableExt, format, Map, Record};
+use crate::{application::http_client, error::Error, extension::TomlTableExt, format, Map, Record};
 use datafusion::{
     arrow::{datatypes::Schema, record_batch::RecordBatch},
     dataframe::DataFrame,
@@ -209,7 +209,7 @@ impl ArrowConnector {
         }
         ctx.register_variable(VarType::System, Arc::new(self.system_variables.clone()));
         ctx.refresh_catalogs().await?;
-        self.context.get_or_try_init(|| Ok(ctx))
+        Ok(self.context.get_or_init(|| ctx))
     }
 
     /// Attempts to create a [`DateFrame`](datafusion::dataframe::DataFrame)

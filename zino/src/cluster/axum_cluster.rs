@@ -24,7 +24,7 @@ use tower_http::{
 };
 use zino_core::{
     application::Application,
-    extend::TomlTableExt,
+    extension::TomlTableExt,
     response::Response,
     schedule::{AsyncCronJob, Job, JobScheduler},
     state::State,

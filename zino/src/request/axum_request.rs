@@ -18,7 +18,7 @@ use zino_core::{
     application::Application,
     channel::CloudEvent,
     error::Error,
-    extend::HeaderMapExt,
+    extension::HeaderMapExt,
     request::{Context, RequestContext},
     response::Rejection,
     state::State,

@@ -8,7 +8,7 @@ use tower_http::{
     trace::TraceLayer,
 };
 use tracing::{field::Empty, Span};
-use zino_core::{application::Application, extend::HeaderMapExt, trace::TraceContext, Uuid};
+use zino_core::{application::Application, extension::HeaderMapExt, trace::TraceContext, Uuid};
 
 // Type aliases.
 type NewMakeSpan = fn(&Request<Body>) -> Span;

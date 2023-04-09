@@ -26,7 +26,7 @@
 //! | `webhdfs`     | WebHDFS services.                        | `accessor`            |
 //!
 
-use crate::{extend::TomlTableExt, state::State};
+use crate::{extension::TomlTableExt, state::State};
 use opendal::{
     layers::{MetricsLayer, RetryLayer, TracingLayer},
     services::{Azblob, Azdfs, Fs, Gcs, Ghac, Ipmfs, Memory, Obs, Oss, Webdav, Webhdfs, S3},

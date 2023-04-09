@@ -3,7 +3,7 @@
 use crate::{
     datetime::DateTime,
     error::Error,
-    extend::{HeaderMapExt, JsonObjectExt, TomlTableExt},
+    extension::{HeaderMapExt, JsonObjectExt, TomlTableExt},
     schedule::{AsyncCronJob, CronJob, Job, JobScheduler},
     state::State,
     trace::TraceContext,

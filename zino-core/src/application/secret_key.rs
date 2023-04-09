@@ -1,5 +1,5 @@
 use super::Application;
-use crate::extend::TomlTableExt;
+use crate::extension::TomlTableExt;
 use hkdf::Hkdf;
 use sha2::{Digest, Sha256};
 use std::{env, sync::OnceLock};

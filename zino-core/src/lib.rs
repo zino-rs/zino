@@ -13,10 +13,9 @@
 #![feature(async_fn_in_trait)]
 #![feature(decl_macro)]
 #![feature(doc_auto_cfg)]
-#![feature(is_some_and)]
 #![feature(iter_intersperse)]
+#![feature(lazy_cell)]
 #![feature(let_chains)]
-#![feature(once_cell)]
 #![feature(result_option_inspect)]
 #![feature(string_leak)]
 #![forbid(unsafe_code)]
@@ -42,7 +41,7 @@ pub mod authentication;
 pub mod channel;
 pub mod datetime;
 pub mod error;
-pub mod extend;
+pub mod extension;
 pub mod i18n;
 pub mod model;
 pub mod request;

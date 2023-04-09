@@ -1,4 +1,4 @@
-use crate::{extend::JsonObjectExt, request::Validation, Map};
+use crate::{extension::JsonObjectExt, request::Validation, Map};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Default)]

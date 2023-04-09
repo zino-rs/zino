@@ -1,6 +1,6 @@
 use self::ChatbotClient::*;
 use super::ChatbotService;
-use crate::{error::Error, extend::TomlTableExt, Map};
+use crate::{error::Error, extension::TomlTableExt, Map};
 use toml::Table;
 
 #[cfg(feature = "chatbot-openai")]

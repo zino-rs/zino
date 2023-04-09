@@ -1,4 +1,4 @@
-use crate::{error::Error, extend::AvroRecordExt, Record};
+use crate::{error::Error, extension::AvroRecordExt, Record};
 use apache_avro::types::Value;
 use datafusion::arrow::{
     array::{

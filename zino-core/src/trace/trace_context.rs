@@ -1,5 +1,5 @@
 use super::TraceState;
-use crate::{extend::HeaderMapExt, Uuid};
+use crate::{extension::HeaderMapExt, Uuid};
 use http::header::HeaderMap;
 use tracing::Span;
 

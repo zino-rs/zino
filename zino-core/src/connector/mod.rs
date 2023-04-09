@@ -24,7 +24,7 @@
 //! | `timescaledb`    | TimescaleDB            | `connector-postgres`   |
 //!
 
-use crate::{error::Error, extend::TomlTableExt, state::State, Map, Record};
+use crate::{error::Error, extension::TomlTableExt, state::State, Map, Record};
 use apache_avro::types::Value;
 use serde::de::DeserializeOwned;
 use std::sync::LazyLock;

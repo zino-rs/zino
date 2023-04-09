@@ -1,4 +1,4 @@
-use zino_core::{extend::JsonObjectExt, Map, Uuid};
+use zino_core::{extension::JsonObjectExt, Map, Uuid};
 
 pub fn bench(c: &mut criterion::Criterion) {
     c.bench_function("new_map", |b| {

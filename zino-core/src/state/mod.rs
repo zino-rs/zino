@@ -1,6 +1,6 @@
 //! Application or request scoped state.
 
-use crate::{application, crypto, extend::TomlTableExt, format::base64, Map};
+use crate::{application, crypto, extension::TomlTableExt, format::base64, Map};
 use std::{
     borrow::Cow,
     env, fs,

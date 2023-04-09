@@ -6,7 +6,7 @@ use tokio_stream::wrappers::ReceiverStream;
 use zino_core::{
     application::Application,
     channel::{CloudEvent, Subscription},
-    extend::TomlTableExt,
+    extension::TomlTableExt,
     Uuid,
 };
 

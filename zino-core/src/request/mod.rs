@@ -6,7 +6,7 @@ use crate::{
     channel::{CloudEvent, Subscription},
     datetime::DateTime,
     error::Error,
-    extend::HeaderMapExt,
+    extension::HeaderMapExt,
     i18n,
     model::{Model, Query},
     response::{Rejection, Response, ResponseCode},
