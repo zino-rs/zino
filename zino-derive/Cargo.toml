@@ -16,7 +16,7 @@ proc-macro = true
 [dependencies]
 proc-macro2 = "1.0.56"
 quote = "1.0.26"
-syn = "2.0.13"
+syn = "2.0.15"
 
 [dependencies.zino-core]
 path = "../zino-core"
