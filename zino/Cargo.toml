@@ -35,7 +35,7 @@ toml = "0.7.3"
 tracing = "0.1.37"
 
 [dependencies.axum]
-version = "0.6.15"
+version = "0.6.16"
 optional = true
 features = ["ws"]
 

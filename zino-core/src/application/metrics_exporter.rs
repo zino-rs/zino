@@ -1,7 +1,6 @@
 use super::Application;
 use crate::extension::TomlTableExt;
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
-use metrics_exporter_tcp::TcpBuilder;
 use std::{net::IpAddr, time::Duration};
 
 /// Initializes the metrics exporters.
@@ -69,18 +68,8 @@ pub(super) fn init<APP: Application + ?Sized>() {
             builder
                 .install()
                 .expect("fail to install Prometheus exporter");
-        } else if exporter == "tcp" {
-            let host = metrics.get_str("host").unwrap_or("127.0.0.1");
-            let port = metrics.get_u16("port").unwrap_or(9000);
-            let buffer_size = metrics.get_usize("buffer_size").unwrap_or(1024);
-            let host_addr = host
-                .parse::<IpAddr>()
-                .unwrap_or_else(|err| panic!("invalid host address `{host}`: {err}"));
-            TcpBuilder::new()
-                .listen_address((host_addr, port))
-                .buffer_size(Some(buffer_size))
-                .install()
-                .expect("fail to install TCP exporter");
+        } else {
+            tracing::error!("metrics exporter `{exporter}` is unsupported");
         }
     }
 }
