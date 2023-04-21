@@ -45,8 +45,6 @@ mod connector_mysql;
 mod connector_postgres;
 #[cfg(feature = "connector-sqlite")]
 mod connector_sqlite;
-#[cfg(feature = "connector-taos")]
-mod connector_taos;
 
 #[cfg(any(
     feature = "connector-mssql",
