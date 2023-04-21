@@ -1,9 +1,11 @@
+use crate::{endpoint, middleware, AxumExtractor};
 use axum::{
     body::{Bytes, Full},
     error_handling::HandleErrorLayer,
     extract::{rejection::LengthLimitError, DefaultBodyLimit},
     http::{self, StatusCode},
-    middleware, routing, BoxError, Router, Server,
+    middleware::from_fn,
+    routing, BoxError, Router, Server,
 };
 use futures::future;
 use std::{convert::Infallible, net::SocketAddr, path::PathBuf, sync::LazyLock, time::Duration};
@@ -106,11 +108,8 @@ impl Application for AxumCluster {
                 let mut app = Router::new()
                     .route_service("/", serve_file.clone())
                     .nest_service("/assets", serve_dir.clone())
-                    .route("/sse", routing::get(crate::endpoint::axum_sse::sse_handler))
-                    .route(
-                        "/websocket",
-                        routing::get(crate::endpoint::axum_websocket::websocket_handler),
-                    );
+                    .route("/sse", routing::get(endpoint::sse_handler))
+                    .route("/websocket", routing::get(endpoint::websocket_handler));
                 for route in &routes {
                     app = app.merge(route.clone());
                 }
@@ -118,8 +117,8 @@ impl Application for AxumCluster {
                 let state = app_state.clone();
                 app = app
                     .fallback_service(tower::service_fn(|req| async {
-                        let request = crate::AxumExtractor(req);
-                        let res = Response::new(StatusCode::NOT_FOUND).provide_context(&request);
+                        let req = AxumExtractor::new(req);
+                        let res = Response::new(StatusCode::NOT_FOUND).provide_context(&req);
                         Ok::<http::Response<Full<Bytes>>, Infallible>(res.into())
                     }))
                     .layer(
@@ -134,15 +133,9 @@ impl Application for AxumCluster {
                                 ),
                             )
                             .layer(DecompressionLayer::new().gzip(true).br(true))
-                            .layer(LazyLock::force(
-                                &crate::middleware::tower_tracing::TRACING_MIDDLEWARE,
-                            ))
-                            .layer(LazyLock::force(
-                                &crate::middleware::tower_cors::CORS_MIDDLEWARE,
-                            ))
-                            .layer(middleware::from_fn(
-                                crate::middleware::axum_context::request_context,
-                            ))
+                            .layer(LazyLock::force(&middleware::TRACING_MIDDLEWARE))
+                            .layer(LazyLock::force(&middleware::CORS_MIDDLEWARE))
+                            .layer(from_fn(middleware::request_context))
                             .layer(HandleErrorLayer::new(|err: BoxError| async move {
                                 let status_code = if err.is::<Elapsed>() {
                                     StatusCode::REQUEST_TIMEOUT

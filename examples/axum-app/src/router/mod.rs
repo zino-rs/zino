@@ -1,5 +1,9 @@
-use crate::controller::{stats, task, user};
+use crate::{
+    controller::{stats, task, user},
+    middleware,
+};
 use axum::{
+    middleware::from_fn,
     routing::{get, post},
     Router,
 };
@@ -20,7 +24,9 @@ pub(crate) fn routes() -> Vec<Router> {
     routes.push(controller);
 
     // Stats controller.
-    let controller = Router::new().route("/stats", get(stats::index));
+    let controller = Router::new()
+        .route("/stats", get(stats::index))
+        .layer(from_fn(middleware::check_client_ip));
     routes.push(controller);
 
     routes

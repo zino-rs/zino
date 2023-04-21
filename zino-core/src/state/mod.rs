@@ -97,7 +97,7 @@ impl State {
         listeners.push((main_host, main_port).into());
 
         // Optional standbys.
-        if config.contains_key("standy") {
+        if config.contains_key("standby") {
             let standbys = config
                 .get_array("standby")
                 .expect("the `standby` field should be an array of tables");

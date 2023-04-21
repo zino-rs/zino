@@ -56,25 +56,29 @@ pub use zino_core::{
     extension::JsonObjectExt,
     model::{Model, Mutation, Query},
     request::{RequestContext, Validation},
-    response::ExtractRejection,
+    response::{ExtractRejection, Rejection},
     schedule::{AsyncCronJob, CronJob},
     BoxFuture, Map, Record, Uuid,
 };
 
-#[cfg(feature = "axum")]
-pub use cluster::axum_cluster::AxumCluster;
-#[cfg(feature = "axum")]
-pub use request::axum_request::AxumExtractor;
+cfg_if::cfg_if! {
+    if #[cfg(feature = "axum")] {
+        use axum::{
+            body::{Body, Bytes, Full},
+            http,
+        };
 
-/// A specialized request extractor for `axum`.
-#[cfg(feature = "axum")]
-pub type Request = AxumExtractor<axum::http::Request<axum::body::Body>>;
+        pub use cluster::axum_cluster::AxumCluster;
+        pub use request::axum_request::AxumExtractor;
 
-/// A specialized response for `axum`.
-#[cfg(feature = "axum")]
-pub type Response = zino_core::response::Response<axum::http::StatusCode>;
+        /// A specialized request extractor for `axum`.
+        pub type Request<B = Body> = AxumExtractor<http::Request<B>>;
 
-/// A specialized `Result` type for `axum`.
-#[cfg(feature = "axum")]
-pub type Result<T = axum::http::Response<axum::body::Full<axum::body::Bytes>>> =
-    std::result::Result<T, T>;
+        /// A specialized response for `axum`.
+        pub type Response = zino_core::response::Response<http::StatusCode>;
+
+        /// A specialized `Result` type for `axum`.
+        pub type Result<T = http::Response<Full<Bytes>>> =
+            std::result::Result<T, http::Response<Full<Bytes>>>;
+    }
+}

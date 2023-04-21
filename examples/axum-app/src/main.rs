@@ -1,4 +1,5 @@
 mod controller;
+mod middleware;
 mod router;
 mod schedule;
 mod service;

@@ -26,7 +26,15 @@ use zino_core::{
 };
 
 /// An HTTP request extractor for `axum`.
-pub struct AxumExtractor<T>(pub(crate) T);
+pub struct AxumExtractor<T>(T);
+
+impl<T> AxumExtractor<T> {
+    /// Creates a new instance of `T`.
+    #[inline]
+    pub fn new(value: T) -> Self {
+        Self(value)
+    }
+}
 
 impl<T> Deref for AxumExtractor<T> {
     type Target = T;
@@ -162,6 +170,13 @@ impl RequestContext for AxumExtractor<Request<Body>> {
         let mut bytes = Vec::with_capacity(buffer_size);
         body.reader().read_to_end(&mut bytes)?;
         Ok(bytes)
+    }
+}
+
+impl From<AxumExtractor<Request<Body>>> for Request<Body> {
+    #[inline]
+    fn from(extractor: AxumExtractor<Request<Body>>) -> Self {
+        extractor.0
     }
 }
 

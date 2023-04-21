@@ -27,6 +27,7 @@ axum = [
 
 [dependencies]
 async-trait = "0.1.68"
+cfg-if = "1.0"
 futures = "0.3.28"
 hyper = "0.14.26"
 parking_lot = "0.12.1"
