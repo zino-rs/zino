@@ -75,7 +75,7 @@ impl Application for AxumCluster {
         let mut body_limit = 100 * 1024 * 1024; // 100MB
         let mut request_timeout = Duration::from_secs(10); // 10 seconds
         let mut public_dir = PathBuf::new();
-        let default_public_dir = Self::project_dir().join("assets");
+        let default_public_dir = Self::project_dir().join("public");
         if let Some(server) = Self::config().get_table("server") {
             if let Some(limit) = server.get_usize("body-limit") {
                 body_limit = limit;
@@ -107,7 +107,7 @@ impl Application for AxumCluster {
             let servers = listeners.iter().map(|listener| {
                 let mut app = Router::new()
                     .route_service("/", serve_file.clone())
-                    .nest_service("/assets", serve_dir.clone())
+                    .nest_service("/public", serve_dir.clone())
                     .route("/sse", routing::get(endpoint::sse_handler))
                     .route("/websocket", routing::get(endpoint::websocket_handler));
                 for route in &routes {

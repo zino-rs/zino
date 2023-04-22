@@ -24,7 +24,7 @@ host = "127.0.0.1"
 port = 5432
 database = "data_cube"
 username = "postgres"
-password = "8Pi6qJiOQGi016XCl+wAo10ddw8Ln+F39ct1WY6IjjBn0w4O"
+password = "GX0LHL11d8rLOr6B41CPXz+HN8c5mgLmnvt+XHIyjAviJfJL"
 
 [tracing]
 filter = "info,sqlx=trace,tower_http=trace,zino=trace,zino_core=trace"
