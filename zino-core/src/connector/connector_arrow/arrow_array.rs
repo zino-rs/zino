@@ -239,15 +239,19 @@ impl ArrowArrayExt for dyn Array {
                 }
                 AvroValue::Map(hashmap)
             }
-            DataType::Union(_fields, types, _mode) => {
+            DataType::Union(union_fields, _mode) => {
                 let union_array = array::as_union_array(self);
                 let type_id = union_array.type_id(index);
-                let position = types.iter().position(|&ty| type_id == ty).ok_or_else(|| {
-                    let type_names = union_array.type_names();
-                    let message =
-                        format!("invalid slot `{type_id}` for the union types `{type_names:?}`");
-                    Error::new(message)
-                })?;
+                let position = union_fields
+                    .iter()
+                    .position(|(ty, _)| type_id == ty)
+                    .ok_or_else(|| {
+                        let type_names = union_array.type_names();
+                        let message = format!(
+                            "invalid slot `{type_id}` for the union types `{type_names:?}`"
+                        );
+                        Error::new(message)
+                    })?;
                 let value = union_array.value(index).parse_avro_value(0)?;
                 AvroValue::Union(position.try_into()?, Box::new(value))
             }

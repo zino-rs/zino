@@ -2,7 +2,7 @@ use super::ArrowFieldExt;
 use crate::{error::Error, Record};
 use datafusion::arrow::{
     array::Array,
-    datatypes::{DataType, Field, Schema, UnionMode},
+    datatypes::{DataType, Field, Schema, UnionFields, UnionMode},
 };
 use std::sync::Arc;
 use toml::{Table, Value};
@@ -43,7 +43,7 @@ impl ArrowSchemaExt for Schema {
                     if array_length == 1 && let Some(Value::String(value_type)) = array.first() {
                         let item_data_type = parse_arrow_data_type(&value_type)?;
                         let field = Field::new("item", item_data_type, true);
-                        DataType::List(Box::new(field))
+                        DataType::List(Arc::new(field))
                     } else if array_length >= 2 {
                         let mut fields = Vec::with_capacity(array_length);
                         let mut positions = Vec::with_capacity(array_length);
@@ -55,7 +55,7 @@ impl ArrowSchemaExt for Schema {
                                 positions.push(i8::try_from(index)?);
                             }
                         }
-                        DataType::Union(fields, positions, UnionMode::Dense)
+                        DataType::Union(UnionFields::new(positions, fields), UnionMode::Dense)
                     } else {
                         return Err(Error::new(format!("schema for `{key}` should be nonempty")));
                     }

@@ -1,4 +1,4 @@
-use super::{mutation::MutationExt, postgres, query::QueryExt, ConnectionPool};
+use super::{mutation::MutationExt, query::QueryExt, ConnectionPool};
 use crate::{
     error::Error,
     extension::JsonObjectExt,
@@ -256,7 +256,7 @@ pub trait Schema: 'static + Send + Sync + Model {
             let field = col.name();
             if !readonly_fields.contains(&field) {
                 let value = Postgres::encode_value(col, map.get(field));
-                let field = postgres::format_field(field);
+                let field = Postgres::format_field(field);
                 mutations.push(format!("{field} = {value}"));
             }
         }
@@ -327,7 +327,7 @@ pub trait Schema: 'static + Send + Sync + Model {
             let field = col.name();
             let value = Postgres::encode_value(col, map.get(field));
             if !readonly_fields.contains(&field) {
-                let field = postgres::format_field(field);
+                let field = Postgres::format_field(field);
                 mutations.push(format!("{field} = {value}"));
             }
             values.push(value);
@@ -586,8 +586,8 @@ pub trait Schema: 'static + Send + Sync + Model {
             .iter()
             .zip(right_columns.iter())
             .map(|(left_col, right_col)| {
-                let left_col = postgres::format_field(left_col);
-                let right_col = postgres::format_field(right_col);
+                let left_col = Postgres::format_field(left_col);
+                let right_col = Postgres::format_field(right_col);
                 format!(r#""{model_name}".{left_col} = "{other_model_name}".{right_col}"#)
             })
             .collect::<Vec<_>>()
@@ -630,7 +630,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let projection = columns
             .iter()
             .map(|&(key, distinct)| {
-                let field = postgres::format_field(key);
+                let field = Postgres::format_field(key);
                 if key != "*" {
                     if distinct {
                         format!(r#"count(distinct {field}) as {key}_count_distinct"#)

@@ -1,4 +1,4 @@
-use super::{postgres, Schema};
+use super::Schema;
 use crate::{
     model::{EncodeColumn, Query},
     request::Validation,
@@ -40,7 +40,7 @@ impl QueryExt<Postgres> for Query {
                     if let Some((expr, alias)) = field.rsplit_once("->") {
                         format!(r#"{expr} AS "{alias}""#)
                     } else {
-                        postgres::format_field(field)
+                        Postgres::format_field(field)
                     }
                 })
                 .collect::<Vec<_>>()
@@ -100,7 +100,7 @@ impl QueryExt<Postgres> for Query {
                     if let Some(col) = M::get_column(key) {
                         let condition = if key == sort_by {
                             // Use the filter condition to optimize pagination offset.
-                            let key = postgres::format_field(key);
+                            let key = Postgres::format_field(key);
                             let operator = if ascending { ">" } else { "<" };
                             let value = Postgres::encode_value(col, Some(value));
                             format!(r#"{key} {operator} {value}"#)

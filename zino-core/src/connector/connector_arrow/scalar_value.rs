@@ -47,7 +47,7 @@ impl ScalarValueExt for ScalarValue {
                         scalar
                     })
                     .collect::<Vec<_>>();
-                Self::Struct(Some(scalars), Box::new(fields))
+                Self::Struct(Some(scalars), fields.into())
             }
         }
     }
@@ -94,7 +94,7 @@ impl ScalarValueExt for ScalarValue {
                         scalar
                     })
                     .collect::<Vec<_>>();
-                Self::Struct(Some(scalars), Box::new(fields))
+                Self::Struct(Some(scalars), fields.into())
             }
         }
     }

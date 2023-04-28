@@ -33,10 +33,10 @@ hyper = "0.14.26"
 parking_lot = "0.12.1"
 serde_json = "1.0.96"
 toml = "0.7.3"
-tracing = "0.1.37"
+tracing = "0.1.38"
 
 [dependencies.axum]
-version = "0.6.16"
+version = "0.6.17"
 optional = true
 features = ["ws"]
 
@@ -44,12 +44,12 @@ features = ["ws"]
 version = "1.0.159"
 
 [dependencies.tokio]
-version = "1.27.0"
+version = "1.28.0"
 optional = true
 features = ["parking_lot", "rt-multi-thread"]
 
 [dependencies.tokio-stream]
-version = "0.1.12"
+version = "0.1.14"
 optional = true
 features = ["sync"]
 
