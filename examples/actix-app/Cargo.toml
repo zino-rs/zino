@@ -10,7 +10,7 @@ publish = false
 actix-web = "4.3.1"
 fluent = "0.16.0"
 serde_json = "1.0.96"
-tracing = "0.1.38"
+tracing = "0.1.37"
 
 [dependencies.zino]
 path = "../../zino"

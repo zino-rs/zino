@@ -106,7 +106,7 @@ sha2 = "0.10.6"
 sysinfo = "0.28.4"
 task-local-extensions = "0.1.4"
 toml = "0.7.3"
-tracing = "0.1.38"
+tracing = "0.1.37"
 tracing-appender = "0.2.2"
 url = "2.3.1"
 
