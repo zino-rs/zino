@@ -2,6 +2,7 @@
 
 use crate::{
     error::Error,
+    format,
     request::{RequestContext, Validation},
     trace::{ServerTiming, TimingMetric, TraceContext},
     SharedString, Uuid,
@@ -21,6 +22,9 @@ mod response_code;
 
 pub use rejection::{ExtractRejection, Rejection};
 pub use response_code::ResponseCode;
+
+/// An Http response with the body that consists of a single chunk.
+pub type FullResponse = http::Response<Full<Bytes>>;
 
 /// An HTTP response.
 #[derive(Debug, Serialize)]
@@ -280,6 +284,7 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Records a server timing metric entry.
+    #[inline]
     pub fn record_server_timing(
         &mut self,
         name: impl Into<SharedString>,
@@ -288,6 +293,12 @@ impl<S: ResponseCode> Response<S> {
     ) {
         let metric = TimingMetric::new(name.into(), description, duration);
         self.server_timing.push(metric);
+    }
+
+    /// Returns the status code as `u16`.
+    #[inline]
+    pub fn status_code(&self) -> u16 {
+        self.status_code
     }
 
     /// Returns `true` if the response is successful or `false` otherwise.
@@ -303,12 +314,104 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Returns the trace ID.
+    #[inline]
     pub fn trace_id(&self) -> Uuid {
         if let Some(ref trace_context) = self.trace_context {
             Uuid::from_u128(trace_context.trace_id())
         } else {
             Uuid::nil()
         }
+    }
+
+    /// Returns the content type.
+    #[inline]
+    pub fn content_type(&self) -> &str {
+        self.content_type.as_deref().unwrap_or_else(|| {
+            if self.is_success() {
+                "application/json"
+            } else {
+                "application/problem+json"
+            }
+        })
+    }
+
+    /// Returns the trace context in the form `(traceparent, tracestate)`.
+    pub fn trace_context(&self) -> (String, String) {
+        if let Some(ref trace_context) = self.trace_context {
+            (trace_context.traceparent(), trace_context.tracestate())
+        } else {
+            let mut trace_context = TraceContext::new();
+            let span_id = trace_context.span_id();
+            trace_context
+                .trace_state_mut()
+                .push("zino", format!("{span_id:x}"));
+            (trace_context.traceparent(), trace_context.tracestate())
+        }
+    }
+
+    /// Reads the response into a byte buffer.
+    pub fn read_bytes(&self) -> Result<Vec<u8>, Error> {
+        let content_type = self.content_type();
+        let bytes = if format::header::check_json_content_type(content_type) {
+            let capacity = if let Some(data) = &self.data {
+                data.get().len() + 128
+            } else {
+                128
+            };
+            let mut bytes = Vec::with_capacity(capacity);
+            serde_json::to_writer(&mut bytes, &self)?;
+            bytes
+        } else if let Some(data) = &self.data {
+            let capacity = data.get().len();
+            match serde_json::to_value(data)? {
+                Value::String(s) => s.into_bytes(),
+                Value::Array(vec) => {
+                    if content_type.starts_with("application/msgpack") {
+                        let mut bytes = Vec::with_capacity(capacity);
+                        rmp_serde::encode::write(&mut bytes, &vec)?;
+                        bytes
+                    } else if content_type.starts_with("application/jsonlines") {
+                        let mut bytes = Vec::with_capacity(capacity);
+                        for value in vec {
+                            let mut jsonline = serde_json::to_vec(&value)?;
+                            bytes.append(&mut jsonline);
+                            bytes.push(b'\n');
+                        }
+                        bytes
+                    } else {
+                        Value::Array(vec).to_string().into_bytes()
+                    }
+                }
+                Value::Object(map) => {
+                    if content_type.starts_with("application/msgpack") {
+                        let mut bytes = Vec::with_capacity(capacity);
+                        rmp_serde::encode::write(&mut bytes, &map)?;
+                        bytes
+                    } else {
+                        Value::Object(map).to_string().into_bytes()
+                    }
+                }
+                _ => data.to_string().into_bytes(),
+            }
+        } else {
+            Vec::new()
+        };
+        Ok(bytes)
+    }
+
+    /// Consumes `self` and emits metrics.
+    pub fn emit(mut self) -> ServerTiming {
+        let labels = [("status_code", self.status_code().to_string())];
+        let duration = self.start_time.elapsed();
+        metrics::decrement_gauge!("zino_http_requests_in_flight", 1.0);
+        metrics::increment_counter!("zino_http_responses_total", &labels);
+        metrics::histogram!(
+            "zino_http_requests_duration_seconds",
+            duration.as_secs_f64(),
+            &labels,
+        );
+        self.record_server_timing("total", None, Some(duration));
+        self.server_timing
     }
 }
 
@@ -331,102 +434,29 @@ impl<S: ResponseCode> From<Validation> for Response<S> {
     }
 }
 
-impl<S: ResponseCode> From<Response<S>> for http::Response<Full<Bytes>> {
-    fn from(mut response: Response<S>) -> Self {
-        let status_code = response.status_code;
-        let mut res = if let Some(ref content_type) = response.content_type {
-            if let Some(data) = &response.data {
-                let capacity = data.get().len();
-                let result = serde_json::to_value(data)
-                    .map_err(|err| err.to_string())
-                    .and_then(|data| match data {
-                        Value::String(s) => Ok(s.into_bytes()),
-                        Value::Array(vec) => {
-                            if content_type.starts_with("application/msgpack") {
-                                let mut bytes = Vec::with_capacity(capacity);
-                                rmp_serde::encode::write(&mut bytes, &vec)
-                                    .map_err(|err| err.to_string())?;
-                                Ok(bytes)
-                            } else if content_type.starts_with("application/jsonlines") {
-                                let mut bytes = Vec::with_capacity(capacity);
-                                for value in vec {
-                                    let mut jsonline = serde_json::to_vec(&value)
-                                        .map_err(|err| err.to_string())?;
-                                    bytes.append(&mut jsonline);
-                                    bytes.push(b'\n');
-                                }
-                                Ok(bytes)
-                            } else {
-                                Ok(Value::Array(vec).to_string().into_bytes())
-                            }
-                        }
-                        Value::Object(map) => {
-                            if content_type.starts_with("application/msgpack") {
-                                let mut bytes = Vec::with_capacity(capacity);
-                                rmp_serde::encode::write(&mut bytes, &map)
-                                    .map_err(|err| err.to_string())?;
-                                Ok(bytes)
-                            } else {
-                                Ok(Value::Object(map).to_string().into_bytes())
-                            }
-                        }
-                        _ => Err(data.to_string()),
-                    });
-                match result {
-                    Ok(data) => http::Response::builder()
-                        .status(status_code)
-                        .header(header::CONTENT_TYPE, content_type.as_ref())
-                        .body(Full::from(data))
-                        .unwrap_or_default(),
-                    Err(err) => http::Response::builder()
-                        .status(S::INTERNAL_SERVER_ERROR.status_code())
-                        .header(header::CONTENT_TYPE, content_type.as_ref())
-                        .body(Full::from(err))
-                        .unwrap_or_default(),
-                }
-            } else {
-                http::Response::builder()
-                    .status(status_code)
-                    .header(header::CONTENT_TYPE, content_type.as_ref())
-                    .body(Full::default())
-                    .unwrap_or_default()
-            }
-        } else {
-            let capacity = if let Some(data) = &response.data {
-                data.get().len() + 128
-            } else {
-                128
-            };
-            let mut bytes = Vec::with_capacity(capacity);
-            if let Err(err) = serde_json::to_writer(&mut bytes, &response) {
-                http::Response::builder()
-                    .status(S::INTERNAL_SERVER_ERROR.status_code())
-                    .header(header::CONTENT_TYPE, "text/plain")
-                    .body(Full::from(err.to_string()))
-                    .unwrap_or_default()
-            } else {
-                let content_type = if response.is_success() {
-                    "application/json"
-                } else {
-                    "application/problem+json"
-                };
-                http::Response::builder()
-                    .status(status_code)
-                    .header(header::CONTENT_TYPE, content_type)
-                    .body(Full::from(bytes))
-                    .unwrap_or_default()
-            }
+impl<S: ResponseCode> From<Response<S>> for FullResponse {
+    fn from(response: Response<S>) -> Self {
+        let mut res = match response.read_bytes() {
+            Ok(data) => http::Response::builder()
+                .status(response.status_code())
+                .header(header::CONTENT_TYPE, response.content_type())
+                .body(Full::from(data))
+                .unwrap_or_default(),
+            Err(err) => http::Response::builder()
+                .status(S::INTERNAL_SERVER_ERROR.status_code())
+                .header(header::CONTENT_TYPE, "text/plain")
+                .body(Full::from(err.to_string()))
+                .unwrap_or_default(),
         };
-        let (traceparent, tracestate) = if let Some(ref trace_context) = response.trace_context {
-            (trace_context.traceparent(), trace_context.tracestate())
-        } else {
-            let mut trace_context = TraceContext::new();
-            let span_id = trace_context.span_id();
-            trace_context
-                .trace_state_mut()
-                .push("zino", format!("{span_id:x}"));
-            (trace_context.traceparent(), trace_context.tracestate())
-        };
+
+        let request_id = response.request_id();
+        if !request_id.is_nil() {
+            if let Ok(header_value) = HeaderValue::try_from(request_id.to_string()) {
+                res.headers_mut().insert("x-request-id", header_value);
+            }
+        }
+
+        let (traceparent, tracestate) = response.trace_context();
         if let Ok(header_value) = HeaderValue::try_from(traceparent) {
             res.headers_mut().insert("traceparent", header_value);
         }
@@ -434,28 +464,10 @@ impl<S: ResponseCode> From<Response<S>> for http::Response<Full<Bytes>> {
             res.headers_mut().insert("tracestate", header_value);
         }
 
-        let duration = response.start_time.elapsed();
-        response.record_server_timing("total", None, Some(duration));
-        if let Ok(header_value) = HeaderValue::try_from(response.server_timing.to_string()) {
+        let server_timing = response.emit();
+        if let Ok(header_value) = HeaderValue::try_from(server_timing.to_string()) {
             res.headers_mut().insert("server-timing", header_value);
         }
-
-        let request_id = response.request_id;
-        if !request_id.is_nil() {
-            if let Ok(header_value) = HeaderValue::try_from(request_id.to_string()) {
-                res.headers_mut().insert("x-request-id", header_value);
-            }
-        }
-
-        // Emit metrics.
-        let labels = [("status_code", status_code.to_string())];
-        metrics::decrement_gauge!("zino_http_requests_in_flight", 1.0);
-        metrics::increment_counter!("zino_http_responses_total", &labels);
-        metrics::histogram!(
-            "zino_http_requests_duration_seconds",
-            duration.as_secs_f64(),
-            &labels,
-        );
 
         res
     }

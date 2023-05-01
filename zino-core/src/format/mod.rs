@@ -1,6 +1,7 @@
 //! Utilities for formatting and parsing.
 
 pub(crate) mod base64;
+pub(crate) mod header;
 pub(crate) mod str_array;
 
 #[cfg(any(feature = "connector", feature = "orm"))]

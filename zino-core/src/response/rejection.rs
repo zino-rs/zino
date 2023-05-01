@@ -1,14 +1,12 @@
 use self::RejectionKind::*;
-use super::Response;
+use super::{FullResponse, Response};
 use crate::{
     error::Error,
     request::{Context, RequestContext, Validation},
     trace::TraceContext,
     SharedString,
 };
-use bytes::Bytes;
 use http::StatusCode;
-use http_body::Full;
 
 /// A rejection response type.
 #[derive(Debug)]
@@ -126,9 +124,23 @@ impl<'a> Rejection<'a> {
         self.trace_context = Some(ctx.new_trace_context());
         self
     }
+
+    /// Returns the status code as `u16`.
+    #[inline]
+    pub fn status_code(&self) -> u16 {
+        match &self.kind {
+            BadRequest(_) => 400,
+            Unauthorized(_) => 401,
+            Forbidden(_) => 403,
+            NotFound(_) => 404,
+            MethodNotAllowed(_) => 405,
+            Conflict(_) => 409,
+            InternalServerError(_) => 500,
+        }
+    }
 }
 
-impl<'a> From<Rejection<'a>> for http::Response<Full<Bytes>> {
+impl<'a> From<Rejection<'a>> for FullResponse {
     fn from(rejection: Rejection<'a>) -> Self {
         let mut res = match rejection.kind {
             BadRequest(validation) => {

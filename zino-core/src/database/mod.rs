@@ -2,7 +2,7 @@
 
 use crate::{extension::TomlTableExt, state::State};
 use sqlx::{
-    postgres::{PgConnectOptions, PgPool, PgPoolOptions},
+    postgres::{PgConnectOptions, PgPoolOptions},
     Connection, Database, Pool, Postgres,
 };
 use std::{
@@ -37,7 +37,7 @@ where
     available: AtomicBool,
 }
 
-impl ConnectionPool<Postgres> {
+impl<DB: Database> ConnectionPool<DB> {
     /// Returns `true` if the connection pool is available.
     #[inline]
     pub fn is_available(&self) -> bool {
@@ -50,6 +50,26 @@ impl ConnectionPool<Postgres> {
         self.available.store(available, Ordering::Relaxed);
     }
 
+    /// Returns the name.
+    #[inline]
+    pub fn name(&self) -> &'static str {
+        self.name
+    }
+
+    /// Returns the database.
+    #[inline]
+    pub fn database(&self) -> &'static str {
+        self.database
+    }
+
+    /// Returns a reference to the pool.
+    #[inline]
+    pub(crate) fn pool(&self) -> &Pool<DB> {
+        &self.pool
+    }
+}
+
+impl ConnectionPool<Postgres> {
     /// Connects lazily to the database according to the config.
     pub fn connect_lazy(application_name: &'static str, config: &'static Table) -> Self {
         let name = config.get_str("name").unwrap_or("main");
@@ -124,24 +144,6 @@ impl ConnectionPool<Postgres> {
             pool,
             available: AtomicBool::new(true),
         }
-    }
-
-    /// Returns the name.
-    #[inline]
-    pub fn name(&self) -> &'static str {
-        self.name
-    }
-
-    /// Returns the database.
-    #[inline]
-    pub fn database(&self) -> &'static str {
-        self.database
-    }
-
-    /// Returns a reference to the pool.
-    #[inline]
-    pub(crate) fn pool(&self) -> &PgPool {
-        &self.pool
     }
 }
 

@@ -40,16 +40,13 @@ pub struct AxumCluster {
 }
 
 impl Application for AxumCluster {
-    /// Router.
     type Router = Router;
 
-    /// Registers routes.
     fn register(mut self, routes: Vec<Self::Router>) -> Self {
         self.routes = routes;
         self
     }
 
-    /// Runs the application.
     fn run(self, async_jobs: Vec<(&'static str, AsyncCronJob)>) {
         let runtime = Builder::new_multi_thread()
             .thread_keep_alive(Duration::from_secs(10))

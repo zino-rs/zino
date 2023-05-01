@@ -25,16 +25,19 @@
 //!
 //! ## Feature flags
 //!
-//! Currently, we only provide the `axum` feature to enable an integration with [`axum`].
+//! Currently, we provide the `axum` and `actix` features to enable an integration with [`axum`]
+//! or [`actix-web`].
 //!
 //! [`zino`]: https://github.com/photino/zino
 //! [`sqlx`]: https://crates.io/crates/sqlx
 //! [`tracing`]: https://crates.io/crates/tracing
 //! [`metrics`]: https://crates.io/crates/metrics
 //! [`axum`]: https://crates.io/crates/axum
+//! [`actix-web`]: https://crates.io/crates/actix-web
 //! [`axum-app`]: https://github.com/photino/zino/tree/main/examples/axum-app
 
 #![feature(async_fn_in_trait)]
+#![feature(cell_leak)]
 #![feature(doc_auto_cfg)]
 #![feature(lazy_cell)]
 #![feature(result_option_inspect)]
@@ -46,6 +49,7 @@ mod cluster;
 mod endpoint;
 mod middleware;
 mod request;
+mod response;
 
 #[doc(no_inline)]
 pub use zino_core::{
@@ -62,23 +66,40 @@ pub use zino_core::{
 };
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "axum")] {
-        use axum::{
-            body::{Body, Bytes, Full},
-            http,
-        };
+    if #[cfg(feature = "actix")] {
+        use actix_web::{http::StatusCode, web::ServiceConfig, HttpRequest};
+
+        pub use cluster::actix_cluster::ActixCluster;
+
+        use request::actix_request::ActixExtractor;
+        use response::actix_response::{ActixRejection, ActixResponse};
+
+        /// Router configure for `actix-web`.
+        pub type RouterConfigure = fn(cfg: &mut ServiceConfig);
+
+        /// A specialized request extractor for `actix-web`.
+        pub type Request = ActixExtractor<HttpRequest>;
+
+        /// A specialized response for `actix-web`.
+        pub type Response = zino_core::response::Response<StatusCode>;
+
+        /// A specialized `Result` type for `actix-web`.
+        pub type Result<T = ActixResponse<StatusCode>> = std::result::Result<T, ActixRejection>;
+    } else if #[cfg(feature = "axum")] {
+        use axum::{body::Body, http::{self, StatusCode}};
 
         pub use cluster::axum_cluster::AxumCluster;
-        pub use request::axum_request::AxumExtractor;
+
+        use request::axum_request::AxumExtractor;
+        use response::axum_response::{AxumRejection, AxumResponse};
 
         /// A specialized request extractor for `axum`.
-        pub type Request<B = Body> = AxumExtractor<http::Request<B>>;
+        pub type Request = AxumExtractor<http::Request<Body>>;
 
         /// A specialized response for `axum`.
-        pub type Response = zino_core::response::Response<http::StatusCode>;
+        pub type Response = zino_core::response::Response<StatusCode>;
 
         /// A specialized `Result` type for `axum`.
-        pub type Result<T = http::Response<Full<Bytes>>> =
-            std::result::Result<T, http::Response<Full<Bytes>>>;
+        pub type Result<T = AxumResponse<StatusCode>> = std::result::Result<T, AxumRejection>;
     }
 }

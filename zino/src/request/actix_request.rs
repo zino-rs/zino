@@ -1,14 +1,13 @@
-use async_trait::async_trait;
-use axum::{
-    body::Body,
-    extract::{FromRequest, MatchedPath},
-    http::{HeaderMap, Method, Request},
+use actix_web::{
+    dev::Payload,
+    http::{header::HeaderMap, Method},
+    FromRequest, HttpMessage, HttpRequest,
 };
-use hyper::body::{self, Buf, HttpBody};
 use std::{
+    cell::{Ref, RefMut},
     convert::Infallible,
-    io::Read,
-    net::{IpAddr, SocketAddr},
+    future,
+    net::IpAddr,
     ops::{Deref, DerefMut},
     sync::LazyLock,
 };
@@ -18,17 +17,16 @@ use zino_core::{
     application::Application,
     channel::CloudEvent,
     error::Error,
-    extension::HeaderMapExt,
     request::{Context, RequestContext},
     response::Rejection,
     state::State,
     Map,
 };
 
-/// An HTTP request extractor for `axum`.
-pub struct AxumExtractor<T>(T);
+/// An HTTP request extractor for `actix-web`.
+pub struct ActixExtractor<T>(T);
 
-impl<T> AxumExtractor<T> {
+impl<T> ActixExtractor<T> {
     /// Creates a new instance of `T`.
     #[inline]
     pub fn new(value: T) -> Self {
@@ -36,7 +34,7 @@ impl<T> AxumExtractor<T> {
     }
 }
 
-impl<T> Deref for AxumExtractor<T> {
+impl<T> Deref for ActixExtractor<T> {
     type Target = T;
 
     #[inline]
@@ -45,21 +43,14 @@ impl<T> Deref for AxumExtractor<T> {
     }
 }
 
-impl<T> DerefMut for AxumExtractor<T> {
+impl<T> DerefMut for ActixExtractor<T> {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-impl From<AxumExtractor<Request<Body>>> for Request<Body> {
-    #[inline]
-    fn from(extractor: AxumExtractor<Request<Body>>) -> Self {
-        extractor.0
-    }
-}
-
-impl RequestContext for AxumExtractor<Request<Body>> {
+impl RequestContext for ActixExtractor<HttpRequest> {
     type Method = Method;
     type Headers = HeaderMap;
 
@@ -80,7 +71,7 @@ impl RequestContext for AxumExtractor<Request<Body>> {
 
     #[inline]
     fn header_map(&self) -> &Self::Headers {
-        self.headers()
+        self.headers().into()
     }
 
     #[inline]
@@ -94,12 +85,14 @@ impl RequestContext for AxumExtractor<Request<Body>> {
 
     #[inline]
     fn get_context(&self) -> Option<&Context> {
-        self.extensions().get::<Context>()
+        let extensions = Ref::leak(self.extensions());
+        extensions.get::<Context>()
     }
 
     #[inline]
     fn get_cookie(&self, name: &str) -> Option<Cookie<'static>> {
-        let cookies = self.extensions().get::<Cookies>()?;
+        let extensions = Ref::leak(self.extensions());
+        let cookies = extensions.get::<Cookies>()?;
         let key = LazyLock::force(&COOKIE_PRIVATE_KEY);
         let signed_cookies = cookies.signed(key);
         signed_cookies.get(name)
@@ -116,8 +109,8 @@ impl RequestContext for AxumExtractor<Request<Body>> {
 
     #[inline]
     fn matched_route(&self) -> String {
-        if let Some(path) = self.extensions().get::<MatchedPath>() {
-            path.as_str().to_owned()
+        if let Some(path) = self.match_pattern() {
+            path
         } else {
             self.uri().path().to_owned()
         }
@@ -125,17 +118,13 @@ impl RequestContext for AxumExtractor<Request<Body>> {
 
     #[inline]
     fn client_ip(&self) -> Option<IpAddr> {
-        self.header_map().get_client_ip().or_else(|| {
-            self.extensions()
-                .get::<SocketAddr>()
-                .map(|socket| socket.ip())
-        })
+        None
     }
 
     #[inline]
     fn config(&self) -> &Table {
-        let state = self
-            .extensions()
+        let extensions = Ref::leak(self.extensions());
+        let state = extensions
             .get::<State>()
             .expect("the request extension `State` does not exist");
         state.config()
@@ -143,8 +132,8 @@ impl RequestContext for AxumExtractor<Request<Body>> {
 
     #[inline]
     fn state_data(&self) -> &Map {
-        let state = self
-            .extensions()
+        let extensions = Ref::leak(self.extensions());
+        let state = extensions
             .get::<State>()
             .expect("the request extension `State` does not exist");
         state.data()
@@ -152,41 +141,42 @@ impl RequestContext for AxumExtractor<Request<Body>> {
 
     #[inline]
     fn state_data_mut(&mut self) -> &mut Map {
-        let state = self
-            .extensions_mut()
+        let extensions = RefMut::leak(self.extensions_mut());
+        let state = extensions
             .get_mut::<State>()
             .expect("the request extension `State` does not exist");
         state.data_mut()
     }
 
     #[inline]
-    fn try_send(&self, message: CloudEvent) -> Result<(), Rejection> {
-        crate::channel::axum_channel::MessageChannel::shared()
-            .try_send(message)
-            .map_err(Rejection::internal_server_error)
+    fn try_send(&self, _message: CloudEvent) -> Result<(), Rejection> {
+        Ok(())
     }
 
     async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error> {
-        let buffer_size = self.size_hint().lower().try_into().unwrap_or(128);
-        let body = body::aggregate(self.body_mut()).await?;
-        let mut bytes = Vec::with_capacity(buffer_size);
-        body.reader().read_to_end(&mut bytes)?;
-        Ok(bytes)
+        Ok(Vec::new())
     }
 }
 
-#[async_trait]
-impl FromRequest<(), Body> for AxumExtractor<Request<Body>> {
-    type Rejection = Infallible;
+impl From<ActixExtractor<HttpRequest>> for HttpRequest {
+    #[inline]
+    fn from(extractor: ActixExtractor<HttpRequest>) -> Self {
+        extractor.0
+    }
+}
+
+impl FromRequest for ActixExtractor<HttpRequest> {
+    type Error = Infallible;
+    type Future = future::Ready<Result<Self, Self::Error>>;
 
     #[inline]
-    async fn from_request(req: Request<Body>, _state: &()) -> Result<Self, Self::Rejection> {
-        Ok(AxumExtractor(req))
+    fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
+        future::ready(Ok(ActixExtractor::new(req.clone())))
     }
 }
 
 /// Private key for cookie signing.
 static COOKIE_PRIVATE_KEY: LazyLock<Key> = LazyLock::new(|| {
-    let secret_key = crate::AxumCluster::secret_key();
+    let secret_key = crate::ActixCluster::secret_key();
     Key::try_from(secret_key).unwrap_or_else(|_| Key::generate())
 });

@@ -1,0 +1,63 @@
+# --env=dev
+
+name = "data-cube"
+version = "0.5.3"
+
+[main]
+host = "127.0.0.1"
+port = 6080
+
+[[standby]]
+host = "127.0.0.1"
+port = 6081
+
+[[standby]]
+host = "127.0.0.1"
+port = 6082
+
+[database]
+type = "postgres"
+namespace = "dc"
+
+[[postgres]]
+host = "127.0.0.1"
+port = 5432
+database = "data_cube"
+username = "postgres"
+password = "89g1oD31Nrhxy5pJLyxQZdJgM5SkzVGalQUhsaUNWNByMlUQ"
+
+[tracing]
+filter = "info,sqlx=trace,tower_http=trace,zino=trace,zino_core=trace"
+display-filename = false
+display-line-number = false
+display-span-list = false
+
+[metrics]
+exporter = "prometheus"
+host = "127.0.0.1"
+port = 9000
+
+[[connector]]
+type = "arrow"
+name = "mock"
+root = "./data/mock/"
+
+[[connector.tables]]
+type = "csv"
+name = "users"
+path = "./users.csv"
+
+[[connector.tables]]
+type = "ndjson"
+name = "logs"
+url = "http://localhost:6080/assets/data/logs.ndjson"
+
+[connector.tables.schema]
+timestamp = "string"
+level = "string"
+fields = { message = "string" }
+target = "string"
+span = { "http.method" = "string", "http.target" = "string", "http.status_code" = "int" }
+
+[connector.variables]
+app-name = "data-cube"

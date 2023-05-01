@@ -16,6 +16,7 @@ readme = "README.md"
 features = ["axum"]
 
 [features]
+actix = ["dep:actix-web", "zino-core/runtime-actix"]
 axum = [
     "dep:axum",
     "dep:tokio",
@@ -34,6 +35,11 @@ parking_lot = "0.12.1"
 serde_json = "1.0.96"
 toml = "0.7.3"
 tracing = "0.1.38"
+
+[dependencies.actix-web]
+version = "4.3.1"
+optional = true
+features = ["secure-cookies"]
 
 [dependencies.axum]
 version = "0.6.17"

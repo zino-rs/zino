@@ -6,6 +6,10 @@ use intl_memoizer::concurrent::IntlLangMemoizer;
 use std::{fs, sync::LazyLock};
 use unic_langid::LanguageIdentifier;
 
+mod language;
+
+pub use language::select_language;
+
 /// Translates the localization message.
 pub fn translate(
     locale: &LanguageIdentifier,

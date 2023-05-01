@@ -1,7 +1,7 @@
 //! Request context and validation.
 
 use crate::{
-    application::{self, http_client},
+    application::http_client,
     authentication::{Authentication, ParseSecurityTokenError, SecurityToken, SessionId},
     channel::{CloudEvent, Subscription},
     datetime::DateTime,
@@ -36,7 +36,7 @@ pub trait RequestContext {
     /// HTTP request method.
     type Method: AsRef<str>;
     /// A set of HTTP headers.
-    type Headers: HeaderMapExt;
+    type Headers;
 
     /// Returns the request method.
     fn request_method(&self) -> &Self::Method;
@@ -44,17 +44,11 @@ pub trait RequestContext {
     /// Returns the request path regardless of nesting.
     fn request_path(&self) -> &str;
 
-    /// Returns the route that matches the request.
-    fn matched_route(&self) -> &str;
-
     /// Returns the query string of the request URI.
     fn query_string(&self) -> Option<&str>;
 
     /// Returns a reference to the request headers.
     fn header_map(&self) -> &Self::Headers;
-
-    /// Returns a mutable reference to the request headers.
-    fn header_map_mut(&mut self) -> &mut Self::Headers;
 
     /// Gets an HTTP header with the given name.
     fn get_header(&self, name: &str) -> Option<&str>;
@@ -67,6 +61,8 @@ pub trait RequestContext {
 
     /// Adds a cookie to the cookie jar.
     fn add_cookie(&self, cookie: Cookie<'static>);
+
+    fn matched_route(&self) -> String;
 
     /// Returns the client's remote IP.
     fn client_ip(&self) -> Option<IpAddr>;
@@ -93,7 +89,7 @@ pub trait RequestContext {
         metrics::increment_counter!(
             "zino_http_requests_total",
             "method" => self.request_method().as_ref().to_owned(),
-            "route" => self.matched_route().to_owned(),
+            "route" => self.matched_route(),
         );
 
         // Parse tracing headers.
@@ -118,8 +114,8 @@ pub trait RequestContext {
         } else {
             let supported_locales = i18n::SUPPORTED_LOCALES.as_slice();
             let locale = self
-                .header_map()
-                .select_language(supported_locales)
+                .get_header("accept-language")
+                .and_then(|languages| i18n::select_language(languages, supported_locales))
                 .unwrap_or(&i18n::DEFAULT_LOCALE);
             ctx.set_locale(locale);
         }
@@ -166,12 +162,6 @@ pub trait RequestContext {
             .secure(true)
             .same_site(SameSite::Lax)
             .path(self.request_path().to_owned());
-        if let Some(host) = self.header_map().get_host() {
-            let domain = host.split_once(':').map(|v| v.0).unwrap_or(host);
-            if domain.ends_with::<&str>(application::APP_DOMAIN.as_ref()) {
-                cookie_builder = cookie_builder.domain(domain.to_owned());
-            }
-        }
         if let Some(max_age) = max_age.and_then(|d| d.try_into().ok()) {
             cookie_builder = cookie_builder.max_age(max_age);
         }
@@ -220,6 +210,35 @@ pub trait RequestContext {
     #[inline]
     fn locale(&self) -> Option<&LanguageIdentifier> {
         self.get_context().and_then(|ctx| ctx.locale())
+    }
+
+    /// Gets the data type by parsing the `content-type` header.
+    fn data_type(&self) -> Option<SharedString> {
+        let content_type = self.get_header("content-type").map(|content_type| {
+            if let Some((essence, _)) = content_type.split_once(';') {
+                essence
+            } else {
+                content_type
+            }
+        })?;
+        let data_type = match content_type {
+            "application/json" | "application/problem+json" => "json".into(),
+            "application/jsonlines" | "application/x-ndjson" => "ndjson".into(),
+            "application/msgpack" | "application/x-msgpack" => "msgpack".into(),
+            "application/octet-stream" => "bytes".into(),
+            "application/x-www-form-urlencoded" => "form".into(),
+            "multipart/form-data" => "multipart".into(),
+            "text/csv" => "csv".into(),
+            "text/plain" => "text".into(),
+            _ => {
+                if content_type.starts_with("application/") && content_type.ends_with("+json") {
+                    "json".into()
+                } else {
+                    content_type.to_owned().into()
+                }
+            }
+        };
+        Some(data_type)
     }
 
     /// Parses the route parameter by name as an instance of type `T`.
@@ -282,7 +301,7 @@ pub trait RequestContext {
     where
         T: DeserializeOwned + Send + 'static,
     {
-        let data_type = self.header_map().get_data_type().unwrap_or("form".into());
+        let data_type = self.data_type().unwrap_or("form".into());
         if data_type.contains('/') {
             let message = format!("deserialization of the data type `{data_type}` is unsupported");
             let rejection = Rejection::from_validation_entry("data_type", Error::new(message))
@@ -481,7 +500,7 @@ pub trait RequestContext {
     where
         Self: Sized,
     {
-        let data_type = self.header_map().get_data_type().unwrap_or("form".into());
+        let data_type = self.data_type().unwrap_or("form".into());
         if data_type.contains('/') {
             let message = format!("deserialization of the data type `{data_type}` is unsupported");
             let rejection = Rejection::from_validation_entry("data_type", Error::new(message))

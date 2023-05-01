@@ -91,6 +91,7 @@ impl DateTime {
 }
 
 impl fmt::Display for DateTime {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -102,24 +103,28 @@ impl fmt::Display for DateTime {
 
 impl Default for DateTime {
     /// Returns an instance which corresponds to **the current date**.
+    #[inline]
     fn default() -> Self {
         Self::now()
     }
 }
 
 impl From<chrono::DateTime<Local>> for DateTime {
+    #[inline]
     fn from(dt: chrono::DateTime<Local>) -> Self {
         Self(dt)
     }
 }
 
 impl From<DateTime> for chrono::DateTime<Local> {
+    #[inline]
     fn from(dt: DateTime) -> Self {
         dt.0
     }
 }
 
 impl From<DateTime> for Value {
+    #[inline]
     fn from(dt: DateTime) -> Self {
         Value::String(dt.to_string())
     }
@@ -128,6 +133,7 @@ impl From<DateTime> for Value {
 impl FromStr for DateTime {
     type Err = ParseError;
 
+    #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         chrono::DateTime::<Local>::from_str(s).map(Self)
     }

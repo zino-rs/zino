@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Index</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <h3>Congratulations, you have booted your application successfully!</h3>
+  <script>
+    // SSE
+    const sse = new EventSource('/sse?topic=message');
+    sse.addEventListener('message', (event) => {
+      console.dir(event);
+    });
+    window.addEventListener('beforeunload', (event) => {
+      console.log('close');
+      sse.close();
+    });
+
+    // WebSocket
+    const socket = new WebSocket('ws://localhost:6080/websocket');
+    socket.addEventListener('open', (event) => {
+      const data = {
+          specversion: '1.0',
+          type: 'smartscreen:sn-container:click',
+          id: 'f024794d020d48088fc9d40afe0d60c0',
+          source: 'http://localhost:6080/index.html',
+          data: {
+            id: 'index:sn-container-2',
+            name: 'sn-container',
+            width: 10,
+            height: 3,
+            left: 1,
+            top: 0.75,
+          },
+      };
+      socket.send(JSON.stringify(data));
+    });
+    socket.addEventListener('message', (event) => {
+      console.dir(event);
+    });
+  </script>
+</body>
+</html>
