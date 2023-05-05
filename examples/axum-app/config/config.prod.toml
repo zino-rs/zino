@@ -24,7 +24,7 @@ host = "127.0.0.1"
 port = 5432
 database = "data_cube"
 username = "postgres"
-password = "IiSI08rxbYWZRtcJfyqNmw2t7Eym+iP4hKxDNgRbtLg23SD2"
+password = "1/dtfEAn/SPQV3AUBD3gcRx7ig9fmH4z4EADzxGQwBQD+uLT"
 
 [tracing]
 filter = "info,sqlx=warn"

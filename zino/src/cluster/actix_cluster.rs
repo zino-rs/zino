@@ -1,6 +1,15 @@
 use crate::RouterConfigure;
-use actix_web::{rt::System, App, HttpServer};
-use zino_core::{application::Application, schedule::AsyncCronJob, state::State};
+use actix_files::{Files, NamedFile};
+use actix_web::{
+    dev::{fn_service, ServiceRequest, ServiceResponse},
+    middleware::Compress,
+    rt::System,
+    web, App, HttpServer,
+};
+use std::path::PathBuf;
+use zino_core::{
+    application::Application, extension::TomlTableExt, schedule::AsyncCronJob, state::State,
+};
 
 /// An HTTP server cluster for `actix-web`.
 #[derive(Default)]
@@ -18,26 +27,53 @@ impl Application for ActixCluster {
     }
 
     fn run(self, _async_jobs: Vec<(&'static str, AsyncCronJob)>) {
-        let routes = self.routes;
-        let app_state = State::default();
-        let app_env = app_state.env();
-        let listeners = app_state.listeners();
-        listeners.iter().for_each(|listener| {
-            tracing::warn!(env = app_env, "listen on {listener}");
-        });
+        // Server config.
+        let mut public_dir = PathBuf::new();
+        let default_public_dir = Self::project_dir().join("public");
+        if let Some(server) = Self::config().get_table("server") {
+            if let Some(dir) = server.get_str("public-dir") {
+                public_dir.push(dir);
+            } else {
+                public_dir = default_public_dir;
+            }
+        } else {
+            public_dir = default_public_dir;
+        }
+
         System::new()
-            .block_on(
+            .block_on({
+                let routes = self.routes;
+                let app_state = State::default();
+                let app_env = app_state.env();
+                let listeners = app_state.listeners();
+                listeners.iter().for_each(|listener| {
+                    tracing::warn!(env = app_env, "listen on {listener}");
+                });
                 HttpServer::new(move || {
-                    let mut app = App::new();
+                    let index_file_handler = web::get()
+                        .to(move || async { NamedFile::open_async("./public/index.html").await });
+                    let static_files = Files::new("/public", public_dir.clone())
+                        .show_files_listing()
+                        .prefer_utf8(true)
+                        .index_file("index.html")
+                        .default_handler(fn_service(|req: ServiceRequest| async {
+                            let (req, _) = req.into_parts();
+                            let file = NamedFile::open_async("./public/404.html").await?;
+                            let res = file.into_response(&req);
+                            Ok(ServiceResponse::new(req, res))
+                        }));
+                    let mut app = App::new()
+                        .route("/", index_file_handler)
+                        .service(static_files);
                     for route in &routes {
                         app = app.configure(route);
                     }
-                    app
+                    app.wrap(Compress::default())
                 })
                 .bind(listeners.as_slice())
                 .unwrap_or_else(|err| panic!("fail to create an HTTP server: {err}"))
-                .run(),
-            )
+                .run()
+            })
             .unwrap_or_else(|err| panic!("fail to build Actix runtime: {err}"))
     }
 }

@@ -7,7 +7,7 @@ mod service;
 use zino::Application;
 
 fn main() {
-    zino::ActixCluster::boot()
+    zino::Cluster::boot()
         .register(router::routes())
         .spawn(schedule::jobs())
         .run(schedule::async_jobs())

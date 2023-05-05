@@ -69,10 +69,12 @@ cfg_if::cfg_if! {
     if #[cfg(feature = "actix")] {
         use actix_web::{http::StatusCode, web::ServiceConfig, HttpRequest};
 
-        pub use cluster::actix_cluster::ActixCluster;
-
+        use cluster::actix_cluster::ActixCluster;
         use request::actix_request::ActixExtractor;
         use response::actix_response::{ActixRejection, ActixResponse};
+
+        /// Cluster for `actix-web`.
+        pub type Cluster = ActixCluster;
 
         /// Router configure for `actix-web`.
         pub type RouterConfigure = fn(cfg: &mut ServiceConfig);
@@ -88,10 +90,12 @@ cfg_if::cfg_if! {
     } else if #[cfg(feature = "axum")] {
         use axum::{body::Body, http::{self, StatusCode}};
 
-        pub use cluster::axum_cluster::AxumCluster;
-
+        use cluster::axum_cluster::AxumCluster;
         use request::axum_request::AxumExtractor;
         use response::axum_response::{AxumRejection, AxumResponse};
+
+         /// Cluster for `axum`.
+         pub type Cluster = AxumCluster;
 
         /// A specialized request extractor for `axum`.
         pub type Request = AxumExtractor<http::Request<Body>>;

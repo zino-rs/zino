@@ -213,7 +213,7 @@ impl Authentication {
             .unwrap_or_default();
         sign_parts.push(content_type);
 
-        // Expires.
+        // Expires
         if let Some(expires) = self.expires.as_ref() {
             let expires = expires.timestamp().to_string();
             sign_parts.push(expires);

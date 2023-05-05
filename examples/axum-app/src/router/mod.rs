@@ -12,22 +12,22 @@ pub(crate) fn routes() -> Vec<Router> {
     let mut routes = Vec::new();
 
     // User controller.
-    let controller = Router::new()
+    let router = Router::new()
         .route("/user/new", post(user::new))
         .route("/user/:id/update", post(user::update))
         .route("/user/list", get(user::list))
         .route("/user/:id/view", get(user::view));
-    routes.push(controller);
+    routes.push(router);
 
     // Task controller.
-    let controller = Router::new().route("/task/execute", post(task::execute));
-    routes.push(controller);
+    let router = Router::new().route("/task/execute", post(task::execute));
+    routes.push(router);
 
     // Stats controller.
-    let controller = Router::new()
+    let router = Router::new()
         .route("/stats", get(stats::index))
         .layer(from_fn(middleware::check_client_ip));
-    routes.push(controller);
+    routes.push(router);
 
     routes
 }

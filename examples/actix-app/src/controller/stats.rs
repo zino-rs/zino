@@ -1,13 +1,13 @@
 use serde_json::json;
-use zino::{ActixCluster, Application, Request, Response, Result};
+use zino::{Application, Cluster, Request, Response, Result};
 
 pub(crate) async fn index(req: Request) -> Result {
     let res = Response::default().provide_context(&req);
     let stats = json!({
         "method": "GET",
         "path": "/stats",
-        "app_state_data": ActixCluster::state_data(),
-        "app_sysinfo": ActixCluster::sysinfo(),
+        "app_state_data": Cluster::state_data(),
+        "app_sysinfo": Cluster::sysinfo(),
     });
     let data = json!({
         "title": "Stats",
