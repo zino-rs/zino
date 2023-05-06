@@ -49,9 +49,9 @@ impl fmt::Display for ActixRejection {
     }
 }
 
-impl<'a> From<Rejection<'a>> for ActixRejection {
+impl From<Rejection> for ActixRejection {
     #[inline]
-    fn from(rejection: Rejection<'a>) -> Self {
+    fn from(rejection: Rejection) -> Self {
         Self(Response::from(rejection))
     }
 }

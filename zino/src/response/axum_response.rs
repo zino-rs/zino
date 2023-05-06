@@ -21,9 +21,9 @@ impl<S: ResponseCode> IntoResponse for AxumResponse<S> {
 /// An HTTP rejection response for `axum`.
 pub struct AxumRejection(FullResponse);
 
-impl<'a> From<Rejection<'a>> for AxumRejection {
+impl From<Rejection> for AxumRejection {
     #[inline]
-    fn from(rejection: Rejection<'a>) -> Self {
+    fn from(rejection: Rejection) -> Self {
         Self(rejection.into())
     }
 }

@@ -1,5 +1,9 @@
 cfg_if::cfg_if! {
-    if #[cfg(feature = "axum")] {
+    if #[cfg(feature = "actix")] {
+        mod actix_context;
+
+        pub(crate) use actix_context::RequestContextInitializer;
+    } else if #[cfg(feature = "axum")] {
         mod axum_context;
         mod tower_cors;
         mod tower_tracing;

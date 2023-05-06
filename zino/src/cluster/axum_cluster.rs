@@ -112,7 +112,7 @@ impl Application for AxumCluster {
                 let state = app_state.clone();
                 app = app
                     .fallback_service(tower::service_fn(|req| async {
-                        let req = AxumExtractor::new(req);
+                        let req = AxumExtractor::from(req);
                         let res = Response::new(StatusCode::NOT_FOUND).provide_context(&req);
                         Ok::<FullResponse, Infallible>(res.into())
                     }))

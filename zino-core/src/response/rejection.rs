@@ -10,11 +10,11 @@ use http::StatusCode;
 
 /// A rejection response type.
 #[derive(Debug)]
-pub struct Rejection<'a> {
+pub struct Rejection {
     /// Rejection kind.
     kind: RejectionKind,
     /// Optional context.
-    context: Option<&'a Context>,
+    context: Option<Context>,
     /// Optional trace context.
     trace_context: Option<TraceContext>,
 }
@@ -39,7 +39,7 @@ enum RejectionKind {
     InternalServerError(Error),
 }
 
-impl<'a> Rejection<'a> {
+impl Rejection {
     /// Creates an `BadRequest` rejection.
     #[inline]
     pub fn bad_request(validation: Validation) -> Self {
@@ -119,7 +119,7 @@ impl<'a> Rejection<'a> {
 
     /// Provides the request context for the rejection.
     #[inline]
-    pub fn provide_context<T: RequestContext + ?Sized>(mut self, ctx: &'a T) -> Self {
+    pub fn provide_context<T: RequestContext + ?Sized>(mut self, ctx: &T) -> Self {
         self.context = ctx.get_context();
         self.trace_context = Some(ctx.new_trace_context());
         self
@@ -140,8 +140,8 @@ impl<'a> Rejection<'a> {
     }
 }
 
-impl<'a> From<Rejection<'a>> for Response<StatusCode> {
-    fn from(rejection: Rejection<'a>) -> Self {
+impl From<Rejection> for Response<StatusCode> {
+    fn from(rejection: Rejection) -> Self {
         let mut res = match rejection.kind {
             BadRequest(validation) => {
                 let mut res = Response::new(StatusCode::BAD_REQUEST);
@@ -189,21 +189,21 @@ impl<'a> From<Rejection<'a>> for Response<StatusCode> {
     }
 }
 
-impl<'a> From<Rejection<'a>> for FullResponse {
+impl From<Rejection> for FullResponse {
     #[inline]
-    fn from(rejection: Rejection<'a>) -> Self {
+    fn from(rejection: Rejection) -> Self {
         Response::from(rejection).into()
     }
 }
 
 /// Trait for extracting rejections.
-pub trait ExtractRejection<'a, T> {
+pub trait ExtractRejection<T> {
     /// Extracts a rejection.
-    fn extract(self) -> Result<T, Rejection<'a>>;
+    fn extract(self) -> Result<T, Rejection>;
 
     /// Extracts a rejection with the request context.
     #[inline]
-    fn extract_with_context<Ctx: RequestContext>(self, ctx: &'a Ctx) -> Result<T, Rejection<'a>>
+    fn extract_with_context<Ctx: RequestContext>(self, ctx: &Ctx) -> Result<T, Rejection>
     where
         Self: Sized,
     {
@@ -212,23 +212,23 @@ pub trait ExtractRejection<'a, T> {
     }
 }
 
-impl<'a, T> ExtractRejection<'a, T> for Result<T, Validation> {
+impl<T> ExtractRejection<T> for Result<T, Validation> {
     #[inline]
-    fn extract(self) -> Result<T, Rejection<'a>> {
+    fn extract(self) -> Result<T, Rejection> {
         self.map_err(Rejection::bad_request)
     }
 }
 
-impl<'a, T, E: Into<Error>> ExtractRejection<'a, T> for Result<T, E> {
+impl<T, E: Into<Error>> ExtractRejection<T> for Result<T, E> {
     #[inline]
-    fn extract(self) -> Result<T, Rejection<'a>> {
+    fn extract(self) -> Result<T, Rejection> {
         self.map_err(Rejection::internal_server_error)
     }
 }
 
-impl<'a, T, E: Into<Error>> ExtractRejection<'a, T> for Result<Option<T>, E> {
+impl<T, E: Into<Error>> ExtractRejection<T> for Result<Option<T>, E> {
     #[inline]
-    fn extract(self) -> Result<T, Rejection<'a>> {
+    fn extract(self) -> Result<T, Rejection> {
         self.map_err(Rejection::internal_server_error)?
             .ok_or_else(|| Rejection::not_found(Error::new("resource does not exit")))
     }

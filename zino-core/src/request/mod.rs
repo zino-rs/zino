@@ -49,10 +49,10 @@ pub trait RequestContext {
     fn get_header(&self, name: &str) -> Option<&str>;
 
     /// Gets the query string of the request URI.
-    fn get_query_string(&self) -> Option<&str>;
+    fn get_query(&self) -> Option<&str>;
 
-    /// Gets a reference to the request context.
-    fn get_context(&self) -> Option<&Context>;
+    /// Gets the request context.
+    fn get_context(&self) -> Option<Context>;
 
     /// Gets a cookie with the given name.
     fn get_cookie(&self, name: &str) -> Option<Cookie<'static>>;
@@ -68,9 +68,6 @@ pub trait RequestContext {
 
     /// Returns a reference to the request scoped state data.
     fn state_data(&self) -> &Map;
-
-    /// Returns a mutable reference to the request scoped state data.
-    fn state_data_mut(&mut self) -> &mut Map;
 
     /// Reads the entire request body into a byte buffer.
     async fn read_body_bytes(&mut self) -> Result<Bytes, Error>;
@@ -171,10 +168,10 @@ pub trait RequestContext {
 
     /// Returns the instance.
     #[inline]
-    fn instance(&self) -> &str {
+    fn instance(&self) -> String {
         self.get_context()
-            .map(|ctx| ctx.instance())
-            .unwrap_or_else(|| self.request_path())
+            .map(|ctx| ctx.instance().to_owned())
+            .unwrap_or_else(|| self.request_path().to_owned())
     }
 
     /// Returns the request ID.
@@ -195,14 +192,15 @@ pub trait RequestContext {
 
     /// Returns the session ID.
     #[inline]
-    fn session_id(&self) -> Option<&str> {
-        self.get_context().and_then(|ctx| ctx.session_id())
+    fn session_id(&self) -> Option<String> {
+        self.get_context()
+            .and_then(|ctx| ctx.session_id().map(|s| s.to_owned()))
     }
 
     /// Returns the locale.
     #[inline]
-    fn locale(&self) -> Option<&LanguageIdentifier> {
-        self.get_context().and_then(|ctx| ctx.locale())
+    fn locale(&self) -> Option<LanguageIdentifier> {
+        self.get_context().and_then(|ctx| ctx.locale().cloned())
     }
 
     /// Gets the data type by parsing the `content-type` header.
@@ -274,7 +272,7 @@ pub trait RequestContext {
     where
         T: Default + DeserializeOwned + Send + 'static,
     {
-        if let Some(query) = self.get_query_string() {
+        if let Some(query) = self.get_query() {
             serde_qs::from_str::<T>(query)
                 .map_err(|err| Rejection::from_validation_entry("query", err).provide_context(self))
         } else {
@@ -576,7 +574,7 @@ pub trait RequestContext {
     /// Translates the localization message.
     fn translate(&self, message: &str, args: Option<FluentArgs>) -> Result<SharedString, Error> {
         if let Some(locale) = self.locale() {
-            i18n::translate(locale, message, args)
+            i18n::translate(&locale, message, args)
         } else {
             let default_locale = i18n::DEFAULT_LOCALE.parse()?;
             i18n::translate(&default_locale, message, args)
@@ -587,7 +585,7 @@ pub trait RequestContext {
     fn subscription(&self) -> Subscription {
         let mut subscription = self.parse_query::<Subscription>().unwrap_or_default();
         if subscription.session_id().is_none() && let Some(session_id) = self.session_id() {
-            subscription.set_session_id(Some(session_id.to_owned()));
+            subscription.set_session_id(Some(session_id));
         }
         subscription
     }
@@ -595,10 +593,10 @@ pub trait RequestContext {
     /// Creates a new cloud event instance.
     fn cloud_event(&self, topic: impl Into<String>, data: impl Into<Value>) -> CloudEvent {
         let id = self.request_id().to_string();
-        let source = self.instance().to_owned();
+        let source = self.instance();
         let mut event = CloudEvent::new(id, source, topic.into(), data.into());
         if let Some(session_id) = self.session_id() {
-            event.set_session_id(session_id.to_owned());
+            event.set_session_id(session_id);
         }
         event
     }

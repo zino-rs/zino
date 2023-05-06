@@ -22,14 +22,6 @@ use zino_core::{
 /// An HTTP request extractor for `axum`.
 pub struct AxumExtractor<T>(T);
 
-impl<T> AxumExtractor<T> {
-    /// Creates a new instance of `T`.
-    #[inline]
-    pub fn new(value: T) -> Self {
-        Self(value)
-    }
-}
-
 impl<T> Deref for AxumExtractor<T> {
     type Target = T;
 
@@ -43,6 +35,13 @@ impl<T> DerefMut for AxumExtractor<T> {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
+    }
+}
+
+impl From<Request<Body>> for AxumExtractor<Request<Body>> {
+    #[inline]
+    fn from(request: Request<Body>) -> Self {
+        Self(request)
     }
 }
 
@@ -82,13 +81,13 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
-    fn get_query_string(&self) -> Option<&str> {
+    fn get_query(&self) -> Option<&str> {
         self.uri().query()
     }
 
     #[inline]
-    fn get_context(&self) -> Option<&Context> {
-        self.extensions().get::<Context>()
+    fn get_context(&self) -> Option<Context> {
+        self.extensions().get::<Context>().cloned()
     }
 
     #[inline]
@@ -133,15 +132,6 @@ impl RequestContext for AxumExtractor<Request<Body>> {
             .get::<State>()
             .expect("the request extension `State` does not exist");
         state.data()
-    }
-
-    #[inline]
-    fn state_data_mut(&mut self) -> &mut Map {
-        let state = self
-            .extensions_mut()
-            .get_mut::<State>()
-            .expect("the request extension `State` does not exist");
-        state.data_mut()
     }
 
     #[inline]

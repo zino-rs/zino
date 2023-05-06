@@ -1,4 +1,4 @@
-use crate::RouterConfigure;
+use crate::{middleware, RouterConfigure};
 use actix_files::{Files, NamedFile};
 use actix_web::{
     dev::{fn_service, ServiceRequest, ServiceResponse},
@@ -83,9 +83,12 @@ impl Application for ActixCluster {
                         .route("/", index_file_handler)
                         .service(static_files);
                     for route in &routes {
-                        app = app.configure(route);
+                        app = app.configure(route).configure(|cfg| {
+                            cfg.app_data(app_state.clone());
+                        });
                     }
                     app.wrap(Compress::default())
+                        .wrap(middleware::RequestContextInitializer)
                 })
                 .bind(listeners.as_slice())
                 .unwrap_or_else(|err| panic!("fail to create an HTTP server: {err}"))
