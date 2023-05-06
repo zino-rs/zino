@@ -19,6 +19,8 @@ features = ["axum"]
 actix = [
     "dep:actix-files",
     "dep:actix-web",
+    "dep:tokio",
+    "dep:tokio-stream",
     "zino-core/runtime-actix",
 ]
 axum = [
@@ -50,12 +52,12 @@ optional = true
 features = ["secure-cookies"]
 
 [dependencies.axum]
-version = "0.6.17"
+version = "0.6.18"
 optional = true
 features = ["ws"]
 
 [dependencies.serde]
-version = "1.0.159"
+version = "1.0.162"
 
 [dependencies.tokio]
 version = "1.28.0"

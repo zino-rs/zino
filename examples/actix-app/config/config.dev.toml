@@ -27,7 +27,7 @@ username = "postgres"
 password = "NpN6lqKBg1HzTr1dg0AzEVo/r6WceHSVNstfwxg/M2ELSJYw"
 
 [tracing]
-filter = "info,sqlx=trace,tower_http=trace,zino=trace,zino_core=trace"
+filter = "info,sqlx=trace,zino=trace,zino_core=trace"
 display-filename = false
 display-line-number = false
 display-span-list = false

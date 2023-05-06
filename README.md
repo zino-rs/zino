@@ -17,10 +17,11 @@ productivity and performance.
 - 🕗 Lightweight scheduler for sync and async cron jobs.
 - 💠 Unified access to storage services, data sources and chatbots.
 - 📊 Support for [`tracing`], [`metrics`] and logging.
+- 🎨 Integrations with integration with [`actix-web`] or [`axum`].
 
 ## Getting started
 
-You can start with the example [`axum-app`].
+You can start with the example [`actix-app`] or [`axum-app`].
 Currently, it requires rustc **nightly** to build the project.
 
 ```shell
@@ -54,5 +55,8 @@ This project is licensed under the [MIT license][license].
 [`sqlx`]: https://crates.io/crates/sqlx
 [`tracing`]: https://crates.io/crates/tracing
 [`metrics`]: https://crates.io/crates/metrics
+[`actix-web`]: https://crates.io/crates/actix-web
+[`axum`]: https://crates.io/crates/axum
+[`actix-app`]: https://github.com/photino/zino/tree/main/examples/actix-app
 [`axum-app`]: https://github.com/photino/zino/tree/main/examples/axum-app
 [license]: https://github.com/photino/zino/blob/main/LICENSE

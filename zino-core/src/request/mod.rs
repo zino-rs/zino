@@ -13,15 +13,13 @@ use crate::{
     trace::{TraceContext, TraceState},
     Map, SharedString, Uuid,
 };
+use bytes::Bytes;
 use cookie::{Cookie, SameSite};
 use fluent::FluentArgs;
 use multer::Multipart;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use std::{
-    net::IpAddr,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 use toml::value::Table;
 use unic_langid::LanguageIdentifier;
 
@@ -44,14 +42,14 @@ pub trait RequestContext {
     /// Returns the request path regardless of nesting.
     fn request_path(&self) -> &str;
 
-    /// Returns the query string of the request URI.
-    fn query_string(&self) -> Option<&str>;
-
     /// Returns a reference to the request headers.
     fn header_map(&self) -> &Self::Headers;
 
     /// Gets an HTTP header with the given name.
     fn get_header(&self, name: &str) -> Option<&str>;
+
+    /// Gets the query string of the request URI.
+    fn get_query_string(&self) -> Option<&str>;
 
     /// Gets a reference to the request context.
     fn get_context(&self) -> Option<&Context>;
@@ -62,10 +60,8 @@ pub trait RequestContext {
     /// Adds a cookie to the cookie jar.
     fn add_cookie(&self, cookie: Cookie<'static>);
 
+    /// Returns the route that matches the request.
     fn matched_route(&self) -> String;
-
-    /// Returns the client's remote IP.
-    fn client_ip(&self) -> Option<IpAddr>;
 
     /// Returns a reference to the application config.
     fn config(&self) -> &Table;
@@ -76,11 +72,8 @@ pub trait RequestContext {
     /// Returns a mutable reference to the request scoped state data.
     fn state_data_mut(&mut self) -> &mut Map;
 
-    /// Attempts to send a message.
-    fn try_send(&self, message: CloudEvent) -> Result<(), Rejection>;
-
     /// Reads the entire request body into a byte buffer.
-    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error>;
+    async fn read_body_bytes(&mut self) -> Result<Bytes, Error>;
 
     /// Creates a new request context.
     fn new_context(&self) -> Context {
@@ -281,7 +274,7 @@ pub trait RequestContext {
     where
         T: Default + DeserializeOwned + Send + 'static,
     {
-        if let Some(query) = self.query_string() {
+        if let Some(query) = self.get_query_string() {
             serde_qs::from_str::<T>(query)
                 .map_err(|err| Rejection::from_validation_entry("query", err).provide_context(self))
         } else {

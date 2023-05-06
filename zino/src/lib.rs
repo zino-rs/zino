@@ -18,22 +18,24 @@
 //! - 🕗 Lightweight scheduler for sync and async cron jobs.
 //! - 💠 Unified access to storage services, data sources and chatbots.
 //! - 📊 Support for [`tracing`], [`metrics`] and logging.
+//! - 🎨 Integrations with integration with [`actix-web`] or [`axum`].
 //!
 //! ## Getting started
 //!
-//! You can start with the example [`axum-app`].
+//! You can start with the example [`actix-app`] or [`axum-app`].
 //!
 //! ## Feature flags
 //!
-//! Currently, we provide the `axum` and `actix` features to enable an integration with [`axum`]
-//! or [`actix-web`].
+//! Currently, we provide the `actix` and `axum` features to enable an integration with
+//! [`actix-web`] or [`axum`].
 //!
 //! [`zino`]: https://github.com/photino/zino
 //! [`sqlx`]: https://crates.io/crates/sqlx
 //! [`tracing`]: https://crates.io/crates/tracing
 //! [`metrics`]: https://crates.io/crates/metrics
-//! [`axum`]: https://crates.io/crates/axum
 //! [`actix-web`]: https://crates.io/crates/actix-web
+//! [`axum`]: https://crates.io/crates/axum
+//! [`actix-app`]: https://github.com/photino/zino/tree/main/examples/actix-app
 //! [`axum-app`]: https://github.com/photino/zino/tree/main/examples/axum-app
 
 #![feature(async_fn_in_trait)]
@@ -89,6 +91,8 @@ cfg_if::cfg_if! {
         pub type Result<T = ActixResponse<StatusCode>> = std::result::Result<T, ActixRejection>;
     } else if #[cfg(feature = "axum")] {
         use axum::{body::Body, http::{self, StatusCode}};
+
+        pub use channel::axum_channel::MessageChannel;
 
         use cluster::axum_cluster::AxumCluster;
         use request::axum_request::AxumExtractor;

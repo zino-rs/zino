@@ -3,12 +3,15 @@ use actix_files::{Files, NamedFile};
 use actix_web::{
     dev::{fn_service, ServiceRequest, ServiceResponse},
     middleware::Compress,
-    rt::System,
+    rt::{self, Runtime},
     web, App, HttpServer,
 };
 use std::path::PathBuf;
 use zino_core::{
-    application::Application, extension::TomlTableExt, schedule::AsyncCronJob, state::State,
+    application::Application,
+    extension::TomlTableExt,
+    schedule::{AsyncCronJob, Job, JobScheduler},
+    state::State,
 };
 
 /// An HTTP server cluster for `actix-web`.
@@ -26,7 +29,21 @@ impl Application for ActixCluster {
         self
     }
 
-    fn run(self, _async_jobs: Vec<(&'static str, AsyncCronJob)>) {
+    fn run(self, async_jobs: Vec<(&'static str, AsyncCronJob)>) {
+        let runtime = Runtime::new().expect("fail to build Tokio runtime for `ActixCluster`");
+        let mut scheduler = JobScheduler::new();
+        for (cron_expr, exec) in async_jobs {
+            scheduler.add(Job::new_async(cron_expr, exec));
+        }
+        runtime.spawn(async move {
+            loop {
+                scheduler.tick_async().await;
+
+                // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
+                rt::time::sleep(scheduler.time_till_next_job()).await;
+            }
+        });
+
         // Server config.
         let mut public_dir = PathBuf::new();
         let default_public_dir = Self::project_dir().join("public");
@@ -40,7 +57,7 @@ impl Application for ActixCluster {
             public_dir = default_public_dir;
         }
 
-        System::new()
+        runtime
             .block_on({
                 let routes = self.routes;
                 let app_state = State::default();

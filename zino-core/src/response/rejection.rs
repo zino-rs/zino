@@ -140,7 +140,7 @@ impl<'a> Rejection<'a> {
     }
 }
 
-impl<'a> From<Rejection<'a>> for FullResponse {
+impl<'a> From<Rejection<'a>> for Response<StatusCode> {
     fn from(rejection: Rejection<'a>) -> Self {
         let mut res = match rejection.kind {
             BadRequest(validation) => {
@@ -185,7 +185,14 @@ impl<'a> From<Rejection<'a>> for FullResponse {
             res.set_request_id(ctx.request_id());
         }
         res.set_trace_context(rejection.trace_context);
-        res.into()
+        res
+    }
+}
+
+impl<'a> From<Rejection<'a>> for FullResponse {
+    #[inline]
+    fn from(rejection: Rejection<'a>) -> Self {
+        Response::from(rejection).into()
     }
 }
 

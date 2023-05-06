@@ -1,8 +1,7 @@
-use futures::stream::Stream;
 use parking_lot::RwLock;
 use std::{collections::HashMap, sync::LazyLock};
 use tokio::sync::mpsc::{self, error::TrySendError, Receiver, Sender};
-use tokio_stream::wrappers::ReceiverStream;
+use tokio_stream::{wrappers::ReceiverStream, Stream};
 use zino_core::{
     application::Application,
     channel::{CloudEvent, Subscription},
@@ -45,9 +44,9 @@ impl Subscriber {
     }
 }
 
-/// Message channel of cloud events.
+/// Message channel for sending and receiving cloud events.
 #[derive(Debug)]
-pub(crate) struct MessageChannel {
+pub struct MessageChannel {
     /// Sender ID.
     sender_id: Uuid,
     /// Receiver.
@@ -56,7 +55,7 @@ pub(crate) struct MessageChannel {
 
 impl MessageChannel {
     /// Creates a new `MessageChannel`.
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         let (sender, receiver) = mpsc::channel(*CHANNEL_CAPACITY);
         let sender_id = Uuid::new_v4();
         let subscriber = Subscriber::new(sender, None);
@@ -71,15 +70,12 @@ impl MessageChannel {
 
     /// Returns a reference to the shared `MessageChannel`.
     #[inline]
-    pub(crate) fn shared() -> &'static Self {
+    pub fn shared() -> &'static Self {
         LazyLock::force(&SHARED_CHANNEL)
     }
 
     /// Attempts to send a message to all receivers in the channel except this one.
-    pub(crate) fn try_send(
-        &self,
-        message: impl Into<CloudEvent>,
-    ) -> Result<(), TrySendError<CloudEvent>> {
+    pub fn try_send(&self, message: impl Into<CloudEvent>) -> Result<(), TrySendError<CloudEvent>> {
         let sender_id = &self.sender_id;
         let event = message.into();
         let source = event.source();
@@ -104,7 +100,7 @@ impl MessageChannel {
 
     /// Consumes `Self` and returns a message stream of `CloudEvent`.
     #[inline]
-    pub(crate) fn into_stream(self) -> impl Stream<Item = CloudEvent> {
+    pub fn into_stream(self) -> impl Stream<Item = CloudEvent> {
         ReceiverStream::new(self.receiver)
     }
 }
@@ -117,7 +113,7 @@ impl Default for MessageChannel {
 
 /// Channel capacity.
 static CHANNEL_CAPACITY: LazyLock<usize> = LazyLock::new(|| {
-    if let Some(channel) = crate::AxumCluster::config().get("channel") {
+    if let Some(channel) = crate::Cluster::config().get("channel") {
         channel
             .as_table()
             .expect("the `channel` field should be a table")

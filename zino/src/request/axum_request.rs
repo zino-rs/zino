@@ -1,14 +1,11 @@
 use async_trait::async_trait;
 use axum::{
-    body::Body,
+    body::{Body, Bytes},
     extract::{FromRequest, MatchedPath},
     http::{HeaderMap, Method, Request},
 };
-use hyper::body::{self, Buf, HttpBody};
 use std::{
     convert::Infallible,
-    io::Read,
-    net::{IpAddr, SocketAddr},
     ops::{Deref, DerefMut},
     sync::LazyLock,
 };
@@ -16,11 +13,8 @@ use toml::value::Table;
 use tower_cookies::{Cookie, Cookies, Key};
 use zino_core::{
     application::Application,
-    channel::CloudEvent,
     error::Error,
-    extension::HeaderMapExt,
     request::{Context, RequestContext},
-    response::Rejection,
     state::State,
     Map,
 };
@@ -74,11 +68,6 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
-    fn query_string(&self) -> Option<&str> {
-        self.uri().query()
-    }
-
-    #[inline]
     fn header_map(&self) -> &Self::Headers {
         self.headers()
     }
@@ -90,6 +79,11 @@ impl RequestContext for AxumExtractor<Request<Body>> {
             .to_str()
             .inspect_err(|err| tracing::error!("{err}"))
             .ok()
+    }
+
+    #[inline]
+    fn get_query_string(&self) -> Option<&str> {
+        self.uri().query()
     }
 
     #[inline]
@@ -124,15 +118,6 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
-    fn client_ip(&self) -> Option<IpAddr> {
-        self.header_map().get_client_ip().or_else(|| {
-            self.extensions()
-                .get::<SocketAddr>()
-                .map(|socket| socket.ip())
-        })
-    }
-
-    #[inline]
     fn config(&self) -> &Table {
         let state = self
             .extensions()
@@ -160,17 +145,8 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
-    fn try_send(&self, message: CloudEvent) -> Result<(), Rejection> {
-        crate::channel::axum_channel::MessageChannel::shared()
-            .try_send(message)
-            .map_err(Rejection::internal_server_error)
-    }
-
-    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error> {
-        let buffer_size = self.size_hint().lower().try_into().unwrap_or(128);
-        let body = body::aggregate(self.body_mut()).await?;
-        let mut bytes = Vec::with_capacity(buffer_size);
-        body.reader().read_to_end(&mut bytes)?;
+    async fn read_body_bytes(&mut self) -> Result<Bytes, Error> {
+        let bytes = hyper::body::to_bytes(self.body_mut()).await?;
         Ok(bytes)
     }
 }
@@ -187,6 +163,6 @@ impl FromRequest<(), Body> for AxumExtractor<Request<Body>> {
 
 /// Private key for cookie signing.
 static COOKIE_PRIVATE_KEY: LazyLock<Key> = LazyLock::new(|| {
-    let secret_key = crate::AxumCluster::secret_key();
+    let secret_key = crate::Cluster::secret_key();
     Key::try_from(secret_key).unwrap_or_else(|_| Key::generate())
 });

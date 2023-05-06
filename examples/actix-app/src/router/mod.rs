@@ -11,7 +11,7 @@ pub(crate) fn routes() -> Vec<RouterConfigure> {
 }
 
 fn user_router(cfg: &mut ServiceConfig) {
-    cfg.route("/user/new", get().to(user::new))
+    cfg.route("/user/new", post().to(user::new))
         .route("/user/{id}/update", post().to(user::update))
         .route("/user/list", get().to(user::list))
         .route("/user/{id}/view", get().to(user::view));

@@ -21,9 +21,9 @@ pub(super) fn init<APP: Application + ?Sized>() {
 
     let app_env = APP::env();
     let mut env_filter = if app_env == "dev" {
-        "info,sqlx=trace,zino=trace,zino_core=trace"
+        "info,zino=trace,zino_core=trace"
     } else {
-        "info,sqlx=warn"
+        "info"
     };
 
     let mut log_dir = "logs";

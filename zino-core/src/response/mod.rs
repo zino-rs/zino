@@ -399,10 +399,10 @@ impl<S: ResponseCode> Response<S> {
         Ok(bytes)
     }
 
-    /// Consumes `self` and emits metrics.
-    pub fn emit(mut self) -> ServerTiming {
-        let labels = [("status_code", self.status_code().to_string())];
+    /// Gets the response time.
+    pub fn response_time(&self) -> Duration {
         let duration = self.start_time.elapsed();
+        let labels = [("status_code", self.status_code().to_string())];
         metrics::decrement_gauge!("zino_http_requests_in_flight", 1.0);
         metrics::increment_counter!("zino_http_responses_total", &labels);
         metrics::histogram!(
@@ -410,6 +410,12 @@ impl<S: ResponseCode> Response<S> {
             duration.as_secs_f64(),
             &labels,
         );
+        duration
+    }
+
+    /// Consumes `self` and emits metrics.
+    pub fn emit(mut self) -> ServerTiming {
+        let duration = self.response_time();
         self.record_server_timing("total", None, Some(duration));
         self.server_timing
     }

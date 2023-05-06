@@ -1,13 +1,11 @@
 use crate::{endpoint, middleware, AxumExtractor};
 use axum::{
-    body::{Bytes, Full},
     error_handling::HandleErrorLayer,
     extract::{rejection::LengthLimitError, DefaultBodyLimit},
-    http::{self, StatusCode},
+    http::StatusCode,
     middleware::from_fn,
     routing, BoxError, Router, Server,
 };
-use futures::future;
 use std::{convert::Infallible, net::SocketAddr, path::PathBuf, sync::LazyLock, time::Duration};
 use tokio::runtime::Builder;
 use tower::{
@@ -27,7 +25,7 @@ use tower_http::{
 use zino_core::{
     application::Application,
     extension::TomlTableExt,
-    response::Response,
+    response::{FullResponse, Response},
     schedule::{AsyncCronJob, Job, JobScheduler},
     state::State,
 };
@@ -54,7 +52,7 @@ impl Application for AxumCluster {
             .global_queue_interval(61)
             .enable_all()
             .build()
-            .expect("fail to build Tokio runtime with the multi thread scheduler selected");
+            .expect("fail to build Tokio runtime for `AxumCluster`");
         let mut scheduler = JobScheduler::new();
         for (cron_expr, exec) in async_jobs {
             scheduler.add(Job::new_async(cron_expr, exec));
@@ -116,7 +114,7 @@ impl Application for AxumCluster {
                     .fallback_service(tower::service_fn(|req| async {
                         let req = AxumExtractor::new(req);
                         let res = Response::new(StatusCode::NOT_FOUND).provide_context(&req);
-                        Ok::<http::Response<Full<Bytes>>, Infallible>(res.into())
+                        Ok::<FullResponse, Infallible>(res.into())
                     }))
                     .layer(
                         ServiceBuilder::new()
@@ -142,7 +140,7 @@ impl Application for AxumCluster {
                                     StatusCode::INTERNAL_SERVER_ERROR
                                 };
                                 let res = Response::new(status_code);
-                                Ok::<http::Response<Full<Bytes>>, Infallible>(res.into())
+                                Ok::<FullResponse, Infallible>(res.into())
                             }))
                             .layer(TimeoutLayer::new(request_timeout)),
                     );
@@ -150,7 +148,7 @@ impl Application for AxumCluster {
                 Server::bind(listener)
                     .serve(app.into_make_service_with_connect_info::<SocketAddr>())
             });
-            for result in future::join_all(servers).await {
+            for result in futures::future::join_all(servers).await {
                 if let Err(err) = result {
                     tracing::error!("server error: {err}");
                 }

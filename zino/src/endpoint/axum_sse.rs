@@ -2,9 +2,8 @@ use axum::{
     extract::Query,
     response::sse::{Event, KeepAlive, Sse},
 };
-use futures::stream::Stream;
 use std::convert::Infallible;
-use tokio_stream::StreamExt;
+use tokio_stream::{Stream, StreamExt};
 use zino_core::channel::Subscription;
 
 /// SSE endpoint handler.
@@ -15,7 +14,7 @@ pub(crate) async fn sse_handler(
     let session_id = subscription.session_id().map(|s| s.to_owned());
     let source = subscription.source().map(|s| s.to_owned());
     let topic = subscription.topic().map(|t| t.to_owned());
-    let channel = crate::channel::axum_channel::MessageChannel::new();
+    let channel = crate::MessageChannel::new();
     let stream = channel.into_stream().filter_map(move |event| {
         let mut sse_event_filter = None;
         let event_session_id = event.session_id();

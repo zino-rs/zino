@@ -1,13 +1,13 @@
 use actix_web::{
     dev::Payload,
     http::{header::HeaderMap, Method},
+    web::Bytes,
     FromRequest, HttpMessage, HttpRequest,
 };
 use std::{
     cell::{Ref, RefMut},
     convert::Infallible,
     future,
-    net::IpAddr,
     ops::{Deref, DerefMut},
     sync::LazyLock,
 };
@@ -15,24 +15,14 @@ use toml::value::Table;
 use tower_cookies::{Cookie, Cookies, Key};
 use zino_core::{
     application::Application,
-    channel::CloudEvent,
     error::Error,
     request::{Context, RequestContext},
-    response::Rejection,
     state::State,
     Map,
 };
 
 /// An HTTP request extractor for `actix-web`.
-pub struct ActixExtractor<T>(T);
-
-impl<T> ActixExtractor<T> {
-    /// Creates a new instance of `T`.
-    #[inline]
-    pub fn new(value: T) -> Self {
-        Self(value)
-    }
-}
+pub struct ActixExtractor<T>(T, Payload);
 
 impl<T> Deref for ActixExtractor<T> {
     type Target = T;
@@ -65,11 +55,6 @@ impl RequestContext for ActixExtractor<HttpRequest> {
     }
 
     #[inline]
-    fn query_string(&self) -> Option<&str> {
-        self.uri().query()
-    }
-
-    #[inline]
     fn header_map(&self) -> &Self::Headers {
         self.headers().into()
     }
@@ -81,6 +66,11 @@ impl RequestContext for ActixExtractor<HttpRequest> {
             .to_str()
             .inspect_err(|err| tracing::error!("{err}"))
             .ok()
+    }
+
+    #[inline]
+    fn get_query_string(&self) -> Option<&str> {
+        self.uri().query()
     }
 
     #[inline]
@@ -117,11 +107,6 @@ impl RequestContext for ActixExtractor<HttpRequest> {
     }
 
     #[inline]
-    fn client_ip(&self) -> Option<IpAddr> {
-        None
-    }
-
-    #[inline]
     fn config(&self) -> &Table {
         let extensions = Ref::leak(self.extensions());
         let state = extensions
@@ -149,12 +134,9 @@ impl RequestContext for ActixExtractor<HttpRequest> {
     }
 
     #[inline]
-    fn try_send(&self, _message: CloudEvent) -> Result<(), Rejection> {
-        Ok(())
-    }
-
-    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error> {
-        Ok(Vec::new())
+    async fn read_body_bytes(&mut self) -> Result<Bytes, Error> {
+        let bytes = Bytes::from_request(&self.0, &mut self.1).await?;
+        Ok(bytes)
     }
 }
 
@@ -170,13 +152,13 @@ impl FromRequest for ActixExtractor<HttpRequest> {
     type Future = future::Ready<Result<Self, Self::Error>>;
 
     #[inline]
-    fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
-        future::ready(Ok(ActixExtractor::new(req.clone())))
+    fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
+        future::ready(Ok(ActixExtractor(req.clone(), payload.take())))
     }
 }
 
 /// Private key for cookie signing.
 static COOKIE_PRIVATE_KEY: LazyLock<Key> = LazyLock::new(|| {
-    let secret_key = crate::ActixCluster::secret_key();
+    let secret_key = crate::Cluster::secret_key();
     Key::try_from(secret_key).unwrap_or_else(|_| Key::generate())
 });

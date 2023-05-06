@@ -1,6 +1,11 @@
 use crate::service::user;
+use fluent::fluent_args;
 use serde_json::json;
-use zino::{ExtractRejection, Map, Model, Request, RequestContext, Response, Result, Schema, Uuid};
+use std::time::Instant;
+use zino::{
+    ExtractRejection, JsonObjectExt, Map, Model, Request, RequestContext, Response, Result, Schema,
+    Uuid,
+};
 use zino_model::User;
 
 pub(crate) async fn new(mut req: Request) -> Result {
@@ -19,10 +24,13 @@ pub(crate) async fn new(mut req: Request) -> Result {
 pub(crate) async fn update(mut req: Request) -> Result {
     let user_id: Uuid = req.parse_param("id")?;
     let body: Map = req.parse_body().await?;
-    let (validation, data) = user::update(user_id, body)
+    let (validation, user_info) = user::update(user_id, body)
         .await
         .extract_with_context(&req)?;
     let mut res = Response::from(validation).provide_context(&req);
+    let data = json!({
+        "user": user_info,
+    });
     res.set_data(&data);
     Ok(res.into())
 }
@@ -47,13 +55,21 @@ pub(crate) async fn view(req: Request) -> Result {
     let mut res: Response = req.query_validation(&mut query)?;
     query.add_filter("id", user_id.to_string());
 
-    let message = json!({
-        "path": req.request_path(),
-    });
-    let event = req.cloud_event("message", message);
-    req.try_send(event)?;
+    let db_query_start_time = Instant::now();
+    let user: Map = User::find_one(&query).await.extract_with_context(&req)?;
+    let db_query_duration = db_query_start_time.elapsed();
 
-    let (db_query_duration, data) = user::view(&req, &query).await.extract_with_context(&req)?;
+    let args = fluent_args![
+        "name" => user.get_str("name").unwrap_or_default()
+    ];
+    let user_intro = req
+        .translate("user-intro", Some(args))
+        .extract_with_context(&req)?;
+    let data = json!({
+        "schema": User::schema(),
+        "intro": user_intro,
+        "user": user,
+    });
     res.record_server_timing("db", None, Some(db_query_duration));
     res.set_data(&data);
     Ok(res.into())

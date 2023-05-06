@@ -4,7 +4,7 @@ use zino_core::{application::Application, extension::TomlTableExt};
 
 // CORS middleware.
 pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {
-    if let Some(cors) = crate::AxumCluster::config().get_table("cors") {
+    if let Some(cors) = crate::Cluster::config().get_table("cors") {
         let allow_credentials = cors.get_bool("allow-credentials").unwrap_or(false);
         let allow_origin = cors
             .get_array("allow-origin")
