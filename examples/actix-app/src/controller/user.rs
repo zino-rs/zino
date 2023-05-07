@@ -66,7 +66,6 @@ pub(crate) async fn view(req: Request) -> Result {
         "schema": User::schema(),
         "intro": user_intro,
         "user": user,
-        "i18n": "中文字符",
     });
     res.record_server_timing("db", None, Some(db_query_duration));
     res.set_data(&data);

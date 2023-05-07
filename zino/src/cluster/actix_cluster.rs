@@ -88,7 +88,9 @@ impl Application for ActixCluster {
                         });
                     }
                     app.wrap(Compress::default())
-                        .wrap(middleware::RequestContextInitializer)
+                        .wrap(middleware::RequestContextInitializer::default())
+                        .wrap(middleware::tracing_middleware())
+                        .wrap(middleware::cors_middleware())
                 })
                 .bind(listeners.as_slice())
                 .unwrap_or_else(|err| panic!("fail to create an HTTP server: {err}"))

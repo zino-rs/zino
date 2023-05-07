@@ -17,8 +17,8 @@
 //! - 🐘 Highly optimized ORM for PostgreSQL built on top of [`sqlx`].
 //! - 🕗 Lightweight scheduler for sync and async cron jobs.
 //! - 💠 Unified access to storage services, data sources and chatbots.
-//! - 📊 Supports for [`tracing`], [`metrics`] and logging.
-//! - 🎨 Integrates with [`actix-web`] or [`axum`] in a consistent way.
+//! - 📊 Built-in support for [`tracing`], [`metrics`] and logging.
+//! - 🎨 Full integratations with [`actix-web`] and [`axum`].
 //!
 //! ## Getting started
 //!

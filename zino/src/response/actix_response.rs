@@ -40,8 +40,13 @@ impl Responder for ActixResponse<StatusCode> {
 }
 
 /// An HTTP rejection response for `actix-web`.
-#[derive(Debug)]
 pub struct ActixRejection(Response<StatusCode>);
+
+impl fmt::Debug for ActixRejection {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0.message().unwrap_or("OK"))
+    }
+}
 
 impl fmt::Display for ActixRejection {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

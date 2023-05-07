@@ -10,7 +10,7 @@ use tower_http::{
 use tracing::{field::Empty, Span};
 use zino_core::{application::Application, extension::HeaderMapExt, trace::TraceContext, Uuid};
 
-// Type aliases.
+/// Type aliases.
 type NewMakeSpan = fn(&Request<Body>) -> Span;
 type NewOnRequest = fn(&Request<Body>, &Span);
 type NewOnResponse = fn(&Response<BoxBody>, Duration, &Span);
@@ -27,7 +27,7 @@ type NewTraceLayer = TraceLayer<
     NewOnFailure,
 >;
 
-// Tracing middleware.
+/// Tracing middleware.
 pub(crate) static TRACING_MIDDLEWARE: LazyLock<NewTraceLayer> = LazyLock::new(|| {
     let classifier = StatusInRangeAsFailures::new_for_client_and_server_errors();
     TraceLayer::new(classifier.into_make_classifier())
@@ -46,8 +46,9 @@ fn new_make_span(request: &Request<Body>) -> Span {
         "HTTP request",
         "otel.kind" = "server",
         "otel.name" = crate::Cluster::name(),
-        "http.method" = request.method().as_str(),
+        "otel.status_code" = Empty,
         "http.scheme" = uri.scheme_str(),
+        "http.method" = request.method().as_str(),
         "http.target" = uri.path_and_query().map(|p| p.as_str()),
         "http.client_ip" = headers.get_client_ip().map(|ip| ip.to_string()),
         "http.user_agent" = headers.get_str("user-agent"),
@@ -59,10 +60,10 @@ fn new_make_span(request: &Request<Body>) -> Span {
         "http.server.duration" = Empty,
         "net.host.name" = uri.host(),
         "net.host.port" = uri.port_u16(),
-        "context.request_id" = Empty,
         "context.session_id" = Empty,
-        "context.span_id" = Empty,
         "context.trace_id" = Empty,
+        "context.request_id" = Empty,
+        "context.span_id" = Empty,
         "context.parent_id" = Empty,
     )
 }
@@ -110,6 +111,7 @@ fn new_on_response(response: &Response<BoxBody>, latency: Duration, span: &Span)
         "http.server.duration",
         u64::try_from(latency.as_millis()).ok(),
     );
+    span.record("otel.status_code", "OK");
     tracing::info!("finished processing request");
 }
 
@@ -117,7 +119,8 @@ fn new_on_body_chunk(chunk: &Bytes, _latency: Duration, _span: &Span) {
     tracing::debug!("flushed {} bytes", chunk.len());
 }
 
-fn new_on_eos(_trailers: Option<&HeaderMap>, stream_duration: Duration, _span: &Span) {
+fn new_on_eos(_trailers: Option<&HeaderMap>, stream_duration: Duration, span: &Span) {
+    span.record("otel.status_code", "OK");
     tracing::debug!(
         stream_duration = u64::try_from(stream_duration.as_millis()).ok(),
         "end of stream",
@@ -132,9 +135,16 @@ fn new_on_failure(error: StatusInRangeFailureClass, latency: Duration, span: &Sp
     match error {
         StatusInRangeFailureClass::StatusCode(status_code) => {
             span.record("http.status_code", status_code.as_u16());
-            tracing::error!("response failed");
+            if status_code.is_client_error() {
+                span.record("otel.status_code", "OK");
+                tracing::warn!("response failed");
+            } else {
+                span.record("otel.status_code", "ERROR");
+                tracing::error!("response failed");
+            }
         }
         StatusInRangeFailureClass::Error(err) => {
+            span.record("otel.status_code", "ERROR");
             tracing::error!(err);
         }
     }

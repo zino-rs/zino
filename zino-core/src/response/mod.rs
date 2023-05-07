@@ -307,6 +307,15 @@ impl<S: ResponseCode> Response<S> {
         self.success
     }
 
+    /// Returns the message.
+    #[inline]
+    pub fn message(&self) -> Option<&str> {
+        self.detail
+            .as_ref()
+            .or(self.message.as_ref())
+            .map(|s| s.as_ref())
+    }
+
     /// Returns the request ID.
     #[inline]
     pub fn request_id(&self) -> Uuid {

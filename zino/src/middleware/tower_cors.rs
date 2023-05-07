@@ -2,7 +2,7 @@ use std::{sync::LazyLock, time::Duration};
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer, ExposeHeaders};
 use zino_core::{application::Application, extension::TomlTableExt};
 
-// CORS middleware.
+/// CORS middleware.
 pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {
     if let Some(cors) = crate::Cluster::config().get_table("cors") {
         let allow_credentials = cors.get_bool("allow-credentials").unwrap_or(false);
