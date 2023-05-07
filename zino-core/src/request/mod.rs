@@ -57,9 +57,6 @@ pub trait RequestContext {
     /// Gets a cookie with the given name.
     fn get_cookie(&self, name: &str) -> Option<Cookie<'static>>;
 
-    /// Adds a cookie to the cookie jar.
-    fn add_cookie(&self, cookie: Cookie<'static>);
-
     /// Returns the route that matches the request.
     fn matched_route(&self) -> String;
 

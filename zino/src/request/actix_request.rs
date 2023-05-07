@@ -1,4 +1,5 @@
 use actix_web::{
+    cookie::Cookie,
     dev::{Payload, ServiceRequest},
     http::{header::HeaderMap, Method},
     web::Bytes,
@@ -8,12 +9,9 @@ use std::{
     convert::Infallible,
     future,
     ops::{Deref, DerefMut},
-    sync::LazyLock,
 };
 use toml::value::Table;
-use tower_cookies::{Cookie, Cookies, Key};
 use zino_core::{
-    application::Application,
     error::Error,
     request::{Context, RequestContext},
     state::State,
@@ -80,19 +78,7 @@ impl RequestContext for ActixExtractor<HttpRequest> {
 
     #[inline]
     fn get_cookie(&self, name: &str) -> Option<Cookie<'static>> {
-        let cookies = self.extensions().get::<Cookies>()?;
-        let key = LazyLock::force(&COOKIE_PRIVATE_KEY);
-        let signed_cookies = cookies.signed(key);
-        signed_cookies.get(name)
-    }
-
-    #[inline]
-    fn add_cookie(&self, cookie: Cookie<'static>) {
-        self.extensions().get::<Cookies>().map(|cookies| {
-            let key = LazyLock::force(&COOKIE_PRIVATE_KEY);
-            let signed_cookies = cookies.signed(key);
-            signed_cookies.add(cookie);
-        });
+        self.cookie(name)
     }
 
     #[inline]
@@ -158,9 +144,3 @@ impl FromRequest for ActixExtractor<HttpRequest> {
         future::ready(Ok(ActixExtractor(req.clone(), payload.take())))
     }
 }
-
-/// Private key for cookie signing.
-static COOKIE_PRIVATE_KEY: LazyLock<Key> = LazyLock::new(|| {
-    let secret_key = crate::Cluster::secret_key();
-    Key::try_from(secret_key).unwrap_or_else(|_| Key::generate())
-});

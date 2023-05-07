@@ -47,9 +47,6 @@ pub(crate) async fn list(req: Request) -> Result {
 }
 
 pub(crate) async fn view(req: Request) -> Result {
-    let locale_cookie = req.new_cookie("locale", "en-US", None);
-    req.add_cookie(locale_cookie);
-
     let user_id: Uuid = req.parse_param("id")?;
     let mut query = User::default_query();
     let mut res: Response = req.query_validation(&mut query)?;
@@ -69,6 +66,7 @@ pub(crate) async fn view(req: Request) -> Result {
         "schema": User::schema(),
         "intro": user_intro,
         "user": user,
+        "i18n": "中文字符",
     });
     res.record_server_timing("db", None, Some(db_query_duration));
     res.set_data(&data);

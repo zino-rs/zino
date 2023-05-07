@@ -166,7 +166,7 @@ impl<S: ResponseCode> Response<S> {
         match result {
             Ok(raw_value) => {
                 self.data = Some(raw_value);
-                self.content_type = Some("text/html".into());
+                self.content_type = Some("text/html; charset=utf-8".into());
             }
             Err(err) => {
                 let code = S::INTERNAL_SERVER_ERROR;
@@ -328,9 +328,9 @@ impl<S: ResponseCode> Response<S> {
     pub fn content_type(&self) -> &str {
         self.content_type.as_deref().unwrap_or_else(|| {
             if self.is_success() {
-                "application/json"
+                "application/json; charset=utf-8"
             } else {
-                "application/problem+json"
+                "application/problem+json; charset=utf-8"
             }
         })
     }
@@ -450,7 +450,7 @@ impl<S: ResponseCode> From<Response<S>> for FullResponse {
                 .unwrap_or_default(),
             Err(err) => http::Response::builder()
                 .status(S::INTERNAL_SERVER_ERROR.status_code())
-                .header(header::CONTENT_TYPE, "text/plain")
+                .header(header::CONTENT_TYPE, "text/plain; charset=utf-8")
                 .body(Full::from(err.to_string()))
                 .unwrap_or_default(),
         };

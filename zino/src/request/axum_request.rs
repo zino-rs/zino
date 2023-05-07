@@ -99,15 +99,6 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
-    fn add_cookie(&self, cookie: Cookie<'static>) {
-        self.extensions().get::<Cookies>().map(|cookies| {
-            let key = LazyLock::force(&COOKIE_PRIVATE_KEY);
-            let signed_cookies = cookies.signed(key);
-            signed_cookies.add(cookie);
-        });
-    }
-
-    #[inline]
     fn matched_route(&self) -> String {
         if let Some(path) = self.extensions().get::<MatchedPath>() {
             path.as_str().to_owned()

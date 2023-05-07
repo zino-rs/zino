@@ -1,7 +1,7 @@
 use actix_web::{
     body::BoxBody,
     http::{
-        header::{HeaderName, HeaderValue},
+        header::{self, HeaderName, HeaderValue},
         StatusCode,
     },
     HttpRequest, HttpResponse, Responder, ResponseError,
@@ -89,12 +89,21 @@ fn build_http_response(response: &Response<StatusCode>) -> HttpResponse<BoxBody>
                 .try_into()
                 .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
             let body = BoxBody::new(data);
-            HttpResponse::with_body(status_code, body)
+            let mut res = HttpResponse::with_body(status_code, body);
+            if let Ok(header_value) = HeaderValue::try_from(response.content_type()) {
+                res.headers_mut().insert(header::CONTENT_TYPE, header_value);
+            }
+            res
         }
         Err(err) => {
             let status_code = StatusCode::INTERNAL_SERVER_ERROR;
             let body = BoxBody::new(err.to_string());
-            HttpResponse::with_body(status_code, body)
+            let mut res = HttpResponse::with_body(status_code, body);
+            res.headers_mut().insert(
+                header::CONTENT_TYPE,
+                HeaderValue::from_static("text/plain; charset=utf-8"),
+            );
+            res
         }
     };
 
