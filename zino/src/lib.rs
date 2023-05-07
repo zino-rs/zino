@@ -18,7 +18,7 @@
 //! - 🕗 Lightweight scheduler for sync and async cron jobs.
 //! - 💠 Unified access to storage services, data sources and chatbots.
 //! - 📊 Built-in support for [`tracing`], [`metrics`] and logging.
-//! - 🎨 Full integratations with [`actix-web`] and [`axum`].
+//! - 🎨 Full integrations with [`actix-web`] and [`axum`].
 //!
 //! ## Getting started
 //!
