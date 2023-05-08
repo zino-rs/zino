@@ -91,14 +91,14 @@ cfg_if::cfg_if! {
     } else if #[cfg(feature = "axum")] {
         use axum::{body::Body, http::{self, StatusCode}};
 
-        pub use channel::axum_channel::MessageChannel;
-
         use cluster::axum_cluster::AxumCluster;
         use request::axum_request::AxumExtractor;
         use response::axum_response::{AxumRejection, AxumResponse};
 
-         /// Cluster for `axum`.
-         pub type Cluster = AxumCluster;
+        pub use channel::axum_channel::MessageChannel;
+
+        /// Cluster for `axum`.
+        pub type Cluster = AxumCluster;
 
         /// A specialized request extractor for `axum`.
         pub type Request = AxumExtractor<http::Request<Body>>;

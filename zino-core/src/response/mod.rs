@@ -307,6 +307,12 @@ impl<S: ResponseCode> Response<S> {
         self.success
     }
 
+    /// Returns `true` if the response has a request context.
+    #[inline]
+    pub fn has_context(&self) -> bool {
+        self.trace_context.is_some() && !self.request_id.is_nil()
+    }
+
     /// Returns the message.
     #[inline]
     pub fn message(&self) -> Option<&str> {

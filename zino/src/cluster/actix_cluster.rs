@@ -1,15 +1,18 @@
-use crate::{middleware, RouterConfigure};
+use crate::{middleware, ActixResponse, Request, RouterConfigure};
 use actix_files::{Files, NamedFile};
 use actix_web::{
     dev::{fn_service, ServiceRequest, ServiceResponse},
-    middleware::Compress,
+    http::StatusCode,
+    middleware::{Compress, NormalizePath},
     rt::{self, Runtime},
-    web, App, HttpServer,
+    web::{self, FormConfig, JsonConfig, PayloadConfig},
+    App, HttpServer, Responder,
 };
 use std::path::PathBuf;
 use zino_core::{
     application::Application,
     extension::TomlTableExt,
+    response::Response,
     schedule::{AsyncCronJob, Job, JobScheduler},
     state::State,
 };
@@ -45,9 +48,13 @@ impl Application for ActixCluster {
         });
 
         // Server config.
+        let mut body_limit = 100 * 1024 * 1024; // 100MB
         let mut public_dir = PathBuf::new();
         let default_public_dir = Self::project_dir().join("public");
         if let Some(server) = Self::config().get_table("server") {
+            if let Some(limit) = server.get_usize("body-limit") {
+                body_limit = limit;
+            }
             if let Some(dir) = server.get_str("public-dir") {
                 public_dir.push(dir);
             } else {
@@ -81,13 +88,20 @@ impl Application for ActixCluster {
                         }));
                     let mut app = App::new()
                         .route("/", index_file_handler)
-                        .service(static_files);
+                        .service(static_files)
+                        .default_service(web::to(|req: Request| async {
+                            let res = Response::new(StatusCode::NOT_FOUND);
+                            ActixResponse::from(res).respond_to(&req.into())
+                        }));
                     for route in &routes {
-                        app = app.configure(route).configure(|cfg| {
-                            cfg.app_data(app_state.clone());
-                        });
+                        app = app.configure(route);
                     }
-                    app.wrap(Compress::default())
+                    app.app_data(app_state.clone())
+                        .app_data(FormConfig::default().limit(body_limit))
+                        .app_data(JsonConfig::default().limit(body_limit))
+                        .app_data(PayloadConfig::default().limit(body_limit))
+                        .wrap(Compress::default())
+                        .wrap(NormalizePath::trim())
                         .wrap(middleware::RequestContextInitializer::default())
                         .wrap(middleware::tracing_middleware())
                         .wrap(middleware::cors_middleware())

@@ -27,7 +27,7 @@ username = "postgres"
 password = "nL8Jf78clvUrNgvRRHdDxWbvfZdnyFuAUYslR8r17tgl9Zx2"
 
 [tracing]
-filter = "info,sqlx=warn"
+filter = "warn"
 
 [metrics]
 exporter = "prometheus"

@@ -128,6 +128,13 @@ impl From<ActixExtractor<HttpRequest>> for ServiceRequest {
     }
 }
 
+impl From<HttpRequest> for ActixExtractor<HttpRequest> {
+    #[inline]
+    fn from(request: HttpRequest) -> Self {
+        Self(request, Payload::None)
+    }
+}
+
 impl From<ActixExtractor<HttpRequest>> for HttpRequest {
     #[inline]
     fn from(extractor: ActixExtractor<HttpRequest>) -> Self {

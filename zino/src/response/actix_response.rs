@@ -25,10 +25,14 @@ impl<S: ResponseCode> From<Response<S>> for ActixResponse<S> {
 impl Responder for ActixResponse<StatusCode> {
     type Body = BoxBody;
 
-    fn respond_to(self, _req: &HttpRequest) -> HttpResponse<Self::Body> {
-        let response = self.0;
-        let mut res = build_http_response(&response);
+    fn respond_to(self, req: &HttpRequest) -> HttpResponse<Self::Body> {
+        let mut response = self.0;
+        if !response.has_context() {
+            let req = crate::Request::from(req.clone());
+            response = response.provide_context(&req);
+        }
 
+        let mut res = build_http_response(&response);
         let server_timing = response.emit();
         if let Ok(header_value) = HeaderValue::try_from(server_timing.to_string()) {
             let header_name = HeaderName::from_static("server-timing");
@@ -73,8 +77,8 @@ impl ResponseError for ActixRejection {
 
     fn error_response(&self) -> HttpResponse<BoxBody> {
         let response = &self.0;
-        let mut res = build_http_response(&response);
 
+        let mut res = build_http_response(&response);
         let timing = TimingMetric::new("total".into(), None, response.response_time().into());
         if let Ok(header_value) = HeaderValue::try_from(timing.to_string()) {
             let header_name = HeaderName::from_static("server-timing");

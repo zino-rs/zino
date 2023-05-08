@@ -9,14 +9,14 @@ use zino_core::{application::Application, trace::TraceContext, Uuid};
 
 /// Tracing middleware.
 #[inline]
-pub(crate) fn tracing_middleware() -> TracingLogger<NewRootSpanBuilder> {
+pub(crate) fn tracing_middleware() -> TracingLogger<CustomRootSpanBuilder> {
     TracingLogger::new()
 }
 
 /// Root span builder.
-pub(crate) struct NewRootSpanBuilder;
+pub(crate) struct CustomRootSpanBuilder;
 
-impl RootSpanBuilder for NewRootSpanBuilder {
+impl RootSpanBuilder for CustomRootSpanBuilder {
     fn on_request_start(request: &ServiceRequest) -> Span {
         let uri = request.uri();
         let headers = request.headers();

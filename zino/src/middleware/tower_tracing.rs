@@ -11,35 +11,35 @@ use tracing::{field::Empty, Span};
 use zino_core::{application::Application, extension::HeaderMapExt, trace::TraceContext, Uuid};
 
 /// Type aliases.
-type NewMakeSpan = fn(&Request<Body>) -> Span;
-type NewOnRequest = fn(&Request<Body>, &Span);
-type NewOnResponse = fn(&Response<BoxBody>, Duration, &Span);
-type NewOnBodyChunk = fn(&Bytes, Duration, &Span);
-type NewOnEos = fn(Option<&HeaderMap>, Duration, &Span);
-type NewOnFailure = fn(StatusInRangeFailureClass, Duration, &Span);
-type NewTraceLayer = TraceLayer<
+type CustomMakeSpan = fn(&Request<Body>) -> Span;
+type CustomOnRequest = fn(&Request<Body>, &Span);
+type CustomOnResponse = fn(&Response<BoxBody>, Duration, &Span);
+type CustomOnBodyChunk = fn(&Bytes, Duration, &Span);
+type CustomOnEos = fn(Option<&HeaderMap>, Duration, &Span);
+type CustomOnFailure = fn(StatusInRangeFailureClass, Duration, &Span);
+type CustomTraceLayer = TraceLayer<
     SharedClassifier<StatusInRangeAsFailures>,
-    NewMakeSpan,
-    NewOnRequest,
-    NewOnResponse,
-    NewOnBodyChunk,
-    NewOnEos,
-    NewOnFailure,
+    CustomMakeSpan,
+    CustomOnRequest,
+    CustomOnResponse,
+    CustomOnBodyChunk,
+    CustomOnEos,
+    CustomOnFailure,
 >;
 
 /// Tracing middleware.
-pub(crate) static TRACING_MIDDLEWARE: LazyLock<NewTraceLayer> = LazyLock::new(|| {
+pub(crate) static TRACING_MIDDLEWARE: LazyLock<CustomTraceLayer> = LazyLock::new(|| {
     let classifier = StatusInRangeAsFailures::new_for_client_and_server_errors();
     TraceLayer::new(classifier.into_make_classifier())
-        .make_span_with(new_make_span as NewMakeSpan)
-        .on_request(new_on_request as NewOnRequest)
-        .on_response(new_on_response as NewOnResponse)
-        .on_body_chunk(new_on_body_chunk as NewOnBodyChunk)
-        .on_eos(new_on_eos as NewOnEos)
-        .on_failure(new_on_failure as NewOnFailure)
+        .make_span_with(custom_make_span as CustomMakeSpan)
+        .on_request(custom_on_request as CustomOnRequest)
+        .on_response(custom_on_response as CustomOnResponse)
+        .on_body_chunk(custom_on_body_chunk as CustomOnBodyChunk)
+        .on_eos(custom_on_eos as CustomOnEos)
+        .on_failure(custom_on_failure as CustomOnFailure)
 });
 
-fn new_make_span(request: &Request<Body>) -> Span {
+fn custom_make_span(request: &Request<Body>) -> Span {
     let uri = request.uri();
     let headers = request.headers();
     tracing::info_span!(
@@ -68,7 +68,7 @@ fn new_make_span(request: &Request<Body>) -> Span {
     )
 }
 
-fn new_on_request(request: &Request<Body>, span: &Span) {
+fn custom_on_request(request: &Request<Body>, span: &Span) {
     let headers = request.headers();
     let traceparent = headers.get_str("traceparent");
     let trace_context = traceparent.and_then(TraceContext::from_traceparent);
@@ -91,7 +91,7 @@ fn new_on_request(request: &Request<Body>, span: &Span) {
     tracing::debug!("started processing request");
 }
 
-fn new_on_response(response: &Response<BoxBody>, latency: Duration, span: &Span) {
+fn custom_on_response(response: &Response<BoxBody>, latency: Duration, span: &Span) {
     let headers = response.headers();
     let traceparent = headers.get_str("traceparent");
     span.record("http.response.header.traceparent", traceparent);
@@ -115,11 +115,11 @@ fn new_on_response(response: &Response<BoxBody>, latency: Duration, span: &Span)
     tracing::info!("finished processing request");
 }
 
-fn new_on_body_chunk(chunk: &Bytes, _latency: Duration, _span: &Span) {
+fn custom_on_body_chunk(chunk: &Bytes, _latency: Duration, _span: &Span) {
     tracing::debug!("flushed {} bytes", chunk.len());
 }
 
-fn new_on_eos(_trailers: Option<&HeaderMap>, stream_duration: Duration, span: &Span) {
+fn custom_on_eos(_trailers: Option<&HeaderMap>, stream_duration: Duration, span: &Span) {
     span.record("otel.status_code", "OK");
     tracing::debug!(
         stream_duration = u64::try_from(stream_duration.as_millis()).ok(),
@@ -127,7 +127,7 @@ fn new_on_eos(_trailers: Option<&HeaderMap>, stream_duration: Duration, span: &S
     );
 }
 
-fn new_on_failure(error: StatusInRangeFailureClass, latency: Duration, span: &Span) {
+fn custom_on_failure(error: StatusInRangeFailureClass, latency: Duration, span: &Span) {
     span.record(
         "http.server.duration",
         u64::try_from(latency.as_millis()).ok(),

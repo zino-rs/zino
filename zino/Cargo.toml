@@ -53,7 +53,13 @@ optional = true
 [dependencies.actix-web]
 version = "4.3.1"
 optional = true
-features = ["secure-cookies"]
+default-features = false
+features = [
+    "compress-brotli",
+    "compress-gzip",
+    "cookies",
+    "secure-cookies",
+]
 
 [dependencies.tracing-actix-web]
 version = "0.7.4"
@@ -63,7 +69,12 @@ features = ["opentelemetry_0_18"]
 [dependencies.axum]
 version = "0.6.18"
 optional = true
-features = ["ws"]
+default-features = false
+features = [
+    "matched-path",
+    "tokio",
+    "ws",
+]
 
 [dependencies.serde]
 version = "1.0.162"
