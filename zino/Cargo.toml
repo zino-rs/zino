@@ -72,7 +72,9 @@ optional = true
 default-features = false
 features = [
     "matched-path",
+    "query",
     "tokio",
+    "tracing",
     "ws",
 ]
 
@@ -105,9 +107,9 @@ features = [
     "add-extension",
     "compression-br",
     "compression-gzip",
+    "cors",
     "decompression-br",
     "decompression-gzip",
-    "cors",
     "fs",
     "trace",
 ]
