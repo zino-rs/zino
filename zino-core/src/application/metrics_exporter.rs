@@ -1,5 +1,5 @@
 use super::Application;
-use crate::extension::TomlTableExt;
+use crate::{extension::TomlTableExt, state::State};
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
 use std::{net::IpAddr, time::Duration};
 
@@ -12,8 +12,10 @@ pub(super) fn init<APP: Application + ?Sized>() {
                 let interval = metrics
                     .get_duration("interval")
                     .unwrap_or_else(|| Duration::from_secs(60));
+                let username = metrics.get_str("username").map(|s| s.to_owned());
+                let password = State::decrypt_password(metrics).map(|s| s.into_owned());
                 PrometheusBuilder::new()
-                    .with_push_gateway(endpoint, interval)
+                    .with_push_gateway(endpoint, interval, username, password)
                     .expect("fail to configure the exporter to run in push gateway mode")
             } else {
                 let host = metrics.get_str("host").unwrap_or("127.0.0.1");

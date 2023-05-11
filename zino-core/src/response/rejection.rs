@@ -212,6 +212,13 @@ pub trait ExtractRejection<T> {
     }
 }
 
+impl<T> ExtractRejection<T> for Option<T> {
+    #[inline]
+    fn extract(self) -> Result<T, Rejection> {
+        self.ok_or_else(|| Rejection::not_found(Error::new("resource does not exit")))
+    }
+}
+
 impl<T> ExtractRejection<T> for Result<T, Validation> {
     #[inline]
     fn extract(self) -> Result<T, Rejection> {

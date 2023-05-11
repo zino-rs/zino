@@ -252,6 +252,8 @@ impl<S: ResponseCode> Response<S> {
 
     /// Sets the content type.
     ///
+    /// # Note
+    ///
     /// Currently, we have built-in support for the following values:
     ///
     /// - `application/json`
@@ -415,6 +417,10 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Gets the response time.
+    ///
+    /// # Note
+    ///
+    /// It should only be called when the response will finish.
     pub fn response_time(&self) -> Duration {
         let duration = self.start_time.elapsed();
         let labels = [("status_code", self.status_code().to_string())];

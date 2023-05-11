@@ -79,10 +79,10 @@ features = [
 ]
 
 [dependencies.serde]
-version = "1.0.162"
+version = "1.0.163"
 
 [dependencies.tokio]
-version = "1.28.0"
+version = "1.28.1"
 optional = true
 features = ["parking_lot", "rt-multi-thread"]
 

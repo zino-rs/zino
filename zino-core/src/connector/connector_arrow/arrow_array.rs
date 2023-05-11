@@ -216,7 +216,7 @@ impl ArrowArrayExt for dyn Array {
                 let mut hashmap = HashMap::with_capacity(num_keys);
                 for i in 0..num_keys {
                     if let AvroValue::String(key) = keys.parse_avro_value(i)? {
-                        let value = values.parse_avro_value(i)?;
+                        let value = values.column(i).parse_avro_value(index)?;
                         hashmap.insert(key, value);
                     } else {
                         let key_type = map_array.key_type();
@@ -381,7 +381,7 @@ impl ArrowArrayExt for dyn Array {
                 let mut map = Map::with_capacity(num_keys);
                 for i in 0..num_keys {
                     if let JsonValue::String(key) = keys.parse_json_value(i)? {
-                        let value = values.parse_json_value(i)?;
+                        let value = values.column(i).parse_json_value(index)?;
                         map.insert(key, value);
                     } else {
                         let key_type = map_array.key_type();

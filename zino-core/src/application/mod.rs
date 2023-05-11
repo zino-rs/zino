@@ -69,28 +69,22 @@ pub trait Application {
         system_monitor::refresh_and_retrieve()
     }
 
-    /// Returns a reference to the shared application state.
-    #[inline]
-    fn shared_state() -> &'static State {
-        LazyLock::force(&SHARED_APP_STATE)
-    }
-
     /// Returns the application env.
     #[inline]
     fn env() -> &'static str {
-        Self::shared_state().env()
+        SHARED_APP_STATE.env()
     }
 
     /// Returns a reference to the shared application config.
     #[inline]
     fn config() -> &'static Table {
-        Self::shared_state().config()
+        SHARED_APP_STATE.config()
     }
 
     /// Returns a reference to the shared application state data.
     #[inline]
     fn state_data() -> &'static Map {
-        Self::shared_state().data()
+        SHARED_APP_STATE.data()
     }
 
     /// Returns the application name.
