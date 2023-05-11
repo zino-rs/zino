@@ -188,8 +188,8 @@ impl ReqwestOtelSpanBackend for RequestTiming {
             "HTTP request",
             "otel.kind" = "client",
             "otel.name" = "zino-bot",
-            "http.method" = request.method().as_str(),
             "http.scheme" = url.scheme(),
+            "http.method" = request.method().as_str(),
             "http.url" = remove_credentials(url).as_ref(),
             "http.request.header.traceparent" = traceparent,
             "http.request.header.tracestate" = headers.get_str("tracestate"),
@@ -241,10 +241,9 @@ impl ReqwestOtelSpanBackend for RequestTiming {
             }
             Err(err) => {
                 if let reqwest_middleware::Error::Reqwest(err) = err {
-                    span.record(
-                        "http.status_code",
-                        err.status().map(|status_code| status_code.as_u16()),
-                    );
+                    if let Some(status_code) = err.status() {
+                        span.record("http.status_code", status_code.as_u16());
+                    }
                 }
                 tracing::error!("{err}");
             }

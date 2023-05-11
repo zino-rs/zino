@@ -53,6 +53,17 @@ pub trait Application {
         Self::default()
     }
 
+    /// Boots the application with a custom initialization.
+    #[inline]
+    fn boot_with<F>(init: F) -> Self
+    where
+        Self: Default,
+        F: FnOnce(),
+    {
+        init();
+        Self::boot()
+    }
+
     /// Gets the system’s information.
     fn sysinfo() -> Map {
         system_monitor::refresh_and_retrieve()

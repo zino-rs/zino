@@ -117,4 +117,3 @@ features = [
 [dependencies.zino-core]
 path = "../zino-core"
 version = "0.8.1"
-features = ["orm", "view"]

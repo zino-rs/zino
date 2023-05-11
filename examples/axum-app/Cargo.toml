@@ -20,7 +20,12 @@ features = ["axum"]
 [dependencies.zino-core]
 path = "../../zino-core"
 version = "0.8.2"
-features = ["connector", "connector-arrow"]
+features = [
+    "connector",
+    "connector-arrow",
+    "orm",
+    "view",
+]
 
 [dependencies.zino-model]
 path = "../../zino-model"
