@@ -1,6 +1,6 @@
 //! Application or request scoped state.
 
-use crate::{application, crypto, extension::TomlTableExt, format::base64, Map};
+use crate::{application, crypto, encoding::base64, extension::TomlTableExt};
 use std::{
     borrow::Cow,
     env, fs,
@@ -11,23 +11,23 @@ use toml::value::{Table, Value};
 
 /// A state is a record of the env, config and associated data.
 #[derive(Debug, Clone)]
-pub struct State {
+pub struct State<T = ()> {
     /// Environment.
     env: &'static str,
     /// Configuration.
     config: Table,
     /// Associated data.
-    data: Map,
+    data: T,
 }
 
-impl State {
+impl<T> State<T> {
     /// Creates a new instance.
     #[inline]
-    pub fn new(env: &'static str) -> Self {
+    pub fn new(env: &'static str, data: T) -> Self {
         Self {
             env,
             config: Table::new(),
-            data: Map::new(),
+            data,
         }
     }
 
@@ -43,14 +43,17 @@ impl State {
             .parse()
             .expect("fail to parse toml value");
         match config {
-            Value::Table(table) => self.config = table,
+            Value::Table(table) => {
+                self.config = table;
+                tracing::warn!(env, "`config.{env}.toml` loaded");
+            }
             _ => panic!("toml config file should be a table"),
         }
     }
 
     /// Set the state data.
     #[inline]
-    pub fn set_data(&mut self, data: Map) {
+    pub fn set_data(&mut self, data: T) {
         self.data = data;
     }
 
@@ -68,13 +71,13 @@ impl State {
 
     /// Returns a reference to the data.
     #[inline]
-    pub fn data(&self) -> &Map {
+    pub fn data(&self) -> &T {
         &self.data
     }
 
     /// Returns a mutable reference to the data.
     #[inline]
-    pub fn data_mut(&mut self) -> &mut Map {
+    pub fn data_mut(&mut self) -> &mut T {
         &mut self.data
     }
 
@@ -114,6 +117,14 @@ impl State {
         }
 
         listeners
+    }
+}
+
+impl State {
+    /// Returns a reference to the shared state.
+    #[inline]
+    pub fn shared() -> &'static Self {
+        LazyLock::force(&SHARED_STATE)
     }
 
     /// Encrypts the password in the config.
@@ -178,30 +189,29 @@ impl State {
 
         authority
     }
+}
 
-    /// Returns a reference to the shared state.
+impl<T: Default> Default for State<T> {
     #[inline]
-    pub(crate) fn shared() -> &'static State {
-        LazyLock::force(&SHARED_STATE)
+    fn default() -> Self {
+        State::new(&DEFAULT_ENV, T::default())
     }
 }
 
-impl Default for State {
-    fn default() -> Self {
-        SHARED_STATE.clone()
+/// Default env.
+static DEFAULT_ENV: LazyLock<&'static str> = LazyLock::new(|| {
+    let mut default_env = "dev";
+    for arg in env::args().skip(1) {
+        if let Some(value) = arg.strip_prefix("--env=") {
+            default_env = value.to_owned().leak();
+        }
     }
-}
+    default_env
+});
 
 /// Shared application state.
 static SHARED_STATE: LazyLock<State> = LazyLock::new(|| {
-    let mut app_env = "dev";
-    for arg in env::args().skip(1) {
-        if let Some(value) = arg.strip_prefix("--env=") {
-            app_env = value.to_owned().leak();
-        }
-    }
-
-    let mut state = State::new(app_env);
+    let mut state = State::default();
     state.load_config();
     state
 });

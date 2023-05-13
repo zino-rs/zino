@@ -111,7 +111,7 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     fn config(&self) -> &Table {
         let state = self
             .extensions()
-            .get::<State>()
+            .get::<State<Map>>()
             .expect("the request extension `State` does not exist");
         state.config()
     }
@@ -120,7 +120,7 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     fn state_data(&self) -> &Map {
         let state = self
             .extensions()
-            .get::<State>()
+            .get::<State<Map>>()
             .expect("the request extension `State` does not exist");
         state.data()
     }

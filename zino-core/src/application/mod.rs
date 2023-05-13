@@ -69,6 +69,12 @@ pub trait Application {
         system_monitor::refresh_and_retrieve()
     }
 
+    /// Returns a reference to the shared application state.
+    #[inline]
+    fn shared_state() -> &'static State<Map> {
+        LazyLock::force(&SHARED_APP_STATE)
+    }
+
     /// Returns the application env.
     #[inline]
     fn env() -> &'static str {
@@ -199,8 +205,10 @@ pub(crate) static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
 });
 
 /// Shared app state.
-static SHARED_APP_STATE: LazyLock<State> = LazyLock::new(|| {
+static SHARED_APP_STATE: LazyLock<State<Map>> = LazyLock::new(|| {
     let mut state = State::default();
+    state.load_config();
+
     let config = state.config();
     let app_name = config
         .get_str("name")

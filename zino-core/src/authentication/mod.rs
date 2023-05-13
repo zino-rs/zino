@@ -1,6 +1,6 @@
 //! Zero trust authentication.
 
-use crate::{datetime::DateTime, format::base64, request::Validation, Map};
+use crate::{datetime::DateTime, encoding::base64, request::Validation, Map};
 use hmac::{
     digest::{FixedOutput, KeyInit, MacMarker, Update},
     Mac,

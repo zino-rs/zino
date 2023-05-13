@@ -93,7 +93,7 @@ impl RequestContext for ActixExtractor<HttpRequest> {
     #[inline]
     fn config(&self) -> &Table {
         let state = self
-            .app_data::<State>()
+            .app_data::<State<Map>>()
             .expect("the resource data `State` does not exist");
         state.config()
     }
@@ -101,7 +101,7 @@ impl RequestContext for ActixExtractor<HttpRequest> {
     #[inline]
     fn state_data(&self) -> &Map {
         let state = self
-            .app_data::<State>()
+            .app_data::<State<Map>>()
             .expect("the resource data `State` does not exist");
         state.data()
     }

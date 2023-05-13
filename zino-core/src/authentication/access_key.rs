@@ -1,4 +1,4 @@
-use crate::format::base64;
+use crate::encoding::base64;
 use hmac::{
     digest::{FixedOutput, KeyInit, MacMarker, Update},
     Mac,

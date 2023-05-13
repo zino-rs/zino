@@ -14,7 +14,6 @@ use zino_core::{
     extension::TomlTableExt,
     response::Response,
     schedule::{AsyncCronJob, Job, JobScheduler},
-    state::State,
 };
 
 /// An HTTP server cluster for `actix-web`.
@@ -47,7 +46,7 @@ impl Application for ActixCluster {
             }
         });
 
-        // Server config.
+        // Server config
         let mut body_limit = 100 * 1024 * 1024; // 100MB
         let mut public_dir = PathBuf::new();
         let default_public_dir = Self::project_dir().join("public");
@@ -67,7 +66,7 @@ impl Application for ActixCluster {
         runtime
             .block_on({
                 let routes = self.routes;
-                let app_state = State::default();
+                let app_state = Self::shared_state();
                 let app_env = app_state.env();
                 let listeners = app_state.listeners();
                 listeners.iter().for_each(|listener| {

@@ -1,6 +1,6 @@
 use self::ParseSecurityTokenError::*;
 use super::AccessKeyId;
-use crate::{crypto, datetime::DateTime, error::Error, format::base64};
+use crate::{crypto, datetime::DateTime, encoding::base64, error::Error};
 use std::{error, fmt};
 
 /// Security token.

@@ -21,6 +21,7 @@
 #![forbid(unsafe_code)]
 
 mod crypto;
+mod encoding;
 mod format;
 
 #[cfg(feature = "accessor")]

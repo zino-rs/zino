@@ -2,7 +2,7 @@
 
 use crate::{
     error::Error,
-    format,
+    extension,
     request::{RequestContext, Validation},
     trace::{ServerTiming, TimingMetric, TraceContext},
     SharedString, Uuid,
@@ -369,7 +369,7 @@ impl<S: ResponseCode> Response<S> {
     /// Reads the response into a byte buffer.
     pub fn read_bytes(&self) -> Result<Vec<u8>, Error> {
         let content_type = self.content_type();
-        let bytes = if format::header::check_json_content_type(content_type) {
+        let bytes = if extension::header::check_json_content_type(content_type) {
             let capacity = if let Some(data) = &self.data {
                 data.get().len() + 128
             } else {

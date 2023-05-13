@@ -1,4 +1,4 @@
-use crate::{error::Error, format::base64, Map};
+use crate::{encoding::base64, error::Error, Map};
 use apache_avro::{types::Value as AvroValue, Days, Duration, Millis, Months};
 use datafusion::arrow::{
     array::{self, Array, ArrayAccessor, FixedSizeBinaryArray, FixedSizeListArray, StringArray},

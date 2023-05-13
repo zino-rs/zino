@@ -40,7 +40,7 @@ port = 9000
 [[connector]]
 type = "arrow"
 name = "mock"
-root = "./data/mock/"
+root = "./assets/data/mock/"
 
 [[connector.tables]]
 type = "csv"
@@ -50,7 +50,7 @@ path = "./users.csv"
 [[connector.tables]]
 type = "ndjson"
 name = "logs"
-url = "http://localhost:6080/assets/data/logs.ndjson"
+url = "http://localhost:6080/public/data/logs.ndjson"
 
 [connector.tables.schema]
 timestamp = "string"

@@ -27,7 +27,6 @@ use zino_core::{
     extension::TomlTableExt,
     response::{FullResponse, Response},
     schedule::{AsyncCronJob, Job, JobScheduler},
-    state::State,
 };
 
 /// An HTTP server cluster for `axum`.
@@ -66,7 +65,7 @@ impl Application for AxumCluster {
             }
         });
 
-        // Server config.
+        // Server config
         let mut body_limit = 100 * 1024 * 1024; // 100MB
         let mut request_timeout = Duration::from_secs(10); // 10 seconds
         let mut public_dir = PathBuf::new();
@@ -96,7 +95,7 @@ impl Application for AxumCluster {
 
         runtime.block_on(async {
             let routes = self.routes;
-            let app_state = State::default();
+            let app_state = Self::shared_state();
             let app_env = app_state.env();
             let listeners = app_state.listeners();
             let servers = listeners.iter().map(|listener| {

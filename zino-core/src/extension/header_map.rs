@@ -1,4 +1,3 @@
-use crate::format;
 use http::header::HeaderMap;
 use std::net::IpAddr;
 
@@ -64,7 +63,7 @@ pub trait HeaderMapExt {
     /// Checks whether it has a `content-type: application/json` or similar header.
     fn has_json_content_type(&self) -> bool {
         if let Some(content_type) = self.get_str("content-type") {
-            format::header::check_json_content_type(content_type)
+            super::header::check_json_content_type(content_type)
         } else {
             false
         }
