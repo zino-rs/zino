@@ -18,10 +18,16 @@ productivity and performance.
 
 You can start with the example [`actix-app`] or [`axum-app`].
 
-## Feature flags
+## Feature 
 
-Currently, we provide the `actix` and `axum` features to enable an integration with
-[`actix-web`] or [`axum`].
+The following optional features are available:
+
+| Name         | Description                                          | Default? |
+|--------------|------------------------------------------------------|----------|
+| `actix`      | Enables the integration with [`actix-web`].          | No       |
+| `axum`       | Enables the integration with [`axum`].               | No       |
+| `orm`        | Enables the ORM.                                     | Yes      |
+| `view`       | Enables the HTML template rendering.                 | Yes      |
 
 [`sqlx`]: https://crates.io/crates/sqlx
 [`tracing`]: https://crates.io/crates/tracing

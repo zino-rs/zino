@@ -26,8 +26,14 @@
 //!
 //! ## Feature flags
 //!
-//! Currently, we provide the `actix` and `axum` features to enable an integration with
-//! [`actix-web`] or [`axum`].
+//! The following optional features are available:
+//!
+//! | Name         | Description                                          | Default? |
+//! |--------------|------------------------------------------------------|----------|
+//! | `actix`      | Enables the integration with [`actix-web`].          | No       |
+//! | `axum`       | Enables the integration with [`axum`].               | No       |
+//! | `orm`        | Enables the ORM.                                     | Yes      |
+//! | `view`       | Enables the HTML template rendering.                 | Yes      |
 //!
 //! [`zino`]: https://github.com/photino/zino
 //! [`sqlx`]: https://crates.io/crates/sqlx
@@ -55,7 +61,6 @@ mod response;
 #[doc(no_inline)]
 pub use zino_core::{
     application::Application,
-    database::Schema,
     datetime::DateTime,
     error::Error,
     extension::JsonObjectExt,
@@ -66,6 +71,10 @@ pub use zino_core::{
     state::State,
     BoxFuture, Map, Record, Uuid,
 };
+
+#[cfg(feature = "orm")]
+#[doc(no_inline)]
+pub use zino_core::database::Schema;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "actix")] {

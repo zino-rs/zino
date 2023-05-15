@@ -24,7 +24,6 @@ features = [
     "connector",
     "connector-arrow",
     "orm-mysql",
-    "view",
 ]
 
 [dependencies.zino-model]

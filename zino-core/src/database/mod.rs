@@ -1,7 +1,7 @@
 //! Database schema and ORM.
 //!
 //! # Supported database drivers
-//! 
+//!
 //! You can enable the `orm-mysql` feature to use MySQL or enable `orm-postgres` to use PostgreSQL.
 
 use crate::{extension::TomlTableExt, state::State};
@@ -54,7 +54,7 @@ cfg_if::cfg_if! {
     }
 }
 
-/// A database connection pool.
+/// A database connection pool based on [`sqlx::Pool`](sqlx::Pool).
 #[derive(Debug)]
 pub struct ConnectionPool {
     /// Name.
@@ -196,7 +196,11 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
     let config = State::shared().config();
 
     // Database connection pools.
-    let driver = config.get_str("type").unwrap_or("postgres");
+    let driver = config
+        .get_table("database")
+        .expect("the `database` field should be a table")
+        .get_str("type")
+        .unwrap_or("postgres");
     let databases = config
         .get_array(driver)
         .unwrap_or_else(|| panic!("the `{driver}` field should be an array of tables"));
