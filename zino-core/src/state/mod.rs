@@ -1,4 +1,4 @@
-//! Application or request scoped state.
+//! Application scoped state.
 
 use crate::{application, crypto, encoding::base64, extension::TomlTableExt};
 use std::{
@@ -86,7 +86,7 @@ impl<T> State<T> {
         let config = self.config();
         let mut listeners = Vec::new();
 
-        // Main server.
+        // Main server
         let main = config
             .get_table("main")
             .expect("the `main` field should be a table");
@@ -99,7 +99,7 @@ impl<T> State<T> {
             .expect("the `main.port` field should be an integer");
         listeners.push((main_host, main_port).into());
 
-        // Optional standbys.
+        // Optional standbys
         if config.contains_key("standby") {
             let standbys = config
                 .get_array("standby")

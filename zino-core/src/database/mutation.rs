@@ -1,7 +1,6 @@
 /// Generates SQL `SET` expressions.
-use super::Schema;
+use super::{DatabaseDriver, Schema};
 use crate::model::{EncodeColumn, Mutation};
-use sqlx::Postgres;
 
 /// Extension trait for [`Mutation`](crate::model::Mutation).
 pub(super) trait MutationExt<DB> {
@@ -9,7 +8,7 @@ pub(super) trait MutationExt<DB> {
     fn format_updates<M: Schema>(&self) -> String;
 }
 
-impl MutationExt<Postgres> for Mutation {
+impl MutationExt<DatabaseDriver> for Mutation {
     fn format_updates<M: Schema>(&self) -> String {
         let updates = self.updates();
         if updates.is_empty() {
@@ -21,49 +20,25 @@ impl MutationExt<Postgres> for Mutation {
         let mut mutations = Vec::new();
         for (key, value) in updates.iter() {
             match key.as_str() {
-                "$append" => {
-                    if let Some(update) = value.as_object() {
-                        for (key, value) in update.iter() {
-                            if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let key = Postgres::format_field(key);
-                                let value = Postgres::encode_value(col, Some(value));
-                                let mutation = format!(r#"{key} = {key} || {value}"#);
-                                mutations.push(mutation);
-                            }
-                        }
-                    }
-                }
-                "$prepend" => {
-                    if let Some(update) = value.as_object() {
-                        for (key, value) in update.iter() {
-                            if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let key = Postgres::format_field(key);
-                                let value = Postgres::encode_value(col, Some(value));
-                                let mutation = format!(r#"{key} = {value} || {key}"#);
-                                mutations.push(mutation);
-                            }
-                        }
-                    }
-                }
-                "$pull" => {
-                    if let Some(update) = value.as_object() {
-                        for (key, value) in update.iter() {
-                            if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let key = Postgres::format_field(key);
-                                let value = Postgres::encode_value(col, Some(value));
-                                let mutation = format!(r#"{key} = array_remove({key}, {value})"#);
-                                mutations.push(mutation);
-                            }
-                        }
-                    }
-                }
                 "$inc" => {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
                             if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let key = Postgres::format_field(key);
-                                let value = Postgres::encode_value(col, Some(value));
+                                let key = DatabaseDriver::format_field(key);
+                                let value = DatabaseDriver::encode_value(col, Some(value));
                                 let mutation = format!(r#"{key} = {key} + {value}"#);
+                                mutations.push(mutation);
+                            }
+                        }
+                    }
+                }
+                "$mul" => {
+                    if let Some(update) = value.as_object() {
+                        for (key, value) in update.iter() {
+                            if fields.contains(key) && let Some(col) = M::get_column(key) {
+                                let key = DatabaseDriver::format_field(key);
+                                let value = DatabaseDriver::encode_value(col, Some(value));
+                                let mutation = format!(r#"{key} = {key} * {value}"#);
                                 mutations.push(mutation);
                             }
                         }
@@ -73,8 +48,8 @@ impl MutationExt<Postgres> for Mutation {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
                             if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let key = Postgres::format_field(key);
-                                let value = Postgres::encode_value(col, Some(value));
+                                let key = DatabaseDriver::format_field(key);
+                                let value = DatabaseDriver::encode_value(col, Some(value));
                                 let mutation = format!(r#"{key} = LEAST({key}, {value})"#);
                                 mutations.push(mutation);
                             }
@@ -85,21 +60,9 @@ impl MutationExt<Postgres> for Mutation {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
                             if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let key = Postgres::format_field(key);
-                                let value = Postgres::encode_value(col, Some(value));
+                                let key = DatabaseDriver::format_field(key);
+                                let value = DatabaseDriver::encode_value(col, Some(value));
                                 let mutation = format!(r#"{key} = GREATEST({key}, {value})"#);
-                                mutations.push(mutation);
-                            }
-                        }
-                    }
-                }
-                "$mul" => {
-                    if let Some(update) = value.as_object() {
-                        for (key, value) in update.iter() {
-                            if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let key = Postgres::format_field(key);
-                                let value = Postgres::encode_value(col, Some(value));
-                                let mutation = format!(r#"{key} = {key} * {value}"#);
                                 mutations.push(mutation);
                             }
                         }
@@ -107,8 +70,8 @@ impl MutationExt<Postgres> for Mutation {
                 }
                 _ => {
                     if (permissive || fields.contains(key)) && let Some(col) = M::get_column(key) {
-                        let key = Postgres::format_field(key);
-                        let value = Postgres::encode_value(col, Some(value));
+                        let key = DatabaseDriver::format_field(key);
+                        let value = DatabaseDriver::encode_value(col, Some(value));
                         let mutation = format!(r#"{key} = {value}"#);
                         mutations.push(mutation);
                     }

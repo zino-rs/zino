@@ -14,7 +14,6 @@ use tower::{
 };
 use tower_cookies::CookieManagerLayer;
 use tower_http::{
-    add_extension::AddExtensionLayer,
     compression::{
         predicate::{DefaultPredicate, NotForContentType, Predicate},
         CompressionLayer,
@@ -108,7 +107,6 @@ impl Application for AxumCluster {
                     app = app.merge(route.clone());
                 }
 
-                let state = app_state.clone();
                 app = app
                     .fallback_service(tower::service_fn(|req| async {
                         let req = AxumExtractor::from(req);
@@ -117,7 +115,6 @@ impl Application for AxumCluster {
                     }))
                     .layer(
                         ServiceBuilder::new()
-                            .layer(AddExtensionLayer::new(state))
                             .layer(DefaultBodyLimit::max(body_limit))
                             .layer(CookieManagerLayer::new())
                             .layer(

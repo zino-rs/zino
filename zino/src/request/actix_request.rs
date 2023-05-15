@@ -10,12 +10,9 @@ use std::{
     future,
     ops::{Deref, DerefMut},
 };
-use toml::value::Table;
 use zino_core::{
     error::Error,
     request::{Context, RequestContext},
-    state::State,
-    Map,
 };
 
 /// An HTTP request extractor for `actix-web`.
@@ -52,6 +49,15 @@ impl RequestContext for ActixExtractor<HttpRequest> {
     }
 
     #[inline]
+    fn matched_route(&self) -> String {
+        if let Some(path) = self.match_pattern() {
+            path
+        } else {
+            self.uri().path().to_owned()
+        }
+    }
+
+    #[inline]
     fn header_map(&self) -> &Self::Headers {
         self.headers().into()
     }
@@ -79,31 +85,6 @@ impl RequestContext for ActixExtractor<HttpRequest> {
     #[inline]
     fn get_cookie(&self, name: &str) -> Option<Cookie<'static>> {
         self.cookie(name)
-    }
-
-    #[inline]
-    fn matched_route(&self) -> String {
-        if let Some(path) = self.match_pattern() {
-            path
-        } else {
-            self.uri().path().to_owned()
-        }
-    }
-
-    #[inline]
-    fn config(&self) -> &Table {
-        let state = self
-            .app_data::<State<Map>>()
-            .expect("the resource data `State` does not exist");
-        state.config()
-    }
-
-    #[inline]
-    fn state_data(&self) -> &Map {
-        let state = self
-            .app_data::<State<Map>>()
-            .expect("the resource data `State` does not exist");
-        state.data()
     }
 
     #[inline]

@@ -20,7 +20,6 @@ use multer::Multipart;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::time::{Duration, Instant};
-use toml::value::Table;
 use unic_langid::LanguageIdentifier;
 
 mod context;
@@ -42,6 +41,9 @@ pub trait RequestContext {
     /// Returns the request path regardless of nesting.
     fn request_path(&self) -> &str;
 
+    /// Returns the route that matches the request.
+    fn matched_route(&self) -> String;
+
     /// Returns a reference to the request headers.
     fn header_map(&self) -> &Self::Headers;
 
@@ -56,15 +58,6 @@ pub trait RequestContext {
 
     /// Gets a cookie with the given name.
     fn get_cookie(&self, name: &str) -> Option<Cookie<'static>>;
-
-    /// Returns the route that matches the request.
-    fn matched_route(&self) -> String;
-
-    /// Returns a reference to the application config.
-    fn config(&self) -> &Table;
-
-    /// Returns a reference to the request scoped state data.
-    fn state_data(&self) -> &Map;
 
     /// Reads the entire request body into a byte buffer.
     async fn read_body_bytes(&mut self) -> Result<Bytes, Error>;

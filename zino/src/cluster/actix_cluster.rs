@@ -95,8 +95,7 @@ impl Application for ActixCluster {
                     for route in &routes {
                         app = app.configure(route);
                     }
-                    app.app_data(app_state.clone())
-                        .app_data(FormConfig::default().limit(body_limit))
+                    app.app_data(FormConfig::default().limit(body_limit))
                         .app_data(JsonConfig::default().limit(body_limit))
                         .app_data(PayloadConfig::default().limit(body_limit))
                         .wrap(Compress::default())

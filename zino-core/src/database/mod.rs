@@ -1,9 +1,13 @@
 //! Database schema and ORM.
+//!
+//! # Supported database drivers
+//! 
+//! You can enable the `orm-mysql` feature to use MySQL or enable `orm-postgres` to use PostgreSQL.
 
 use crate::{extension::TomlTableExt, state::State};
 use sqlx::{
-    postgres::{PgConnectOptions, PgPoolOptions},
-    Connection, Database, Pool, Postgres,
+    pool::{Pool, PoolOptions},
+    Connection,
 };
 use std::{
     sync::{
@@ -15,29 +19,55 @@ use std::{
 use toml::value::Table;
 
 mod mutation;
-mod postgres;
 mod query;
 mod schema;
 
 pub use schema::Schema;
 
+cfg_if::cfg_if! {
+    if #[cfg(feature = "orm-mysql")] {
+        use sqlx::mysql::{MySql, MySqlConnectOptions, MySqlRow};
+
+        mod mysql;
+
+        /// MySQL database driver.
+        type DatabaseDriver = MySql;
+
+        /// A single row from the MySQL database.
+        type DatabaseRow = MySqlRow;
+
+        /// Options and flags which can be used to configure a MySQL connection.
+        type DatabaseConnectOptions = MySqlConnectOptions;
+    } else {
+        use sqlx::postgres::{PgConnectOptions, PgRow, Postgres};
+
+        mod postgres;
+
+        /// PostgreSQL database driver.
+        type DatabaseDriver = Postgres;
+
+        /// A single row from the PostgreSQL database.
+        type DatabaseRow = PgRow;
+
+        /// Options and flags which can be used to configure a PostgreSQL connection.
+        type DatabaseConnectOptions = PgConnectOptions;
+    }
+}
+
 /// A database connection pool.
 #[derive(Debug)]
-pub struct ConnectionPool<DB = Postgres>
-where
-    DB: Database,
-{
+pub struct ConnectionPool {
     /// Name.
     name: &'static str,
     /// Database.
     database: &'static str,
     /// Pool.
-    pool: Pool<DB>,
+    pool: Pool<DatabaseDriver>,
     /// Availability.
     available: AtomicBool,
 }
 
-impl<DB: Database> ConnectionPool<DB> {
+impl ConnectionPool {
     /// Returns `true` if the connection pool is available.
     #[inline]
     pub fn is_available(&self) -> bool {
@@ -64,43 +94,36 @@ impl<DB: Database> ConnectionPool<DB> {
 
     /// Returns a reference to the pool.
     #[inline]
-    pub(crate) fn pool(&self) -> &Pool<DB> {
+    pub(crate) fn pool(&self) -> &Pool<DatabaseDriver> {
         &self.pool
     }
-}
 
-impl ConnectionPool<Postgres> {
     /// Connects lazily to the database according to the config.
-    pub fn connect_lazy(application_name: &'static str, config: &'static Table) -> Self {
+    pub fn connect_lazy(config: &'static Table) -> Self {
         let name = config.get_str("name").unwrap_or("main");
 
         // Connect options.
-        let statement_cache_capacity = config.get_usize("statement-cache-capacity").unwrap_or(100);
-        let host = config.get_str("host").unwrap_or("127.0.0.1");
-        let port = config.get_u16("port").unwrap_or(5432);
-        let mut connect_options = PgConnectOptions::new()
-            .application_name(application_name)
-            .statement_cache_capacity(statement_cache_capacity)
-            .host(host)
-            .port(port);
-        if let Some(database) = config.get_str("database") {
-            let username = config
-                .get_str("username")
-                .expect("the `postgres.username` field should be a str");
-            let password = State::decrypt_password(config)
-                .expect("the `postgres.password` field should be a str");
-            connect_options = connect_options
-                .database(database)
-                .username(username)
-                .password(password.as_ref());
+        let database = config
+            .get_str("database")
+            .expect("the `database` field should be a str");
+        let username = config
+            .get_str("username")
+            .expect("the `username` field should be a str");
+        let password =
+            State::decrypt_password(config).expect("the `password` field should be a str");
+        let mut connect_options = DatabaseConnectOptions::new()
+            .database(database)
+            .username(username)
+            .password(password.as_ref());
+        if let Some(host) = config.get_str("host") {
+            connect_options = connect_options.host(host);
         }
-
-        // Database name.
-        let database = connect_options
-            .get_database()
-            .unwrap_or_default()
-            .to_owned()
-            .leak();
+        if let Some(port) = config.get_u16("hport") {
+            connect_options = connect_options.port(port);
+        }
+        if let Some(statement_cache_capacity) = config.get_usize("statement-cache-capacity") {
+            connect_options = connect_options.statement_cache_capacity(statement_cache_capacity);
+        }
 
         // Pool options.
         let max_connections = config.get_u32("max-connections").unwrap_or(16);
@@ -114,7 +137,7 @@ impl ConnectionPool<Postgres> {
         let acquire_timeout = config
             .get_duration("acquire-timeout")
             .unwrap_or_else(|| Duration::from_secs(30));
-        let pool = PgPoolOptions::new()
+        let pool = PoolOptions::<DatabaseDriver>::new()
             .max_connections(max_connections)
             .min_connections(min_connections)
             .max_lifetime(max_lifetime)
@@ -172,19 +195,15 @@ impl ConnectionPools {
 static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
     let config = State::shared().config();
 
-    // Application name.
-    let application_name = config
-        .get_str("name")
-        .expect("the `name` field should be a str");
-
     // Database connection pools.
+    let driver = config.get_str("type").unwrap_or("postgres");
     let databases = config
-        .get_array("postgres")
-        .expect("the `postgres` field should be an array of tables");
+        .get_array(driver)
+        .unwrap_or_else(|| panic!("the `{driver}` field should be an array of tables"));
     let pools = databases
         .iter()
         .filter_map(|v| v.as_table())
-        .map(|database| ConnectionPool::connect_lazy(application_name, database))
+        .map(ConnectionPool::connect_lazy)
         .collect::<Vec<_>>();
     ConnectionPools(pools)
 });

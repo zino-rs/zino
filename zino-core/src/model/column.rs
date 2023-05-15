@@ -83,7 +83,7 @@ impl<'a> Column<'a> {
             "Vec<Uuid>" => Schema::Array(Box::new(Schema::Uuid)),
             "Map" => Schema::Map(Box::new(Schema::Ref {
                 name: Name {
-                    name: "Json".to_owned(),
+                    name: "json".to_owned(),
                     namespace: None,
                 },
             })),
@@ -99,6 +99,9 @@ impl<'a> Column<'a> {
 
 /// A backend type for encoding the column.
 pub trait EncodeColumn<'a> {
+    /// Driver name.
+    const DRIVER_NAME: &'static str;
+
     /// Returns the corresponding column type.
     fn column_type(column: &Column<'a>) -> &'a str;
 

@@ -9,14 +9,11 @@ use std::{
     ops::{Deref, DerefMut},
     sync::LazyLock,
 };
-use toml::value::Table;
 use tower_cookies::{Cookie, Cookies, Key};
 use zino_core::{
     application::Application,
     error::Error,
     request::{Context, RequestContext},
-    state::State,
-    Map,
 };
 
 /// An HTTP request extractor for `axum`.
@@ -72,6 +69,15 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
+    fn matched_route(&self) -> String {
+        if let Some(path) = self.extensions().get::<MatchedPath>() {
+            path.as_str().to_owned()
+        } else {
+            self.uri().path().to_owned()
+        }
+    }
+
+    #[inline]
     fn get_header(&self, name: &str) -> Option<&str> {
         self.headers()
             .get(name)?
@@ -96,33 +102,6 @@ impl RequestContext for AxumExtractor<Request<Body>> {
         let key = LazyLock::force(&COOKIE_PRIVATE_KEY);
         let signed_cookies = cookies.signed(key);
         signed_cookies.get(name)
-    }
-
-    #[inline]
-    fn matched_route(&self) -> String {
-        if let Some(path) = self.extensions().get::<MatchedPath>() {
-            path.as_str().to_owned()
-        } else {
-            self.uri().path().to_owned()
-        }
-    }
-
-    #[inline]
-    fn config(&self) -> &Table {
-        let state = self
-            .extensions()
-            .get::<State<Map>>()
-            .expect("the request extension `State` does not exist");
-        state.config()
-    }
-
-    #[inline]
-    fn state_data(&self) -> &Map {
-        let state = self
-            .extensions()
-            .get::<State<Map>>()
-            .expect("the request extension `State` does not exist");
-        state.data()
     }
 
     #[inline]

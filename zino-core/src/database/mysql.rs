@@ -2,7 +2,7 @@ use super::{query::QueryExt, DatabaseDriver, DatabaseRow};
 use crate::{
     model::{Column, DecodeRow, EncodeColumn, Query},
     request::Validation,
-    Map, Record, Uuid,
+    Map, Record,
 };
 use apache_avro::types::Value as AvroValue;
 use chrono::{DateTime, Local, SecondsFormat};
@@ -11,24 +11,29 @@ use sqlx::{Column as _, Error, Row, TypeInfo};
 use std::borrow::Cow;
 
 impl<'a> EncodeColumn<'a> for DatabaseDriver {
-    const DRIVER_NAME: &'static str = "postgres";
+    const DRIVER_NAME: &'static str = "mysql";
 
     fn column_type(column: &Column<'a>) -> &'a str {
         let type_name = column.type_name();
         match type_name {
             "bool" => "BOOLEAN",
-            "u64" | "i64" | "usize" | "isize" => "BIGINT",
-            "u32" | "i32" => "INT",
-            "u16" | "i16" | "u8" | "i8" => "SMALLINT",
-            "f64" => "DOUBLE PRECISION",
-            "f32" => "REAL",
-            "String" => "TEXT",
-            "DateTime" => "TIMESTAMPTZ",
-            "Uuid" | "Option<Uuid>" => "UUID",
-            "Vec<u8>" => "BYTEA",
-            "Vec<String>" => "TEXT[]",
-            "Vec<Uuid>" => "UUID[]",
-            "Map" => "JSONB",
+            "u64" | "usize" => "BIGINT UNSIGNED",
+            "i64" | "isize" => "BIGINT",
+            "u32" => "INT UNSIGNED",
+            "i32" => "INT",
+            "u16" => "SMALLINT UNSIGNED",
+            "i16" => "SMALLINT",
+            "u8" => "TINYINT UNSIGNED",
+            "i8" => "TINYINT",
+            "f64" => "DOUBLE",
+            "f32" => "FLOAT",
+            "String" => "VARCHAR(255)",
+            "DateTime" => "TIMESTAMP",
+            "Uuid" | "Option<Uuid>" => "VARCHAR(36)",
+            "Vec<u8>" => "BLOB",
+            "Vec<String>" => "JSON",
+            "Vec<Uuid>" => "JSON",
+            "Map" => "JSON",
             _ => type_name,
         }
     }
@@ -63,11 +68,9 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                             _ => Self::encode_value(column, Some(v)).into_owned(),
                         })
                         .collect::<Vec<_>>();
-                    format!("ARRAY[{}]::{}", values.join(","), Self::column_type(column)).into()
+                    format!(r#"json_array({})"#, values.join(",")).into()
                 }
-                JsonValue::Object(_) => {
-                    format!("'{}'::{}", value, Self::column_type(column)).into()
-                }
+                JsonValue::Object(_) => format!("'{value}'").into(),
             }
         } else if column.default_value().is_some() {
             "DEFAULT".into()
@@ -105,30 +108,29 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
             }
             "String" | "Uuid" | "Option<Uuid>" => Self::format_string(value).into(),
             "DateTime" => match value {
-                "epoch" => "'epoch'".into(),
+                "epoch" => "from_unixtime(0)".into(),
                 "now" => "now()".into(),
-                "today" => "date_trunc('day', now())".into(),
-                "tomorrow" => "date_trunc('day', now()) + '1 day'::INTERVAL".into(),
-                "yesterday" => "date_trunc('day', now()) - '1 day'::INTERVAL".into(),
+                "today" => "curdate()".into(),
+                "tomorrow" => "curdate() + INTERVAL 1 DAY".into(),
+                "yesterday" => "curdate() - INTERVAL 1 DAY".into(),
                 _ => Self::format_string(value).into(),
             },
-            "Vec<u8>" => format!(r"'\x{value}'").into(),
+            "Vec<u8>" => format!("'value'").into(),
             "Vec<String>" | "Vec<Uuid>" => {
-                let column_type = Self::column_type(column);
                 if value.contains(',') {
                     let values = value
                         .split(',')
                         .map(Self::format_string)
                         .collect::<Vec<_>>();
-                    format!("ARRAY[{}]::{}", values.join(","), column_type).into()
+                    format!(r#"json_array({})"#, values.join(",")).into()
                 } else {
                     let value = Self::format_string(value);
-                    format!("ARRAY[{value}]::{column_type}").into()
+                    format!(r#"json_array({value})"#).into()
                 }
             }
             "Map" => {
                 let value = Self::format_string(value);
-                format!("{value}::jsonb").into()
+                format!("'{value}'").into()
             }
             _ => "NULL".into(),
         }
@@ -140,7 +142,8 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
             if type_name == "Map" {
                 let field = Self::format_field(field);
                 let value = Self::encode_value(column, Some(value));
-                return format!(r#"{field} @> {value}"#);
+                // `json_overlaps()` was added in MySQL 8.0.17.
+                return format!(r#"json_overlaps({field}, {value})"#);
             } else {
                 let mut conditions = Vec::with_capacity(filter.len());
                 for (name, value) in filter {
@@ -153,16 +156,9 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                         "$gte" => ">=",
                         "$in" => "IN",
                         "$nin" => "NOT IN",
-                        "$all" => "@>",
-                        "$size" => "array_length",
                         _ => "=",
                     };
-                    if operator == "array_length" {
-                        let field = Self::format_field(field);
-                        let value = Self::encode_value(column, Some(value));
-                        let condition = format!(r#"array_length({field}, 1) = {value}"#);
-                        conditions.push(condition);
-                    } else if operator == "IN" || operator == "NOT IN" {
+                    if operator == "IN" || operator == "NOT IN" {
                         if let Some(value) = value.as_array() && !value.is_empty() {
                             let field = Self::format_field(field);
                             let value = value
@@ -278,34 +274,33 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                                 .map(|v| {
                                     let s = v.replace(';', ",");
                                     let value = Self::format_value(column, &s);
-                                    format!(r#"{field} @> {value}"#)
+                                    format!(r#"json_overlaps({field}, {value})"#)
                                 })
                                 .collect::<Vec<_>>()
                                 .join(" OR ")
                         } else {
-                            let s = value.replace(';', ",");
-                            let value = Self::format_value(column, &s);
-                            format!(r#"{field} @> {value}"#)
+                            value
+                                .split(';')
+                                .map(|v| {
+                                    let value = Self::format_value(column, v);
+                                    format!(r#"json_overlaps({field}, {value})"#)
+                                })
+                                .collect::<Vec<_>>()
+                                .join(" AND ")
                         }
                     } else {
                         let value = Self::format_value(column, value);
-                        format!(r#"{field} && {value}"#)
+                        format!(r#"json_overlaps({field}, {value})"#)
                     }
                 } else {
                     let value = Self::encode_value(column, Some(value));
-                    format!(r#"{field} && {value}"#)
+                    format!(r#"json_overlaps({field}, {value})"#)
                 }
             }
             "Map" => {
                 let field = Self::format_field(field);
-                if let Some(value) = value.as_str() {
-                    // JSON path operator is supported in Postgres 12+
-                    let value = Self::format_string(value);
-                    format!(r#"{field} @? {value}"#)
-                } else {
-                    let value = Self::encode_value(column, Some(value));
-                    format!(r#"{field} @> {value}"#)
-                }
+                let value = Self::encode_value(column, Some(value));
+                format!(r#"json_overlaps({field}, {value})"#)
             }
             _ => {
                 let field = Self::format_field(field);
@@ -319,11 +314,11 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
         if field.contains('.') {
             field
                 .split('.')
-                .map(|s| format!(r#""{s}""#))
+                .map(|s| format!("`{s}`"))
                 .collect::<Vec<_>>()
                 .join(".")
         } else {
-            format!(r#""{field}""#)
+            format!("`{field}`")
         }
     }
 
@@ -342,31 +337,26 @@ impl DecodeRow<DatabaseRow> for Map {
         for col in columns {
             let key = col.name();
             let value = match col.type_info().name() {
-                "BOOL" => row.try_get_unchecked::<bool, _>(key)?.into(),
-                "INT2" => row.try_get_unchecked::<i16, _>(key)?.into(),
-                "INT4" => row.try_get_unchecked::<i32, _>(key)?.into(),
-                "INT8" => row.try_get_unchecked::<i64, _>(key)?.into(),
-                "FLOAT4" => row.try_get_unchecked::<f32, _>(key)?.into(),
-                "FLOAT8" => row.try_get_unchecked::<f64, _>(key)?.into(),
-                "TEXT" | "VARCHAR" => row.try_get_unchecked::<String, _>(key)?.into(),
-                "TIMESTAMPTZ" => {
+                "BOOLEAN" => row.try_get_unchecked::<bool, _>(key)?.into(),
+                "TINYINT" => row.try_get_unchecked::<i8, _>(key)?.into(),
+                "TINYINT UNSIGNED" => row.try_get_unchecked::<u8, _>(key)?.into(),
+                "SMALLINT" => row.try_get_unchecked::<i16, _>(key)?.into(),
+                "SMALLINT UNSIGNED" => row.try_get_unchecked::<u16, _>(key)?.into(),
+                "INT" => row.try_get_unchecked::<i32, _>(key)?.into(),
+                "INT UNSIGNED" => row.try_get_unchecked::<u32, _>(key)?.into(),
+                "BIGINT" => row.try_get_unchecked::<i64, _>(key)?.into(),
+                "BIGINT UNSIGNED" => row.try_get_unchecked::<u64, _>(key)?.into(),
+                "FLOAT" => row.try_get_unchecked::<f32, _>(key)?.into(),
+                "DOUBLE" => row.try_get_unchecked::<f64, _>(key)?.into(),
+                "VARCHAR" | "TEXT" => row.try_get_unchecked::<String, _>(key)?.into(),
+                "TIMESTAMP" => {
                     let datetime = row.try_get_unchecked::<DateTime<Local>, _>(key)?;
                     datetime
                         .to_rfc3339_opts(SecondsFormat::Micros, false)
                         .into()
                 }
-                "UUID" => row.try_get_unchecked::<Uuid, _>(key)?.to_string().into(),
-                "BYTEA" => row.try_get_unchecked::<Vec<u8>, _>(key)?.into(),
-                "TEXT[]" => row.try_get_unchecked::<Vec<String>, _>(key)?.into(),
-                "UUID[]" => {
-                    let values = row.try_get_unchecked::<Vec<Uuid>, _>(key)?;
-                    values
-                        .iter()
-                        .map(|v| v.to_string())
-                        .collect::<Vec<_>>()
-                        .into()
-                }
-                "JSONB" | "JSON" => row.try_get_unchecked::<JsonValue, _>(key)?,
+                "VARBINARY" | "BLOB" => row.try_get_unchecked::<Vec<u8>, _>(key)?.into(),
+                "JSON" => row.try_get_unchecked::<JsonValue, _>(key)?,
                 _ => JsonValue::Null,
             };
             map.insert(key.to_owned(), value);
@@ -384,39 +374,20 @@ impl DecodeRow<DatabaseRow> for Record {
         for col in columns {
             let field = col.name();
             let value = match col.type_info().name() {
-                "BOOL" => row.try_get_unchecked::<bool, _>(field)?.into(),
-                "INT4" => row.try_get_unchecked::<i32, _>(field)?.into(),
-                "INT8" => row.try_get_unchecked::<i64, _>(field)?.into(),
-                "FLOAT4" => row.try_get_unchecked::<f32, _>(field)?.into(),
-                "FLOAT8" => row.try_get_unchecked::<f64, _>(field)?.into(),
-                "TEXT" | "VARCHAR" => row.try_get_unchecked::<String, _>(field)?.into(),
-                "TIMESTAMPTZ" => {
+                "BOOLEAN" => row.try_get_unchecked::<bool, _>(field)?.into(),
+                "INT" | "INT UNSIGNED" => row.try_get_unchecked::<i32, _>(field)?.into(),
+                "BIGINT" | "BIGINT UNSIGNED" => row.try_get_unchecked::<i64, _>(field)?.into(),
+                "FLOAT" => row.try_get_unchecked::<f32, _>(field)?.into(),
+                "DOUBLE" => row.try_get_unchecked::<f64, _>(field)?.into(),
+                "VARCHAR" | "TEXT" => row.try_get_unchecked::<String, _>(field)?.into(),
+                "TIMESTAMP" => {
                     let datetime = row.try_get_unchecked::<DateTime<Local>, _>(field)?;
                     datetime
                         .to_rfc3339_opts(SecondsFormat::Micros, false)
                         .into()
                 }
-                // deserialize Avro Uuid value wasn't supported in 0.14.0
-                "UUID" => row.try_get_unchecked::<Uuid, _>(field)?.to_string().into(),
-                "BYTEA" => row.try_get_unchecked::<Vec<u8>, _>(field)?.into(),
-                "TEXT[]" => {
-                    let values = row.try_get_unchecked::<Vec<String>, _>(field)?;
-                    let vec = values
-                        .into_iter()
-                        .map(AvroValue::String)
-                        .collect::<Vec<_>>();
-                    AvroValue::Array(vec)
-                }
-                "UUID[]" => {
-                    // deserialize Avro Uuid value wasn't supported in 0.14.0
-                    let values = row.try_get_unchecked::<Vec<Uuid>, _>(field)?;
-                    let vec = values
-                        .into_iter()
-                        .map(|u| AvroValue::String(u.to_string()))
-                        .collect::<Vec<_>>();
-                    AvroValue::Array(vec)
-                }
-                "JSONB" | "JSON" => row.try_get_unchecked::<JsonValue, _>(field)?.into(),
+                "VARBINARY" | "BLOB" => row.try_get_unchecked::<Vec<u8>, _>(field)?.into(),
+                "JSON" => row.try_get_unchecked::<JsonValue, _>(field)?.into(),
                 _ => AvroValue::Null,
             };
             record.push((field.to_owned(), value));
@@ -446,17 +417,16 @@ impl QueryExt<DatabaseDriver> for Query {
         if self.filters().contains_key(sort_by) {
             format!("LIMIT {}", self.limit())
         } else {
-            format!("LIMIT {} OFFSET {}", self.limit(), self.offset())
+            format!("LIMIT {}, {}", self.offset(), self.limit())
         }
     }
 
     fn parse_text_search(filter: &Map) -> Option<String> {
         let fields = Validation::parse_str_array(filter.get("$fields"))?;
         Validation::parse_string(filter.get("$search")).map(|search| {
-            let text = fields.join(" || ' ' || ");
-            let lang = Validation::parse_string(filter.get("$language"))
-                .unwrap_or_else(|| "english".into());
-            format!("to_tsvector('{lang}', {text}) @@ websearch_to_tsquery('{lang}', '{search}')")
+            let fields = fields.join(",");
+            let search = DatabaseDriver::format_string(search.as_ref());
+            format!("match({fields}) against({search})")
         })
     }
 }

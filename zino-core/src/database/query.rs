@@ -1,46 +1,37 @@
-use super::Schema;
-use crate::{
-    model::{EncodeColumn, Query},
-    request::Validation,
-    Map,
-};
+use super::{DatabaseDriver, Schema};
+use crate::{model::EncodeColumn, request::Validation, Map};
 use serde_json::Value;
-use sqlx::Postgres;
 
 /// Extension trait for [`Query`](crate::model::Query).
 pub(super) trait QueryExt<DB> {
-    /// Formats projection fields.
-    fn format_fields(&self) -> String;
+    /// Returns a reference to the projection fields.
+    fn query_fields(&self) -> &[String];
 
-    /// Formats the query filters to generate SQL `WHERE` expression.
-    fn format_filters<M: Schema>(&self) -> String;
+    /// Returns a reference to the filters.
+    fn query_filters(&self) -> &Map;
 
-    /// Formats the query sort to generate SQL `ORDER BY` expression.
-    fn format_sort(&self) -> String;
+    /// Returns the sort order.
+    fn query_order(&self) -> (&str, bool);
 
     /// Formats the query pagination to generate SQL `LIMIT` expression.
     fn format_pagination(&self) -> String;
 
-    // Formats the selection with a logic operator.
-    fn format_selection<M: Schema>(selection: &Map, operator: &str) -> String;
-
     /// Parses text search filter.
     fn parse_text_search(filter: &Map) -> Option<String>;
-}
 
-impl QueryExt<Postgres> for Query {
+    /// Formats projection fields.
     fn format_fields(&self) -> String {
-        let fields = self.fields();
+        let fields = self.query_fields();
         if fields.is_empty() {
             "*".to_owned()
         } else {
             fields
                 .iter()
                 .map(|field| {
-                    if let Some((expr, alias)) = field.rsplit_once("->") {
+                    if let Some((expr, alias)) = field.rsplit_once(":>") {
                         format!(r#"{expr} AS "{alias}""#)
                     } else {
-                        Postgres::format_field(field)
+                        DatabaseDriver::format_field(field)
                     }
                 })
                 .collect::<Vec<_>>()
@@ -48,13 +39,14 @@ impl QueryExt<Postgres> for Query {
         }
     }
 
+    /// Formats the query filters to generate SQL `WHERE` expression.
     fn format_filters<M: Schema>(&self) -> String {
-        let filters = self.filters();
+        let filters = self.query_filters();
         if filters.is_empty() {
             return String::new();
         }
 
-        let (sort_by, ascending) = self.sort_order();
+        let (sort_by, ascending) = self.query_order();
         let mut expression = " ".to_owned();
         let mut conditions = Vec::with_capacity(filters.len());
         for (key, value) in filters {
@@ -100,12 +92,12 @@ impl QueryExt<Postgres> for Query {
                     if let Some(col) = M::get_column(key) {
                         let condition = if key == sort_by {
                             // Use the filter condition to optimize pagination offset.
-                            let key = Postgres::format_field(key);
+                            let key = DatabaseDriver::format_field(key);
                             let operator = if ascending { ">" } else { "<" };
-                            let value = Postgres::encode_value(col, Some(value));
+                            let value = DatabaseDriver::encode_value(col, Some(value));
                             format!(r#"{key} {operator} {value}"#)
                         } else {
-                            Postgres::format_filter(col, key, value)
+                            DatabaseDriver::format_filter(col, key, value)
                         };
                         conditions.push(condition);
                     }
@@ -128,8 +120,9 @@ impl QueryExt<Postgres> for Query {
         expression
     }
 
+    /// Formats the query sort to generate SQL `ORDER BY` expression.
     fn format_sort(&self) -> String {
-        let (sort_by, ascending) = self.sort_order();
+        let (sort_by, ascending) = self.query_order();
         if sort_by.is_empty() {
             String::new()
         } else {
@@ -138,15 +131,7 @@ impl QueryExt<Postgres> for Query {
         }
     }
 
-    fn format_pagination(&self) -> String {
-        let (sort_by, _) = self.sort_order();
-        if self.filters().contains_key(sort_by) {
-            format!("LIMIT {}", self.limit())
-        } else {
-            format!("LIMIT {} OFFSET {}", self.limit(), self.offset())
-        }
-    }
-
+    // Formats the selection with a logic operator.
     fn format_selection<M: Schema>(selection: &Map, operator: &str) -> String {
         let mut conditions = Vec::with_capacity(selection.len());
         for (key, value) in selection {
@@ -184,7 +169,7 @@ impl QueryExt<Postgres> for Query {
                 }
                 _ => {
                     if let Some(col) = M::get_column(key) {
-                        let condition = Postgres::format_filter(col, key, value);
+                        let condition = DatabaseDriver::format_filter(col, key, value);
                         conditions.push(condition);
                     }
                 }
@@ -195,15 +180,5 @@ impl QueryExt<Postgres> for Query {
         } else {
             format!("({})", conditions.join(operator))
         }
-    }
-
-    fn parse_text_search(filter: &Map) -> Option<String> {
-        let fields = Validation::parse_str_array(filter.get("$fields"))?;
-        Validation::parse_string(filter.get("$search")).map(|search| {
-            let text = fields.join(" || ' ' || ");
-            let lang = Validation::parse_string(filter.get("$language"))
-                .unwrap_or_else(|| "english".into());
-            format!("to_tsvector('{lang}', {text}) @@ websearch_to_tsquery('{lang}', '{search}')")
-        })
     }
 }

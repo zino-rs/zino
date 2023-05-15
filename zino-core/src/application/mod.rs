@@ -58,9 +58,9 @@ pub trait Application {
     fn boot_with<F>(init: F) -> Self
     where
         Self: Default,
-        F: FnOnce(),
+        F: FnOnce(&'static State<Map>),
     {
-        init();
+        init(Self::shared_state());
         Self::boot()
     }
 

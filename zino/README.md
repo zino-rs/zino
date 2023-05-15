@@ -8,8 +8,8 @@ productivity and performance.
 - 🚀 Out-of-the-box features for rapid application development.
 - ✨ Minimal design, modular architecture and high-level abstractions.
 - ⚡ Embrace practical conventions to get the best performance.
-- 🐘 Highly optimized ORM for PostgreSQL built on top of [`sqlx`].
-- 🕗 Lightweight scheduler for sync and async cron jobs.
+- 💎 Highly optimized ORM for MySQL and PostgreSQL based on [`sqlx`].
+- 📅 Lightweight scheduler for sync and async cron jobs.
 - 💠 Unified access to storage services, data sources and chatbots.
 - 📊 Built-in support for [`tracing`], [`metrics`] and logging.
 - 🎨 Full integrations with [`actix-web`] and [`axum`].
