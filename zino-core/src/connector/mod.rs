@@ -10,6 +10,7 @@
 //! | `databend`       | Databend               | `connector-mysql`      |
 //! | `graphql`        | GraphQL API            | `connector-http`       |
 //! | `greptimedb`     | GreptimeDB             | `connector-postgres`   |
+//! | `highgo`         | HighGo Database        | `connector-postgres`   |
 //! | `hologres`       | Aliyun Hologres        | `connector-postgres`   |
 //! | `http`           | HTTP services          | `connector-http`       |
 //! | `mariadb`        | MariaDB                | `connector-mysql`      |

@@ -164,8 +164,8 @@ impl Connector for DataSource {
             "http" | "rest" | "graphql" => "http",
             "mssql" => "mssql",
             "mysql" | "ceresdb" | "databend" | "mariadb" | "tidb" => "mysql",
-            "postgres" | "citus" | "greptimedb" | "hologres" | "opengauss" | "postgis"
-            | "timescaledb" => "postgres",
+            "postgres" | "citus" | "greptimedb" | "highgo" | "hologres" | "opengauss"
+            | "postgis" | "timescaledb" => "postgres",
             "sqlite" => "sqlite",
             _ => {
                 if let Some(protocol) = config.get_str("protocol") {

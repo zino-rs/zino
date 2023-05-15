@@ -19,6 +19,13 @@ port = 6082
 type = "postgres"
 namespace = "dc"
 
+[[mysql]]
+host = "127.0.0.1"
+port = 3306
+database = "data_cube"
+username = "root"
+password = "xPBxjz/LiMj3mWZAruopxAZYaSzaSu/1EB0GDpp3YY4"
+
 [[postgres]]
 host = "127.0.0.1"
 port = 5432

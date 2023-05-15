@@ -4,7 +4,7 @@
 //!
 //! You can enable the `orm-mysql` feature to use MySQL or enable `orm-postgres` to use PostgreSQL.
 
-use crate::{extension::TomlTableExt, state::State};
+use crate::{extension::TomlTableExt, model::EncodeColumn, state::State};
 use sqlx::{
     pool::{Pool, PoolOptions},
     Connection,
@@ -94,7 +94,7 @@ impl ConnectionPool {
 
     /// Returns a reference to the pool.
     #[inline]
-    pub(crate) fn pool(&self) -> &Pool<DatabaseDriver> {
+    pub fn pool(&self) -> &Pool<DatabaseDriver> {
         &self.pool
     }
 
@@ -178,12 +178,12 @@ impl ConnectionPools {
     /// Returns a connection pool with the specific name.
     pub(crate) fn get_pool(&self, name: &str) -> Option<&ConnectionPool> {
         let mut pool = None;
-        for c in self.0.iter() {
-            if c.name() == name {
-                if c.is_available() {
-                    return Some(c);
+        for p in self.0.iter() {
+            if p.name() == name {
+                if p.is_available() {
+                    return Some(p);
                 } else {
-                    pool = Some(c);
+                    pool = Some(p);
                 }
             }
         }
@@ -200,7 +200,7 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
         .get_table("database")
         .expect("the `database` field should be a table")
         .get_str("type")
-        .unwrap_or("postgres");
+        .unwrap_or(DatabaseDriver::DRIVER_NAME);
     let databases = config
         .get_array(driver)
         .unwrap_or_else(|| panic!("the `{driver}` field should be an array of tables"));
@@ -208,7 +208,8 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
         .iter()
         .filter_map(|v| v.as_table())
         .map(ConnectionPool::connect_lazy)
-        .collect::<Vec<_>>();
+        .collect();
+    tracing::warn!(driver, "connect to the database lazily");
     ConnectionPools(pools)
 });
 

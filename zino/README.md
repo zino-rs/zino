@@ -18,7 +18,7 @@ productivity and performance.
 
 You can start with the example [`actix-app`] or [`axum-app`].
 
-## Feature 
+## Feature flags
 
 The following optional features are available:
 
