@@ -341,26 +341,29 @@ impl DecodeRow<DatabaseRow> for Map {
         let columns = row.columns();
         let mut map = Map::with_capacity(columns.len());
         for col in columns {
-            let key = col.name();
+            let field = col.name();
+            let index = col.ordinal();
             let value = match col.type_info().name() {
-                "BOOLEAN" => row.try_get_unchecked::<bool, _>(key)?.into(),
-                "TINYINT" => row.try_get_unchecked::<i8, _>(key)?.into(),
-                "TINYINT UNSIGNED" => row.try_get_unchecked::<u8, _>(key)?.into(),
-                "SMALLINT" => row.try_get_unchecked::<i16, _>(key)?.into(),
-                "SMALLINT UNSIGNED" => row.try_get_unchecked::<u16, _>(key)?.into(),
-                "INT" => row.try_get_unchecked::<i32, _>(key)?.into(),
-                "INT UNSIGNED" => row.try_get_unchecked::<u32, _>(key)?.into(),
-                "BIGINT" => row.try_get_unchecked::<i64, _>(key)?.into(),
-                "BIGINT UNSIGNED" => row.try_get_unchecked::<u64, _>(key)?.into(),
-                "FLOAT" => row.try_get_unchecked::<f32, _>(key)?.into(),
-                "DOUBLE" => row.try_get_unchecked::<f64, _>(key)?.into(),
-                "TEXT" | "VARCHAR" | "CHAR" => row.try_get_unchecked::<String, _>(key)?.into(),
-                "TIMESTAMP" => row.try_get_unchecked::<DateTime, _>(key)?.into(),
-                "BLOB" | "VARBINARY" | "BINARY" => row.try_get_unchecked::<Vec<u8>, _>(key)?.into(),
-                "JSON" => row.try_get_unchecked::<JsonValue, _>(key)?,
+                "BOOLEAN" => row.try_get_unchecked::<bool, _>(index)?.into(),
+                "TINYINT" => row.try_get_unchecked::<i8, _>(index)?.into(),
+                "TINYINT UNSIGNED" => row.try_get_unchecked::<u8, _>(index)?.into(),
+                "SMALLINT" => row.try_get_unchecked::<i16, _>(index)?.into(),
+                "SMALLINT UNSIGNED" => row.try_get_unchecked::<u16, _>(index)?.into(),
+                "INT" => row.try_get_unchecked::<i32, _>(index)?.into(),
+                "INT UNSIGNED" => row.try_get_unchecked::<u32, _>(index)?.into(),
+                "BIGINT" => row.try_get_unchecked::<i64, _>(index)?.into(),
+                "BIGINT UNSIGNED" => row.try_get_unchecked::<u64, _>(index)?.into(),
+                "FLOAT" => row.try_get_unchecked::<f32, _>(index)?.into(),
+                "DOUBLE" => row.try_get_unchecked::<f64, _>(index)?.into(),
+                "TEXT" | "VARCHAR" | "CHAR" => row.try_get_unchecked::<String, _>(index)?.into(),
+                "TIMESTAMP" => row.try_get_unchecked::<DateTime, _>(index)?.into(),
+                "BLOB" | "VARBINARY" | "BINARY" => {
+                    row.try_get_unchecked::<Vec<u8>, _>(index)?.into()
+                }
+                "JSON" => row.try_get_unchecked::<JsonValue, _>(index)?,
                 _ => JsonValue::Null,
             };
-            map.insert(key.to_owned(), value);
+            map.insert(field.to_owned(), value);
         }
         Ok(map)
     }
@@ -373,20 +376,23 @@ impl DecodeRow<DatabaseRow> for Record {
         let columns = row.columns();
         let mut record = Record::with_capacity(columns.len());
         for col in columns {
-            let key = col.name();
+            let field = col.name();
+            let index = col.ordinal();
             let value = match col.type_info().name() {
-                "BOOLEAN" => row.try_get_unchecked::<bool, _>(key)?.into(),
-                "INT" | "INT UNSIGNED" => row.try_get_unchecked::<i32, _>(key)?.into(),
-                "BIGINT" | "BIGINT UNSIGNED" => row.try_get_unchecked::<i64, _>(key)?.into(),
-                "FLOAT" => row.try_get_unchecked::<f32, _>(key)?.into(),
-                "DOUBLE" => row.try_get_unchecked::<f64, _>(key)?.into(),
-                "VARCHAR" | "CHAR" | "TEXT" => row.try_get_unchecked::<String, _>(key)?.into(),
-                "TIMESTAMP" => row.try_get_unchecked::<DateTime, _>(key)?.into(),
-                "VARBINARY" | "BINARY" | "BLOB" => row.try_get_unchecked::<Vec<u8>, _>(key)?.into(),
-                "JSON" => row.try_get_unchecked::<JsonValue, _>(key)?.into(),
+                "BOOLEAN" => row.try_get_unchecked::<bool, _>(index)?.into(),
+                "INT" | "INT UNSIGNED" => row.try_get_unchecked::<i32, _>(index)?.into(),
+                "BIGINT" | "BIGINT UNSIGNED" => row.try_get_unchecked::<i64, _>(index)?.into(),
+                "FLOAT" => row.try_get_unchecked::<f32, _>(index)?.into(),
+                "DOUBLE" => row.try_get_unchecked::<f64, _>(index)?.into(),
+                "VARCHAR" | "CHAR" | "TEXT" => row.try_get_unchecked::<String, _>(index)?.into(),
+                "TIMESTAMP" => row.try_get_unchecked::<DateTime, _>(index)?.into(),
+                "VARBINARY" | "BINARY" | "BLOB" => {
+                    row.try_get_unchecked::<Vec<u8>, _>(index)?.into()
+                }
+                "JSON" => row.try_get_unchecked::<JsonValue, _>(index)?.into(),
                 _ => AvroValue::Null,
             };
-            record.push((key.to_owned(), value));
+            record.push((field.to_owned(), value));
         }
         Ok(record)
     }

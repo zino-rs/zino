@@ -340,31 +340,32 @@ impl DecodeRow<DatabaseRow> for Map {
         let columns = row.columns();
         let mut map = Map::with_capacity(columns.len());
         for col in columns {
-            let key = col.name();
+            let field = col.name();
+            let index = col.ordinal();
             let value = match col.type_info().name() {
-                "BOOL" => row.try_get_unchecked::<bool, _>(key)?.into(),
-                "INT2" => row.try_get_unchecked::<i16, _>(key)?.into(),
-                "INT4" => row.try_get_unchecked::<i32, _>(key)?.into(),
-                "INT8" => row.try_get_unchecked::<i64, _>(key)?.into(),
-                "FLOAT4" => row.try_get_unchecked::<f32, _>(key)?.into(),
-                "FLOAT8" => row.try_get_unchecked::<f64, _>(key)?.into(),
-                "TEXT" | "VARCHAR" => row.try_get_unchecked::<String, _>(key)?.into(),
-                "TIMESTAMPTZ" => row.try_get_unchecked::<DateTime, _>(key)?.into(),
-                "UUID" => row.try_get_unchecked::<Uuid, _>(key)?.to_string().into(),
-                "BYTEA" => row.try_get_unchecked::<Vec<u8>, _>(key)?.into(),
-                "TEXT[]" => row.try_get_unchecked::<Vec<String>, _>(key)?.into(),
+                "BOOL" => row.try_get_unchecked::<bool, _>(index)?.into(),
+                "INT2" => row.try_get_unchecked::<i16, _>(index)?.into(),
+                "INT4" => row.try_get_unchecked::<i32, _>(index)?.into(),
+                "INT8" => row.try_get_unchecked::<i64, _>(index)?.into(),
+                "FLOAT4" => row.try_get_unchecked::<f32, _>(index)?.into(),
+                "FLOAT8" => row.try_get_unchecked::<f64, _>(index)?.into(),
+                "TEXT" | "VARCHAR" => row.try_get_unchecked::<String, _>(index)?.into(),
+                "TIMESTAMPTZ" => row.try_get_unchecked::<DateTime, _>(index)?.into(),
+                "UUID" => row.try_get_unchecked::<Uuid, _>(index)?.to_string().into(),
+                "BYTEA" => row.try_get_unchecked::<Vec<u8>, _>(index)?.into(),
+                "TEXT[]" => row.try_get_unchecked::<Vec<String>, _>(index)?.into(),
                 "UUID[]" => {
-                    let values = row.try_get_unchecked::<Vec<Uuid>, _>(key)?;
+                    let values = row.try_get_unchecked::<Vec<Uuid>, _>(index)?;
                     values
                         .iter()
                         .map(|v| v.to_string())
                         .collect::<Vec<_>>()
                         .into()
                 }
-                "JSONB" | "JSON" => row.try_get_unchecked::<JsonValue, _>(key)?,
+                "JSONB" | "JSON" => row.try_get_unchecked::<JsonValue, _>(index)?,
                 _ => JsonValue::Null,
             };
-            map.insert(key.to_owned(), value);
+            map.insert(field.to_owned(), value);
         }
         Ok(map)
     }
@@ -377,20 +378,21 @@ impl DecodeRow<DatabaseRow> for Record {
         let columns = row.columns();
         let mut record = Record::with_capacity(columns.len());
         for col in columns {
-            let key = col.name();
+            let field = col.name();
+            let index = col.ordinal();
             let value = match col.type_info().name() {
-                "BOOL" => row.try_get_unchecked::<bool, _>(key)?.into(),
-                "INT4" => row.try_get_unchecked::<i32, _>(key)?.into(),
-                "INT8" => row.try_get_unchecked::<i64, _>(key)?.into(),
-                "FLOAT4" => row.try_get_unchecked::<f32, _>(key)?.into(),
-                "FLOAT8" => row.try_get_unchecked::<f64, _>(key)?.into(),
-                "TEXT" | "VARCHAR" => row.try_get_unchecked::<String, _>(key)?.into(),
-                "TIMESTAMPTZ" => row.try_get_unchecked::<DateTime, _>(key)?.into(),
+                "BOOL" => row.try_get_unchecked::<bool, _>(index)?.into(),
+                "INT4" => row.try_get_unchecked::<i32, _>(index)?.into(),
+                "INT8" => row.try_get_unchecked::<i64, _>(index)?.into(),
+                "FLOAT4" => row.try_get_unchecked::<f32, _>(index)?.into(),
+                "FLOAT8" => row.try_get_unchecked::<f64, _>(index)?.into(),
+                "TEXT" | "VARCHAR" => row.try_get_unchecked::<String, _>(index)?.into(),
+                "TIMESTAMPTZ" => row.try_get_unchecked::<DateTime, _>(index)?.into(),
                 // deserialize Avro Uuid value wasn't supported in 0.14.0
-                "UUID" => row.try_get_unchecked::<Uuid, _>(key)?.to_string().into(),
-                "BYTEA" => row.try_get_unchecked::<Vec<u8>, _>(key)?.into(),
+                "UUID" => row.try_get_unchecked::<Uuid, _>(index)?.to_string().into(),
+                "BYTEA" => row.try_get_unchecked::<Vec<u8>, _>(index)?.into(),
                 "TEXT[]" => {
-                    let values = row.try_get_unchecked::<Vec<String>, _>(key)?;
+                    let values = row.try_get_unchecked::<Vec<String>, _>(index)?;
                     let vec = values
                         .into_iter()
                         .map(AvroValue::String)
@@ -399,17 +401,17 @@ impl DecodeRow<DatabaseRow> for Record {
                 }
                 "UUID[]" => {
                     // deserialize Avro Uuid value wasn't supported in 0.14.0
-                    let values = row.try_get_unchecked::<Vec<Uuid>, _>(key)?;
+                    let values = row.try_get_unchecked::<Vec<Uuid>, _>(index)?;
                     let vec = values
                         .into_iter()
                         .map(|u| AvroValue::String(u.to_string()))
                         .collect::<Vec<_>>();
                     AvroValue::Array(vec)
                 }
-                "JSONB" | "JSON" => row.try_get_unchecked::<JsonValue, _>(key)?.into(),
+                "JSONB" | "JSON" => row.try_get_unchecked::<JsonValue, _>(index)?.into(),
                 _ => AvroValue::Null,
             };
-            record.push((key.to_owned(), value));
+            record.push((field.to_owned(), value));
         }
         Ok(record)
     }

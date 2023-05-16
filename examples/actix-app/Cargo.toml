@@ -23,7 +23,7 @@ version = "0.9.1"
 features = [
     "connector",
     "connector-arrow",
-    "orm-mysql",
+    "orm-postgres",
 ]
 
 [dependencies.zino-model]

@@ -23,6 +23,7 @@ mod mutation;
 mod query;
 mod schema;
 
+pub use decode::decode;
 pub use schema::Schema;
 
 cfg_if::cfg_if! {
@@ -194,23 +195,28 @@ impl ConnectionPools {
 
 /// Shared connection pools.
 static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
+    let driver = DatabaseDriver::DRIVER_NAME;
     let config = State::shared().config();
 
     // Database connection pools.
-    let driver = config
+    let database_type = config
         .get_table("database")
         .expect("the `database` field should be a table")
         .get_str("type")
-        .unwrap_or(DatabaseDriver::DRIVER_NAME);
+        .unwrap_or(driver);
     let databases = config
-        .get_array(driver)
-        .unwrap_or_else(|| panic!("the `{driver}` field should be an array of tables"));
+        .get_array(database_type)
+        .unwrap_or_else(|| panic!("the `{database_type}` field should be an array of tables"));
     let pools = databases
         .iter()
         .filter_map(|v| v.as_table())
         .map(ConnectionPool::connect_lazy)
         .collect();
-    tracing::warn!(driver, "connect to the database lazily");
+    if database_type == driver {
+        tracing::warn!(driver, "connect to the database lazily");
+    } else {
+        tracing::error!(driver, "invalid database type `{database_type}`");
+    }
     ConnectionPools(pools)
 });
 
