@@ -5,11 +5,11 @@ use crate::{
     format,
     model::{Column, DecodeRow, EncodeColumn, Model, Mutation, Query},
     request::Validation,
-    Map, Record,
+    BoxFuture, Map, Record,
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
-use sqlx::Row;
+use sqlx::{Row, Transaction};
 
 /// Database schema.
 pub trait Schema: 'static + Send + Sync + Model {
@@ -724,6 +724,20 @@ pub trait Schema: 'static + Send + Sync + Model {
             Some(data) => serde_json::from_value(data.into()).map_err(Error::from),
             None => Ok(None),
         }
+    }
+
+    /// Executes the specific operations inside a transaction.
+    /// If the operations return an error, the transaction will be rolled back;
+    /// if not, the transaction will be committed.
+    async fn transaction<F, T>(tx: F) -> Result<T, Error>
+    where
+        F: for<'a> FnOnce(&'a Transaction<DatabaseDriver>) -> BoxFuture<'a, Result<T, Error>>,
+    {
+        let pool = Self::acquire_writer().await?.pool();
+        let transaction = pool.begin().await?;
+        let data = tx(&transaction).await?;
+        transaction.commit().await?;
+        Ok(data)
     }
 
     /// Finds one model selected by the primary key in the table, and parses it as `Self`.

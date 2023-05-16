@@ -5,9 +5,7 @@ pub(crate) async fn execute(mut req: Request) -> Result {
     let mut query = Query::default();
     let mut res: Response = req.query_validation(&mut query)?;
     let body: Map = req.parse_body().await?;
-    let data = task::execute_union_query(&query, body)
-        .await
-        .extract_with_context(&req)?;
+    let data = task::execute_query(&query, body).await.extract(&req)?;
     res.set_data(&data);
     Ok(res.into())
 }

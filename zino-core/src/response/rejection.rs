@@ -119,7 +119,7 @@ impl Rejection {
 
     /// Provides the request context for the rejection.
     #[inline]
-    pub fn provide_context<T: RequestContext + ?Sized>(mut self, ctx: &T) -> Self {
+    pub fn context<T: RequestContext + ?Sized>(mut self, ctx: &T) -> Self {
         self.context = ctx.get_context();
         self.trace_context = Some(ctx.new_trace_context());
         self
@@ -198,45 +198,35 @@ impl From<Rejection> for FullResponse {
 
 /// Trait for extracting rejections.
 pub trait ExtractRejection<T> {
-    /// Extracts a rejection.
-    fn extract(self) -> Result<T, Rejection>;
-
     /// Extracts a rejection with the request context.
-    #[inline]
-    fn extract_with_context<Ctx: RequestContext>(self, ctx: &Ctx) -> Result<T, Rejection>
-    where
-        Self: Sized,
-    {
-        self.extract()
-            .map_err(|rejection| rejection.provide_context(ctx))
-    }
+    fn extract<Ctx: RequestContext>(self, ctx: &Ctx) -> Result<T, Rejection>;
 }
 
 impl<T> ExtractRejection<T> for Option<T> {
     #[inline]
-    fn extract(self) -> Result<T, Rejection> {
-        self.ok_or_else(|| Rejection::not_found(Error::new("resource does not exit")))
+    fn extract<Ctx: RequestContext>(self, ctx: &Ctx) -> Result<T, Rejection> {
+        self.ok_or_else(|| Rejection::not_found(Error::new("resource does not exit")).context(ctx))
     }
 }
 
 impl<T> ExtractRejection<T> for Result<T, Validation> {
     #[inline]
-    fn extract(self) -> Result<T, Rejection> {
-        self.map_err(Rejection::bad_request)
+    fn extract<Ctx: RequestContext>(self, ctx: &Ctx) -> Result<T, Rejection> {
+        self.map_err(|err| Rejection::bad_request(err).context(ctx))
     }
 }
 
 impl<T, E: Into<Error>> ExtractRejection<T> for Result<T, E> {
     #[inline]
-    fn extract(self) -> Result<T, Rejection> {
-        self.map_err(Rejection::internal_server_error)
+    fn extract<Ctx: RequestContext>(self, ctx: &Ctx) -> Result<T, Rejection> {
+        self.map_err(|err| Rejection::internal_server_error(err).context(ctx))
     }
 }
 
 impl<T, E: Into<Error>> ExtractRejection<T> for Result<Option<T>, E> {
     #[inline]
-    fn extract(self) -> Result<T, Rejection> {
-        self.map_err(Rejection::internal_server_error)?
-            .ok_or_else(|| Rejection::not_found(Error::new("resource does not exit")))
+    fn extract<Ctx: RequestContext>(self, ctx: &Ctx) -> Result<T, Rejection> {
+        self.map_err(|err| Rejection::internal_server_error(err).context(ctx))?
+            .ok_or_else(|| Rejection::not_found(Error::new("resource does not exit")).context(ctx))
     }
 }

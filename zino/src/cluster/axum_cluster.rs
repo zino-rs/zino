@@ -110,7 +110,7 @@ impl Application for AxumCluster {
                 app = app
                     .fallback_service(tower::service_fn(|req| async {
                         let req = AxumExtractor::from(req);
-                        let res = Response::new(StatusCode::NOT_FOUND).provide_context(&req);
+                        let res = Response::new(StatusCode::NOT_FOUND).context(&req);
                         Ok::<FullResponse, Infallible>(res.into())
                     }))
                     .layer(

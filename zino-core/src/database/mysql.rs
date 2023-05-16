@@ -1,11 +1,11 @@
 use super::{query::QueryExt, DatabaseDriver, DatabaseRow};
 use crate::{
+    datetime::DateTime,
     model::{Column, DecodeRow, EncodeColumn, Query},
     request::Validation,
     Map, Record,
 };
 use apache_avro::types::Value as AvroValue;
-use chrono::{DateTime, Local, SecondsFormat};
 use serde_json::Value as JsonValue;
 use sqlx::{Column as _, Error, Row, TypeInfo};
 use std::borrow::Cow;
@@ -27,7 +27,13 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
             "i8" => "TINYINT",
             "f64" => "DOUBLE",
             "f32" => "FLOAT",
-            "String" => "VARCHAR(255)",
+            "String" => {
+                if column.default_value().is_some() {
+                    "VARCHAR(255)"
+                } else {
+                    "TEXT"
+                }
+            }
             "DateTime" => "TIMESTAMP",
             "Uuid" | "Option<Uuid>" => "VARCHAR(36)",
             "Vec<u8>" => "BLOB",
@@ -348,14 +354,9 @@ impl DecodeRow<DatabaseRow> for Map {
                 "BIGINT UNSIGNED" => row.try_get_unchecked::<u64, _>(key)?.into(),
                 "FLOAT" => row.try_get_unchecked::<f32, _>(key)?.into(),
                 "DOUBLE" => row.try_get_unchecked::<f64, _>(key)?.into(),
-                "VARCHAR" | "TEXT" => row.try_get_unchecked::<String, _>(key)?.into(),
-                "TIMESTAMP" => {
-                    let datetime = row.try_get_unchecked::<DateTime<Local>, _>(key)?;
-                    datetime
-                        .to_rfc3339_opts(SecondsFormat::Micros, false)
-                        .into()
-                }
-                "VARBINARY" | "BLOB" => row.try_get_unchecked::<Vec<u8>, _>(key)?.into(),
+                "TEXT" | "VARCHAR" | "CHAR" => row.try_get_unchecked::<String, _>(key)?.into(),
+                "TIMESTAMP" => row.try_get_unchecked::<DateTime, _>(key)?.into(),
+                "BLOB" | "VARBINARY" | "BINARY" => row.try_get_unchecked::<Vec<u8>, _>(key)?.into(),
                 "JSON" => row.try_get_unchecked::<JsonValue, _>(key)?,
                 _ => JsonValue::Null,
             };
@@ -372,25 +373,20 @@ impl DecodeRow<DatabaseRow> for Record {
         let columns = row.columns();
         let mut record = Record::with_capacity(columns.len());
         for col in columns {
-            let field = col.name();
+            let key = col.name();
             let value = match col.type_info().name() {
-                "BOOLEAN" => row.try_get_unchecked::<bool, _>(field)?.into(),
-                "INT" | "INT UNSIGNED" => row.try_get_unchecked::<i32, _>(field)?.into(),
-                "BIGINT" | "BIGINT UNSIGNED" => row.try_get_unchecked::<i64, _>(field)?.into(),
-                "FLOAT" => row.try_get_unchecked::<f32, _>(field)?.into(),
-                "DOUBLE" => row.try_get_unchecked::<f64, _>(field)?.into(),
-                "VARCHAR" | "TEXT" => row.try_get_unchecked::<String, _>(field)?.into(),
-                "TIMESTAMP" => {
-                    let datetime = row.try_get_unchecked::<DateTime<Local>, _>(field)?;
-                    datetime
-                        .to_rfc3339_opts(SecondsFormat::Micros, false)
-                        .into()
-                }
-                "VARBINARY" | "BLOB" => row.try_get_unchecked::<Vec<u8>, _>(field)?.into(),
-                "JSON" => row.try_get_unchecked::<JsonValue, _>(field)?.into(),
+                "BOOLEAN" => row.try_get_unchecked::<bool, _>(key)?.into(),
+                "INT" | "INT UNSIGNED" => row.try_get_unchecked::<i32, _>(key)?.into(),
+                "BIGINT" | "BIGINT UNSIGNED" => row.try_get_unchecked::<i64, _>(key)?.into(),
+                "FLOAT" => row.try_get_unchecked::<f32, _>(key)?.into(),
+                "DOUBLE" => row.try_get_unchecked::<f64, _>(key)?.into(),
+                "VARCHAR" | "CHAR" | "TEXT" => row.try_get_unchecked::<String, _>(key)?.into(),
+                "TIMESTAMP" => row.try_get_unchecked::<DateTime, _>(key)?.into(),
+                "VARBINARY" | "BINARY" | "BLOB" => row.try_get_unchecked::<Vec<u8>, _>(key)?.into(),
+                "JSON" => row.try_get_unchecked::<JsonValue, _>(key)?.into(),
                 _ => AvroValue::Null,
             };
-            record.push((field.to_owned(), value));
+            record.push((key.to_owned(), value));
         }
         Ok(record)
     }

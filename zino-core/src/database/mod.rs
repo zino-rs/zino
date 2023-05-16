@@ -18,6 +18,7 @@ use std::{
 };
 use toml::value::Table;
 
+mod decode;
 mod mutation;
 mod query;
 mod schema;
@@ -31,10 +32,10 @@ cfg_if::cfg_if! {
         mod mysql;
 
         /// MySQL database driver.
-        type DatabaseDriver = MySql;
+        pub type DatabaseDriver = MySql;
 
         /// A single row from the MySQL database.
-        type DatabaseRow = MySqlRow;
+        pub type DatabaseRow = MySqlRow;
 
         /// Options and flags which can be used to configure a MySQL connection.
         type DatabaseConnectOptions = MySqlConnectOptions;
@@ -44,10 +45,10 @@ cfg_if::cfg_if! {
         mod postgres;
 
         /// PostgreSQL database driver.
-        type DatabaseDriver = Postgres;
+        pub type DatabaseDriver = Postgres;
 
         /// A single row from the PostgreSQL database.
-        type DatabaseRow = PgRow;
+        pub type DatabaseRow = PgRow;
 
         /// Options and flags which can be used to configure a PostgreSQL connection.
         type DatabaseConnectOptions = PgConnectOptions;

@@ -16,6 +16,7 @@ host = "127.0.0.1"
 port = 6082
 
 [database]
+type = "mysql"
 namespace = "dc"
 
 [[mysql]]
@@ -23,14 +24,14 @@ host = "127.0.0.1"
 port = 3306
 database = "data_cube"
 username = "root"
-password = "mfuJ2PAi/Q92bfER7E5QhJCTO3i3wg6X/GS4jDxFTec"
+password = "EhViC/ntvtX+YXO9HnhvhZLDWrynQylx9Y4qUQNbUvo"
 
 [[postgres]]
 host = "127.0.0.1"
 port = 5432
 database = "data_cube"
 username = "postgres"
-password = "lJOk/kIjwhVcUiAPflpO3JMO/HDjikqyVXwlg4wD/fcsOfsm"
+password = "j4bf2v43mzZB6sTOyZgtepgfxCCPhx1FXRTLlR3D4x+yxXXr"
 
 [tracing]
 filter = "warn"

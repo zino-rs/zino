@@ -1,8 +1,9 @@
 //! ISO 8601 combined date and time with local time zone.
 
+use apache_avro::types::Value as AvroValue;
 use chrono::{format::ParseError, Local, NaiveDateTime, SecondsFormat, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::Value as JsonValue;
 use std::{
     fmt,
     ops::{Add, AddAssign, Sub, SubAssign},
@@ -123,10 +124,17 @@ impl From<DateTime> for chrono::DateTime<Local> {
     }
 }
 
-impl From<DateTime> for Value {
+impl From<DateTime> for AvroValue {
     #[inline]
     fn from(dt: DateTime) -> Self {
-        Value::String(dt.to_string())
+        AvroValue::String(dt.to_string())
+    }
+}
+
+impl From<DateTime> for JsonValue {
+    #[inline]
+    fn from(dt: DateTime) -> Self {
+        JsonValue::String(dt.to_string())
     }
 }
 

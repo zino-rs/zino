@@ -2,7 +2,7 @@ use zino::{Error, JsonObjectExt, Map, Query, Schema};
 use zino_core::connector::{DataFrameExecutor, GlobalConnector};
 use zino_model::User;
 
-pub(crate) async fn execute_union_query(query: &Query, body: Map) -> Result<Vec<Map>, Error> {
+pub(crate) async fn execute_query(query: &Query, body: Map) -> Result<Vec<Map>, Error> {
     let records = User::find(query).await?;
     let connector = GlobalConnector::get("mock")
         .and_then(|data_source| data_source.get_arrow_connector())

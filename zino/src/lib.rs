@@ -73,7 +73,6 @@ pub use zino_core::{
 };
 
 #[cfg(feature = "orm")]
-#[doc(no_inline)]
 pub use zino_core::database::Schema;
 
 cfg_if::cfg_if! {

@@ -16,6 +16,7 @@
 #![feature(iter_intersperse)]
 #![feature(lazy_cell)]
 #![feature(let_chains)]
+#![feature(min_specialization)]
 #![feature(result_option_inspect)]
 #![feature(string_leak)]
 #![forbid(unsafe_code)]
@@ -62,6 +63,9 @@ pub type Uuid = uuid::Uuid;
 
 /// An allocation-optimized string.
 pub type SharedString = std::borrow::Cow<'static, str>;
+
+/// A type-erased error type.
+pub type BoxError = Box<dyn std::error::Error + Sync + Send + 'static>;
 
 /// An owned dynamically typed future.
 pub type BoxFuture<'a, T = ()> =

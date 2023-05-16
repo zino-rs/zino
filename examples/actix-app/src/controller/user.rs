@@ -12,7 +12,7 @@ pub(crate) async fn new(mut req: Request) -> Result {
     let mut user = User::new();
     let mut res: Response = req.model_validation(&mut user).await?;
 
-    user.upsert().await.extract_with_context(&req)?;
+    user.upsert().await.extract(&req)?;
     let data = json!({
         "method": req.request_method().as_ref(),
         "path": req.request_path(),
@@ -24,10 +24,8 @@ pub(crate) async fn new(mut req: Request) -> Result {
 pub(crate) async fn update(mut req: Request) -> Result {
     let user_id: Uuid = req.parse_param("id")?;
     let body: Map = req.parse_body().await?;
-    let (validation, user_info) = user::update(user_id, body)
-        .await
-        .extract_with_context(&req)?;
-    let mut res = Response::from(validation).provide_context(&req);
+    let (validation, user_info) = user::update(user_id, body).await.extract(&req)?;
+    let mut res = Response::from(validation).context(&req);
     let data = json!({
         "user": user_info,
     });
@@ -38,7 +36,7 @@ pub(crate) async fn update(mut req: Request) -> Result {
 pub(crate) async fn list(req: Request) -> Result {
     let mut query = User::default_query();
     let mut res: Response = req.query_validation(&mut query)?;
-    let users: Vec<Map> = User::find(&query).await.extract_with_context(&req)?;
+    let users: Vec<Map> = User::find(&query).await.extract(&req)?;
     let data = json!({
         "users": users,
     });
@@ -53,17 +51,15 @@ pub(crate) async fn view(req: Request) -> Result {
     query.add_filter("id", user_id.to_string());
 
     let db_query_start_time = Instant::now();
-    let user: Map = User::find_one(&query).await.extract_with_context(&req)?;
+    let user: Map = User::find_one(&query).await.extract(&req)?;
     let db_query_duration = db_query_start_time.elapsed();
 
     let args = fluent_args![
         "name" => user.get_str("name").unwrap_or_default()
     ];
-    let user_intro = req
-        .translate("user-intro", Some(args))
-        .extract_with_context(&req)?;
+    let user_intro = req.translate("user-intro", Some(args)).extract(&req)?;
     let data = json!({
-        "schema": User::schema(),
+        "columns": User::columns(),
         "intro": user_intro,
         "user": user,
     });

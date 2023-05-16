@@ -29,7 +29,7 @@ impl Responder for ActixResponse<StatusCode> {
         let mut response = self.0;
         if !response.has_context() {
             let req = crate::Request::from(req.clone());
-            response = response.provide_context(&req);
+            response = response.context(&req);
         }
 
         let mut res = build_http_response(&response);

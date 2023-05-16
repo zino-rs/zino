@@ -139,7 +139,7 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Provides the request context for the response.
-    pub fn provide_context<Ctx: RequestContext>(mut self, ctx: &Ctx) -> Self {
+    pub fn context<Ctx: RequestContext>(mut self, ctx: &Ctx) -> Self {
         self.instance = (!self.is_success()).then(|| ctx.instance().into());
         self.start_time = ctx.start_time();
         self.request_id = ctx.request_id();

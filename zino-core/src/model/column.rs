@@ -11,10 +11,12 @@ pub struct Column<'a> {
     /// Column type name.
     type_name: &'a str,
     /// A str representation of the default value.
+    #[serde(skip_serializing_if = "Option::is_none")]
     default_value: Option<&'a str>,
     /// `NOT NULL` constraint.
     not_null: bool,
     /// Index type.
+    #[serde(skip_serializing_if = "Option::is_none")]
     index_type: Option<&'a str>,
 }
 
