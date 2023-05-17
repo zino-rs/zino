@@ -13,6 +13,7 @@
 #![feature(let_chains)]
 #![forbid(unsafe_code)]
 
+use convert_case::{Case, Casing};
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{parse_macro_input, Data, DeriveInput, Fields};
@@ -23,38 +24,32 @@ mod parser;
 #[proc_macro_derive(Schema, attributes(schema))]
 pub fn schema_macro(item: TokenStream) -> TokenStream {
     /// Integer types
-    const INTEGER_TYPES: [&str; 6] = ["u64", "i64", "u32", "i32", "u16", "i16"];
+    const INTEGER_TYPES: [&str; 10] = [
+        "u64", "i64", "u32", "i32", "u16", "i16", "u8", "i8", "usize", "isize",
+    ];
 
     // Input
     let input = parse_macro_input!(item as DeriveInput);
 
-    // Type name
+    // Model name
     let name = input.ident;
-    let mut type_name = name.to_string();
+    let mut model_name = name.to_string();
 
     // Reader and writer
-    let mut primary_key_name = String::from("id");
     let mut reader_name = String::from("main");
     let mut writer_name = String::from("main");
-    let mut distribution_column = None;
     for attr in input.attrs.iter() {
         for (key, value) in parser::parse_attr(attr).into_iter() {
             if let Some(value) = value {
                 match key.as_str() {
-                    "type_name" => {
-                        type_name = value;
-                    }
-                    "primary_key" => {
-                        primary_key_name = value;
+                    "model_name" => {
+                        model_name = value;
                     }
                     "reader_name" => {
                         reader_name = value;
                     }
                     "writer_name" => {
                         writer_name = value;
-                    }
-                    "distribution_column" => {
-                        distribution_column = Some(value);
                     }
                     _ => panic!("struct attribute `{key}` is not supported"),
                 }
@@ -63,6 +58,8 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     }
 
     // Columns
+    let mut primary_key_name = String::from("id");
+    let mut distribution_column = None;
     let mut columns = Vec::new();
     let mut column_fields = Vec::new();
     let mut readonly_fields = Vec::new();
@@ -71,26 +68,42 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
         for field in fields.named.into_iter() {
             let mut type_name = parser::get_type_name(&field.ty);
             if let Some(ident) = field.ident && !type_name.is_empty() {
-                let name = ident.to_string();
+                let mut ignore = false;
+                let mut name = ident.to_string();
                 let mut default_value = None;
                 let mut not_null = false;
                 let mut index_type = None;
-                for attr in field.attrs.iter() {
+                'inner: for attr in field.attrs.iter() {
                     for (key, value) in parser::parse_attr(attr).into_iter() {
                         match key.as_str() {
-                            "type_name" => {
+                            "ignore" => {
+                                ignore = true;
+                                break 'inner;
+                            }
+                            "column_name" => {
+                                if let Some(value) = value {
+                                    name = value;
+                                }
+                            }
+                            "column_type" => {
                                 if let Some(value) = value {
                                     type_name = value;
                                 }
                             }
+                            "default_value" => {
+                                default_value = value;
+                            }
                             "not_null" => {
                                 not_null = true;
                             }
-                            "default" => {
-                                default_value = value;
-                            }
-                            "index" => {
+                            "index_type" => {
                                 index_type = value;
+                            }
+                            "primary_key" => {
+                                primary_key_name = name.clone();
+                            }
+                            "distribution_column" => {
+                                distribution_column = Some(name.clone());
                             }
                             "readonly" => {
                                 readonly_fields.push(quote!{ #name });
@@ -98,14 +111,12 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                             "writeonly" => {
                                 writeonly_fields.push(quote!{ #name });
                             }
-                            "readwrite" => (),
-                            "internal" => {
-                                readonly_fields.push(quote!{ #name });
-                                writeonly_fields.push(quote!{ #name });
-                            },
                             _ => panic!("field attribute `{key}` is not supported"),
                         }
                     }
+                }
+                if ignore {
+                    continue;
                 }
                 if type_name.starts_with("Option") {
                     not_null = false;
@@ -144,24 +155,24 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     }
 
     // Output
-    let type_name_lowercase = type_name.to_ascii_lowercase();
-    let type_name_uppercase = type_name.to_ascii_uppercase();
+    let model_name_snake = model_name.to_case(Case::Snake);
+    let model_name_upper_snake = model_name.to_case(Case::UpperSnake);
     let quote_distribution_column = if let Some(column_name) = distribution_column {
         quote! { Some(#column_name) }
     } else {
         quote! { None }
     };
     let schema_primary_key = format_ident!("{}", primary_key_name);
-    let schema_columns = format_ident!("{}_COLUMNS", type_name_uppercase);
-    let schema_fields = format_ident!("{}_FIELDS", type_name_uppercase);
-    let schema_readonly_fields = format_ident!("{}_READONLY_FIELDS", type_name_uppercase);
-    let schema_writeonly_fields = format_ident!("{}_WRITEONLY_FIELDS", type_name_uppercase);
-    let schema_reader = format_ident!("{}_READER", type_name_uppercase);
-    let schema_writer = format_ident!("{}_WRITER", type_name_uppercase);
-    let avro_schema = format_ident!("{}_AVRO_SCHEMA", type_name_uppercase);
-    let columns_len = columns.len();
-    let readonly_fields_len = readonly_fields.len();
-    let writeonly_fields_len = writeonly_fields.len();
+    let schema_columns = format_ident!("{}_COLUMNS", model_name_upper_snake);
+    let schema_fields = format_ident!("{}_FIELDS", model_name_upper_snake);
+    let schema_readonly_fields = format_ident!("{}_READONLY_FIELDS", model_name_upper_snake);
+    let schema_writeonly_fields = format_ident!("{}_WRITEONLY_FIELDS", model_name_upper_snake);
+    let schema_reader = format_ident!("{}_READER", model_name_upper_snake);
+    let schema_writer = format_ident!("{}_WRITER", model_name_upper_snake);
+    let avro_schema = format_ident!("{}_AVRO_SCHEMA", model_name_upper_snake);
+    let num_columns = columns.len();
+    let num_readonly_fields = readonly_fields.len();
+    let num_writeonly_fields = writeonly_fields.len();
     let output = quote! {
         use zino_core::{
             database::{ConnectionPool, Schema},
@@ -196,7 +207,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 .collect::<Vec<_>>();
             Schema::Record {
                 name: Name {
-                    name: #type_name.to_owned(),
+                    name: #model_name.to_owned(),
                     namespace: None,
                 },
                 aliases: None,
@@ -205,19 +216,19 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 lookup: std::collections::BTreeMap::new(),
             }
         });
-        static #schema_columns: std::sync::LazyLock<[Column; #columns_len]> =
+        static #schema_columns: std::sync::LazyLock<[Column; #num_columns]> =
             std::sync::LazyLock::new(|| [#(#columns),*]);
-        static #schema_fields: std::sync::LazyLock<[&'static str; #columns_len]> =
+        static #schema_fields: std::sync::LazyLock<[&'static str; #num_columns]> =
             std::sync::LazyLock::new(|| [#(#column_fields),*]);
-        static #schema_readonly_fields: std::sync::LazyLock<[&'static str; #readonly_fields_len]> =
+        static #schema_readonly_fields: std::sync::LazyLock<[&'static str; #num_readonly_fields]> =
             std::sync::LazyLock::new(|| [#(#readonly_fields),*]);
-        static #schema_writeonly_fields: std::sync::LazyLock<[&'static str; #writeonly_fields_len]> =
+        static #schema_writeonly_fields: std::sync::LazyLock<[&'static str; #num_writeonly_fields]> =
             std::sync::LazyLock::new(|| [#(#writeonly_fields),*]);
         static #schema_reader: std::sync::OnceLock<&ConnectionPool> = std::sync::OnceLock::new();
         static #schema_writer: std::sync::OnceLock<&ConnectionPool> = std::sync::OnceLock::new();
 
         impl Schema for #name {
-            const TYPE_NAME: &'static str = #type_name_lowercase;
+            const MODEL_NAME: &'static str = #model_name_snake;
             const PRIMARY_KEY_NAME: &'static str = #primary_key_name;
             const READER_NAME: &'static str = #reader_name;
             const WRITER_NAME: &'static str = #writer_name;
@@ -256,19 +267,20 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 if let Some(connection_pool) = #schema_reader.get() {
                     Ok(*connection_pool)
                 } else {
+                    let model_name = Self::MODEL_NAME;
                     let connection_pool = Self::init_reader()?;
                     if let Err(err) = Self::create_table().await {
-                        let message = format!("fail to acquire reader for the model `{}`", Self::TYPE_NAME);
+                        let message = format!("fail to acquire reader for the model `{model_name}`");
                         connection_pool.store_availability(false);
                         return Err(err.context(message));
                     }
                     if let Err(err) = Self::create_indexes().await {
-                        let message = format!("fail to acquire reader for the model `{}`", Self::TYPE_NAME);
+                        let message = format!("fail to acquire reader for the model `{model_name}`");
                         connection_pool.store_availability(false);
                         return Err(err.context(message));
                     }
                     #schema_reader.set(connection_pool).map_err(|_| {
-                        ZinoError::new(format!("fail to acquire reader for the model `{}`", Self::TYPE_NAME))
+                        ZinoError::new(format!("fail to acquire reader for the model `{model_name}`"))
                     })?;
                     Ok(connection_pool)
                 }
@@ -278,19 +290,20 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 if let Some(connection_pool) = #schema_writer.get() {
                     Ok(*connection_pool)
                 } else {
+                    let model_name = Self::MODEL_NAME;
                     let connection_pool = Self::init_writer()?;
                     if let Err(err) = Self::create_table().await {
-                        let message = format!("fail to acquire writer for the model `{}`", Self::TYPE_NAME);
+                        let message = format!("fail to acquire writer for the model `{model_name}`");
                         connection_pool.store_availability(false);
                         return Err(err.context(message));
                     }
                     if let Err(err) = Self::create_indexes().await {
-                        let message = format!("fail to acquire writer for the model `{}`", Self::TYPE_NAME);
+                        let message = format!("fail to acquire writer for the model `{model_name}`");
                         connection_pool.store_availability(false);
                         return Err(err.context(message));
                     }
                     #schema_writer.set(connection_pool).map_err(|_| {
-                        ZinoError::new(format!("fail to acquire writer for the model `{}`", Self::TYPE_NAME))
+                        ZinoError::new(format!("fail to acquire writer for the model `{model_name}`"))
                     })?;
                     Ok(connection_pool)
                 }

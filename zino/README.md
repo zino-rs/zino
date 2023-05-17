@@ -1,7 +1,7 @@
 # zino
 
-`zino` is a full-featured web application framework for Rust with a focus on
-productivity and performance.
+`zino` is a full-featured application framework for Rust with a focus on
+practicability, productivity and extendibility.
 
 ## Highlights
 
@@ -26,7 +26,7 @@ The following optional features are available:
 |--------------|------------------------------------------------------|----------|
 | `actix`      | Enables the integration with [`actix-web`].          | No       |
 | `axum`       | Enables the integration with [`axum`].               | No       |
-| `orm`        | Enables the ORM.                                     | Yes      |
+| `orm`        | Enables the ORM for MySQL or PostgreSQL.             | Yes      |
 | `view`       | Enables the HTML template rendering.                 | Yes      |
 
 [`sqlx`]: https://crates.io/crates/sqlx

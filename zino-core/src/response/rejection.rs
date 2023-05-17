@@ -205,7 +205,7 @@ pub trait ExtractRejection<T> {
 impl<T> ExtractRejection<T> for Option<T> {
     #[inline]
     fn extract<Ctx: RequestContext>(self, ctx: &Ctx) -> Result<T, Rejection> {
-        self.ok_or_else(|| Rejection::not_found(Error::new("resource does not exit")).context(ctx))
+        self.ok_or_else(|| Rejection::not_found(Error::new("resource does not exist")).context(ctx))
     }
 }
 
@@ -227,6 +227,6 @@ impl<T, E: Into<Error>> ExtractRejection<T> for Result<Option<T>, E> {
     #[inline]
     fn extract<Ctx: RequestContext>(self, ctx: &Ctx) -> Result<T, Rejection> {
         self.map_err(|err| Rejection::internal_server_error(err).context(ctx))?
-            .ok_or_else(|| Rejection::not_found(Error::new("resource does not exit")).context(ctx))
+            .ok_or_else(|| Rejection::not_found(Error::new("resource does not exist")).context(ctx))
     }
 }

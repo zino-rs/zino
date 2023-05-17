@@ -119,6 +119,10 @@ pub trait Application {
 
     /// Returns the secret key for the application.
     /// It should have at least 64 bytes.
+    ///
+    /// # Note
+    ///
+    /// This should only be used for internal services. Do not expose it to application users.
     #[inline]
     fn secret_key() -> &'static [u8] {
         SECRET_KEY.get().expect("fail to get the secret key")

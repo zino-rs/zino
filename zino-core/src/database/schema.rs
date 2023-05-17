@@ -13,8 +13,8 @@ use sqlx::{Row, Transaction};
 
 /// Database schema.
 pub trait Schema: 'static + Send + Sync + Model {
-    /// Type name.
-    const TYPE_NAME: &'static str;
+    /// Model name.
+    const MODEL_NAME: &'static str;
     /// Primary key name.
     const PRIMARY_KEY_NAME: &'static str = "id";
     /// Reader name.
@@ -51,21 +51,22 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Returns the model name.
     #[inline]
     fn model_name() -> &'static str {
-        Self::TYPE_NAME
+        Self::MODEL_NAME
     }
 
     /// Returns the model namespace.
     #[inline]
     fn model_namespace() -> &'static str {
-        [*super::NAMESPACE_PREFIX, Self::TYPE_NAME].join(":").leak()
+        [*super::NAMESPACE_PREFIX, Self::MODEL_NAME]
+            .join(":")
+            .leak()
     }
 
     /// Returns the table name.
     #[inline]
     fn table_name() -> &'static str {
-        [*super::NAMESPACE_PREFIX, Self::TYPE_NAME]
+        [*super::NAMESPACE_PREFIX, Self::MODEL_NAME]
             .join("_")
-            .replace(':', "_")
             .leak()
     }
 
@@ -143,16 +144,71 @@ pub trait Schema: 'static + Send + Sync + Model {
     async fn create_indexes() -> Result<u64, Error> {
         let pool = Self::init_writer()?.pool();
 
-        // Returns early for MySQL since it does not support `CREATE INDEX IF NOT EXISTS`.
+        let table_name = Self::table_name();
+        let columns = Self::columns();
+        let mut rows = 0;
         if DatabaseDriver::DRIVER_NAME == "mysql" {
-            return Ok(0);
+            let sql = format!("SHOW INDEXES FROM {table_name}");
+            let indexes = sqlx::query(&sql).fetch_all(pool).await?;
+            if indexes.len() > 1 {
+                return Ok(0);
+            }
+
+            let mut text_search_columns = Vec::new();
+            for col in columns {
+                if let Some(index_type) = col.index_type() {
+                    let column_name = col.name();
+                    if index_type == "fulltext" || index_type == "text" {
+                        text_search_columns.push(column_name);
+                    } else if index_type == "unique" || index_type == "spatial" {
+                        let index_type = index_type.to_uppercase();
+                        let sql = format!(
+                            "
+                                CREATE {index_type} INDEX {table_name}_{column_name}_index
+                                ON {table_name} ({column_name});
+                            "
+                        );
+                        rows = sqlx::query(&sql)
+                            .execute(pool)
+                            .await?
+                            .rows_affected()
+                            .max(rows);
+                    } else if index_type == "btree" || index_type == "hash" {
+                        let index_type = index_type.to_uppercase();
+                        let sql = format!(
+                            "
+                                CREATE INDEX {table_name}_{column_name}_index
+                                ON {table_name} ({column_name}) USING {index_type};
+                            "
+                        );
+                        rows = sqlx::query(&sql)
+                            .execute(pool)
+                            .await?
+                            .rows_affected()
+                            .max(rows);
+                    }
+                }
+            }
+            if !text_search_columns.is_empty() {
+                let text_search_columns = text_search_columns.join(",");
+                let sql = format!(
+                    "
+                        CREATE FULLTEXT INDEX {table_name}_text_search_index
+                        ON {table_name} ({text_search_columns});
+                    "
+                );
+                rows = sqlx::query(&sql)
+                    .execute(pool)
+                    .await?
+                    .rows_affected()
+                    .max(rows);
+            }
+            return Ok(rows);
         }
 
-        let table_name = Self::table_name();
-        let mut text_search_languages = Vec::new();
         let mut text_search_columns = Vec::new();
-        let mut rows = 0;
-        for col in Self::columns() {
+        let mut text_search_languages = Vec::new();
+        for col in columns {
             if let Some(index_type) = col.index_type() {
                 let column_name = col.name();
                 if index_type.starts_with("text") {
@@ -160,6 +216,18 @@ pub trait Schema: 'static + Send + Sync + Model {
                     let column = format!("coalesce({column_name}, '')");
                     text_search_languages.push(language);
                     text_search_columns.push((language, column));
+                } else if index_type == "unique" {
+                    let sql = format!(
+                        "
+                            CREATE UNIQUE INDEX {table_name}_{column_name}_index
+                            ON {table_name} ({column_name});
+                        "
+                    );
+                    rows = sqlx::query(&sql)
+                        .execute(pool)
+                        .await?
+                        .rows_affected()
+                        .max(rows);
                 } else {
                     let sort_order = if index_type == "btree" { " DESC" } else { "" };
                     let sql = format!(
@@ -754,7 +822,7 @@ pub trait Schema: 'static + Send + Sync + Model {
             let record = Record::decode_row(&row)?;
             Self::try_from_avro_record(record).map_err(Error::from)
         } else {
-            let model_name = Self::TYPE_NAME;
+            let model_name = Self::MODEL_NAME;
             Err(Error::new(format!(
                 "no rows found for the model `{model_name}` with the primary key `{primary_key}`"
             )))

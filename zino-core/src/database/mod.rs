@@ -5,6 +5,7 @@
 //! You can enable the `orm-mysql` feature to use MySQL or enable `orm-postgres` to use PostgreSQL.
 
 use crate::{extension::TomlTableExt, model::EncodeColumn, state::State};
+use convert_case::{Case, Casing};
 use sqlx::{
     pool::{Pool, PoolOptions},
     Connection,
@@ -149,13 +150,13 @@ impl ConnectionPool {
             .before_acquire(move |conn, meta| {
                 Box::pin(async move {
                     if meta.idle_for.as_secs() > 60 &&
-                        let Some(pool) = SHARED_CONNECTION_POOLS.get_pool(name)
+                        let Some(cp) = SHARED_CONNECTION_POOLS.get_pool(name)
                     {
                         if let Err(err) = conn.ping().await {
-                            pool.store_availability(false);
+                            cp.store_availability(false);
                             return Err(err);
                         } else {
-                            pool.store_availability(true);
+                            cp.store_availability(cp.pool().num_idle() > 0);
                         }
                     }
                     Ok(true)
@@ -180,13 +181,11 @@ impl ConnectionPools {
     /// Returns a connection pool with the specific name.
     pub(crate) fn get_pool(&self, name: &str) -> Option<&ConnectionPool> {
         let mut pool = None;
-        for p in self.0.iter() {
-            if p.name() == name {
-                if p.is_available() {
-                    return Some(p);
-                } else {
-                    pool = Some(p);
-                }
+        for cp in self.0.iter().filter(|cp| cp.name() == name) {
+            if cp.is_available() {
+                return Some(cp);
+            } else {
+                pool = Some(cp);
             }
         }
         pool
@@ -215,7 +214,10 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
     if database_type == driver {
         tracing::warn!(driver, "connect to the database lazily");
     } else {
-        tracing::error!(driver, "invalid database type `{database_type}`");
+        tracing::error!(
+            driver,
+            "invalid database type `{database_type}` for the driver `{driver}`"
+        );
     }
     ConnectionPools(pools)
 });
@@ -227,5 +229,7 @@ static NAMESPACE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
         .get_table("database")
         .expect("the `database` field should be a table")
         .get_str("namespace")
-        .expect("the `database.namespace` field should be a str")
+        .expect("the `namespace` field should be a str")
+        .to_case(Case::Snake)
+        .leak()
 });

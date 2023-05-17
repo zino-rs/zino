@@ -10,15 +10,15 @@ pub struct Log {
     // Basic fields.
     #[schema(readonly)]
     id: Uuid,
-    #[schema(not_null, index = "text")]
+    #[schema(not_null, index_type = "text")]
     name: String,
-    #[schema(default = "Log::model_namespace", index = "hash")]
+    #[schema(default_value = "Log::model_namespace", index_type = "hash")]
     namespace: String,
-    #[schema(default = "internal")]
+    #[schema(default_value = "internal")]
     visibility: String,
-    #[schema(default = "active", index = "hash")]
+    #[schema(default_value = "active", index_type = "hash")]
     status: String,
-    #[schema(index = "text")]
+    #[schema(index_type = "text")]
     description: String,
 
     // Info fields.
@@ -31,11 +31,11 @@ pub struct Log {
     topic: String,
     #[schema(readonly)]
     level: String,
-    #[schema(readonly, index = "text")]
+    #[schema(readonly, index_type = "text")]
     message: String,
     #[schema(readonly)]
     source: String,
-    #[schema(readonly, index = "btree")]
+    #[schema(readonly, index_type = "btree")]
     recorded_at: DateTime,
 
     // Extensions.
@@ -47,9 +47,9 @@ pub struct Log {
     // Revisions.
     manager_id: Uuid,    // user.id
     maintainer_id: Uuid, // user.id
-    #[schema(readonly, default = "now", index = "btree")]
+    #[schema(readonly, default_value = "now", index_type = "btree")]
     created_at: DateTime,
-    #[schema(default = "now", index = "btree")]
+    #[schema(default_value = "now", index_type = "btree")]
     updated_at: DateTime,
     version: u64,
     edition: u32,

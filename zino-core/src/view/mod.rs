@@ -8,7 +8,7 @@ use tera::{Context, Tera};
 pub fn render(template_name: &str, data: Map) -> Result<String, Error> {
     let view_engine = SHARED_VIEW_ENGINE
         .get()
-        .ok_or_else(|| Error::new("fail to get view engine"))?;
+        .ok_or_else(|| Error::new("fail to get the view engine"))?;
     let context = Context::from_value(data.into())?;
     view_engine
         .render(template_name, &context)
@@ -43,7 +43,7 @@ pub(crate) fn init<APP: Application + ?Sized>() {
     }
     SHARED_VIEW_ENGINE
         .set(view_engine)
-        .expect("fail to set view engine");
+        .expect("fail to set the view engine");
 }
 
 /// Shared view engine.

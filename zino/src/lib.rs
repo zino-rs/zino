@@ -6,8 +6,8 @@
 //! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?labelColor=555555&logo=rust
 //! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?labelColor=555555&logo=docs.rs
 //!
-//! [`zino`] is a full-featured web application framework for Rust
-//! with a focus on productivity and performance.
+//! [`zino`] is a full-featured application framework for Rust with a focus on
+//! practicability, productivity and extendibility.
 //!
 //! ## Highlights
 //!
@@ -32,7 +32,7 @@
 //! |--------------|------------------------------------------------------|----------|
 //! | `actix`      | Enables the integration with [`actix-web`].          | No       |
 //! | `axum`       | Enables the integration with [`axum`].               | No       |
-//! | `orm`        | Enables the ORM.                                     | Yes      |
+//! | `orm`        | Enables the ORM for MySQL or PostgreSQL.             | Yes      |
 //! | `view`       | Enables the HTML template rendering.                 | Yes      |
 //!
 //! [`zino`]: https://github.com/photino/zino
@@ -73,6 +73,7 @@ pub use zino_core::{
 };
 
 #[cfg(feature = "orm")]
+#[doc(no_inline)]
 pub use zino_core::database::Schema;
 
 cfg_if::cfg_if! {

@@ -349,7 +349,7 @@ impl DecodeRow<DatabaseRow> for Map {
                 "INT8" => row.try_get_unchecked::<i64, _>(index)?.into(),
                 "FLOAT4" => row.try_get_unchecked::<f32, _>(index)?.into(),
                 "FLOAT8" => row.try_get_unchecked::<f64, _>(index)?.into(),
-                "TEXT" | "VARCHAR" => row.try_get_unchecked::<String, _>(index)?.into(),
+                "TEXT" | "VARCHAR" | "CHAR" => row.try_get_unchecked::<String, _>(index)?.into(),
                 "TIMESTAMPTZ" => row.try_get_unchecked::<DateTime, _>(index)?.into(),
                 "UUID" => row.try_get_unchecked::<Uuid, _>(index)?.to_string().into(),
                 "BYTEA" => row.try_get_unchecked::<Vec<u8>, _>(index)?.into(),
@@ -386,7 +386,7 @@ impl DecodeRow<DatabaseRow> for Record {
                 "INT8" => row.try_get_unchecked::<i64, _>(index)?.into(),
                 "FLOAT4" => row.try_get_unchecked::<f32, _>(index)?.into(),
                 "FLOAT8" => row.try_get_unchecked::<f64, _>(index)?.into(),
-                "TEXT" | "VARCHAR" => row.try_get_unchecked::<String, _>(index)?.into(),
+                "TEXT" | "VARCHAR" | "CHAR" => row.try_get_unchecked::<String, _>(index)?.into(),
                 "TIMESTAMPTZ" => row.try_get_unchecked::<DateTime, _>(index)?.into(),
                 // deserialize Avro Uuid value wasn't supported in 0.14.0
                 "UUID" => row.try_get_unchecked::<Uuid, _>(index)?.to_string().into(),

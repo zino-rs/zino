@@ -10,15 +10,15 @@ pub struct Dataset {
     // Basic fields.
     #[schema(readonly)]
     id: Uuid,
-    #[schema(not_null, index = "text")]
+    #[schema(not_null, index_type = "text")]
     name: String,
-    #[schema(default = "Dataset::model_namespace", index = "hash")]
+    #[schema(default_value = "Dataset::model_namespace", index_type = "hash")]
     namespace: String,
-    #[schema(default = "internal")]
+    #[schema(default_value = "internal")]
     visibility: String,
-    #[schema(default = "active", index = "hash")]
+    #[schema(default_value = "active", index_type = "hash")]
     status: String,
-    #[schema(index = "text")]
+    #[schema(index_type = "text")]
     description: String,
 
     // Info fields.
@@ -26,7 +26,7 @@ pub struct Dataset {
     task_id: Option<Uuid>, // task.id
     valid_from: DateTime,
     expires_at: DateTime,
-    #[schema(index = "gin")]
+    #[schema(index_type = "gin")]
     tags: Vec<Uuid>, // tag.id, tag.namespace = "*:dataset"
 
     // Extensions.
@@ -37,9 +37,9 @@ pub struct Dataset {
     // Revisions.
     manager_id: Uuid,    // user.id
     maintainer_id: Uuid, // user.id
-    #[schema(readonly, default = "now", index = "btree")]
+    #[schema(readonly, default_value = "now", index_type = "btree")]
     created_at: DateTime,
-    #[schema(default = "now", index = "btree")]
+    #[schema(default_value = "now", index_type = "btree")]
     updated_at: DateTime,
     version: u64,
     edition: u32,

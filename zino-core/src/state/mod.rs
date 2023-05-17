@@ -155,7 +155,8 @@ impl State {
             }
         }
         if let Some(encrypted_password) = Self::encrypt_password(config).as_deref() {
-            let masked_password = format::mask_text(password, 1, 1);
+            let num_chars = password.len() / 4;
+            let masked_password = format::mask_text(password, num_chars, num_chars);
             tracing::warn!(
                 encrypted_password,
                 "raw passowrd `{masked_password}` should be encypted"

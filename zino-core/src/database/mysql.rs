@@ -28,13 +28,13 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
             "f64" => "DOUBLE",
             "f32" => "FLOAT",
             "String" => {
-                if column.default_value().is_some() {
+                if column.default_value().or(column.index_type()).is_some() {
                     "VARCHAR(255)"
                 } else {
                     "TEXT"
                 }
             }
-            "DateTime" => "TIMESTAMP",
+            "DateTime" => "TIMESTAMP(6)",
             "Uuid" | "Option<Uuid>" => "VARCHAR(36)",
             "Vec<u8>" => "BLOB",
             "Vec<String>" => "JSON",
@@ -115,7 +115,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
             "String" | "Uuid" | "Option<Uuid>" => Self::format_string(value).into(),
             "DateTime" => match value {
                 "epoch" => "from_unixtime(0)".into(),
-                "now" => "now()".into(),
+                "now" => "current_timestamp(6)".into(),
                 "today" => "curdate()".into(),
                 "tomorrow" => "curdate() + INTERVAL 1 DAY".into(),
                 "yesterday" => "curdate() - INTERVAL 1 DAY".into(),
@@ -384,9 +384,9 @@ impl DecodeRow<DatabaseRow> for Record {
                 "BIGINT" | "BIGINT UNSIGNED" => row.try_get_unchecked::<i64, _>(index)?.into(),
                 "FLOAT" => row.try_get_unchecked::<f32, _>(index)?.into(),
                 "DOUBLE" => row.try_get_unchecked::<f64, _>(index)?.into(),
-                "VARCHAR" | "CHAR" | "TEXT" => row.try_get_unchecked::<String, _>(index)?.into(),
+                "TEXT" | "VARCHAR" | "CHAR" => row.try_get_unchecked::<String, _>(index)?.into(),
                 "TIMESTAMP" => row.try_get_unchecked::<DateTime, _>(index)?.into(),
-                "VARBINARY" | "BINARY" | "BLOB" => {
+                "BLOB" | "VARBINARY" | "BINARY" => {
                     row.try_get_unchecked::<Vec<u8>, _>(index)?.into()
                 }
                 "JSON" => row.try_get_unchecked::<JsonValue, _>(index)?.into(),

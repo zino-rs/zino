@@ -1,7 +1,7 @@
 # zino
 
-`zino` is a full-featured web application framework for Rust with a focus on
-productivity and performance.
+`zino` is a full-featured application framework for Rust with a focus on
+practicability, productivity and extendibility.
 
 [![Crates.io](https://img.shields.io/crates/v/zino)][zino]
 [![Documentation](https://shields.io/docsrs/zino)][zino-docs]

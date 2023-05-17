@@ -59,7 +59,6 @@ pub(crate) async fn view(req: Request) -> Result {
     ];
     let user_intro = req.translate("user-intro", Some(args)).extract(&req)?;
     let data = json!({
-        "schema": User::schema(),
         "intro": user_intro,
         "user": user,
     });
