@@ -2,9 +2,9 @@
 //!
 //! # Supported database drivers
 //!
-//! You can enable the `orm-mysql` feature to use MySQL or enable `orm-postgres` to use PostgreSQL.
+//! You can enable the `orm-mysql` feature to use MySQL or `orm-postgres` to use PostgreSQL.
 
-use crate::{extension::TomlTableExt, model::EncodeColumn, state::State};
+use crate::{extension::TomlTableExt, state::State};
 use convert_case::{Case, Casing};
 use sqlx::{
     pool::{Pool, PoolOptions},
@@ -41,6 +41,9 @@ cfg_if::cfg_if! {
 
         /// Options and flags which can be used to configure a MySQL connection.
         type DatabaseConnectOptions = MySqlConnectOptions;
+
+        /// Driver name.
+        static DRIVER_NAME: &str = "mysql";
     } else {
         use sqlx::postgres::{PgConnectOptions, PgRow, Postgres};
 
@@ -54,6 +57,9 @@ cfg_if::cfg_if! {
 
         /// Options and flags which can be used to configure a PostgreSQL connection.
         type DatabaseConnectOptions = PgConnectOptions;
+
+        /// Driver name.
+        static DRIVER_NAME: &str = "postgres";
     }
 }
 
@@ -195,7 +201,7 @@ impl ConnectionPools {
 
 /// Shared connection pools.
 static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
-    let driver = DatabaseDriver::DRIVER_NAME;
+    let driver = DRIVER_NAME;
     let config = State::shared().config();
 
     // Database connection pools.

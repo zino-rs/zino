@@ -99,20 +99,17 @@ impl<'a> Column<'a> {
     }
 }
 
-/// A backend type for encoding the column.
-pub trait EncodeColumn<'a> {
-    /// Driver name.
-    const DRIVER_NAME: &'static str;
-
-    /// Returns the corresponding column type.
-    fn column_type(column: &Column<'a>) -> &'a str;
+/// Encodes the column to be sent to the database.
+pub trait EncodeColumn<DB> {
+    /// Returns the corresponding column type in the database.
+    fn column_type(&self) -> &str;
 
     /// Encodes a json value as a column value represented by a str.
-    fn encode_value<'b>(column: &Column<'a>, value: Option<&'b Value>) -> Cow<'b, str>;
+    fn encode_value<'a>(&self, value: Option<&'a Value>) -> Cow<'a, str>;
 
     /// Formats a string value for the column.
-    fn format_value<'b>(column: &Column<'a>, value: &'b str) -> Cow<'b, str>;
+    fn format_value<'a>(&self, value: &'a str) -> Cow<'a, str>;
 
     /// Formats a column filter.
-    fn format_filter(column: &Column<'a>, key: &str, value: &Value) -> String;
+    fn format_filter(&self, key: &str, value: &Value) -> String;
 }

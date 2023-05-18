@@ -24,6 +24,7 @@ features = [
     "connector",
     "connector-arrow",
     "orm-postgres",
+    "view-minijinja",
 ]
 
 [dependencies.zino-model]

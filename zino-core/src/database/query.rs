@@ -1,4 +1,4 @@
-use super::{DatabaseDriver, Schema};
+use super::Schema;
 use crate::{model::EncodeColumn, request::Validation, Map, SharedString};
 use serde_json::Value;
 use std::borrow::Cow;
@@ -108,10 +108,10 @@ pub(super) trait QueryExt<DB> {
                             // Use the filter condition to optimize pagination offset.
                             let key = Self::format_field(key);
                             let operator = if ascending { ">" } else { "<" };
-                            let value = DatabaseDriver::encode_value(col, Some(value));
+                            let value = col.encode_value(Some(value));
                             format!(r#"{key} {operator} {value}"#)
                         } else {
-                            DatabaseDriver::format_filter(col, key, value)
+                            col.format_filter(key, value)
                         };
                         conditions.push(condition);
                     }
@@ -183,7 +183,7 @@ pub(super) trait QueryExt<DB> {
                 }
                 _ => {
                     if let Some(col) = M::get_column(key) {
-                        let condition = DatabaseDriver::format_filter(col, key, value);
+                        let condition = col.format_filter(key, value);
                         conditions.push(condition);
                     }
                 }

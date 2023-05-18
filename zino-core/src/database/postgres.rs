@@ -11,11 +11,9 @@ use serde_json::Value as JsonValue;
 use sqlx::{Column as _, Error, Row, TypeInfo};
 use std::borrow::Cow;
 
-impl<'a> EncodeColumn<'a> for DatabaseDriver {
-    const DRIVER_NAME: &'static str = "postgres";
-
-    fn column_type(column: &Column<'a>) -> &'a str {
-        let type_name = column.type_name();
+impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
+    fn column_type(&self) -> &str {
+        let type_name = self.type_name();
         match type_name {
             "bool" => "BOOLEAN",
             "u64" | "i64" | "usize" | "isize" => "BIGINT",
@@ -37,7 +35,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
         }
     }
 
-    fn encode_value<'b>(column: &Column<'a>, value: Option<&'b JsonValue>) -> Cow<'b, str> {
+    fn encode_value<'a>(&self, value: Option<&'a JsonValue>) -> Cow<'a, str> {
         if let Some(value) = value {
             match value {
                 JsonValue::Null => "NULL".into(),
@@ -48,15 +46,15 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                 JsonValue::Number(value) => value.to_string().into(),
                 JsonValue::String(value) => {
                     if value.is_empty() {
-                        if let Some(value) = column.default_value() {
-                            Self::format_value(column, value).into_owned().into()
+                        if let Some(value) = self.default_value() {
+                            self.format_value(value).into_owned().into()
                         } else {
                             "''".into()
                         }
                     } else if value == "null" {
                         "NULL".into()
                     } else {
-                        Self::format_value(column, value)
+                        self.format_value(value)
                     }
                 }
                 JsonValue::Array(value) => {
@@ -64,24 +62,22 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                         .iter()
                         .map(|v| match v {
                             JsonValue::String(v) => Query::escape_string(v),
-                            _ => Self::encode_value(column, Some(v)).into_owned(),
+                            _ => self.encode_value(Some(v)).into_owned(),
                         })
                         .collect::<Vec<_>>();
-                    format!("ARRAY[{}]::{}", values.join(","), Self::column_type(column)).into()
+                    format!("ARRAY[{}]::{}", values.join(","), self.column_type()).into()
                 }
-                JsonValue::Object(_) => {
-                    format!("'{}'::{}", value, Self::column_type(column)).into()
-                }
+                JsonValue::Object(_) => format!("'{}'::{}", value, self.column_type()).into(),
             }
-        } else if column.default_value().is_some() {
+        } else if self.default_value().is_some() {
             "DEFAULT".into()
         } else {
             "NULL".into()
         }
     }
 
-    fn format_value<'b>(column: &Column<'a>, value: &'b str) -> Cow<'b, str> {
-        match column.type_name() {
+    fn format_value<'a>(&self, value: &'a str) -> Cow<'a, str> {
+        match self.type_name() {
             "bool" => {
                 let value = if value == "true" { "TRUE" } else { "FALSE" };
                 value.into()
@@ -130,7 +126,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
             },
             "Vec<u8>" => format!(r"'\x{value}'").into(),
             "Vec<String>" | "Vec<Uuid>" => {
-                let column_type = Self::column_type(column);
+                let column_type = self.column_type();
                 if value.contains(',') {
                     let values = value
                         .split(',')
@@ -150,12 +146,12 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
         }
     }
 
-    fn format_filter(column: &Column<'a>, field: &str, value: &serde_json::Value) -> String {
-        let type_name = column.type_name();
+    fn format_filter(&self, field: &str, value: &serde_json::Value) -> String {
+        let type_name = self.type_name();
         if let Some(filter) = value.as_object() {
             if type_name == "Map" {
                 let field = Query::format_field(field);
-                let value = Self::encode_value(column, Some(value));
+                let value = self.encode_value(Some(value));
                 return format!(r#"{field} @> {value}"#);
             } else {
                 let mut conditions = Vec::with_capacity(filter.len());
@@ -175,7 +171,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                     };
                     if operator == "array_length" {
                         let field = Query::format_field(field);
-                        let value = Self::encode_value(column, Some(value));
+                        let value = self.encode_value(Some(value));
                         let condition = format!(r#"array_length({field}, 1) = {value}"#);
                         conditions.push(condition);
                     } else if operator == "IN" || operator == "NOT IN" {
@@ -183,7 +179,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                             let field = Query::format_field(field);
                             let value = value
                                 .iter()
-                                .map(|v| Self::encode_value(column, Some(v)))
+                                .map(|v| self.encode_value(Some(v)))
                                 .collect::<Vec<_>>()
                                 .join(",");
                             let condition = format!(r#"{field} {operator} ({value})"#);
@@ -191,7 +187,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                         }
                     } else {
                         let field = Query::format_field(field);
-                        let value = Self::encode_value(column, Some(value));
+                        let value = self.encode_value(Some(value));
                         let condition = format!(r#"{field} {operator} {value}"#);
                         conditions.push(condition);
                     }
@@ -206,7 +202,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
         match type_name {
             "bool" => {
                 let field = Query::format_field(field);
-                let value = Self::encode_value(column, Some(value));
+                let value = self.encode_value(Some(value));
                 if value == "TRUE" {
                     format!(r#"{field} IS TRUE"#)
                 } else {
@@ -219,22 +215,22 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                 let field = Query::format_field(field);
                 if let Some(value) = value.as_str() {
                     if let Some((min_value, max_value)) = value.split_once(',') {
-                        let min_value = Self::format_value(column, min_value);
-                        let max_value = Self::format_value(column, max_value);
+                        let min_value = self.format_value(min_value);
+                        let max_value = self.format_value(max_value);
                         format!(r#"{field} >= {min_value} AND {field} < {max_value}"#)
                     } else {
                         let index = value.find(|ch| !"<>=".contains(ch)).unwrap_or(0);
                         if index > 0 {
                             let (operator, value) = value.split_at(index);
-                            let value = Self::format_value(column, value);
+                            let value = self.format_value(value);
                             format!(r#"{field} {operator} {value}"#)
                         } else {
-                            let value = Self::format_value(column, value);
+                            let value = self.format_value(value);
                             format!(r#"{field} = {value}"#)
                         }
                     }
                 } else {
-                    let value = Self::encode_value(column, Some(value));
+                    let value = self.encode_value(Some(value));
                     format!(r#"{field} = {value}"#)
                 }
             }
@@ -258,7 +254,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                         }
                     }
                 } else {
-                    let value = Self::encode_value(column, Some(value));
+                    let value = self.encode_value(Some(value));
                     format!(r#"{field} = {value}"#)
                 }
             }
@@ -281,7 +277,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                         format!(r#"{field} = {value}"#)
                     }
                 } else {
-                    let value = Self::encode_value(column, Some(value));
+                    let value = self.encode_value(Some(value));
                     format!(r#"{field} = {value}"#)
                 }
             }
@@ -294,22 +290,22 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                                 .split(',')
                                 .map(|v| {
                                     let s = v.replace(';', ",");
-                                    let value = Self::format_value(column, &s);
+                                    let value = self.format_value(&s);
                                     format!(r#"{field} @> {value}"#)
                                 })
                                 .collect::<Vec<_>>()
                                 .join(" OR ")
                         } else {
                             let s = value.replace(';', ",");
-                            let value = Self::format_value(column, &s);
+                            let value = self.format_value(&s);
                             format!(r#"{field} @> {value}"#)
                         }
                     } else {
-                        let value = Self::format_value(column, value);
+                        let value = self.format_value(value);
                         format!(r#"{field} && {value}"#)
                     }
                 } else {
-                    let value = Self::encode_value(column, Some(value));
+                    let value = self.encode_value(Some(value));
                     format!(r#"{field} && {value}"#)
                 }
             }
@@ -320,13 +316,13 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                     let value = Query::escape_string(value);
                     format!(r#"{field} @? {value}"#)
                 } else {
-                    let value = Self::encode_value(column, Some(value));
+                    let value = self.encode_value(Some(value));
                     format!(r#"{field} @> {value}"#)
                 }
             }
             _ => {
                 let field = Query::format_field(field);
-                let value = Self::encode_value(column, Some(value));
+                let value = self.encode_value(Some(value));
                 format!(r#"{field} = {value}"#)
             }
         }
@@ -444,7 +440,11 @@ impl DecodeRow<DatabaseRow> for Record {
 impl QueryExt<DatabaseDriver> for Query {
     #[inline]
     fn placeholder(n: usize) -> SharedString {
-        format!("${n}").into()
+        if n == 1 {
+            "$1".into()
+        } else {
+            format!("${n}").into()
+        }
     }
 
     #[inline]
@@ -467,7 +467,7 @@ impl QueryExt<DatabaseDriver> for Query {
         if self.filters().contains_key(sort_by) {
             format!("LIMIT {}", self.limit())
         } else {
-            format!("OFFSET {} LIMIT {}", self.offset(), self.limit())
+            format!("LIMIT {} OFFSET {}", self.limit(), self.offset())
         }
     }
 

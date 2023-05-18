@@ -1,18 +1,20 @@
 //! Building HTML views using templates.
 
-use crate::{application::Application, error::Error, extension::TomlTableExt, Map};
-use std::{path::Path, sync::OnceLock};
-use tera::{Context, Tera};
+use crate::{application::Application, extension::TomlTableExt};
+use std::path::Path;
 
-/// Renders a template with the given data using [`tera`](https://crates.io/crates/tera).
-pub fn render(template_name: &str, data: Map) -> Result<String, Error> {
-    let view_engine = SHARED_VIEW_ENGINE
-        .get()
-        .ok_or_else(|| Error::new("fail to get the view engine"))?;
-    let context = Context::from_value(data.into())?;
-    view_engine
-        .render(template_name, &context)
-        .map_err(|err| err.into())
+cfg_if::cfg_if! {
+    if #[cfg(feature = "view-tera")] {
+        mod tera;
+
+        use self::tera::load_templates;
+        pub use self::tera::render;
+    } else {
+        mod minijinja;
+
+        use self::minijinja::load_templates;
+        pub use self::minijinja::render;
+    }
 }
 
 /// Intializes view engine.
@@ -32,19 +34,5 @@ pub(crate) fn init<APP: Application + ?Sized>() {
             .to_string_lossy()
             .into()
     };
-    let template_dir_glob = template_dir + "/**/*";
-    let mut view_engine =
-        Tera::new(template_dir_glob.as_str()).expect("fail to parse html templates");
-    view_engine.autoescape_on(vec![".html", ".html.tera", ".tera"]);
-    if APP::env() == "dev" {
-        view_engine
-            .full_reload()
-            .expect("fail to reload html templates");
-    }
-    SHARED_VIEW_ENGINE
-        .set(view_engine)
-        .expect("fail to set the view engine");
+    load_templates(APP::shared_state(), template_dir);
 }
-
-/// Shared view engine.
-static SHARED_VIEW_ENGINE: OnceLock<Tera> = OnceLock::new();

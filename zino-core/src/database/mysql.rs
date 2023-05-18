@@ -11,11 +11,9 @@ use serde_json::Value as JsonValue;
 use sqlx::{Column as _, Error, Row, TypeInfo};
 use std::borrow::Cow;
 
-impl<'a> EncodeColumn<'a> for DatabaseDriver {
-    const DRIVER_NAME: &'static str = "mysql";
-
-    fn column_type(column: &Column<'a>) -> &'a str {
-        let type_name = column.type_name();
+impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
+    fn column_type(&self) -> &str {
+        let type_name = self.type_name();
         match type_name {
             "bool" => "BOOLEAN",
             "u64" | "usize" => "BIGINT UNSIGNED",
@@ -29,7 +27,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
             "f64" => "DOUBLE",
             "f32" => "FLOAT",
             "String" => {
-                if column.default_value().or(column.index_type()).is_some() {
+                if self.default_value().or(self.index_type()).is_some() {
                     "VARCHAR(255)"
                 } else {
                     "TEXT"
@@ -48,7 +46,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
         }
     }
 
-    fn encode_value<'b>(column: &Column<'a>, value: Option<&'b JsonValue>) -> Cow<'b, str> {
+    fn encode_value<'a>(&self, value: Option<&'a JsonValue>) -> Cow<'a, str> {
         if let Some(value) = value {
             match value {
                 JsonValue::Null => "NULL".into(),
@@ -59,15 +57,15 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                 JsonValue::Number(value) => value.to_string().into(),
                 JsonValue::String(value) => {
                     if value.is_empty() {
-                        if let Some(value) = column.default_value() {
-                            Self::format_value(column, value).into_owned().into()
+                        if let Some(value) = self.default_value() {
+                            self.format_value(value).into_owned().into()
                         } else {
                             "''".into()
                         }
                     } else if value == "null" {
                         "NULL".into()
                     } else {
-                        Self::format_value(column, value)
+                        self.format_value(value)
                     }
                 }
                 JsonValue::Array(value) => {
@@ -75,22 +73,22 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                         .iter()
                         .map(|v| match v {
                             JsonValue::String(v) => Query::escape_string(v),
-                            _ => Self::encode_value(column, Some(v)).into_owned(),
+                            _ => self.encode_value(Some(v)).into_owned(),
                         })
                         .collect::<Vec<_>>();
                     format!(r#"json_array({})"#, values.join(",")).into()
                 }
                 JsonValue::Object(_) => format!("'{value}'").into(),
             }
-        } else if column.default_value().is_some() {
+        } else if self.default_value().is_some() {
             "DEFAULT".into()
         } else {
             "NULL".into()
         }
     }
 
-    fn format_value<'b>(column: &Column<'a>, value: &'b str) -> Cow<'b, str> {
-        match column.type_name() {
+    fn format_value<'a>(&self, value: &'a str) -> Cow<'a, str> {
+        match self.type_name() {
             "bool" => {
                 let value = if value == "true" { "TRUE" } else { "FALSE" };
                 value.into()
@@ -158,12 +156,12 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
         }
     }
 
-    fn format_filter(column: &Column<'a>, field: &str, value: &serde_json::Value) -> String {
-        let type_name = column.type_name();
+    fn format_filter(&self, field: &str, value: &serde_json::Value) -> String {
+        let type_name = self.type_name();
         if let Some(filter) = value.as_object() {
             if type_name == "Map" {
                 let field = Query::format_field(field);
-                let value = Self::encode_value(column, Some(value));
+                let value = self.encode_value(Some(value));
                 // `json_overlaps()` was added in MySQL 8.0.17.
                 return format!(r#"json_overlaps({field}, {value})"#);
             } else {
@@ -185,7 +183,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                             let field = Query::format_field(field);
                             let value = value
                                 .iter()
-                                .map(|v| Self::encode_value(column, Some(v)))
+                                .map(|v| self.encode_value(Some(v)))
                                 .collect::<Vec<_>>()
                                 .join(",");
                             let condition = format!(r#"{field} {operator} ({value})"#);
@@ -193,7 +191,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                         }
                     } else {
                         let field = Query::format_field(field);
-                        let value = Self::encode_value(column, Some(value));
+                        let value = self.encode_value(Some(value));
                         let condition = format!(r#"{field} {operator} {value}"#);
                         conditions.push(condition);
                     }
@@ -208,7 +206,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
         match type_name {
             "bool" => {
                 let field = Query::format_field(field);
-                let value = Self::encode_value(column, Some(value));
+                let value = self.encode_value(Some(value));
                 if value == "TRUE" {
                     format!(r#"{field} IS TRUE"#)
                 } else {
@@ -221,22 +219,22 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                 let field = Query::format_field(field);
                 if let Some(value) = value.as_str() {
                     if let Some((min_value, max_value)) = value.split_once(',') {
-                        let min_value = Self::format_value(column, min_value);
-                        let max_value = Self::format_value(column, max_value);
+                        let min_value = self.format_value(min_value);
+                        let max_value = self.format_value(max_value);
                         format!(r#"{field} >= {min_value} AND {field} < {max_value}"#)
                     } else {
                         let index = value.find(|ch| !"<>=".contains(ch)).unwrap_or(0);
                         if index > 0 {
                             let (operator, value) = value.split_at(index);
-                            let value = Self::format_value(column, value);
+                            let value = self.format_value(value);
                             format!(r#"{field} {operator} {value}"#)
                         } else {
-                            let value = Self::format_value(column, value);
+                            let value = self.format_value(value);
                             format!(r#"{field} = {value}"#)
                         }
                     }
                 } else {
-                    let value = Self::encode_value(column, Some(value));
+                    let value = self.encode_value(Some(value));
                     format!(r#"{field} = {value}"#)
                 }
             }
@@ -260,7 +258,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                         }
                     }
                 } else {
-                    let value = Self::encode_value(column, Some(value));
+                    let value = self.encode_value(Some(value));
                     format!(r#"{field} = {value}"#)
                 }
             }
@@ -283,7 +281,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                         format!(r#"{field} = {value}"#)
                     }
                 } else {
-                    let value = Self::encode_value(column, Some(value));
+                    let value = self.encode_value(Some(value));
                     format!(r#"{field} = {value}"#)
                 }
             }
@@ -296,7 +294,7 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                                 .split(',')
                                 .map(|v| {
                                     let s = v.replace(';', ",");
-                                    let value = Self::format_value(column, &s);
+                                    let value = self.format_value(&s);
                                     format!(r#"json_overlaps({field}, {value})"#)
                                 })
                                 .collect::<Vec<_>>()
@@ -305,29 +303,29 @@ impl<'a> EncodeColumn<'a> for DatabaseDriver {
                             value
                                 .split(';')
                                 .map(|v| {
-                                    let value = Self::format_value(column, v);
+                                    let value = self.format_value(v);
                                     format!(r#"json_overlaps({field}, {value})"#)
                                 })
                                 .collect::<Vec<_>>()
                                 .join(" AND ")
                         }
                     } else {
-                        let value = Self::format_value(column, value);
+                        let value = self.format_value(value);
                         format!(r#"json_overlaps({field}, {value})"#)
                     }
                 } else {
-                    let value = Self::encode_value(column, Some(value));
+                    let value = self.encode_value(Some(value));
                     format!(r#"json_overlaps({field}, {value})"#)
                 }
             }
             "Map" => {
                 let field = Query::format_field(field);
-                let value = Self::encode_value(column, Some(value));
+                let value = self.encode_value(Some(value));
                 format!(r#"json_overlaps({field}, {value})"#)
             }
             _ => {
                 let field = Query::format_field(field);
-                let value = Self::encode_value(column, Some(value));
+                let value = self.encode_value(Some(value));
                 format!(r#"{field} = {value}"#)
             }
         }

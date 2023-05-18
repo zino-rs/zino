@@ -118,13 +118,13 @@ pub trait Schema: 'static + Send + Sync + Model {
         let columns = Self::columns()
             .iter()
             .map(|col| {
-                let name = col.name();
-                let column_type = DatabaseDriver::column_type(col);
-                let mut column = format!("{name} {column_type}");
-                if name == primary_key_name {
+                let column_name = col.name();
+                let column_type = col.column_type();
+                let mut column = format!("{column_name} {column_type}");
+                if column_name == primary_key_name {
                     column += " PRIMARY KEY";
                 } else if let Some(value) = col.default_value() {
-                    column = column + " DEFAULT " + &DatabaseDriver::format_value(col, value);
+                    column = column + " DEFAULT " + &col.format_value(value);
                 } else if col.is_not_null() {
                     column += " NOT NULL";
                 }
@@ -147,7 +147,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let table_name = Self::table_name();
         let columns = Self::columns();
         let mut rows = 0;
-        if DatabaseDriver::DRIVER_NAME == "mysql" {
+        if super::DRIVER_NAME == "mysql" {
             let sql = format!("SHOW INDEXES FROM {table_name}");
             let indexes = sqlx::query(&sql).fetch_all(pool).await?;
             if indexes.len() > 1 {
@@ -274,21 +274,11 @@ pub trait Schema: 'static + Send + Sync + Model {
         let fields = Self::fields().join(",");
         let values = Self::columns()
             .iter()
-            .map(|col| DatabaseDriver::encode_value(col, map.get(col.name())))
-            .collect::<Vec<_>>();
-        let placeholders = values
-            .iter()
-            .enumerate()
-            .map(|(i, _)| Query::placeholder(i + 1))
+            .map(|col| col.encode_value(map.get(col.name())))
             .collect::<Vec<_>>()
             .join(",");
-        let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({placeholders});");
-        let mut query = sqlx::query(&sql);
-        for value in values {
-            query = query.bind(value);
-        }
-
-        let query_result = query.execute(pool).await?;
+        let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({values});");
+        let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
         if rows_affected == 1 {
             Ok(())
@@ -309,7 +299,7 @@ pub trait Schema: 'static + Send + Sync + Model {
             let map = model.into_map();
             let entries = columns
                 .iter()
-                .map(|col| DatabaseDriver::encode_value(col, map.get(col.name())))
+                .map(|col| col.encode_value(map.get(col.name())))
                 .collect::<Vec<_>>();
             values.push(format!("({})", entries.join(",")));
         }
@@ -331,30 +321,20 @@ pub trait Schema: 'static + Send + Sync + Model {
         let readonly_fields = Self::readonly_fields();
         let num_writable_fields = Self::fields().len() - readonly_fields.len();
         let mut mutations = Vec::with_capacity(num_writable_fields);
-        let mut values = Vec::with_capacity(num_writable_fields);
         for col in Self::columns() {
             let field = col.name();
             if !readonly_fields.contains(&field) {
-                let value = DatabaseDriver::encode_value(col, map.get(field));
+                let value = col.encode_value(map.get(field));
                 let field = Query::format_field(field);
-                let placeholder = Query::placeholder(values.len() + 1);
-                mutations.push(format!("{field} = {placeholder}"));
-                values.push(value);
+                mutations.push(format!("{field} = {value}"));
             }
         }
 
         let mutations = mutations.join(",");
-        let placeholder = Query::placeholder(values.len() + 1);
         let sql = format!(
-            "UPDATE {table_name} SET {mutations} WHERE {primary_key_name} = {placeholder};"
+            "UPDATE {table_name} SET {mutations} WHERE {primary_key_name} = '{primary_key}';"
         );
-        let mut query = sqlx::query(&sql);
-        for value in values {
-            query = query.bind(value);
-        }
-        query = query.bind(primary_key);
-
-        let query_result = query.execute(pool).await?;
+        let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
         if rows_affected == 1 {
             Ok(())
@@ -415,7 +395,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let mut mutations = Vec::with_capacity(num_writable_fields);
         for col in Self::columns() {
             let field = col.name();
-            let value = DatabaseDriver::encode_value(col, map.get(field));
+            let value = col.encode_value(map.get(field));
             if !readonly_fields.contains(&field) {
                 let field = Query::format_field(field);
                 mutations.push(format!("{field} = {value}"));
@@ -426,7 +406,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let fields = fields.join(",");
         let values = values.join(",");
         let mutations = mutations.join(",");
-        let sql = if DatabaseDriver::DRIVER_NAME == "mysql" {
+        let sql = if super::DRIVER_NAME == "mysql" {
             format!(
                 "
                     INSERT INTO {table_name} ({fields}) VALUES ({values})
