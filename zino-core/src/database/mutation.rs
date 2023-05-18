@@ -1,6 +1,6 @@
 /// Generates SQL `SET` expressions.
-use super::{DatabaseDriver, Schema};
-use crate::model::{EncodeColumn, Mutation};
+use super::{query::QueryExt, DatabaseDriver, Schema};
+use crate::model::{EncodeColumn, Mutation, Query};
 
 /// Extension trait for [`Mutation`](crate::model::Mutation).
 pub(super) trait MutationExt<DB> {
@@ -24,7 +24,7 @@ impl MutationExt<DatabaseDriver> for Mutation {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
                             if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let key = DatabaseDriver::format_field(key);
+                                let key = Query::format_field(key);
                                 let value = DatabaseDriver::encode_value(col, Some(value));
                                 let mutation = format!(r#"{key} = {key} + {value}"#);
                                 mutations.push(mutation);
@@ -36,7 +36,7 @@ impl MutationExt<DatabaseDriver> for Mutation {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
                             if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let key = DatabaseDriver::format_field(key);
+                                let key = Query::format_field(key);
                                 let value = DatabaseDriver::encode_value(col, Some(value));
                                 let mutation = format!(r#"{key} = {key} * {value}"#);
                                 mutations.push(mutation);
@@ -48,7 +48,7 @@ impl MutationExt<DatabaseDriver> for Mutation {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
                             if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let key = DatabaseDriver::format_field(key);
+                                let key = Query::format_field(key);
                                 let value = DatabaseDriver::encode_value(col, Some(value));
                                 let mutation = format!(r#"{key} = LEAST({key}, {value})"#);
                                 mutations.push(mutation);
@@ -60,7 +60,7 @@ impl MutationExt<DatabaseDriver> for Mutation {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
                             if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let key = DatabaseDriver::format_field(key);
+                                let key = Query::format_field(key);
                                 let value = DatabaseDriver::encode_value(col, Some(value));
                                 let mutation = format!(r#"{key} = GREATEST({key}, {value})"#);
                                 mutations.push(mutation);
@@ -70,7 +70,7 @@ impl MutationExt<DatabaseDriver> for Mutation {
                 }
                 _ => {
                     if (permissive || fields.contains(key)) && let Some(col) = M::get_column(key) {
-                        let key = DatabaseDriver::format_field(key);
+                        let key = Query::format_field(key);
                         let value = DatabaseDriver::encode_value(col, Some(value));
                         let mutation = format!(r#"{key} = {value}"#);
                         mutations.push(mutation);

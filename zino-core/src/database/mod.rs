@@ -140,6 +140,7 @@ impl ConnectionPool {
         let acquire_timeout = config
             .get_duration("acquire-timeout")
             .unwrap_or_else(|| Duration::from_secs(30));
+        let health_check_interval = config.get_u64("health-check-interval").unwrap_or(60);
         let pool = PoolOptions::<DatabaseDriver>::new()
             .max_connections(max_connections)
             .min_connections(min_connections)
@@ -149,7 +150,7 @@ impl ConnectionPool {
             .test_before_acquire(false)
             .before_acquire(move |conn, meta| {
                 Box::pin(async move {
-                    if meta.idle_for.as_secs() > 60 &&
+                    if meta.idle_for.as_secs() > health_check_interval &&
                         let Some(cp) = SHARED_CONNECTION_POOLS.get_pool(name)
                     {
                         if let Err(err) = conn.ping().await {

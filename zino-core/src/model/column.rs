@@ -115,10 +115,4 @@ pub trait EncodeColumn<'a> {
 
     /// Formats a column filter.
     fn format_filter(column: &Column<'a>, key: &str, value: &Value) -> String;
-
-    /// Formats a field.
-    fn format_field(field: &str) -> String;
-
-    /// Formats a string.
-    fn format_string(value: &str) -> String;
 }

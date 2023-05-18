@@ -1,9 +1,13 @@
 use super::{DatabaseDriver, Schema};
-use crate::{model::EncodeColumn, request::Validation, Map};
+use crate::{model::EncodeColumn, request::Validation, Map, SharedString};
 use serde_json::Value;
+use std::borrow::Cow;
 
 /// Extension trait for [`Query`](crate::model::Query).
 pub(super) trait QueryExt<DB> {
+    /// Returns a placeholder for the n-th parameter.
+    fn placeholder(n: usize) -> SharedString;
+
     /// Returns a reference to the projection fields.
     fn query_fields(&self) -> &[String];
 
@@ -16,26 +20,36 @@ pub(super) trait QueryExt<DB> {
     /// Formats the query pagination to generate SQL `LIMIT` expression.
     fn format_pagination(&self) -> String;
 
+    /// Formats a field for the query.
+    fn format_field(field: &str) -> Cow<'_, str>;
+
     /// Parses text search filter.
     fn parse_text_search(filter: &Map) -> Option<String>;
 
+    /// Escapes a string.
+    #[inline]
+    fn escape_string(value: &str) -> String {
+        format!("'{}'", value.replace('\'', "''"))
+    }
+
     /// Formats projection fields.
-    fn format_fields(&self) -> String {
+    fn format_fields(&self) -> Cow<'_, str> {
         let fields = self.query_fields();
         if fields.is_empty() {
-            "*".to_owned()
+            "*".into()
         } else {
             fields
                 .iter()
                 .map(|field| {
                     if let Some((expr, alias)) = field.rsplit_once(":>") {
-                        format!(r#"{expr} AS "{alias}""#)
+                        format!(r#"{expr} AS "{alias}""#).into()
                     } else {
-                        DatabaseDriver::format_field(field)
+                        Self::format_field(field)
                     }
                 })
                 .collect::<Vec<_>>()
                 .join(", ")
+                .into()
         }
     }
 
@@ -92,7 +106,7 @@ pub(super) trait QueryExt<DB> {
                     if let Some(col) = M::get_column(key) {
                         let condition = if key == sort_by {
                             // Use the filter condition to optimize pagination offset.
-                            let key = DatabaseDriver::format_field(key);
+                            let key = Self::format_field(key);
                             let operator = if ascending { ">" } else { "<" };
                             let value = DatabaseDriver::encode_value(col, Some(value));
                             format!(r#"{key} {operator} {value}"#)

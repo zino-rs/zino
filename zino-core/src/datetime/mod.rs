@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use std::{
     fmt,
-    ops::{Add, AddAssign, Sub, SubAssign},
+    ops::{Add, AddAssign, Deref, Sub, SubAssign},
     str::FromStr,
     time::Duration,
 };
@@ -15,9 +15,12 @@ mod duration;
 
 pub use duration::{parse_duration, ParseDurationError};
 
+/// Alias for [`chrono::DateTime<Local>`](chrono::DateTime).
+type LocalDateTime = chrono::DateTime<Local>;
+
 /// A wrapper type for [`chrono::DateTime<Local>`](chrono::DateTime).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct DateTime(chrono::DateTime<Local>);
+pub struct DateTime(LocalDateTime);
 
 impl DateTime {
     /// Returns a new instance which corresponds to the current date.
@@ -42,18 +45,6 @@ impl DateTime {
         Self(Local.from_utc_datetime(&dt))
     }
 
-    /// Returns the number of non-leap seconds since January 1, 1970 0:00:00 UTC.
-    #[inline]
-    pub fn timestamp(&self) -> i64 {
-        self.0.timestamp()
-    }
-
-    /// Returns the number of non-leap-milliseconds since January 1, 1970 UTC.
-    #[inline]
-    pub fn timestamp_millis(&self) -> i64 {
-        self.0.timestamp_millis()
-    }
-
     /// Parses an RFC 2822 date and time.
     #[inline]
     pub fn parse_utc_str(s: &str) -> Result<Self, ParseError> {
@@ -65,6 +56,14 @@ impl DateTime {
     #[inline]
     pub fn parse_iso_str(s: &str) -> Result<Self, ParseError> {
         let datetime = chrono::DateTime::parse_from_rfc3339(s)?;
+        Ok(Self(datetime.with_timezone(&Local)))
+    }
+
+    /// Parses a string with the specified format string.
+    /// See [`format::strftime`](chrono::format::strftime) for the supported escape sequences.
+    #[inline]
+    pub fn parse_from_str(s: &str, fmt: &str) -> Result<Self, ParseError> {
+        let datetime = chrono::DateTime::parse_from_str(s, fmt)?;
         Ok(Self(datetime.with_timezone(&Local)))
     }
 
@@ -82,13 +81,6 @@ impl DateTime {
         let datetime = self.0.with_timezone(&Utc);
         datetime.to_rfc3339_opts(SecondsFormat::Millis, true)
     }
-
-    /// Formats the combined date and time with the specified format string.
-    /// See [`format::strftime`](chrono::format::strftime) for the supported escape sequences.
-    #[inline]
-    pub fn format(&self, fmt: &str) -> String {
-        format!("{}", self.0.format(fmt))
-    }
 }
 
 impl fmt::Display for DateTime {
@@ -103,21 +95,30 @@ impl fmt::Display for DateTime {
 }
 
 impl Default for DateTime {
-    /// Returns an instance which corresponds to **the current date**.
+    /// Returns an instance which corresponds to **the current date and time**.
     #[inline]
     fn default() -> Self {
         Self::now()
     }
 }
 
-impl From<chrono::DateTime<Local>> for DateTime {
+impl Deref for DateTime {
+    type Target = LocalDateTime;
+
     #[inline]
-    fn from(dt: chrono::DateTime<Local>) -> Self {
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl From<LocalDateTime> for DateTime {
+    #[inline]
+    fn from(dt: LocalDateTime) -> Self {
         Self(dt)
     }
 }
 
-impl From<DateTime> for chrono::DateTime<Local> {
+impl From<DateTime> for LocalDateTime {
     #[inline]
     fn from(dt: DateTime) -> Self {
         dt.0
@@ -143,7 +144,7 @@ impl FromStr for DateTime {
 
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        chrono::DateTime::<Local>::from_str(s).map(Self)
+        LocalDateTime::from_str(s).map(Self)
     }
 }
 

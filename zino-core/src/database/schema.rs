@@ -271,14 +271,24 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let map = self.into_map();
+        let fields = Self::fields().join(",");
         let values = Self::columns()
             .iter()
             .map(|col| DatabaseDriver::encode_value(col, map.get(col.name())))
+            .collect::<Vec<_>>();
+        let placeholders = values
+            .iter()
+            .enumerate()
+            .map(|(i, _)| Query::placeholder(i + 1))
             .collect::<Vec<_>>()
             .join(",");
-        let fields = Self::fields().join(",");
-        let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({values});");
-        let query_result = sqlx::query(&sql).execute(pool).await?;
+        let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({placeholders});");
+        let mut query = sqlx::query(&sql);
+        for value in values {
+            query = query.bind(value);
+        }
+
+        let query_result = query.execute(pool).await?;
         let rows_affected = query_result.rows_affected();
         if rows_affected == 1 {
             Ok(())
@@ -318,23 +328,33 @@ pub trait Schema: 'static + Send + Sync + Model {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let primary_key = self.primary_key();
         let map = self.into_map();
-        let num_fields = Self::fields().len();
         let readonly_fields = Self::readonly_fields();
-        let mut mutations = Vec::with_capacity(num_fields - readonly_fields.len());
+        let num_writable_fields = Self::fields().len() - readonly_fields.len();
+        let mut mutations = Vec::with_capacity(num_writable_fields);
+        let mut values = Vec::with_capacity(num_writable_fields);
         for col in Self::columns() {
             let field = col.name();
             if !readonly_fields.contains(&field) {
                 let value = DatabaseDriver::encode_value(col, map.get(field));
-                let field = DatabaseDriver::format_field(field);
-                mutations.push(format!("{field} = {value}"));
+                let field = Query::format_field(field);
+                let placeholder = Query::placeholder(values.len() + 1);
+                mutations.push(format!("{field} = {placeholder}"));
+                values.push(value);
             }
         }
 
         let mutations = mutations.join(",");
+        let placeholder = Query::placeholder(values.len() + 1);
         let sql = format!(
-            "UPDATE {table_name} SET {mutations} WHERE {primary_key_name} = '{primary_key}';"
+            "UPDATE {table_name} SET {mutations} WHERE {primary_key_name} = {placeholder};"
         );
-        let query_result = sqlx::query(&sql).execute(pool).await?;
+        let mut query = sqlx::query(&sql);
+        for value in values {
+            query = query.bind(value);
+        }
+        query = query.bind(primary_key);
+
+        let query_result = query.execute(pool).await?;
         let rows_affected = query_result.rows_affected();
         if rows_affected == 1 {
             Ok(())
@@ -390,13 +410,14 @@ pub trait Schema: 'static + Send + Sync + Model {
         let fields = Self::fields();
         let num_fields = fields.len();
         let readonly_fields = Self::readonly_fields();
+        let num_writable_fields = num_fields - readonly_fields.len();
         let mut values = Vec::with_capacity(num_fields);
-        let mut mutations = Vec::with_capacity(num_fields - readonly_fields.len());
+        let mut mutations = Vec::with_capacity(num_writable_fields);
         for col in Self::columns() {
             let field = col.name();
             let value = DatabaseDriver::encode_value(col, map.get(field));
             if !readonly_fields.contains(&field) {
-                let field = DatabaseDriver::format_field(field);
+                let field = Query::format_field(field);
                 mutations.push(format!("{field} = {value}"));
             }
             values.push(value);
@@ -436,9 +457,10 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let primary_key = self.primary_key();
-        let sql = format!("DELETE FROM {table_name} WHERE {primary_key_name} = '{primary_key}';");
-        let query_result = sqlx::query(&sql).execute(pool).await?;
+        let placeholder = Query::placeholder(1);
+        let sql = format!("DELETE FROM {table_name} WHERE {primary_key_name} = {placeholder};");
+        let query = sqlx::query(&sql).bind(self.primary_key());
+        let query_result = query.execute(pool).await?;
         let rows_affected = query_result.rows_affected();
         if rows_affected == 1 {
             Ok(())
@@ -653,9 +675,9 @@ pub trait Schema: 'static + Send + Sync + Model {
     ) -> Result<Vec<T>, Error> {
         let pool = Self::acquire_reader().await?.pool();
         let table_name = Self::table_name();
-        let model_name = DatabaseDriver::format_field(Self::model_name());
+        let model_name = Query::format_field(Self::model_name());
         let other_table_name = M::table_name();
-        let other_model_name = DatabaseDriver::format_field(M::model_name());
+        let other_model_name = Query::format_field(M::model_name());
         let projection = query.format_fields();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
@@ -664,8 +686,8 @@ pub trait Schema: 'static + Send + Sync + Model {
             .iter()
             .zip(right_columns.iter())
             .map(|(left_col, right_col)| {
-                let left_col = DatabaseDriver::format_field(left_col);
-                let right_col = DatabaseDriver::format_field(right_col);
+                let left_col = Query::format_field(left_col);
+                let right_col = Query::format_field(right_col);
                 format!("{model_name}.{left_col} = {other_model_name}.{right_col}")
             })
             .collect::<Vec<_>>()
@@ -708,7 +730,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let projection = columns
             .iter()
             .map(|&(key, distinct)| {
-                let field = DatabaseDriver::format_field(key);
+                let field = Query::format_field(key);
                 if key != "*" {
                     if distinct {
                         format!(r#"count(distinct {field}) as {key}_count_distinct"#)
@@ -813,12 +835,14 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::acquire_reader().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let placeholder = Query::placeholder(1);
         let sql = format!(
             "
-                SELECT * FROM {table_name} WHERE {primary_key_name} = '{primary_key}';
+                SELECT * FROM {table_name} WHERE {primary_key_name} = {placeholder};
             "
         );
-        if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
+        let query = sqlx::query(&sql).bind(primary_key);
+        if let Some(row) = query.fetch_optional(pool).await? {
             let record = Record::decode_row(&row)?;
             Self::try_from_avro_record(record).map_err(Error::from)
         } else {
