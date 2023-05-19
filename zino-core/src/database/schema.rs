@@ -316,7 +316,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let primary_key = self.primary_key();
+        let primary_key = Query::escape_string(&self.primary_key());
         let map = self.into_map();
         let readonly_fields = Self::readonly_fields();
         let num_writable_fields = Self::fields().len() - readonly_fields.len();
@@ -332,7 +332,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
         let mutations = mutations.join(",");
         let sql = format!(
-            "UPDATE {table_name} SET {mutations} WHERE {primary_key_name} = '{primary_key}';"
+            "UPDATE {table_name} SET {mutations} WHERE {primary_key_name} = {primary_key};"
         );
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
@@ -437,10 +437,9 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let placeholder = Query::placeholder(1);
-        let sql = format!("DELETE FROM {table_name} WHERE {primary_key_name} = {placeholder};");
-        let query = sqlx::query(&sql).bind(self.primary_key());
-        let query_result = query.execute(pool).await?;
+        let primary_key = Query::escape_string(&self.primary_key());
+        let sql = format!("DELETE FROM {table_name} WHERE {primary_key_name} = {primary_key};");
+        let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
         if rows_affected == 1 {
             Ok(())
@@ -810,19 +809,44 @@ pub trait Schema: 'static + Send + Sync + Model {
         Ok(data)
     }
 
+    /// Finds one model selected by the primary key in the table,
+    /// and decodes it as an instance of type `T`.
+    async fn find_by_id<T: DecodeRow<DatabaseRow, Error = sqlx::Error>>(
+        primary_key: &str,
+    ) -> Result<Option<T>, Error> {
+        let pool = Self::acquire_reader().await?.pool();
+        let table_name = Self::table_name();
+        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let query = Self::default_query();
+        let projection = query.format_fields();
+        let primary_key = Query::escape_string(primary_key);
+        let sql = format!(
+            "
+                SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {primary_key};
+            "
+        );
+        let data = if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
+            Some(T::decode_row(&row)?)
+        } else {
+            None
+        };
+        Ok(data)
+    }
+
     /// Finds one model selected by the primary key in the table, and parses it as `Self`.
     async fn try_get_model(primary_key: &str) -> Result<Self, Error> {
         let pool = Self::acquire_reader().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let placeholder = Query::placeholder(1);
+        let query = Self::default_query();
+        let projection = query.format_fields();
+        let primary_key = Query::escape_string(primary_key);
         let sql = format!(
             "
-                SELECT * FROM {table_name} WHERE {primary_key_name} = {placeholder};
+                SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {primary_key};
             "
         );
-        let query = sqlx::query(&sql).bind(primary_key);
-        if let Some(row) = query.fetch_optional(pool).await? {
+        if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
             let record = Record::decode_row(&row)?;
             Self::try_from_avro_record(record).map_err(Error::from)
         } else {

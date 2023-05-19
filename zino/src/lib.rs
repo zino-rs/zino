@@ -63,7 +63,7 @@ pub use zino_core::{
     application::Application,
     datetime::DateTime,
     error::Error,
-    extension::JsonObjectExt,
+    extension::{JsonObjectExt, TomlTableExt},
     model::{Model, Mutation, Query},
     request::{RequestContext, Validation},
     response::{ExtractRejection, Rejection},

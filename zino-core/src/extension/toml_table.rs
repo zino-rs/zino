@@ -32,11 +32,17 @@ pub trait TomlTableExt {
     /// Extracts the string corresponding to the key.
     fn get_str(&self, key: &str) -> Option<&str>;
 
-    /// Extracts the array value corresponding to the key.
+    /// Extracts the array corresponding to the key.
     fn get_array(&self, key: &str) -> Option<&Array>;
 
-    /// Extracts the table value corresponding to the key.
+    /// Extracts the table corresponding to the key.
     fn get_table(&self, key: &str) -> Option<&Table>;
+
+    /// Extracts the first table in an array corresponding to the key.
+    fn get_first_table(&self, key: &str) -> Option<&Table>;
+
+    /// Extracts the last table in an array corresponding to the key.
+    fn get_last_table(&self, key: &str) -> Option<&Table>;
 
     /// Extracts the string corresponding to the key
     /// and parses it as `Duration`.
@@ -100,6 +106,16 @@ impl TomlTableExt for Table {
     #[inline]
     fn get_table(&self, key: &str) -> Option<&Table> {
         self.get(key).and_then(|v| v.as_table())
+    }
+
+    #[inline]
+    fn get_first_table(&self, key: &str) -> Option<&Table> {
+        self.get_array(key)?.first()?.as_table()
+    }
+
+    #[inline]
+    fn get_last_table(&self, key: &str) -> Option<&Table> {
+        self.get_array(key)?.last()?.as_table()
     }
 
     fn get_duration(&self, key: &str) -> Option<Duration> {

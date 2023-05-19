@@ -103,7 +103,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     "NULL".into()
                 }
             }
-            "String" | "Uuid" | "Option<Uuid>" => Query::escape_string(value).into(),
+            "String" => Query::escape_string(value).into(),
             "DateTime" | "NaiveDateTime" => match value {
                 "epoch" => "'epoch'".into(),
                 "now" => "now()".into(),
@@ -124,6 +124,10 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 "midnight" => "'allballs'".into(),
                 _ => Query::escape_string(value).into(),
             },
+            "Uuid" | "Option<Uuid>" => {
+                let value = Query::escape_string(value);
+                format!("{value}::uuid").into()
+            }
             "Vec<u8>" => format!(r"'\x{value}'").into(),
             "Vec<String>" | "Vec<Uuid>" => {
                 let column_type = self.column_type();

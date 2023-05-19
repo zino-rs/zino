@@ -1,4 +1,7 @@
+#![feature(lazy_cell)]
+
 mod controller;
+mod extension;
 mod middleware;
 mod router;
 mod schedule;
