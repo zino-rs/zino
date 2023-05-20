@@ -7,7 +7,7 @@ mod router;
 mod schedule;
 mod service;
 
-use zino::Application;
+use zino::prelude::*;
 
 fn main() {
     zino::Cluster::boot()

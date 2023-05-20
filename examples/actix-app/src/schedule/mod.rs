@@ -1,4 +1,4 @@
-use zino::{AsyncCronJob, CronJob};
+use zino::prelude::*;
 
 mod job;
 

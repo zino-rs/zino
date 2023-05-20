@@ -1,5 +1,5 @@
-use zino::{Error, Map, Model, Schema, Uuid, Validation};
-use zino_model::{ModelAccessor, User};
+use zino::prelude::*;
+use zino_model::User;
 
 pub(crate) async fn update(user_id: Uuid, body: Map) -> Result<(Validation, Map), Error> {
     let user_id = user_id.to_string();

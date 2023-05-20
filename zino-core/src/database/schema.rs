@@ -5,14 +5,18 @@ use crate::{
     format,
     model::{Column, DecodeRow, EncodeColumn, Model, Mutation, Query},
     request::Validation,
-    BoxFuture, Map, Record,
+    BoxFuture, Map, Record, Uuid,
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use sqlx::{Row, Transaction};
+use std::fmt::Display;
 
 /// Database schema.
 pub trait Schema: 'static + Send + Sync + Model {
+    /// Primary key.
+    type PrimaryKey: Default + Display + PartialEq = Uuid;
+
     /// Model name.
     const MODEL_NAME: &'static str;
     /// Primary key name.
@@ -23,6 +27,9 @@ pub trait Schema: 'static + Send + Sync + Model {
     const WRITER_NAME: &'static str = "main";
     /// Optional distribution column. It can be used for Citus to create a distributed table.
     const DISTRIBUTION_COLUMN: Option<&'static str> = None;
+
+    /// Returns the primary key value as a `String`.
+    fn primary_key(&self) -> &Self::PrimaryKey;
 
     /// Returns a reference to the [Avro schema](apache_avro::schema::Schema).
     fn schema() -> &'static apache_avro::Schema;
@@ -38,9 +45,6 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Returns a reference to the writeonly column fields.
     fn writeonly_fields() -> &'static [&'static str];
-
-    /// Returns the primary key value as a `String`.
-    fn primary_key(&self) -> String;
 
     /// Retrieves a connection pool for the model reader.
     async fn acquire_reader() -> Result<&'static ConnectionPool, Error>;
@@ -316,7 +320,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let primary_key = Query::escape_string(&self.primary_key());
+        let primary_key = Query::escape_string(self.primary_key());
         let map = self.into_map();
         let readonly_fields = Self::readonly_fields();
         let num_writable_fields = Self::fields().len() - readonly_fields.len();
@@ -437,7 +441,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let primary_key = Query::escape_string(&self.primary_key());
+        let primary_key = Query::escape_string(self.primary_key());
         let sql = format!("DELETE FROM {table_name} WHERE {primary_key_name} = {primary_key};");
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();

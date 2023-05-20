@@ -1,4 +1,4 @@
-use apache_avro::schema::{Name, Schema};
+use apache_avro::schema::{Name, RecordField, RecordFieldOrder, Schema};
 use serde::Serialize;
 use serde_json::Value;
 use std::borrow::Cow;
@@ -95,6 +95,27 @@ impl<'a> Column<'a> {
                     namespace: None,
                 },
             },
+        }
+    }
+
+    /// Returns a field for the record Avro schema.
+    pub fn record_field(&self) -> RecordField {
+        let schema = self.schema();
+        let default_value = self.default_value().and_then(|s| match schema {
+            Schema::Boolean => s.parse::<bool>().ok().map(|b| b.into()),
+            Schema::Int => s.parse::<i32>().ok().map(|i| i.into()),
+            Schema::Long => s.parse::<i64>().ok().map(|i| i.into()),
+            Schema::Float => s.parse::<f32>().ok().map(|f| f.into()),
+            Schema::Double => s.parse::<f64>().ok().map(|f| f.into()),
+            _ => Some(s.into()),
+        });
+        RecordField {
+            name: self.name().to_owned(),
+            doc: None,
+            default: default_value,
+            schema,
+            order: RecordFieldOrder::Ascending,
+            position: 0,
         }
     }
 }

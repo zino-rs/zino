@@ -70,7 +70,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
             builder
                 .install()
                 .expect("fail to install Prometheus exporter");
-        } else {
+        } else if !exporter.is_empty() {
             tracing::error!("metrics exporter `{exporter}` is unsupported");
         }
     }

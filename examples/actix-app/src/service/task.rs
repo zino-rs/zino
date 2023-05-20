@@ -1,4 +1,4 @@
-use zino::{Error, JsonObjectExt, Map, Query, Schema};
+use zino::prelude::*;
 use zino_core::connector::{DataFrameExecutor, GlobalConnector};
 use zino_model::User;
 

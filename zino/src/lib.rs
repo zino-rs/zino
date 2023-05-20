@@ -51,30 +51,14 @@
 #![feature(string_leak)]
 #![forbid(unsafe_code)]
 
+pub mod prelude;
+
 mod channel;
 mod cluster;
 mod endpoint;
 mod middleware;
 mod request;
 mod response;
-
-#[doc(no_inline)]
-pub use zino_core::{
-    application::Application,
-    datetime::DateTime,
-    error::Error,
-    extension::{JsonObjectExt, TomlTableExt},
-    model::{Model, Mutation, Query},
-    request::{RequestContext, Validation},
-    response::{ExtractRejection, Rejection},
-    schedule::{AsyncCronJob, CronJob},
-    state::State,
-    BoxFuture, Map, Record, Uuid,
-};
-
-#[cfg(feature = "orm")]
-#[doc(no_inline)]
-pub use zino_core::database::Schema;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "actix")] {

@@ -14,9 +14,9 @@ pub struct Collection {
     name: String,
     #[schema(default_value = "Collection::model_namespace", index_type = "hash")]
     namespace: String,
-    #[schema(default_value = "internal")]
+    #[schema(default_value = "Internal")]
     visibility: String,
-    #[schema(default_value = "active", index_type = "hash")]
+    #[schema(default_value = "Active", index_type = "hash")]
     status: String,
     #[schema(index_type = "text")]
     description: String,
@@ -29,11 +29,10 @@ pub struct Collection {
 
     // Extensions.
     content: Map,
-    metrics: Map,
-    extras: Map,
+    extra: Map,
 
     // Revisions.
-    manager_id: Uuid,    // user.id
+    owner_id: Uuid,      // user.id
     maintainer_id: Uuid, // user.id
     #[schema(readonly, default_value = "now", index_type = "btree")]
     created_at: DateTime,
@@ -79,9 +78,8 @@ super::impl_model_accessor!(
     status,
     description,
     content,
-    metrics,
-    extras,
-    manager_id,
+    extra,
+    owner_id,
     maintainer_id,
     created_at,
     updated_at,

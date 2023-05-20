@@ -58,6 +58,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     }
 
     // Columns
+    let mut primary_key_type = String::from("Uuid");
     let mut primary_key_name = String::from("id");
     let mut distribution_column = None;
     let mut columns = Vec::new();
@@ -101,6 +102,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                             }
                             "primary_key" => {
                                 primary_key_name = name.clone();
+                                primary_key_type = type_name.clone();
                             }
                             "distribution_column" => {
                                 distribution_column = Some(name.clone());
@@ -162,6 +164,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     } else {
         quote! { None }
     };
+    let primary_key_type_ident = format_ident!("{}", primary_key_type);
     let schema_primary_key = format_ident!("{}", primary_key_name);
     let schema_columns = format_ident!("{}_COLUMNS", model_name_upper_snake);
     let schema_fields = format_ident!("{}_FIELDS", model_name_upper_snake);
@@ -177,36 +180,19 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
         use zino_core::{
             database::{ConnectionPool, Schema},
             error::Error as ZinoError,
-            model::Column,
+            model::{schema, Column},
         };
 
-        static #avro_schema: std::sync::LazyLock<apache_avro::Schema> = std::sync::LazyLock::new(|| {
-            use apache_avro::schema::{Name, RecordField, RecordFieldOrder, Schema};
+        static #avro_schema: std::sync::LazyLock<schema::Schema> = std::sync::LazyLock::new(|| {
             let mut fields = #schema_columns.iter().enumerate()
                 .map(|(index, col)| {
-                    let schema = col.schema();
-                    let default_value = col.default_value().and_then(|s| {
-                        match schema {
-                           Schema::Boolean => s.parse::<bool>().ok().map(|b| b.into()),
-                           Schema::Int => s.parse::<i32>().ok().map(|i| i.into()),
-                           Schema::Long => s.parse::<i64>().ok().map(|i| i.into()),
-                           Schema::Float => s.parse::<f32>().ok().map(|f| f.into()),
-                           Schema::Double => s.parse::<f64>().ok().map(|f| f.into()),
-                           _ => Some(s.into()),
-                        }
-                    });
-                    RecordField {
-                        name: col.name().to_owned(),
-                        doc: None,
-                        default: default_value,
-                        schema,
-                        order: RecordFieldOrder::Ascending,
-                        position: index,
-                    }
+                    let mut field = col.record_field();
+                    field.position = index;
+                    field
                 })
                 .collect::<Vec<_>>();
-            Schema::Record {
-                name: Name {
+            schema::Schema::Record {
+                name: schema::Name {
                     name: #model_name.to_owned(),
                     namespace: None,
                 },
@@ -228,13 +214,21 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
         static #schema_writer: std::sync::OnceLock<&ConnectionPool> = std::sync::OnceLock::new();
 
         impl Schema for #name {
+            type PrimaryKey = #primary_key_type_ident;
+
             const MODEL_NAME: &'static str = #model_name_snake;
             const PRIMARY_KEY_NAME: &'static str = #primary_key_name;
             const READER_NAME: &'static str = #reader_name;
             const WRITER_NAME: &'static str = #writer_name;
             const DISTRIBUTION_COLUMN: Option<&'static str> = #quote_distribution_column;
 
-            fn schema() -> &'static apache_avro::Schema {
+            #[inline]
+            fn primary_key(&self) -> &Self::PrimaryKey {
+                &self.#schema_primary_key
+            }
+
+            #[inline]
+            fn schema() -> &'static schema::Schema {
                 std::sync::LazyLock::force(&#avro_schema)
             }
 
@@ -256,11 +250,6 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
             #[inline]
             fn writeonly_fields() -> &'static [&'static str] {
                 #schema_writeonly_fields.as_slice()
-            }
-
-            #[inline]
-            fn primary_key(&self) -> String {
-                self.#schema_primary_key.to_string()
             }
 
             async fn acquire_reader() -> Result<&'static ConnectionPool, ZinoError> {

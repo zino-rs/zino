@@ -2,7 +2,7 @@ use crate::extension::rbatis;
 use rbs::value::Value;
 use serde_json::json;
 use std::time::Instant;
-use zino::{ExtractRejection, Request, RequestContext, Response, Result, Schema, Uuid};
+use zino::{prelude::*, Request, Response, Result};
 use zino_model::User;
 
 pub(crate) async fn rbatis_user_view(req: Request) -> Result {

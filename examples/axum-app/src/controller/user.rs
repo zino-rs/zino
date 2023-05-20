@@ -2,8 +2,8 @@ use crate::service::user;
 use fluent::fluent_args;
 use serde_json::json;
 use std::time::Instant;
-use zino::{ExtractRejection, Map, Model, Request, RequestContext, Response, Result, Schema, Uuid};
-use zino_model::{ModelAccessor, User};
+use zino::{prelude::*, Request, Response, Result};
+use zino_model::User;
 
 pub(crate) async fn new(mut req: Request) -> Result {
     let mut user = User::new();

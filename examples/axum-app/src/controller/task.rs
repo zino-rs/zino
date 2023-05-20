@@ -1,5 +1,5 @@
 use crate::service::task;
-use zino::{ExtractRejection, Map, Query, Request, RequestContext, Response, Result};
+use zino::{prelude::*, Request, Response, Result};
 
 pub(crate) async fn execute(mut req: Request) -> Result {
     let mut query = Query::default();

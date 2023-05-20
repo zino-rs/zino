@@ -1,7 +1,7 @@
 use rbatis::Rbatis;
 use rbdc_mysql::driver::MysqlDriver;
 use std::sync::LazyLock;
-use zino::{Application, Cluster, State, TomlTableExt};
+use zino::{prelude::*, Cluster};
 
 pub(crate) static RBATIS: LazyLock<Rbatis> = LazyLock::new(|| {
     let config = Cluster::config()

@@ -17,10 +17,8 @@
 #![forbid(unsafe_code)]
 
 use zino_core::{
-    database::Schema,
     datetime::DateTime,
-    extension::JsonObjectExt,
-    model::{Mutation, Query},
+    model::ModelAccessor,
     Map, Uuid,
 };
 
@@ -58,218 +56,11 @@ pub use task::Task;
 pub use log::Log;
 pub use record::Record;
 
-/// Access model fields.
-pub trait ModelAccessor: Schema {
-    /// Returns the `id` field.
-    fn id(&self) -> Uuid;
-
-    /// Returns the `name` field.
-    fn name(&self) -> &str;
-
-    /// Returns the `namespace` field.
-    fn namespace(&self) -> &str;
-
-    /// Returns the `visibility` field.
-    fn visibility(&self) -> &str;
-
-    /// Returns the `status` field.
-    fn status(&self) -> &str;
-
-    /// Returns the `description` field.
-    fn description(&self) -> &str;
-
-    /// Returns the `content` field.
-    fn content(&self) -> &Map;
-
-    /// Returns the `metrics` field.
-    fn metrics(&self) -> &Map;
-
-    /// Returns the `extras` field.
-    fn extras(&self) -> &Map;
-
-    /// Returns the `manager_id` field.
-    fn manager_id(&self) -> Uuid;
-
-    /// Returns the `maintainer_id` field.
-    fn maintainer_id(&self) -> Uuid;
-
-    /// Returns the `created_at` field.
-    fn created_at(&self) -> DateTime;
-
-    /// Returns the `updated_at` field.
-    fn updated_at(&self) -> DateTime;
-
-    /// Returns the `version` field.
-    fn version(&self) -> u64;
-
-    /// Returns the `edition` field.
-    fn edition(&self) -> u32;
-
-    /// Returns `true` if `self` has the namespace prefix.
-    #[inline]
-    fn has_namespace(&self, namespace: &str) -> bool {
-        self.namespace()
-            .strip_prefix(namespace)
-            .is_some_and(|s| s.is_empty() || s.starts_with(':'))
-    }
-
-    /// Returns `true` if the `visibility` is `public`.
-    #[inline]
-    fn is_public(&self) -> bool {
-        self.visibility() == "public"
-    }
-
-    /// Returns `true` if the `visibility` is `internal`.
-    #[inline]
-    fn is_internal(&self) -> bool {
-        self.visibility() == "internal"
-    }
-
-    /// Returns `true` if the `visibility` is `private`.
-    #[inline]
-    fn is_private(&self) -> bool {
-        self.visibility() == "private"
-    }
-
-    /// Returns `true` if the `status` is `active`.
-    #[inline]
-    fn is_active(&self) -> bool {
-        self.status() == "active"
-    }
-
-    /// Returns `true` if the `status` is `inactive`.
-    #[inline]
-    fn is_inactive(&self) -> bool {
-        self.status() == "inactive"
-    }
-
-    /// Returns `true` if the `status` is `locked`.
-    #[inline]
-    fn is_locked(&self) -> bool {
-        self.status() == "locked"
-    }
-
-    /// Returns `true` if the `status` is `deleted`.
-    #[inline]
-    fn is_deleted(&self) -> bool {
-        self.status() == "deleted"
-    }
-
-    /// Returns the next version for the model.
-    #[inline]
-    fn next_version(&self) -> u64 {
-        self.version() + 1
-    }
-
-    /// Constructs the query filters for the model of the current version.
-    fn current_version_filters(&self) -> Map {
-        let mut filters = Map::with_capacity(2);
-        filters.upsert("id", self.id().to_string());
-        filters.upsert("version", self.version());
-        filters
-    }
-
-    /// Constructs the `Query` for the model of the current version.
-    fn current_version_query(&self) -> Query {
-        let mut query = Self::default_query();
-        query.append_filters(&mut self.current_version_filters());
-        query
-    }
-
-    /// Constructs the query filters for the model of the next version.
-    fn next_version_filters(&self) -> Map {
-        let mut filters = Map::with_capacity(2);
-        filters.upsert("id", self.id().to_string());
-        filters.upsert("version", self.next_version());
-        filters
-    }
-
-    /// Constructs the mutation updates for the model of the next version.
-    fn next_version_updates(&self) -> Map {
-        let mut updates = Map::with_capacity(2);
-        updates.upsert("updated_at", DateTime::now().to_string());
-        updates.upsert("version", self.next_version());
-        updates
-    }
-
-    /// Constructs the `Mutation` for the model of the next version.
-    fn next_version_mutation(&self, mut updates: Map) -> Mutation {
-        let mut mutation = Self::default_mutation();
-        mutation.append_updates(&mut updates);
-        mutation.append_updates(&mut self.next_version_updates());
-        mutation
-    }
-
-    /// Returns the next edition for the model.
-    #[inline]
-    fn next_edition(&self) -> u32 {
-        self.edition() + 1
-    }
-
-    /// Constructs the query filters for the model of the current edition.
-    fn current_edition_filters(&self) -> Map {
-        let mut filters = Map::with_capacity(2);
-        filters.upsert("id", self.id().to_string());
-        filters.upsert("edition", self.edition());
-        filters
-    }
-
-    /// Constructs the `Query` for the model of the current edition.
-    fn current_edition_query(&self) -> Query {
-        let mut query = Self::default_query();
-        query.append_filters(&mut self.current_edition_filters());
-        query
-    }
-
-    /// Constructs the query filters for the model of the next edition.
-    fn next_edition_filters(&self) -> Map {
-        let mut filters = Map::with_capacity(2);
-        filters.upsert("id", self.id().to_string());
-        filters.upsert("edition", self.next_edition());
-        filters
-    }
-
-    /// Constructs the mutation updates for the model of the next edition.
-    fn next_edition_updates(&self) -> Map {
-        let mut updates = Map::with_capacity(2);
-        updates.upsert("updated_at", DateTime::now().to_string());
-        updates.upsert("version", self.next_version());
-        updates.upsert("edition", self.next_edition());
-        updates
-    }
-
-    /// Constructs the `Mutation` for the model of the next edition.
-    fn next_edition_mutation(&self, mut updates: Map) -> Mutation {
-        let mut mutation = Self::default_mutation();
-        mutation.append_updates(&mut updates);
-        mutation.append_updates(&mut self.next_edition_updates());
-        mutation
-    }
-
-    /// Constructs the `Mutation` for a soft delete of the model.
-    fn soft_delete_mutation(&self) -> Mutation {
-        let mut mutation = Self::default_mutation();
-        let mut updates = self.next_edition_updates();
-        updates.upsert("status", "deleted");
-        mutation.append_updates(&mut updates);
-        mutation
-    }
-
-    /// Constructs a default list `Query` for the model.
-    #[inline]
-    fn default_list_query() -> Query {
-        let mut query = Self::default_query();
-        query.add_filter("status", Map::from_entry("$ne", "deleted"));
-        query.set_sort_order("updated_at".to_owned(), false);
-        query
-    }
-}
-
-macro impl_model_accessor($model:ty, $id:ident, $name:ident, $namespace:ident, $visibility:ident,
-    $status:ident, $description:ident, $content:ident, $metrics:ident, $extras:ident,
-    $manager_id:ident, $maintainer_id:ident, $created_at:ident, $updated_at:ident,
+macro impl_model_accessor($model:ty, $id:ident, $name:ident, $namespace:ident,
+    $visibility:ident, $status:ident, $description:ident, $content:ident, $extra:ident,
+    $owner_id:ident, $maintainer_id:ident, $created_at:ident, $updated_at:ident,
     $version:ident, $edition:ident) {
-    impl ModelAccessor for $model {
+    impl ModelAccessor<Uuid, Uuid> for $model {
         #[inline]
         fn id(&self) -> Uuid {
             self.$id
@@ -301,23 +92,20 @@ macro impl_model_accessor($model:ty, $id:ident, $name:ident, $namespace:ident, $
         }
 
         #[inline]
-        fn content(&self) -> &Map {
-            &self.$content
+        fn content(&self) -> Option<&Map> {
+            let content = &self.$content;
+            (!content.is_empty()).then_some(content)
         }
 
         #[inline]
-        fn metrics(&self) -> &Map {
-            &self.$metrics
+        fn extra(&self) -> Option<&Map> {
+            let extra = &self.$extra;
+            (!extra.is_empty()).then_some(extra)
         }
 
         #[inline]
-        fn extras(&self) -> &Map {
-            &self.$extras
-        }
-
-        #[inline]
-        fn manager_id(&self) -> Uuid {
-            self.$manager_id
+        fn owner_id(&self) -> Uuid {
+            self.$owner_id
         }
 
         #[inline]

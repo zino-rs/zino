@@ -1,7 +1,7 @@
 use super::Schema;
 use crate::{model::EncodeColumn, request::Validation, Map, SharedString};
 use serde_json::Value;
-use std::borrow::Cow;
+use std::{borrow::Cow, fmt::Display};
 
 /// Extension trait for [`Query`](crate::model::Query).
 pub(super) trait QueryExt<DB> {
@@ -28,8 +28,8 @@ pub(super) trait QueryExt<DB> {
 
     /// Escapes a string.
     #[inline]
-    fn escape_string(value: &str) -> String {
-        format!("'{}'", value.replace('\'', "''"))
+    fn escape_string(value: impl Display) -> String {
+        format!("'{}'", value.to_string().replace('\'', "''"))
     }
 
     /// Formats projection fields.
