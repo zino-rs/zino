@@ -7,17 +7,21 @@ use serde_json::Value as JsonValue;
 #[doc(no_inline)]
 pub use apache_avro::schema;
 
-mod accessor;
 mod column;
 mod mutation;
 mod query;
 mod row;
 
-pub use accessor::ModelAccessor;
 pub use column::{Column, EncodeColumn};
 pub use mutation::Mutation;
 pub use query::Query;
 pub use row::DecodeRow;
+
+#[cfg(feature = "orm")]
+mod accessor;
+
+#[cfg(feature = "orm")]
+pub use accessor::ModelAccessor;
 
 /// General data model.
 pub trait Model: Default + Serialize + DeserializeOwned {
