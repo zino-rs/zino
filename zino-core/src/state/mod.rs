@@ -69,6 +69,12 @@ impl<T> State<T> {
         &self.config
     }
 
+    /// Returns a reference to the config corresponding to the `extension`.
+    #[inline]
+    pub fn get_extension_config(&self, extension: &str) -> Option<&Table> {
+        self.config().get_table("extensions")?.get_table(extension)
+    }
+
     /// Returns a reference to the data.
     #[inline]
     pub fn data(&self) -> &T {

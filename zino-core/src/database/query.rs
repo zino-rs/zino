@@ -141,7 +141,7 @@ pub(super) trait QueryExt<DB> {
             String::new()
         } else {
             let sort_order = if ascending { "ASC" } else { "DESC" };
-            format!("ORDER BY {sort_by} {sort_order} NULLS LAST")
+            format!("ORDER BY {sort_by} {sort_order}")
         }
     }
 

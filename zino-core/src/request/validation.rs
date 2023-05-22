@@ -84,6 +84,40 @@ impl Validation {
             .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
     }
 
+    /// Parses a json value as `u8`.
+    pub fn parse_u8<'a>(value: impl Into<Option<&'a Value>>) -> Option<Result<u8, ParseIntError>> {
+        let value = value.into();
+        value
+            .and_then(|v| v.as_u64())
+            .and_then(|i| u8::try_from(i).ok())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    /// Parses a json value as `u16`.
+    pub fn parse_u16<'a>(
+        value: impl Into<Option<&'a Value>>,
+    ) -> Option<Result<u16, ParseIntError>> {
+        let value = value.into();
+        value
+            .and_then(|v| v.as_u64())
+            .and_then(|i| u16::try_from(i).ok())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    /// Parses a json value as `u32`.
+    pub fn parse_u32<'a>(
+        value: impl Into<Option<&'a Value>>,
+    ) -> Option<Result<u32, ParseIntError>> {
+        let value = value.into();
+        value
+            .and_then(|v| v.as_u64())
+            .and_then(|i| u32::try_from(i).ok())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
     /// Parses a json value as `u64`.
     pub fn parse_u64<'a>(
         value: impl Into<Option<&'a Value>>,
@@ -92,6 +126,29 @@ impl Validation {
         value
             .and_then(|v| v.as_u64())
             .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    /// Parses a json value as `usize`.
+    pub fn parse_usize<'a>(
+        value: impl Into<Option<&'a Value>>,
+    ) -> Option<Result<usize, ParseIntError>> {
+        let value = value.into();
+        value
+            .and_then(|v| v.as_u64())
+            .and_then(|i| usize::try_from(i).ok())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    /// Parses a json value as `f32`.
+    pub fn parse_f32<'a>(
+        value: impl Into<Option<&'a Value>>,
+    ) -> Option<Result<f32, ParseFloatError>> {
+        let value = value.into();
+        value
+            .and_then(|v| v.as_f64())
+            .map(|f| Ok(f as f32))
             .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
     }
 

@@ -12,18 +12,20 @@ use sqlx::{
 };
 use std::{
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering::Relaxed},
         LazyLock,
     },
     time::Duration,
 };
 use toml::value::Table;
 
+mod accessor;
 mod decode;
 mod mutation;
 mod query;
 mod schema;
 
+pub use accessor::ModelAccessor;
 pub use decode::decode;
 pub use schema::Schema;
 
@@ -80,13 +82,13 @@ impl ConnectionPool {
     /// Returns `true` if the connection pool is available.
     #[inline]
     pub fn is_available(&self) -> bool {
-        self.available.load(Ordering::Relaxed)
+        self.available.load(Relaxed)
     }
 
     /// Stores the value into the availability of the connection pool.
     #[inline]
     pub fn store_availability(&self, available: bool) {
-        self.available.store(available, Ordering::Relaxed);
+        self.available.store(available, Relaxed);
     }
 
     /// Returns the name.
@@ -231,12 +233,18 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
 
 /// Database namespace prefix.
 static NAMESPACE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
-    State::shared()
+    let config = State::shared()
         .config()
         .get_table("database")
-        .expect("the `database` field should be a table")
+        .expect("the `database` field should be a table");
+    let max_rows = config.get_usize("max-rows").unwrap_or(1000);
+    MAX_ROWS.store(max_rows, Relaxed);
+    config
         .get_str("namespace")
         .expect("the `namespace` field should be a str")
         .to_case(Case::Snake)
         .leak()
 });
+
+/// Max number of returning rows.
+static MAX_ROWS: AtomicUsize = AtomicUsize::new(1000);

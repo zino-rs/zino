@@ -1,5 +1,11 @@
 use parking_lot::RwLock;
-use std::{collections::HashMap, sync::LazyLock};
+use std::{
+    collections::HashMap,
+    sync::{
+        atomic::{AtomicUsize, Ordering::Relaxed},
+        LazyLock,
+    },
+};
 use tokio::sync::mpsc::{self, error::TrySendError, Receiver, Sender};
 use tokio_stream::{wrappers::ReceiverStream, Stream};
 use zino_core::{
@@ -56,7 +62,7 @@ pub struct MessageChannel {
 impl MessageChannel {
     /// Creates a new `MessageChannel`.
     pub fn new() -> Self {
-        let (sender, receiver) = mpsc::channel(*CHANNEL_CAPACITY);
+        let (sender, receiver) = mpsc::channel(CHANNEL_CAPACITY.load(Relaxed));
         let sender_id = Uuid::new_v4();
         let subscriber = Subscriber::new(sender, None);
         let mut senders = CHANNEL_SUBSCRIBERS.write();
@@ -112,8 +118,15 @@ impl Default for MessageChannel {
 }
 
 /// Channel capacity.
-static CHANNEL_CAPACITY: LazyLock<usize> = LazyLock::new(|| {
-    if let Some(channel) = crate::Cluster::config().get("channel") {
+static CHANNEL_CAPACITY: AtomicUsize = AtomicUsize::new(10000);
+
+/// Channel subscribers.
+static CHANNEL_SUBSCRIBERS: LazyLock<RwLock<HashMap<Uuid, Subscriber>>> =
+    LazyLock::new(|| RwLock::new(HashMap::new()));
+
+/// Shared channel.
+pub(crate) static SHARED_CHANNEL: LazyLock<MessageChannel> = LazyLock::new(|| {
+    let capacity = if let Some(channel) = crate::Cluster::config().get("channel") {
         channel
             .as_table()
             .expect("the `channel` field should be a table")
@@ -121,12 +134,7 @@ static CHANNEL_CAPACITY: LazyLock<usize> = LazyLock::new(|| {
             .expect("the `channel.capacity` field should be a positive integer")
     } else {
         10000
-    }
+    };
+    CHANNEL_CAPACITY.store(capacity, Relaxed);
+    MessageChannel::new()
 });
-
-/// Channel subscribers.
-static CHANNEL_SUBSCRIBERS: LazyLock<RwLock<HashMap<Uuid, Subscriber>>> =
-    LazyLock::new(|| RwLock::new(HashMap::new()));
-
-/// Shared channel.
-pub(crate) static SHARED_CHANNEL: LazyLock<MessageChannel> = LazyLock::new(MessageChannel::new);

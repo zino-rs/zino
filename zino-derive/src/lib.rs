@@ -102,7 +102,6 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                             }
                             "primary_key" => {
                                 primary_key_name = name.clone();
-                                primary_key_type = type_name.clone();
                             }
                             "distribution_column" => {
                                 distribution_column = Some(name.clone());
@@ -120,7 +119,10 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 if ignore {
                     continue;
                 }
-                if type_name.starts_with("Option") {
+                if primary_key_name == name {
+                    primary_key_type = type_name.clone();
+                    not_null = true;
+                } else if type_name.starts_with("Option") {
                     not_null = false;
                 } else if type_name == "Uuid" {
                     not_null = true;
@@ -164,7 +166,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     } else {
         quote! { None }
     };
-    let primary_key_type_ident = format_ident!("{}", primary_key_type);
+    let schema_primary_key_type = format_ident!("{}", primary_key_type);
     let schema_primary_key = format_ident!("{}", primary_key_name);
     let schema_columns = format_ident!("{}_COLUMNS", model_name_upper_snake);
     let schema_fields = format_ident!("{}_FIELDS", model_name_upper_snake);
@@ -214,7 +216,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
         static #schema_writer: std::sync::OnceLock<&ConnectionPool> = std::sync::OnceLock::new();
 
         impl Schema for #name {
-            type PrimaryKey = #primary_key_type_ident;
+            type PrimaryKey = #schema_primary_key_type;
 
             const MODEL_NAME: &'static str = #model_name_snake;
             const PRIMARY_KEY_NAME: &'static str = #primary_key_name;

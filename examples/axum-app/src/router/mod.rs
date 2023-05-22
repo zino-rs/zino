@@ -8,7 +8,7 @@ use axum::{
     Router,
 };
 
-pub(crate) fn routes() -> Vec<Router> {
+pub fn routes() -> Vec<Router> {
     let mut routes = Vec::new();
 
     // User controller.

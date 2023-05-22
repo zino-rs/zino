@@ -3,7 +3,7 @@ use rbdc_mysql::driver::MysqlDriver;
 use std::sync::LazyLock;
 use zino::{prelude::*, Cluster};
 
-pub(crate) static RBATIS: LazyLock<Rbatis> = LazyLock::new(|| {
+pub static RBATIS: LazyLock<Rbatis> = LazyLock::new(|| {
     let config = Cluster::config()
         .get_first_table("mysql")
         .expect("the `mysql` field should be a nonempty array of tables");

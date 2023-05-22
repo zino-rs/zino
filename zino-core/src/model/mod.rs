@@ -17,12 +17,6 @@ pub use mutation::Mutation;
 pub use query::Query;
 pub use row::DecodeRow;
 
-#[cfg(feature = "orm")]
-mod accessor;
-
-#[cfg(feature = "orm")]
-pub use accessor::ModelAccessor;
-
 /// General data model.
 pub trait Model: Default + Serialize + DeserializeOwned {
     /// Creates a new instance.

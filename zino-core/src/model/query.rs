@@ -36,12 +36,12 @@ impl Query {
         let filters = &mut self.filters;
         for (key, value) in data {
             match key.as_str() {
-                "fields" => {
+                "fields" | "columns" | "select" => {
                     if let Some(fields) = Validation::parse_str_array(value) {
                         self.fields = fields.into_iter().map(|s| s.to_owned()).collect();
                     }
                 }
-                "sort" | "sort_by" | "order_by" => {
+                "sort" | "sort_by" | "order" | "order_by" => {
                     if let Some(sort_by) = Validation::parse_string(value) {
                         self.sort_order.0 = Some(sort_by.into_owned());
                     }

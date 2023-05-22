@@ -59,6 +59,12 @@ pub trait JsonObjectExt {
 
     /// Creates a new instance with the entry.
     fn from_entry(key: impl Into<String>, value: impl Into<Value>) -> Self;
+
+    /// Creates a new instance with a single key `entry`.
+    fn data_entry(value: impl Into<Value>) -> Self;
+
+    /// Creates a new instance with a single key `entries`.
+    fn data_entries(value: Vec<Map>) -> Self;
 }
 
 impl JsonObjectExt for Map {
@@ -152,8 +158,22 @@ impl JsonObjectExt for Map {
 
     #[inline]
     fn from_entry(key: impl Into<String>, value: impl Into<Value>) -> Self {
-        let mut map = Map::new();
+        let mut map = Map::with_capacity(1);
         map.insert(key.into(), value.into());
+        map
+    }
+
+    #[inline]
+    fn data_entry(value: impl Into<Value>) -> Self {
+        let mut map = Map::with_capacity(1);
+        map.insert("entry".to_owned(), value.into());
+        map
+    }
+
+    #[inline]
+    fn data_entries(value: Vec<Map>) -> Self {
+        let mut map = Map::with_capacity(1);
+        map.insert("entries".to_owned(), value.into());
         map
     }
 }

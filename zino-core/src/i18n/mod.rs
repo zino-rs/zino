@@ -3,7 +3,7 @@
 use crate::{application, error::Error, extension::TomlTableExt, state::State, SharedString};
 use fluent::{bundle::FluentBundle, FluentArgs, FluentResource};
 use intl_memoizer::concurrent::IntlLangMemoizer;
-use std::{fs, sync::LazyLock};
+use std::{fs, io::ErrorKind, sync::LazyLock};
 use unic_langid::LanguageIdentifier;
 
 mod language;
@@ -94,7 +94,11 @@ static LOCALIZATION: LazyLock<Vec<(LanguageIdentifier, Translation)>> = LazyLock
                 }
             }
         }
-        Err(err) => tracing::error!("{err}"),
+        Err(err) => {
+            if err.kind() != ErrorKind::NotFound {
+                tracing::error!("{err}");
+            }
+        }
     }
     locales
 });

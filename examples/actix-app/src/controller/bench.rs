@@ -5,7 +5,7 @@ use std::time::Instant;
 use zino::{prelude::*, Request, Response, Result};
 use zino_model::User;
 
-pub(crate) async fn rbatis_user_view(req: Request) -> Result {
+pub async fn rbatis_user_view(req: Request) -> Result {
     let user_id: Uuid = req.parse_param("id")?;
 
     let db_query_start_time = Instant::now();
@@ -15,10 +15,10 @@ pub(crate) async fn rbatis_user_view(req: Request) -> Result {
     let user = rbatis::RBATIS.query(&sql, args).await.extract(&req)?;
     let db_query_duration = db_query_start_time.elapsed();
 
-    let mut res = Response::default().context(&req);
     let data = json!({
-        "user": user,
+        "entry": user,
     });
+    let mut res = Response::default().context(&req);
     res.record_server_timing("db", None, Some(db_query_duration));
     res.set_data(&data);
     Ok(res.into())

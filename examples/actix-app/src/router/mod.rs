@@ -2,7 +2,7 @@ use crate::controller::{bench, stats, task, user};
 use actix_web::web::{get, post, ServiceConfig};
 use zino::RouterConfigure;
 
-pub(crate) fn routes() -> Vec<RouterConfigure> {
+pub fn routes() -> Vec<RouterConfigure> {
     vec![
         user_router as RouterConfigure,
         task_router as RouterConfigure,

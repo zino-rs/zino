@@ -16,11 +16,7 @@
 #![feature(let_chains)]
 #![forbid(unsafe_code)]
 
-use zino_core::{
-    datetime::DateTime,
-    model::ModelAccessor,
-    Map, Uuid,
-};
+use zino_core::{database::ModelAccessor, datetime::DateTime, Map, Uuid};
 
 mod group;
 mod policy;
@@ -60,10 +56,10 @@ macro impl_model_accessor($model:ty, $id:ident, $name:ident, $namespace:ident,
     $visibility:ident, $status:ident, $description:ident, $content:ident, $extra:ident,
     $owner_id:ident, $maintainer_id:ident, $created_at:ident, $updated_at:ident,
     $version:ident, $edition:ident) {
-    impl ModelAccessor<Uuid, Uuid> for $model {
+    impl ModelAccessor<Uuid> for $model {
         #[inline]
-        fn id(&self) -> Uuid {
-            self.$id
+        fn id(&self) -> &Uuid {
+            &self.$id
         }
 
         #[inline]

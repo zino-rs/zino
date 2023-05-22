@@ -10,7 +10,7 @@ use crate::{
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use sqlx::{Row, Transaction};
-use std::fmt::Display;
+use std::{fmt::Display, sync::atomic::Ordering::Relaxed};
 
 /// Database schema.
 pub trait Schema: 'static + Send + Sync + Model {
@@ -28,7 +28,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Optional distribution column. It can be used for Citus to create a distributed table.
     const DISTRIBUTION_COLUMN: Option<&'static str> = None;
 
-    /// Returns the primary key value as a `String`.
+    /// Returns the primary key value.
     fn primary_key(&self) -> &Self::PrimaryKey;
 
     /// Returns a reference to the [Avro schema](apache_avro::schema::Schema).
@@ -502,8 +502,10 @@ pub trait Schema: 'static + Send + Sync + Model {
         let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} {pagination};");
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
-        while let Some(row) = rows.try_next().await? {
+        let mut max_rows = super::MAX_ROWS.load(Relaxed);
+        while let Some(row) = rows.try_next().await? && max_rows > 0 {
             data.push(T::decode_row(&row)?);
+            max_rows -= 1;
         }
         Ok(data)
     }
@@ -571,10 +573,12 @@ pub trait Schema: 'static + Send + Sync + Model {
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut associations = Map::new();
-        while let Some(row) = rows.try_next().await? {
+        let mut max_rows = super::MAX_ROWS.load(Relaxed);
+        while let Some(row) = rows.try_next().await? && max_rows > 0 {
             let primary_key_value = row.try_get_unchecked::<String, _>(primary_key_name)?;
             let map = Map::decode_row(&row)?;
             associations.insert(primary_key_value, map.into());
+            max_rows -= 1;
         }
         for row in data {
             for col in columns {
@@ -684,8 +688,10 @@ pub trait Schema: 'static + Send + Sync + Model {
         );
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
-        while let Some(row) = rows.try_next().await? {
+        let mut max_rows = super::MAX_ROWS.load(Relaxed);
+        while let Some(row) = rows.try_next().await? && max_rows > 0 {
             data.push(T::decode_row(&row)?);
+            max_rows -= 1;
         }
         Ok(data)
     }
@@ -758,8 +764,10 @@ pub trait Schema: 'static + Send + Sync + Model {
         let sql = format::format_query(query, params);
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
-        while let Some(row) = rows.try_next().await? {
+        let mut max_rows = super::MAX_ROWS.load(Relaxed);
+        while let Some(row) = rows.try_next().await? && max_rows > 0 {
             data.push(T::decode_row(&row)?);
+            max_rows -= 1;
         }
         Ok(data)
     }
@@ -816,7 +824,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Finds one model selected by the primary key in the table,
     /// and decodes it as an instance of type `T`.
     async fn find_by_id<T: DecodeRow<DatabaseRow, Error = sqlx::Error>>(
-        primary_key: &str,
+        primary_key: &Self::PrimaryKey,
     ) -> Result<Option<T>, Error> {
         let pool = Self::acquire_reader().await?.pool();
         let table_name = Self::table_name();
@@ -838,7 +846,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     }
 
     /// Finds one model selected by the primary key in the table, and parses it as `Self`.
-    async fn try_get_model(primary_key: &str) -> Result<Self, Error> {
+    async fn try_get_model(primary_key: &Self::PrimaryKey) -> Result<Self, Error> {
         let pool = Self::acquire_reader().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;

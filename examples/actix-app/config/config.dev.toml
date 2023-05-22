@@ -17,6 +17,7 @@ port = 6082
 
 [database]
 namespace = "dc"
+max-rows = 100
 
 [[mysql]]
 host = "127.0.0.1"

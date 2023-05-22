@@ -1,21 +1,23 @@
+use super::Schema;
 use crate::{
-    database::Schema,
     datetime::DateTime,
+    error::Error,
     extension::JsonObjectExt,
     model::{Mutation, Query},
+    request::Validation,
     Map,
 };
 use serde_json::Value;
 use std::fmt::Display;
 
 /// Access model fields.
-pub trait ModelAccessor<T, U>: Schema
+pub trait ModelAccessor<T, U = T>: Schema<PrimaryKey = T>
 where
     T: Default + Display + PartialEq,
     U: Default + Display + PartialEq,
 {
-    /// Returns the `id` field.
-    fn id(&self) -> T;
+    /// Returns the `id` field, i.e. the primary key.
+    fn id(&self) -> &T;
 
     /// Returns the `name` field.
     #[inline]
@@ -276,5 +278,27 @@ where
         query.add_filter("status", Map::from_entry("$ne", "Deleted"));
         query.set_sort_order("updated_at".to_owned(), false);
         query
+    }
+
+    /// Updates a model of the primary key using the json object.
+    async fn update_by_id(id: &T, data: Map) -> Result<(Validation, Self), Error> {
+        let mut model = Self::try_get_model(id).await?;
+        let validation = model.read_map(&data);
+        if !validation.is_success() {
+            return Ok((validation, model));
+        }
+
+        let query = model.current_version_query();
+        let mutation = model.next_version_mutation(data);
+        Self::update_one(&query, &mutation).await?;
+        Ok((validation, model))
+    }
+
+    /// Deletes a model of the primary key by setting the status as `Deleted`.
+    async fn soft_delete_by_id(id: &T) -> Result<(), Error> {
+        let model = Self::try_get_model(id).await?;
+        let query = model.current_version_query();
+        let mutation = model.soft_delete_mutation();
+        Self::update_one(&query, &mutation).await
     }
 }

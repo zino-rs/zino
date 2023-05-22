@@ -8,7 +8,7 @@ pub use zino_core::{
     datetime::DateTime,
     error::Error,
     extension::{JsonObjectExt, TomlTableExt},
-    model::{Model, ModelAccessor, Mutation, Query},
+    model::{Model, Mutation, Query},
     request::{RequestContext, Validation},
     response::{ExtractRejection, Rejection},
     schedule::{AsyncCronJob, CronJob},
@@ -18,4 +18,4 @@ pub use zino_core::{
 
 #[cfg(feature = "orm")]
 #[doc(no_inline)]
-pub use zino_core::database::Schema;
+pub use zino_core::database::{ModelAccessor, Schema};

@@ -32,7 +32,7 @@
 //! |--------------|------------------------------------------------------|----------|
 //! | `actix`      | Enables the integration with [`actix-web`].          | No       |
 //! | `axum`       | Enables the integration with [`axum`].               | No       |
-//! | `orm`        | Enables the ORM on for MySQL or **PostgreSQL**.      | Yes      |
+//! | `orm`        | Enables the ORM for MySQL or **PostgreSQL**.         | Yes      |
 //! | `view`       | Enables the HTML template rendering.                 | Yes      |
 //!
 //! [`zino`]: https://github.com/photino/zino
