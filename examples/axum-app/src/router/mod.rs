@@ -1,5 +1,5 @@
 use crate::{
-    controller::{bench, stats, task, user},
+    controller::{bench, stats, tag, task, user},
     middleware,
 };
 use axum::{
@@ -16,7 +16,17 @@ pub fn routes() -> Vec<Router> {
         .route("/user/new", post(user::new))
         .route("/user/:id/update", post(user::update))
         .route("/user/list", get(user::list))
-        .route("/user/:id/view", get(user::view));
+        .route("/user/:id/view", get(user::view))
+        .route("/user/:id/delete", post(user::delete));
+    routes.push(router);
+
+    // Tag controller.
+    let router = Router::new()
+        .route("/tag/new", post(tag::new))
+        .route("/tag/:id/update", post(tag::update))
+        .route("/tag/list", get(tag::list))
+        .route("/tag/:id/view", get(tag::view))
+        .route("/tag/:id/delete", post(tag::delete));
     routes.push(router);
 
     // Task controller.

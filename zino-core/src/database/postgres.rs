@@ -363,7 +363,13 @@ impl DecodeRow<DatabaseRow> for Map {
                     .try_get_unchecked::<NaiveTime, _>(index)?
                     .to_string()
                     .into(),
-                "UUID" => row.try_get_unchecked::<Uuid, _>(index)?.to_string().into(),
+                "UUID" => {
+                    if let Some(value) = row.try_get_unchecked::<Option<Uuid>, _>(index)? {
+                        value.to_string().into()
+                    } else {
+                        JsonValue::Null
+                    }
+                }
                 "BYTEA" => row.try_get_unchecked::<Vec<u8>, _>(index)?.into(),
                 "TEXT[]" => row.try_get_unchecked::<Vec<String>, _>(index)?.into(),
                 "UUID[]" => {
@@ -413,7 +419,13 @@ impl DecodeRow<DatabaseRow> for Record {
                     .to_string()
                     .into(),
                 // deserialize Avro Uuid value wasn't supported in 0.14.0
-                "UUID" => row.try_get_unchecked::<Uuid, _>(index)?.to_string().into(),
+                "UUID" => {
+                    if let Some(value) = row.try_get_unchecked::<Option<Uuid>, _>(index)? {
+                        value.to_string().into()
+                    } else {
+                        AvroValue::Null
+                    }
+                }
                 "BYTEA" => row.try_get_unchecked::<Vec<u8>, _>(index)?.into(),
                 "TEXT[]" => {
                     let values = row.try_get_unchecked::<Vec<String>, _>(index)?;
@@ -471,7 +483,7 @@ impl QueryExt<DatabaseDriver> for Query {
         if self.filters().contains_key(sort_by) {
             format!("LIMIT {}", self.limit())
         } else {
-            format!("LIMIT {} OFFSET {}", self.limit(), self.offset())
+            format!("OFFSET {} LIMIT {} ", self.offset(), self.limit())
         }
     }
 

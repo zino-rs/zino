@@ -35,11 +35,11 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     let name = input.ident;
     let mut model_name = name.to_string();
 
-    // Reader and writer
+    // Parsing struct attrs
     let mut reader_name = String::from("main");
     let mut writer_name = String::from("main");
     for attr in input.attrs.iter() {
-        for (key, value) in parser::parse_attr(attr).into_iter() {
+        for (key, value) in parser::parse_schema_attr(attr).into_iter() {
             if let Some(value) = value {
                 match key.as_str() {
                     "model_name" => {
@@ -57,7 +57,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
         }
     }
 
-    // Columns
+    // Parsing field attrs
     let mut primary_key_type = String::from("Uuid");
     let mut primary_key_name = String::from("id");
     let mut distribution_column = None;
@@ -71,11 +71,12 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
             if let Some(ident) = field.ident && !type_name.is_empty() {
                 let mut ignore = false;
                 let mut name = ident.to_string();
-                let mut default_value = None;
                 let mut not_null = false;
+                let mut default_value = None;
                 let mut index_type = None;
+                let mut reference = None;
                 'inner: for attr in field.attrs.iter() {
-                    for (key, value) in parser::parse_attr(attr).into_iter() {
+                    for (key, value) in parser::parse_schema_attr(attr).into_iter() {
                         match key.as_str() {
                             "ignore" => {
                                 ignore = true;
@@ -91,14 +92,17 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                                     type_name = value;
                                 }
                             }
-                            "default_value" => {
-                                default_value = value;
-                            }
                             "not_null" => {
                                 not_null = true;
                             }
+                            "default_value" => {
+                                default_value = value;
+                            }
                             "index_type" => {
                                 index_type = value;
+                            }
+                            "reference" => {
+                                reference = value;
                             }
                             "primary_key" => {
                                 primary_key_name = name.clone();
@@ -149,9 +153,29 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 } else {
                     quote! { None }
                 };
-                let column = quote! {
-                    zino_core::model::Column::new(#name, #type_name, #quote_value, #not_null, #quote_index)
+                let quote_reference = if let Some(ref model_name) = reference {
+                    let model_ident = format_ident!("{}", model_name);
+                    quote! {{
+                        let table_name = <#model_ident>::table_name();
+                        let column_name = <#model_ident>::PRIMARY_KEY_NAME;
+                        Some(zino_core::model::Reference::new(table_name, column_name))
+                    }}
+                } else {
+                    quote! { None }
                 };
+                let column = quote! {{
+                    let mut column = zino_core::model::Column::new(#name, #type_name, #not_null);
+                    if let Some(default_value) = #quote_value {
+                        column.set_default_value(default_value);
+                    }
+                    if let Some(index_type) = #quote_index {
+                        column.set_index_type(index_type);
+                    }
+                    if let Some(reference) = #quote_reference {
+                        column.set_reference(reference);
+                    }
+                    column
+                }};
                 columns.push(column);
                 column_fields.push(quote!{ #name });
             }
@@ -309,6 +333,120 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
         }
 
         impl Eq for #name {}
+    };
+
+    TokenStream::from(output)
+}
+
+/// Derive the `ModelAccessor` trait.
+#[proc_macro_derive(ModelAccessor, attributes(schema))]
+pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
+    // Input
+    let input = parse_macro_input!(item as DeriveInput);
+
+    // Parsing field attrs
+    let name = input.ident;
+    let mut column_methods = Vec::new();
+    let mut primary_key_type = String::from("Uuid");
+    let mut primary_key_name = String::from("id");
+    let mut user_id_type = String::from("Uuid");
+    if let Data::Struct(data) = input.data && let Fields::Named(fields) = data.fields {
+        for field in fields.named.into_iter() {
+            let type_name = parser::get_type_name(&field.ty);
+            if let Some(ident) = field.ident && !type_name.is_empty() {
+                let name = ident.to_string();
+                for attr in field.attrs.iter() {
+                    for (key, _value) in parser::parse_schema_attr(attr).into_iter() {
+                        if key == "primary_key" {
+                            primary_key_name = name.clone();
+                        }
+                    }
+                }
+                if primary_key_name == name {
+                    primary_key_type = type_name;
+                } else {
+                    let name_ident = format_ident!("{}", name);
+                    match name.as_str() {
+                        "name" | "namespace" | "visibility" | "status" | "description" => {
+                            let method = quote! {
+                                #[inline]
+                                fn #name_ident(&self) -> &str {
+                                    &self.#name_ident
+                                }
+                            };
+                            column_methods.push(method);
+                        }
+                        "content" | "extra" => {
+                            let method = quote! {
+                                #[inline]
+                                fn #name_ident(&self) -> Option<&Map> {
+                                    let map = &self.#name_ident;
+                                    (!map.is_empty()).then_some(map)
+                                }
+                            };
+                            column_methods.push(method);
+                        }
+                        "owner_id" | "manager_id" => {
+                            let type_name_ident = format_ident!("{}", type_name);
+                            let method = quote! {
+                                #[inline]
+                                fn #name_ident(&self) -> Option<&#type_name_ident> {
+                                    let user_id = &self.#name_ident;
+                                    (user_id != &#type_name_ident::default()).then_some(user_id)
+                                }
+                            };
+                            column_methods.push(method);
+                            user_id_type = type_name;
+                        }
+                        "created_at" | "updated_at" => {
+                            let method = quote! {
+                                #[inline]
+                                fn #name_ident(&self) -> DateTime {
+                                    self.#name_ident
+                                }
+                            };
+                            column_methods.push(method);
+                        }
+                        "version" => {
+                            let method = quote! {
+                                #[inline]
+                                fn #name_ident(&self) -> u64 {
+                                    self.#name_ident
+                                }
+                            };
+                            column_methods.push(method);
+                        }
+                        "edition" => {
+                            let method = quote! {
+                                #[inline]
+                                fn #name_ident(&self) -> u32 {
+                                    self.#name_ident
+                                }
+                            };
+                            column_methods.push(method);
+                        }
+                        _ => (),
+                    }
+                }
+            }
+        }
+    }
+
+    // Output
+    let model_primary_key_type = format_ident!("{}", primary_key_type);
+    let model_primary_key = format_ident!("{}", primary_key_name);
+    let model_user_id_type = format_ident!("{}", user_id_type);
+    let output = quote! {
+        use zino_core::database::ModelAccessor;
+
+        impl ModelAccessor<#model_primary_key_type, #model_user_id_type> for #name {
+            #[inline]
+            fn id(&self) -> &#model_primary_key_type {
+                &self.#model_primary_key
+            }
+
+            #(#column_methods)*
+        }
     };
 
     TokenStream::from(output)

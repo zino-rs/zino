@@ -1,9 +1,10 @@
+use crate::{Group, Source, Tag, User};
 use serde::{Deserialize, Serialize};
 use zino_core::{datetime::DateTime, model::Model, request::Validation, Map, Uuid};
-use zino_derive::Schema;
+use zino_derive::{ModelAccessor, Schema};
 
 /// The collection model.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, Schema)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
 pub struct Collection {
@@ -22,9 +23,11 @@ pub struct Collection {
     description: String,
 
     // Info fields.
+    #[schema(reference = "Group")]
     consumer_id: Option<Uuid>, // group.id, group.subject = "user"
-    source_id: Uuid,           // source.id
-    #[schema(index_type = "gin")]
+    #[schema(reference = "Source")]
+    source_id: Uuid, // source.id
+    #[schema(reference = "Tag", index_type = "gin")]
     tags: Vec<Uuid>, // tag.id, tag.namespace = "*:collection"
 
     // Extensions.
@@ -32,7 +35,9 @@ pub struct Collection {
     extra: Map,
 
     // Revisions.
-    owner_id: Uuid,      // user.id
+    #[schema(reference = "User")]
+    owner_id: Uuid, // user.id
+    #[schema(reference = "User")]
     maintainer_id: Uuid, // user.id
     #[schema(readonly, default_value = "now", index_type = "btree")]
     created_at: DateTime,
@@ -68,21 +73,3 @@ impl Model for Collection {
         validation
     }
 }
-
-super::impl_model_accessor!(
-    Collection,
-    id,
-    name,
-    namespace,
-    visibility,
-    status,
-    description,
-    content,
-    extra,
-    owner_id,
-    maintainer_id,
-    created_at,
-    updated_at,
-    version,
-    edition
-);

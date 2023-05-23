@@ -63,14 +63,14 @@ where
 
     /// Returns the `owner_id` field.
     #[inline]
-    fn owner_id(&self) -> U {
-        U::default()
+    fn owner_id(&self) -> Option<&U> {
+        None
     }
 
     /// Returns the `maintainer_id` field.
     #[inline]
-    fn maintainer_id(&self) -> U {
-        U::default()
+    fn maintainer_id(&self) -> Option<&U> {
+        None
     }
 
     /// Returns the `created_at` field.
@@ -95,6 +95,24 @@ where
     #[inline]
     fn edition(&self) -> u32 {
         0
+    }
+
+    /// Returns a snapshot of the model.
+    #[inline]
+    fn snapshot(&self) -> Map {
+        let mut snapshot = Map::with_capacity(5);
+        snapshot.upsert(Self::PRIMARY_KEY_NAME, self.id().to_string());
+        snapshot.upsert("name", self.name());
+        snapshot.upsert("status", self.status());
+        snapshot.upsert("updated_at", self.updated_at());
+        snapshot.upsert("version", self.version());
+        snapshot
+    }
+
+    /// Returns `true` if the `name` is nonempty.
+    #[inline]
+    fn has_name(&self) -> bool {
+        !self.name().is_empty()
     }
 
     /// Returns `true` if `self` has the namespace prefix.
@@ -147,6 +165,12 @@ where
         self.status().eq_ignore_ascii_case("Deleted")
     }
 
+    /// Returns `true` if the `description` is nonempty.
+    #[inline]
+    fn has_description(&self) -> bool {
+        !self.description().is_empty()
+    }
+
     /// Returns a reference to the value corresponding to the key in `content`.
     #[inline]
     fn get_content_value(&self, key: &str) -> Option<&Value> {
@@ -162,13 +186,15 @@ where
     /// Returns `true` if the `owner_id` is not the default.
     #[inline]
     fn has_owner(&self) -> bool {
-        self.owner_id() != U::default()
+        self.owner_id()
+            .is_some_and(|owner_id| owner_id != &U::default())
     }
 
     /// Returns `true` if the `maintainer_id` is not the default.
     #[inline]
     fn has_maintainer(&self) -> bool {
-        self.maintainer_id() != U::default()
+        self.maintainer_id()
+            .is_some_and(|maintainer_id| maintainer_id != &U::default())
     }
 
     /// Returns the next version for the model.
@@ -180,7 +206,7 @@ where
     /// Constructs the query filters for the model of the current version.
     fn current_version_filters(&self) -> Map {
         let mut filters = Map::with_capacity(2);
-        filters.upsert("id", self.id().to_string());
+        filters.upsert(Self::PRIMARY_KEY_NAME, self.id().to_string());
         filters.upsert("version", self.version());
         filters
     }
@@ -195,7 +221,7 @@ where
     /// Constructs the query filters for the model of the next version.
     fn next_version_filters(&self) -> Map {
         let mut filters = Map::with_capacity(2);
-        filters.upsert("id", self.id().to_string());
+        filters.upsert(Self::PRIMARY_KEY_NAME, self.id().to_string());
         filters.upsert("version", self.next_version());
         filters
     }
@@ -225,7 +251,7 @@ where
     /// Constructs the query filters for the model of the current edition.
     fn current_edition_filters(&self) -> Map {
         let mut filters = Map::with_capacity(2);
-        filters.upsert("id", self.id().to_string());
+        filters.upsert(Self::PRIMARY_KEY_NAME, self.id().to_string());
         filters.upsert("edition", self.edition());
         filters
     }
@@ -240,7 +266,7 @@ where
     /// Constructs the query filters for the model of the next edition.
     fn next_edition_filters(&self) -> Map {
         let mut filters = Map::with_capacity(2);
-        filters.upsert("id", self.id().to_string());
+        filters.upsert(Self::PRIMARY_KEY_NAME, self.id().to_string());
         filters.upsert("edition", self.next_edition());
         filters
     }
@@ -272,7 +298,6 @@ where
     }
 
     /// Constructs a default list `Query` for the model.
-    #[inline]
     fn default_list_query() -> Query {
         let mut query = Self::default_query();
         query.add_filter("status", Map::from_entry("$ne", "Deleted"));
@@ -281,11 +306,16 @@ where
     }
 
     /// Updates a model of the primary key using the json object.
-    async fn update_by_id(id: &T, data: Map) -> Result<(Validation, Self), Error> {
+    async fn update_by_id(id: &T, mut data: Map) -> Result<(Validation, Self), Error> {
         let mut model = Self::try_get_model(id).await?;
         let validation = model.read_map(&data);
         if !validation.is_success() {
             return Ok((validation, model));
+        }
+        if model.is_locked() {
+            data.retain(|key, _value| key == "visibility" || key == "status");
+        } else if model.is_deleted() {
+            data.retain(|key, _value| key == "status");
         }
 
         let query = model.current_version_query();

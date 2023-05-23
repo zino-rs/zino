@@ -1,9 +1,10 @@
+use crate::{Tag, User};
 use serde::{Deserialize, Serialize};
 use zino_core::{datetime::DateTime, model::Model, request::Validation, Map, Uuid};
-use zino_derive::Schema;
+use zino_derive::{ModelAccessor, Schema};
 
 /// The source model.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, Schema)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
 pub struct Source {
@@ -22,7 +23,7 @@ pub struct Source {
     description: String,
 
     // Info fields.
-    #[schema(index_type = "gin")]
+    #[schema(reference = "Tag", index_type = "gin")]
     tags: Vec<Uuid>, // tag.id, tag.namespace = "*:source"
 
     // Extensions.
@@ -30,7 +31,9 @@ pub struct Source {
     extra: Map,
 
     // Revisions.
-    owner_id: Uuid,      // user.id
+    #[schema(reference = "User")]
+    owner_id: Uuid, // user.id
+    #[schema(reference = "User")]
     maintainer_id: Uuid, // user.id
     #[schema(readonly, default_value = "now", index_type = "btree")]
     created_at: DateTime,
@@ -66,21 +69,3 @@ impl Model for Source {
         validation
     }
 }
-
-super::impl_model_accessor!(
-    Source,
-    id,
-    name,
-    namespace,
-    visibility,
-    status,
-    description,
-    content,
-    extra,
-    owner_id,
-    maintainer_id,
-    created_at,
-    updated_at,
-    version,
-    edition
-);

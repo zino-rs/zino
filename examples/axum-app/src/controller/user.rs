@@ -28,9 +28,8 @@ pub async fn update(mut req: Request) -> Result {
     let user_id: Uuid = req.parse_param("id")?;
     let body: Map = req.parse_body().await?;
     let (validation, user) = User::update_by_id(&user_id, body).await.extract(&req)?;
-    let mut res = Response::from(validation).context(&req);
-
     let data = Map::data_entry(user.next_version_filters());
+    let mut res = Response::from(validation).context(&req);
     res.set_data(&data);
     Ok(res.into())
 }
@@ -55,5 +54,13 @@ pub async fn view(req: Request) -> Result {
     let mut res = Response::default().context(&req);
     res.record_server_timing("db", None, Some(db_query_duration));
     res.set_data(&data);
+    Ok(res.into())
+}
+
+pub async fn delete(req: Request) -> Result {
+    let id: Uuid = req.parse_param("id")?;
+    User::soft_delete_by_id(&id).await.extract(&req)?;
+
+    let res = Response::default().context(&req);
     Ok(res.into())
 }

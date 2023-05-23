@@ -18,7 +18,7 @@ pub(crate) fn get_type_name(ty: &Type) -> String {
 }
 
 /// Parses an attribute and returns a list of arguments
-pub(crate) fn parse_attr(attr: &Attribute) -> Vec<(String, Option<String>)> {
+pub(crate) fn parse_schema_attr(attr: &Attribute) -> Vec<(String, Option<String>)> {
     let mut arguments = Vec::new();
     if attr.path().is_ident("schema") {
         if let Ok(nested) = attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated) {

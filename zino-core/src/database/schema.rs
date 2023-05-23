@@ -9,7 +9,7 @@ use crate::{
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
-use sqlx::{Row, Transaction};
+use sqlx::Transaction;
 use std::{fmt::Display, sync::atomic::Ordering::Relaxed};
 
 /// Database schema.
@@ -573,12 +573,10 @@ pub trait Schema: 'static + Send + Sync + Model {
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut associations = Map::new();
-        let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        while let Some(row) = rows.try_next().await? && max_rows > 0 {
-            let primary_key_value = row.try_get_unchecked::<String, _>(primary_key_name)?;
+        while let Some(row) = rows.try_next().await? {
+            let primary_key_value = super::decode::<String>(&row, primary_key_name)?;
             let map = Map::decode_row(&row)?;
             associations.insert(primary_key_value, map.into());
-            max_rows -= 1;
         }
         for row in data {
             for col in columns {
@@ -629,7 +627,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut associations = Map::new();
         while let Some(row) = rows.try_next().await? {
-            let primary_key_value = row.try_get_unchecked::<String, _>(primary_key_name)?;
+            let primary_key_value = super::decode::<String>(&row, primary_key_name)?;
             let map = Map::decode_row(&row)?;
             associations.insert(primary_key_value, map.into());
         }

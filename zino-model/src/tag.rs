@@ -1,9 +1,10 @@
+use crate::User;
 use serde::{Deserialize, Serialize};
 use zino_core::{datetime::DateTime, model::Model, request::Validation, Map, Uuid};
-use zino_derive::Schema;
+use zino_derive::{ModelAccessor, Schema};
 
 /// The tag model.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, Schema)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
 pub struct Tag {
@@ -24,6 +25,7 @@ pub struct Tag {
     // Info fields.
     #[schema(not_null)]
     category: String,
+    #[schema(reference = "Tag")]
     parent_id: Option<Uuid>, // tag.id, tag.namespace = {tag.namespace}, tag.category = {tag.category}
 
     // Extensions.
@@ -31,7 +33,9 @@ pub struct Tag {
     extra: Map,
 
     // Revisions.
-    owner_id: Uuid,      // user.id
+    #[schema(reference = "User")]
+    owner_id: Uuid, // user.id
+    #[schema(reference = "User")]
     maintainer_id: Uuid, // user.id
     #[schema(readonly, default_value = "now", index_type = "btree")]
     created_at: DateTime,
@@ -64,24 +68,18 @@ impl Model for Tag {
         if self.name.is_empty() {
             validation.record("name", "should be nonempty");
         }
+        if let Some(category) = Validation::parse_string(data.get("category")) {
+            self.category = category.into_owned();
+        }
+        if self.category.is_empty() {
+            validation.record("category", "should be nonempty");
+        }
+        if let Some(result) = Validation::parse_uuid(data.get("parent_id")) {
+            match result {
+                Ok(parent_id) => self.parent_id = Some(parent_id),
+                Err(err) => validation.record_fail("parent_id", err),
+            }
+        }
         validation
     }
 }
-
-super::impl_model_accessor!(
-    Tag,
-    id,
-    name,
-    namespace,
-    visibility,
-    status,
-    description,
-    content,
-    extra,
-    owner_id,
-    maintainer_id,
-    created_at,
-    updated_at,
-    version,
-    edition
-);

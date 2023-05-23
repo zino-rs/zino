@@ -1,3 +1,4 @@
+use super::Reference;
 use apache_avro::schema::{Name, RecordField, RecordFieldOrder, Schema};
 use serde::Serialize;
 use serde_json::Value;
@@ -10,32 +11,48 @@ pub struct Column<'a> {
     name: &'a str,
     /// Column type name.
     type_name: &'a str,
+    /// `NOT NULL` constraint.
+    not_null: bool,
     /// A str representation of the default value.
     #[serde(skip_serializing_if = "Option::is_none")]
     default_value: Option<&'a str>,
-    /// `NOT NULL` constraint.
-    not_null: bool,
     /// Index type.
     #[serde(skip_serializing_if = "Option::is_none")]
     index_type: Option<&'a str>,
+    /// Reference.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    reference: Option<Reference<'a>>,
 }
 
 impl<'a> Column<'a> {
     /// Creates a new instance.
-    pub const fn new(
-        name: &'a str,
-        type_name: &'a str,
-        default_value: Option<&'a str>,
-        not_null: bool,
-        index_type: Option<&'a str>,
-    ) -> Self {
+    pub fn new(name: &'a str, type_name: &'a str, not_null: bool) -> Self {
         Self {
             name,
             type_name,
-            default_value,
             not_null,
-            index_type,
+            default_value: None,
+            index_type: None,
+            reference: None,
         }
+    }
+
+    /// Sets the default value.
+    #[inline]
+    pub fn set_default_value(&mut self, default_value: &'a str) {
+        self.default_value = (!default_value.is_empty()).then_some(default_value);
+    }
+
+    /// Sets the index type.
+    #[inline]
+    pub fn set_index_type(&mut self, index_type: &'a str) {
+        self.index_type = (!index_type.is_empty()).then_some(index_type);
+    }
+
+    /// Sets the reference.
+    #[inline]
+    pub fn set_reference(&mut self, reference: Reference<'a>) {
+        self.reference = Some(reference);
     }
 
     /// Returns the name.
@@ -50,22 +67,28 @@ impl<'a> Column<'a> {
         self.type_name
     }
 
-    /// Returns the default value.
-    #[inline]
-    pub fn default_value(&self) -> Option<&'a str> {
-        self.default_value
-    }
-
     /// Returns `true` if the column can not be null.
     #[inline]
     pub fn is_not_null(&self) -> bool {
         self.not_null
     }
 
+    /// Returns the default value.
+    #[inline]
+    pub fn default_value(&self) -> Option<&'a str> {
+        self.default_value
+    }
+
     /// Returns the index type.
     #[inline]
     pub fn index_type(&self) -> Option<&'a str> {
         self.index_type
+    }
+
+    /// Returns the reference.
+    #[inline]
+    pub fn reference(&self) -> Option<&Reference<'a>> {
+        self.reference.as_ref()
     }
 
     /// Returns the [Avro schema](apache_avro::schema::Schema).

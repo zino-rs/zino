@@ -1,9 +1,10 @@
+use crate::{Group, Tag, Task, User};
 use serde::{Deserialize, Serialize};
 use zino_core::{datetime::DateTime, model::Model, request::Validation, Map, Uuid};
-use zino_derive::Schema;
+use zino_derive::{ModelAccessor, Schema};
 
 /// The dataset model.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, Schema)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
 pub struct Dataset {
@@ -22,11 +23,13 @@ pub struct Dataset {
     description: String,
 
     // Info fields.
+    #[schema(reference = "Group")]
     project_id: Uuid, // group.id, group.namespace = "*:project", group.subject = "user"
+    #[schema(reference = "Task")]
     task_id: Option<Uuid>, // task.id
     valid_from: DateTime,
     expires_at: DateTime,
-    #[schema(index_type = "gin")]
+    #[schema(reference = "Tag", index_type = "gin")]
     tags: Vec<Uuid>, // tag.id, tag.namespace = "*:dataset"
 
     // Extensions.
@@ -34,7 +37,9 @@ pub struct Dataset {
     extra: Map,
 
     // Revisions.
-    owner_id: Uuid,      // user.id
+    #[schema(reference = "User")]
+    owner_id: Uuid, // user.id
+    #[schema(reference = "User")]
     maintainer_id: Uuid, // user.id
     #[schema(readonly, default_value = "now", index_type = "btree")]
     created_at: DateTime,
@@ -70,21 +75,3 @@ impl Model for Dataset {
         validation
     }
 }
-
-super::impl_model_accessor!(
-    Dataset,
-    id,
-    name,
-    namespace,
-    visibility,
-    status,
-    description,
-    content,
-    extra,
-    owner_id,
-    maintainer_id,
-    created_at,
-    updated_at,
-    version,
-    edition
-);

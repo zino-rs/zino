@@ -10,10 +10,10 @@ pub struct Query {
     filters: Map,
     // Sort order.
     sort_order: (Option<String>, bool),
-    // Limit.
-    limit: u64,
     // Offset.
     offset: u64,
+    // Limit.
+    limit: u32,
 }
 
 impl Query {
@@ -24,8 +24,8 @@ impl Query {
             fields: Vec::new(),
             filters,
             sort_order: (None, false),
-            limit: 10,
             offset: 0,
+            limit: 10,
         }
     }
 
@@ -51,19 +51,19 @@ impl Query {
                         self.sort_order.1 = ascending;
                     }
                 }
-                "limit" => {
-                    if let Some(result) = Validation::parse_u64(value) {
-                        match result {
-                            Ok(limit) => self.limit = limit,
-                            Err(err) => validation.record_fail("limit", err),
-                        }
-                    }
-                }
                 "offset" | "skip" => {
                     if let Some(result) = Validation::parse_u64(value) {
                         match result {
                             Ok(offset) => self.offset = offset,
                             Err(err) => validation.record_fail("offset", err),
+                        }
+                    }
+                }
+                "limit" => {
+                    if let Some(result) = Validation::parse_u32(value) {
+                        match result {
+                            Ok(limit) => self.limit = limit,
+                            Err(err) => validation.record_fail("limit", err),
                         }
                     }
                 }
@@ -147,16 +147,16 @@ impl Query {
         self.sort_order = (sort_by.into(), ascending);
     }
 
-    /// Sets the query limit.
-    #[inline]
-    pub fn set_limit(&mut self, limit: u64) {
-        self.limit = limit;
-    }
-
     /// Sets the query offset.
     #[inline]
     pub fn set_offset(&mut self, offset: u64) {
         self.offset = offset;
+    }
+
+    /// Sets the query limit.
+    #[inline]
+    pub fn set_limit(&mut self, limit: u32) {
+        self.limit = limit;
     }
 
     /// Returns a reference to the projection fields.
@@ -178,16 +178,16 @@ impl Query {
         (sort_order.0.as_deref().unwrap_or_default(), sort_order.1)
     }
 
-    /// Returns the query limit.
-    #[inline]
-    pub fn limit(&self) -> u64 {
-        self.limit
-    }
-
     /// Returns the query offset.
     #[inline]
     pub fn offset(&self) -> u64 {
         self.offset
+    }
+
+    /// Returns the query limit.
+    #[inline]
+    pub fn limit(&self) -> u32 {
+        self.limit
     }
 }
 
@@ -198,8 +198,8 @@ impl Default for Query {
             fields: Vec::new(),
             filters: Map::new(),
             sort_order: (None, false),
-            limit: 10,
             offset: 0,
+            limit: 10,
         }
     }
 }

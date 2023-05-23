@@ -1,9 +1,10 @@
+use crate::{Group, Source, Tag, User};
 use serde::{Deserialize, Serialize};
 use zino_core::{datetime::DateTime, model::Model, request::Validation, Map, Uuid};
-use zino_derive::Schema;
+use zino_derive::{ModelAccessor, Schema};
 
 /// The task model.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, Schema)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
 pub struct Task {
@@ -22,10 +23,13 @@ pub struct Task {
     description: String,
 
     // Info fields.
+    #[schema(reference = "Group")]
     project_id: Uuid, // group.id, group.namespace = "*:project", group.subject = "user"
-    input_id: Uuid,   // source.id
+    #[schema(reference = "Source")]
+    input_id: Uuid, // source.id
+    #[schema(reference = "Source")]
     output_id: Option<Uuid>, // source.id
-    #[schema(index_type = "gin")]
+    #[schema(reference = "Task", index_type = "gin")]
     dependencies: Vec<Uuid>, // task.id
     valid_from: DateTime,
     expires_at: DateTime,
@@ -33,7 +37,7 @@ pub struct Task {
     last_time: DateTime,
     next_time: DateTime,
     priority: u16,
-    #[schema(index_type = "gin")]
+    #[schema(reference = "Tag", index_type = "gin")]
     tags: Vec<Uuid>, // tag.id, tag.namespace = "*:task"
 
     // Extensions.
@@ -41,7 +45,9 @@ pub struct Task {
     extra: Map,
 
     // Revisions.
-    owner_id: Uuid,      // user.id
+    #[schema(reference = "User")]
+    owner_id: Uuid, // user.id
+    #[schema(reference = "User")]
     maintainer_id: Uuid, // user.id
     #[schema(readonly, default_value = "now", index_type = "btree")]
     created_at: DateTime,
@@ -77,21 +83,3 @@ impl Model for Task {
         validation
     }
 }
-
-super::impl_model_accessor!(
-    Task,
-    id,
-    name,
-    namespace,
-    visibility,
-    status,
-    description,
-    content,
-    extra,
-    owner_id,
-    maintainer_id,
-    created_at,
-    updated_at,
-    version,
-    edition
-);

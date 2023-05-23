@@ -10,11 +10,13 @@ pub use apache_avro::schema;
 mod column;
 mod mutation;
 mod query;
+mod reference;
 mod row;
 
 pub use column::{Column, EncodeColumn};
 pub use mutation::Mutation;
 pub use query::Query;
+pub use reference::Reference;
 pub use row::DecodeRow;
 
 /// General data model.

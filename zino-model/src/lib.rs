@@ -11,12 +11,9 @@
 //! [`zino`]: https://github.com/photino/zino
 
 #![feature(async_fn_in_trait)]
-#![feature(decl_macro)]
 #![feature(lazy_cell)]
 #![feature(let_chains)]
 #![forbid(unsafe_code)]
-
-use zino_core::{database::ModelAccessor, datetime::DateTime, Map, Uuid};
 
 mod group;
 mod policy;
@@ -51,82 +48,3 @@ pub use task::Task;
 
 pub use log::Log;
 pub use record::Record;
-
-macro impl_model_accessor($model:ty, $id:ident, $name:ident, $namespace:ident,
-    $visibility:ident, $status:ident, $description:ident, $content:ident, $extra:ident,
-    $owner_id:ident, $maintainer_id:ident, $created_at:ident, $updated_at:ident,
-    $version:ident, $edition:ident) {
-    impl ModelAccessor<Uuid> for $model {
-        #[inline]
-        fn id(&self) -> &Uuid {
-            &self.$id
-        }
-
-        #[inline]
-        fn name(&self) -> &str {
-            &self.$name
-        }
-
-        #[inline]
-        fn namespace(&self) -> &str {
-            &self.$namespace
-        }
-
-        #[inline]
-        fn visibility(&self) -> &str {
-            &self.$visibility
-        }
-
-        #[inline]
-        fn status(&self) -> &str {
-            &self.$status
-        }
-
-        #[inline]
-        fn description(&self) -> &str {
-            &self.$description
-        }
-
-        #[inline]
-        fn content(&self) -> Option<&Map> {
-            let content = &self.$content;
-            (!content.is_empty()).then_some(content)
-        }
-
-        #[inline]
-        fn extra(&self) -> Option<&Map> {
-            let extra = &self.$extra;
-            (!extra.is_empty()).then_some(extra)
-        }
-
-        #[inline]
-        fn owner_id(&self) -> Uuid {
-            self.$owner_id
-        }
-
-        #[inline]
-        fn maintainer_id(&self) -> Uuid {
-            self.$maintainer_id
-        }
-
-        #[inline]
-        fn created_at(&self) -> DateTime {
-            self.$created_at
-        }
-
-        #[inline]
-        fn updated_at(&self) -> DateTime {
-            self.$updated_at
-        }
-
-        #[inline]
-        fn version(&self) -> u64 {
-            self.$version
-        }
-
-        #[inline]
-        fn edition(&self) -> u32 {
-            self.$edition
-        }
-    }
-}
