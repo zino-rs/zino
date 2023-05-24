@@ -8,7 +8,7 @@ use crate::{
 use apache_avro::types::Value as AvroValue;
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use serde_json::Value as JsonValue;
-use sqlx::{Column as _, Error, Row, TypeInfo};
+use sqlx::{Column as _, Error, Row, TypeInfo, ValueRef};
 use std::borrow::Cow;
 
 impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
@@ -341,37 +341,42 @@ impl DecodeRow<DatabaseRow> for Map {
         for col in columns {
             let field = col.name();
             let index = col.ordinal();
-            let value = match col.type_info().name() {
-                "BOOLEAN" => row.try_get_unchecked::<bool, _>(index)?.into(),
-                "TINYINT" => row.try_get_unchecked::<i8, _>(index)?.into(),
-                "TINYINT UNSIGNED" => row.try_get_unchecked::<u8, _>(index)?.into(),
-                "SMALLINT" => row.try_get_unchecked::<i16, _>(index)?.into(),
-                "SMALLINT UNSIGNED" => row.try_get_unchecked::<u16, _>(index)?.into(),
-                "INT" => row.try_get_unchecked::<i32, _>(index)?.into(),
-                "INT UNSIGNED" => row.try_get_unchecked::<u32, _>(index)?.into(),
-                "BIGINT" => row.try_get_unchecked::<i64, _>(index)?.into(),
-                "BIGINT UNSIGNED" => row.try_get_unchecked::<u64, _>(index)?.into(),
-                "FLOAT" => row.try_get_unchecked::<f32, _>(index)?.into(),
-                "DOUBLE" => row.try_get_unchecked::<f64, _>(index)?.into(),
-                "TEXT" | "VARCHAR" | "CHAR" => row.try_get_unchecked::<String, _>(index)?.into(),
-                "TIMESTAMP" => row.try_get_unchecked::<DateTime, _>(index)?.into(),
-                "DATETIME" => row
-                    .try_get_unchecked::<NaiveDateTime, _>(index)?
-                    .to_string()
-                    .into(),
-                "DATE" => row
-                    .try_get_unchecked::<NaiveDate, _>(index)?
-                    .to_string()
-                    .into(),
-                "TIME" => row
-                    .try_get_unchecked::<NaiveTime, _>(index)?
-                    .to_string()
-                    .into(),
-                "BLOB" | "VARBINARY" | "BINARY" => {
-                    row.try_get_unchecked::<Vec<u8>, _>(index)?.into()
+            let raw_value = row.try_get_raw(index)?;
+            let value = if raw_value.is_null() {
+                JsonValue::Null
+            } else {
+                use super::decode::decode_column;
+                match col.type_info().name() {
+                    "BOOLEAN" => decode_column::<bool>(field, raw_value)?.into(),
+                    "TINYINT" => decode_column::<i8>(field, raw_value)?.into(),
+                    "TINYINT UNSIGNED" => decode_column::<u8>(field, raw_value)?.into(),
+                    "SMALLINT" => decode_column::<i16>(field, raw_value)?.into(),
+                    "SMALLINT UNSIGNED" => decode_column::<u16>(field, raw_value)?.into(),
+                    "INT" => decode_column::<i32>(field, raw_value)?.into(),
+                    "INT UNSIGNED" => decode_column::<u32>(field, raw_value)?.into(),
+                    "BIGINT" => decode_column::<i64>(field, raw_value)?.into(),
+                    "BIGINT UNSIGNED" => decode_column::<u64>(field, raw_value)?.into(),
+                    "FLOAT" => decode_column::<f32>(field, raw_value)?.into(),
+                    "DOUBLE" => decode_column::<f64>(field, raw_value)?.into(),
+                    "TEXT" | "VARCHAR" | "CHAR" => {
+                        decode_column::<String>(field, raw_value)?.into()
+                    }
+                    "TIMESTAMP" => decode_column::<DateTime>(field, raw_value)?.into(),
+                    "DATETIME" => decode_column::<NaiveDateTime>(field, raw_value)?
+                        .to_string()
+                        .into(),
+                    "DATE" => decode_column::<NaiveDate>(field, raw_value)?
+                        .to_string()
+                        .into(),
+                    "TIME" => decode_column::<NaiveTime>(field, raw_value)?
+                        .to_string()
+                        .into(),
+                    "BLOB" | "VARBINARY" | "BINARY" => {
+                        decode_column::<Vec<u8>>(field, raw_value)?.into()
+                    }
+                    "JSON" => decode_column::<JsonValue>(field, raw_value)?,
+                    _ => JsonValue::Null,
                 }
-                "JSON" => row.try_get_unchecked::<JsonValue, _>(index)?,
-                _ => JsonValue::Null,
             };
             map.insert(field.to_owned(), value);
         }
@@ -388,31 +393,36 @@ impl DecodeRow<DatabaseRow> for Record {
         for col in columns {
             let field = col.name();
             let index = col.ordinal();
-            let value = match col.type_info().name() {
-                "BOOLEAN" => row.try_get_unchecked::<bool, _>(index)?.into(),
-                "INT" | "INT UNSIGNED" => row.try_get_unchecked::<i32, _>(index)?.into(),
-                "BIGINT" | "BIGINT UNSIGNED" => row.try_get_unchecked::<i64, _>(index)?.into(),
-                "FLOAT" => row.try_get_unchecked::<f32, _>(index)?.into(),
-                "DOUBLE" => row.try_get_unchecked::<f64, _>(index)?.into(),
-                "TEXT" | "VARCHAR" | "CHAR" => row.try_get_unchecked::<String, _>(index)?.into(),
-                "TIMESTAMP" => row.try_get_unchecked::<DateTime, _>(index)?.into(),
-                "DATETIME" => row
-                    .try_get_unchecked::<NaiveDateTime, _>(index)?
-                    .to_string()
-                    .into(),
-                "DATE" => row
-                    .try_get_unchecked::<NaiveDate, _>(index)?
-                    .to_string()
-                    .into(),
-                "TIME" => row
-                    .try_get_unchecked::<NaiveTime, _>(index)?
-                    .to_string()
-                    .into(),
-                "BLOB" | "VARBINARY" | "BINARY" => {
-                    row.try_get_unchecked::<Vec<u8>, _>(index)?.into()
+            let raw_value = row.try_get_raw(index)?;
+            let value = if raw_value.is_null() {
+                AvroValue::Null
+            } else {
+                use super::decode::decode_column;
+                match col.type_info().name() {
+                    "BOOLEAN" => decode_column::<bool>(field, raw_value)?.into(),
+                    "INT" | "INT UNSIGNED" => decode_column::<i32>(field, raw_value)?.into(),
+                    "BIGINT" | "BIGINT UNSIGNED" => decode_column::<i64>(field, raw_value)?.into(),
+                    "FLOAT" => decode_column::<f32>(field, raw_value)?.into(),
+                    "DOUBLE" => decode_column::<f64>(field, raw_value)?.into(),
+                    "TEXT" | "VARCHAR" | "CHAR" => {
+                        decode_column::<String>(field, raw_value)?.into()
+                    }
+                    "TIMESTAMP" => decode_column::<DateTime>(field, raw_value)?.into(),
+                    "DATETIME" => decode_column::<NaiveDateTime>(field, raw_value)?
+                        .to_string()
+                        .into(),
+                    "DATE" => decode_column::<NaiveDate>(field, raw_value)?
+                        .to_string()
+                        .into(),
+                    "TIME" => decode_column::<NaiveTime>(field, raw_value)?
+                        .to_string()
+                        .into(),
+                    "BLOB" | "VARBINARY" | "BINARY" => {
+                        decode_column::<Vec<u8>>(field, raw_value)?.into()
+                    }
+                    "JSON" => decode_column::<JsonValue>(field, raw_value)?.into(),
+                    _ => AvroValue::Null,
                 }
-                "JSON" => row.try_get_unchecked::<JsonValue, _>(index)?.into(),
-                _ => AvroValue::Null,
             };
             record.push((field.to_owned(), value));
         }
@@ -421,11 +431,6 @@ impl DecodeRow<DatabaseRow> for Record {
 }
 
 impl QueryExt<DatabaseDriver> for Query {
-    #[inline]
-    fn placeholder(_n: usize) -> SharedString {
-        "?".into()
-    }
-
     #[inline]
     fn query_fields(&self) -> &[String] {
         self.fields()
@@ -439,6 +444,19 @@ impl QueryExt<DatabaseDriver> for Query {
     #[inline]
     fn query_order(&self) -> (&str, bool) {
         self.sort_order()
+    }
+
+    #[inline]
+    fn placeholder(_n: usize) -> SharedString {
+        "?".into()
+    }
+
+    #[inline]
+    fn prepare_query<'a>(
+        query: &'a str,
+        params: Option<&'a Map>,
+    ) -> (Cow<'a, str>, Vec<&'a JsonValue>) {
+        crate::format::query::prepare_sql_query(query, params, '?')
     }
 
     fn format_pagination(&self) -> String {

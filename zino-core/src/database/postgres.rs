@@ -8,7 +8,7 @@ use crate::{
 use apache_avro::types::Value as AvroValue;
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use serde_json::Value as JsonValue;
-use sqlx::{Column as _, Error, Row, TypeInfo};
+use sqlx::{Column as _, Error, Row, TypeInfo, ValueRef};
 use std::borrow::Cow;
 
 impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
@@ -342,46 +342,45 @@ impl DecodeRow<DatabaseRow> for Map {
         for col in columns {
             let field = col.name();
             let index = col.ordinal();
-            let value = match col.type_info().name() {
-                "BOOL" => row.try_get_unchecked::<bool, _>(index)?.into(),
-                "INT2" => row.try_get_unchecked::<i16, _>(index)?.into(),
-                "INT4" => row.try_get_unchecked::<i32, _>(index)?.into(),
-                "INT8" => row.try_get_unchecked::<i64, _>(index)?.into(),
-                "FLOAT4" => row.try_get_unchecked::<f32, _>(index)?.into(),
-                "FLOAT8" => row.try_get_unchecked::<f64, _>(index)?.into(),
-                "TEXT" | "VARCHAR" | "CHAR" => row.try_get_unchecked::<String, _>(index)?.into(),
-                "TIMESTAMPTZ" => row.try_get_unchecked::<DateTime, _>(index)?.into(),
-                "TIMESTAMP" => row
-                    .try_get_unchecked::<NaiveDateTime, _>(index)?
-                    .to_string()
-                    .into(),
-                "DATE" => row
-                    .try_get_unchecked::<NaiveDate, _>(index)?
-                    .to_string()
-                    .into(),
-                "TIME" => row
-                    .try_get_unchecked::<NaiveTime, _>(index)?
-                    .to_string()
-                    .into(),
-                "UUID" => {
-                    if let Some(value) = row.try_get_unchecked::<Option<Uuid>, _>(index)? {
-                        value.to_string().into()
-                    } else {
-                        JsonValue::Null
+            let raw_value = row.try_get_raw(index)?;
+            let value = if raw_value.is_null() {
+                JsonValue::Null
+            } else {
+                use super::decode::decode_column;
+                match col.type_info().name() {
+                    "BOOL" => decode_column::<bool>(field, raw_value)?.into(),
+                    "INT2" => decode_column::<i16>(field, raw_value)?.into(),
+                    "INT4" => decode_column::<i32>(field, raw_value)?.into(),
+                    "INT8" => decode_column::<i64>(field, raw_value)?.into(),
+                    "FLOAT4" => decode_column::<f32>(field, raw_value)?.into(),
+                    "FLOAT8" => decode_column::<f64>(field, raw_value)?.into(),
+                    "TEXT" | "VARCHAR" | "CHAR" => {
+                        decode_column::<String>(field, raw_value)?.into()
                     }
+                    "TIMESTAMPTZ" => decode_column::<DateTime>(field, raw_value)?.into(),
+                    "TIMESTAMP" => decode_column::<NaiveDateTime>(field, raw_value)?
+                        .to_string()
+                        .into(),
+                    "DATE" => decode_column::<NaiveDate>(field, raw_value)?
+                        .to_string()
+                        .into(),
+                    "TIME" => decode_column::<NaiveTime>(field, raw_value)?
+                        .to_string()
+                        .into(),
+                    "UUID" => decode_column::<Uuid>(field, raw_value)?.to_string().into(),
+                    "BYTEA" => decode_column::<Vec<u8>>(field, raw_value)?.into(),
+                    "TEXT[]" => decode_column::<Vec<String>>(field, raw_value)?.into(),
+                    "UUID[]" => {
+                        let values = decode_column::<Vec<Uuid>>(field, raw_value)?;
+                        values
+                            .iter()
+                            .map(|v| v.to_string())
+                            .collect::<Vec<_>>()
+                            .into()
+                    }
+                    "JSONB" | "JSON" => decode_column::<JsonValue>(field, raw_value)?,
+                    _ => JsonValue::Null,
                 }
-                "BYTEA" => row.try_get_unchecked::<Vec<u8>, _>(index)?.into(),
-                "TEXT[]" => row.try_get_unchecked::<Vec<String>, _>(index)?.into(),
-                "UUID[]" => {
-                    let values = row.try_get_unchecked::<Vec<Uuid>, _>(index)?;
-                    values
-                        .iter()
-                        .map(|v| v.to_string())
-                        .collect::<Vec<_>>()
-                        .into()
-                }
-                "JSONB" | "JSON" => row.try_get_unchecked::<JsonValue, _>(index)?,
-                _ => JsonValue::Null,
             };
             map.insert(field.to_owned(), value);
         }
@@ -398,54 +397,53 @@ impl DecodeRow<DatabaseRow> for Record {
         for col in columns {
             let field = col.name();
             let index = col.ordinal();
-            let value = match col.type_info().name() {
-                "BOOL" => row.try_get_unchecked::<bool, _>(index)?.into(),
-                "INT4" => row.try_get_unchecked::<i32, _>(index)?.into(),
-                "INT8" => row.try_get_unchecked::<i64, _>(index)?.into(),
-                "FLOAT4" => row.try_get_unchecked::<f32, _>(index)?.into(),
-                "FLOAT8" => row.try_get_unchecked::<f64, _>(index)?.into(),
-                "TEXT" | "VARCHAR" | "CHAR" => row.try_get_unchecked::<String, _>(index)?.into(),
-                "TIMESTAMPTZ" => row.try_get_unchecked::<DateTime, _>(index)?.into(),
-                "TIMESTAMP" => row
-                    .try_get_unchecked::<NaiveDateTime, _>(index)?
-                    .to_string()
-                    .into(),
-                "DATE" => row
-                    .try_get_unchecked::<NaiveDate, _>(index)?
-                    .to_string()
-                    .into(),
-                "TIME" => row
-                    .try_get_unchecked::<NaiveTime, _>(index)?
-                    .to_string()
-                    .into(),
-                // deserialize Avro Uuid value wasn't supported in 0.14.0
-                "UUID" => {
-                    if let Some(value) = row.try_get_unchecked::<Option<Uuid>, _>(index)? {
-                        value.to_string().into()
-                    } else {
-                        AvroValue::Null
+            let raw_value = row.try_get_raw(index)?;
+            let value = if raw_value.is_null() {
+                AvroValue::Null
+            } else {
+                use super::decode::decode_column;
+                match col.type_info().name() {
+                    "BOOL" => decode_column::<bool>(field, raw_value)?.into(),
+                    "INT4" => decode_column::<i32>(field, raw_value)?.into(),
+                    "INT8" => decode_column::<i64>(field, raw_value)?.into(),
+                    "FLOAT4" => decode_column::<f32>(field, raw_value)?.into(),
+                    "FLOAT8" => decode_column::<f64>(field, raw_value)?.into(),
+                    "TEXT" | "VARCHAR" | "CHAR" => {
+                        decode_column::<String>(field, raw_value)?.into()
                     }
-                }
-                "BYTEA" => row.try_get_unchecked::<Vec<u8>, _>(index)?.into(),
-                "TEXT[]" => {
-                    let values = row.try_get_unchecked::<Vec<String>, _>(index)?;
-                    let vec = values
-                        .into_iter()
-                        .map(AvroValue::String)
-                        .collect::<Vec<_>>();
-                    AvroValue::Array(vec)
-                }
-                "UUID[]" => {
+                    "TIMESTAMPTZ" => decode_column::<DateTime>(field, raw_value)?.into(),
+                    "TIMESTAMP" => decode_column::<NaiveDateTime>(field, raw_value)?
+                        .to_string()
+                        .into(),
+                    "DATE" => decode_column::<NaiveDate>(field, raw_value)?
+                        .to_string()
+                        .into(),
+                    "TIME" => decode_column::<NaiveTime>(field, raw_value)?
+                        .to_string()
+                        .into(),
                     // deserialize Avro Uuid value wasn't supported in 0.14.0
-                    let values = row.try_get_unchecked::<Vec<Uuid>, _>(index)?;
-                    let vec = values
-                        .into_iter()
-                        .map(|u| AvroValue::String(u.to_string()))
-                        .collect::<Vec<_>>();
-                    AvroValue::Array(vec)
+                    "UUID" => decode_column::<Uuid>(field, raw_value)?.to_string().into(),
+                    "BYTEA" => decode_column::<Vec<u8>>(field, raw_value)?.into(),
+                    "TEXT[]" => {
+                        let values = decode_column::<Vec<String>>(field, raw_value)?;
+                        let vec = values
+                            .into_iter()
+                            .map(AvroValue::String)
+                            .collect::<Vec<_>>();
+                        AvroValue::Array(vec)
+                    }
+                    "UUID[]" => {
+                        // deserialize Avro Uuid value wasn't supported in 0.14.0
+                        let values = decode_column::<Vec<Uuid>>(field, raw_value)?;
+                        let vec = values
+                            .into_iter()
+                            .map(|v| AvroValue::String(v.to_string()))
+                            .collect::<Vec<_>>();
+                        AvroValue::Array(vec)
+                    }
+                    "JSONB" | "JSON" => decode_column::<JsonValue>(field, raw_value)?.into(),
+                    _ => AvroValue::Null,
                 }
-                "JSONB" | "JSON" => row.try_get_unchecked::<JsonValue, _>(index)?.into(),
-                _ => AvroValue::Null,
             };
             record.push((field.to_owned(), value));
         }
@@ -454,15 +452,6 @@ impl DecodeRow<DatabaseRow> for Record {
 }
 
 impl QueryExt<DatabaseDriver> for Query {
-    #[inline]
-    fn placeholder(n: usize) -> SharedString {
-        if n == 1 {
-            "$1".into()
-        } else {
-            format!("${n}").into()
-        }
-    }
-
     #[inline]
     fn query_fields(&self) -> &[String] {
         self.fields()
@@ -476,6 +465,23 @@ impl QueryExt<DatabaseDriver> for Query {
     #[inline]
     fn query_order(&self) -> (&str, bool) {
         self.sort_order()
+    }
+
+    #[inline]
+    fn placeholder(n: usize) -> SharedString {
+        if n == 1 {
+            "$1".into()
+        } else {
+            format!("${n}").into()
+        }
+    }
+
+    #[inline]
+    fn prepare_query<'a>(
+        query: &'a str,
+        params: Option<&'a Map>,
+    ) -> (Cow<'a, str>, Vec<&'a JsonValue>) {
+        crate::format::query::prepare_sql_query(query, params, '$')
     }
 
     fn format_pagination(&self) -> String {

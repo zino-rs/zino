@@ -83,3 +83,19 @@ impl Model for Tag {
         validation
     }
 }
+
+impl Tag {
+    /// Returns the `category`.
+    #[inline]
+    pub fn category(&self) -> &str {
+        &self.category
+    }
+
+    /// Returns the `parent_id`.
+    #[inline]
+    pub fn parent_id(&self) -> Option<&Uuid> {
+        self.parent_id
+            .as_ref()
+            .filter(|parent_id| !parent_id.is_nil())
+    }
+}

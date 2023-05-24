@@ -65,7 +65,7 @@ features = [
 ]
 
 [dependencies.tracing-actix-web]
-version = "0.7.4"
+version = "0.7.5"
 optional = true
 features = ["opentelemetry_0_18"]
 

@@ -2,14 +2,13 @@ use super::{mutation::MutationExt, query::QueryExt, ConnectionPool, DatabaseDriv
 use crate::{
     error::Error,
     extension::JsonObjectExt,
-    format,
     model::{Column, DecodeRow, EncodeColumn, Model, Mutation, Query},
     request::Validation,
     BoxFuture, Map, Record, Uuid,
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
-use sqlx::Transaction;
+use sqlx::{Decode, Transaction};
 use std::{fmt::Display, sync::atomic::Ordering::Relaxed};
 
 /// Database schema.
@@ -551,9 +550,11 @@ pub trait Schema: 'static + Send + Sync + Model {
         query: &mut Query,
         data: &mut Vec<Map>,
         columns: [&str; N],
-    ) -> Result<u64, Error> {
+    ) -> Result<u64, Error>
+    where
+        for<'r> Self::PrimaryKey: Decode<'r, DatabaseDriver>,
+    {
         let pool = Self::acquire_reader().await?.pool();
-        let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
         for row in data.iter() {
@@ -563,20 +564,25 @@ pub trait Schema: 'static + Send + Sync + Model {
                 }
             }
         }
-        if !values.is_empty() {
+
+        let num_values = values.len();
+        if num_values > 0 {
             let primary_key_values = Map::from_entry("$in", values);
             query.append_filters(&mut Map::from_entry(primary_key_name, primary_key_values));
+        } else {
+            return Ok(0);
         }
 
+        let table_name = Self::table_name();
         let projection = query.format_fields();
         let filters = query.format_filters::<Self>();
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
         let mut rows = sqlx::query(&sql).fetch(pool);
-        let mut associations = Map::new();
+        let mut associations = Map::with_capacity(num_values);
         while let Some(row) = rows.try_next().await? {
-            let primary_key_value = super::decode::<String>(&row, primary_key_name)?;
+            let primary_key_value = super::decode::<Self::PrimaryKey>(&row, primary_key_name)?;
             let map = Map::decode_row(&row)?;
-            associations.insert(primary_key_value, map.into());
+            associations.insert(primary_key_value.to_string(), map.into());
         }
         for row in data {
             for col in columns {
@@ -606,9 +612,11 @@ pub trait Schema: 'static + Send + Sync + Model {
         query: &mut Query,
         data: &mut Map,
         columns: [&str; N],
-    ) -> Result<(), Error> {
+    ) -> Result<(), Error>
+    where
+        for<'r> Self::PrimaryKey: Decode<'r, DatabaseDriver>,
+    {
         let pool = Self::acquire_reader().await?.pool();
-        let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
         for col in columns {
@@ -616,20 +624,25 @@ pub trait Schema: 'static + Send + Sync + Model {
                 values.append(&mut vec);
             }
         }
-        if !values.is_empty() {
+
+        let num_values = values.len();
+        if num_values > 0 {
             let primary_key_values = Map::from_entry("$in", values);
             query.append_filters(&mut Map::from_entry(primary_key_name, primary_key_values));
+        } else {
+            return Ok(());
         }
 
+        let table_name = Self::table_name();
         let projection = query.format_fields();
         let filters = query.format_filters::<Self>();
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
         let mut rows = sqlx::query(&sql).fetch(pool);
-        let mut associations = Map::new();
+        let mut associations = Map::with_capacity(num_values);
         while let Some(row) = rows.try_next().await? {
-            let primary_key_value = super::decode::<String>(&row, primary_key_name)?;
+            let primary_key_value = super::decode::<Self::PrimaryKey>(&row, primary_key_name)?;
             let map = Map::decode_row(&row)?;
-            associations.insert(primary_key_value, map.into());
+            associations.insert(primary_key_value.to_string(), map.into());
         }
         for col in columns {
             if let Some(value) = data.get_mut(col) {
@@ -748,8 +761,13 @@ pub trait Schema: 'static + Send + Sync + Model {
     /// Executes the query in the table, and returns the total number of rows affected.
     async fn execute(query: &str, params: Option<&Map>) -> Result<u64, Error> {
         let pool = Self::acquire_reader().await?.pool();
-        let sql = format::format_query(query, params);
-        let query_result = sqlx::query(&sql).execute(pool).await?;
+        let (sql, values) = Query::prepare_query(query, params);
+        let mut query = sqlx::query(&sql);
+        for value in values {
+            query = query.bind(value.to_string());
+        }
+
+        let query_result = query.execute(pool).await?;
         Ok(query_result.rows_affected())
     }
 
@@ -759,8 +777,13 @@ pub trait Schema: 'static + Send + Sync + Model {
         params: Option<&Map>,
     ) -> Result<Vec<T>, Error> {
         let pool = Self::acquire_reader().await?.pool();
-        let sql = format::format_query(query, params);
-        let mut rows = sqlx::query(&sql).fetch(pool);
+        let (sql, values) = Query::prepare_query(query, params);
+        let mut query = sqlx::query(&sql);
+        for value in values {
+            query = query.bind(value.to_string());
+        }
+
+        let mut rows = query.fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
         while let Some(row) = rows.try_next().await? && max_rows > 0 {
@@ -785,8 +808,13 @@ pub trait Schema: 'static + Send + Sync + Model {
         params: Option<&Map>,
     ) -> Result<Option<T>, Error> {
         let pool = Self::acquire_reader().await?.pool();
-        let sql = format::format_query(query, params);
-        let data = if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
+        let (sql, values) = Query::prepare_query(query, params);
+        let mut query = sqlx::query(&sql);
+        for value in values {
+            query = query.bind(value.to_string());
+        }
+
+        let data = if let Some(row) = query.fetch_optional(pool).await? {
             Some(T::decode_row(&row)?)
         } else {
             None

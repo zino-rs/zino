@@ -55,10 +55,10 @@ impl HttpConnector {
     /// Makes an HTTP request with the given query and params.
     pub async fn fetch(&self, query: &str, params: Option<&Map>) -> Result<Response, Error> {
         let url = self.base_url.join(query)?;
-        let resource = format::format_query(url.as_str(), params);
+        let resource = format::query::format_query(url.as_str(), params);
         let mut options = Map::from_entry("method", self.method());
         if let Some(body) = self.body() {
-            options.upsert("body", format::format_query(body, params));
+            options.upsert("body", format::query::format_query(body, params));
         }
 
         let mut headers = HeaderMap::new();
@@ -66,7 +66,7 @@ impl HttpConnector {
             if let Ok(header_name) = HeaderName::try_from(key) {
                 if let Some(header_value) = value
                     .as_str()
-                    .and_then(|s| format::format_query(s, params).parse().ok())
+                    .and_then(|s| format::query::format_query(s, params).parse().ok())
                 {
                     headers.insert(header_name, header_value);
                 }

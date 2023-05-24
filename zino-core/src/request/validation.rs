@@ -2,7 +2,6 @@ use crate::{
     datetime::{self, DateTime},
     error::Error,
     extension::JsonObjectExt,
-    format::str_array,
     Map, SharedString,
 };
 use serde_json::Value;
@@ -191,7 +190,7 @@ impl Validation {
         value
             .into()
             .and_then(|v| match v {
-                Value::String(s) => Some(str_array::parse_str_array(s)),
+                Value::String(s) => Some(crate::format::parse_str_array(s)),
                 Value::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
                 _ => None,
             })
@@ -209,7 +208,7 @@ impl Validation {
         value
             .into()
             .and_then(|v| match v {
-                Value::String(s) => Some(str_array::parse_str_array(s)),
+                Value::String(s) => Some(crate::format::parse_str_array(s)),
                 Value::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
                 _ => None,
             })

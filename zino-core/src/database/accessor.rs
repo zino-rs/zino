@@ -297,6 +297,20 @@ where
         mutation
     }
 
+    /// Constructs a default snapshot `Query` for the model.
+    fn default_snapshot_query() -> Query {
+        let mut query = Self::default_query();
+        let fields = [
+            Self::PRIMARY_KEY_NAME,
+            "name",
+            "status",
+            "updated_at",
+            "version",
+        ];
+        query.allow_fields(&fields);
+        query
+    }
+
     /// Constructs a default list `Query` for the model.
     fn default_list_query() -> Query {
         let mut query = Self::default_query();

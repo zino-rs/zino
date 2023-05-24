@@ -5,9 +5,6 @@ use std::{borrow::Cow, fmt::Display};
 
 /// Extension trait for [`Query`](crate::model::Query).
 pub(super) trait QueryExt<DB> {
-    /// Returns a placeholder for the n-th parameter.
-    fn placeholder(n: usize) -> SharedString;
-
     /// Returns a reference to the projection fields.
     fn query_fields(&self) -> &[String];
 
@@ -16,6 +13,13 @@ pub(super) trait QueryExt<DB> {
 
     /// Returns the sort order.
     fn query_order(&self) -> (&str, bool);
+
+    /// Returns a placeholder for the n-th parameter.
+    fn placeholder(n: usize) -> SharedString;
+
+    /// Prepares the SQL query for binding parameters.
+    fn prepare_query<'a>(query: &'a str, params: Option<&'a Map>)
+        -> (Cow<'a, str>, Vec<&'a Value>);
 
     /// Formats the query pagination to generate SQL `LIMIT` expression.
     fn format_pagination(&self) -> String;

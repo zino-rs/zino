@@ -55,15 +55,23 @@ fn map_serialize<'r, M: SerializeMap, DB: Database, T: Decode<'r, DB> + Serializ
 
 pub(super) macro impl_sqlx_connector($pool:ty) {
     async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, Error> {
-        let sql = format::format_query(query, params);
-        let query = sqlx::query(sql.as_ref());
+        let (sql, values) = format::query::prepare_sql_query(query, params, '?');
+        let mut query = sqlx::query(&sql);
+        for value in values {
+            query = query.bind(value.to_string());
+        }
+
         let query_result = query.execute(self).await?;
         Ok(Some(query_result.rows_affected()))
     }
 
     async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, Error> {
-        let sql = format::format_query(query, params);
-        let query = sqlx::query(sql.as_ref());
+        let (sql, values) = format::query::prepare_sql_query(query, params, '?');
+        let mut query = sqlx::query(&sql);
+        for value in values {
+            query = query.bind(value.to_string());
+        }
+
         let mut rows = query.fetch(self);
         let mut records = Vec::new();
         while let Some(row) = rows.try_next().await? {
@@ -80,8 +88,12 @@ pub(super) macro impl_sqlx_connector($pool:ty) {
         query: &str,
         params: Option<&Map>,
     ) -> Result<Vec<T>, Error> {
-        let sql = format::format_query(query, params);
-        let query = sqlx::query(sql.as_ref());
+        let (sql, values) = format::query::prepare_sql_query(query, params, '?');
+        let mut query = sqlx::query(&sql);
+        for value in values {
+            query = query.bind(value.to_string());
+        }
+
         let mut rows = query.fetch(self);
         let mut data = Vec::new();
         while let Some(row) = rows.try_next().await? {
@@ -93,8 +105,12 @@ pub(super) macro impl_sqlx_connector($pool:ty) {
     }
 
     async fn query_one(&self, query: &str, params: Option<&Map>) -> Result<Option<Record>, Error> {
-        let sql = format::format_query(query, params);
-        let query = sqlx::query(sql.as_ref());
+        let (sql, values) = format::query::prepare_sql_query(query, params, '?');
+        let mut query = sqlx::query(&sql);
+        for value in values {
+            query = query.bind(value.to_string());
+        }
+
         let data = if let Some(row) = query.fetch_optional(self).await? {
             let value = apache_avro::to_value(&SerializeRow(row))?;
             if let Value::Record(record) = value {
@@ -113,8 +129,12 @@ pub(super) macro impl_sqlx_connector($pool:ty) {
         query: &str,
         params: Option<&Map>,
     ) -> Result<Option<T>, Error> {
-        let sql = format::format_query(query, params);
-        let query = sqlx::query(sql.as_ref());
+        let (sql, values) = format::query::prepare_sql_query(query, params, '?');
+        let mut query = sqlx::query(&sql);
+        for value in values {
+            query = query.bind(value.to_string());
+        }
+
         if let Some(row) = query.fetch_optional(self).await? {
             let json_value = serde_json::to_value(&SerializeRow(row))?;
             serde_json::from_value(json_value).map_err(Error::from)

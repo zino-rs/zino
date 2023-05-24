@@ -22,3 +22,17 @@ where
 {
     row.try_get_unchecked(field).map_err(Error::from)
 }
+
+/// Decodes a raw value at the index.
+pub(super) fn decode_column<'r, T>(
+    field: &str,
+    value: <DatabaseDriver as HasValueRef<'r>>::ValueRef,
+) -> Result<T, sqlx::Error>
+where
+    T: Decode<'r, DatabaseDriver>,
+{
+    T::decode(value).map_err(|source| sqlx::Error::ColumnDecode {
+        index: field.to_owned(),
+        source,
+    })
+}
