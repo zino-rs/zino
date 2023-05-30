@@ -1,5 +1,5 @@
 use super::Schema;
-use crate::{model::EncodeColumn, request::Validation, Map, SharedString};
+use crate::{extension::JsonValueExt, model::EncodeColumn, Map, SharedString};
 use serde_json::Value;
 use std::{borrow::Cow, fmt::Display};
 
@@ -94,7 +94,7 @@ pub(super) trait QueryExt<DB> {
                     }
                 }
                 "$rand" => {
-                    if let Some(Ok(value)) = Validation::parse_f64(value) {
+                    if let Some(Ok(value)) = value.parse_f64() {
                         let condition = format!("random() < {value}");
                         conditions.push(condition);
                     }
@@ -126,9 +126,7 @@ pub(super) trait QueryExt<DB> {
             expression += &format!("WHERE {}", conditions.join(" AND "));
         };
         if let Some(group) = filters.get("$group") {
-            let groups = Validation::parse_str_array(group)
-                .unwrap_or_default()
-                .join(", ");
+            let groups = group.parse_str_array().unwrap_or_default().join(", ");
             expression += &format!("GROUP BY {groups}");
             if let Some(Value::Object(selection)) = filters.get("$match") {
                 let condition = Self::format_selection::<M>(selection, " AND ");

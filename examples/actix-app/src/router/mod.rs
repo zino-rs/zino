@@ -1,6 +1,7 @@
-use crate::controller::{bench, stats, tag, task, user};
+use crate::controller::{bench, stats, task, user};
 use actix_web::web::{get, post, ServiceConfig};
-use zino::RouterConfigure;
+use zino::{DefaultController, RouterConfigure};
+use zino_model::{Tag, User};
 
 pub fn routes() -> Vec<RouterConfigure> {
     vec![
@@ -14,18 +15,18 @@ pub fn routes() -> Vec<RouterConfigure> {
 
 fn user_router(cfg: &mut ServiceConfig) {
     cfg.route("/user/new", post().to(user::new))
-        .route("/user/{id}/update", post().to(user::update))
-        .route("/user/list", get().to(user::list))
+        .route("/user/{id}/delete", post().to(User::delete))
+        .route("/user/{id}/update", post().to(User::update))
         .route("/user/{id}/view", get().to(user::view))
-        .route("/user/{id}/delete", post().to(user::delete));
+        .route("/user/list", get().to(User::list));
 }
 
 fn tag_router(cfg: &mut ServiceConfig) {
-    cfg.route("/tag/new", post().to(tag::new))
-        .route("/tag/{id}/update", post().to(tag::update))
-        .route("/tag/list", get().to(tag::list))
-        .route("/tag/{id}/view", get().to(tag::view))
-        .route("/tag/{id}/delete", post().to(tag::delete));
+    cfg.route("/tag/new", post().to(Tag::new))
+        .route("/tag/{id}/delete", post().to(Tag::delete))
+        .route("/tag/{id}/update", post().to(Tag::update))
+        .route("/tag/{id}/view", get().to(Tag::view))
+        .route("/tag/list", get().to(Tag::list));
 }
 
 fn task_router(cfg: &mut ServiceConfig) {

@@ -1,6 +1,8 @@
 use crate::{Group, Resource, Tag, User};
 use serde::{Deserialize, Serialize};
-use zino_core::{datetime::DateTime, model::Model, request::Validation, Map, Uuid};
+use zino_core::{
+    datetime::DateTime, extension::JsonObjectExt, model::Model, request::Validation, Map, Uuid,
+};
 use zino_derive::{ModelAccessor, Schema};
 
 /// The message model.
@@ -62,13 +64,13 @@ impl Model for Message {
 
     fn read_map(&mut self, data: &Map) -> Validation {
         let mut validation = Validation::new();
-        if let Some(result) = Validation::parse_uuid(data.get("id")) {
+        if let Some(result) = data.parse_uuid("id") {
             match result {
                 Ok(id) => self.id = id,
                 Err(err) => validation.record_fail("id", err),
             }
         }
-        if let Some(name) = Validation::parse_string(data.get("name")) {
+        if let Some(name) = data.parse_string("name") {
             self.name = name.into_owned();
         }
         if self.name.is_empty() {

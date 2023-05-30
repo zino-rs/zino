@@ -1,4 +1,8 @@
-use crate::{extension::JsonObjectExt, request::Validation, Map};
+use crate::{
+    extension::{JsonObjectExt, JsonValueExt},
+    request::Validation,
+    Map,
+};
 use serde_json::Value;
 
 #[derive(Debug, Clone, Default)]
@@ -28,7 +32,7 @@ impl Mutation {
         for (key, value) in data {
             match key.as_str() {
                 "fields" => {
-                    if let Some(fields) = Validation::parse_str_array(value) {
+                    if let Some(fields) = value.parse_str_array() {
                         if fields.is_empty() {
                             validation.record("fields", "must be nonempty");
                         } else {

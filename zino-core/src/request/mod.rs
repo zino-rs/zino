@@ -6,7 +6,7 @@ use crate::{
     channel::{CloudEvent, Subscription},
     datetime::DateTime,
     error::Error,
-    extension::HeaderMapExt,
+    extension::{HeaderMapExt, JsonObjectExt},
     i18n,
     model::{Model, Query},
     response::{Rejection, Response, ResponseCode},
@@ -224,10 +224,7 @@ pub trait RequestContext {
 
     /// Parses the route parameter by name as an instance of type `T`.
     /// The name should not include `:`, `*`, `{` or `}`.
-    fn parse_param<T>(&self, name: &str) -> Result<T, Rejection>
-    where
-        T: DeserializeOwned + Send + 'static,
-    {
+    fn parse_param<T: DeserializeOwned>(&self, name: &str) -> Result<T, Rejection> {
         const CAPTURES: [char; 4] = [':', '*', '{', '}'];
         let route = self.matched_route();
         if route.contains(CAPTURES) {
@@ -258,10 +255,7 @@ pub trait RequestContext {
 
     /// Parses the query as an instance of type `T`.
     /// Returns a default value of `T` when the query is empty.
-    fn parse_query<T>(&self) -> Result<T, Rejection>
-    where
-        T: Default + DeserializeOwned + Send + 'static,
-    {
+    fn parse_query<T: Default + DeserializeOwned>(&self) -> Result<T, Rejection> {
         if let Some(query) = self.get_query() {
             serde_qs::from_str::<T>(query)
                 .map_err(|err| Rejection::from_validation_entry("query", err).context(self))
@@ -280,10 +274,7 @@ pub trait RequestContext {
     /// - `application/msgpack`
     /// - `application/problem+json`
     /// - `application/x-www-form-urlencoded`
-    async fn parse_body<T>(&mut self) -> Result<T, Rejection>
-    where
-        T: DeserializeOwned + Send + 'static,
-    {
+    async fn parse_body<T: DeserializeOwned>(&mut self) -> Result<T, Rejection> {
         let data_type = self.data_type().unwrap_or("form".into());
         if data_type.contains('/') {
             let message = format!("deserialization of the data type `{data_type}` is unsupported");
@@ -337,12 +328,12 @@ pub trait RequestContext {
         let mut validation = Validation::new();
         if let Some(signature) = query.get("signature").and_then(|v| v.as_str()) {
             authentication.set_signature(signature.to_owned());
-            if let Some(access_key_id) = Validation::parse_string(query.get("access_key_id")) {
+            if let Some(access_key_id) = query.parse_string("access_key_id") {
                 authentication.set_access_key_id(access_key_id);
             } else {
                 validation.record("access_key_id", "should be nonempty");
             }
-            if let Some(Ok(secs)) = Validation::parse_i64(query.get("expires")) {
+            if let Some(Ok(secs)) = query.parse_i64("expires") {
                 if DateTime::now().timestamp() <= secs {
                     let expires = DateTime::from_timestamp(secs);
                     authentication.set_expires(Some(expires));
@@ -405,15 +396,14 @@ pub trait RequestContext {
             match SecurityToken::parse_with(token.to_owned(), key.as_ref()) {
                 Ok(security_token) => {
                     let query = self.parse_query::<Map>().unwrap_or_default();
-                    if let Some(assignee_id) = Validation::parse_string(query.get("access_key_id"))
-                    {
+                    if let Some(assignee_id) = query.parse_string("access_key_id") {
                         if security_token.assignee_id().as_str() != assignee_id {
                             validation.record("access_key_id", "untrusted access key ID");
                         }
                     } else {
                         validation.record("access_key_id", "should be nonempty");
                     }
-                    if let Some(Ok(expires)) = Validation::parse_i64(query.get("expires")) {
+                    if let Some(Ok(expires)) = query.parse_i64("expires") {
                         if security_token.expires().timestamp() != expires {
                             validation.record("expires", "untrusted timestamp");
                         }
@@ -474,7 +464,7 @@ pub trait RequestContext {
 
     /// Returns a `Response` or `Rejection` from a model validation.
     /// The data is extracted from [`parse_body()`](RequestContext::parse_body).
-    async fn model_validation<M: Model + Send, S: ResponseCode>(
+    async fn model_validation<M: Model, S: ResponseCode>(
         &mut self,
         model: &mut M,
     ) -> Result<Response<S>, Rejection>

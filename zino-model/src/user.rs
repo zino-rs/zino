@@ -3,8 +3,8 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
 use zino_core::{
-    authentication::AccessKeyId, datetime::DateTime, error::Error, model::Model,
-    request::Validation, Map, Uuid,
+    authentication::AccessKeyId, datetime::DateTime, error::Error, extension::JsonObjectExt,
+    model::Model, request::Validation, Map, Uuid,
 };
 use zino_derive::{ModelAccessor, Schema};
 
@@ -71,19 +71,19 @@ impl Model for User {
 
     fn read_map(&mut self, data: &Map) -> Validation {
         let mut validation = Validation::new();
-        if let Some(result) = Validation::parse_uuid(data.get("id")) {
+        if let Some(result) = data.parse_uuid("id") {
             match result {
                 Ok(id) => self.id = id,
                 Err(err) => validation.record_fail("id", err),
             }
         }
-        if let Some(name) = Validation::parse_string(data.get("name")) {
+        if let Some(name) = data.parse_string("name") {
             self.name = name.into_owned();
         }
         if self.name.is_empty() {
             validation.record("name", "should be nonempty");
         }
-        if let Some(roles) = Validation::parse_str_array(data.get("roles")) {
+        if let Some(roles) = data.parse_str_array("roles") {
             if let Err(err) = self.set_roles(roles) {
                 validation.record_fail("roles", err);
             }
@@ -91,7 +91,7 @@ impl Model for User {
         if self.roles.is_empty() && !validation.contains_key("roles") {
             validation.record("roles", "should be nonempty");
         }
-        if let Some(tags) = Validation::parse_array(data.get("tags")) {
+        if let Some(tags) = data.parse_array("tags") {
             self.tags = tags;
         }
         validation
@@ -99,6 +99,18 @@ impl Model for User {
 }
 
 impl User {
+    /// Sets the `access_key_id`.
+    #[inline]
+    pub fn set_access_key_id(&mut self, access_key_id: AccessKeyId) {
+        self.access_key_id = access_key_id.to_string();
+    }
+
+    /// Returns a reference to the `access_key_id`.
+    #[inline]
+    pub fn access_key_id(&self) -> &[u8] {
+        self.access_key_id.as_ref()
+    }
+
     /// Sets the `roles` of the user.
     pub fn set_roles(&mut self, roles: Vec<&str>) -> Result<(), Error> {
         let num_roles = roles.len();

@@ -1,5 +1,16 @@
-use crate::{Map, Record};
+use crate::{
+    datetime::{self, DateTime},
+    Map, Record, Uuid,
+};
 use serde_json::Value;
+use std::{
+    borrow::Cow,
+    net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr},
+    num::{ParseFloatError, ParseIntError},
+    str::{FromStr, ParseBoolError},
+    time::Duration,
+};
+use url::{self, Url};
 
 /// Extension trait for [`Map`](crate::Map).
 pub trait JsonObjectExt {
@@ -48,6 +59,71 @@ pub trait JsonObjectExt {
 
     /// Extracts the object value corresponding to the key.
     fn get_object(&self, key: &str) -> Option<&Map>;
+
+    /// Extracts the value corresponding to the key and parses it as `i64`.
+    fn parse_i64(&self, key: &str) -> Option<Result<i64, ParseIntError>>;
+
+    /// Extracts the value corresponding to the key and parses it as `u8`.
+    fn parse_u8(&self, key: &str) -> Option<Result<u8, ParseIntError>>;
+
+    /// Extracts the value corresponding to the key and parses it as `u16`.
+    fn parse_u16(&self, key: &str) -> Option<Result<u16, ParseIntError>>;
+
+    /// Extracts the value corresponding to the key and parses it as `u32`.
+    fn parse_u32(&self, key: &str) -> Option<Result<u32, ParseIntError>>;
+
+    /// Extracts the value corresponding to the key and parses it as `u64`.
+    fn parse_u64(&self, key: &str) -> Option<Result<u64, ParseIntError>>;
+
+    /// Extracts the value corresponding to the key and parses it as `usize`.
+    fn parse_usize(&self, key: &str) -> Option<Result<usize, ParseIntError>>;
+
+    /// Extracts the value corresponding to the key and parses it as `f32`.
+    fn parse_f32(&self, key: &str) -> Option<Result<f32, ParseFloatError>>;
+
+    /// Extracts the value corresponding to the key and parses it as `f64`.
+    fn parse_f64(&self, key: &str) -> Option<Result<f64, ParseFloatError>>;
+
+    /// Extracts the value corresponding to the key and parses it as `bool`.
+    fn parse_bool(&self, key: &str) -> Option<Result<bool, ParseBoolError>>;
+
+    /// Extracts the value corresponding to the key and parses it as `Cow<'_, str>`.
+    /// If the str is empty, it also returns `None`.
+    fn parse_string(&self, key: &str) -> Option<Cow<'_, str>>;
+
+    /// Extracts the array value corresponding to the key and parses it as `Vec<T>`.
+    /// If the vec is empty, it also returns `None`.
+    fn parse_array<T: FromStr>(&self, key: &str) -> Option<Vec<T>>;
+
+    /// Extracts the array value corresponding to the key and parses it as `Vec<&str>`.
+    /// If the vec is empty, it also returns `None`.
+    fn parse_str_array(&self, key: &str) -> Option<Vec<&str>>;
+
+    /// Extracts the object value corresponding to the key and parses it as `Map`.
+    /// If the map is empty, it also returns `None`.
+    fn parse_object(&self, key: &str) -> Option<&Map>;
+
+    /// Extracts the string corresponding to the key and parses it as `Uuid`.
+    /// If the `Uuid` is `nil`, it also returns `None`.
+    fn parse_uuid(&self, key: &str) -> Option<Result<Uuid, uuid::Error>>;
+
+    /// Extracts the string corresponding to the key and parses it as `DateTime`.
+    fn parse_datetime(&self, key: &str) -> Option<Result<DateTime, chrono::format::ParseError>>;
+
+    /// Extracts the string corresponding to the key and parses it as `Duration`.
+    fn parse_duration(&self, key: &str) -> Option<Result<Duration, datetime::ParseDurationError>>;
+
+    /// Extracts the string corresponding to the key and parses it as `Url`.
+    fn parse_url(&self, key: &str) -> Option<Result<Url, url::ParseError>>;
+
+    /// Extracts the string corresponding to the key and parses it as `IpAddr`.
+    fn parse_ip(&self, key: &str) -> Option<Result<IpAddr, AddrParseError>>;
+
+    /// Extracts the string corresponding to the key and parses it as `Ipv4Addr`.
+    fn parse_ipv4(&self, key: &str) -> Option<Result<Ipv4Addr, AddrParseError>>;
+
+    /// Extracts the string corresponding to the key and parses it as `Ipv6Addr`.
+    fn parse_ipv6(&self, key: &str) -> Option<Result<Ipv6Addr, AddrParseError>>;
 
     /// Inserts or updates a key/value pair into the map.
     /// If the map did have this key present, the value is updated and the old value is returned,
@@ -141,6 +217,171 @@ impl JsonObjectExt for Map {
     #[inline]
     fn get_object(&self, key: &str) -> Option<&Map> {
         self.get(key).and_then(|v| v.as_object())
+    }
+
+    fn parse_i64(&self, key: &str) -> Option<Result<i64, ParseIntError>> {
+        let value = self.get(key);
+        value
+            .and_then(|v| v.as_i64())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    fn parse_u8(&self, key: &str) -> Option<Result<u8, ParseIntError>> {
+        let value = self.get(key);
+        value
+            .and_then(|v| v.as_u64())
+            .and_then(|i| u8::try_from(i).ok())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    fn parse_u16(&self, key: &str) -> Option<Result<u16, ParseIntError>> {
+        let value = self.get(key);
+        value
+            .and_then(|v| v.as_u64())
+            .and_then(|i| u16::try_from(i).ok())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    fn parse_u32(&self, key: &str) -> Option<Result<u32, ParseIntError>> {
+        let value = self.get(key);
+        value
+            .and_then(|v| v.as_u64())
+            .and_then(|i| u32::try_from(i).ok())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    fn parse_u64(&self, key: &str) -> Option<Result<u64, ParseIntError>> {
+        let value = self.get(key);
+        value
+            .and_then(|v| v.as_u64())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    fn parse_usize(&self, key: &str) -> Option<Result<usize, ParseIntError>> {
+        let value = self.get(key);
+        value
+            .and_then(|v| v.as_u64())
+            .and_then(|i| usize::try_from(i).ok())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    fn parse_f32(&self, key: &str) -> Option<Result<f32, ParseFloatError>> {
+        let value = self.get(key);
+        value
+            .and_then(|v| v.as_f64())
+            .map(|f| Ok(f as f32))
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    fn parse_f64(&self, key: &str) -> Option<Result<f64, ParseFloatError>> {
+        let value = self.get(key);
+        value
+            .and_then(|v| v.as_f64())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    fn parse_bool(&self, key: &str) -> Option<Result<bool, ParseBoolError>> {
+        let value = self.get(key);
+        value
+            .and_then(|v| v.as_bool())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    fn parse_string(&self, key: &str) -> Option<Cow<'_, str>> {
+        self.get(key)
+            .and_then(|v| {
+                v.as_str()
+                    .map(|s| Cow::Borrowed(s.trim()))
+                    .or_else(|| Some(v.to_string().into()))
+            })
+            .filter(|s| !s.is_empty())
+    }
+
+    fn parse_array<T: FromStr>(&self, key: &str) -> Option<Vec<T>> {
+        self.get(key)
+            .and_then(|v| match v {
+                Value::String(s) => Some(crate::format::parse_str_array(s)),
+                Value::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
+                _ => None,
+            })
+            .and_then(|values| {
+                let vec = values
+                    .iter()
+                    .filter_map(|s| if s.is_empty() { None } else { s.parse().ok() })
+                    .collect::<Vec<_>>();
+                (!vec.is_empty()).then_some(vec)
+            })
+    }
+
+    fn parse_str_array(&self, key: &str) -> Option<Vec<&str>> {
+        self.get(key)
+            .and_then(|v| match v {
+                Value::String(s) => Some(crate::format::parse_str_array(s)),
+                Value::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
+                _ => None,
+            })
+            .and_then(|values| {
+                let vec = values
+                    .iter()
+                    .map(|s| s.trim())
+                    .filter(|s| !s.is_empty())
+                    .collect::<Vec<_>>();
+                (!vec.is_empty()).then_some(vec)
+            })
+    }
+
+    fn parse_object(&self, key: &str) -> Option<&Map> {
+        self.get(key)
+            .and_then(|v| v.as_object())
+            .filter(|o| !o.is_empty())
+    }
+
+    fn parse_uuid(&self, key: &str) -> Option<Result<Uuid, uuid::Error>> {
+        self.get(key)
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim_start_matches("urn:uuid:"))
+            .filter(|s| !s.chars().all(|c| c == '0' || c == '-'))
+            .map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_datetime(&self, key: &str) -> Option<Result<DateTime, chrono::format::ParseError>> {
+        self.get(key).and_then(|v| v.as_str()).map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_duration(&self, key: &str) -> Option<Result<Duration, datetime::ParseDurationError>> {
+        self.get(key)
+            .and_then(|v| v.as_str())
+            .map(datetime::parse_duration)
+    }
+
+    #[inline]
+    fn parse_url(&self, key: &str) -> Option<Result<Url, url::ParseError>> {
+        self.get(key).and_then(|v| v.as_str()).map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_ip(&self, key: &str) -> Option<Result<IpAddr, AddrParseError>> {
+        self.get(key).and_then(|v| v.as_str()).map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_ipv4(&self, key: &str) -> Option<Result<Ipv4Addr, AddrParseError>> {
+        self.get(key).and_then(|v| v.as_str()).map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_ipv6(&self, key: &str) -> Option<Result<Ipv6Addr, AddrParseError>> {
+        self.get(key).and_then(|v| v.as_str()).map(|s| s.parse())
     }
 
     #[inline]

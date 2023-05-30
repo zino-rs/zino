@@ -55,10 +55,13 @@ pub mod prelude;
 
 mod channel;
 mod cluster;
+mod controller;
 mod endpoint;
 mod middleware;
 mod request;
 mod response;
+
+pub use controller::DefaultController;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "actix")] {

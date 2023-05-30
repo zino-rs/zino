@@ -1,4 +1,8 @@
-use crate::{extension::JsonObjectExt, request::Validation, Map};
+use crate::{
+    extension::{JsonObjectExt, JsonValueExt},
+    request::Validation,
+    Map,
+};
 use serde_json::Value;
 
 #[derive(Debug, Clone)]
@@ -37,22 +41,22 @@ impl Query {
         for (key, value) in data {
             match key.as_str() {
                 "fields" | "columns" | "select" => {
-                    if let Some(fields) = Validation::parse_str_array(value) {
+                    if let Some(fields) = value.parse_str_array() {
                         self.fields = fields.into_iter().map(|s| s.to_owned()).collect();
                     }
                 }
                 "sort" | "sort_by" | "order" | "order_by" => {
-                    if let Some(sort_by) = Validation::parse_string(value) {
-                        self.sort_order.0 = Some(sort_by.into_owned());
+                    if let Some(sort_by) = value.as_str() {
+                        self.sort_order.0 = Some(sort_by.to_owned());
                     }
                 }
                 "ascending" => {
-                    if let Some(Ok(ascending)) = Validation::parse_bool(value) {
+                    if let Some(Ok(ascending)) = value.parse_bool() {
                         self.sort_order.1 = ascending;
                     }
                 }
                 "offset" | "skip" => {
-                    if let Some(result) = Validation::parse_u64(value) {
+                    if let Some(result) = value.parse_u64() {
                         match result {
                             Ok(offset) => self.offset = offset,
                             Err(err) => validation.record_fail("offset", err),
@@ -60,7 +64,7 @@ impl Query {
                     }
                 }
                 "limit" => {
-                    if let Some(result) = Validation::parse_u32(value) {
+                    if let Some(result) = value.parse_u32() {
                         match result {
                             Ok(limit) => self.limit = limit,
                             Err(err) => validation.record_fail("limit", err),

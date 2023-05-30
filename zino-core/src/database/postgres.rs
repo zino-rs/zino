@@ -1,8 +1,8 @@
 use super::{query::QueryExt, DatabaseDriver, DatabaseRow};
 use crate::{
     datetime::DateTime,
+    extension::JsonObjectExt,
     model::{Column, DecodeRow, EncodeColumn, Query},
-    request::Validation,
     Map, Record, SharedString, Uuid,
 };
 use apache_avro::types::Value as AvroValue;
@@ -507,10 +507,11 @@ impl QueryExt<DatabaseDriver> for Query {
     }
 
     fn parse_text_search(filter: &Map) -> Option<String> {
-        let fields = Validation::parse_str_array(filter.get("$fields"))?;
-        Validation::parse_string(filter.get("$search")).map(|search| {
+        let fields = filter.parse_str_array("$fields")?;
+        filter.parse_string("$search").map(|search| {
             let text = fields.join(" || ' ' || ");
-            let lang = Validation::parse_string(filter.get("$language"))
+            let lang = filter
+                .parse_string("$language")
                 .unwrap_or_else(|| "english".into());
             format!("to_tsvector('{lang}', {text}) @@ websearch_to_tsquery('{lang}', '{search}')")
         })

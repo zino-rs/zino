@@ -482,8 +482,8 @@ impl QueryExt<DatabaseDriver> for Query {
     }
 
     fn parse_text_search(filter: &Map) -> Option<String> {
-        let fields = Validation::parse_str_array(filter.get("$fields"))?;
-        Validation::parse_string(filter.get("$search")).map(|search| {
+        let fields = filter.parse_str_array("$fields")?;
+        filter.parse_string("$search").map(|search| {
             let fields = fields.join(",");
             let search = Query::escape_string(search.as_ref());
             format!("match({fields}) against({search})")

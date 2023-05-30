@@ -1,6 +1,8 @@
 use crate::User;
 use serde::{Deserialize, Serialize};
-use zino_core::{datetime::DateTime, model::Model, request::Validation, Map, Uuid};
+use zino_core::{
+    datetime::DateTime, extension::JsonObjectExt, model::Model, request::Validation, Map, Uuid,
+};
 use zino_derive::{ModelAccessor, Schema};
 
 /// The tag model.
@@ -56,25 +58,25 @@ impl Model for Tag {
 
     fn read_map(&mut self, data: &Map) -> Validation {
         let mut validation = Validation::new();
-        if let Some(result) = Validation::parse_uuid(data.get("id")) {
+        if let Some(result) = data.parse_uuid("id") {
             match result {
                 Ok(id) => self.id = id,
                 Err(err) => validation.record_fail("id", err),
             }
         }
-        if let Some(name) = Validation::parse_string(data.get("name")) {
+        if let Some(name) = data.parse_string("name") {
             self.name = name.into_owned();
         }
         if self.name.is_empty() {
             validation.record("name", "should be nonempty");
         }
-        if let Some(category) = Validation::parse_string(data.get("category")) {
+        if let Some(category) = data.parse_string("category") {
             self.category = category.into_owned();
         }
         if self.category.is_empty() {
             validation.record("category", "should be nonempty");
         }
-        if let Some(result) = Validation::parse_uuid(data.get("parent_id")) {
+        if let Some(result) = data.parse_uuid("parent_id") {
             match result {
                 Ok(parent_id) => self.parent_id = Some(parent_id),
                 Err(err) => validation.record_fail("parent_id", err),
