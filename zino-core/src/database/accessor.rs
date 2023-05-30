@@ -314,9 +314,24 @@ where
     /// Constructs a default list `Query` for the model.
     fn default_list_query() -> Query {
         let mut query = Self::default_query();
+        query.deny_fields(&["content", "extra"]);
         query.add_filter("status", Map::from_entry("$ne", "Deleted"));
         query.set_sort_order("updated_at".to_owned(), false);
         query
+    }
+
+    /// Fetches the data of models seleted by the `Query`.
+    async fn fetch(query: &Query) -> Result<Vec<Map>, Error> {
+        let models = Self::find(query).await?;
+        Ok(models)
+    }
+
+    /// Fetches the data of a model seleted by the primary key.
+    async fn fetch_by_id(id: &T) -> Result<Map, Error> {
+        let model: Map = Self::find_by_id(id)
+            .await?
+            .ok_or_else(|| Error::new(format!("cannot find the model `{id}`")))?;
+        Ok(model)
     }
 
     /// Updates a model of the primary key using the json object.

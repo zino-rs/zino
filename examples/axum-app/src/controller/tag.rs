@@ -1,4 +1,3 @@
-use crate::service;
 use zino::{prelude::*, Request, Response, Result};
 use zino_model::Tag;
 
@@ -25,7 +24,7 @@ pub async fn update(mut req: Request) -> Result {
 pub async fn list(req: Request) -> Result {
     let mut query = Tag::default_list_query();
     let mut res: Response = req.query_validation(&mut query)?;
-    let tags = service::tag::find(&query).await.extract(&req)?;
+    let tags = Tag::fetch(&query).await.extract(&req)?;
     let data = Map::data_entries(tags);
     res.set_data(&data);
     Ok(res.into())
@@ -33,7 +32,7 @@ pub async fn list(req: Request) -> Result {
 
 pub async fn view(req: Request) -> Result {
     let tag_id: Uuid = req.parse_param("id")?;
-    let tag = service::tag::find_by_id(&tag_id).await.extract(&req)?;
+    let tag = Tag::fetch_by_id(&tag_id).await.extract(&req)?;
 
     let data = Map::data_entry(tag);
     let mut res = Response::default().context(&req);

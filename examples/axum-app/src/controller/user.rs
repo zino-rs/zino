@@ -1,4 +1,3 @@
-use crate::service;
 use fluent::fluent_args;
 use serde_json::json;
 use std::time::Instant;
@@ -38,7 +37,7 @@ pub async fn update(mut req: Request) -> Result {
 pub async fn list(req: Request) -> Result {
     let mut query = User::default_list_query();
     let mut res: Response = req.query_validation(&mut query)?;
-    let users = service::user::find(&query).await.extract(&req)?;
+    let users = User::fetch(&query).await.extract(&req)?;
     let data = Map::data_entries(users);
     res.set_data(&data);
     Ok(res.into())
@@ -48,7 +47,7 @@ pub async fn view(req: Request) -> Result {
     let user_id: Uuid = req.parse_param("id")?;
 
     let db_query_start_time = Instant::now();
-    let user = service::user::find_by_id(&user_id).await.extract(&req)?;
+    let user = User::fetch_by_id(&user_id).await.extract(&req)?;
     let db_query_duration = db_query_start_time.elapsed();
 
     let data = Map::data_entry(user);

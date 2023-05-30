@@ -1,7 +1,7 @@
 [package]
 name = "zino-model"
 description = "Model types for zino."
-version = "0.6.2"
+version = "0.6.3"
 rust-version = "1.70"
 edition = "2021"
 license = "MIT"
@@ -13,7 +13,7 @@ documentation = "https://docs.rs/zino-model"
 readme = "README.md"
 
 [dependencies]
-regex = "1.8.2"
+regex = "1.8.3"
 
 [dependencies.serde]
 version = "1.0.162"
@@ -21,9 +21,9 @@ features = ["derive"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.9.4"
+version = "0.9.5"
 features = ["orm"]
 
 [dependencies.zino-derive]
 path = "../zino-derive"
-version = "0.6.2"
+version = "0.6.3"

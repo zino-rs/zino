@@ -347,18 +347,29 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
     // Parsing field attrs
     let name = input.ident;
     let mut column_methods = Vec::new();
+    let mut snapshot_fields = Vec::new();
+    let mut related_queries = Vec::new();
+    let mut related_one_queries = Vec::new();
     let mut primary_key_type = String::from("Uuid");
     let mut primary_key_name = String::from("id");
     let mut user_id_type = String::from("Uuid");
     if let Data::Struct(data) = input.data && let Fields::Named(fields) = data.fields {
+        let mut model_references: Vec<(String, Vec<String>)> = Vec::new();
         for field in fields.named.into_iter() {
             let type_name = parser::get_type_name(&field.ty);
             if let Some(ident) = field.ident && !type_name.is_empty() {
                 let name = ident.to_string();
                 for attr in field.attrs.iter() {
-                    for (key, _value) in parser::parse_schema_attr(attr).into_iter() {
+                    for (key, value) in parser::parse_schema_attr(attr).into_iter() {
                         if key == "primary_key" {
                             primary_key_name = name.clone();
+                        } else if key == "reference" {
+                            if let Some(value) = value {
+                                match model_references.iter_mut().find(|r| r.0 == value) {
+                                    Some(r) => r.1.push(name.clone()),
+                                    None => model_references.push((value, vec![name.clone()])),
+                                }
+                            }
                         }
                     }
                 }
@@ -367,7 +378,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                 } else {
                     let name_ident = format_ident!("{}", name);
                     match name.as_str() {
-                        "name" | "namespace" | "visibility" | "status" | "description" => {
+                        "name" => {
                             let method = quote! {
                                 #[inline]
                                 fn #name_ident(&self) -> &str {
@@ -375,6 +386,26 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                 }
                             };
                             column_methods.push(method);
+                            snapshot_fields.push("name");
+                        }
+                        "namespace" | "visibility" | "description" => {
+                            let method = quote! {
+                                #[inline]
+                                fn #name_ident(&self) -> &str {
+                                    &self.#name_ident
+                                }
+                            };
+                            column_methods.push(method);
+                        }
+                        "status" => {
+                            let method = quote! {
+                                #[inline]
+                                fn #name_ident(&self) -> &str {
+                                    &self.#name_ident
+                                }
+                            };
+                            column_methods.push(method);
+                            snapshot_fields.push("status");
                         }
                         "content" | "extra" => {
                             let method = quote! {
@@ -386,7 +417,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                             };
                             column_methods.push(method);
                         }
-                        "owner_id" | "manager_id" => {
+                        "owner_id" | "maintainer_id" => {
                             let type_name_ident = format_ident!("{}", type_name);
                             let method = quote! {
                                 #[inline]
@@ -398,7 +429,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                             column_methods.push(method);
                             user_id_type = type_name;
                         }
-                        "created_at" | "updated_at" => {
+                        "created_at" => {
                             let method = quote! {
                                 #[inline]
                                 fn #name_ident(&self) -> DateTime {
@@ -406,6 +437,16 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                 }
                             };
                             column_methods.push(method);
+                        }
+                        "updated_at" => {
+                            let method = quote! {
+                                #[inline]
+                                fn #name_ident(&self) -> DateTime {
+                                    self.#name_ident
+                                }
+                            };
+                            column_methods.push(method);
+                            snapshot_fields.push("updated_at");
                         }
                         "version" => {
                             let method = quote! {
@@ -415,6 +456,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                 }
                             };
                             column_methods.push(method);
+                            snapshot_fields.push("version");
                         }
                         "edition" => {
                             let method = quote! {
@@ -430,6 +472,40 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                 }
             }
         }
+        if model_references.is_empty() {
+            related_queries.push(quote! {
+                let models = Self::find(query).await?;
+            });
+            related_one_queries.push(quote! {
+                let model: Map = Self::find_by_id(id)
+                    .await?
+                    .ok_or_else(|| ZinoError::new(format!("cannot find the model `{id}`")))?;
+            });
+        } else {
+            related_queries.push(quote! {
+                let mut models = Self::find(query).await?;
+            });
+            related_one_queries.push(quote! {
+                let mut model: Map = Self::find_by_id(id)
+                    .await?
+                    .ok_or_else(|| ZinoError::new(format!("cannot find the model `{id}`")))?;
+            });
+            for (model, fields) in model_references.into_iter() {
+                let model_ident = format_ident!("{}", model);
+                let related_query = quote! {
+                    let mut query = #model_ident::default_snapshot_query();
+                    #model_ident::find_related(&mut query, &mut models, [#(#fields),*]).await?;
+                };
+                let related_one_query = quote! {
+                    let mut query = #model_ident::default_query();
+                    #model_ident::find_related_one(&mut query, &mut model, [#(#fields),*]).await?;
+                };
+                related_queries.push(related_query);
+                related_one_queries.push(related_one_query);
+            }
+        }
+        related_queries.push(quote! { Ok(models) });
+        related_one_queries.push(quote! { Ok(model) });
     }
 
     // Output
@@ -437,7 +513,11 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
     let model_primary_key = format_ident!("{}", primary_key_name);
     let model_user_id_type = format_ident!("{}", user_id_type);
     let output = quote! {
-        use zino_core::database::ModelAccessor;
+        use zino_core::{
+            database::ModelAccessor,
+            model::Query,
+            Map as ZinoMap,
+        };
 
         impl ModelAccessor<#model_primary_key_type, #model_user_id_type> for #name {
             #[inline]
@@ -446,6 +526,24 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
             }
 
             #(#column_methods)*
+
+            fn default_snapshot_query() -> Query {
+                let mut query = Self::default_query();
+                let fields = [
+                    Self::PRIMARY_KEY_NAME,
+                    #(#snapshot_fields),*
+                ];
+                query.allow_fields(&fields);
+                query
+            }
+
+            async fn fetch(query: &Query) -> Result<Vec<ZinoMap>, ZinoError> {
+                #(#related_queries)*
+            }
+
+            async fn fetch_by_id(id: &#model_primary_key_type) -> Result<ZinoMap, ZinoError> {
+                #(#related_one_queries)*
+            }
         }
     };
 

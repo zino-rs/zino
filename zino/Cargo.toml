@@ -1,7 +1,7 @@
 [package]
 name = "zino"
 description = "Full-featured web application framework for Rust."
-version = "0.8.5"
+version = "0.8.6"
 rust-version = "1.70"
 edition = "2021"
 license = "MIT"
@@ -85,7 +85,7 @@ features = [
 version = "1.0.163"
 
 [dependencies.tokio]
-version = "1.28.1"
+version = "1.28.2"
 optional = true
 features = ["parking_lot", "rt-multi-thread"]
 
@@ -119,4 +119,4 @@ features = [
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.9.3"
+version = "0.9.5"

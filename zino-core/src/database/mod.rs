@@ -65,7 +65,7 @@ cfg_if::cfg_if! {
     }
 }
 
-/// A database connection pool based on [`sqlx::Pool`](sqlx::Pool).
+/// A database connection pool based on [`sqlx::Pool`](sqlx::pool::Pool).
 #[derive(Debug)]
 pub struct ConnectionPool {
     /// Name.
