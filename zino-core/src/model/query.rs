@@ -46,8 +46,8 @@ impl Query {
                     }
                 }
                 "sort" | "sort_by" | "order" | "order_by" => {
-                    if let Some(sort_by) = value.as_str() {
-                        self.sort_order.0 = Some(sort_by.to_owned());
+                    if let Some(sort_by) = value.parse_string() {
+                        self.sort_order.0 = Some(sort_by.into_owned());
                     }
                 }
                 "ascending" => {
@@ -118,7 +118,7 @@ impl Query {
             self.fields.retain(|field| {
                 fields
                     .iter()
-                    .any(|key| field == key || field.ends_with(&format!("=>{key}")))
+                    .any(|key| field == key || field.starts_with(&format!("{key}:")))
             })
         }
     }
@@ -129,7 +129,7 @@ impl Query {
         self.fields.retain(|field| {
             !fields
                 .iter()
-                .any(|key| field == key || field.ends_with(&format!("=>{key}")))
+                .any(|key| field == key || field.starts_with(&format!("{key}:")))
         })
     }
 

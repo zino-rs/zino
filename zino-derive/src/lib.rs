@@ -60,7 +60,6 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     // Parsing field attrs
     let mut primary_key_type = String::from("Uuid");
     let mut primary_key_name = String::from("id");
-    let mut distribution_column = None;
     let mut columns = Vec::new();
     let mut column_fields = Vec::new();
     let mut readonly_fields = Vec::new();
@@ -106,9 +105,6 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                             }
                             "primary_key" => {
                                 primary_key_name = name.clone();
-                            }
-                            "distribution_column" => {
-                                distribution_column = Some(name.clone());
                             }
                             "readonly" => {
                                 readonly_fields.push(quote!{ #name });
@@ -185,11 +181,6 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     // Output
     let model_name_snake = model_name.to_case(Case::Snake);
     let model_name_upper_snake = model_name.to_case(Case::UpperSnake);
-    let quote_distribution_column = if let Some(column_name) = distribution_column {
-        quote! { Some(#column_name) }
-    } else {
-        quote! { None }
-    };
     let schema_primary_key_type = format_ident!("{}", primary_key_type);
     let schema_primary_key = format_ident!("{}", primary_key_name);
     let schema_columns = format_ident!("{}_COLUMNS", model_name_upper_snake);
@@ -246,7 +237,6 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
             const PRIMARY_KEY_NAME: &'static str = #primary_key_name;
             const READER_NAME: &'static str = #reader_name;
             const WRITER_NAME: &'static str = #writer_name;
-            const DISTRIBUTION_COLUMN: Option<&'static str> = #quote_distribution_column;
 
             #[inline]
             fn primary_key(&self) -> &Self::PrimaryKey {
@@ -363,6 +353,8 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                     for (key, value) in parser::parse_schema_attr(attr).into_iter() {
                         if key == "primary_key" {
                             primary_key_name = name.clone();
+                        } else if key == "snapshot" {
+                            snapshot_fields.push(name.clone());
                         } else if key == "reference" {
                             if let Some(value) = value {
                                 match model_references.iter_mut().find(|r| r.0 == value) {
@@ -377,6 +369,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                     primary_key_type = type_name;
                 } else {
                     let name_ident = format_ident!("{}", name);
+                    let mut snapshot_field = None;
                     match name.as_str() {
                         "name" => {
                             let method = quote! {
@@ -386,7 +379,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                 }
                             };
                             column_methods.push(method);
-                            snapshot_fields.push("name");
+                            snapshot_field = Some("name");
                         }
                         "namespace" | "visibility" | "description" => {
                             let method = quote! {
@@ -405,7 +398,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                 }
                             };
                             column_methods.push(method);
-                            snapshot_fields.push("status");
+                            snapshot_field = Some("status");
                         }
                         "content" | "extra" => {
                             let method = quote! {
@@ -446,7 +439,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                 }
                             };
                             column_methods.push(method);
-                            snapshot_fields.push("updated_at");
+                            snapshot_field = Some("updated_at");
                         }
                         "version" => {
                             let method = quote! {
@@ -456,7 +449,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                 }
                             };
                             column_methods.push(method);
-                            snapshot_fields.push("version");
+                            snapshot_field = Some("version");
                         }
                         "edition" => {
                             let method = quote! {
@@ -468,6 +461,9 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                             column_methods.push(method);
                         }
                         _ => (),
+                    }
+                    if let Some(field) = snapshot_field {
+                        snapshot_fields.push(field.to_owned());
                     }
                 }
             }

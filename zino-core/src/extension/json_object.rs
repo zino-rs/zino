@@ -18,13 +18,6 @@ pub trait JsonObjectExt {
     fn get_bool(&self, key: &str) -> Option<bool>;
 
     /// Extracts the integer value corresponding to the key and
-    /// represents it as `i32` if possible.
-    fn get_i32(&self, key: &str) -> Option<i32>;
-
-    /// Extracts the integer value corresponding to the key.
-    fn get_i64(&self, key: &str) -> Option<i64>;
-
-    /// Extracts the integer value corresponding to the key and
     /// represents it as `u8` if possible.
     fn get_u8(&self, key: &str) -> Option<u8>;
 
@@ -44,6 +37,13 @@ pub trait JsonObjectExt {
     /// represents it as `usize` if possible.
     fn get_usize(&self, key: &str) -> Option<usize>;
 
+    /// Extracts the integer value corresponding to the key and
+    /// represents it as `i32` if possible.
+    fn get_i32(&self, key: &str) -> Option<i32>;
+
+    /// Extracts the integer value corresponding to the key.
+    fn get_i64(&self, key: &str) -> Option<i64>;
+
     /// Extracts the float value corresponding to the key and
     /// represents it as `f32` if possible.
     fn get_f32(&self, key: &str) -> Option<f32>;
@@ -60,8 +60,8 @@ pub trait JsonObjectExt {
     /// Extracts the object value corresponding to the key.
     fn get_object(&self, key: &str) -> Option<&Map>;
 
-    /// Extracts the value corresponding to the key and parses it as `i64`.
-    fn parse_i64(&self, key: &str) -> Option<Result<i64, ParseIntError>>;
+    /// Extracts the value corresponding to the key and parses it as `bool`.
+    fn parse_bool(&self, key: &str) -> Option<Result<bool, ParseBoolError>>;
 
     /// Extracts the value corresponding to the key and parses it as `u8`.
     fn parse_u8(&self, key: &str) -> Option<Result<u8, ParseIntError>>;
@@ -78,14 +78,17 @@ pub trait JsonObjectExt {
     /// Extracts the value corresponding to the key and parses it as `usize`.
     fn parse_usize(&self, key: &str) -> Option<Result<usize, ParseIntError>>;
 
+    /// Extracts the value corresponding to the key and parses it as `i32`.
+    fn parse_i32(&self, key: &str) -> Option<Result<i32, ParseIntError>>;
+
+    /// Extracts the value corresponding to the key and parses it as `i64`.
+    fn parse_i64(&self, key: &str) -> Option<Result<i64, ParseIntError>>;
+
     /// Extracts the value corresponding to the key and parses it as `f32`.
     fn parse_f32(&self, key: &str) -> Option<Result<f32, ParseFloatError>>;
 
     /// Extracts the value corresponding to the key and parses it as `f64`.
     fn parse_f64(&self, key: &str) -> Option<Result<f64, ParseFloatError>>;
-
-    /// Extracts the value corresponding to the key and parses it as `bool`.
-    fn parse_bool(&self, key: &str) -> Option<Result<bool, ParseBoolError>>;
 
     /// Extracts the value corresponding to the key and parses it as `Cow<'_, str>`.
     /// If the str is empty, it also returns `None`.
@@ -150,18 +153,6 @@ impl JsonObjectExt for Map {
     }
 
     #[inline]
-    fn get_i32(&self, key: &str) -> Option<i32> {
-        self.get(key)
-            .and_then(|v| v.as_u64())
-            .and_then(|i| i32::try_from(i).ok())
-    }
-
-    #[inline]
-    fn get_i64(&self, key: &str) -> Option<i64> {
-        self.get(key).and_then(|v| v.as_i64())
-    }
-
-    #[inline]
     fn get_u8(&self, key: &str) -> Option<u8> {
         self.get(key)
             .and_then(|v| v.as_u64())
@@ -195,6 +186,18 @@ impl JsonObjectExt for Map {
     }
 
     #[inline]
+    fn get_i32(&self, key: &str) -> Option<i32> {
+        self.get(key)
+            .and_then(|v| v.as_i64())
+            .and_then(|i| i32::try_from(i).ok())
+    }
+
+    #[inline]
+    fn get_i64(&self, key: &str) -> Option<i64> {
+        self.get(key).and_then(|v| v.as_i64())
+    }
+
+    #[inline]
     fn get_f32(&self, key: &str) -> Option<f32> {
         self.get(key).and_then(|v| v.as_f64()).map(|f| f as f32)
     }
@@ -219,10 +222,10 @@ impl JsonObjectExt for Map {
         self.get(key).and_then(|v| v.as_object())
     }
 
-    fn parse_i64(&self, key: &str) -> Option<Result<i64, ParseIntError>> {
+    fn parse_bool(&self, key: &str) -> Option<Result<bool, ParseBoolError>> {
         let value = self.get(key);
         value
-            .and_then(|v| v.as_i64())
+            .and_then(|v| v.as_bool())
             .map(Ok)
             .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
     }
@@ -271,6 +274,23 @@ impl JsonObjectExt for Map {
             .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
     }
 
+    fn parse_i32(&self, key: &str) -> Option<Result<i32, ParseIntError>> {
+        let value = self.get(key);
+        value
+            .and_then(|v| v.as_i64())
+            .and_then(|i| i32::try_from(i).ok())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    fn parse_i64(&self, key: &str) -> Option<Result<i64, ParseIntError>> {
+        let value = self.get(key);
+        value
+            .and_then(|v| v.as_i64())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
     fn parse_f32(&self, key: &str) -> Option<Result<f32, ParseFloatError>> {
         let value = self.get(key);
         value
@@ -283,14 +303,6 @@ impl JsonObjectExt for Map {
         let value = self.get(key);
         value
             .and_then(|v| v.as_f64())
-            .map(Ok)
-            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
-    }
-
-    fn parse_bool(&self, key: &str) -> Option<Result<bool, ParseBoolError>> {
-        let value = self.get(key);
-        value
-            .and_then(|v| v.as_bool())
             .map(Ok)
             .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
     }
@@ -338,15 +350,13 @@ impl JsonObjectExt for Map {
             })
     }
 
+    #[inline]
     fn parse_object(&self, key: &str) -> Option<&Map> {
-        self.get(key)
-            .and_then(|v| v.as_object())
-            .filter(|o| !o.is_empty())
+        self.get_object(key).filter(|o| !o.is_empty())
     }
 
     fn parse_uuid(&self, key: &str) -> Option<Result<Uuid, uuid::Error>> {
-        self.get(key)
-            .and_then(|v| v.as_str())
+        self.get_str(key)
             .map(|s| s.trim_start_matches("urn:uuid:"))
             .filter(|s| !s.chars().all(|c| c == '0' || c == '-'))
             .map(|s| s.parse())
@@ -354,34 +364,32 @@ impl JsonObjectExt for Map {
 
     #[inline]
     fn parse_datetime(&self, key: &str) -> Option<Result<DateTime, chrono::format::ParseError>> {
-        self.get(key).and_then(|v| v.as_str()).map(|s| s.parse())
+        self.get_str(key).map(|s| s.parse())
     }
 
     #[inline]
     fn parse_duration(&self, key: &str) -> Option<Result<Duration, datetime::ParseDurationError>> {
-        self.get(key)
-            .and_then(|v| v.as_str())
-            .map(datetime::parse_duration)
+        self.get_str(key).map(datetime::parse_duration)
     }
 
     #[inline]
     fn parse_url(&self, key: &str) -> Option<Result<Url, url::ParseError>> {
-        self.get(key).and_then(|v| v.as_str()).map(|s| s.parse())
+        self.get_str(key).map(|s| s.parse())
     }
 
     #[inline]
     fn parse_ip(&self, key: &str) -> Option<Result<IpAddr, AddrParseError>> {
-        self.get(key).and_then(|v| v.as_str()).map(|s| s.parse())
+        self.get_str(key).map(|s| s.parse())
     }
 
     #[inline]
     fn parse_ipv4(&self, key: &str) -> Option<Result<Ipv4Addr, AddrParseError>> {
-        self.get(key).and_then(|v| v.as_str()).map(|s| s.parse())
+        self.get_str(key).map(|s| s.parse())
     }
 
     #[inline]
     fn parse_ipv6(&self, key: &str) -> Option<Result<Ipv6Addr, AddrParseError>> {
-        self.get(key).and_then(|v| v.as_str()).map(|s| s.parse())
+        self.get_str(key).map(|s| s.parse())
     }
 
     #[inline]

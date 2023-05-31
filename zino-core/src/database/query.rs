@@ -1,5 +1,9 @@
 use super::Schema;
-use crate::{extension::JsonValueExt, model::EncodeColumn, Map, SharedString};
+use crate::{
+    extension::{JsonObjectExt, JsonValueExt},
+    model::EncodeColumn,
+    Map, SharedString,
+};
 use serde_json::Value;
 use std::{borrow::Cow, fmt::Display};
 
@@ -45,8 +49,9 @@ pub(super) trait QueryExt<DB> {
             fields
                 .iter()
                 .map(|field| {
-                    if let Some((expr, alias)) = field.rsplit_once(":>") {
-                        format!(r#"{expr} AS "{alias}""#).into()
+                    if let Some((alias, expr)) = field.rsplit_once(":") {
+                        let alias = Self::format_field(alias);
+                        format!(r#"{expr} AS {alias}"#).into()
                     } else {
                         Self::format_field(field)
                     }
@@ -125,8 +130,8 @@ pub(super) trait QueryExt<DB> {
         if !conditions.is_empty() {
             expression += &format!("WHERE {}", conditions.join(" AND "));
         };
-        if let Some(group) = filters.get("$group") {
-            let groups = group.parse_str_array().unwrap_or_default().join(", ");
+        if let Some(groups) = filters.parse_str_array("$group") {
+            let groups = groups.join(", ");
             expression += &format!("GROUP BY {groups}");
             if let Some(Value::Object(selection)) = filters.get("$match") {
                 let condition = Self::format_selection::<M>(selection, " AND ");

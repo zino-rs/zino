@@ -23,8 +23,6 @@ pub trait Schema: 'static + Send + Sync + Model {
     const READER_NAME: &'static str = "main";
     /// Writer name.
     const WRITER_NAME: &'static str = "main";
-    /// Optional distribution column. It can be used for Citus to create a distributed table.
-    const DISTRIBUTION_COLUMN: Option<&'static str> = None;
 
     /// Returns the primary key value.
     fn primary_key(&self) -> &Self::PrimaryKey;
@@ -101,7 +99,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     fn init_reader() -> Result<&'static ConnectionPool, Error> {
         super::SHARED_CONNECTION_POOLS
             .get_pool(Self::READER_NAME)
-            .ok_or_else(|| Error::new("connection to the database is not available"))
+            .ok_or_else(|| Error::new("connection to the database is unavailable"))
     }
 
     /// Initializes the model writer.
@@ -109,7 +107,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     fn init_writer() -> Result<&'static ConnectionPool, Error> {
         super::SHARED_CONNECTION_POOLS
             .get_pool(Self::WRITER_NAME)
-            .ok_or_else(|| Error::new("connection to the database is not available"))
+            .ok_or_else(|| Error::new("connection to the database is unavailable"))
     }
 
     /// Creates table for the model.
@@ -117,7 +115,9 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::init_writer()?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let columns = Self::columns()
+        let enable_foreign_keys = super::ENABLE_FOREIGN_KEYS.load(Relaxed);
+        let mut constraints = Vec::new();
+        let mut columns = Self::columns()
             .iter()
             .map(|col| {
                 let column_name = col.name();
@@ -130,14 +130,20 @@ pub trait Schema: 'static + Send + Sync + Model {
                 } else if col.is_not_null() {
                     column += " NOT NULL";
                 }
+                if enable_foreign_keys && let Some(reference) = col.reference() {
+                    let ref_name = reference.name();
+                    let ref_column = reference.column_name();
+                    constraints.push(format!(
+                        "FOREIGN KEY ({column_name}) REFERENCES {ref_name}({ref_column})"
+                    ));
+                }
                 column
             })
-            .collect::<Vec<_>>()
-            .join(",\n  ");
-        let mut sql = format!("CREATE TABLE IF NOT EXISTS {table_name} (\n  {columns}\n);");
-        if let Some(column_name) = Self::DISTRIBUTION_COLUMN {
-            sql += &format!("\n SELECT create_distributed_table('{table_name}', '{column_name}');");
-        }
+            .collect::<Vec<_>>();
+        columns.extend(constraints);
+
+        let expressions = columns.join(",\n  ");
+        let sql = format!("CREATE TABLE IF NOT EXISTS {table_name} (\n  {expressions}\n);");
         sqlx::query(&sql).execute(pool).await?;
         Ok(())
     }

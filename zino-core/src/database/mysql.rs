@@ -1,8 +1,8 @@
 use super::{query::QueryExt, DatabaseDriver, DatabaseRow};
 use crate::{
     datetime::DateTime,
+    extension::JsonObjectExt,
     model::{Column, DecodeRow, EncodeColumn, Query},
-    request::Validation,
     Map, Record, SharedString,
 };
 use apache_avro::types::Value as AvroValue;
