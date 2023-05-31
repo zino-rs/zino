@@ -89,7 +89,7 @@ impl fmt::Display for DateTime {
         write!(
             f,
             "{}",
-            self.0.to_rfc3339_opts(SecondsFormat::Micros, false)
+            self.0.format("%Y-%m-%d %H:%M:%S%.f%z")
         )
     }
 }
