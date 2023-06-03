@@ -36,9 +36,9 @@ pub struct Tag {
 
     // Revisions.
     #[schema(reference = "User")]
-    owner_id: Uuid, // user.id
+    owner_id: Option<Uuid>, // user.id
     #[schema(reference = "User")]
-    maintainer_id: Uuid, // user.id
+    maintainer_id: Option<Uuid>, // user.id
     #[schema(readonly, default_value = "now", index_type = "btree")]
     created_at: DateTime,
     #[schema(default_value = "now", index_type = "btree")]
@@ -67,14 +67,8 @@ impl Model for Tag {
         if let Some(name) = data.parse_string("name") {
             self.name = name.into_owned();
         }
-        if self.name.is_empty() {
-            validation.record("name", "should be nonempty");
-        }
         if let Some(category) = data.parse_string("category") {
             self.category = category.into_owned();
-        }
-        if self.category.is_empty() {
-            validation.record("category", "should be nonempty");
         }
         if let Some(result) = data.parse_uuid("parent_id") {
             match result {

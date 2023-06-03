@@ -11,7 +11,7 @@ pub struct Column<'a> {
     name: &'a str,
     /// Column type name.
     type_name: &'a str,
-    /// `NOT NULL` constraint.
+    /// A flag which indicates whether the column is not null.
     not_null: bool,
     /// A str representation of the default value.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -100,9 +100,9 @@ impl<'a> Column<'a> {
             "i64" | "u64" | "isize" | "usize" => Schema::Long,
             "f32" => Schema::Float,
             "f64" => Schema::Double,
-            "String" => Schema::String,
+            "String" | "Option<String>" => Schema::String,
             "DateTime" => Schema::TimestampMicros,
-            "Uuid" => Schema::Uuid,
+            "Uuid" | "Option<Uuid>" => Schema::Uuid,
             "Vec<u8>" => Schema::Bytes,
             "Vec<String>" => Schema::Array(Box::new(Schema::String)),
             "Vec<Uuid>" => Schema::Array(Box::new(Schema::Uuid)),

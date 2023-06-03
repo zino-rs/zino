@@ -320,6 +320,35 @@ where
         query
     }
 
+    /// Filters the values of the primary key.
+    async fn filter(primary_key_values: Vec<Value>) -> Result<Vec<Value>, Error> {
+        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let limit = primary_key_values.len();
+        let mut query = Query::default();
+        query.allow_fields(&[primary_key_name]);
+        query.add_filter(primary_key_name, Map::from_entry("$in", primary_key_values));
+        query.add_filter("status", Map::from_entry("$ne", "Deleted"));
+        query.set_limit(limit);
+
+        let data = Self::find::<Map>(&query).await?;
+        let mut primary_key_values = Vec::with_capacity(data.len());
+        for map in data.into_iter() {
+            for (_key, value) in map.into_iter() {
+                primary_key_values.push(value);
+            }
+        }
+        Ok(primary_key_values)
+    }
+
+    /// Checks the constraints for the model.
+    async fn check_constraints(&self) -> Result<Validation, Error> {
+        let mut validation = Validation::new();
+        if self.id() == &T::default() {
+            validation.record(Self::PRIMARY_KEY_NAME, "should not be a default value");
+        }
+        Ok(validation)
+    }
+
     /// Fetches the data of models seleted by the `Query`.
     async fn fetch(query: &Query) -> Result<Vec<Map>, Error> {
         let models = Self::find(query).await?;
@@ -338,6 +367,11 @@ where
     async fn update_by_id(id: &T, mut data: Map) -> Result<(Validation, Self), Error> {
         let mut model = Self::try_get_model(id).await?;
         let validation = model.read_map(&data);
+        if !validation.is_success() {
+            return Ok((validation, model));
+        }
+
+        let validation = model.check_constraints().await?;
         if !validation.is_success() {
             return Ok((validation, model));
         }

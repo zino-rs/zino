@@ -40,9 +40,9 @@ pub struct Dataset {
 
     // Revisions.
     #[schema(reference = "User")]
-    owner_id: Uuid, // user.id
+    owner_id: Option<Uuid>, // user.id
     #[schema(reference = "User")]
-    maintainer_id: Uuid, // user.id
+    maintainer_id: Option<Uuid>, // user.id
     #[schema(readonly, default_value = "now", index_type = "btree")]
     created_at: DateTime,
     #[schema(default_value = "now", index_type = "btree")]
@@ -70,9 +70,6 @@ impl Model for Dataset {
         }
         if let Some(name) = data.parse_string("name") {
             self.name = name.into_owned();
-        }
-        if self.name.is_empty() {
-            validation.record("name", "should be nonempty");
         }
         validation
     }

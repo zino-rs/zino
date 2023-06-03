@@ -115,9 +115,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let pool = Self::init_writer()?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let enable_foreign_keys = super::ENABLE_FOREIGN_KEYS.load(Relaxed);
-        let mut constraints = Vec::new();
-        let mut columns = Self::columns()
+        let columns = Self::columns()
             .iter()
             .map(|col| {
                 let column_name = col.name();
@@ -130,20 +128,11 @@ pub trait Schema: 'static + Send + Sync + Model {
                 } else if col.is_not_null() {
                     column += " NOT NULL";
                 }
-                if enable_foreign_keys && let Some(reference) = col.reference() {
-                    let ref_name = reference.name();
-                    let ref_column = reference.column_name();
-                    constraints.push(format!(
-                        "FOREIGN KEY ({column_name}) REFERENCES {ref_name}({ref_column})"
-                    ));
-                }
                 column
             })
-            .collect::<Vec<_>>();
-        columns.extend(constraints);
-
-        let expressions = columns.join(",\n  ");
-        let sql = format!("CREATE TABLE IF NOT EXISTS {table_name} (\n  {expressions}\n);");
+            .collect::<Vec<_>>()
+            .join(",\n  ");
+        let sql = format!("CREATE TABLE IF NOT EXISTS {table_name} (\n  {columns}\n);");
         sqlx::query(&sql).execute(pool).await?;
         Ok(())
     }
@@ -494,7 +483,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Finds models selected by the query in the table,
     /// and decodes it as `Vec<T>`.
-    async fn find<T: DecodeRow<DatabaseRow, Error = sqlx::Error>>(
+    async fn find<T: DecodeRow<DatabaseRow, Error = Error>>(
         query: &Query,
     ) -> Result<Vec<T>, Error> {
         let pool = Self::acquire_reader().await?.pool();
@@ -523,7 +512,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Finds one model selected by the query in the table,
     /// and decodes it as an instance of type `T`.
-    async fn find_one<T: DecodeRow<DatabaseRow, Error = sqlx::Error>>(
+    async fn find_one<T: DecodeRow<DatabaseRow, Error = Error>>(
         query: &Query,
     ) -> Result<Option<T>, Error> {
         let pool = Self::acquire_reader().await?.pool();
@@ -573,7 +562,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let num_values = values.len();
         if num_values > 0 {
             let primary_key_values = Map::from_entry("$in", values);
-            query.append_filters(&mut Map::from_entry(primary_key_name, primary_key_values));
+            query.add_filter(primary_key_name, primary_key_values);
         } else {
             return Ok(0);
         }
@@ -633,7 +622,7 @@ pub trait Schema: 'static + Send + Sync + Model {
         let num_values = values.len();
         if num_values > 0 {
             let primary_key_values = Map::from_entry("$in", values);
-            query.append_filters(&mut Map::from_entry(primary_key_name, primary_key_values));
+            query.add_filter(primary_key_name, primary_key_values);
         } else {
             return Ok(());
         }
@@ -671,7 +660,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Performs a left outer join to another table to filter rows in the "joined" table,
     /// and decodes it as `Vec<T>`.
-    async fn lookup<M: Schema, T: DecodeRow<DatabaseRow, Error = sqlx::Error>>(
+    async fn lookup<M: Schema, T: DecodeRow<DatabaseRow, Error = Error>>(
         query: &Query,
         left_columns: &[&str],
         right_columns: &[&str],
@@ -725,7 +714,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Counts the number of rows selected by the query in the table.
     /// The boolean value determines whether it only counts distinct values or not.
-    async fn count<T: DecodeRow<DatabaseRow, Error = sqlx::Error>>(
+    async fn count<T: DecodeRow<DatabaseRow, Error = Error>>(
         query: &Query,
         columns: &[(&str, bool)],
     ) -> Result<T, Error> {
@@ -777,7 +766,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     }
 
     /// Executes the query in the table, and decodes it as `Vec<T>`.
-    async fn query<T: DecodeRow<DatabaseRow, Error = sqlx::Error>>(
+    async fn query<T: DecodeRow<DatabaseRow, Error = Error>>(
         query: &str,
         params: Option<&Map>,
     ) -> Result<Vec<T>, Error> {
@@ -808,7 +797,7 @@ pub trait Schema: 'static + Send + Sync + Model {
     }
 
     /// Executes the query in the table, and decodes it as an instance of type `T`.
-    async fn query_one<T: DecodeRow<DatabaseRow, Error = sqlx::Error>>(
+    async fn query_one<T: DecodeRow<DatabaseRow, Error = Error>>(
         query: &str,
         params: Option<&Map>,
     ) -> Result<Option<T>, Error> {
@@ -854,7 +843,7 @@ pub trait Schema: 'static + Send + Sync + Model {
 
     /// Finds one model selected by the primary key in the table,
     /// and decodes it as an instance of type `T`.
-    async fn find_by_id<T: DecodeRow<DatabaseRow, Error = sqlx::Error>>(
+    async fn find_by_id<T: DecodeRow<DatabaseRow, Error = Error>>(
         primary_key: &Self::PrimaryKey,
     ) -> Result<Option<T>, Error> {
         let pool = Self::acquire_reader().await?.pool();

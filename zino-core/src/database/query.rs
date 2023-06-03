@@ -122,7 +122,9 @@ pub(super) trait QueryExt<DB> {
                         } else {
                             col.format_filter(key, value)
                         };
-                        conditions.push(condition);
+                        if !condition.is_empty() {
+                            conditions.push(condition);
+                        }
                     }
                 }
             }
@@ -191,7 +193,9 @@ pub(super) trait QueryExt<DB> {
                 _ => {
                     if let Some(col) = M::get_column(key) {
                         let condition = col.format_filter(key, value);
-                        conditions.push(condition);
+                        if !condition.is_empty() {
+                            conditions.push(condition);
+                        }
                     }
                 }
             }

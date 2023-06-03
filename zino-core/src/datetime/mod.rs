@@ -2,7 +2,7 @@
 
 use apache_avro::types::Value as AvroValue;
 use chrono::{format::ParseError, Local, NaiveDateTime, SecondsFormat, TimeZone, Utc};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 use serde_json::Value as JsonValue;
 use std::{
     fmt,
@@ -19,7 +19,7 @@ pub use duration::{parse_duration, ParseDurationError};
 type LocalDateTime = chrono::DateTime<Local>;
 
 /// A wrapper type for [`chrono::DateTime<Local>`](chrono::DateTime).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize)]
 pub struct DateTime(LocalDateTime);
 
 impl DateTime {
@@ -86,7 +86,15 @@ impl DateTime {
 impl fmt::Display for DateTime {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0.format("%Y-%m-%d %H:%M:%S%.f%z"))
+        write!(f, "{}", self.0.format("%Y-%m-%d %H:%M:%S%.6f %z"))
+    }
+}
+
+impl Serialize for DateTime {
+    #[inline]
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let s = format!("{}", self.0.format("%Y-%m-%d %H:%M:%S%.6f"));
+        serializer.serialize_str(&s)
     }
 }
 

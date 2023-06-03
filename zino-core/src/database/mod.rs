@@ -237,12 +237,8 @@ static NAMESPACE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
         .config()
         .get_table("database")
         .expect("the `database` field should be a table");
-    let max_rows = config.get_usize("max-rows").unwrap_or(1000);
+    let max_rows = config.get_usize("max-rows").unwrap_or(10000);
     MAX_ROWS.store(max_rows, Relaxed);
-
-    let enable_foreign_keys = config.get_bool("enable-foreign-keys").unwrap_or_default();
-    ENABLE_FOREIGN_KEYS.store(enable_foreign_keys, Relaxed);
-
     config
         .get_str("namespace")
         .expect("the `namespace` field should be a str")
@@ -251,7 +247,4 @@ static NAMESPACE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
 });
 
 /// Max number of returning rows.
-static MAX_ROWS: AtomicUsize = AtomicUsize::new(1000);
-
-/// Config for enabling foreign keys.
-static ENABLE_FOREIGN_KEYS: AtomicBool = AtomicBool::new(false);
+static MAX_ROWS: AtomicUsize = AtomicUsize::new(10000);

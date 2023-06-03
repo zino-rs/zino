@@ -7,6 +7,10 @@ use zino_model::User;
 pub async fn new(mut req: Request) -> Result {
     let mut user = User::new();
     let mut res: Response = req.model_validation(&mut user).await?;
+    let validation = user.check_constraints().await.extract(&req)?;
+    if !validation.is_success() {
+        return Err(Rejection::bad_request(validation).context(&req).into());
+    }
 
     let user_name = user.name().to_owned();
     user.upsert().await.extract(&req)?;

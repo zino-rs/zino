@@ -1,6 +1,7 @@
 use super::{query::QueryExt, DatabaseDriver, DatabaseRow};
 use crate::{
     datetime::DateTime,
+    error::Error,
     extension::JsonObjectExt,
     model::{Column, DecodeRow, EncodeColumn, Query},
     Map, Record, SharedString, Uuid,
@@ -8,7 +9,7 @@ use crate::{
 use apache_avro::types::Value as AvroValue;
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use serde_json::Value as JsonValue;
-use sqlx::{Column as _, Error, Row, TypeInfo, ValueRef};
+use sqlx::{Column as _, Row, TypeInfo, ValueRef};
 use std::borrow::Cow;
 
 impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
@@ -21,7 +22,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             "u16" | "i16" | "u8" | "i8" => "SMALLINT",
             "f64" => "DOUBLE PRECISION",
             "f32" => "REAL",
-            "String" => "TEXT",
+            "String" | "Option<String>" => "TEXT",
             "DateTime" => "TIMESTAMPTZ",
             "NaiveDateTime" => "TIMESTAMP",
             "NaiveDate" | "Date" => "DATE",
@@ -103,7 +104,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     "NULL".into()
                 }
             }
-            "String" => Query::escape_string(value).into(),
+            "String" | "Option<String>" => Query::escape_string(value).into(),
             "DateTime" | "NaiveDateTime" => match value {
                 "epoch" => "'epoch'".into(),
                 "now" => "now()".into(),
@@ -179,9 +180,9 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         let condition = format!(r#"array_length({field}, 1) = {value}"#);
                         conditions.push(condition);
                     } else if operator == "IN" || operator == "NOT IN" {
-                        if let Some(value) = value.as_array() && !value.is_empty() {
+                        if let Some(values) = value.as_array() && !values.is_empty() {
                             let field = Query::format_field(field);
-                            let value = value
+                            let value = values
                                 .iter()
                                 .map(|v| self.encode_value(Some(v)))
                                 .collect::<Vec<_>>()
@@ -238,7 +239,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     format!(r#"{field} = {value}"#)
                 }
             }
-            "String" => {
+            "String" | "Option<String>" => {
                 let field = Query::format_field(field);
                 if let Some(value) = value.as_str() {
                     if value == "null" {

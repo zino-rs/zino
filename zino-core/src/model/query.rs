@@ -15,9 +15,9 @@ pub struct Query {
     // Sort order.
     sort_order: (Option<String>, bool),
     // Offset.
-    offset: u64,
+    offset: usize,
     // Limit.
-    limit: u32,
+    limit: usize,
 }
 
 impl Query {
@@ -56,7 +56,7 @@ impl Query {
                     }
                 }
                 "offset" | "skip" => {
-                    if let Some(result) = value.parse_u64() {
+                    if let Some(result) = value.parse_usize() {
                         match result {
                             Ok(offset) => self.offset = offset,
                             Err(err) => validation.record_fail("offset", err),
@@ -64,7 +64,7 @@ impl Query {
                     }
                 }
                 "limit" => {
-                    if let Some(result) = value.parse_u32() {
+                    if let Some(result) = value.parse_usize() {
                         match result {
                             Ok(limit) => self.limit = limit,
                             Err(err) => validation.record_fail("limit", err),
@@ -153,13 +153,13 @@ impl Query {
 
     /// Sets the query offset.
     #[inline]
-    pub fn set_offset(&mut self, offset: u64) {
+    pub fn set_offset(&mut self, offset: usize) {
         self.offset = offset;
     }
 
     /// Sets the query limit.
     #[inline]
-    pub fn set_limit(&mut self, limit: u32) {
+    pub fn set_limit(&mut self, limit: usize) {
         self.limit = limit;
     }
 
@@ -184,13 +184,13 @@ impl Query {
 
     /// Returns the query offset.
     #[inline]
-    pub fn offset(&self) -> u64 {
+    pub fn offset(&self) -> usize {
         self.offset
     }
 
     /// Returns the query limit.
     #[inline]
-    pub fn limit(&self) -> u32 {
+    pub fn limit(&self) -> usize {
         self.limit
     }
 }

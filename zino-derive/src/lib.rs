@@ -38,6 +38,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     // Parsing struct attrs
     let mut reader_name = String::from("main");
     let mut writer_name = String::from("main");
+    let mut documentation = None;
     for attr in input.attrs.iter() {
         for (key, value) in parser::parse_schema_attr(attr).into_iter() {
             if let Some(value) = value {
@@ -50,6 +51,9 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                     }
                     "writer_name" => {
                         writer_name = value;
+                    }
+                    "doc" => {
+                        documentation = Some(value);
                     }
                     _ => panic!("struct attribute `{key}` is not supported"),
                 }
@@ -193,6 +197,11 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     let num_columns = columns.len();
     let num_readonly_fields = readonly_fields.len();
     let num_writeonly_fields = writeonly_fields.len();
+    let quote_documentation = if let Some(doc) = documentation {
+        quote! { Some(#doc) }
+    } else {
+        quote! { None }
+    };
     let output = quote! {
         use zino_core::{
             database::{ConnectionPool, Schema},
@@ -211,10 +220,10 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
             schema::Schema::Record {
                 name: schema::Name {
                     name: #model_name.to_owned(),
-                    namespace: None,
+                    namespace: Some(<#name>::model_namespace().to_owned()),
                 },
                 aliases: None,
-                doc: None,
+                doc: #quote_documentation,
                 fields,
                 lookup: std::collections::BTreeMap::new(),
             }
@@ -338,6 +347,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
     let name = input.ident;
     let mut column_methods = Vec::new();
     let mut snapshot_fields = Vec::new();
+    let mut check_constraints = Vec::new();
     let mut related_queries = Vec::new();
     let mut related_one_queries = Vec::new();
     let mut primary_key_type = String::from("Uuid");
@@ -351,12 +361,56 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                 let name = ident.to_string();
                 for attr in field.attrs.iter() {
                     for (key, value) in parser::parse_schema_attr(attr).into_iter() {
+                        if key == "not_null" {
+                            if type_name == "String" {
+                                check_constraints.push(quote! {
+                                    if self.#ident.is_empty() {
+                                        validation.record(#name, "should be nonempty");
+                                    }
+                                });
+                            } else if type_name == "Uuid" {
+                                check_constraints.push(quote! {
+                                    if self.#ident.is_nil() {
+                                        validation.record(#name, "should not be nil");
+                                    }
+                                });
+                            }
+                        }
                         if key == "primary_key" {
                             primary_key_name = name.clone();
                         } else if key == "snapshot" {
                             snapshot_fields.push(name.clone());
                         } else if key == "reference" {
                             if let Some(value) = value {
+                                let model_ident = format_ident!("{}", value);
+                                if type_name.starts_with("Vec") {
+                                    check_constraints.push(quote! {
+                                        let values = self.#ident
+                                            .iter()
+                                            .map(|value| value.to_string().into())
+                                            .collect::<Vec<_>>();
+                                        let length = values.len();
+                                        if length > 0 && <#model_ident>::filter(values).await?.len() != length {
+                                            validation.record(#name, "nonexistent value");
+                                        }
+                                    });
+                                } else if type_name.starts_with("Option") {
+                                    check_constraints.push(quote! {
+                                        if let Some(value) = self.#ident {
+                                            let values = vec![value.to_string().into()];
+                                            if <#model_ident>::filter(values).await?.len() != 1 {
+                                                validation.record(#name, "nonexistent value");
+                                            }
+                                        }
+                                    });
+                                } else {
+                                    check_constraints.push(quote! {
+                                        let values = vec![self.#ident.to_string().into()];
+                                        if <#model_ident>::filter(values).await?.len() != 1 {
+                                            validation.record(#name, "nonexistent value");
+                                        }
+                                    });
+                                }
                                 match model_references.iter_mut().find(|r| r.0 == value) {
                                     Some(r) => r.1.push(name.clone()),
                                     None => model_references.push((value, vec![name.clone()])),
@@ -411,16 +465,31 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                             column_methods.push(method);
                         }
                         "owner_id" | "maintainer_id" => {
-                            let type_name_ident = format_ident!("{}", type_name);
-                            let method = quote! {
-                                #[inline]
-                                fn #name_ident(&self) -> Option<&#type_name_ident> {
-                                    let user_id = &self.#name_ident;
-                                    (user_id != &#type_name_ident::default()).then_some(user_id)
+                            let user_type_opt = type_name.strip_prefix("Option");
+                            let user_type = if let Some(user_type) = user_type_opt {
+                                user_type.trim_matches(|c| c == '<' || c == '>').to_owned()
+                            } else {
+                                type_name.clone()
+                            };
+                            let user_type_ident = format_ident!("{}", user_type);
+                            let method = if user_type_opt.is_some() {
+                                quote! {
+                                    #[inline]
+                                    fn #name_ident(&self) -> Option<&#user_type_ident> {
+                                        self.#name_ident.as_ref()
+                                    }
+                                }
+                            } else {
+                                quote! {
+                                    #[inline]
+                                    fn #name_ident(&self) -> Option<&#user_type_ident> {
+                                        let id = &self.#name_ident;
+                                        (id != &#user_type_ident::default()).then_some(id)
+                                    }
                                 }
                             };
                             column_methods.push(method);
-                            user_id_type = type_name;
+                            user_id_type = user_type;
                         }
                         "created_at" => {
                             let method = quote! {
@@ -512,6 +581,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
         use zino_core::{
             database::ModelAccessor,
             model::Query,
+            request::Validation as ZinoValidation,
             Map as ZinoMap,
         };
 
@@ -531,6 +601,15 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                 ];
                 query.allow_fields(&fields);
                 query
+            }
+
+            async fn check_constraints(&self) -> Result<ZinoValidation, ZinoError> {
+                let mut validation = ZinoValidation::new();
+                if self.id() == &<#model_primary_key_type>::default() {
+                    validation.record(Self::PRIMARY_KEY_NAME, "should not be a default value");
+                }
+                #(#check_constraints)*
+                Ok(validation)
             }
 
             async fn fetch(query: &Query) -> Result<Vec<ZinoMap>, ZinoError> {

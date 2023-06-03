@@ -24,8 +24,11 @@ pub trait DefaultController<T, U = T> {
 #[cfg(any(feature = "actix", feature = "axum"))]
 #[cfg(feature = "orm")]
 use zino_core::{
-    database::ModelAccessor, extension::JsonObjectExt, request::RequestContext,
-    response::ExtractRejection, Map,
+    database::ModelAccessor,
+    extension::JsonObjectExt,
+    request::RequestContext,
+    response::{ExtractRejection, Rejection},
+    Map,
 };
 
 #[cfg(any(feature = "actix", feature = "axum"))]
@@ -41,7 +44,10 @@ where
     async fn new(mut req: Self::Request) -> Self::Result {
         let mut model = Self::new();
         let mut res: crate::Response = req.model_validation(&mut model).await?;
-
+        let validation = model.check_constraints().await.extract(&req)?;
+        if !validation.is_success() {
+            return Err(Rejection::bad_request(validation).context(&req).into());
+        }
         let data = Map::data_entry(model.snapshot());
         model.upsert().await.extract(&req)?;
         res.set_data(&data);
