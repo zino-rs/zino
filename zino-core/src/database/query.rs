@@ -2,9 +2,8 @@ use super::Schema;
 use crate::{
     extension::{JsonObjectExt, JsonValueExt},
     model::EncodeColumn,
-    Map, SharedString,
+    JsonValue, Map, SharedString,
 };
-use serde_json::Value;
 use std::{borrow::Cow, fmt::Display};
 
 /// Extension trait for [`Query`](crate::model::Query).
@@ -22,8 +21,10 @@ pub(super) trait QueryExt<DB> {
     fn placeholder(n: usize) -> SharedString;
 
     /// Prepares the SQL query for binding parameters.
-    fn prepare_query<'a>(query: &'a str, params: Option<&'a Map>)
-        -> (Cow<'a, str>, Vec<&'a Value>);
+    fn prepare_query<'a>(
+        query: &'a str,
+        params: Option<&'a Map>,
+    ) -> (Cow<'a, str>, Vec<&'a JsonValue>);
 
     /// Formats the query pagination to generate SQL `LIMIT` expression.
     fn format_pagination(&self) -> String;
@@ -135,7 +136,7 @@ pub(super) trait QueryExt<DB> {
         if let Some(groups) = filters.parse_str_array("$group") {
             let groups = groups.join(", ");
             expression += &format!("GROUP BY {groups}");
-            if let Some(Value::Object(selection)) = filters.get("$match") {
+            if let Some(JsonValue::Object(selection)) = filters.get("$match") {
                 let condition = Self::format_selection::<M>(selection, " AND ");
                 expression += &format!("HAVING {condition}");
             }

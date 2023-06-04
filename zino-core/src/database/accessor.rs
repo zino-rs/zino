@@ -1,14 +1,18 @@
 use super::Schema;
 use crate::{
+    crypto,
     datetime::DateTime,
+    encoding::base64,
     error::Error,
-    extension::JsonObjectExt,
+    extension::{JsonObjectExt, TomlTableExt},
     model::{Mutation, Query},
     request::Validation,
-    Map,
+    state::State,
+    JsonValue, Map,
 };
-use serde_json::Value;
-use std::fmt::Display;
+use hkdf::Hkdf;
+use sha2::{Digest, Sha256};
+use std::{fmt::Display, sync::LazyLock};
 
 /// Access model fields.
 pub trait ModelAccessor<T, U = T>: Schema<PrimaryKey = T>
@@ -173,13 +177,13 @@ where
 
     /// Returns a reference to the value corresponding to the key in `content`.
     #[inline]
-    fn get_content_value(&self, key: &str) -> Option<&Value> {
+    fn get_content_value(&self, key: &str) -> Option<&JsonValue> {
         self.content()?.get(key)
     }
 
     /// Returns a reference to the value corresponding to the key in `extra`.
     #[inline]
-    fn get_extra_value(&self, key: &str) -> Option<&Value> {
+    fn get_extra_value(&self, key: &str) -> Option<&JsonValue> {
         self.extra()?.get(key)
     }
 
@@ -320,24 +324,35 @@ where
         query
     }
 
-    /// Filters the values of the primary key.
-    async fn filter(primary_key_values: Vec<Value>) -> Result<Vec<Value>, Error> {
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let limit = primary_key_values.len();
-        let mut query = Query::default();
-        query.allow_fields(&[primary_key_name]);
-        query.add_filter(primary_key_name, Map::from_entry("$in", primary_key_values));
-        query.add_filter("status", Map::from_entry("$ne", "Deleted"));
-        query.set_limit(limit);
+    /// Returns the secret key for the model.
+    /// It should have at least 64 bytes.
+    ///
+    /// # Note
+    ///
+    /// This should only be used for internal services. Do not expose it to external users.
+    #[inline]
+    fn secret_key() -> &'static [u8] {
+        SECRET_KEY.as_slice()
+    }
 
-        let data = Self::find::<Map>(&query).await?;
-        let mut primary_key_values = Vec::with_capacity(data.len());
-        for map in data.into_iter() {
-            for (_key, value) in map.into_iter() {
-                primary_key_values.push(value);
-            }
+    /// Encrypts the password for the model.
+    fn encrypt_password(passowrd: &[u8]) -> Result<String, Error> {
+        let key = Self::secret_key();
+        if let Ok(bytes) = base64::decode(passowrd) && bytes.len() == 256 {
+            crypto::encrypt_hashed_password(key, passowrd)
+        } else {
+            crypto::encrypt_raw_password::<Sha256>(key, passowrd)
         }
-        Ok(primary_key_values)
+    }
+
+    /// Verifies the password for the model.
+    fn verify_password(passowrd: &[u8], encrypted_password: String) -> Result<bool, Error> {
+        let key = Self::secret_key();
+        if let Ok(bytes) = base64::decode(passowrd) && bytes.len() == 256 {
+            crypto::verify_hashed_password(key, passowrd, encrypted_password)
+        } else {
+            crypto::verify_raw_password::<Sha256>(key, passowrd, encrypted_password)
+        }
     }
 
     /// Checks the constraints for the model.
@@ -395,3 +410,28 @@ where
         Self::update_one(&query, &mutation).await
     }
 }
+
+/// Secret key.
+static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
+    let config = State::shared()
+        .config()
+        .get_table("database")
+        .expect("the `database` field should be a table");
+    let database_checksum: [u8; 32] = config
+        .get_str("checksum")
+        .and_then(|checksum| checksum.as_bytes().try_into().ok())
+        .unwrap_or_else(|| {
+            let database_key = format!("{}_{}", *super::NAMESPACE_PREFIX, super::DRIVER_NAME);
+            let mut hasher = Sha256::new();
+            hasher.update(database_key.as_bytes());
+            hasher.finalize().into()
+        });
+
+    let mut secret_key = [0; 64];
+    let info = "ZINO:ORM;CHECKSUM:SHA256;HKDF:HMAC-SHA256";
+    Hkdf::<Sha256>::from_prk(&database_checksum)
+        .expect("pseudorandom key is not long enough")
+        .expand(info.as_bytes(), &mut secret_key)
+        .expect("invalid length for Sha256 to output");
+    secret_key
+});

@@ -122,7 +122,7 @@ pub trait Application {
     ///
     /// # Note
     ///
-    /// This should only be used for internal services. Do not expose it to application users.
+    /// This should only be used for internal services. Do not expose it to external users.
     #[inline]
     fn secret_key() -> &'static [u8] {
         SECRET_KEY.get().expect("fail to get the secret key")

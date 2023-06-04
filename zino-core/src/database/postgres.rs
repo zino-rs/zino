@@ -4,11 +4,9 @@ use crate::{
     error::Error,
     extension::JsonObjectExt,
     model::{Column, DecodeRow, EncodeColumn, Query},
-    Map, Record, SharedString, Uuid,
+    AvroValue, JsonValue, Map, Record, SharedString, Uuid,
 };
-use apache_avro::types::Value as AvroValue;
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
-use serde_json::Value as JsonValue;
 use sqlx::{Column as _, Row, TypeInfo, ValueRef};
 use std::borrow::Cow;
 
@@ -17,9 +15,27 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
         let type_name = self.type_name();
         match type_name {
             "bool" => "BOOLEAN",
-            "u64" | "i64" | "usize" | "isize" => "BIGINT",
-            "u32" | "i32" => "INT",
-            "u16" | "i16" | "u8" | "i8" => "SMALLINT",
+            "u64" | "i64" | "usize" | "isize" => {
+                if self.auto_increment() {
+                    "BIGSERIAL"
+                } else {
+                    "BIGINT"
+                }
+            }
+            "u32" | "i32" => {
+                if self.auto_increment() {
+                    "SERIAL"
+                } else {
+                    "INT"
+                }
+            }
+            "u16" | "i16" | "u8" | "i8" => {
+                if self.auto_increment() {
+                    "SMALLSERIAL"
+                } else {
+                    "SMALLINT"
+                }
+            }
             "f64" => "DOUBLE PRECISION",
             "f32" => "REAL",
             "String" | "Option<String>" => "TEXT",
@@ -151,7 +167,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
         }
     }
 
-    fn format_filter(&self, field: &str, value: &serde_json::Value) -> String {
+    fn format_filter(&self, field: &str, value: &JsonValue) -> String {
         let type_name = self.type_name();
         if let Some(filter) = value.as_object() {
             if type_name == "Map" {

@@ -27,6 +27,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     const INTEGER_TYPES: [&str; 10] = [
         "u64", "i64", "u32", "i32", "u16", "i16", "u8", "i8", "usize", "isize",
     ];
+    const UNSIGNED_INTEGER_TYPES: [&str; 5] = ["u64", "u32", "u16", "u8", "usize"];
 
     // Input
     let input = parse_macro_input!(item as DeriveInput);
@@ -68,6 +69,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     let mut column_fields = Vec::new();
     let mut readonly_fields = Vec::new();
     let mut writeonly_fields = Vec::new();
+    let mut decode_model_fields = Vec::new();
     if let Data::Struct(data) = input.data && let Fields::Named(fields) = data.fields {
         for field in fields.named.into_iter() {
             let mut type_name = parser::get_type_name(&field.ty);
@@ -95,6 +97,16 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                                     type_name = value;
                                 }
                             }
+                            "length" if type_name == "String" => {
+                                if let Some(value) = value {
+                                    type_name = format!("CHAR({value})");
+                                }
+                            }
+                            "max_length" if type_name == "String" => {
+                                if let Some(value) = value {
+                                    type_name = format!("VARCHAR({value})");
+                                }
+                            }
                             "not_null" => {
                                 not_null = true;
                             }
@@ -103,6 +115,9 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                             }
                             "index_type" => {
                                 index_type = value;
+                            }
+                            "unique" => {
+                                index_type = Some("unique".to_owned());
                             }
                             "reference" => {
                                 reference = value;
@@ -116,7 +131,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                             "writeonly" => {
                                 writeonly_fields.push(quote!{ #name });
                             }
-                            _ => panic!("field attribute `{key}` is not supported"),
+                            _ => (),
                         }
                     }
                 }
@@ -177,7 +192,30 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                     column
                 }};
                 columns.push(column);
-                column_fields.push(quote!{ #name });
+                column_fields.push(quote! { #name });
+                if type_name == "Map" {
+                    decode_model_fields.push(quote! {
+                        if let JsonValue::Object(map) = database::decode(row, #name)? {
+                            model.#ident = map;
+                        }
+                    });
+                } else if type_name.starts_with("Vec") {
+                    decode_model_fields.push(quote! {
+                        let value = database::decode::<JsonValue>(row, #name)?;
+                        if let Some(vec) = value.parse_array() {
+                            model.#ident = vec;
+                        }
+                    });
+                } else if UNSIGNED_INTEGER_TYPES.contains(&type_name.as_str()) {
+                    decode_model_fields.push(quote! {
+                        let value = database::decode::<i64>(row, #name)?;
+                        model.#ident = value.try_into()?;
+                    });
+                } else {
+                    decode_model_fields.push(quote! {
+                        model.#ident = database::decode(row, #name)?;
+                    });
+                }
             }
         }
     }
@@ -204,10 +242,21 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     };
     let output = quote! {
         use zino_core::{
-            database::{ConnectionPool, Schema},
+            database::{self, ConnectionPool, DatabaseRow, Schema},
             error::Error as ZinoError,
-            model::{schema, Column},
+            model::{schema, Column, DecodeRow},
         };
+
+        impl DecodeRow<DatabaseRow> for #name {
+            type Error = ZinoError;
+
+            fn decode_row(row: &DatabaseRow) -> Result<Self, Self::Error> {
+                use zino_core::{extension::JsonValueExt, JsonValue};
+                let mut model = <#name>::default();
+                #(#decode_model_fields)*
+                Ok(model)
+            }
+        }
 
         static #avro_schema: std::sync::LazyLock<schema::Schema> = std::sync::LazyLock::new(|| {
             let mut fields = #schema_columns.iter().enumerate()
@@ -230,11 +279,11 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
         });
         static #schema_columns: std::sync::LazyLock<[Column; #num_columns]> =
             std::sync::LazyLock::new(|| [#(#columns),*]);
-        static #schema_fields: std::sync::LazyLock<[&'static str; #num_columns]> =
+        static #schema_fields: std::sync::LazyLock<[&str; #num_columns]> =
             std::sync::LazyLock::new(|| [#(#column_fields),*]);
-        static #schema_readonly_fields: std::sync::LazyLock<[&'static str; #num_readonly_fields]> =
+        static #schema_readonly_fields: std::sync::LazyLock<[&str; #num_readonly_fields]> =
             std::sync::LazyLock::new(|| [#(#readonly_fields),*]);
-        static #schema_writeonly_fields: std::sync::LazyLock<[&'static str; #num_writeonly_fields]> =
+        static #schema_writeonly_fields: std::sync::LazyLock<[&str; #num_writeonly_fields]> =
             std::sync::LazyLock::new(|| [#(#writeonly_fields),*]);
         static #schema_reader: std::sync::OnceLock<&ConnectionPool> = std::sync::OnceLock::new();
         static #schema_writer: std::sync::OnceLock<&ConnectionPool> = std::sync::OnceLock::new();
@@ -361,61 +410,145 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                 let name = ident.to_string();
                 for attr in field.attrs.iter() {
                     for (key, value) in parser::parse_schema_attr(attr).into_iter() {
-                        if key == "not_null" {
-                            if type_name == "String" {
-                                check_constraints.push(quote! {
-                                    if self.#ident.is_empty() {
-                                        validation.record(#name, "should be nonempty");
-                                    }
-                                });
-                            } else if type_name == "Uuid" {
-                                check_constraints.push(quote! {
-                                    if self.#ident.is_nil() {
-                                        validation.record(#name, "should not be nil");
-                                    }
-                                });
+                        match key.as_str() {
+                            "primary_key" => {
+                                primary_key_name = name.clone();
                             }
-                        }
-                        if key == "primary_key" {
-                            primary_key_name = name.clone();
-                        } else if key == "snapshot" {
-                            snapshot_fields.push(name.clone());
-                        } else if key == "reference" {
-                            if let Some(value) = value {
-                                let model_ident = format_ident!("{}", value);
-                                if type_name.starts_with("Vec") {
-                                    check_constraints.push(quote! {
-                                        let values = self.#ident
-                                            .iter()
-                                            .map(|value| value.to_string().into())
-                                            .collect::<Vec<_>>();
-                                        let length = values.len();
-                                        if length > 0 && <#model_ident>::filter(values).await?.len() != length {
-                                            validation.record(#name, "nonexistent value");
-                                        }
-                                    });
-                                } else if type_name.starts_with("Option") {
-                                    check_constraints.push(quote! {
-                                        if let Some(value) = self.#ident {
-                                            let values = vec![value.to_string().into()];
-                                            if <#model_ident>::filter(values).await?.len() != 1 {
-                                                validation.record(#name, "nonexistent value");
+                            "snapshot" => {
+                                snapshot_fields.push(name.clone());
+                            }
+                            "reference" => {
+                                if let Some(value) = value {
+                                    let model_ident = format_ident!("{}", value);
+                                    if type_name.starts_with("Vec") {
+                                        check_constraints.push(quote! {
+                                            let values = self.#ident
+                                                .iter()
+                                                .map(|value| value.to_string())
+                                                .collect::<Vec<_>>();
+                                            let length = values.len();
+                                            if length > 0 {
+                                                let data = <#model_ident>::filter(values).await?;
+                                                if data.len() != length {
+                                                    validation.record(#name, "there are nonexistent values");
+                                                }
                                             }
-                                        }
-                                    });
-                                } else {
-                                    check_constraints.push(quote! {
-                                        let values = vec![self.#ident.to_string().into()];
-                                        if <#model_ident>::filter(values).await?.len() != 1 {
-                                            validation.record(#name, "nonexistent value");
-                                        }
-                                    });
-                                }
-                                match model_references.iter_mut().find(|r| r.0 == value) {
-                                    Some(r) => r.1.push(name.clone()),
-                                    None => model_references.push((value, vec![name.clone()])),
+                                        });
+                                    } else if type_name.starts_with("Option") {
+                                        check_constraints.push(quote! {
+                                            if let Some(value) = self.#ident {
+                                                let values = vec![value.to_string()];
+                                                let data = <#model_ident>::filter(values).await?;
+                                                if data.len() != 1 {
+                                                    validation.record(#name, "it is a nonexistent value");
+                                                }
+                                            }
+                                        });
+                                    } else {
+                                        check_constraints.push(quote! {
+                                            let values = vec![self.#ident.to_string()];
+                                            let data = <#model_ident>::filter(values).await?;
+                                            if data.len() != 1 {
+                                                validation.record(#name, "it is a nonexistent value");
+                                            }
+                                        });
+                                    }
+                                    match model_references.iter_mut().find(|r| r.0 == value) {
+                                        Some(r) => r.1.push(name.clone()),
+                                        None => model_references.push((value, vec![name.clone()])),
+                                    }
                                 }
                             }
+                            "unique" => {
+                                check_constraints.push(quote! {
+                                    let value = self.#ident.to_string();
+                                    if !self.is_unique_in(#name, value).await? {
+                                        validation.record(#name, "it should be unique");
+                                    }
+                                });
+                            }
+                            "not_null" => {
+                                if type_name == "String" {
+                                    check_constraints.push(quote! {
+                                        if self.#ident.is_empty() {
+                                            validation.record(#name, "it should be nonempty");
+                                        }
+                                    });
+                                } else if type_name == "Uuid" {
+                                    check_constraints.push(quote! {
+                                        if self.#ident.is_nil() {
+                                            validation.record(#name, "it should not be nil");
+                                        }
+                                    });
+                                }
+                            }
+                            "length" => {
+                                let length: usize = value
+                                    .and_then(|s| s.parse().ok())
+                                    .unwrap_or_default();
+                                if type_name == "String" || type_name.starts_with("Vec") {
+                                    check_constraints.push(quote! {
+                                        let length = #length;
+                                        if self.#ident.len() != length {
+                                            let message = format!("the length should be {length}");
+                                            validation.record(#name, message);
+                                        }
+                                    });
+                                } else if type_name == "Option<String>" {
+                                    check_constraints.push(quote! {
+                                        let length = #length;
+                                        if let Some(ref s) = self.#ident && s.len() != length {
+                                            let message = format!("the length should be {length}");
+                                            validation.record(#name, message);
+                                        }
+                                    });
+                                }
+                            }
+                            "max_length" => {
+                                let length: usize = value
+                                    .and_then(|s| s.parse().ok())
+                                    .unwrap_or_default();
+                                if type_name == "String" || type_name.starts_with("Vec") {
+                                    check_constraints.push(quote! {
+                                        let length = #length;
+                                        if self.#ident.len() > length {
+                                            let message = format!("the length should be at most {length}");
+                                            validation.record(#name, message);
+                                        }
+                                    });
+                                } else if type_name == "Option<String>" {
+                                    check_constraints.push(quote! {
+                                        let length = #length;
+                                        if let Some(ref s) = self.#ident && s.len() > length {
+                                            let message = format!("the length should be at most {length}");
+                                            validation.record(#name, message);
+                                        }
+                                    });
+                                }
+                            }
+                            "min_length" => {
+                                let length: usize = value
+                                    .and_then(|s| s.parse().ok())
+                                    .unwrap_or_default();
+                                if type_name == "String" || type_name.starts_with("Vec") {
+                                    check_constraints.push(quote! {
+                                        let length = #length;
+                                        if self.#ident.len() < length {
+                                            let message = format!("the length should be at least {length}");
+                                            validation.record(#name, message);
+                                        }
+                                    });
+                                } else if type_name == "Option<String>" {
+                                    check_constraints.push(quote! {
+                                        let length = #length;
+                                        if let Some(ref s) = self.#ident && s.len() < length {
+                                            let message = format!("the length should be at least {length}");
+                                            validation.record(#name, message);
+                                        }
+                                    });
+                                }
+                            }
+                            _ => (),
                         }
                     }
                 }

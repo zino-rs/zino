@@ -143,7 +143,6 @@ impl State {
                 Some(password.into())
             } else {
                 crypto::encrypt(key, password.as_bytes())
-                    .inspect_err(|_| tracing::error!("fail to encrypt the password"))
                     .ok()
                     .map(|bytes| base64::encode(bytes).into())
             }

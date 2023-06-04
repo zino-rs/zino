@@ -1,5 +1,5 @@
-use crate::{encoding::base64, error::Error, Map};
-use apache_avro::{types::Value as AvroValue, Days, Duration, Millis, Months};
+use crate::{encoding::base64, error::Error, AvroValue, JsonValue, Map};
+use apache_avro::{Days, Duration, Millis, Months};
 use datafusion::arrow::{
     array::{self, Array, ArrayAccessor, FixedSizeBinaryArray, FixedSizeListArray, StringArray},
     datatypes::{
@@ -11,7 +11,6 @@ use datafusion::arrow::{
         TimestampSecondType, UInt16Type, UInt32Type, UInt64Type, UInt8Type,
     },
 };
-use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 
 /// Extension trait for [`dyn Array`](datafusion::arrow::array::Array).

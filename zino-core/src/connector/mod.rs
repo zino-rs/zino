@@ -25,8 +25,7 @@
 //! | `timescaledb`    | TimescaleDB            | `connector-postgres`   |
 //!
 
-use crate::{error::Error, extension::TomlTableExt, state::State, Map, Record};
-use apache_avro::types::Value;
+use crate::{error::Error, extension::TomlTableExt, state::State, AvroValue, Map, Record};
 use serde::de::DeserializeOwned;
 use std::sync::LazyLock;
 use toml::Table;
@@ -85,9 +84,9 @@ pub trait Connector {
         let data = self.query(query, params).await?;
         let value = data
             .into_iter()
-            .map(|record| Value::Record(record))
+            .map(|record| AvroValue::Record(record))
             .collect::<Vec<_>>();
-        apache_avro::from_value(&Value::Array(value)).map_err(|err| err.into())
+        apache_avro::from_value(&AvroValue::Array(value)).map_err(|err| err.into())
     }
 
     /// Executes the query and parses it as a `Record`.
@@ -100,7 +99,7 @@ pub trait Connector {
         params: Option<&Map>,
     ) -> Result<Option<T>, Error> {
         if let Some(record) = self.query_one(query, params).await? {
-            let value = Value::Union(1, Box::new(Value::Record(record)));
+            let value = AvroValue::Union(1, Box::new(AvroValue::Record(record)));
             apache_avro::from_value(&value).map_err(|err| err.into())
         } else {
             Ok(None)

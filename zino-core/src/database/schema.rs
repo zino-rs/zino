@@ -3,7 +3,7 @@ use crate::{
     error::Error,
     extension::JsonObjectExt,
     model::{Column, DecodeRow, EncodeColumn, Model, Mutation, Query},
-    BoxFuture, Map, Record, Uuid,
+    BoxFuture, JsonValue, Map, Uuid,
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
@@ -11,7 +11,7 @@ use sqlx::{Decode, Transaction};
 use std::{fmt::Display, sync::atomic::Ordering::Relaxed};
 
 /// Database schema.
-pub trait Schema: 'static + Send + Sync + Model {
+pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error = Error> {
     /// Primary key.
     type PrimaryKey: Default + Display + PartialEq = Uuid;
 
@@ -124,7 +124,11 @@ pub trait Schema: 'static + Send + Sync + Model {
                 if column_name == primary_key_name {
                     column += " PRIMARY KEY";
                 } else if let Some(value) = col.default_value() {
-                    column = column + " DEFAULT " + &col.format_value(value);
+                    if super::DRIVER_NAME == "mysql" && col.auto_increment() {
+                        column += " AUTO_INCREMENT";
+                    } else {
+                        column = column + " DEFAULT " + &col.format_value(value);
+                    }
                 } else if col.is_not_null() {
                     column += " NOT NULL";
                 }
@@ -216,7 +220,7 @@ pub trait Schema: 'static + Send + Sync + Model {
                 } else if index_type == "unique" {
                     let sql = format!(
                         "
-                            CREATE UNIQUE INDEX {table_name}_{column_name}_index
+                            CREATE UNIQUE INDEX IF NOT EXISTS {table_name}_{column_name}_index
                             ON {table_name} ({column_name});
                         "
                     );
@@ -879,13 +883,59 @@ pub trait Schema: 'static + Send + Sync + Model {
             "
         );
         if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
-            let record = Record::decode_row(&row)?;
-            Self::try_from_avro_record(record).map_err(Error::from)
+            Self::decode_row(&row)
         } else {
             let model_name = Self::MODEL_NAME;
             Err(Error::new(format!(
                 "no rows found for the model `{model_name}` with the primary key `{primary_key}`"
             )))
+        }
+    }
+
+    /// Filters the values of the primary key.
+    async fn filter<T: Into<JsonValue>>(
+        primary_key_values: Vec<T>,
+    ) -> Result<Vec<JsonValue>, Error> {
+        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let limit = primary_key_values.len();
+        let mut query = Query::default();
+        query.allow_fields(&[primary_key_name]);
+        query.add_filter(primary_key_name, Map::from_entry("$in", primary_key_values));
+        query.set_limit(limit);
+
+        let data = Self::find::<Map>(&query).await?;
+        let mut primary_key_values = Vec::with_capacity(data.len());
+        for map in data.into_iter() {
+            for (_key, value) in map.into_iter() {
+                primary_key_values.push(value);
+            }
+        }
+        Ok(primary_key_values)
+    }
+
+    /// Returns `true` if the model has a unique column value.
+    async fn is_unique_in<T: Into<JsonValue>>(
+        &self,
+        column: &str,
+        value: T,
+    ) -> Result<bool, Error> {
+        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let mut query = Query::default();
+        query.allow_fields(&[primary_key_name, column]);
+        query.add_filter(column, value);
+        query.set_limit(2);
+
+        let mut data = Self::find::<Map>(&query).await?;
+        match data.len() {
+            0 => Ok(true),
+            1 => {
+                if let Some(map) = data.pop() && let Some(value) = map.get_str(primary_key_name) {
+                    Ok(self.primary_key().to_string() == value)
+                } else {
+                    Ok(true)
+                }
+            },
+            _ => Ok(false),
         }
     }
 }

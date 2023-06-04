@@ -1,6 +1,5 @@
 use super::{sqlx_common::SerializeRow, Connector, DataSource, DataSourceConnector::Postgres};
-use crate::{error::Error, extension::TomlTableExt, format, state::State, Map, Record};
-use apache_avro::types::Value;
+use crate::{error::Error, extension::TomlTableExt, format, state::State, AvroValue, Map, Record};
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use sqlx::postgres::{PgPool, PgPoolOptions};
@@ -58,7 +57,7 @@ impl Connector for PgPool {
         let mut records = Vec::new();
         while let Some(row) = rows.try_next().await? {
             let value = apache_avro::to_value(&SerializeRow(row))?;
-            if let Value::Record(record) = value {
+            if let AvroValue::Record(record) = value {
                 records.push(record);
             }
         }
@@ -95,7 +94,7 @@ impl Connector for PgPool {
 
         let data = if let Some(row) = query.fetch_optional(self).await? {
             let value = apache_avro::to_value(&SerializeRow(row))?;
-            if let Value::Record(record) = value {
+            if let AvroValue::Record(record) = value {
                 Some(record)
             } else {
                 None

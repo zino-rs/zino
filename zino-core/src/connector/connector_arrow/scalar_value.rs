@@ -1,9 +1,8 @@
+use crate::{JsonValue, TomlValue};
 use datafusion::{
     arrow::datatypes::{DataType, Field},
     scalar::ScalarValue,
 };
-use serde_json::Value as JsonValue;
-use toml::Value as TomlValue;
 
 /// Extension trait for [`ScalarValue`](datafusion::scalar::ScalarValue).
 pub(super) trait ScalarValueExt {

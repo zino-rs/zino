@@ -1,9 +1,8 @@
 //! ISO 8601 combined date and time with local time zone.
 
-use apache_avro::types::Value as AvroValue;
+use crate::{AvroValue, JsonValue};
 use chrono::{format::ParseError, Local, NaiveDateTime, SecondsFormat, TimeZone, Utc};
 use serde::{Deserialize, Serialize, Serializer};
-use serde_json::Value as JsonValue;
 use std::{
     fmt,
     ops::{Add, AddAssign, Deref, Sub, SubAssign},

@@ -35,6 +35,9 @@ cfg_if::cfg_if! {
 
         mod mysql;
 
+        /// Driver name.
+        static DRIVER_NAME: &str = "mysql";
+
         /// MySQL database driver.
         pub type DatabaseDriver = MySql;
 
@@ -43,13 +46,13 @@ cfg_if::cfg_if! {
 
         /// Options and flags which can be used to configure a MySQL connection.
         type DatabaseConnectOptions = MySqlConnectOptions;
-
-        /// Driver name.
-        static DRIVER_NAME: &str = "mysql";
     } else {
         use sqlx::postgres::{PgConnectOptions, PgRow, Postgres};
 
         mod postgres;
+
+        /// Driver name.
+        static DRIVER_NAME: &str = "postgres";
 
         /// PostgreSQL database driver.
         pub type DatabaseDriver = Postgres;
@@ -59,9 +62,6 @@ cfg_if::cfg_if! {
 
         /// Options and flags which can be used to configure a PostgreSQL connection.
         type DatabaseConnectOptions = PgConnectOptions;
-
-        /// Driver name.
-        static DRIVER_NAME: &str = "postgres";
     }
 }
 

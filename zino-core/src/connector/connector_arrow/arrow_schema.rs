@@ -1,11 +1,11 @@
 use super::ArrowFieldExt;
-use crate::{error::Error, Record};
+use crate::{error::Error, Record, TomlValue};
 use datafusion::arrow::{
     array::Array,
     datatypes::{DataType, Field, Schema, UnionFields, UnionMode},
 };
 use std::sync::Arc;
-use toml::{Table, Value};
+use toml::Table;
 
 /// Extension trait for [`Schema`](datafusion::arrow::datatypes::Schema).
 pub(super) trait ArrowSchemaExt {
@@ -37,18 +37,18 @@ impl ArrowSchemaExt for Schema {
         for (key, value) in table {
             let name = key.to_owned();
             let data_type = match value {
-                Value::String(value_type) => parse_arrow_data_type(value_type)?,
-                Value::Array(array) => {
-                    let array_length = array.len();
-                    if array_length == 1 && let Some(Value::String(value_type)) = array.first() {
+                TomlValue::String(value_type) => parse_arrow_data_type(value_type)?,
+                TomlValue::Array(array) => {
+                    let length = array.len();
+                    if length == 1 && let Some(TomlValue::String(value_type)) = array.first() {
                         let item_data_type = parse_arrow_data_type(&value_type)?;
                         let field = Field::new("item", item_data_type, true);
                         DataType::List(Arc::new(field))
-                    } else if array_length >= 2 {
-                        let mut fields = Vec::with_capacity(array_length);
-                        let mut positions = Vec::with_capacity(array_length);
+                    } else if length >= 2 {
+                        let mut fields = Vec::with_capacity(length);
+                        let mut positions = Vec::with_capacity(length);
                         for (index, value) in array.iter().enumerate() {
-                            if let Value::String(value_type) = value {
+                            if let TomlValue::String(value_type) = value {
                                 let data_type = parse_arrow_data_type(value_type)?;
                                 let field = Field::new(index.to_string(), data_type, true);
                                 fields.push(field);
@@ -60,7 +60,7 @@ impl ArrowSchemaExt for Schema {
                         return Err(Error::new(format!("schema for `{key}` should be nonempty")));
                     }
                 }
-                Value::Table(table) => {
+                TomlValue::Table(table) => {
                     let schema = Self::try_from_toml_table(table)?;
                     DataType::Struct(schema.fields)
                 }

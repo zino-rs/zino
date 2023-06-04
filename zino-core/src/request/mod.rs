@@ -11,14 +11,13 @@ use crate::{
     model::{Model, Query},
     response::{Rejection, Response, ResponseCode},
     trace::{TraceContext, TraceState},
-    Map, SharedString, Uuid,
+    JsonValue, Map, SharedString, Uuid,
 };
 use bytes::Bytes;
 use cookie::{Cookie, SameSite};
 use fluent::FluentArgs;
 use multer::Multipart;
 use serde::de::DeserializeOwned;
-use serde_json::Value;
 use std::time::{Duration, Instant};
 use unic_langid::LanguageIdentifier;
 
@@ -571,7 +570,7 @@ pub trait RequestContext {
     }
 
     /// Creates a new cloud event instance.
-    fn cloud_event(&self, topic: impl Into<String>, data: impl Into<Value>) -> CloudEvent {
+    fn cloud_event(&self, topic: impl Into<String>, data: impl Into<JsonValue>) -> CloudEvent {
         let id = self.request_id().to_string();
         let source = self.instance();
         let mut event = CloudEvent::new(id, source, topic.into(), data.into());

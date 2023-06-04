@@ -1,7 +1,7 @@
 use super::Reference;
+use crate::JsonValue;
 use apache_avro::schema::{Name, RecordField, RecordFieldOrder, Schema};
 use serde::Serialize;
-use serde_json::Value;
 use std::borrow::Cow;
 
 /// A model field with associated metadata.
@@ -71,6 +71,13 @@ impl<'a> Column<'a> {
     #[inline]
     pub fn is_not_null(&self) -> bool {
         self.not_null
+    }
+
+    /// Returns `true` if the column has an `auto_increment` default.
+    #[inline]
+    pub fn auto_increment(&self) -> bool {
+        self.default_value
+            .is_some_and(|value| value == "auto_increment")
     }
 
     /// Returns the default value.
@@ -149,11 +156,11 @@ pub trait EncodeColumn<DB> {
     fn column_type(&self) -> &str;
 
     /// Encodes a json value as a column value represented by a str.
-    fn encode_value<'a>(&self, value: Option<&'a Value>) -> Cow<'a, str>;
+    fn encode_value<'a>(&self, value: Option<&'a JsonValue>) -> Cow<'a, str>;
 
     /// Formats a string value for the column.
     fn format_value<'a>(&self, value: &'a str) -> Cow<'a, str>;
 
     /// Formats a column filter.
-    fn format_filter(&self, key: &str, value: &Value) -> String;
+    fn format_filter(&self, key: &str, value: &JsonValue) -> String;
 }

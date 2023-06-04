@@ -1,6 +1,5 @@
-use crate::{datetime::DateTime, Map};
+use crate::{datetime::DateTime, JsonValue, Map};
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 /// Cloud event.
 /// See [the spec](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md).
@@ -16,8 +15,8 @@ pub struct CloudEvent {
     #[serde(rename = "type")]
     topic: String,
     /// Response data.
-    #[serde(skip_serializing_if = "Value::is_null")]
-    data: Value,
+    #[serde(skip_serializing_if = "JsonValue::is_null")]
+    data: JsonValue,
     /// Session ID.
     #[serde(rename = "sessionid")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -33,7 +32,7 @@ pub struct CloudEvent {
 impl CloudEvent {
     /// Creates a new instance.
     #[inline]
-    pub fn new(id: String, source: String, topic: String, data: Value) -> Self {
+    pub fn new(id: String, source: String, topic: String, data: JsonValue) -> Self {
         Self {
             id,
             source,
@@ -89,7 +88,7 @@ impl CloudEvent {
     #[must_use]
     pub fn into_map(self) -> Map {
         match serde_json::to_value(self) {
-            Ok(Value::Object(map)) => map,
+            Ok(JsonValue::Object(map)) => map,
             _ => panic!("the cloud event cann't be converted to a json object"),
         }
     }

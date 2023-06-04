@@ -1,9 +1,8 @@
 use crate::{
     extension::{JsonObjectExt, JsonValueExt},
     request::Validation,
-    Map,
+    JsonValue, Map,
 };
-use serde_json::Value;
 
 #[derive(Debug, Clone, Default)]
 /// A mutation type for models.
@@ -71,7 +70,7 @@ impl Mutation {
 
     /// Adds a key-value pair to the mutation updates.
     #[inline]
-    pub fn add_update(&mut self, key: impl Into<String>, value: impl Into<Value>) {
+    pub fn add_update(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) {
         self.updates.upsert(key, value);
     }
 

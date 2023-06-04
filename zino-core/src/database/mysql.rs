@@ -4,11 +4,9 @@ use crate::{
     error::Error,
     extension::JsonObjectExt,
     model::{Column, DecodeRow, EncodeColumn, Query},
-    Map, Record, SharedString,
+    AvroValue, JsonValue, Map, Record, SharedString,
 };
-use apache_avro::types::Value as AvroValue;
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
-use serde_json::Value as JsonValue;
 use sqlx::{Column as _, Row, TypeInfo, ValueRef};
 use std::borrow::Cow;
 
@@ -159,7 +157,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
         }
     }
 
-    fn format_filter(&self, field: &str, value: &serde_json::Value) -> String {
+    fn format_filter(&self, field: &str, value: &JsonValue) -> String {
         let type_name = self.type_name();
         if let Some(filter) = value.as_object() {
             if type_name == "Map" {

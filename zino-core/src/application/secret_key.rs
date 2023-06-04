@@ -12,16 +12,14 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .unwrap_or_else(|| {
             let pkg_name = env::var("CARGO_PKG_NAME").expect("fail to get crate name");
             let pkg_version = env::var("CARGO_PKG_VERSION").expect("fail to get crate version");
-            let pkg_description = env::var("CARGO_PKG_DESCRIPTION").unwrap_or_default();
-            let pkg_key = format!("{pkg_name}@{pkg_version}:{pkg_description}");
+            let pkg_key = format!("{pkg_name}@{pkg_version}");
             let mut hasher = Sha256::new();
             hasher.update(pkg_key.as_bytes());
             hasher.finalize().into()
         });
 
     let mut secret_key = [0; 64];
-    let zino_version = env!("CARGO_PKG_VERSION");
-    let info = format!("ZINO:{zino_version};CHECKSUM:SHA256;HKDF:HMAC-SHA256");
+    let info = "ZINO:APPLICATION;CHECKSUM:SHA256;HKDF:HMAC-SHA256";
     Hkdf::<Sha256>::from_prk(&app_checksum)
         .expect("pseudorandom key is not long enough")
         .expand(info.as_bytes(), &mut secret_key)

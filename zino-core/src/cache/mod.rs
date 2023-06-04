@@ -1,9 +1,8 @@
 //! Global cache for the application.
 
-use crate::state::State;
+use crate::{state::State, JsonValue};
 use lru::LruCache;
 use parking_lot::RwLock;
-use serde_json::Value;
 use std::{num::NonZeroUsize, sync::LazyLock};
 
 /// Global cache built on the top of [`LruCache`](lru::LruCache).
@@ -15,7 +14,7 @@ impl GlobalCache {
     /// If the key already exists in the cache, then it updates the key’s value and
     /// returns the old value. Otherwise, `None` is returned.
     #[inline]
-    pub fn put(key: impl Into<String>, value: impl Into<Value>) -> Option<Value> {
+    pub fn put(key: impl Into<String>, value: impl Into<JsonValue>) -> Option<JsonValue> {
         let mut cache = GLOBAL_CACHE.write();
         cache.put(key.into(), value.into())
     }
@@ -24,7 +23,10 @@ impl GlobalCache {
     /// exists in the cache or another cache entry is removed (due to the LRU’s capacity),
     /// then it returns the old entry’s key-value pair. Otherwise, returns `None`.
     #[inline]
-    pub fn push(key: impl Into<String>, value: impl Into<Value>) -> Option<(String, Value)> {
+    pub fn push(
+        key: impl Into<String>,
+        value: impl Into<JsonValue>,
+    ) -> Option<(String, JsonValue)> {
         let mut cache = GLOBAL_CACHE.write();
         cache.push(key.into(), value.into())
     }
@@ -32,7 +34,7 @@ impl GlobalCache {
     /// Returns a cloned value of the key in the global cache or `None`
     /// if it is not present in the cache. Moves the key to the head of the LRU list if it exists.
     #[inline]
-    pub fn get(key: &str) -> Option<Value> {
+    pub fn get(key: &str) -> Option<JsonValue> {
         let mut cache = GLOBAL_CACHE.write();
         cache.get(key).cloned()
     }
@@ -41,7 +43,7 @@ impl GlobalCache {
     /// if it is not present in the cache. It does not update the LRU list
     /// so the key’s position will be unchanged.
     #[inline]
-    pub fn peek(key: &str) -> Option<Value> {
+    pub fn peek(key: &str) -> Option<JsonValue> {
         let cache = GLOBAL_CACHE.read();
         cache.peek(key).cloned()
     }
@@ -57,7 +59,7 @@ impl GlobalCache {
     /// Removes and returns the value corresponding to the key from the global cache or
     /// `None` if it does not exist.
     #[inline]
-    pub fn pop(key: &str) -> Option<Value> {
+    pub fn pop(key: &str) -> Option<JsonValue> {
         let mut cache = GLOBAL_CACHE.write();
         cache.pop(key)
     }
@@ -65,7 +67,7 @@ impl GlobalCache {
     /// Removes and returns the key-value pair from the global cache or
     /// `None` if it does not exist.
     #[inline]
-    pub fn pop_entry(key: &str) -> Option<(String, Value)> {
+    pub fn pop_entry(key: &str) -> Option<(String, JsonValue)> {
         let mut cache = GLOBAL_CACHE.write();
         cache.pop_entry(key)
     }
@@ -73,7 +75,7 @@ impl GlobalCache {
     /// Removes and returns the key-value pair corresponding to the least recently used item
     /// or `None` if the global cache is empty.
     #[inline]
-    pub fn pop_lru() -> Option<(String, Value)> {
+    pub fn pop_lru() -> Option<(String, JsonValue)> {
         let mut cache = GLOBAL_CACHE.write();
         cache.pop_lru()
     }
@@ -129,7 +131,7 @@ impl GlobalCache {
 }
 
 /// Global cache.
-static GLOBAL_CACHE: LazyLock<RwLock<LruCache<String, Value>>> = LazyLock::new(|| {
+static GLOBAL_CACHE: LazyLock<RwLock<LruCache<String, JsonValue>>> = LazyLock::new(|| {
     let capacity = if let Some(cache) = State::shared().config().get("cache") {
         cache
             .as_table()

@@ -28,9 +28,9 @@ pub struct User {
     description: String,
 
     // Info fields.
-    #[schema(not_null, writeonly)]
+    #[schema(not_null, unique, writeonly)]
     access_key_id: String,
-    #[schema(not_null, writeonly)]
+    #[schema(not_null, unique, writeonly)]
     account: String,
     #[schema(not_null, writeonly)]
     password: String,
@@ -79,6 +79,15 @@ impl Model for User {
         }
         if let Some(name) = data.parse_string("name") {
             self.name = name.into_owned();
+        }
+        if let Some(account) = data.parse_string("account") {
+            self.account = account.into_owned();
+        }
+        if let Some(password) = data.parse_string("password") {
+            match User::encrypt_password(password.as_bytes()) {
+                Ok(password) => self.password = password,
+                Err(err) => validation.record_fail("password", err),
+            }
         }
         if let Some(roles) = data.parse_str_array("roles") {
             if let Err(err) = self.set_roles(roles) {

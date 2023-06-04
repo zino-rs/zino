@@ -1,6 +1,5 @@
-use crate::Map;
+use crate::{JsonValue, Map};
 use regex::{Captures, Regex};
-use serde_json::Value;
 use std::{borrow::Cow, sync::LazyLock};
 
 /// Formats the query using interpolation of the parameters.
@@ -14,7 +13,7 @@ pub(crate) fn format_query<'a>(query: &'a str, params: Option<&'a Map>) -> Cow<'
             params
                 .get(key)
                 .map(|value| match value {
-                    Value::String(s) => s.to_owned(),
+                    JsonValue::String(s) => s.to_owned(),
                     _ => value.to_string(),
                 })
                 .unwrap_or_else(|| format!("${{{key}}}"))
@@ -42,13 +41,13 @@ pub(crate) fn prepare_sql_query<'a>(
     query: &'a str,
     params: Option<&'a Map>,
     placeholder: char,
-) -> (Cow<'a, str>, Vec<&'a Value>) {
+) -> (Cow<'a, str>, Vec<&'a JsonValue>) {
     let sql = format_query(query, params);
     if let Some(params) = params && sql.contains('#') {
         let mut values = Vec::new();
         let sql = STATEMENT_PATTERN.replace_all(&sql, |captures: &Captures| {
             let key = &captures[1];
-            let value = params.get(key).unwrap_or(&Value::Null);
+            let value = params.get(key).unwrap_or(&JsonValue::Null);
             values.push(value);
             if placeholder == '$' {
                 Cow::Owned(format!("${}", values.len()))

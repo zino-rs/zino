@@ -1,4 +1,4 @@
-use serde_json::Value;
+use crate::JsonValue;
 use std::{
     borrow::Cow,
     num::{ParseFloatError, ParseIntError},
@@ -50,7 +50,7 @@ pub trait JsonValueExt {
     fn parse_str_array(&self) -> Option<Vec<&str>>;
 }
 
-impl JsonValueExt for Value {
+impl JsonValueExt for JsonValue {
     fn parse_bool(&self) -> Option<Result<bool, ParseBoolError>> {
         self.as_bool()
             .map(Ok)
@@ -125,8 +125,8 @@ impl JsonValueExt for Value {
 
     fn parse_array<T: FromStr>(&self) -> Option<Vec<T>> {
         let values = match &self {
-            Value::String(s) => Some(crate::format::parse_str_array(s)),
-            Value::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
+            JsonValue::String(s) => Some(crate::format::parse_str_array(s)),
+            JsonValue::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
             _ => None,
         };
         let vec = values?
@@ -138,8 +138,8 @@ impl JsonValueExt for Value {
 
     fn parse_str_array(&self) -> Option<Vec<&str>> {
         let values = match &self {
-            Value::String(s) => Some(crate::format::parse_str_array(s)),
-            Value::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
+            JsonValue::String(s) => Some(crate::format::parse_str_array(s)),
+            JsonValue::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
             _ => None,
         };
         let vec = values?

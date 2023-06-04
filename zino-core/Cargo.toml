@@ -110,6 +110,10 @@ tracing = "0.1.37"
 tracing-appender = "0.2.2"
 url = "2.3.1"
 
+[dependencies.argon2]
+version = "0.5.0"
+features = ["std"]
+
 [dependencies.async-openai]
 version = "0.10.3"
 optional = true

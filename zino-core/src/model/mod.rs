@@ -1,8 +1,6 @@
 //! Application specific models.
-use crate::{request::Validation, Map, Record};
-use apache_avro::types::Value as AvroValue;
+use crate::{request::Validation, AvroValue, JsonValue, Map, Record};
 use serde::{de::DeserializeOwned, Serialize};
-use serde_json::Value as JsonValue;
 
 #[doc(no_inline)]
 pub use apache_avro::schema;

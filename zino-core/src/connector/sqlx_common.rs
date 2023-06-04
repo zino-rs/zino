@@ -1,5 +1,4 @@
-use crate::{error::Error, format, Map, Record};
-use apache_avro::types::Value;
+use crate::{error::Error, format, AvroValue, Map, Record};
 use futures::TryStreamExt;
 use serde::{
     de::DeserializeOwned,
@@ -76,7 +75,7 @@ pub(super) macro impl_sqlx_connector($pool:ty) {
         let mut records = Vec::new();
         while let Some(row) = rows.try_next().await? {
             let value = apache_avro::to_value(&SerializeRow(row))?;
-            if let Value::Record(record) = value {
+            if let AvroValue::Record(record) = value {
                 records.push(record);
             }
         }
@@ -113,7 +112,7 @@ pub(super) macro impl_sqlx_connector($pool:ty) {
 
         let data = if let Some(row) = query.fetch_optional(self).await? {
             let value = apache_avro::to_value(&SerializeRow(row))?;
-            if let Value::Record(record) = value {
+            if let AvroValue::Record(record) = value {
                 Some(record)
             } else {
                 None

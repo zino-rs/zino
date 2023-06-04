@@ -3,7 +3,7 @@ use crate::{
     error::Error,
     extension::{HeaderMapExt, JsonObjectExt, TomlTableExt},
     trace::TraceContext,
-    Map, Uuid,
+    JsonValue, Map, Uuid,
 };
 use reqwest::{
     header::{self, HeaderMap, HeaderName},
@@ -13,7 +13,6 @@ use reqwest::{
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, RequestBuilder};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use reqwest_tracing::{ReqwestOtelSpanBackend, TracingMiddleware};
-use serde_json::Value;
 use std::{
     borrow::Cow,
     fs,
@@ -127,12 +126,12 @@ pub(crate) fn request_builder(
     }
     if let Some(body) = options.get("body") {
         match body {
-            Value::String(text) => {
+            JsonValue::String(text) => {
                 request_builder = request_builder
                     .body(text.to_owned())
                     .header(header::CONTENT_TYPE, "text/plain");
             }
-            Value::Object(map) => {
+            JsonValue::Object(map) => {
                 let data_type = options.get_str("data_type").unwrap_or_default();
                 request_builder = match data_type {
                     "form" => request_builder.form(map),
@@ -140,7 +139,7 @@ pub(crate) fn request_builder(
                     "multipart" => {
                         let mut form = Form::new();
                         for (key, value) in map.clone() {
-                            if let Value::String(value) = value {
+                            if let JsonValue::String(value) = value {
                                 form = form.text(key, value);
                             } else {
                                 form = form.text(key, value.to_string());

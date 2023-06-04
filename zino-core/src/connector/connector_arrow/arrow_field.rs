@@ -1,5 +1,4 @@
-use crate::{error::Error, extension::AvroRecordExt, Record};
-use apache_avro::types::Value;
+use crate::{error::Error, extension::AvroRecordExt, AvroValue, Record};
 use datafusion::arrow::{
     array::{
         self, Array, BinaryArray, BooleanArray, Float32Array, Float64Array, Int32Array, Int64Array,
@@ -12,22 +11,22 @@ use std::sync::Arc;
 /// Extension trait for [`Field`](datafusion::arrow::datatypes::Field).
 pub(super) trait ArrowFieldExt {
     /// Attempts to create a `Field` from an Avro record entry.
-    fn try_from_avro_record_entry(field: &str, value: &Value) -> Result<Field, Error>;
+    fn try_from_avro_record_entry(field: &str, value: &AvroValue) -> Result<Field, Error>;
 
     /// Collects values in the Avro records with the specific field.
     fn collect_values_from_avro_records(&self, records: &[Record]) -> Arc<dyn Array + 'static>;
 }
 
 impl ArrowFieldExt for Field {
-    fn try_from_avro_record_entry(field: &str, value: &Value) -> Result<Field, Error> {
+    fn try_from_avro_record_entry(field: &str, value: &AvroValue) -> Result<Field, Error> {
         let data_type = match value {
-            Value::Boolean(_) => DataType::Boolean,
-            Value::Int(_) => DataType::Int32,
-            Value::Long(_) => DataType::Int64,
-            Value::Float(_) => DataType::Float32,
-            Value::Double(_) => DataType::Float64,
-            Value::Bytes(_) => DataType::Binary,
-            Value::String(_) | Value::Uuid(_) => DataType::Utf8,
+            AvroValue::Boolean(_) => DataType::Boolean,
+            AvroValue::Int(_) => DataType::Int32,
+            AvroValue::Long(_) => DataType::Int64,
+            AvroValue::Float(_) => DataType::Float32,
+            AvroValue::Double(_) => DataType::Float64,
+            AvroValue::Bytes(_) => DataType::Binary,
+            AvroValue::String(_) | AvroValue::Uuid(_) => DataType::Utf8,
             _ => {
                 let message = format!("fail to construct an Arrow field for the `{field}` field");
                 return Err(Error::new(message));

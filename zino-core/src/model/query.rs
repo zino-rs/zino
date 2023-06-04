@@ -1,9 +1,8 @@
 use crate::{
     extension::{JsonObjectExt, JsonValueExt},
     request::Validation,
-    Map,
+    JsonValue, Map,
 };
-use serde_json::Value;
 
 #[derive(Debug, Clone)]
 /// A query type for models.
@@ -80,13 +79,13 @@ impl Query {
                                     if let Some(vec) = filters.get_mut(key) {
                                         if let Some(vec) = vec.as_array_mut() {
                                             if index > vec.len() {
-                                                vec.resize(index, Value::Null);
+                                                vec.resize(index, JsonValue::Null);
                                             }
                                             vec.insert(index, value.to_owned());
                                         }
                                     } else {
                                         let mut vec = Vec::with_capacity(index);
-                                        vec.resize(index, Value::Null);
+                                        vec.resize(index, JsonValue::Null);
                                         vec.push(value.to_owned());
                                         filters.upsert(key, vec);
                                     }
@@ -135,7 +134,7 @@ impl Query {
 
     /// Adds a key-value pair to the query filters.
     #[inline]
-    pub fn add_filter(&mut self, key: impl Into<String>, value: impl Into<Value>) {
+    pub fn add_filter(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) {
         self.filters.upsert(key, value);
     }
 

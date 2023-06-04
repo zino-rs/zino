@@ -1,12 +1,17 @@
-//! Crypto helpers.
+//! Crypto helpers for hashing, signing, encryption and decryption.
 
+use crate::error::Error;
 use aes_gcm_siv::{
     aead::{generic_array::GenericArray, Aead},
-    Aes256GcmSiv, Error, KeyInit, Nonce,
+    Aes256GcmSiv, KeyInit, Nonce,
 };
 use rand::Rng;
 
-/// Encrypts the plaintext using AES-GCM-SIV.
+mod password;
+
+pub(crate) use password::*;
+
+/// Encrypts the plaintext using `AES-GCM-SIV`.
 pub(crate) fn encrypt(key: &[u8], plaintext: &[u8]) -> Result<Vec<u8>, Error> {
     const KEY_SIZE: usize = 32;
     const NONCE_SIZE: usize = 12;
@@ -19,18 +24,20 @@ pub(crate) fn encrypt(key: &[u8], plaintext: &[u8]) -> Result<Vec<u8>, Error> {
     rng.fill(&mut bytes);
 
     let nonce = Nonce::from_slice(&bytes);
-    let mut ciphertext = cipher.encrypt(nonce, plaintext)?;
+    let mut ciphertext = cipher
+        .encrypt(nonce, plaintext)
+        .map_err(|_| Error::new("fail to encrypt the plaintext"))?;
     ciphertext.extend_from_slice(&bytes);
     Ok(ciphertext)
 }
 
-/// Decrypts the data using AES-GCM-SIV.
+/// Decrypts the data using `AES-GCM-SIV`.
 pub(crate) fn decrypt(key: &[u8], data: &[u8]) -> Result<String, Error> {
     const KEY_SIZE: usize = 32;
     const NONCE_SIZE: usize = 12;
 
     if data.len() <= NONCE_SIZE {
-        return Err(Error);
+        return Err(Error::new("invalid data length"));
     }
 
     let key_padding = [key, &[0u8; KEY_SIZE]].concat();
@@ -38,6 +45,8 @@ pub(crate) fn decrypt(key: &[u8], data: &[u8]) -> Result<String, Error> {
 
     let (ciphertext, bytes) = data.split_at(data.len() - NONCE_SIZE);
     let nonce = GenericArray::from_slice(bytes);
-    let plaintext = cipher.decrypt(nonce, ciphertext)?;
+    let plaintext = cipher
+        .decrypt(nonce, ciphertext)
+        .map_err(|_| Error::new("fail to decrypt the ciphertext"))?;
     Ok(String::from_utf8_lossy(&plaintext).into_owned())
 }

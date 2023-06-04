@@ -1,8 +1,7 @@
 use crate::{
     datetime::{self, DateTime},
-    Map, Record, Uuid,
+    JsonValue, Map, Record, Uuid,
 };
-use serde_json::Value;
 use std::{
     borrow::Cow,
     net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr},
@@ -55,7 +54,7 @@ pub trait JsonObjectExt {
     fn get_str(&self, key: &str) -> Option<&str>;
 
     /// Extracts the array value corresponding to the key.
-    fn get_array(&self, key: &str) -> Option<&Vec<Value>>;
+    fn get_array(&self, key: &str) -> Option<&Vec<JsonValue>>;
 
     /// Extracts the object value corresponding to the key.
     fn get_object(&self, key: &str) -> Option<&Map>;
@@ -131,16 +130,16 @@ pub trait JsonObjectExt {
     /// Inserts or updates a key/value pair into the map.
     /// If the map did have this key present, the value is updated and the old value is returned,
     /// otherwise `None` is returned.
-    fn upsert(&mut self, key: impl Into<String>, value: impl Into<Value>) -> Option<Value>;
+    fn upsert(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) -> Option<JsonValue>;
 
     /// Consumes `self` and constructs an Avro record value.
     fn into_avro_record(self) -> Record;
 
     /// Creates a new instance with the entry.
-    fn from_entry(key: impl Into<String>, value: impl Into<Value>) -> Self;
+    fn from_entry(key: impl Into<String>, value: impl Into<JsonValue>) -> Self;
 
     /// Creates a new instance with a single key `entry`.
-    fn data_entry(value: impl Into<Value>) -> Self;
+    fn data_entry(value: impl Into<JsonValue>) -> Self;
 
     /// Creates a new instance with a single key `entries`.
     fn data_entries(value: Vec<Map>) -> Self;
@@ -213,7 +212,7 @@ impl JsonObjectExt for Map {
     }
 
     #[inline]
-    fn get_array(&self, key: &str) -> Option<&Vec<Value>> {
+    fn get_array(&self, key: &str) -> Option<&Vec<JsonValue>> {
         self.get(key).and_then(|v| v.as_array())
     }
 
@@ -320,8 +319,8 @@ impl JsonObjectExt for Map {
     fn parse_array<T: FromStr>(&self, key: &str) -> Option<Vec<T>> {
         self.get(key)
             .and_then(|v| match v {
-                Value::String(s) => Some(crate::format::parse_str_array(s)),
-                Value::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
+                JsonValue::String(s) => Some(crate::format::parse_str_array(s)),
+                JsonValue::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
                 _ => None,
             })
             .and_then(|values| {
@@ -336,8 +335,8 @@ impl JsonObjectExt for Map {
     fn parse_str_array(&self, key: &str) -> Option<Vec<&str>> {
         self.get(key)
             .and_then(|v| match v {
-                Value::String(s) => Some(crate::format::parse_str_array(s)),
-                Value::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
+                JsonValue::String(s) => Some(crate::format::parse_str_array(s)),
+                JsonValue::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
                 _ => None,
             })
             .and_then(|values| {
@@ -393,7 +392,7 @@ impl JsonObjectExt for Map {
     }
 
     #[inline]
-    fn upsert(&mut self, key: impl Into<String>, value: impl Into<Value>) -> Option<Value> {
+    fn upsert(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) -> Option<JsonValue> {
         self.insert(key.into(), value.into())
     }
 
@@ -406,14 +405,14 @@ impl JsonObjectExt for Map {
     }
 
     #[inline]
-    fn from_entry(key: impl Into<String>, value: impl Into<Value>) -> Self {
+    fn from_entry(key: impl Into<String>, value: impl Into<JsonValue>) -> Self {
         let mut map = Map::with_capacity(1);
         map.insert(key.into(), value.into());
         map
     }
 
     #[inline]
-    fn data_entry(value: impl Into<Value>) -> Self {
+    fn data_entry(value: impl Into<JsonValue>) -> Self {
         let mut map = Map::with_capacity(1);
         map.insert("entry".to_owned(), value.into());
         map
