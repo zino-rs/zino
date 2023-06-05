@@ -6,7 +6,7 @@ use zino::{prelude::*, Request, Response, Result};
 use zino_model::User;
 
 pub async fn rbatis_user_view(req: Request) -> Result {
-    let user_id: Uuid = req.parse_param("id")?;
+    let user_id = req.parse_param::<Uuid>("id")?;
 
     let db_query_start_time = Instant::now();
     let table_name = User::table_name();

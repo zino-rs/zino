@@ -542,9 +542,9 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         }
     }
 
-    /// Finds the related data in the corresponding `columns` for `Vec<Map>` using
+    /// Populates the related data in the corresponding `columns` for `Vec<Map>` using
     /// a merged select on the primary key, which solves the `N+1` problem.
-    async fn find_related<const N: usize>(
+    async fn populate<const N: usize>(
         query: &mut Query,
         data: &mut Vec<Map>,
         columns: [&str; N],
@@ -604,9 +604,9 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         u64::try_from(associations.len()).map_err(Error::from)
     }
 
-    /// Finds the related data in the corresponding `columns` for `Map` using
+    /// Populates the related data in the corresponding `columns` for `Map` using
     /// a merged select on the primary key, which solves the `N+1` problem.
-    async fn find_related_one<const N: usize>(
+    async fn populate_one<const N: usize>(
         query: &mut Query,
         data: &mut Map,
         columns: [&str; N],

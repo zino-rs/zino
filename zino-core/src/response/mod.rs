@@ -23,13 +23,16 @@ mod response_code;
 pub use rejection::{ExtractRejection, Rejection};
 pub use response_code::ResponseCode;
 
+/// An HTTP status code.
+pub type StatusCode = http::StatusCode;
+
 /// An Http response with the body that consists of a single chunk.
 pub type FullResponse = http::Response<Full<Bytes>>;
 
 /// An HTTP response.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub struct Response<S> {
+pub struct Response<S = StatusCode> {
     /// A URI reference that identifies the problem type.
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]

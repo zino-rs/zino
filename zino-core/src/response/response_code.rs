@@ -1,5 +1,5 @@
+use super::StatusCode;
 use crate::SharedString;
-use http::StatusCode;
 use std::borrow::Cow;
 
 /// Trait for response code.

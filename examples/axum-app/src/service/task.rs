@@ -13,7 +13,7 @@ pub async fn execute_query(query: &Query, body: Map) -> Result<Vec<Map>, Error> 
         .select_columns(&["name"])?;
 
     let sql = body.get_str("sql").unwrap_or("SELECT 'ok' AS status;");
-    let data: Vec<Map> = connector
+    let data = connector
         .try_get_session_context()
         .await?
         .sql(sql)

@@ -24,14 +24,14 @@ host = "127.0.0.1"
 port = 3306
 database = "data_cube"
 username = "root"
-password = "4Ge5YUF0N9FGA/TsU8Pdovw1W8xJYRhEz/SXDqCoHe0"
+password = "xMFSFbicR4tencx0wvCY333Xcxn5kCWU+8ZIeOLHKwI"
 
 [[postgres]]
 host = "127.0.0.1"
 port = 5432
 database = "data_cube"
 username = "postgres"
-password = "6bFNvM8XTOOvaEjkQicN5GTN3IvOA+xRyiDw8Z7rZ/AOTwPR"
+password = "9Qn6WYGutjHwuzhrA/WmYO5TaMobQNdqq9qIIPVIzL1m7+cU"
 
 [tracing]
 filter = "warn"

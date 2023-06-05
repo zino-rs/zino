@@ -1,12 +1,11 @@
 use self::RejectionKind::*;
-use super::{FullResponse, Response};
+use super::{FullResponse, Response, StatusCode};
 use crate::{
     error::Error,
     request::{Context, RequestContext, Validation},
     trace::TraceContext,
     SharedString,
 };
-use http::StatusCode;
 
 /// A rejection response type.
 #[derive(Debug)]
@@ -37,10 +36,12 @@ enum RejectionKind {
     Conflict(Error),
     /// 500 Internal Server Error
     InternalServerError(Error),
+    /// 503 Service Unavailable
+    ServiceUnavailable(Error),
 }
 
 impl Rejection {
-    /// Creates an `BadRequest` rejection.
+    /// Creates a `400 Bad Request` rejection.
     #[inline]
     pub fn bad_request(validation: Validation) -> Self {
         Self {
@@ -50,7 +51,7 @@ impl Rejection {
         }
     }
 
-    /// Creates an `Unauthorized` rejection.
+    /// Creates a `401 Unauthorized` rejection.
     #[inline]
     pub fn unauthorized(err: impl Into<Error>) -> Self {
         Self {
@@ -60,7 +61,7 @@ impl Rejection {
         }
     }
 
-    /// Creates a `Forbidden` rejection.
+    /// Creates a `403 Forbidden` rejection.
     #[inline]
     pub fn forbidden(err: impl Into<Error>) -> Self {
         Self {
@@ -70,7 +71,7 @@ impl Rejection {
         }
     }
 
-    /// Creates a `NotFound` rejection.
+    /// Creates a `404 Not Found` rejection.
     #[inline]
     pub fn not_found(err: impl Into<Error>) -> Self {
         Self {
@@ -80,7 +81,7 @@ impl Rejection {
         }
     }
 
-    /// Creates a `MethodNotAllowed` rejection.
+    /// Creates a `405 Method Not Allowed` rejection.
     #[inline]
     pub fn method_not_allowed(err: impl Into<Error>) -> Self {
         Self {
@@ -90,7 +91,7 @@ impl Rejection {
         }
     }
 
-    /// Creates a `Conflict` rejection.
+    /// Creates a `409 Conflict` rejection.
     #[inline]
     pub fn conflict(err: impl Into<Error>) -> Self {
         Self {
@@ -100,11 +101,21 @@ impl Rejection {
         }
     }
 
-    /// Creates an `InternalServerError` rejection.
+    /// Creates a `500 Internal Server Error` rejection.
     #[inline]
     pub fn internal_server_error(err: impl Into<Error>) -> Self {
         Self {
             kind: InternalServerError(err.into()),
+            context: None,
+            trace_context: None,
+        }
+    }
+
+    /// Creates a `503 Service Unavailable` rejection.
+    #[inline]
+    pub fn service_unavailable(err: impl Into<Error>) -> Self {
+        Self {
+            kind: ServiceUnavailable(err.into()),
             context: None,
             trace_context: None,
         }
@@ -115,6 +126,27 @@ impl Rejection {
     pub fn from_validation_entry(key: impl Into<SharedString>, err: impl Into<Error>) -> Self {
         let validation = Validation::from_entry(key, err);
         Self::bad_request(validation)
+    }
+
+    /// Creates a new instance from an error classified by the error message.
+    pub fn from_error(err: impl Into<Error>) -> Self {
+        let err = err.into();
+        let message = err.message();
+        if message.starts_with("401 Unauthorized") {
+            Self::unauthorized(err)
+        } else if message.starts_with("403 Forbidden") {
+            Self::forbidden(err)
+        } else if message.starts_with("404 Not Found") {
+            Self::not_found(err)
+        } else if message.starts_with("405 Method Not Allowed") {
+            Self::method_not_allowed(err)
+        } else if message.starts_with("409 Conflict") {
+            Self::conflict(err)
+        } else if message.starts_with("503 Service Unavailable") {
+            Self::service_unavailable(err)
+        } else {
+            Self::internal_server_error(err)
+        }
     }
 
     /// Provides the request context for the rejection.
@@ -136,6 +168,7 @@ impl Rejection {
             MethodNotAllowed(_) => 405,
             Conflict(_) => 409,
             InternalServerError(_) => 500,
+            ServiceUnavailable(_) => 503,
         }
     }
 }
@@ -175,6 +208,11 @@ impl From<Rejection> for Response<StatusCode> {
             }
             InternalServerError(err) => {
                 let mut res = Response::new(StatusCode::INTERNAL_SERVER_ERROR);
+                res.set_error_message(err);
+                res
+            }
+            ServiceUnavailable(err) => {
+                let mut res = Response::new(StatusCode::SERVICE_UNAVAILABLE);
                 res.set_error_message(err);
                 res
             }
@@ -219,14 +257,14 @@ impl<T> ExtractRejection<T> for Result<T, Validation> {
 impl<T, E: Into<Error>> ExtractRejection<T> for Result<T, E> {
     #[inline]
     fn extract<Ctx: RequestContext>(self, ctx: &Ctx) -> Result<T, Rejection> {
-        self.map_err(|err| Rejection::internal_server_error(err).context(ctx))
+        self.map_err(|err| Rejection::from_error(err).context(ctx))
     }
 }
 
 impl<T, E: Into<Error>> ExtractRejection<T> for Result<Option<T>, E> {
     #[inline]
     fn extract<Ctx: RequestContext>(self, ctx: &Ctx) -> Result<T, Rejection> {
-        self.map_err(|err| Rejection::internal_server_error(err).context(ctx))?
+        self.map_err(|err| Rejection::from_error(err).context(ctx))?
             .ok_or_else(|| Rejection::not_found(Error::new("resource does not exist")).context(ctx))
     }
 }

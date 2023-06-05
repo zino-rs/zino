@@ -374,13 +374,17 @@ where
     async fn fetch_by_id(id: &T) -> Result<Map, Error> {
         let model: Map = Self::find_by_id(id)
             .await?
-            .ok_or_else(|| Error::new(format!("cannot find the model `{id}`")))?;
+            .ok_or_else(|| Error::new(format!("404 Not Found: cannot find the model `{id}`")))?;
         Ok(model)
     }
 
     /// Updates a model of the primary key using the json object.
     async fn update_by_id(id: &T, mut data: Map) -> Result<(Validation, Self), Error> {
         let mut model = Self::try_get_model(id).await?;
+        if let Some(version) = data.get_u64("version") && model.version() != version {
+            return Err(Error::new("409 Conflict: there is a version control conflict"));
+        }
+
         let validation = model.read_map(&data);
         if !validation.is_success() {
             return Ok((validation, model));

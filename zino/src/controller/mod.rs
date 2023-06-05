@@ -43,13 +43,14 @@ where
 
     async fn new(mut req: Self::Request) -> Self::Result {
         let mut model = Self::new();
-        let mut res: crate::Response = req.model_validation(&mut model).await?;
+        let mut res = req.model_validation(&mut model).await?;
         let validation = model.check_constraints().await.extract(&req)?;
         if !validation.is_success() {
             return Err(Rejection::bad_request(validation).context(&req).into());
         }
         let data = Map::data_entry(model.snapshot());
-        model.upsert().await.extract(&req)?;
+        model.insert().await.extract(&req)?;
+        res.set_code(zino_core::response::StatusCode::CREATED);
         res.set_data(&data);
         Ok(res.into())
     }
@@ -64,7 +65,7 @@ where
 
     async fn update(mut req: Self::Request) -> Self::Result {
         let id = req.parse_param::<T>("id")?;
-        let body: Map = req.parse_body().await?;
+        let body = req.parse_body().await?;
         let (validation, model) = Self::update_by_id(&id, body).await.extract(&req)?;
         let data = Map::data_entry(model.next_version_filters());
         let mut res = crate::Response::from(validation).context(&req);
@@ -84,7 +85,7 @@ where
 
     async fn list(req: Self::Request) -> Self::Result {
         let mut query = Self::default_list_query();
-        let mut res: crate::Response = req.query_validation(&mut query)?;
+        let mut res = req.query_validation(&mut query)?;
         let models = Self::fetch(&query).await.extract(&req)?;
         let data = Map::data_entries(models);
         res.set_data(&data);

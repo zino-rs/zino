@@ -10,7 +10,7 @@ pub use zino_core::{
     extension::{JsonObjectExt, TomlTableExt},
     model::{Model, Mutation, Query},
     request::{RequestContext, Validation},
-    response::{ExtractRejection, Rejection},
+    response::{ExtractRejection, Rejection, StatusCode},
     schedule::{AsyncCronJob, CronJob},
     state::State,
     BoxFuture, Map, Record, Uuid,

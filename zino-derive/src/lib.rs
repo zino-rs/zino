@@ -116,9 +116,6 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                             "index_type" => {
                                 index_type = value;
                             }
-                            "unique" => {
-                                index_type = Some("unique".to_owned());
-                            }
                             "reference" => {
                                 reference = value;
                             }
@@ -143,8 +140,6 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                     not_null = true;
                 } else if type_name.starts_with("Option") {
                     not_null = false;
-                } else if type_name == "Uuid" {
-                    not_null = true;
                 } else if INTEGER_TYPES.contains(&type_name.as_str()) {
                     default_value = default_value.or_else(|| Some("0".to_owned()));
                 }
@@ -333,17 +328,17 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                     let model_name = Self::MODEL_NAME;
                     let connection_pool = Self::init_reader()?;
                     if let Err(err) = Self::create_table().await {
-                        let message = format!("fail to acquire reader for the model `{model_name}`");
+                        let message = format!("503 Service Unavailable: fail to acquire reader for the model `{model_name}`");
                         connection_pool.store_availability(false);
                         return Err(err.context(message));
                     }
                     if let Err(err) = Self::create_indexes().await {
-                        let message = format!("fail to acquire reader for the model `{model_name}`");
+                        let message = format!("503 Service Unavailable: fail to acquire reader for the model `{model_name}`");
                         connection_pool.store_availability(false);
                         return Err(err.context(message));
                     }
                     #schema_reader.set(connection_pool).map_err(|_| {
-                        ZinoError::new(format!("fail to acquire reader for the model `{model_name}`"))
+                        ZinoError::new(format!("503 Service Unavailable: fail to acquire reader for the model `{model_name}`"))
                     })?;
                     Ok(connection_pool)
                 }
@@ -356,17 +351,17 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                     let model_name = Self::MODEL_NAME;
                     let connection_pool = Self::init_writer()?;
                     if let Err(err) = Self::create_table().await {
-                        let message = format!("fail to acquire writer for the model `{model_name}`");
+                        let message = format!("503 Service Unavailable: fail to acquire writer for the model `{model_name}`");
                         connection_pool.store_availability(false);
                         return Err(err.context(message));
                     }
                     if let Err(err) = Self::create_indexes().await {
-                        let message = format!("fail to acquire writer for the model `{model_name}`");
+                        let message = format!("503 Service Unavailable: fail to acquire writer for the model `{model_name}`");
                         connection_pool.store_availability(false);
                         return Err(err.context(message));
                     }
                     #schema_writer.set(connection_pool).map_err(|_| {
-                        ZinoError::new(format!("fail to acquire writer for the model `{model_name}`"))
+                        ZinoError::new(format!("503 Service Unavailable: fail to acquire writer for the model `{model_name}`"))
                     })?;
                     Ok(connection_pool)
                 }
@@ -397,8 +392,8 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
     let mut column_methods = Vec::new();
     let mut snapshot_fields = Vec::new();
     let mut check_constraints = Vec::new();
-    let mut related_queries = Vec::new();
-    let mut related_one_queries = Vec::new();
+    let mut populated_queries = Vec::new();
+    let mut populated_one_queries = Vec::new();
     let mut primary_key_type = String::from("Uuid");
     let mut primary_key_name = String::from("id");
     let mut user_id_type = String::from("Uuid");
@@ -671,39 +666,39 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
             }
         }
         if model_references.is_empty() {
-            related_queries.push(quote! {
+            populated_queries.push(quote! {
                 let models = Self::find(query).await?;
             });
-            related_one_queries.push(quote! {
+            populated_one_queries.push(quote! {
                 let model: Map = Self::find_by_id(id)
                     .await?
-                    .ok_or_else(|| ZinoError::new(format!("cannot find the model `{id}`")))?;
+                    .ok_or_else(|| ZinoError::new(format!("404 Not Found: cannot find the model `{id}`")))?;
             });
         } else {
-            related_queries.push(quote! {
+            populated_queries.push(quote! {
                 let mut models = Self::find(query).await?;
             });
-            related_one_queries.push(quote! {
+            populated_one_queries.push(quote! {
                 let mut model: Map = Self::find_by_id(id)
                     .await?
-                    .ok_or_else(|| ZinoError::new(format!("cannot find the model `{id}`")))?;
+                    .ok_or_else(|| ZinoError::new(format!("404 Not Found: cannot find the model `{id}`")))?;
             });
             for (model, fields) in model_references.into_iter() {
                 let model_ident = format_ident!("{}", model);
-                let related_query = quote! {
+                let populated_query = quote! {
                     let mut query = #model_ident::default_snapshot_query();
-                    #model_ident::find_related(&mut query, &mut models, [#(#fields),*]).await?;
+                    #model_ident::populate(&mut query, &mut models, [#(#fields),*]).await?;
                 };
-                let related_one_query = quote! {
+                let populated_one_query = quote! {
                     let mut query = #model_ident::default_query();
-                    #model_ident::find_related_one(&mut query, &mut model, [#(#fields),*]).await?;
+                    #model_ident::populate_one(&mut query, &mut model, [#(#fields),*]).await?;
                 };
-                related_queries.push(related_query);
-                related_one_queries.push(related_one_query);
+                populated_queries.push(populated_query);
+                populated_one_queries.push(populated_one_query);
             }
         }
-        related_queries.push(quote! { Ok(models) });
-        related_one_queries.push(quote! { Ok(model) });
+        populated_queries.push(quote! { Ok(models) });
+        populated_one_queries.push(quote! { Ok(model) });
     }
 
     // Output
@@ -746,11 +741,11 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
             }
 
             async fn fetch(query: &Query) -> Result<Vec<ZinoMap>, ZinoError> {
-                #(#related_queries)*
+                #(#populated_queries)*
             }
 
             async fn fetch_by_id(id: &#model_primary_key_type) -> Result<ZinoMap, ZinoError> {
-                #(#related_one_queries)*
+                #(#populated_one_queries)*
             }
         }
     };

@@ -64,14 +64,18 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let app_name = APP::name();
     let file_appender = rolling::hourly(rolling_file_dir, format!("{app_name}.{app_env}"));
     let (non_blocking_appender, worker_guard) = tracing_appender::non_blocking(file_appender);
-    let stderr = io::stderr.with_max_level(Level::WARN);
+    let stdout = if APP::env() == "dev" {
+        io::stdout.with_max_level(Level::DEBUG)
+    } else {
+        io::stdout.with_max_level(Level::WARN)
+    };
     let fmt_layer = tracing_subscriber::fmt::layer()
         .with_target(display_target)
         .with_file(display_filename)
         .with_line_number(display_line_number)
         .with_thread_names(display_thread_names)
         .with_timer(local_offset_time)
-        .with_writer(stderr.and(non_blocking_appender))
+        .with_writer(stdout.and(non_blocking_appender))
         .json()
         .with_current_span(true)
         .with_span_list(display_span_list);
