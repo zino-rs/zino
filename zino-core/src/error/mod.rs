@@ -86,11 +86,14 @@ impl fmt::Display for Error {
         if let Some(source) = &self.source {
             let source = source.message();
             let root_source = self.root_source().map(|err| err.message());
-            tracing::error!(root_source, "{message}: {source}");
-            write!(f, "{message}: {source}")
+            if root_source != Some(source) {
+                tracing::error!(root_source, source, "{message}");
+            } else {
+                tracing::error!(root_source, "{message}");
+            }
         } else {
             tracing::error!("{message}");
-            write!(f, "{message}")
         }
+        write!(f, "{message}")
     }
 }

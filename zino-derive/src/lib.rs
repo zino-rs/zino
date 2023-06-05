@@ -81,7 +81,8 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 let mut index_type = None;
                 let mut reference = None;
                 'inner: for attr in field.attrs.iter() {
-                    for (key, value) in parser::parse_schema_attr(attr).into_iter() {
+                    let arguments = parser::parse_schema_attr(attr);
+                    for (key, value) in arguments.into_iter() {
                         match key.as_str() {
                             "ignore" => {
                                 ignore = true;
@@ -237,10 +238,12 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     };
     let output = quote! {
         use zino_core::{
-            database::{self, ConnectionPool, DatabaseRow, Schema},
+            database::{self, ConnectionPool, DatabaseRow, ModelHooks, Schema},
             error::Error as ZinoError,
             model::{schema, Column, DecodeRow},
         };
+
+        impl ModelHooks for #name {}
 
         impl DecodeRow<DatabaseRow> for #name {
             type Error = ZinoError;
@@ -404,7 +407,9 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
             if let Some(ident) = field.ident && !type_name.is_empty() {
                 let name = ident.to_string();
                 for attr in field.attrs.iter() {
-                    for (key, value) in parser::parse_schema_attr(attr).into_iter() {
+                    let arguments = parser::parse_schema_attr(attr);
+                    let is_readable = arguments.iter().all(|arg| arg.0 != "writeonly");
+                    for (key, value) in arguments.into_iter() {
                         match key.as_str() {
                             "primary_key" => {
                                 primary_key_name = name.clone();
@@ -457,12 +462,12 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                             "unique" => {
                                 check_constraints.push(quote! {
                                     let value = self.#ident.to_string();
-                                    if !self.is_unique_in(#name, value).await? {
+                                    if !value.is_empty() && !self.is_unique_in(#name, value).await? {
                                         validation.record(#name, "it should be unique");
                                     }
                                 });
                             }
-                            "not_null" => {
+                            "not_null" if is_readable => {
                                 if type_name == "String" {
                                     check_constraints.push(quote! {
                                         if self.#ident.is_empty() {

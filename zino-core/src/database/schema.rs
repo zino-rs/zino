@@ -1,17 +1,19 @@
-use super::{mutation::MutationExt, query::QueryExt, ConnectionPool, DatabaseDriver, DatabaseRow};
+use super::{
+    mutation::MutationExt, query::QueryExt, ConnectionPool, DatabaseDriver, DatabaseRow, ModelHooks,
+};
 use crate::{
     error::Error,
     extension::JsonObjectExt,
-    model::{Column, DecodeRow, EncodeColumn, Model, Mutation, Query},
+    model::{Column, DecodeRow, EncodeColumn, Mutation, Query},
     BoxFuture, JsonValue, Map, Uuid,
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
-use sqlx::{Decode, Transaction};
+use sqlx::Transaction;
 use std::{fmt::Display, sync::atomic::Ordering::Relaxed};
 
 /// Database schema.
-pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error = Error> {
+pub trait Schema: ModelHooks + DecodeRow<DatabaseRow, Error = Error> {
     /// Primary key.
     type PrimaryKey: Default + Display + PartialEq = Uuid;
 
@@ -268,8 +270,10 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
     }
 
     /// Inserts the model into the table.
-    async fn insert(self) -> Result<(), Error> {
+    async fn insert(mut self) -> Result<(), Error> {
         let pool = Self::acquire_writer().await?.pool();
+        self.before_insert().await?;
+
         let table_name = Self::table_name();
         let map = self.into_map();
         let fields = Self::fields().join(",");
@@ -279,9 +283,15 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
             .collect::<Vec<_>>()
             .join(",");
         let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({values});");
+        Self::before_scan(&sql).await?;
+
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
-        if rows_affected == 1 {
+        Self::after_scan(rows_affected).await?;
+
+        let success = rows_affected == 1;
+        Self::after_insert(success).await?;
+        if success {
             Ok(())
         } else {
             Err(Error::new(format!(
@@ -293,10 +303,11 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
     /// Inserts many models into the table.
     async fn insert_many(models: Vec<Self>) -> Result<u64, Error> {
         let pool = Self::acquire_writer().await?.pool();
-        let table_name = Self::table_name();
         let columns = Self::columns();
         let mut values = Vec::with_capacity(models.len());
-        for model in models.into_iter() {
+        for mut model in models.into_iter() {
+            model.before_insert().await?;
+
             let map = model.into_map();
             let entries = columns
                 .iter()
@@ -305,16 +316,23 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
             values.push(format!("({})", entries.join(",")));
         }
 
+        let table_name = Self::table_name();
         let fields = Self::fields().join(",");
         let values = values.join(",");
         let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({values});");
+        Self::before_scan(&sql).await?;
+
         let query_result = sqlx::query(&sql).execute(pool).await?;
-        Ok(query_result.rows_affected())
+        let rows_affected = query_result.rows_affected();
+        Self::after_scan(rows_affected).await?;
+        Ok(rows_affected)
     }
 
     /// Updates the model in the table.
-    async fn update(self) -> Result<(), Error> {
+    async fn update(mut self) -> Result<(), Error> {
         let pool = Self::acquire_writer().await?.pool();
+        self.before_update().await?;
+
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let primary_key = Query::escape_string(self.primary_key());
@@ -335,9 +353,15 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         let sql = format!(
             "UPDATE {table_name} SET {mutations} WHERE {primary_key_name} = {primary_key};"
         );
+        Self::before_scan(&sql).await?;
+
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
-        if rows_affected == 1 {
+        Self::after_scan(rows_affected).await?;
+
+        let success = rows_affected == 1;
+        Self::after_update(success).await?;
+        if success {
             Ok(())
         } else {
             Err(Error::new(format!(
@@ -352,16 +376,30 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let filters = query.format_filters::<Self>();
-        let sort = query.format_sort();
         let updates = mutation.format_updates::<Self>();
-        let sql = format!(
-            "
-                UPDATE {table_name} SET {updates} WHERE {primary_key_name} IN
-                (SELECT {primary_key_name} FROM {table_name} {filters} {sort} LIMIT 1);
-            "
-        );
+        let sql = if super::DRIVER_NAME == "mysql" {
+            // MySQL doesn't yet support 'LIMIT & IN/ALL/ANY/SOME subquery'
+            // and self-referencing in UPDATE/DELETE
+            format!(
+                "
+                    UPDATE {table_name} SET {updates} WHERE {primary_key_name} IN
+                    (SELECT * from (SELECT {primary_key_name} FROM {table_name} {filters}) AS t);
+                "
+            )
+        } else {
+            let sort = query.format_sort();
+            format!(
+                "
+                    UPDATE {table_name} SET {updates} WHERE {primary_key_name} IN
+                    (SELECT {primary_key_name} FROM {table_name} {filters} {sort} LIMIT 1);
+                "
+            )
+        };
+        Self::before_scan(sql.trim()).await?;
+
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
+        Self::after_scan(rows_affected).await?;
         if rows_affected <= 1 {
             Ok(())
         } else {
@@ -378,13 +416,19 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         let filters = query.format_filters::<Self>();
         let updates = mutation.format_updates::<Self>();
         let sql = format!("UPDATE {table_name} SET {updates} {filters};");
+        Self::before_scan(&sql).await?;
+
         let query_result = sqlx::query(&sql).execute(pool).await?;
-        Ok(query_result.rows_affected())
+        let rows_affected = query_result.rows_affected();
+        Self::after_scan(rows_affected).await?;
+        Ok(rows_affected)
     }
 
     /// Updates or inserts the model into the table.
-    async fn upsert(self) -> Result<(), Error> {
+    async fn upsert(mut self) -> Result<(), Error> {
         let pool = Self::acquire_writer().await?.pool();
+        self.before_upsert().await?;
+
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let map = self.into_map();
@@ -422,9 +466,15 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
                 "
             )
         };
+        Self::before_scan(sql.trim()).await?;
+
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
-        if rows_affected == 1 {
+        Self::after_scan(rows_affected).await?;
+
+        let success = rows_affected == 1;
+        Self::after_upsert(success).await?;
+        if success {
             Ok(())
         } else {
             Err(Error::new(format!(
@@ -434,15 +484,23 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
     }
 
     /// Deletes the model in the table.
-    async fn delete(&self) -> Result<(), Error> {
+    async fn delete(self) -> Result<(), Error> {
         let pool = Self::acquire_writer().await?.pool();
+        self.before_delete().await?;
+
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let primary_key = Query::escape_string(self.primary_key());
         let sql = format!("DELETE FROM {table_name} WHERE {primary_key_name} = {primary_key};");
+        Self::before_scan(&sql).await?;
+
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
-        if rows_affected == 1 {
+        Self::after_scan(rows_affected).await?;
+
+        let success = rows_affected == 1;
+        self.after_delete(success).await?;
+        if success {
             Ok(())
         } else {
             Err(Error::new(format!(
@@ -464,8 +522,11 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
                 (SELECT {primary_key_name} FROM {table_name} {filters} {sort} LIMIT 1);
             "
         );
+        Self::before_scan(sql.trim()).await?;
+
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
+        Self::after_scan(rows_affected).await?;
         if rows_affected <= 1 {
             Ok(())
         } else {
@@ -481,8 +542,12 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         let table_name = Self::table_name();
         let filters = query.format_filters::<Self>();
         let sql = format!("DELETE FROM {table_name} {filters};");
+        Self::before_scan(&sql).await?;
+
         let query_result = sqlx::query(&sql).execute(pool).await?;
-        Ok(query_result.rows_affected())
+        let rows_affected = query_result.rows_affected();
+        Self::after_scan(rows_affected).await?;
+        Ok(rows_affected)
     }
 
     /// Finds models selected by the query in the table,
@@ -500,10 +565,12 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
+        Self::before_scan(&sql).await?;
         while let Some(row) = rows.try_next().await? && max_rows > 0 {
             data.push(T::decode_row(&row)?);
             max_rows -= 1;
         }
+        Self::after_scan(u64::try_from(data.len())?).await?;
         Ok(data)
     }
 
@@ -525,11 +592,14 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} LIMIT 1;");
-        let data = if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
-            Some(T::decode_row(&row)?)
+        Self::before_scan(&sql).await?;
+
+        let (num_rows, data) = if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
+            (1, Some(T::decode_row(&row)?))
         } else {
-            None
+            (0, None)
         };
+        Self::after_scan(num_rows).await?;
         Ok(data)
     }
 
@@ -548,10 +618,7 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         query: &mut Query,
         data: &mut Vec<Map>,
         columns: [&str; N],
-    ) -> Result<u64, Error>
-    where
-        for<'r> Self::PrimaryKey: Decode<'r, DatabaseDriver>,
-    {
+    ) -> Result<u64, Error> {
         let pool = Self::acquire_reader().await?.pool();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
@@ -577,17 +644,22 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut associations = Map::with_capacity(num_values);
+        Self::before_scan(&sql).await?;
         while let Some(row) = rows.try_next().await? {
-            let primary_key_value = super::decode::<Self::PrimaryKey>(&row, primary_key_name)?;
             let map = Map::decode_row(&row)?;
-            associations.insert(primary_key_value.to_string(), map.into());
+            let primary_key_value = map
+                .get_str(primary_key_name)
+                .map(|s| s.to_owned())
+                .unwrap_or_default();
+            associations.upsert(primary_key_value, map);
         }
+        Self::after_scan(u64::try_from(associations.len())?).await?;
         for row in data {
             for col in columns {
                 if let Some(value) = row.get_mut(col) {
                     if let Some(value) = value.as_str() {
                         if let Some(value) = associations.get(value) {
-                            row.insert(col.to_owned(), value.clone());
+                            row.upsert(col, value.clone());
                         }
                     } else if let Some(entries) = value.as_array_mut() {
                         for entry in entries {
@@ -610,10 +682,7 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         query: &mut Query,
         data: &mut Map,
         columns: [&str; N],
-    ) -> Result<(), Error>
-    where
-        for<'r> Self::PrimaryKey: Decode<'r, DatabaseDriver>,
-    {
+    ) -> Result<(), Error> {
         let pool = Self::acquire_reader().await?.pool();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
@@ -637,16 +706,21 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut associations = Map::with_capacity(num_values);
+        Self::before_scan(&sql).await?;
         while let Some(row) = rows.try_next().await? {
-            let primary_key_value = super::decode::<Self::PrimaryKey>(&row, primary_key_name)?;
             let map = Map::decode_row(&row)?;
-            associations.insert(primary_key_value.to_string(), map.into());
+            let primary_key_value = map
+                .get_str(primary_key_name)
+                .map(|s| s.to_owned())
+                .unwrap_or_default();
+            associations.upsert(primary_key_value, map);
         }
+        Self::after_scan(u64::try_from(associations.len())?).await?;
         for col in columns {
             if let Some(value) = data.get_mut(col) {
                 if let Some(value) = value.as_str() {
                     if let Some(value) = associations.get(value) {
-                        data.insert(col.to_owned(), value.clone());
+                        data.upsert(col, value.clone());
                     }
                 } else if let Some(entries) = value.as_array_mut() {
                     for entry in entries {
@@ -698,10 +772,12 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
+        Self::before_scan(sql.trim()).await?;
         while let Some(row) = rows.try_next().await? && max_rows > 0 {
             data.push(T::decode_row(&row)?);
             max_rows -= 1;
         }
+        Self::after_scan(u64::try_from(data.len())?).await?;
         Ok(data)
     }
 
@@ -742,7 +818,10 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
             .collect::<Vec<_>>()
             .join(",");
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
+        Self::before_scan(&sql).await?;
+
         let row = sqlx::query(&sql).fetch_one(pool).await?;
+        Self::after_scan(1).await?;
         T::decode_row(&row).map_err(Error::from)
     }
 
@@ -764,9 +843,12 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         for value in values {
             query = query.bind(value.to_string());
         }
+        Self::before_scan(&sql).await?;
 
         let query_result = query.execute(pool).await?;
-        Ok(query_result.rows_affected())
+        let rows_affected = query_result.rows_affected();
+        Self::after_scan(rows_affected).await?;
+        Ok(rows_affected)
     }
 
     /// Executes the query in the table, and decodes it as `Vec<T>`.
@@ -784,10 +866,12 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         let mut rows = query.fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
+        Self::before_scan(&sql).await?;
         while let Some(row) = rows.try_next().await? && max_rows > 0 {
             data.push(T::decode_row(&row)?);
             max_rows -= 1;
         }
+        Self::after_scan(u64::try_from(data.len())?).await?;
         Ok(data)
     }
 
@@ -811,12 +895,14 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         for value in values {
             query = query.bind(value.to_string());
         }
+        Self::before_scan(&sql).await?;
 
-        let data = if let Some(row) = query.fetch_optional(pool).await? {
-            Some(T::decode_row(&row)?)
+        let (num_rows, data) = if let Some(row) = query.fetch_optional(pool).await? {
+            (1, Some(T::decode_row(&row)?))
         } else {
-            None
+            (0, None)
         };
+        Self::after_scan(num_rows).await?;
         Ok(data)
     }
 
@@ -857,15 +943,16 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         let projection = query.format_fields();
         let primary_key = Query::escape_string(primary_key);
         let sql = format!(
-            "
-                SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {primary_key};
-            "
+            "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {primary_key};"
         );
-        let data = if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
-            Some(T::decode_row(&row)?)
+        Self::before_scan(&sql).await?;
+
+        let (num_rows, data) = if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
+            (1, Some(T::decode_row(&row)?))
         } else {
-            None
+            (0, None)
         };
+        Self::after_scan(num_rows).await?;
         Ok(data)
     }
 
@@ -878,16 +965,21 @@ pub trait Schema: 'static + Send + Sync + Model + DecodeRow<DatabaseRow, Error =
         let projection = query.format_fields();
         let primary_key = Query::escape_string(primary_key);
         let sql = format!(
-            "
-                SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {primary_key};
-            "
+            "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {primary_key};"
         );
+        Self::before_scan(&sql).await?;
+
         if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
-            Self::decode_row(&row)
+            Self::after_scan(1).await?;
+
+            let map = Map::decode_row(&row)?;
+            Self::try_from_map(map).map_err(Error::from)
         } else {
+            Self::after_scan(0).await?;
+
             let model_name = Self::MODEL_NAME;
             Err(Error::new(format!(
-                "no rows found for the model `{model_name}` with the primary key `{primary_key}`"
+                "404 Not Found: no rows for the model `{model_name}` with the key `{primary_key}`"
             )))
         }
     }

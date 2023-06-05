@@ -67,9 +67,11 @@ where
         let id = req.parse_param::<T>("id")?;
         let body = req.parse_body().await?;
         let (validation, model) = Self::update_by_id(&id, body).await.extract(&req)?;
-        let data = Map::data_entry(model.next_version_filters());
         let mut res = crate::Response::from(validation).context(&req);
-        res.set_data(&data);
+        if res.is_success() {
+            let data = Map::data_entry(model.next_version_filters());
+            res.set_data(&data);
+        }
         Ok(res.into())
     }
 

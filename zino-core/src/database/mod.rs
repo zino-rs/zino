@@ -21,12 +21,14 @@ use toml::value::Table;
 
 mod accessor;
 mod decode;
+mod hook;
 mod mutation;
 mod query;
 mod schema;
 
 pub use accessor::ModelAccessor;
 pub use decode::decode;
+pub use hook::ModelHooks;
 pub use schema::Schema;
 
 cfg_if::cfg_if! {
