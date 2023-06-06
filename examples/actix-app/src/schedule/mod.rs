@@ -10,5 +10,5 @@ pub fn jobs() -> Vec<(&'static str, CronJob)> {
 }
 
 pub fn async_jobs() -> Vec<(&'static str, AsyncCronJob)> {
-    vec![("0/30 * * * * *", job::every_30s as AsyncCronJob)]
+    vec![("0 0 * * * *", job::every_hour as AsyncCronJob)]
 }

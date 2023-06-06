@@ -27,7 +27,7 @@ pub fn every_20s(job_id: Uuid, job_data: &mut Map, _last_tick: DateTime) {
     );
 }
 
-pub fn every_30s(job_id: Uuid, job_data: &mut Map, _last_tick: DateTime) -> BoxFuture {
+pub fn every_hour(job_id: Uuid, job_data: &mut Map, _last_tick: DateTime) -> BoxFuture {
     let counter = job_data
         .get("counter")
         .map(|c| c.as_u64().unwrap_or_default() + 1)
@@ -36,7 +36,7 @@ pub fn every_30s(job_id: Uuid, job_data: &mut Map, _last_tick: DateTime) -> BoxF
     job_data.upsert("counter", counter);
     tracing::debug!(
         job_data = format!("{job_data:?}"),
-        "async job {job_id} is executed every 30 seconds"
+        "async job {job_id} is executed every hour"
     );
 
     Box::pin(async {

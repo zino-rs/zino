@@ -193,7 +193,7 @@ pub trait Schema: ModelHooks + DecodeRow<DatabaseRow, Error = Error> {
                 }
             }
             if !text_search_columns.is_empty() {
-                let text_search_columns = text_search_columns.join(",");
+                let text_search_columns = text_search_columns.join(", ");
                 let sql = format!(
                     "
                         CREATE FULLTEXT INDEX {table_name}_text_search_index
@@ -276,7 +276,7 @@ pub trait Schema: ModelHooks + DecodeRow<DatabaseRow, Error = Error> {
 
         let table_name = Self::table_name();
         let map = self.into_map();
-        let fields = Self::fields().join(",");
+        let fields = Self::fields().join(", ");
         let values = Self::columns()
             .iter()
             .map(|col| col.encode_value(map.get(col.name())))
@@ -313,12 +313,12 @@ pub trait Schema: ModelHooks + DecodeRow<DatabaseRow, Error = Error> {
                 .iter()
                 .map(|col| col.encode_value(map.get(col.name())))
                 .collect::<Vec<_>>();
-            values.push(format!("({})", entries.join(",")));
+            values.push(format!("({})", entries.join(", ")));
         }
 
         let table_name = Self::table_name();
-        let fields = Self::fields().join(",");
-        let values = values.join(",");
+        let fields = Self::fields().join(", ");
+        let values = values.join(", ");
         let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({values});");
         Self::before_scan(&sql).await?;
 
@@ -349,7 +349,7 @@ pub trait Schema: ModelHooks + DecodeRow<DatabaseRow, Error = Error> {
             }
         }
 
-        let mutations = mutations.join(",");
+        let mutations = mutations.join(", ");
         let sql = format!(
             "UPDATE {table_name} SET {mutations} WHERE {primary_key_name} = {primary_key};"
         );
@@ -448,9 +448,9 @@ pub trait Schema: ModelHooks + DecodeRow<DatabaseRow, Error = Error> {
             values.push(value);
         }
 
-        let fields = fields.join(",");
-        let values = values.join(",");
-        let mutations = mutations.join(",");
+        let fields = fields.join(", ");
+        let values = values.join(", ");
+        let mutations = mutations.join(", ");
         let sql = if super::DRIVER_NAME == "mysql" {
             format!(
                 "
@@ -816,7 +816,7 @@ pub trait Schema: ModelHooks + DecodeRow<DatabaseRow, Error = Error> {
                 }
             })
             .collect::<Vec<_>>()
-            .join(",");
+            .join(", ");
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
         Self::before_scan(&sql).await?;
 
