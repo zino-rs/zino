@@ -27,7 +27,6 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     const INTEGER_TYPES: [&str; 10] = [
         "u64", "i64", "u32", "i32", "u16", "i16", "u8", "i8", "usize", "isize",
     ];
-    const UNSIGNED_INTEGER_TYPES: [&str; 5] = ["u64", "u32", "u16", "u8", "usize"];
 
     // Input
     let input = parse_macro_input!(item as DeriveInput);
@@ -69,7 +68,6 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     let mut column_fields = Vec::new();
     let mut readonly_fields = Vec::new();
     let mut writeonly_fields = Vec::new();
-    let mut decode_model_fields = Vec::new();
     if let Data::Struct(data) = input.data && let Fields::Named(fields) = data.fields {
         for field in fields.named.into_iter() {
             let mut type_name = parser::get_type_name(&field.ty);
@@ -189,29 +187,6 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 }};
                 columns.push(column);
                 column_fields.push(quote! { #name });
-                if type_name == "Map" {
-                    decode_model_fields.push(quote! {
-                        if let JsonValue::Object(map) = database::decode(row, #name)? {
-                            model.#ident = map;
-                        }
-                    });
-                } else if type_name.starts_with("Vec") {
-                    decode_model_fields.push(quote! {
-                        let value = database::decode::<JsonValue>(row, #name)?;
-                        if let Some(vec) = value.parse_array() {
-                            model.#ident = vec;
-                        }
-                    });
-                } else if UNSIGNED_INTEGER_TYPES.contains(&type_name.as_str()) {
-                    decode_model_fields.push(quote! {
-                        let value = database::decode::<i64>(row, #name)?;
-                        model.#ident = value.try_into()?;
-                    });
-                } else {
-                    decode_model_fields.push(quote! {
-                        model.#ident = database::decode(row, #name)?;
-                    });
-                }
             }
         }
     }
@@ -238,23 +213,12 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     };
     let output = quote! {
         use zino_core::{
-            database::{self, ConnectionPool, DatabaseRow, ModelHooks, Schema},
+            database::{self, ConnectionPool, ModelHooks, Schema},
             error::Error as ZinoError,
-            model::{schema, Column, DecodeRow},
+            model::{schema, Column},
         };
 
         impl ModelHooks for #name {}
-
-        impl DecodeRow<DatabaseRow> for #name {
-            type Error = ZinoError;
-
-            fn decode_row(row: &DatabaseRow) -> Result<Self, Self::Error> {
-                use zino_core::{extension::JsonValueExt, JsonValue};
-                let mut model = <#name>::default();
-                #(#decode_model_fields)*
-                Ok(model)
-            }
-        }
 
         static #avro_schema: std::sync::LazyLock<schema::Schema> = std::sync::LazyLock::new(|| {
             let mut fields = #schema_columns.iter().enumerate()
@@ -379,6 +343,107 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
         }
 
         impl Eq for #name {}
+    };
+
+    TokenStream::from(output)
+}
+
+/// Derive the `DecodeRow` trait.
+#[proc_macro_derive(DecodeRow, attributes(schema))]
+pub fn decode_row_macro(item: TokenStream) -> TokenStream {
+    /// Integer types
+    const UNSIGNED_INTEGER_TYPES: [&str; 5] = ["u64", "u32", "u16", "u8", "usize"];
+
+    // Input
+    let input = parse_macro_input!(item as DeriveInput);
+
+    // Parsing field attrs
+    let name = input.ident;
+    let mut decode_model_fields = Vec::new();
+    let mut mysql_decode_model_fields = Vec::new();
+    let mut postgres_decode_model_fields = Vec::new();
+    if let Data::Struct(data) = input.data && let Fields::Named(fields) = data.fields {
+        for field in fields.named.into_iter() {
+            let type_name = parser::get_type_name(&field.ty);
+            if let Some(ident) = field.ident && !type_name.is_empty() {
+                let mut ignore = false;
+                let mut is_readable = true;
+                'inner: for attr in field.attrs.iter() {
+                    let arguments = parser::parse_schema_attr(attr);
+                    for (key, _value) in arguments.into_iter() {
+                        match key.as_str() {
+                            "ignore" => {
+                                ignore = true;
+                                break 'inner;
+                            }
+                            "writeonly" => {
+                                is_readable = false;
+                            }
+                            _ => (),
+                        }
+                    }
+                }
+                if ignore {
+                    continue;
+                }
+                if is_readable {
+                    if type_name == "Map" {
+                        decode_model_fields.push(quote! {
+                            if let JsonValue::Object(map) = database::decode(row, #name)? {
+                                model.#ident = map;
+                            }
+                        });
+                    } else if type_name.starts_with("Vec") {
+                        mysql_decode_model_fields.push(quote! {
+                            let value = database::decode::<JsonValue>(row, #name)?;
+                            if let Some(vec) = value.parse_array() {
+                                model.#ident = vec;
+                            }
+                        });
+                        postgres_decode_model_fields.push(quote! {
+                            model.#ident = database::decode(row, #name)?;
+                        });
+                    } else if UNSIGNED_INTEGER_TYPES.contains(&type_name.as_str()) {
+                        let integer_type_ident = format_ident!("{}", type_name.replace('u', "i"));
+                        postgres_decode_model_fields.push(quote! {
+                            let value = database::decode::<#integer_type_ident>(row, #name)?;
+                            model.#ident = value.try_into()?;
+                        });
+                        mysql_decode_model_fields.push(quote! {
+                            model.#ident = database::decode(row, #name)?;
+                        });
+                    } else {
+                        decode_model_fields.push(quote! {
+                            model.#ident = database::decode(row, #name)?;
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    // Output
+    let output = quote! {
+        use zino_core::{
+            database::{self, DatabaseRow},
+            model::DecodeRow,
+        };
+
+        impl DecodeRow<DatabaseRow> for #name {
+            type Error = zino_core::error::Error;
+
+            fn decode_row(row: &DatabaseRow) -> Result<Self, Self::Error> {
+                use zino_core::{extension::JsonValueExt, JsonValue};
+                let mut model = <#name>::default();
+                #(#decode_model_fields)*
+                if database::DRIVER_NAME == "mysql" {
+                    #(#mysql_decode_model_fields)*
+                } else {
+                    #(#postgres_decode_model_fields)*
+                }
+                Ok(model)
+            }
+        }
     };
 
     TokenStream::from(output)

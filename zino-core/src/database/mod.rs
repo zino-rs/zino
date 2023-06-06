@@ -38,7 +38,7 @@ cfg_if::cfg_if! {
         mod mysql;
 
         /// Driver name.
-        static DRIVER_NAME: &str = "mysql";
+        pub static DRIVER_NAME: &str = "mysql";
 
         /// MySQL database driver.
         pub type DatabaseDriver = MySql;
@@ -54,7 +54,7 @@ cfg_if::cfg_if! {
         mod postgres;
 
         /// Driver name.
-        static DRIVER_NAME: &str = "postgres";
+        pub static DRIVER_NAME: &str = "postgres";
 
         /// PostgreSQL database driver.
         pub type DatabaseDriver = Postgres;

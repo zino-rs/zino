@@ -13,7 +13,7 @@ use sqlx::Transaction;
 use std::{fmt::Display, sync::atomic::Ordering::Relaxed};
 
 /// Database schema.
-pub trait Schema: ModelHooks + DecodeRow<DatabaseRow, Error = Error> {
+pub trait Schema: ModelHooks {
     /// Primary key.
     type PrimaryKey: Default + Display + PartialEq = Uuid;
 

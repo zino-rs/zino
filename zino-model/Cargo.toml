@@ -13,7 +13,7 @@ documentation = "https://docs.rs/zino-model"
 readme = "README.md"
 
 [dependencies]
-regex = "1.8.3"
+regex = "1.8.4"
 
 [dependencies.serde]
 version = "1.0.162"

@@ -7,8 +7,10 @@ use aes_gcm_siv::{
 };
 use rand::Rng;
 
+#[cfg(feature = "orm")]
 mod password;
 
+#[cfg(feature = "orm")]
 pub(crate) use password::*;
 
 /// Encrypts the plaintext using `AES-GCM-SIV`.

@@ -4,7 +4,7 @@ use crate::{
     error::Error,
     extension::JsonObjectExt,
     model::{Column, DecodeRow, EncodeColumn, Query},
-    AvroValue, JsonValue, Map, Record, SharedString,
+    AvroValue, JsonValue, Map, Record, SharedString, Uuid,
 };
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use sqlx::{Column as _, Row, TypeInfo, ValueRef};
@@ -372,6 +372,18 @@ impl DecodeRow<DatabaseRow> for Map {
                     "TIME" => decode_column::<NaiveTime>(field, raw_value)?
                         .to_string()
                         .into(),
+                    "BYTE" => {
+                        let bytes = decode_column::<Vec<u8>>(field, raw_value)?;
+                        if bytes.len() == 16 {
+                            if let Ok(value) = Uuid::from_slice(&bytes) {
+                                value.to_string().into()
+                            } else {
+                                bytes.into()
+                            }
+                        } else {
+                            bytes.into()
+                        }
+                    }
                     "BLOB" | "VARBINARY" | "BINARY" => {
                         decode_column::<Vec<u8>>(field, raw_value)?.into()
                     }
@@ -401,8 +413,14 @@ impl DecodeRow<DatabaseRow> for Record {
                 use super::decode::decode_column;
                 match col.type_info().name() {
                     "BOOLEAN" => decode_column::<bool>(field, raw_value)?.into(),
-                    "INT" | "INT UNSIGNED" => decode_column::<i32>(field, raw_value)?.into(),
-                    "BIGINT" | "BIGINT UNSIGNED" => decode_column::<i64>(field, raw_value)?.into(),
+                    "TINYINT" => i32::from(decode_column::<i8>(field, raw_value)?).into(),
+                    "TINYINT UNSIGNED" => i32::from(decode_column::<u8>(field, raw_value)?).into(),
+                    "SMALLINT" => i32::from(decode_column::<i16>(field, raw_value)?).into(),
+                    "SMALLINT UNSIGNED" => i32::from(decode_column::<u16>(field, raw_value)?).into(),
+                    "INT" => decode_column::<i32>(field, raw_value)?.into(),
+                    "INT UNSIGNED" => i32::try_from(decode_column::<u32>(field, raw_value)?)?.into(),
+                    "BIGINT" => decode_column::<i64>(field, raw_value)?.into(),
+                    "BIGINT UNSIGNED" => i64::try_from(decode_column::<u64>(field, raw_value)?)?.into(),
                     "FLOAT" => decode_column::<f32>(field, raw_value)?.into(),
                     "DOUBLE" => decode_column::<f64>(field, raw_value)?.into(),
                     "TEXT" | "VARCHAR" | "CHAR" => {
@@ -418,6 +436,18 @@ impl DecodeRow<DatabaseRow> for Record {
                     "TIME" => decode_column::<NaiveTime>(field, raw_value)?
                         .to_string()
                         .into(),
+                    "BYTE" => {
+                        let bytes = decode_column::<Vec<u8>>(field, raw_value)?;
+                        if bytes.len() == 16 {
+                            if let Ok(value) = Uuid::from_slice(&bytes) {
+                                value.to_string().into()
+                            } else {
+                                bytes.into()
+                            }
+                        } else {
+                            bytes.into()
+                        }
+                    }
                     "BLOB" | "VARBINARY" | "BINARY" => {
                         decode_column::<Vec<u8>>(field, raw_value)?.into()
                     }
