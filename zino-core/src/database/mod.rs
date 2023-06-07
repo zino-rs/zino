@@ -29,6 +29,7 @@ mod schema;
 pub use accessor::ModelAccessor;
 pub use decode::decode;
 pub use hook::ModelHooks;
+pub use query::QueryContext;
 pub use schema::Schema;
 
 cfg_if::cfg_if! {
@@ -38,7 +39,7 @@ cfg_if::cfg_if! {
         mod mysql;
 
         /// Driver name.
-        pub static DRIVER_NAME: &str = "mysql";
+        static DRIVER_NAME: &str = "mysql";
 
         /// MySQL database driver.
         pub type DatabaseDriver = MySql;
@@ -54,7 +55,7 @@ cfg_if::cfg_if! {
         mod postgres;
 
         /// Driver name.
-        pub static DRIVER_NAME: &str = "postgres";
+        static DRIVER_NAME: &str = "postgres";
 
         /// PostgreSQL database driver.
         pub type DatabaseDriver = Postgres;

@@ -1,3 +1,4 @@
+use super::QueryContext;
 use crate::{error::Error, model::Model};
 use std::borrow::Cow;
 
@@ -5,20 +6,21 @@ use std::borrow::Cow;
 pub trait ModelHooks: 'static + Send + Sync + Model {
     /// A hook running before scanning the table.
     #[inline]
-    async fn before_scan(sql: &str) -> Result<(), Error> {
+    async fn before_scan(sql: &str) -> Result<QueryContext<'_>, Error> {
         tracing::debug!(sql);
-        Ok(())
+        Ok(QueryContext::new(sql))
     }
 
     /// A hook running after scanning the table.
     #[inline]
-    async fn after_scan(num_rows: u64) -> Result<(), Error> {
+    async fn after_scan<'a>(ctx: &QueryContext<'a>, num_rows: u64) -> Result<(), Error> {
+        let execution_time = ctx.start_time().elapsed().as_millis();
         let message = match num_rows {
             0 => Cow::Borrowed("no rows affected or fetched"),
             1 => Cow::Borrowed("one row affected or fetched"),
             _ => Cow::Owned(format!("{num_rows} rows affected or fetched")),
         };
-        tracing::debug!("{message}");
+        tracing::debug!(execution_time, "{message}");
         Ok(())
     }
 
@@ -30,9 +32,9 @@ pub trait ModelHooks: 'static + Send + Sync + Model {
 
     /// A hook running after inserting a model into the table.
     #[inline]
-    async fn after_insert(success: bool) -> Result<(), Error> {
+    async fn after_insert<'a>(ctx: &QueryContext<'a>, success: bool) -> Result<(), Error> {
         if !success {
-            tracing::error!("fail to insert a model into the table");
+            tracing::error!(sql = ctx.sql(), "fail to insert a model into the table");
         }
         Ok(())
     }
@@ -45,9 +47,9 @@ pub trait ModelHooks: 'static + Send + Sync + Model {
 
     /// A hook running after deleting a model in the table.
     #[inline]
-    async fn after_delete(self, success: bool) -> Result<(), Error> {
+    async fn after_delete<'a>(self, ctx: &QueryContext<'a>, success: bool) -> Result<(), Error> {
         if !success {
-            tracing::error!("fail to detele a model in the table");
+            tracing::error!(sql = ctx.sql(), "fail to detele a model in the table");
         }
         Ok(())
     }
@@ -60,9 +62,9 @@ pub trait ModelHooks: 'static + Send + Sync + Model {
 
     /// A hook running after updating a model into the table.
     #[inline]
-    async fn after_update(success: bool) -> Result<(), Error> {
+    async fn after_update<'a>(ctx: &QueryContext<'a>, success: bool) -> Result<(), Error> {
         if !success {
-            tracing::error!("fail to update a model into the table");
+            tracing::error!(sql = ctx.sql(), "fail to update a model into the table");
         }
         Ok(())
     }
@@ -75,9 +77,9 @@ pub trait ModelHooks: 'static + Send + Sync + Model {
 
     /// A hook running after updating or inserting a model into the table.
     #[inline]
-    async fn after_upsert(success: bool) -> Result<(), Error> {
+    async fn after_upsert<'a>(ctx: &QueryContext<'a>, success: bool) -> Result<(), Error> {
         if !success {
-            tracing::error!("fail to upsert a model into the table");
+            tracing::error!(sql = ctx.sql(), "fail to upsert a model into the table");
         }
         Ok(())
     }

@@ -4,7 +4,39 @@ use crate::{
     model::EncodeColumn,
     JsonValue, Map, SharedString,
 };
-use std::{borrow::Cow, fmt::Display};
+use std::{borrow::Cow, fmt::Display, time::Instant};
+
+/// Data associated with a SQL query.
+#[derive(Debug, Clone)]
+pub struct QueryContext<'a> {
+    /// SQL expression.
+    sql: &'a str,
+    /// Start time.
+    start_time: Instant,
+}
+
+impl<'a> QueryContext<'a> {
+    /// Creates a new instance.
+    #[inline]
+    pub fn new(sql: &'a str) -> Self {
+        Self {
+            sql,
+            start_time: Instant::now(),
+        }
+    }
+
+    /// Returns the SQL expression.
+    #[inline]
+    pub fn sql(&self) -> &str {
+        self.sql
+    }
+
+    /// Returns the start time.
+    #[inline]
+    pub fn start_time(&self) -> Instant {
+        self.start_time
+    }
+}
 
 /// Extension trait for [`Query`](crate::model::Query).
 pub(super) trait QueryExt<DB> {

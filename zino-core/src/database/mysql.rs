@@ -416,11 +416,17 @@ impl DecodeRow<DatabaseRow> for Record {
                     "TINYINT" => i32::from(decode_column::<i8>(field, raw_value)?).into(),
                     "TINYINT UNSIGNED" => i32::from(decode_column::<u8>(field, raw_value)?).into(),
                     "SMALLINT" => i32::from(decode_column::<i16>(field, raw_value)?).into(),
-                    "SMALLINT UNSIGNED" => i32::from(decode_column::<u16>(field, raw_value)?).into(),
+                    "SMALLINT UNSIGNED" => {
+                        i32::from(decode_column::<u16>(field, raw_value)?).into()
+                    }
                     "INT" => decode_column::<i32>(field, raw_value)?.into(),
-                    "INT UNSIGNED" => i32::try_from(decode_column::<u32>(field, raw_value)?)?.into(),
+                    "INT UNSIGNED" => {
+                        i32::try_from(decode_column::<u32>(field, raw_value)?)?.into()
+                    }
                     "BIGINT" => decode_column::<i64>(field, raw_value)?.into(),
-                    "BIGINT UNSIGNED" => i64::try_from(decode_column::<u64>(field, raw_value)?)?.into(),
+                    "BIGINT UNSIGNED" => {
+                        i64::try_from(decode_column::<u64>(field, raw_value)?)?.into()
+                    }
                     "FLOAT" => decode_column::<f32>(field, raw_value)?.into(),
                     "DOUBLE" => decode_column::<f64>(field, raw_value)?.into(),
                     "TEXT" | "VARCHAR" | "CHAR" => {
