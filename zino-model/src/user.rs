@@ -3,8 +3,8 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
 use zino_core::{
-    authentication::AccessKeyId, datetime::DateTime, error::Error, extension::JsonObjectExt,
-    model::Model, request::Validation, Map, Uuid,
+    authentication::AccessKeyId, database::ModelHooks, datetime::DateTime, error::Error,
+    extension::JsonObjectExt, model::Model, request::Validation, Map, Uuid,
 };
 use zino_derive::{ModelAccessor, Schema};
 
@@ -103,6 +103,8 @@ impl Model for User {
         validation
     }
 }
+
+impl ModelHooks for User {}
 
 impl User {
     /// Sets the `access_key_id`.

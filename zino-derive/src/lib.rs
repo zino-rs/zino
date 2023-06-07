@@ -213,12 +213,10 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     };
     let output = quote! {
         use zino_core::{
-            database::{self, ConnectionPool, ModelHooks, Schema},
+            database::{self, ConnectionPool, Schema},
             error::Error as ZinoError,
             model::{schema, Column},
         };
-
-        impl ModelHooks for #name {}
 
         static #avro_schema: std::sync::LazyLock<schema::Schema> = std::sync::LazyLock::new(|| {
             let mut fields = #schema_columns.iter().enumerate()

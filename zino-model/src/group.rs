@@ -1,7 +1,8 @@
 use crate::{Tag, User};
 use serde::{Deserialize, Serialize};
 use zino_core::{
-    datetime::DateTime, extension::JsonObjectExt, model::Model, request::Validation, Map, Uuid,
+    database::ModelHooks, datetime::DateTime, extension::JsonObjectExt, model::Model,
+    request::Validation, Map, Uuid,
 };
 use zino_derive::{ModelAccessor, Schema};
 
@@ -72,3 +73,5 @@ impl Model for Group {
         validation
     }
 }
+
+impl ModelHooks for Group {}
