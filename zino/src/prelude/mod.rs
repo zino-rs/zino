@@ -8,7 +8,7 @@ pub use zino_core::{
     datetime::DateTime,
     error::Error,
     extension::{JsonObjectExt, TomlTableExt},
-    model::{Model, Mutation, Query},
+    model::{Model, ModelHooks, Mutation, Query, QueryContext},
     request::{RequestContext, Validation},
     response::{ExtractRejection, Rejection, StatusCode},
     schedule::{AsyncCronJob, CronJob},

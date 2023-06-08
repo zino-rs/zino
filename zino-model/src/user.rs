@@ -3,8 +3,13 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
 use zino_core::{
-    authentication::AccessKeyId, database::ModelHooks, datetime::DateTime, error::Error,
-    extension::JsonObjectExt, model::Model, request::Validation, Map, Uuid,
+    authentication::AccessKeyId,
+    datetime::DateTime,
+    error::Error,
+    extension::JsonObjectExt,
+    model::{Model, ModelHooks},
+    request::Validation,
+    Map, Uuid,
 };
 use zino_derive::{ModelAccessor, Schema};
 
@@ -250,7 +255,11 @@ static USER_ROLE_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
 #[cfg(test)]
 mod tests {
     use super::User;
-    use zino_core::{extension::JsonObjectExt, model::Model, Map};
+    use zino_core::{
+        extension::JsonObjectExt,
+        model::{Model, ModelHooks},
+        Map,
+    };
 
     #[test]
     fn it_checks_user_roles() {

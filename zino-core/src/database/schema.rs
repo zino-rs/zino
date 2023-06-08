@@ -1,10 +1,8 @@
-use super::{
-    mutation::MutationExt, query::QueryExt, ConnectionPool, DatabaseDriver, DatabaseRow, ModelHooks,
-};
+use super::{mutation::MutationExt, query::QueryExt, ConnectionPool, DatabaseDriver, DatabaseRow};
 use crate::{
     error::Error,
     extension::JsonObjectExt,
-    model::{Column, DecodeRow, EncodeColumn, Mutation, Query},
+    model::{Column, DecodeRow, EncodeColumn, ModelHooks, Mutation, Query},
     BoxFuture, JsonValue, Map, Uuid,
 };
 use futures::TryStreamExt;
@@ -13,7 +11,7 @@ use sqlx::Transaction;
 use std::{fmt::Display, sync::atomic::Ordering::Relaxed};
 
 /// Database schema.
-pub trait Schema: ModelHooks {
+pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Primary key.
     type PrimaryKey: Default + Display + PartialEq = Uuid;
 

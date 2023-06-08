@@ -6,12 +6,16 @@ use serde::{de::DeserializeOwned, Serialize};
 pub use apache_avro::schema;
 
 mod column;
+mod context;
+mod hook;
 mod mutation;
 mod query;
 mod reference;
 mod row;
 
 pub use column::{Column, EncodeColumn};
+pub use context::QueryContext;
+pub use hook::ModelHooks;
 pub use mutation::Mutation;
 pub use query::Query;
 pub use reference::Reference;
