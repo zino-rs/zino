@@ -16,7 +16,7 @@ readme = "README.md"
 regex = "1.8.4"
 
 [dependencies.serde]
-version = "1.0.162"
+version = "1.0.164"
 features = ["derive"]
 
 [dependencies.zino-core]

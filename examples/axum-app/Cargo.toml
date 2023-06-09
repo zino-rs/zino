@@ -30,7 +30,7 @@ version = "0.10.2"
 features = [
     "connector",
     "connector-arrow",
-    "orm-postgres",
+    "orm-mysql",
     "view-tera",
 ]
 
