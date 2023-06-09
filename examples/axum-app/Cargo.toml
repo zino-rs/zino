@@ -15,6 +15,10 @@ rbatis = "4.3.6"
 rbdc-mysql = "4.3.5"
 rbs = "4.3.2"
 
+[dependencies.serde]
+version = "1.0.162"
+features = ["derive"]
+
 [dependencies.zino]
 path = "../../zino"
 version = "0.9.1"
@@ -29,6 +33,10 @@ features = [
     "orm-mysql",
     "view-tera",
 ]
+
+[dependencies.zino-derive]
+path = "../../zino-derive"
+version = "0.7.2"
 
 [dependencies.zino-model]
 path = "../../zino-model"

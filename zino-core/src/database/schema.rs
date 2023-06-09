@@ -270,7 +270,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Inserts the model into the table.
     async fn insert(mut self) -> Result<(), Error> {
         let pool = Self::acquire_writer().await?.pool();
-        self.before_insert().await?;
+        let model_data = self.before_insert().await?;
 
         let table_name = Self::table_name();
         let map = self.into_map();
@@ -287,7 +287,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::after_scan(&ctx, rows_affected).await?;
 
         let success = rows_affected == 1;
-        Self::after_insert(&ctx, success).await?;
+        Self::after_insert(&ctx, model_data, success).await?;
         if success {
             Ok(())
         } else {
@@ -303,7 +303,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let columns = Self::columns();
         let mut values = Vec::with_capacity(models.len());
         for mut model in models.into_iter() {
-            model.before_insert().await?;
+            let _model_data = model.before_insert().await?;
 
             let map = model.into_map();
             let entries = columns
@@ -328,7 +328,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Updates the model in the table.
     async fn update(mut self) -> Result<(), Error> {
         let pool = Self::acquire_writer().await?.pool();
-        self.before_update().await?;
+        let model_data = self.before_update().await?;
 
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
@@ -356,7 +356,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::after_scan(&ctx, rows_affected).await?;
 
         let success = rows_affected == 1;
-        Self::after_update(&ctx, success).await?;
+        Self::after_update(&ctx, model_data, success).await?;
         if success {
             Ok(())
         } else {
@@ -421,7 +421,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Updates or inserts the model into the table.
     async fn upsert(mut self) -> Result<(), Error> {
         let pool = Self::acquire_writer().await?.pool();
-        self.before_upsert().await?;
+        let model_data = self.before_upsert().await?;
 
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
@@ -466,7 +466,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::after_scan(&ctx, rows_affected).await?;
 
         let success = rows_affected == 1;
-        Self::after_upsert(&ctx, success).await?;
+        Self::after_upsert(&ctx, model_data, success).await?;
         if success {
             Ok(())
         } else {
@@ -479,7 +479,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Deletes the model in the table.
     async fn delete(self) -> Result<(), Error> {
         let pool = Self::acquire_writer().await?.pool();
-        self.before_delete().await?;
+        let model_data = self.before_delete().await?;
 
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
@@ -491,7 +491,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::after_scan(&ctx, rows_affected).await?;
 
         let success = rows_affected == 1;
-        self.after_delete(&ctx, success).await?;
+        self.after_delete(&ctx, model_data, success).await?;
         if success {
             Ok(())
         } else {

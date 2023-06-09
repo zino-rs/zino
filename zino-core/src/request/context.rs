@@ -71,13 +71,13 @@ impl Context {
         &self.instance
     }
 
-    /// Returns the request id.
+    /// Returns the request ID.
     #[inline]
     pub fn request_id(&self) -> Uuid {
         self.request_id
     }
 
-    /// Returns the trace id.
+    /// Returns the trace ID.
     #[inline]
     pub fn trace_id(&self) -> Uuid {
         self.trace_id

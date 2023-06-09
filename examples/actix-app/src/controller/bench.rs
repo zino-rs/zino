@@ -1,9 +1,8 @@
-use crate::extension::rbatis;
+use crate::{extension::rbatis, model::User};
 use rbs::value::Value;
 use serde_json::json;
 use std::time::Instant;
 use zino::{prelude::*, Request, Response, Result};
-use zino_model::User;
 
 pub async fn rbatis_user_view(req: Request) -> Result {
     let user_id = req.parse_param::<Uuid>("id")?;

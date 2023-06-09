@@ -1,12 +1,15 @@
+use crate::Uuid;
 use std::time::Instant;
 
 /// Data associated with a query.
 #[derive(Debug, Clone)]
 pub struct QueryContext<'a> {
-    /// A query.
-    query: &'a str,
     /// Start time.
     start_time: Instant,
+    /// A query.
+    query: &'a str,
+    /// Query ID.
+    query_id: Uuid,
 }
 
 impl<'a> QueryContext<'a> {
@@ -14,9 +17,16 @@ impl<'a> QueryContext<'a> {
     #[inline]
     pub fn new(query: &'a str) -> Self {
         Self {
-            query,
             start_time: Instant::now(),
+            query,
+            query_id: Uuid::new_v4(),
         }
+    }
+
+    /// Returns the start time.
+    #[inline]
+    pub fn start_time(&self) -> Instant {
+        self.start_time
     }
 
     /// Returns the query.
@@ -25,9 +35,9 @@ impl<'a> QueryContext<'a> {
         self.query
     }
 
-    /// Returns the start time.
+    /// Returns the query ID.
     #[inline]
-    pub fn start_time(&self) -> Instant {
-        self.start_time
+    pub fn query_id(&self) -> Uuid {
+        self.query_id
     }
 }
