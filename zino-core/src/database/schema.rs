@@ -782,8 +782,30 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Counts the number of rows selected by the query in the table.
+    async fn count(query: &Query, column: &str, distinct: bool) -> Result<u64, Error> {
+        let pool = Self::acquire_writer().await?.pool();
+        let table_name = Self::table_name();
+        let filters = query.format_filters::<Self>();
+        let field = Query::format_field(column);
+        let projection = if column != "*" {
+            if distinct {
+                format!(r#"count(distinct {field}) as {column}_count_distinct"#)
+            } else {
+                format!(r#"count({field}) as {column}_count"#)
+            }
+        } else {
+            "count(*)".to_owned()
+        };
+        let sql = format!("SELECT {projection} FROM {table_name} {filters};");
+        let ctx = Self::before_scan(&sql).await?;
+        let count: i64 = sqlx::query_scalar(&sql).fetch_one(pool).await?;
+        Self::after_scan(&ctx, 1).await?;
+        u64::try_from(count).map_err(Error::from)
+    }
+
+    /// Counts the number of rows selected by the query in the table.
     /// The boolean value determines whether it only counts distinct values or not.
-    async fn count<T: DecodeRow<DatabaseRow, Error = Error>>(
+    async fn count_many<T: DecodeRow<DatabaseRow, Error = Error>>(
         query: &Query,
         columns: &[(&str, bool)],
     ) -> Result<T, Error> {
@@ -815,11 +837,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Counts the number of rows selected by the query in the table,
     /// and parses it as an instance of type `T`.
-    async fn count_as<T: DeserializeOwned>(
+    async fn count_many_as<T: DeserializeOwned>(
         query: &Query,
         columns: &[(&str, bool)],
     ) -> Result<T, Error> {
-        let map = Self::count::<Map>(query, columns).await?;
+        let map = Self::count_many::<Map>(query, columns).await?;
         serde_json::from_value(map.into()).map_err(Error::from)
     }
 

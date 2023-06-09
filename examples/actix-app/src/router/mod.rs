@@ -1,10 +1,7 @@
-use crate::{
-    controller::{bench, stats, task, user},
-    model::User,
-};
+use crate::controller::{bench, stats, task, user};
 use actix_web::web::{get, post, ServiceConfig};
 use zino::{DefaultController, RouterConfigure};
-use zino_model::Tag;
+use zino_model::{Tag, User};
 
 pub fn routes() -> Vec<RouterConfigure> {
     vec![
