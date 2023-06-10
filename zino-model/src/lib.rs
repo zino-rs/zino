@@ -11,6 +11,7 @@
 //! [`zino`]: https://github.com/photino/zino
 
 #![feature(async_fn_in_trait)]
+#![feature(doc_auto_cfg)]
 #![feature(lazy_cell)]
 #![feature(let_chains)]
 #![forbid(unsafe_code)]
@@ -21,11 +22,13 @@ mod resource;
 mod tag;
 mod user;
 
+mod application;
 mod message;
 mod order;
 
 mod collection;
 mod dataset;
+mod project;
 mod source;
 mod task;
 
@@ -38,11 +41,13 @@ pub use resource::Resource;
 pub use tag::Tag;
 pub use user::User;
 
+pub use application::Application;
 pub use message::Message;
 pub use order::Order;
 
 pub use collection::Collection;
 pub use dataset::Dataset;
+pub use project::Project;
 pub use source::Source;
 pub use task::Task;
 

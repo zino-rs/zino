@@ -1,6 +1,7 @@
-use crate::{Project, Task};
+use crate::User;
 use serde::{Deserialize, Serialize};
 use zino_core::{
+    authentication::AccessKeyId,
     datetime::DateTime,
     extension::JsonObjectExt,
     model::{Model, ModelHooks},
@@ -12,21 +13,18 @@ use zino_derive::{ModelAccessor, Schema};
 #[cfg(feature = "tags")]
 use crate::Tag;
 
-#[cfg(any(feature = "owner-id", feature = "maintainer-id"))]
-use crate::User;
-
-/// The `dataset` model.
+/// The `application` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
-pub struct Dataset {
+pub struct Application {
     // Basic fields.
     #[schema(readonly)]
     id: Uuid,
     #[schema(not_null, index_type = "text")]
     name: String,
     #[cfg(feature = "namespace")]
-    #[schema(default_value = "Dataset::model_namespace", index_type = "hash")]
+    #[schema(default_value = "Application::model_namespace", index_type = "hash")]
     namespace: String,
     #[cfg(feature = "visibility")]
     #[schema(default_value = "Internal")]
@@ -37,15 +35,13 @@ pub struct Dataset {
     description: String,
 
     // Info fields.
-    #[schema(reference = "Project")]
-    project_id: Uuid, // project.id, group.namespace = "*:dataset"
-    #[schema(reference = "Task")]
-    task_id: Option<Uuid>, // task.id
-    valid_from: DateTime,
-    expires_at: DateTime,
+    #[schema(reference = "User")]
+    manager_id: Uuid, // user.id
+    #[schema(not_null, unique, writeonly)]
+    access_key_id: String,
     #[cfg(feature = "tags")]
     #[schema(reference = "Tag", index_type = "gin")]
-    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:dataset"
+    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:application"
 
     // Extensions.
     content: Map,
@@ -67,11 +63,12 @@ pub struct Dataset {
     edition: u32,
 }
 
-impl Model for Dataset {
+impl Model for Application {
     #[inline]
     fn new() -> Self {
         Self {
             id: Uuid::new_v4(),
+            access_key_id: AccessKeyId::new().to_string(),
             ..Self::default()
         }
     }
@@ -90,6 +87,12 @@ impl Model for Dataset {
         if let Some(description) = data.parse_string("description") {
             self.description = description.into_owned();
         }
+        if let Some(result) = data.parse_uuid("manager_id") {
+            match result {
+                Ok(manager_id) => self.manager_id = manager_id,
+                Err(err) => validation.record_fail("manager_id", err),
+            }
+        }
         #[cfg(feature = "tags")]
         if let Some(tags) = data.parse_array("tags") {
             self.tags = tags;
@@ -98,9 +101,15 @@ impl Model for Dataset {
     }
 }
 
-impl ModelHooks for Dataset {}
+impl ModelHooks for Application {}
 
-impl Dataset {
+impl Application {
+    /// Sets the `access_key_id`.
+    #[inline]
+    pub fn set_access_key_id(&mut self, access_key_id: AccessKeyId) {
+        self.access_key_id = access_key_id.to_string();
+    }
+
     /// Sets the `owner_id` field.
     #[cfg(feature = "owner-id")]
     #[inline]

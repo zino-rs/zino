@@ -121,52 +121,60 @@ where
 
     /// Returns `true` if `self` has the namespace prefix.
     #[inline]
-    fn has_namespace(&self, namespace: &str) -> bool {
+    fn has_namespace_prefix(&self, namespace: &str) -> bool {
         self.namespace()
             .strip_prefix(namespace)
             .is_some_and(|s| s.is_empty() || s.starts_with(':'))
     }
 
+    /// Returns `true` if `self` has the namespace suffix.
+    #[inline]
+    fn has_namespace_suffix(&self, namespace: &str) -> bool {
+        self.namespace()
+            .strip_suffix(namespace)
+            .is_some_and(|s| s.is_empty() || s.ends_with(':'))
+    }
+
     /// Returns `true` if the `visibility` is `Public`.
     #[inline]
     fn is_public(&self) -> bool {
-        self.visibility().eq_ignore_ascii_case("Public")
+        self.visibility() == "Public"
     }
 
     /// Returns `true` if the `visibility` is `Internal`.
     #[inline]
     fn is_internal(&self) -> bool {
-        self.visibility().eq_ignore_ascii_case("Internal")
+        self.visibility() == "Internal"
     }
 
     /// Returns `true` if the `visibility` is `Private`.
     #[inline]
     fn is_private(&self) -> bool {
-        self.visibility().eq_ignore_ascii_case("Private")
+        self.visibility() == "Private"
     }
 
     /// Returns `true` if the `status` is `Active`.
     #[inline]
     fn is_active(&self) -> bool {
-        self.status().eq_ignore_ascii_case("Active")
+        self.status() == "Active"
     }
 
     /// Returns `true` if the `status` is `Inactive`.
     #[inline]
     fn is_inactive(&self) -> bool {
-        self.status().eq_ignore_ascii_case("Inactive")
+        self.status() == "Inactive"
     }
 
     /// Returns `true` if the `status` is `Locked`.
     #[inline]
     fn is_locked(&self) -> bool {
-        self.status().eq_ignore_ascii_case("Locked")
+        self.status() == "Locked"
     }
 
     /// Returns `true` if the `status` is `Deleted`.
     #[inline]
     fn is_deleted(&self) -> bool {
-        self.status().eq_ignore_ascii_case("Deleted")
+        self.status() == "Deleted"
     }
 
     /// Returns `true` if the `description` is nonempty.

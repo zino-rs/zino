@@ -1,4 +1,3 @@
-use crate::Tag;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
@@ -13,7 +12,10 @@ use zino_core::{
 };
 use zino_derive::{ModelAccessor, Schema};
 
-/// The user model.
+#[cfg(feature = "tags")]
+use crate::Tag;
+
+/// The `user` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
@@ -23,8 +25,10 @@ pub struct User {
     id: Uuid,
     #[schema(not_null, index_type = "text")]
     name: String,
+    #[cfg(feature = "namespace")]
     #[schema(default_value = "User::model_namespace", index_type = "hash")]
     namespace: String,
+    #[cfg(feature = "visibility")]
     #[schema(default_value = "Internal")]
     visibility: String,
     #[schema(default_value = "Active", index_type = "hash")]
@@ -44,6 +48,7 @@ pub struct User {
     avatar: String,
     #[schema(index_type = "gin")]
     roles: Vec<String>,
+    #[cfg(feature = "tags")]
     #[schema(reference = "Tag", index_type = "gin")]
     tags: Vec<Uuid>, // tag.id, tag.namespace = "*:user"
 
@@ -52,8 +57,10 @@ pub struct User {
     extra: Map,
 
     // Revisions.
+    #[cfg(feature = "owner-id")]
     #[schema(reference = "User")]
     owner_id: Option<Uuid>, // user.id
+    #[cfg(feature = "maintainer-id")]
     #[schema(reference = "User")]
     maintainer_id: Option<Uuid>, // user.id
     #[schema(readonly, default_value = "now", index_type = "btree")]
@@ -61,6 +68,7 @@ pub struct User {
     #[schema(default_value = "now", index_type = "btree")]
     updated_at: DateTime,
     version: u64,
+    #[cfg(feature = "edition")]
     edition: u32,
 }
 
@@ -85,6 +93,9 @@ impl Model for User {
         if let Some(name) = data.parse_string("name") {
             self.name = name.into_owned();
         }
+        if let Some(description) = data.parse_string("description") {
+            self.description = description.into_owned();
+        }
         if let Some(account) = data.parse_string("account") {
             self.account = account.into_owned();
         }
@@ -102,6 +113,7 @@ impl Model for User {
         if self.roles.is_empty() && !validation.contains_key("roles") {
             validation.record("roles", "should be nonempty");
         }
+        #[cfg(feature = "tags")]
         if let Some(tags) = data.parse_array("tags") {
             self.tags = tags;
         }
@@ -118,13 +130,7 @@ impl User {
         self.access_key_id = access_key_id.to_string();
     }
 
-    /// Returns a reference to the `access_key_id`.
-    #[inline]
-    pub fn access_key_id(&self) -> &[u8] {
-        self.access_key_id.as_ref()
-    }
-
-    /// Sets the `roles` of the user.
+    /// Sets the `roles` field.
     pub fn set_roles(&mut self, roles: Vec<&str>) -> Result<(), Error> {
         let num_roles = roles.len();
         let special_roles = ["superuser", "user", "guest"];
@@ -139,6 +145,26 @@ impl User {
         }
         self.roles = roles.into_iter().map(|s| s.to_owned()).collect();
         Ok(())
+    }
+
+    /// Sets the `owner_id` field.
+    #[cfg(feature = "owner-id")]
+    #[inline]
+    pub fn set_owner_id(&mut self, owner_id: Uuid) {
+        self.owner_id = Some(owner_id);
+    }
+
+    /// Sets the `maintainer_id` field.
+    #[cfg(feature = "maintainer-id")]
+    #[inline]
+    pub fn set_maintainer_id(&mut self, maintainer_id: Uuid) {
+        self.maintainer_id = Some(maintainer_id);
+    }
+
+    /// Returns a reference to the `access_key_id`.
+    #[inline]
+    pub fn access_key_id(&self) -> &[u8] {
+        self.access_key_id.as_ref()
     }
 
     /// Returns the `roles` field.

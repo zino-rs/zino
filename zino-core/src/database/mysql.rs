@@ -77,7 +77,10 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         .collect::<Vec<_>>();
                     format!(r#"json_array({})"#, values.join(",")).into()
                 }
-                JsonValue::Object(_) => format!("'{value}'").into(),
+                JsonValue::Object(_) => {
+                    let value = Query::escape_string(value);
+                    format!("{value}").into()
+                }
             }
         } else if self.default_value().is_some() {
             "DEFAULT".into()
@@ -151,7 +154,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             }
             "Map" => {
                 let value = Query::escape_string(value);
-                format!("'{value}'").into()
+                format!("{value}").into()
             }
             _ => "NULL".into(),
         }

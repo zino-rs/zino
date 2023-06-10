@@ -483,10 +483,22 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let primary_key = Query::escape_string(self.primary_key());
-        let sql = format!("DELETE FROM {table_name} WHERE {primary_key_name} = {primary_key};");
+        let primary_key = self.primary_key();
+        let sql = if cfg!(feature = "orm-mysql") {
+            let placeholder = Query::placeholder(1);
+            format!("DELETE FROM {table_name} WHERE {primary_key_name} = {placeholder};")
+        } else {
+            let primary_key = Query::escape_string(primary_key);
+            format!("DELETE FROM {table_name} WHERE {primary_key_name} = {primary_key};")
+        };
+
         let ctx = Self::before_scan(&sql).await?;
-        let query_result = sqlx::query(&sql).execute(pool).await?;
+        let query = if cfg!(feature = "orm-mysql") {
+            sqlx::query(&sql).bind(primary_key.to_string())
+        } else {
+            sqlx::query(&sql)
+        };
+        let query_result = query.execute(pool).await?;
         let rows_affected = query_result.rows_affected();
         Self::after_scan(&ctx, rows_affected).await?;
 
@@ -951,13 +963,25 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let query = Self::default_query();
         let projection = query.format_fields();
-        let primary_key = Query::escape_string(primary_key);
-        let sql = format!(
-            "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {primary_key};"
-        );
+        let sql = if cfg!(feature = "orm-mysql") {
+            let placeholder = Query::placeholder(1);
+            format!(
+                "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {placeholder};"
+            )
+        } else {
+            let primary_key = Query::escape_string(primary_key);
+            format!(
+                "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {primary_key};"
+            )
+        };
 
         let ctx = Self::before_scan(&sql).await?;
-        let (num_rows, data) = if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
+        let query = if cfg!(feature = "orm-mysql") {
+            sqlx::query(&sql).bind(primary_key.to_string())
+        } else {
+            sqlx::query(&sql)
+        };
+        let (num_rows, data) = if let Some(row) = query.fetch_optional(pool).await? {
             (1, Some(T::decode_row(&row)?))
         } else {
             (0, None)
@@ -973,13 +997,25 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let query = Self::default_query();
         let projection = query.format_fields();
-        let primary_key = Query::escape_string(primary_key);
-        let sql = format!(
-            "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {primary_key};"
-        );
+        let sql = if cfg!(feature = "orm-mysql") {
+            let placeholder = Query::placeholder(1);
+            format!(
+                "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {placeholder};"
+            )
+        } else {
+            let primary_key = Query::escape_string(primary_key);
+            format!(
+                "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {primary_key};"
+            )
+        };
 
         let ctx = Self::before_scan(&sql).await?;
-        if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
+        let query = if cfg!(feature = "orm-mysql") {
+            sqlx::query(&sql).bind(primary_key.to_string())
+        } else {
+            sqlx::query(&sql)
+        };
+        if let Some(row) = query.fetch_optional(pool).await? {
             Self::after_scan(&ctx, 1).await?;
 
             let map = Map::decode_row(&row)?;

@@ -23,7 +23,7 @@ pub trait ModelHooks: Model {
         let query_id = ctx.query_id().to_string();
         let message = match num_rows {
             0 => Cow::Borrowed("no rows affected or fetched"),
-            1 => Cow::Borrowed("one row affected or fetched"),
+            1 => Cow::Borrowed("only one row affected or fetched"),
             _ => Cow::Owned(format!("{num_rows} rows affected or fetched")),
         };
         let duration = ctx.start_time().elapsed();
@@ -41,7 +41,7 @@ pub trait ModelHooks: Model {
 
     /// A hook running before inserting a model into the table.
     #[inline]
-    async fn before_insert<'a>(&mut self) -> Result<Self::Data, Error> {
+    async fn before_insert(&mut self) -> Result<Self::Data, Error> {
         Ok(Self::Data::default())
     }
 

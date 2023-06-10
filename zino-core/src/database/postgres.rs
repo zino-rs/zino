@@ -84,7 +84,9 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         .collect::<Vec<_>>();
                     format!("ARRAY[{}]::{}", values.join(","), self.column_type()).into()
                 }
-                JsonValue::Object(_) => format!("'{}'::{}", value, self.column_type()).into(),
+                JsonValue::Object(_) => {
+                    format!("{}::{}", Query::escape_string(value), self.column_type()).into()
+                }
             }
         } else if self.default_value().is_some() {
             "DEFAULT".into()

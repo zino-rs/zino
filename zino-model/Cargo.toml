@@ -12,6 +12,22 @@ repository = "https://github.com/photino/zino"
 documentation = "https://docs.rs/zino-model"
 readme = "README.md"
 
+[features]
+default = [
+    "namespace",
+    "visibility",
+    "tags",
+    "owner-id",
+    "maintainer-id",
+    "edition",
+]
+namespace = []
+visibility = []
+tags = []
+owner-id = []
+maintainer-id = []
+edition = []
+
 [dependencies]
 regex = "1.8.4"
 
