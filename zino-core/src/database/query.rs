@@ -71,7 +71,7 @@ pub(super) trait QueryExt<DB> {
         }
 
         let (sort_by, ascending) = self.query_order();
-        let mut expression = " ".to_owned();
+        let mut expression = String::new();
         let mut conditions = Vec::with_capacity(filters.len());
         for (key, value) in filters {
             match key.as_str() {
@@ -135,10 +135,10 @@ pub(super) trait QueryExt<DB> {
         };
         if let Some(groups) = filters.parse_str_array("$group") {
             let groups = groups.join(", ");
-            expression += &format!("GROUP BY {groups}");
+            expression += &format!(" GROUP BY {groups}");
             if let Some(JsonValue::Object(selection)) = filters.get("$match") {
                 let condition = Self::format_selection::<M>(selection, " AND ");
-                expression += &format!("HAVING {condition}");
+                expression += &format!(" HAVING {condition}");
             }
         }
         expression

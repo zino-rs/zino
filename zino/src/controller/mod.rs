@@ -88,7 +88,16 @@ where
     async fn list(req: Self::Request) -> Self::Result {
         let mut query = Self::default_list_query();
         let mut res = req.query_validation(&mut query)?;
-        let models = Self::fetch(&query).await.extract(&req)?;
+        let populate = query
+            .filters()
+            .parse_bool("populate")
+            .and_then(|r| r.ok())
+            .unwrap_or(false);
+        let models = if populate {
+            Self::fetch(&query).await.extract(&req)?
+        } else {
+            Self::find(&query).await.extract(&req)?
+        };
         let data = Map::data_entries(models);
         res.set_data(&data);
         Ok(res.into())

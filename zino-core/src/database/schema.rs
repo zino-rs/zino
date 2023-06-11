@@ -2,7 +2,7 @@ use super::{mutation::MutationExt, query::QueryExt, ConnectionPool, DatabaseDriv
 use crate::{
     error::Error,
     extension::JsonObjectExt,
-    model::{Column, DecodeRow, EncodeColumn, ModelHooks, Mutation, Query},
+    model::{Column, DecodeRow, EncodeColumn, ModelHooks, Mutation, Query, QueryContext},
     BoxFuture, JsonValue, Map, Uuid,
 };
 use futures::TryStreamExt;
@@ -164,10 +164,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     } else if index_type == "unique" || index_type == "spatial" {
                         let index_type = index_type.to_uppercase();
                         let sql = format!(
-                            "
-                                CREATE {index_type} INDEX {table_name}_{column_name}_index
-                                ON {table_name} ({column_name});
-                            "
+                            "CREATE {index_type} INDEX {table_name}_{column_name}_index \
+                                ON {table_name} ({column_name});"
                         );
                         rows = sqlx::query(&sql)
                             .execute(pool)
@@ -177,10 +175,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     } else if index_type == "btree" || index_type == "hash" {
                         let index_type = index_type.to_uppercase();
                         let sql = format!(
-                            "
-                                CREATE INDEX {table_name}_{column_name}_index
-                                ON {table_name} ({column_name}) USING {index_type};
-                            "
+                            "CREATE INDEX {table_name}_{column_name}_index \
+                                ON {table_name} ({column_name}) USING {index_type};"
                         );
                         rows = sqlx::query(&sql)
                             .execute(pool)
@@ -193,10 +189,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             if !text_search_columns.is_empty() {
                 let text_search_columns = text_search_columns.join(", ");
                 let sql = format!(
-                    "
-                        CREATE FULLTEXT INDEX {table_name}_text_search_index
-                        ON {table_name} ({text_search_columns});
-                    "
+                    "CREATE FULLTEXT INDEX {table_name}_text_search_index \
+                        ON {table_name} ({text_search_columns});"
                 );
                 rows = sqlx::query(&sql)
                     .execute(pool)
@@ -219,10 +213,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     text_search_columns.push((language, column));
                 } else if index_type == "unique" {
                     let sql = format!(
-                        "
-                            CREATE UNIQUE INDEX IF NOT EXISTS {table_name}_{column_name}_index
-                            ON {table_name} ({column_name});
-                        "
+                        "CREATE UNIQUE INDEX IF NOT EXISTS {table_name}_{column_name}_index \
+                            ON {table_name} ({column_name});"
                     );
                     rows = sqlx::query(&sql)
                         .execute(pool)
@@ -232,10 +224,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 } else {
                     let sort_order = if index_type == "btree" { " DESC" } else { "" };
                     let sql = format!(
-                        "
-                            CREATE INDEX IF NOT EXISTS {table_name}_{column_name}_index
-                            ON {table_name} USING {index_type}({column_name}{sort_order});
-                        "
+                        "CREATE INDEX IF NOT EXISTS {table_name}_{column_name}_index \
+                            ON {table_name} USING {index_type}({column_name}{sort_order});"
                     );
                     rows = sqlx::query(&sql)
                         .execute(pool)
@@ -253,10 +243,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 .collect::<String>();
             let text_search = format!("to_tsvector('{language}', {text})");
             let sql = format!(
-                "
-                    CREATE INDEX IF NOT EXISTS {table_name}_text_search_{language}_index
-                    ON {table_name} USING gin({text_search});
-                "
+                "CREATE INDEX IF NOT EXISTS {table_name}_text_search_{language}_index \
+                    ON {table_name} USING gin({text_search});"
             );
             rows = sqlx::query(&sql)
                 .execute(pool)
@@ -268,7 +256,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Inserts the model into the table.
-    async fn insert(mut self) -> Result<(), Error> {
+    async fn insert(mut self) -> Result<QueryContext, Error> {
         let pool = Self::acquire_writer().await?.pool();
         let model_data = self.before_insert().await?;
 
@@ -279,17 +267,19 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             .iter()
             .map(|col| col.encode_value(map.get(col.name())))
             .collect::<Vec<_>>()
-            .join(",");
+            .join(", ");
         let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({values});");
-        let ctx = Self::before_scan(&sql).await?;
+
+        let mut ctx = Self::before_scan(&sql).await?;
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
-        Self::after_scan(&ctx, rows_affected).await?;
-
         let success = rows_affected == 1;
-        Self::after_insert(&ctx, model_data, success).await?;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(rows_affected), success);
+        Self::after_scan(&ctx).await?;
+        Self::after_insert(&ctx, model_data).await?;
         if success {
-            Ok(())
+            Ok(ctx)
         } else {
             Err(Error::new(format!(
                 "{rows_affected} rows are affected while it is expected to affect 1 row"
@@ -317,16 +307,17 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let fields = Self::fields().join(", ");
         let values = values.join(", ");
         let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({values});");
-        let ctx = Self::before_scan(&sql).await?;
-
+        let mut ctx = Self::before_scan(&sql).await?;
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
-        Self::after_scan(&ctx, rows_affected).await?;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(rows_affected), true);
+        Self::after_scan(&ctx).await?;
         Ok(rows_affected)
     }
 
     /// Updates the model in the table.
-    async fn update(mut self) -> Result<(), Error> {
+    async fn update(mut self) -> Result<QueryContext, Error> {
         let pool = Self::acquire_writer().await?.pool();
         let model_data = self.before_update().await?;
 
@@ -350,15 +341,17 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let sql = format!(
             "UPDATE {table_name} SET {mutations} WHERE {primary_key_name} = {primary_key};"
         );
-        let ctx = Self::before_scan(&sql).await?;
+
+        let mut ctx = Self::before_scan(&sql).await?;
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
-        Self::after_scan(&ctx, rows_affected).await?;
-
         let success = rows_affected == 1;
-        Self::after_update(&ctx, model_data, success).await?;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(rows_affected), success);
+        Self::after_scan(&ctx).await?;
+        Self::after_update(&ctx, model_data).await?;
         if success {
-            Ok(())
+            Ok(ctx)
         } else {
             Err(Error::new(format!(
                 "{rows_affected} rows are affected while it is expected to affect 1 row"
@@ -367,7 +360,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Updates at most one model selected by the query in the table.
-    async fn update_one(query: &Query, mutation: &Mutation) -> Result<(), Error> {
+    async fn update_one(query: &Query, mutation: &Mutation) -> Result<QueryContext, Error> {
         let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
@@ -377,26 +370,26 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             // MySQL doesn't yet support 'LIMIT & IN/ALL/ANY/SOME subquery'
             // and self-referencing in UPDATE/DELETE
             format!(
-                "
-                    UPDATE {table_name} SET {updates} WHERE {primary_key_name} IN
-                    (SELECT * from (SELECT {primary_key_name} FROM {table_name} {filters}) AS t);
-                "
+                "UPDATE {table_name} SET {updates} WHERE {primary_key_name} IN \
+                    (SELECT * from (SELECT {primary_key_name} FROM {table_name} {filters}) AS t);"
             )
         } else {
             let sort = query.format_sort();
             format!(
-                "
-                    UPDATE {table_name} SET {updates} WHERE {primary_key_name} IN
-                    (SELECT {primary_key_name} FROM {table_name} {filters} {sort} LIMIT 1);
-                "
+                "UPDATE {table_name} SET {updates} WHERE {primary_key_name} IN \
+                    (SELECT {primary_key_name} FROM {table_name} {filters} {sort} LIMIT 1);"
             )
         };
-        let ctx = Self::before_scan(sql.trim()).await?;
+
+        let mut ctx = Self::before_scan(&sql).await?;
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
-        Self::after_scan(&ctx, rows_affected).await?;
-        if rows_affected <= 1 {
-            Ok(())
+        let success = rows_affected <= 1;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(rows_affected), success);
+        Self::after_scan(&ctx).await?;
+        if success {
+            Ok(ctx)
         } else {
             Err(Error::new(format!(
                 "{rows_affected} rows are affected while it is expected to affect at most 1 row"
@@ -411,15 +404,18 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let filters = query.format_filters::<Self>();
         let updates = mutation.format_updates::<Self>();
         let sql = format!("UPDATE {table_name} SET {updates} {filters};");
-        let ctx = Self::before_scan(&sql).await?;
+
+        let mut ctx = Self::before_scan(&sql).await?;
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
-        Self::after_scan(&ctx, rows_affected).await?;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(rows_affected), true);
+        Self::after_scan(&ctx).await?;
         Ok(rows_affected)
     }
 
     /// Updates or inserts the model into the table.
-    async fn upsert(mut self) -> Result<(), Error> {
+    async fn upsert(mut self) -> Result<QueryContext, Error> {
         let pool = Self::acquire_writer().await?.pool();
         let model_data = self.before_upsert().await?;
 
@@ -447,28 +443,26 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mutations = mutations.join(", ");
         let sql = if cfg!(feature = "orm-mysql") {
             format!(
-                "
-                    INSERT INTO {table_name} ({fields}) VALUES ({values})
-                    ON DUPLICATE KEY UPDATE {mutations};
-                "
+                "INSERT INTO {table_name} ({fields}) VALUES ({values}) \
+                    ON DUPLICATE KEY UPDATE {mutations};"
             )
         } else {
             format!(
-                "
-                    INSERT INTO {table_name} ({fields}) VALUES ({values})
-                    ON CONFLICT ({primary_key_name}) DO UPDATE SET {mutations};
-                "
+                "INSERT INTO {table_name} ({fields}) VALUES ({values}) \
+                    ON CONFLICT ({primary_key_name}) DO UPDATE SET {mutations};"
             )
         };
-        let ctx = Self::before_scan(sql.trim()).await?;
+
+        let mut ctx = Self::before_scan(&sql).await?;
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
-        Self::after_scan(&ctx, rows_affected).await?;
-
         let success = rows_affected == 1;
-        Self::after_upsert(&ctx, model_data, success).await?;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(rows_affected), success);
+        Self::after_scan(&ctx).await?;
+        Self::after_upsert(&ctx, model_data).await?;
         if success {
-            Ok(())
+            Ok(ctx)
         } else {
             Err(Error::new(format!(
                 "{rows_affected} rows are affected while it is expected to affect 1 row"
@@ -477,7 +471,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Deletes the model in the table.
-    async fn delete(self) -> Result<(), Error> {
+    async fn delete(self) -> Result<QueryContext, Error> {
         let pool = Self::acquire_writer().await?.pool();
         let model_data = self.before_delete().await?;
 
@@ -492,7 +486,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             format!("DELETE FROM {table_name} WHERE {primary_key_name} = {primary_key};")
         };
 
-        let ctx = Self::before_scan(&sql).await?;
+        let mut ctx = Self::before_scan(&sql).await?;
         let query = if cfg!(feature = "orm-mysql") {
             sqlx::query(&sql).bind(primary_key.to_string())
         } else {
@@ -500,12 +494,13 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         };
         let query_result = query.execute(pool).await?;
         let rows_affected = query_result.rows_affected();
-        Self::after_scan(&ctx, rows_affected).await?;
-
         let success = rows_affected == 1;
-        self.after_delete(&ctx, model_data, success).await?;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(rows_affected), success);
+        Self::after_scan(&ctx).await?;
+        self.after_delete(&ctx, model_data).await?;
         if success {
-            Ok(())
+            Ok(ctx)
         } else {
             Err(Error::new(format!(
                 "{rows_affected} rows are affected while it is expected to affect 1 row"
@@ -514,24 +509,26 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Deletes at most one model selected by the query in the table.
-    async fn delete_one(query: &Query) -> Result<(), Error> {
+    async fn delete_one(query: &Query) -> Result<QueryContext, Error> {
         let pool = Self::acquire_writer().await?.pool();
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let sql = format!(
-            "
-                DELETE FROM {table_name} WHERE {primary_key_name} IN
-                (SELECT {primary_key_name} FROM {table_name} {filters} {sort} LIMIT 1);
-            "
+            "DELETE FROM {table_name} WHERE {primary_key_name} IN \
+                (SELECT {primary_key_name} FROM {table_name} {filters} {sort} LIMIT 1);"
         );
-        let ctx = Self::before_scan(sql.trim()).await?;
+
+        let mut ctx = Self::before_scan(&sql).await?;
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
-        Self::after_scan(&ctx, rows_affected).await?;
-        if rows_affected <= 1 {
-            Ok(())
+        let success = rows_affected <= 1;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(rows_affected), success);
+        Self::after_scan(&ctx).await?;
+        if success {
+            Ok(ctx)
         } else {
             Err(Error::new(format!(
                 "{rows_affected} rows are affected while it is expected to affect at most 1 row"
@@ -545,10 +542,13 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let table_name = Self::table_name();
         let filters = query.format_filters::<Self>();
         let sql = format!("DELETE FROM {table_name} {filters};");
-        let ctx = Self::before_scan(&sql).await?;
+
+        let mut ctx = Self::before_scan(&sql).await?;
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
-        Self::after_scan(&ctx, rows_affected).await?;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(rows_affected), true);
+        Self::after_scan(&ctx).await?;
         Ok(rows_affected)
     }
 
@@ -567,12 +567,14 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        let ctx = Self::before_scan(&sql).await?;
+        let mut ctx = Self::before_scan(&sql).await?;
         while let Some(row) = rows.try_next().await? && max_rows > 0 {
             data.push(T::decode_row(&row)?);
             max_rows -= 1;
         }
-        Self::after_scan(&ctx, u64::try_from(data.len())?).await?;
+        ctx.set_query(&sql);
+        ctx.set_query_result(Some(u64::try_from(data.len())?), true);
+        Self::after_scan(&ctx).await?;
         Ok(data)
     }
 
@@ -594,13 +596,16 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} LIMIT 1;");
-        let ctx = Self::before_scan(&sql).await?;
+
+        let mut ctx = Self::before_scan(&sql).await?;
         let (num_rows, data) = if let Some(row) = sqlx::query(&sql).fetch_optional(pool).await? {
             (1, Some(T::decode_row(&row)?))
         } else {
             (0, None)
         };
-        Self::after_scan(&ctx, num_rows).await?;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(num_rows), true);
+        Self::after_scan(&ctx).await?;
         Ok(data)
     }
 
@@ -645,7 +650,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut associations = Map::with_capacity(num_values);
-        let ctx = Self::before_scan(&sql).await?;
+        let mut ctx = Self::before_scan(&sql).await?;
         while let Some(row) = rows.try_next().await? {
             let map = Map::decode_row(&row)?;
             let primary_key_value = map
@@ -654,7 +659,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 .unwrap_or_default();
             associations.upsert(primary_key_value, map);
         }
-        Self::after_scan(&ctx, u64::try_from(associations.len())?).await?;
+        ctx.set_query(&sql);
+        ctx.set_query_result(Some(u64::try_from(associations.len())?), true);
+        Self::after_scan(&ctx).await?;
+
         for row in data {
             for col in columns {
                 if let Some(value) = row.get_mut(col) {
@@ -707,7 +715,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut associations = Map::with_capacity(num_values);
-        let ctx = Self::before_scan(&sql).await?;
+        let mut ctx = Self::before_scan(&sql).await?;
         while let Some(row) = rows.try_next().await? {
             let map = Map::decode_row(&row)?;
             let primary_key_value = map
@@ -716,7 +724,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 .unwrap_or_default();
             associations.upsert(primary_key_value, map);
         }
-        Self::after_scan(&ctx, u64::try_from(associations.len())?).await?;
+        ctx.set_query(&sql);
+        ctx.set_query_result(Some(u64::try_from(associations.len())?), true);
+        Self::after_scan(&ctx).await?;
+
         for col in columns {
             if let Some(value) = data.get_mut(col) {
                 if let Some(value) = value.as_str() {
@@ -764,21 +775,21 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             .collect::<Vec<_>>()
             .join(" AND ");
         let sql = format!(
-            "
-                SELECT {projection} FROM {table_name} {model_name}
-                LEFT OUTER JOIN {other_table_name} {other_model_name}
-                ON {on_expressions} {filters} {sort} {pagination};
-            "
+            "SELECT {projection} FROM {table_name} {model_name} \
+                LEFT OUTER JOIN {other_table_name} {other_model_name} \
+                    ON {on_expressions} {filters} {sort} {pagination};"
         );
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        let ctx = Self::before_scan(sql.trim()).await?;
+        let mut ctx = Self::before_scan(&sql).await?;
         while let Some(row) = rows.try_next().await? && max_rows > 0 {
             data.push(T::decode_row(&row)?);
             max_rows -= 1;
         }
-        Self::after_scan(&ctx, u64::try_from(data.len())?).await?;
+        ctx.set_query(&sql);
+        ctx.set_query_result(Some(u64::try_from(data.len())?), true);
+        Self::after_scan(&ctx).await?;
         Ok(data)
     }
 
@@ -809,9 +820,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             "count(*)".to_owned()
         };
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
-        let ctx = Self::before_scan(&sql).await?;
+
+        let mut ctx = Self::before_scan(&sql).await?;
         let count: i64 = sqlx::query_scalar(&sql).fetch_one(pool).await?;
-        Self::after_scan(&ctx, 1).await?;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(1), true);
+        Self::after_scan(&ctx).await?;
         u64::try_from(count).map_err(Error::from)
     }
 
@@ -841,9 +855,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             .collect::<Vec<_>>()
             .join(", ");
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
-        let ctx = Self::before_scan(&sql).await?;
+
+        let mut ctx = Self::before_scan(&sql).await?;
         let row = sqlx::query(&sql).fetch_one(pool).await?;
-        Self::after_scan(&ctx, 1).await?;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(1), true);
+        Self::after_scan(&ctx).await?;
         T::decode_row(&row).map_err(Error::from)
     }
 
@@ -866,10 +883,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             query = query.bind(value.to_string());
         }
 
-        let ctx = Self::before_scan(&sql).await?;
+        let mut ctx = Self::before_scan(&sql).await?;
         let query_result = query.execute(pool).await?;
         let rows_affected = query_result.rows_affected();
-        Self::after_scan(&ctx, rows_affected).await?;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(rows_affected), true);
+        Self::after_scan(&ctx).await?;
         Ok(rows_affected)
     }
 
@@ -888,12 +907,14 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut rows = query.fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        let ctx = Self::before_scan(&sql).await?;
+        let mut ctx = Self::before_scan(&sql).await?;
         while let Some(row) = rows.try_next().await? && max_rows > 0 {
             data.push(T::decode_row(&row)?);
             max_rows -= 1;
         }
-        Self::after_scan(&ctx, u64::try_from(data.len())?).await?;
+        ctx.set_query(sql.as_ref());
+        ctx.set_query_result(Some(u64::try_from(data.len())?), true);
+        Self::after_scan(&ctx).await?;
         Ok(data)
     }
 
@@ -918,13 +939,15 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             query = query.bind(value.to_string());
         }
 
-        let ctx = Self::before_scan(&sql).await?;
+        let mut ctx = Self::before_scan(&sql).await?;
         let (num_rows, data) = if let Some(row) = query.fetch_optional(pool).await? {
             (1, Some(T::decode_row(&row)?))
         } else {
             (0, None)
         };
-        Self::after_scan(&ctx, num_rows).await?;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(num_rows), true);
+        Self::after_scan(&ctx).await?;
         Ok(data)
     }
 
@@ -975,7 +998,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             )
         };
 
-        let ctx = Self::before_scan(&sql).await?;
+        let mut ctx = Self::before_scan(&sql).await?;
         let query = if cfg!(feature = "orm-mysql") {
             sqlx::query(&sql).bind(primary_key.to_string())
         } else {
@@ -986,7 +1009,9 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         } else {
             (0, None)
         };
-        Self::after_scan(&ctx, num_rows).await?;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(num_rows), true);
+        Self::after_scan(&ctx).await?;
         Ok(data)
     }
 
@@ -1009,19 +1034,23 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             )
         };
 
-        let ctx = Self::before_scan(&sql).await?;
+        let mut ctx = Self::before_scan(&sql).await?;
         let query = if cfg!(feature = "orm-mysql") {
             sqlx::query(&sql).bind(primary_key.to_string())
         } else {
             sqlx::query(&sql)
         };
         if let Some(row) = query.fetch_optional(pool).await? {
-            Self::after_scan(&ctx, 1).await?;
+            ctx.set_query(sql);
+            ctx.set_query_result(Some(1), true);
+            Self::after_scan(&ctx).await?;
 
             let map = Map::decode_row(&row)?;
             Self::try_from_map(map).map_err(Error::from)
         } else {
-            Self::after_scan(&ctx, 0).await?;
+            ctx.set_query(sql);
+            ctx.set_query_result(Some(0), true);
+            Self::after_scan(&ctx).await?;
 
             let model_name = Self::MODEL_NAME;
             Err(Error::new(format!(

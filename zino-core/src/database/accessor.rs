@@ -135,46 +135,58 @@ where
             .is_some_and(|s| s.is_empty() || s.ends_with(':'))
     }
 
+    /// Returns `true` if the model has the specific visibility.
+    #[inline]
+    fn has_visibility(&self, visibility: &str) -> bool {
+        self.visibility().eq_ignore_ascii_case(visibility)
+    }
+
     /// Returns `true` if the `visibility` is `Public`.
     #[inline]
     fn is_public(&self) -> bool {
-        self.visibility() == "Public"
+        self.visibility().eq_ignore_ascii_case("Public")
     }
 
     /// Returns `true` if the `visibility` is `Internal`.
     #[inline]
     fn is_internal(&self) -> bool {
-        self.visibility() == "Internal"
+        self.visibility().eq_ignore_ascii_case("Internal")
     }
 
     /// Returns `true` if the `visibility` is `Private`.
     #[inline]
     fn is_private(&self) -> bool {
-        self.visibility() == "Private"
+        self.visibility().eq_ignore_ascii_case("Private")
+    }
+
+    /// Returns `true` if the model has the specific status.
+    #[inline]
+    fn has_status(&self, status: &str) -> bool {
+        self.status().eq_ignore_ascii_case(status)
     }
 
     /// Returns `true` if the `status` is `Active`.
     #[inline]
     fn is_active(&self) -> bool {
-        self.status() == "Active"
+        self.status().eq_ignore_ascii_case("Active")
     }
 
     /// Returns `true` if the `status` is `Inactive`.
     #[inline]
     fn is_inactive(&self) -> bool {
-        self.status() == "Inactive"
+        self.status().eq_ignore_ascii_case("Inactive")
     }
 
     /// Returns `true` if the `status` is `Locked`.
     #[inline]
     fn is_locked(&self) -> bool {
-        self.status() == "Locked"
+        self.status().eq_ignore_ascii_case("Locked")
     }
 
     /// Returns `true` if the `status` is `Deleted`.
     #[inline]
     fn is_deleted(&self) -> bool {
-        self.status() == "Deleted"
+        self.status().eq_ignore_ascii_case("Deleted")
     }
 
     /// Returns `true` if the `description` is nonempty.
@@ -393,6 +405,7 @@ where
             return Err(Error::new("409 Conflict: there is a version control conflict"));
         }
 
+        let model_data = model.before_update().await?;
         let validation = model.read_map(&data);
         if !validation.is_success() {
             return Ok((validation, model));
@@ -410,16 +423,20 @@ where
 
         let query = model.current_version_query();
         let mutation = model.next_version_mutation(data);
-        Self::update_one(&query, &mutation).await?;
+        let ctx = Self::update_one(&query, &mutation).await?;
+        Self::after_update(&ctx, model_data).await?;
         Ok((validation, model))
     }
 
     /// Deletes a model of the primary key by setting the status as `Deleted`.
     async fn soft_delete_by_id(id: &T) -> Result<(), Error> {
-        let model = Self::try_get_model(id).await?;
+        let mut model = Self::try_get_model(id).await?;
+        let model_data = model.before_soft_delete().await?;
         let query = model.current_version_query();
         let mutation = model.soft_delete_mutation();
-        Self::update_one(&query, &mutation).await
+        let ctx = Self::update_one(&query, &mutation).await?;
+        Self::after_soft_delete(&ctx, model_data).await?;
+        Ok(())
     }
 }
 
