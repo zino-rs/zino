@@ -1,4 +1,3 @@
-use super::AccessKeyId;
 use crate::{encoding::base64, error::Error, request::Validation, SharedString};
 use hmac::digest::{Digest, FixedOutput, HashMarker, Update};
 use std::{error, fmt};
@@ -41,8 +40,8 @@ impl SessionId {
         }
     }
 
-    /// Validates the session identifier using the realm and access key ID.
-    pub fn validate_with<D>(&self, realm: &str, access_key_id: AccessKeyId) -> Validation
+    /// Validates the session identifier using the realm and the key.
+    pub fn validate_with<D>(&self, realm: &str, key: impl AsRef<[u8]>) -> Validation
     where
         D: Default + FixedOutput + HashMarker + Update,
     {
@@ -50,7 +49,7 @@ impl SessionId {
         let identifier = &self.identifier;
         match base64::decode(identifier) {
             Ok(hash) => {
-                let data = [realm.as_bytes(), access_key_id.as_ref()].concat();
+                let data = [realm.as_bytes(), key.as_ref()].concat();
                 let mut hasher = D::new();
                 hasher.update(data.as_ref());
 

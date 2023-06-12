@@ -47,7 +47,6 @@
 #![feature(async_fn_in_trait)]
 #![feature(doc_auto_cfg)]
 #![feature(lazy_cell)]
-#![feature(let_chains)]
 #![feature(result_option_inspect)]
 #![feature(string_leak)]
 #![forbid(unsafe_code)]

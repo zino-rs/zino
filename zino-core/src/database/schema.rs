@@ -307,6 +307,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let fields = Self::fields().join(", ");
         let values = values.join(", ");
         let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({values});");
+
         let mut ctx = Self::before_scan(&sql).await?;
         let query_result = sqlx::query(&sql).execute(pool).await?;
         let rows_affected = query_result.rows_affected();
@@ -564,10 +565,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let sort = query.format_sort();
         let pagination = query.format_pagination();
         let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} {pagination};");
+
+        let mut ctx = Self::before_scan(&sql).await?;
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        let mut ctx = Self::before_scan(&sql).await?;
         while let Some(row) = rows.try_next().await? && max_rows > 0 {
             data.push(T::decode_row(&row)?);
             max_rows -= 1;
@@ -648,9 +650,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let projection = query.format_fields();
         let filters = query.format_filters::<Self>();
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
+
+        let mut ctx = Self::before_scan(&sql).await?;
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut associations = Map::with_capacity(num_values);
-        let mut ctx = Self::before_scan(&sql).await?;
         while let Some(row) = rows.try_next().await? {
             let map = Map::decode_row(&row)?;
             let primary_key_value = map
@@ -713,9 +716,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let projection = query.format_fields();
         let filters = query.format_filters::<Self>();
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
+
+        let mut ctx = Self::before_scan(&sql).await?;
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut associations = Map::with_capacity(num_values);
-        let mut ctx = Self::before_scan(&sql).await?;
         while let Some(row) = rows.try_next().await? {
             let map = Map::decode_row(&row)?;
             let primary_key_value = map
@@ -779,10 +783,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 LEFT OUTER JOIN {other_table_name} {other_model_name} \
                     ON {on_expressions} {filters} {sort} {pagination};"
         );
+
+        let mut ctx = Self::before_scan(&sql).await?;
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        let mut ctx = Self::before_scan(&sql).await?;
         while let Some(row) = rows.try_next().await? && max_rows > 0 {
             data.push(T::decode_row(&row)?);
             max_rows -= 1;
@@ -904,10 +909,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             query = query.bind(value.to_string());
         }
 
+        let mut ctx = Self::before_scan(&sql).await?;
         let mut rows = query.fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        let mut ctx = Self::before_scan(&sql).await?;
         while let Some(row) = rows.try_next().await? && max_rows > 0 {
             data.push(T::decode_row(&row)?);
             max_rows -= 1;

@@ -17,7 +17,6 @@ pub trait ModelHooks: Model {
     }
 
     /// A hook running after scanning the table.
-    #[inline]
     async fn after_scan(ctx: &QueryContext) -> Result<(), Error> {
         let query = ctx.query();
         let query_id = ctx.query_id().to_string();
@@ -78,13 +77,13 @@ pub trait ModelHooks: Model {
         Ok(())
     }
 
-    /// A hook running before logically deleting a model into the table.
+    /// A hook running before logically deleting a model from the table.
     #[inline]
     async fn before_soft_delete(&mut self) -> Result<Self::Data, Error> {
         Ok(Self::Data::default())
     }
 
-    /// A hook running after logically deleting a model into the table.
+    /// A hook running after logically deleting a model from the table.
     #[inline]
     async fn after_soft_delete(ctx: &QueryContext, _data: Self::Data) -> Result<(), Error> {
         if !ctx.is_success() {
@@ -93,7 +92,7 @@ pub trait ModelHooks: Model {
             tracing::error!(
                 query,
                 query_id,
-                "fail to logically delete a model into the table"
+                "fail to logically delete a model from the table"
             );
         }
         Ok(())

@@ -17,7 +17,6 @@
 #![feature(iter_intersperse)]
 #![feature(lazy_cell)]
 #![feature(let_chains)]
-#![feature(min_specialization)]
 #![feature(result_option_inspect)]
 #![feature(string_leak)]
 #![forbid(unsafe_code)]
