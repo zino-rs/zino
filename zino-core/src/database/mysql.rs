@@ -500,11 +500,17 @@ impl QueryExt<DatabaseDriver> for Query {
     }
 
     fn format_pagination(&self) -> String {
+        let limit = self.limit();
+        if limit == usize::MAX {
+            return String::new();
+        }
+
         let (sort_by, _) = self.sort_order();
         if self.filters().contains_key(sort_by) {
-            format!("LIMIT {}", self.limit())
+            format!("LIMIT {limit}")
         } else {
-            format!("LIMIT {}, {}", self.offset(), self.limit())
+            let offset = self.offset();
+            format!("LIMIT {offset}, {limit}")
         }
     }
 

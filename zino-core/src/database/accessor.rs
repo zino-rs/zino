@@ -399,13 +399,13 @@ where
     }
 
     /// Updates a model of the primary key using the json object.
-    async fn update_by_id(id: &T, mut data: Map) -> Result<(Validation, Self), Error> {
+    async fn update_by_id(id: &T, data: Map) -> Result<(Validation, Self), Error> {
         let mut model = Self::try_get_model(id).await?;
         if let Some(version) = data.get_u64("version") && model.version() != version {
             return Err(Error::new("409 Conflict: there is a version control conflict"));
         }
 
-        let model_data = model.before_update().await?;
+        let mut data = Self::before_validation(data).await?;
         let validation = model.read_map(&data);
         if !validation.is_success() {
             return Ok((validation, model));
@@ -421,8 +421,11 @@ where
             data.retain(|key, _value| key == "status");
         }
 
+        let data = Self::after_validation(data).await?;
         let query = model.current_version_query();
         let mutation = model.next_version_mutation(data);
+
+        let model_data = model.before_update().await?;
         let ctx = Self::update_one(&query, &mutation).await?;
         Self::after_update(&ctx, model_data).await?;
         Ok((validation, model))

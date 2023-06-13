@@ -472,7 +472,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Deletes the model in the table.
-    async fn delete(self) -> Result<QueryContext, Error> {
+    async fn delete(mut self) -> Result<QueryContext, Error> {
         let pool = Self::acquire_writer().await?.pool();
         let model_data = self.before_delete().await?;
 
@@ -559,6 +559,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         query: &Query,
     ) -> Result<Vec<T>, Error> {
         let pool = Self::acquire_reader().await?.pool();
+        Self::before_select(query).await?;
+
         let table_name = Self::table_name();
         let projection = query.format_fields();
         let filters = query.format_filters::<Self>();
@@ -577,6 +579,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(&sql);
         ctx.set_query_result(Some(u64::try_from(data.len())?), true);
         Self::after_scan(&ctx).await?;
+        Self::after_select(&ctx).await?;
         Ok(data)
     }
 
@@ -593,6 +596,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         query: &Query,
     ) -> Result<Option<T>, Error> {
         let pool = Self::acquire_reader().await?.pool();
+        Self::before_select(query).await?;
+
         let table_name = Self::table_name();
         let projection = query.format_fields();
         let filters = query.format_filters::<Self>();
@@ -608,6 +613,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(sql);
         ctx.set_query_result(Some(num_rows), true);
         Self::after_scan(&ctx).await?;
+        Self::after_select(&ctx).await?;
         Ok(data)
     }
 
@@ -628,6 +634,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         columns: [&str; N],
     ) -> Result<u64, Error> {
         let pool = Self::acquire_reader().await?.pool();
+        Self::before_select(query).await?;
+
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
         for row in data.iter() {
@@ -665,6 +673,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(&sql);
         ctx.set_query_result(Some(u64::try_from(associations.len())?), true);
         Self::after_scan(&ctx).await?;
+        Self::after_select(&ctx).await?;
 
         for row in data {
             for col in columns {
@@ -696,6 +705,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         columns: [&str; N],
     ) -> Result<(), Error> {
         let pool = Self::acquire_reader().await?.pool();
+        Self::before_select(query).await?;
+
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
         for col in columns {
@@ -731,6 +742,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(&sql);
         ctx.set_query_result(Some(u64::try_from(associations.len())?), true);
         Self::after_scan(&ctx).await?;
+        Self::after_select(&ctx).await?;
 
         for col in columns {
             if let Some(value) = data.get_mut(col) {
@@ -760,6 +772,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         right_columns: &[&str],
     ) -> Result<Vec<T>, Error> {
         let pool = Self::acquire_reader().await?.pool();
+        Self::before_select(query).await?;
+
         let table_name = Self::table_name();
         let model_name = Query::format_field(Self::model_name());
         let other_table_name = M::table_name();
@@ -795,6 +809,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(&sql);
         ctx.set_query_result(Some(u64::try_from(data.len())?), true);
         Self::after_scan(&ctx).await?;
+        Self::after_select(&ctx).await?;
         Ok(data)
     }
 
@@ -812,6 +827,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Counts the number of rows selected by the query in the table.
     async fn count(query: &Query, column: &str, distinct: bool) -> Result<u64, Error> {
         let pool = Self::acquire_writer().await?.pool();
+        Self::before_select(query).await?;
+
         let table_name = Self::table_name();
         let filters = query.format_filters::<Self>();
         let field = Query::format_field(column);
@@ -831,6 +848,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(sql);
         ctx.set_query_result(Some(1), true);
         Self::after_scan(&ctx).await?;
+        Self::after_select(&ctx).await?;
         u64::try_from(count).map_err(Error::from)
     }
 
@@ -841,6 +859,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         columns: &[(&str, bool)],
     ) -> Result<T, Error> {
         let pool = Self::acquire_writer().await?.pool();
+        Self::before_select(query).await?;
+
         let table_name = Self::table_name();
         let filters = query.format_filters::<Self>();
         let projection = columns
@@ -866,6 +886,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(sql);
         ctx.set_query_result(Some(1), true);
         Self::after_scan(&ctx).await?;
+        Self::after_select(&ctx).await?;
         T::decode_row(&row).map_err(Error::from)
     }
 
@@ -1017,6 +1038,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(sql);
         ctx.set_query_result(Some(num_rows), true);
         Self::after_scan(&ctx).await?;
+        Self::after_select(&ctx).await?;
         Ok(data)
     }
 
@@ -1049,6 +1071,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             ctx.set_query(sql);
             ctx.set_query_result(Some(1), true);
             Self::after_scan(&ctx).await?;
+            Self::after_select(&ctx).await?;
 
             let map = Map::decode_row(&row)?;
             Self::try_from_map(map).map_err(Error::from)
@@ -1056,6 +1079,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             ctx.set_query(sql);
             ctx.set_query_result(Some(0), true);
             Self::after_scan(&ctx).await?;
+            Self::after_select(&ctx).await?;
 
             let model_name = Self::MODEL_NAME;
             Err(Error::new(format!(
@@ -1085,16 +1109,19 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Ok(primary_key_values)
     }
 
-    /// Returns `true` if the model has a unique column value.
-    async fn is_unique_in<T: Into<JsonValue>>(
+    /// Returns `true` if the model is unique on the column values.
+    async fn is_unique_on<const N: usize>(
         &self,
-        column: &str,
-        value: T,
+        columns: [(&str, JsonValue); N],
     ) -> Result<bool, Error> {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut query = Query::default();
-        query.allow_fields(&[primary_key_name, column]);
-        query.add_filter(column, value);
+        let mut fields = vec![primary_key_name];
+        for (field, value) in columns.into_iter() {
+            fields.push(field);
+            query.add_filter(field, value);
+        }
+        query.allow_fields(&fields);
         query.set_limit(2);
 
         let mut data = Self::find::<Map>(&query).await?;

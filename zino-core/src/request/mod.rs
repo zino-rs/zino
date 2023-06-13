@@ -8,7 +8,7 @@ use crate::{
     error::Error,
     extension::{HeaderMapExt, JsonObjectExt},
     i18n,
-    model::{Model, Query},
+    model::{ModelHooks, Query},
     response::{Rejection, Response, ResponseCode},
     trace::{TraceContext, TraceState},
     JsonValue, Map, SharedString, Uuid,
@@ -463,7 +463,7 @@ pub trait RequestContext {
 
     /// Returns a `Response` or `Rejection` from a model validation.
     /// The data is extracted from [`parse_body()`](RequestContext::parse_body).
-    async fn model_validation<M: Model, S: ResponseCode>(
+    async fn model_validation<M: ModelHooks, S: ResponseCode>(
         &mut self,
         model: &mut M,
     ) -> Result<Response<S>, Rejection>
@@ -482,38 +482,56 @@ pub trait RequestContext {
             .await
             .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
         if data_type == "form" {
-            serde_urlencoded::from_bytes(&bytes)
-                .map_err(|err| Rejection::from_validation_entry("body", err).context(self))
-                .and_then(|data: Map| {
+            let data = serde_urlencoded::from_bytes(&bytes)
+                .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
+            match M::before_validation(data).await {
+                Ok(data) => {
                     let validation = model.read_map(&data);
+                    M::after_validation(data)
+                        .await
+                        .map_err(|err| Rejection::from_error(err).context(self))?;
                     if validation.is_success() {
                         Ok(Response::with_context(S::OK, self))
                     } else {
                         Err(Rejection::bad_request(validation).context(self))
                     }
-                })
+                }
+                Err(err) => Err(Rejection::from_error(err).context(self)),
+            }
         } else if data_type == "msgpack" {
-            rmp_serde::from_slice(&bytes)
-                .map_err(|err| Rejection::from_validation_entry("body", err).context(self))
-                .and_then(|data: Map| {
+            let data = rmp_serde::from_slice(&bytes)
+                .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
+            match M::before_validation(data).await {
+                Ok(data) => {
                     let validation = model.read_map(&data);
+                    M::after_validation(data)
+                        .await
+                        .map_err(|err| Rejection::from_error(err).context(self))?;
                     if validation.is_success() {
                         Ok(Response::with_context(S::OK, self))
                     } else {
                         Err(Rejection::bad_request(validation).context(self))
                     }
-                })
+                }
+                Err(err) => Err(Rejection::from_error(err).context(self)),
+            }
         } else {
-            serde_json::from_slice(&bytes)
-                .map_err(|err| Rejection::from_validation_entry("body", err).context(self))
-                .and_then(|data: Map| {
+            let data = serde_json::from_slice(&bytes)
+                .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
+            match M::before_validation(data).await {
+                Ok(data) => {
                     let validation = model.read_map(&data);
+                    M::after_validation(data)
+                        .await
+                        .map_err(|err| Rejection::from_error(err).context(self))?;
                     if validation.is_success() {
                         Ok(Response::with_context(S::OK, self))
                     } else {
                         Err(Rejection::bad_request(validation).context(self))
                     }
-                })
+                }
+                Err(err) => Err(Rejection::from_error(err).context(self)),
+            }
         }
     }
 

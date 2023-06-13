@@ -55,7 +55,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                     "doc" => {
                         documentation = Some(value);
                     }
-                    _ => panic!("struct attribute `{key}` is not supported"),
+                    _ => (),
                 }
             }
         }
@@ -444,11 +444,41 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
     // Input
     let input = parse_macro_input!(item as DeriveInput);
 
+    // Parsing struct attrs
+    let mut compound_constraints = Vec::new();
+    for attr in input.attrs.iter() {
+        for (key, value) in parser::parse_schema_attr(attr).into_iter() {
+            if let Some(value) = value && key == "unique_on" {
+                let mut fields = Vec::new();
+                let column_values = value
+                    .trim_start_matches('(')
+                    .trim_end_matches(')')
+                    .split(',')
+                    .map(|s| {
+                        let field = s.trim();
+                        let field_ident = format_ident!("{}", field);
+                        fields.push(field);
+                        quote! {
+                            (#field, self.#field_ident.to_string().into())
+                        }
+                    })
+                    .collect::<Vec<_>>();
+                let compound_field = fields.join("_");
+                compound_constraints.push(quote! {
+                    let columns = [#(#column_values),*];
+                    if !self.is_unique_on(columns).await? {
+                        validation.record(#compound_field, "it should be unique");
+                    }
+                });
+            }
+        }
+    }
+
     // Parsing field attrs
     let name = input.ident;
     let mut column_methods = Vec::new();
     let mut snapshot_fields = Vec::new();
-    let mut check_constraints = Vec::new();
+    let mut field_constraints = Vec::new();
     let mut populated_queries = Vec::new();
     let mut populated_one_queries = Vec::new();
     let mut primary_key_type = String::from("Uuid");
@@ -475,7 +505,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                 if let Some(value) = value {
                                     let model_ident = format_ident!("{}", value);
                                     if type_name.starts_with("Vec") {
-                                        check_constraints.push(quote! {
+                                        field_constraints.push(quote! {
                                             let values = self.#ident
                                                 .iter()
                                                 .map(|value| value.to_string())
@@ -489,7 +519,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                             }
                                         });
                                     } else if type_name.starts_with("Option") {
-                                        check_constraints.push(quote! {
+                                        field_constraints.push(quote! {
                                             if let Some(value) = self.#ident {
                                                 let values = vec![value.to_string()];
                                                 let data = <#model_ident>::filter(values).await?;
@@ -499,7 +529,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                             }
                                         });
                                     } else {
-                                        check_constraints.push(quote! {
+                                        field_constraints.push(quote! {
                                             let values = vec![self.#ident.to_string()];
                                             let data = <#model_ident>::filter(values).await?;
                                             if data.len() != 1 {
@@ -514,22 +544,25 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                 }
                             }
                             "unique" => {
-                                check_constraints.push(quote! {
+                                field_constraints.push(quote! {
                                     let value = self.#ident.to_string();
-                                    if !value.is_empty() && !self.is_unique_in(#name, value).await? {
-                                        validation.record(#name, "it should be unique");
+                                    if !value.is_empty() {
+                                        let columns = [(#name, value.into())];
+                                        if !self.is_unique_on(columns).await? {
+                                            validation.record(#name, "it should be unique");
+                                        }
                                     }
                                 });
                             }
                             "not_null" if is_readable => {
                                 if type_name == "String" {
-                                    check_constraints.push(quote! {
+                                    field_constraints.push(quote! {
                                         if self.#ident.is_empty() {
                                             validation.record(#name, "it should be nonempty");
                                         }
                                     });
                                 } else if type_name == "Uuid" {
-                                    check_constraints.push(quote! {
+                                    field_constraints.push(quote! {
                                         if self.#ident.is_nil() {
                                             validation.record(#name, "it should not be nil");
                                         }
@@ -541,7 +574,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                     .and_then(|s| s.parse().ok())
                                     .unwrap_or_default();
                                 if type_name == "String" || type_name.starts_with("Vec") {
-                                    check_constraints.push(quote! {
+                                    field_constraints.push(quote! {
                                         let length = #length;
                                         if self.#ident.len() != length {
                                             let message = format!("the length should be {length}");
@@ -549,7 +582,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                         }
                                     });
                                 } else if type_name == "Option<String>" {
-                                    check_constraints.push(quote! {
+                                    field_constraints.push(quote! {
                                         let length = #length;
                                         if let Some(ref s) = self.#ident && s.len() != length {
                                             let message = format!("the length should be {length}");
@@ -563,7 +596,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                     .and_then(|s| s.parse().ok())
                                     .unwrap_or_default();
                                 if type_name == "String" || type_name.starts_with("Vec") {
-                                    check_constraints.push(quote! {
+                                    field_constraints.push(quote! {
                                         let length = #length;
                                         if self.#ident.len() > length {
                                             let message = format!("the length should be at most {length}");
@@ -571,7 +604,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                         }
                                     });
                                 } else if type_name == "Option<String>" {
-                                    check_constraints.push(quote! {
+                                    field_constraints.push(quote! {
                                         let length = #length;
                                         if let Some(ref s) = self.#ident && s.len() > length {
                                             let message = format!("the length should be at most {length}");
@@ -585,7 +618,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                     .and_then(|s| s.parse().ok())
                                     .unwrap_or_default();
                                 if type_name == "String" || type_name.starts_with("Vec") {
-                                    check_constraints.push(quote! {
+                                    field_constraints.push(quote! {
                                         let length = #length;
                                         if self.#ident.len() < length {
                                             let message = format!("the length should be at least {length}");
@@ -593,7 +626,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                         }
                                     });
                                 } else if type_name == "Option<String>" {
-                                    check_constraints.push(quote! {
+                                    field_constraints.push(quote! {
                                         let length = #length;
                                         if let Some(ref s) = self.#ident && s.len() < length {
                                             let message = format!("the length should be at least {length}");
@@ -795,7 +828,8 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                 if self.id() == &<#model_primary_key_type>::default() {
                     validation.record(Self::PRIMARY_KEY_NAME, "should not be a default value");
                 }
-                #(#check_constraints)*
+                #(#compound_constraints)*
+                #(#field_constraints)*
                 Ok(validation)
             }
 

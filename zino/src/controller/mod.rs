@@ -48,6 +48,7 @@ where
         if !validation.is_success() {
             return Err(Rejection::bad_request(validation).context(&req).into());
         }
+
         let data = Map::data_entry(model.snapshot());
         model.insert().await.extract(&req)?;
         res.set_code(zino_core::response::StatusCode::CREATED);

@@ -1,4 +1,4 @@
-use crate::Uuid;
+use crate::{SharedString, Uuid};
 use std::time::Instant;
 
 /// Data associated with a query.
@@ -70,6 +70,24 @@ impl QueryContext {
     #[inline]
     pub fn is_success(&self) -> bool {
         self.success
+    }
+
+    /// Records an error message for the query.
+    #[inline]
+    pub fn record_error(&self, message: impl AsRef<str>) {
+        let query = self.query();
+        let query_id = self.query_id().to_string();
+        tracing::error!(query, query_id, message = message.as_ref());
+    }
+
+    /// Emits the metrics for the query.
+    #[inline]
+    pub fn emit_metrics(&self, action: impl Into<SharedString>) {
+        metrics::histogram!(
+            "zino_model_query_duration_seconds",
+            self.start_time().elapsed().as_secs_f64(),
+            "action" => action.into(),
+        );
     }
 }
 
