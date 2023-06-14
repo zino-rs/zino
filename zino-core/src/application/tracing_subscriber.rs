@@ -75,17 +75,28 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .with_line_number(display_line_number)
         .with_thread_names(display_thread_names)
         .with_timer(local_offset_time)
-        .with_writer(stdout.and(non_blocking_appender))
-        .json()
-        .with_current_span(true)
-        .with_span_list(display_span_list);
+        .with_writer(stdout.and(non_blocking_appender));
     let filter_layer = EnvFilter::builder()
         .with_default_directive(LevelFilter::WARN.into())
         .parse_lossy(env_filter);
-    let subscriber = tracing_subscriber::registry()
-        .with(filter_layer)
-        .with(fmt_layer);
-    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+    if app_env == "dev" {
+        let pretty_fmt_layer = fmt_layer.pretty();
+        let subscriber = tracing_subscriber::registry()
+            .with(filter_layer)
+            .with(pretty_fmt_layer);
+        tracing::subscriber::set_global_default(subscriber)
+            .expect("fail to set the default subscriber with a `Pretty` formatter");
+    } else {
+        let json_fmt_layer = fmt_layer
+            .json()
+            .with_current_span(true)
+            .with_span_list(display_span_list);
+        let subscriber = tracing_subscriber::registry()
+            .with(filter_layer)
+            .with(json_fmt_layer);
+        tracing::subscriber::set_global_default(subscriber)
+            .expect("fail to set the default subscriber with a `Json` formatter");
+    };
     TRACING_APPENDER_GUARD
         .set(worker_guard)
         .expect("fail to set the worker guard for the tracing appender");
