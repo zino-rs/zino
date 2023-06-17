@@ -64,6 +64,30 @@ impl SessionId {
         validation
     }
 
+    /// Returns `true` if it is permitted for the given `SessionId`.
+    pub fn is_permitted_for(&self, session_id: &SessionId) -> bool {
+        if self.identifier() != session_id.identifier() {
+            return false;
+        }
+
+        let realm = self.realm();
+        let domain = session_id.realm();
+        if domain == realm {
+            self.count() >= session_id.count()
+        } else {
+            let remainder = if realm.len() > domain.len() {
+                realm.strip_suffix(domain)
+            } else {
+                domain.strip_suffix(realm)
+            };
+            if let Some(s) = remainder && s.ends_with('.') {
+                true
+            } else {
+                false
+            }
+        }
+    }
+
     /// Sets the thread used to differentiate concurrent uses of the same session identifier.
     #[inline]
     pub fn set_thread(&mut self, thread: u8) {

@@ -92,7 +92,8 @@ impl fmt::Display for DateTime {
 impl Serialize for DateTime {
     #[inline]
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let s = format!("{}", self.0.format("%Y-%m-%d %H:%M:%S%.6f"));
+        let datetime = self.0.with_timezone(&Utc);
+        let s = format!("{}", datetime.format("%Y-%m-%d %H:%M:%S%.6f"));
         serializer.serialize_str(&s)
     }
 }

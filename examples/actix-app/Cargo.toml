@@ -2,7 +2,7 @@
 name = "actix-app"
 description = "An example for actix-web integration."
 version = "0.1.4"
-rust-version = "1.70"
+rust-version = "1.72"
 edition = "2021"
 publish = false
 

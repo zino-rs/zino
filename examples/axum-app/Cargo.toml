@@ -2,7 +2,7 @@
 name = "axum-app"
 description = "An example for axum integration."
 version = "0.7.4"
-rust-version = "1.70"
+rust-version = "1.72"
 edition = "2021"
 publish = false
 

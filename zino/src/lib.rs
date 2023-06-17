@@ -7,7 +7,7 @@
 //! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?labelColor=555555&logo=docs.rs
 //!
 //! [`zino`] is a **full-featured application framework** for Rust which emphasizes
-//! **simplicity**, **extendibility** and **productivity**.
+//! **simplicity**, **extensibility** and **productivity**.
 //!
 //! ## Highlights
 //!
@@ -48,7 +48,6 @@
 #![feature(doc_auto_cfg)]
 #![feature(lazy_cell)]
 #![feature(result_option_inspect)]
-#![feature(string_leak)]
 #![forbid(unsafe_code)]
 
 pub mod prelude;

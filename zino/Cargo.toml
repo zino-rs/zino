@@ -2,7 +2,7 @@
 name = "zino"
 description = "Full-featured web application framework for Rust."
 version = "0.9.4"
-rust-version = "1.70"
+rust-version = "1.72"
 edition = "2021"
 license = "MIT"
 categories = ["asynchronous", "network-programming", "web-programming::http-server"]

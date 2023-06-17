@@ -2,7 +2,9 @@
 
 use crate::{
     application::http_client,
-    authentication::{Authentication, ParseSecurityTokenError, SecurityToken, SessionId},
+    authentication::{
+        AccessKeyId, Authentication, ParseSecurityTokenError, SecurityToken, SessionId,
+    },
     channel::{CloudEvent, Subscription},
     datetime::DateTime,
     error::Error,
@@ -316,6 +318,7 @@ pub trait RequestContext {
     }
 
     /// Attempts to construct an instance of `Authentication` from an HTTP request.
+    /// The value is extracted from the query or the `authorization` header.
     /// By default, the `Accept` header value is ignored and
     /// the canonicalized resource is set to the request path.
     /// You should always manually set canonicalized headers by calling
@@ -325,7 +328,7 @@ pub trait RequestContext {
         let query = self.parse_query::<Map>().unwrap_or_default();
         let mut authentication = Authentication::new(method);
         let mut validation = Validation::new();
-        if let Some(signature) = query.get("signature").and_then(|v| v.as_str()) {
+        if let Some(signature) = query.get_str("signature") {
             authentication.set_signature(signature.to_owned());
             if let Some(access_key_id) = query.parse_string("access_key_id") {
                 authentication.set_access_key_id(access_key_id);
@@ -386,6 +389,32 @@ pub trait RequestContext {
         Ok(authentication)
     }
 
+    /// Attempts to construct an instance of `AccessKeyId` from an HTTP request.
+    /// The value is extracted from the query param `access_key_id` or the `authorization` header.
+    fn parse_access_key_id(&self) -> Result<AccessKeyId, Rejection> {
+        let query = self.parse_query::<Map>().unwrap_or_default();
+        if let Some(access_key_id) = query.get_str("access_key_id") {
+            Ok(access_key_id.into())
+        } else {
+            let mut validation = Validation::new();
+            if let Some(authorization) = self.get_header("authorization") {
+                if let Some((_, token)) = authorization.split_once(' ') {
+                    let access_key_id = if let Some((access_key_id, _)) = token.split_once(':') {
+                        access_key_id
+                    } else {
+                        token
+                    };
+                    return Ok(access_key_id.into());
+                } else {
+                    validation.record("authorization", "invalid service name");
+                }
+            } else {
+                validation.record("authorization", "invalid header value");
+            }
+            Err(Rejection::bad_request(validation).context(self))
+        }
+    }
+
     /// Attempts to construct an instance of `SecurityToken` from an HTTP request.
     /// The value is extracted from the `x-security-token` header.
     fn parse_security_token(&self, key: impl AsRef<[u8]>) -> Result<SecurityToken, Rejection> {
@@ -428,9 +457,10 @@ pub trait RequestContext {
     }
 
     /// Attempts to construct an instance of `SessionId` from an HTTP request.
-    /// The value is extracted from the `session-id` header.
+    /// The value is extracted from the `x-session-id` or `session-id` header.
     fn parse_session_id(&self) -> Result<SessionId, Rejection> {
-        self.get_header("session-id")
+        self.get_header("x-session-id")
+            .or_else(|| self.get_header("session_id"))
             .ok_or_else(|| {
                 Rejection::from_validation_entry("session-id", Error::new("should be nonempty"))
                     .context(self)

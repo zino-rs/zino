@@ -18,7 +18,6 @@
 #![feature(lazy_cell)]
 #![feature(let_chains)]
 #![feature(result_option_inspect)]
-#![feature(string_leak)]
 #![forbid(unsafe_code)]
 
 mod crypto;
