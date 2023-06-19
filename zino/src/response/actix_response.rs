@@ -33,10 +33,11 @@ impl Responder for ActixResponse<StatusCode> {
         }
 
         let mut res = build_http_response(&response);
-        let server_timing = response.emit();
-        if let Ok(header_value) = HeaderValue::try_from(server_timing.to_string()) {
-            let header_name = HeaderName::from_static("server-timing");
-            res.headers_mut().insert(header_name, header_value);
+        for (key, value) in response.finalize().into_iter() {
+            if let Ok(header_value) = HeaderValue::try_from(value) {
+                let header_name = HeaderName::from_static(key);
+                res.headers_mut().insert(header_name, header_value);
+            }
         }
 
         res
@@ -79,10 +80,37 @@ impl ResponseError for ActixRejection {
         let response = &self.0;
 
         let mut res = build_http_response(&response);
-        let timing = TimingMetric::new("total".into(), None, response.response_time().into());
+
+        let request_id = response.request_id();
+        if !request_id.is_nil() {
+            if let Ok(header_value) = HeaderValue::try_from(request_id.to_string()) {
+                let header_name = HeaderName::from_static("x-request-id");
+                res.headers_mut().insert(header_name, header_value);
+            }
+        }
+
+        let (traceparent, tracestate) = response.trace_context();
+        if let Ok(header_value) = HeaderValue::try_from(traceparent) {
+            let header_name = HeaderName::from_static("traceparent");
+            res.headers_mut().insert(header_name, header_value);
+        }
+        if let Ok(header_value) = HeaderValue::try_from(tracestate) {
+            let header_name = HeaderName::from_static("tracestate");
+            res.headers_mut().insert(header_name, header_value);
+        }
+
+        let response_time = response.response_time();
+        let timing = TimingMetric::new("total".into(), None, response_time.into());
         if let Ok(header_value) = HeaderValue::try_from(timing.to_string()) {
             let header_name = HeaderName::from_static("server-timing");
             res.headers_mut().insert(header_name, header_value);
+        }
+
+        for (key, value) in response.headers() {
+            if let Ok(header_value) = HeaderValue::try_from(value) {
+                let header_name = HeaderName::from_static(key);
+                res.headers_mut().insert(header_name, header_value);
+            }
         }
 
         res
@@ -91,7 +119,7 @@ impl ResponseError for ActixRejection {
 
 /// Build http response from `zino_core::response::Response`.
 fn build_http_response(response: &Response<StatusCode>) -> HttpResponse<BoxBody> {
-    let mut res = match response.read_bytes() {
+    match response.read_bytes() {
         Ok(data) => {
             let status_code = response
                 .status_code()
@@ -114,25 +142,5 @@ fn build_http_response(response: &Response<StatusCode>) -> HttpResponse<BoxBody>
             );
             res
         }
-    };
-
-    let request_id = response.request_id();
-    if !request_id.is_nil() {
-        if let Ok(header_value) = HeaderValue::try_from(request_id.to_string()) {
-            let header_name = HeaderName::from_static("x-request-id");
-            res.headers_mut().insert(header_name, header_value);
-        }
     }
-
-    let (traceparent, tracestate) = response.trace_context();
-    if let Ok(header_value) = HeaderValue::try_from(traceparent) {
-        let header_name = HeaderName::from_static("traceparent");
-        res.headers_mut().insert(header_name, header_value);
-    }
-    if let Ok(header_value) = HeaderValue::try_from(tracestate) {
-        let header_name = HeaderName::from_static("tracestate");
-        res.headers_mut().insert(header_name, header_value);
-    }
-
-    res
 }

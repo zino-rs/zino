@@ -64,8 +64,8 @@ impl SessionId {
         validation
     }
 
-    /// Returns `true` if it is permitted for the given `SessionId`.
-    pub fn is_permitted_for(&self, session_id: &SessionId) -> bool {
+    /// Returns `true` if `self` is permitted by the given `SessionId`.
+    pub fn is_permitted_by(&self, session_id: &SessionId) -> bool {
         if self.identifier() != session_id.identifier() {
             return false;
         }

@@ -1,10 +1,11 @@
 use async_trait::async_trait;
 use axum::{
     body::{Body, Bytes},
-    extract::{FromRequest, MatchedPath},
-    http::{HeaderMap, Method, Request},
+    extract::{FromRequest, MatchedPath, OriginalUri},
+    http::{HeaderMap, Method, Request, Uri},
 };
 use std::{
+    borrow::Cow,
     convert::Infallible,
     ops::{Deref, DerefMut},
     sync::LazyLock,
@@ -59,8 +60,14 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
-    fn request_path(&self) -> &str {
-        self.uri().path()
+    fn original_uri(&self) -> &Uri {
+        // The `OriginalUri` extension will always be present if using
+        // `Router` unless another extractor or middleware has removed it.
+        if let Some(original_uri) = self.extensions().get::<OriginalUri>() {
+            &original_uri.0
+        } else {
+            self.uri()
+        }
     }
 
     #[inline]
@@ -69,11 +76,11 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
-    fn matched_route(&self) -> String {
+    fn matched_route(&self) -> Cow<'_, str> {
         if let Some(path) = self.extensions().get::<MatchedPath>() {
-            path.as_str().to_owned()
+            path.as_str().into()
         } else {
-            self.uri().path().to_owned()
+            self.uri().path().into()
         }
     }
 
@@ -84,11 +91,6 @@ impl RequestContext for AxumExtractor<Request<Body>> {
             .to_str()
             .inspect_err(|err| tracing::error!("{err}"))
             .ok()
-    }
-
-    #[inline]
-    fn get_query(&self) -> Option<&str> {
-        self.uri().query()
     }
 
     #[inline]

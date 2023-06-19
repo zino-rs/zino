@@ -50,7 +50,7 @@ pub(super) trait QueryExt<DB> {
             fields
                 .iter()
                 .map(|field| {
-                    if let Some((alias, expr)) = field.rsplit_once(':') {
+                    if let Some((alias, expr)) = field.split_once(':') {
                         let alias = Self::format_field(alias);
                         format!(r#"{expr} AS {alias}"#).into()
                     } else {

@@ -1,7 +1,7 @@
 use crate::{
     extension::{JsonObjectExt, JsonValueExt},
     request::Validation,
-    JsonValue, Map,
+    JsonValue, Map, SharedString,
 };
 
 #[derive(Debug, Clone)]
@@ -12,7 +12,7 @@ pub struct Query {
     // Filters.
     filters: Map,
     // Sort order.
-    sort_order: (Option<String>, bool),
+    sort_order: (Option<SharedString>, bool),
     // Offset.
     offset: usize,
     // Limit.
@@ -28,7 +28,7 @@ impl Query {
             filters,
             sort_order: (None, false),
             offset: 0,
-            limit: 10,
+            limit: usize::MAX,
         }
     }
 
@@ -46,7 +46,7 @@ impl Query {
                 }
                 "sort" | "sort_by" | "order" | "order_by" => {
                     if let Some(sort_by) = value.parse_string() {
-                        self.sort_order.0 = Some(sort_by.into_owned());
+                        self.sort_order.0 = Some(sort_by.into_owned().into());
                     }
                 }
                 "ascending" => {
@@ -146,8 +146,8 @@ impl Query {
 
     /// Sets the sort order.
     #[inline]
-    pub fn set_sort_order(&mut self, sort_by: impl Into<Option<String>>, ascending: bool) {
-        self.sort_order = (sort_by.into(), ascending);
+    pub fn set_sort_order(&mut self, sort_by: impl Into<SharedString>, ascending: bool) {
+        self.sort_order = (Some(sort_by.into()), ascending);
     }
 
     /// Sets the query offset.

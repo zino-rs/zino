@@ -340,7 +340,7 @@ where
         let mut query = Self::default_query();
         query.deny_fields(&["content", "extra"]);
         query.add_filter("status", Map::from_entry("$ne", "Deleted"));
-        query.set_sort_order("updated_at".to_owned(), false);
+        query.set_sort_order("updated_at", false);
         query
     }
 
@@ -392,7 +392,7 @@ where
 
     /// Fetches the data of a model seleted by the primary key.
     async fn fetch_by_id(id: &T) -> Result<Map, Error> {
-        let model: Map = Self::find_by_id(id)
+        let model = Self::find_by_id::<Map>(id)
             .await?
             .ok_or_else(|| Error::new(format!("404 Not Found: cannot find the model `{id}`")))?;
         Ok(model)

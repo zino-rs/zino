@@ -76,6 +76,9 @@ pub struct Response<S = StatusCode> {
     /// Server timing.
     #[serde(skip)]
     server_timing: ServerTiming,
+    /// Custom headers.
+    #[serde(skip)]
+    headers: Vec<(&'static str, String)>,
     /// Phantom type of response code.
     #[serde(skip)]
     phantom: PhantomData<S>,
@@ -101,6 +104,7 @@ impl<S: ResponseCode> Response<S> {
             content_type: None,
             trace_context: None,
             server_timing: ServerTiming::new(),
+            headers: Vec::new(),
             phantom: PhantomData,
         };
         if success {
@@ -130,6 +134,7 @@ impl<S: ResponseCode> Response<S> {
             content_type: None,
             trace_context: None,
             server_timing: ServerTiming::new(),
+            headers: Vec::new(),
             phantom: PhantomData,
         };
         if success {
@@ -300,6 +305,20 @@ impl<S: ResponseCode> Response<S> {
         self.server_timing.push(metric);
     }
 
+    /// Inserts a custom header.
+    #[inline]
+    pub fn insert_header(&mut self, name: &'static str, value: impl Into<String>) {
+        self.headers.push((name, value.into()));
+    }
+
+    /// Gets a custome header with the given name.
+    #[inline]
+    pub fn get_header(&self, name: &str) -> Option<&str> {
+        self.headers
+            .iter()
+            .find_map(|(key, value)| (key == &name).then_some(value.as_str()))
+    }
+
     /// Returns the status code as `u16`.
     #[inline]
     pub fn status_code(&self) -> u16 {
@@ -355,6 +374,12 @@ impl<S: ResponseCode> Response<S> {
         })
     }
 
+    /// Returns the custom headers.
+    #[inline]
+    pub fn headers(&self) -> &[(&'static str, String)] {
+        &self.headers
+    }
+
     /// Returns the trace context in the form `(traceparent, tracestate)`.
     pub fn trace_context(&self) -> (String, String) {
         if let Some(ref trace_context) = self.trace_context {
@@ -367,6 +392,12 @@ impl<S: ResponseCode> Response<S> {
                 .push("zino", format!("{span_id:x}"));
             (trace_context.traceparent(), trace_context.tracestate())
         }
+    }
+
+    /// Returns the server timing.
+    #[inline]
+    pub fn server_timing(&self) -> String {
+        self.server_timing.to_string()
     }
 
     /// Reads the response into a byte buffer.
@@ -437,11 +468,22 @@ impl<S: ResponseCode> Response<S> {
         duration
     }
 
-    /// Consumes `self` and emits metrics.
-    pub fn emit(mut self) -> ServerTiming {
+    /// Consumes `self` and returns the custom headers.
+    pub fn finalize(mut self) -> Vec<(&'static str, String)> {
+        let request_id = self.request_id();
+        if !request_id.is_nil() {
+            self.insert_header("x-request-id", request_id.to_string());
+        }
+
+        let (traceparent, tracestate) = self.trace_context();
+        self.insert_header("traceparent", traceparent);
+        self.insert_header("tracestate", tracestate);
+
         let duration = self.response_time();
         self.record_server_timing("total", None, Some(duration));
-        self.server_timing
+        self.insert_header("server-timing", self.server_timing());
+
+        self.headers
     }
 }
 
@@ -479,24 +521,10 @@ impl<S: ResponseCode> From<Response<S>> for FullResponse {
                 .unwrap_or_default(),
         };
 
-        let request_id = response.request_id();
-        if !request_id.is_nil() {
-            if let Ok(header_value) = HeaderValue::try_from(request_id.to_string()) {
-                res.headers_mut().insert("x-request-id", header_value);
+        for (key, value) in response.finalize().into_iter() {
+            if let Ok(header_value) = HeaderValue::try_from(value) {
+                res.headers_mut().insert(key, header_value);
             }
-        }
-
-        let (traceparent, tracestate) = response.trace_context();
-        if let Ok(header_value) = HeaderValue::try_from(traceparent) {
-            res.headers_mut().insert("traceparent", header_value);
-        }
-        if let Ok(header_value) = HeaderValue::try_from(tracestate) {
-            res.headers_mut().insert("tracestate", header_value);
-        }
-
-        let server_timing = response.emit();
-        if let Ok(header_value) = HeaderValue::try_from(server_timing.to_string()) {
-            res.headers_mut().insert("server-timing", header_value);
         }
 
         res

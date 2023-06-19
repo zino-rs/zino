@@ -1,11 +1,12 @@
 use actix_web::{
     cookie::Cookie,
     dev::{Payload, ServiceRequest},
-    http::{header::HeaderMap, Method},
+    http::{header::HeaderMap, Method, Uri},
     web::Bytes,
     FromRequest, HttpMessage, HttpRequest,
 };
 use std::{
+    borrow::Cow,
     convert::Infallible,
     future,
     ops::{Deref, DerefMut},
@@ -44,16 +45,16 @@ impl RequestContext for ActixExtractor<HttpRequest> {
     }
 
     #[inline]
-    fn request_path(&self) -> &str {
-        self.uri().path()
+    fn original_uri(&self) -> &Uri {
+        self.uri()
     }
 
     #[inline]
-    fn matched_route(&self) -> String {
+    fn matched_route(&self) -> Cow<'_, str> {
         if let Some(path) = self.match_pattern() {
-            path
+            path.into()
         } else {
-            self.uri().path().to_owned()
+            self.uri().path().into()
         }
     }
 
@@ -69,11 +70,6 @@ impl RequestContext for ActixExtractor<HttpRequest> {
             .to_str()
             .inspect_err(|err| tracing::error!("{err}"))
             .ok()
-    }
-
-    #[inline]
-    fn get_query(&self) -> Option<&str> {
-        self.uri().query()
     }
 
     #[inline]

@@ -362,9 +362,6 @@ impl DecodeRow<DatabaseRow> for Map {
                     "BIGINT UNSIGNED" => decode_column::<u64>(field, raw_value)?.into(),
                     "FLOAT" => decode_column::<f32>(field, raw_value)?.into(),
                     "DOUBLE" => decode_column::<f64>(field, raw_value)?.into(),
-                    "TEXT" | "VARCHAR" | "CHAR" => {
-                        decode_column::<String>(field, raw_value)?.into()
-                    }
                     "TIMESTAMP" => decode_column::<DateTime>(field, raw_value)?.into(),
                     "DATETIME" => decode_column::<NaiveDateTime>(field, raw_value)?
                         .to_string()
@@ -391,7 +388,7 @@ impl DecodeRow<DatabaseRow> for Map {
                         decode_column::<Vec<u8>>(field, raw_value)?.into()
                     }
                     "JSON" => decode_column::<JsonValue>(field, raw_value)?,
-                    _ => JsonValue::Null,
+                    _ => decode_column::<String>(field, raw_value)?.into(),
                 }
             };
             map.insert(field.to_owned(), value);
@@ -432,9 +429,6 @@ impl DecodeRow<DatabaseRow> for Record {
                     }
                     "FLOAT" => decode_column::<f32>(field, raw_value)?.into(),
                     "DOUBLE" => decode_column::<f64>(field, raw_value)?.into(),
-                    "TEXT" | "VARCHAR" | "CHAR" => {
-                        decode_column::<String>(field, raw_value)?.into()
-                    }
                     "TIMESTAMP" => decode_column::<DateTime>(field, raw_value)?.into(),
                     "DATETIME" => decode_column::<NaiveDateTime>(field, raw_value)?
                         .to_string()
@@ -461,7 +455,7 @@ impl DecodeRow<DatabaseRow> for Record {
                         decode_column::<Vec<u8>>(field, raw_value)?.into()
                     }
                     "JSON" => decode_column::<JsonValue>(field, raw_value)?.into(),
-                    _ => AvroValue::Null,
+                    _ => decode_column::<String>(field, raw_value)?.into(),
                 }
             };
             record.push((field.to_owned(), value));

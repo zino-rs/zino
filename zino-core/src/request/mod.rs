@@ -18,9 +18,13 @@ use crate::{
 use bytes::Bytes;
 use cookie::{Cookie, SameSite};
 use fluent::FluentArgs;
+use http::Uri;
 use multer::Multipart;
 use serde::de::DeserializeOwned;
-use std::time::{Duration, Instant};
+use std::{
+    borrow::Cow,
+    time::{Duration, Instant},
+};
 use unic_langid::LanguageIdentifier;
 
 mod context;
@@ -39,20 +43,17 @@ pub trait RequestContext {
     /// Returns the request method.
     fn request_method(&self) -> &Self::Method;
 
-    /// Returns the request path regardless of nesting.
-    fn request_path(&self) -> &str;
+    /// Returns the original request URI regardless of nesting.
+    fn original_uri(&self) -> &Uri;
 
     /// Returns the route that matches the request.
-    fn matched_route(&self) -> String;
+    fn matched_route(&self) -> Cow<'_, str>;
 
     /// Returns a reference to the request headers.
     fn header_map(&self) -> &Self::Headers;
 
     /// Gets an HTTP header with the given name.
     fn get_header(&self, name: &str) -> Option<&str>;
-
-    /// Gets the query string of the request URI.
-    fn get_query(&self) -> Option<&str>;
 
     /// Gets the request context.
     fn get_context(&self) -> Option<Context>;
@@ -63,6 +64,23 @@ pub trait RequestContext {
     /// Reads the entire request body into a byte buffer.
     async fn read_body_bytes(&mut self) -> Result<Bytes, Error>;
 
+    /// Returns the request path regardless of nesting.
+    #[inline]
+    fn request_path(&self) -> &str {
+        self.original_uri().path()
+    }
+
+    /// Gets the query value of the URI for the given name.
+    fn get_query(&self, name: &str) -> Option<&str> {
+        self.original_uri().query()?.split('&').find_map(|param| {
+            if let Some((key, value)) = param.split_once('=') && key == name {
+                Some(value)
+            } else {
+                None
+            }
+        })
+    }
+
     /// Creates a new request context.
     fn new_context(&self) -> Context {
         // Emit metrics.
@@ -70,7 +88,7 @@ pub trait RequestContext {
         metrics::increment_counter!(
             "zino_http_requests_total",
             "method" => self.request_method().as_ref().to_owned(),
-            "route" => self.matched_route(),
+            "route" => self.matched_route().into_owned(),
         );
 
         // Parse tracing headers.
@@ -257,7 +275,7 @@ pub trait RequestContext {
     /// Parses the query as an instance of type `T`.
     /// Returns a default value of `T` when the query is empty.
     fn parse_query<T: Default + DeserializeOwned>(&self) -> Result<T, Rejection> {
-        if let Some(query) = self.get_query() {
+        if let Some(query) = self.original_uri().query() {
             serde_qs::from_str::<T>(query)
                 .map_err(|err| Rejection::from_validation_entry("query", err).context(self))
         } else {
@@ -390,10 +408,10 @@ pub trait RequestContext {
     }
 
     /// Attempts to construct an instance of `AccessKeyId` from an HTTP request.
-    /// The value is extracted from the query param `access_key_id` or the `authorization` header.
+    /// The value is extracted from the query parameter `access_key_id`
+    /// or the `authorization` header.
     fn parse_access_key_id(&self) -> Result<AccessKeyId, Rejection> {
-        let query = self.parse_query::<Map>().unwrap_or_default();
-        if let Some(access_key_id) = query.get_str("access_key_id") {
+        if let Some(access_key_id) = self.get_query("access_key_id") {
             Ok(access_key_id.into())
         } else {
             let mut validation = Validation::new();

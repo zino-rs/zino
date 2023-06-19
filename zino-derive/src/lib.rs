@@ -762,7 +762,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                 let models = Self::find(query).await?;
             });
             populated_one_queries.push(quote! {
-                let model: Map = Self::find_by_id(id)
+                let model = Self::find_by_id::<Map>(id)
                     .await?
                     .ok_or_else(|| ZinoError::new(format!("404 Not Found: cannot find the model `{id}`")))?;
             });
@@ -771,7 +771,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                 let mut models = Self::find(query).await?;
             });
             populated_one_queries.push(quote! {
-                let mut model: Map = Self::find_by_id(id)
+                let mut model = Self::find_by_id::<Map>(id)
                     .await?
                     .ok_or_else(|| ZinoError::new(format!("404 Not Found: cannot find the model `{id}`")))?;
             });
