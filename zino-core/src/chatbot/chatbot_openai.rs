@@ -6,6 +6,7 @@ use crate::{
     Map,
 };
 use async_openai::{
+    config::{Config, OpenAIConfig},
     types::{ChatCompletionRequestMessageArgs, CreateChatCompletionRequestArgs, Role},
     Chat, Client,
 };
@@ -13,16 +14,19 @@ use futures::StreamExt;
 use toml::Table;
 
 /// OpenAI chat completion.
-pub(super) struct OpenAiChatCompletion {
+pub(super) struct OpenAiChatCompletion<C = OpenAIConfig>
+where
+    C: Config,
+{
     /// Model
     model: String,
     /// Client
-    client: Client,
+    client: Client<C>,
 }
 
-impl OpenAiChatCompletion {
+impl<C: Config> OpenAiChatCompletion<C> {
     /// Creates a new instance.
-    pub(super) fn new(model: impl Into<String>, client: Client) -> Self {
+    pub(super) fn new(model: impl Into<String>, client: Client<C>) -> Self {
         Self {
             model: model.into(),
             client,
@@ -31,28 +35,30 @@ impl OpenAiChatCompletion {
 
     /// Returns a chat conversation.
     #[inline]
-    pub(super) fn chat(&self) -> Chat {
+    pub(super) fn chat(&self) -> Chat<'_, C> {
         self.client.chat()
     }
 }
 
-impl ChatbotService for OpenAiChatCompletion {
+impl ChatbotService for OpenAiChatCompletion<OpenAIConfig> {
     fn try_new_chatbot(config: &Table) -> Result<Chatbot, Error> {
         let name = config.get_str("name").unwrap_or("openai");
         let model = config.get_str("model").unwrap_or("gpt-3.5-turbo");
 
-        let mut client = Client::new();
-        if let Some(reqwest_client) = http_client::SHARED_HTTP_CLIENT.get() {
-            client = client.with_http_client(reqwest_client.clone());
-        }
+        let mut openai_config = OpenAIConfig::new();
         if let Some(api_key) = config.get_str("api-key") {
-            client = client.with_api_key(api_key);
+            openai_config = openai_config.with_api_key(api_key);
         }
         if let Some(org_id) = config.get_str("org-id") {
-            client = client.with_org_id(org_id);
+            openai_config = openai_config.with_org_id(org_id);
         }
         if let Some(api_base) = config.get_str("api-base") {
-            client = client.with_api_base(api_base);
+            openai_config = openai_config.with_api_base(api_base);
+        }
+
+        let mut client = Client::with_config(openai_config);
+        if let Some(reqwest_client) = http_client::SHARED_HTTP_CLIENT.get() {
+            client = client.with_http_client(reqwest_client.clone());
         }
 
         let chat_completion = OpenAiChatCompletion::new(model, client);

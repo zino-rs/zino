@@ -51,7 +51,7 @@ pub(super) trait QueryExt<DB> {
                 .iter()
                 .map(|field| {
                     if let Some((alias, expr)) = field.split_once(':') {
-                        let alias = Self::format_field(alias);
+                        let alias = Self::format_field(alias.trim());
                         format!(r#"{expr} AS {alias}"#).into()
                     } else {
                         Self::format_field(field)
@@ -126,6 +126,11 @@ pub(super) trait QueryExt<DB> {
                         if !condition.is_empty() {
                             conditions.push(condition);
                         }
+                    } else if key.contains('.') {
+                        let condition = Self::format_filter(key, value);
+                        if !condition.is_empty() {
+                            conditions.push(condition);
+                        }
                     }
                 }
             }
@@ -197,6 +202,11 @@ pub(super) trait QueryExt<DB> {
                         if !condition.is_empty() {
                             conditions.push(condition);
                         }
+                    } else if key.contains('.') {
+                        let condition = Self::format_filter(key, value);
+                        if !condition.is_empty() {
+                            conditions.push(condition);
+                        }
                     }
                 }
             }
@@ -205,6 +215,41 @@ pub(super) trait QueryExt<DB> {
             String::new()
         } else {
             format!("({})", conditions.join(operator))
+        }
+    }
+
+    /// Formats a query filter.
+    fn format_filter(key: &str, value: &JsonValue) -> String {
+        if let Some(filter) = value.as_object() {
+            let mut conditions = Vec::with_capacity(filter.len());
+            for (name, value) in filter {
+                if let Some(value) = value.parse_string() {
+                    let operator = match name.as_str() {
+                        "$eq" => "=",
+                        "$ne" => "<>",
+                        "$lt" => "<",
+                        "$lte" => "<=",
+                        "$gt" => ">",
+                        "$gte" => ">=",
+                        _ => "=",
+                    };
+                    let field = Self::format_field(key);
+                    let value = Self::escape_string(value);
+                    let condition = format!(r#"{field} {operator} {value}"#);
+                    conditions.push(condition);
+                }
+            }
+            if conditions.is_empty() {
+                String::new()
+            } else {
+                format!("({})", conditions.join(" AND "))
+            }
+        } else if let Some(value) = value.parse_string() {
+            let key = Self::format_field(key);
+            let value = Self::escape_string(value);
+            format!(r#"{key} = {value}"#)
+        } else {
+            String::new()
         }
     }
 }

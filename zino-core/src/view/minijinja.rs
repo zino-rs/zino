@@ -1,6 +1,6 @@
 use crate::{error::Error, state::State, Map};
 use convert_case::{Case, Casing};
-use minijinja::{Environment, Source};
+use minijinja::Environment;
 use std::sync::OnceLock;
 
 /// Renders a template with the given data using [`minijinja`](https://crates.io/crates/minijinja).
@@ -17,7 +17,7 @@ pub(crate) fn load_templates(app_state: &'static State<Map>, template_dir: Strin
     let mut view_engine = Environment::new();
     let app_env = app_state.env();
     view_engine.set_debug(app_env == "dev");
-    view_engine.set_source(Source::from_path(template_dir));
+    view_engine.set_loader(minijinja::path_loader(template_dir));
     view_engine.add_global("APP_ENV", app_env);
     for (key, value) in app_state.data() {
         if let Some(value) = value.as_str() {

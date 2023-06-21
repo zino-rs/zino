@@ -115,7 +115,7 @@ version = "0.5.0"
 features = ["std"]
 
 [dependencies.async-openai]
-version = "0.10.3"
+version = "0.11.0"
 optional = true
 
 [dependencies.chrono]
@@ -131,9 +131,9 @@ version = "0.10.0"
 optional = true
 
 [dependencies.minijinja]
-version = "0.34.0"
+version = "1.0.0"
 optional = true
-features = ["debug", "source"]
+features = ["debug", "loader"]
 
 [dependencies.opendal]
 version = "0.37.0"
@@ -151,20 +151,24 @@ features = [
     "stream",
 ]
 
+[dependencies.rust_decimal]
+version = "1.30.0"
+features = ["serde-float"]
+
 [dependencies.serde]
 version = "1.0.164"
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1.0.96"
+version = "1.0.97"
 features = ["raw_value"]
 
 [dependencies.sqlx]
 version = "0.6.3"
 optional = true
 features = [
-    "bigdecimal",
     "chrono",
+    "decimal",
     "json",
     "uuid",
 ]

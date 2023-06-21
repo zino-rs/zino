@@ -7,6 +7,7 @@ use crate::{
     AvroValue, JsonValue, Map, Record, SharedString, Uuid,
 };
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
+use rust_decimal::Decimal;
 use sqlx::{Column as _, Row, TypeInfo, ValueRef};
 use std::borrow::Cow;
 
@@ -38,6 +39,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             }
             "f64" => "DOUBLE PRECISION",
             "f32" => "REAL",
+            "Decimal" => "NUMERIC",
             "String" | "Option<String>" => "TEXT",
             "DateTime" => "TIMESTAMPTZ",
             "NaiveDateTime" => "TIMESTAMP",
@@ -115,7 +117,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     "NULL".into()
                 }
             }
-            "f64" | "f32" => {
+            "f64" | "f32" | "Decimal" => {
                 if value.parse::<f64>().is_ok() {
                     value.into()
                 } else {
@@ -233,8 +235,8 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 }
             }
             "u64" | "i64" | "u32" | "i32" | "u16" | "i16" | "u8" | "i8" | "usize" | "isize"
-            | "f64" | "f32" | "DateTime" | "Date" | "Time" | "NaiveDateTime" | "NaiveDate"
-            | "NaiveTime" => {
+            | "f64" | "f32" | "Decimal" | "DateTime" | "Date" | "Time" | "NaiveDateTime"
+            | "NaiveDate" | "NaiveTime" => {
                 let field = Query::format_field(field);
                 if let Some(value) = value.as_str() {
                     if let Some((min_value, max_value)) = value.split_once(',') {
@@ -373,6 +375,13 @@ impl DecodeRow<DatabaseRow> for Map {
                     "INT8" => decode_column::<i64>(field, raw_value)?.into(),
                     "FLOAT4" => decode_column::<f32>(field, raw_value)?.into(),
                     "FLOAT8" => decode_column::<f64>(field, raw_value)?.into(),
+                    "NUMERIC" => {
+                        let value = decode_column::<Decimal>(field, raw_value)?;
+                        serde_json::to_value(&value)?
+                    },
+                    "TEXT" | "VARCHAR" | "CHAR" => {
+                        decode_column::<String>(field, raw_value)?.into()
+                    }
                     "TIMESTAMPTZ" => decode_column::<DateTime>(field, raw_value)?.into(),
                     "TIMESTAMP" => decode_column::<NaiveDateTime>(field, raw_value)?
                         .to_string()
@@ -395,7 +404,7 @@ impl DecodeRow<DatabaseRow> for Map {
                             .into()
                     }
                     "JSONB" | "JSON" => decode_column::<JsonValue>(field, raw_value)?,
-                    _ => decode_column::<String>(field, raw_value)?.into(),
+                    _ => JsonValue::Null,
                 }
             };
             map.insert(field.to_owned(), value);
@@ -424,6 +433,12 @@ impl DecodeRow<DatabaseRow> for Record {
                     "INT8" => decode_column::<i64>(field, raw_value)?.into(),
                     "FLOAT4" => decode_column::<f32>(field, raw_value)?.into(),
                     "FLOAT8" => decode_column::<f64>(field, raw_value)?.into(),
+                    "NUMERIC" => decode_column::<Decimal>(field, raw_value)?
+                        .to_string()
+                        .into(),
+                    "TEXT" | "VARCHAR" | "CHAR" => {
+                        decode_column::<String>(field, raw_value)?.into()
+                    }
                     "TIMESTAMPTZ" => decode_column::<DateTime>(field, raw_value)?.into(),
                     "TIMESTAMP" => decode_column::<NaiveDateTime>(field, raw_value)?
                         .to_string()
@@ -455,7 +470,7 @@ impl DecodeRow<DatabaseRow> for Record {
                         AvroValue::Array(vec)
                     }
                     "JSONB" | "JSON" => decode_column::<JsonValue>(field, raw_value)?.into(),
-                    _ => decode_column::<String>(field, raw_value)?.into(),
+                    _ => AvroValue::Null,
                 }
             };
             record.push((field.to_owned(), value));

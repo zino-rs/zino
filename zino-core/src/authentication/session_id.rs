@@ -64,8 +64,8 @@ impl SessionId {
         validation
     }
 
-    /// Returns `true` if `self` is permitted by the given `SessionId`.
-    pub fn is_permitted_by(&self, session_id: &SessionId) -> bool {
+    /// Returns `true` if the given `SessionId` can be accepted by `self`.
+    pub fn accepts(&self, session_id: &SessionId) -> bool {
         if self.identifier() != session_id.identifier() {
             return false;
         }
@@ -73,7 +73,7 @@ impl SessionId {
         let realm = self.realm();
         let domain = session_id.realm();
         if domain == realm {
-            self.count() >= session_id.count()
+            self.count() <= session_id.count()
         } else {
             let remainder = if realm.len() > domain.len() {
                 realm.strip_suffix(domain)
