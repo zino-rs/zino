@@ -127,6 +127,13 @@ pub trait JsonObjectExt {
     /// Extracts the string corresponding to the key and parses it as `Ipv6Addr`.
     fn parse_ipv6(&self, key: &str) -> Option<Result<Ipv6Addr, AddrParseError>>;
 
+    /// Looks up a value by a JSON Pointer.
+    ///
+    /// A Pointer is a Unicode string with the reference tokens separated by `/`.
+    /// Inside tokens `/` is replaced by `~1` and `~` is replaced by `~0`.
+    /// The addressed value is returned and if there is no such value `None` is returned.
+    fn lookup(&self, pointer: &str) -> Option<&JsonValue>;
+
     /// Inserts or updates a key/value pair into the map.
     /// If the map did have this key present, the value is updated and the old value is returned,
     /// otherwise `None` is returned.
@@ -391,6 +398,18 @@ impl JsonObjectExt for Map {
         self.get_str(key).map(|s| s.parse())
     }
 
+    fn lookup(&self, pointer: &str) -> Option<&JsonValue> {
+        let Some(path) = pointer.strip_prefix('/') else {
+            return None;
+        };
+        if let Some(position) = path.find('/') {
+            let (key, pointer) = path.split_at(position);
+            self.get(key)?.pointer(pointer)
+        } else {
+            self.get(path)
+        }
+    }
+
     #[inline]
     fn upsert(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) -> Option<JsonValue> {
         self.insert(key.into(), value.into())
@@ -423,5 +442,27 @@ impl JsonObjectExt for Map {
         let mut map = Map::with_capacity(1);
         map.insert("entries".to_owned(), value.into());
         map
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        extension::{JsonObjectExt, JsonValueExt},
+        Map,
+    };
+
+    #[test]
+    fn it_lookups_json_value() {
+        let mut map = Map::new();
+        map.upsert("entries", vec![Map::from_entry("name", "alice")]);
+        map.upsert("total", 1);
+
+        assert_eq!(map.lookup("total"), None);
+        assert_eq!(map.lookup("/total").and_then(|v| v.as_usize()), Some(1));
+        assert_eq!(
+            map.lookup("/entries/0/name").and_then(|v| v.as_str()),
+            Some("alice")
+        );
     }
 }

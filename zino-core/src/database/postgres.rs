@@ -378,7 +378,7 @@ impl DecodeRow<DatabaseRow> for Map {
                     "NUMERIC" => {
                         let value = decode_column::<Decimal>(field, raw_value)?;
                         serde_json::to_value(&value)?
-                    },
+                    }
                     "TEXT" | "VARCHAR" | "CHAR" => {
                         decode_column::<String>(field, raw_value)?.into()
                     }

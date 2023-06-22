@@ -67,6 +67,9 @@ pub struct Response<S = StatusCode> {
     /// Response data.
     #[serde(skip_serializing_if = "Option::is_none")]
     data: Option<Box<RawValue>>,
+    /// JSON Pointer for identifying a specific value within the response data.
+    #[serde(skip)]
+    json_pointer: Option<SharedString>,
     /// Content type.
     #[serde(skip)]
     content_type: Option<SharedString>,
@@ -101,6 +104,7 @@ impl<S: ResponseCode> Response<S> {
             start_time: Instant::now(),
             request_id: Uuid::nil(),
             data: None,
+            json_pointer: None,
             content_type: None,
             trace_context: None,
             server_timing: ServerTiming::new(),
@@ -131,6 +135,7 @@ impl<S: ResponseCode> Response<S> {
             start_time: ctx.start_time(),
             request_id: ctx.request_id(),
             data: None,
+            json_pointer: ctx.get_query("json_pointer").map(|s| s.to_owned().into()),
             content_type: None,
             trace_context: None,
             server_timing: ServerTiming::new(),
@@ -152,6 +157,7 @@ impl<S: ResponseCode> Response<S> {
         self.start_time = ctx.start_time();
         self.request_id = ctx.request_id();
         self.trace_context = Some(ctx.new_trace_context());
+        self.json_pointer = ctx.get_query("json_pointer").map(|s| s.to_owned().into());
         self
     }
 
@@ -256,6 +262,12 @@ impl<S: ResponseCode> Response<S> {
             Ok(raw_value) => self.data = Some(raw_value),
             Err(err) => self.set_error_message(err),
         }
+    }
+
+    /// Sets a JSON Pointer for identifying a specific value within the response data.
+    #[inline]
+    pub fn set_json_pointer(&mut self, pointer: impl Into<SharedString>) {
+        self.json_pointer = Some(pointer.into());
     }
 
     /// Sets the content type.
@@ -404,14 +416,20 @@ impl<S: ResponseCode> Response<S> {
     pub fn read_bytes(&self) -> Result<Vec<u8>, Error> {
         let content_type = self.content_type();
         let bytes = if extension::header::check_json_content_type(content_type) {
-            let capacity = if let Some(data) = &self.data {
-                data.get().len() + 128
+            if let Some(pointer) = self.json_pointer.as_deref() {
+                let data = serde_json::to_value(&self.data)?;
+                let bytes = serde_json::to_vec(&data.pointer(pointer))?;
+                bytes
             } else {
-                128
-            };
-            let mut bytes = Vec::with_capacity(capacity);
-            serde_json::to_writer(&mut bytes, &self)?;
-            bytes
+                let capacity = if let Some(data) = &self.data {
+                    data.get().len() + 128
+                } else {
+                    128
+                };
+                let mut bytes = Vec::with_capacity(capacity);
+                serde_json::to_writer(&mut bytes, &self)?;
+                bytes
+            }
         } else if let Some(data) = &self.data {
             let capacity = data.get().len();
             match serde_json::to_value(data)? {

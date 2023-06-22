@@ -281,11 +281,7 @@ static USER_ROLE_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
 #[cfg(test)]
 mod tests {
     use super::User;
-    use zino_core::{
-        extension::JsonObjectExt,
-        model::{Model, ModelHooks},
-        Map,
-    };
+    use zino_core::{extension::JsonObjectExt, model::Model, Map};
 
     #[test]
     fn it_checks_user_roles() {
