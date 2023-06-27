@@ -218,7 +218,7 @@ impl From<Rejection> for Response<StatusCode> {
             }
         };
         if let Some(ctx) = rejection.context {
-            res.set_instance(Some(ctx.instance().to_owned().into()));
+            res.set_instance(ctx.instance().to_owned());
             res.set_start_time(ctx.start_time());
             res.set_request_id(ctx.request_id());
         }

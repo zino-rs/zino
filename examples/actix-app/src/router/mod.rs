@@ -1,4 +1,4 @@
-use crate::controller::{bench, stats, task, user};
+use crate::controller::{stats, task, user};
 use actix_web::web::{get, post, ServiceConfig};
 use zino::{DefaultController, RouterConfigure};
 use zino_model::{Tag, User};
@@ -9,7 +9,6 @@ pub fn routes() -> Vec<RouterConfigure> {
         tag_router as RouterConfigure,
         task_router as RouterConfigure,
         stats_router as RouterConfigure,
-        bench_router as RouterConfigure,
     ]
 }
 
@@ -35,11 +34,4 @@ fn task_router(cfg: &mut ServiceConfig) {
 
 fn stats_router(cfg: &mut ServiceConfig) {
     cfg.route("/stats", get().to(stats::index));
-}
-
-fn bench_router(cfg: &mut ServiceConfig) {
-    cfg.route(
-        "/bench/rbatis/user/{id}/view",
-        get().to(bench::rbatis_user_view),
-    );
 }

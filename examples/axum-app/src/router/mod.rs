@@ -1,5 +1,5 @@
 use crate::{
-    controller::{bench, stats, task, user},
+    controller::{stats, task, user},
     middleware,
 };
 use axum::{
@@ -39,10 +39,6 @@ pub fn routes() -> Vec<Router> {
     let router = Router::new()
         .route("/stats", get(stats::index))
         .layer(from_fn(middleware::check_client_ip));
-    routes.push(router);
-
-    // Bench controller.
-    let router = Router::new().route("/bench/rbatis/user/:id/view", get(bench::rbatis_user_view));
     routes.push(router);
 
     routes

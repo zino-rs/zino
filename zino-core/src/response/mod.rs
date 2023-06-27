@@ -217,8 +217,8 @@ impl<S: ResponseCode> Response<S> {
 
     /// Sets a URI reference that identifies the specific occurrence of the problem.
     #[inline]
-    pub fn set_instance(&mut self, instance: Option<SharedString>) {
-        self.instance = instance;
+    pub fn set_instance(&mut self, instance: impl Into<SharedString>) {
+        self.instance = Some(instance.into());
     }
 
     /// Sets the message. If the response is not successful,
