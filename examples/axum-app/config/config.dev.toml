@@ -1,7 +1,7 @@
 # --env=dev
 
 name = "data-cube"
-version = "0.5.3"
+version = "0.5.4"
 
 [main]
 host = "127.0.0.1"

@@ -18,12 +18,12 @@ features = ["derive"]
 
 [dependencies.zino]
 path = "../../zino"
-version = "0.9.6"
+version = "0.9.7"
 features = ["actix"]
 
 [dependencies.zino-core]
 path = "../../zino-core"
-version = "0.10.6"
+version = "0.10.7"
 features = [
     "connector",
     "connector-arrow",
