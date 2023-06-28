@@ -321,6 +321,15 @@ where
         mutation
     }
 
+    /// Constructs the `Mutation` for a lock of the model.
+    fn lock_mutation(&self) -> Mutation {
+        let mut mutation = Self::default_mutation();
+        let mut updates = self.next_edition_updates();
+        updates.upsert("status", "Locked");
+        mutation.append_updates(&mut updates);
+        mutation
+    }
+
     /// Constructs a default snapshot `Query` for the model.
     fn default_snapshot_query() -> Query {
         let mut query = Self::default_query();
@@ -439,6 +448,17 @@ where
         let mutation = model.soft_delete_mutation();
         let ctx = Self::update_one(&query, &mutation).await?;
         Self::after_soft_delete(&ctx, model_data).await?;
+        Ok(())
+    }
+
+    /// Locks a model of the primary key by setting the status as `Locked`.
+    async fn lock_by_id(id: &T) -> Result<(), Error> {
+        let mut model = Self::try_get_model(id).await?;
+        let model_data = model.before_lock().await?;
+        let query = model.current_version_query();
+        let mutation = model.lock_mutation();
+        let ctx = Self::update_one(&query, &mutation).await?;
+        Self::after_lock(&ctx, model_data).await?;
         Ok(())
     }
 }

@@ -5,7 +5,7 @@ use std::{
     str::{FromStr, ParseBoolError},
 };
 
-/// Extension trait for [`serde_json::Value`](serde_json::Value).
+/// Extension trait for [`serde_json::Value`].
 pub trait JsonValueExt {
     /// If the `Value` is an integer, represent it as `u8` if possible.
     /// Returns `None` otherwise.

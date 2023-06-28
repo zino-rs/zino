@@ -107,6 +107,22 @@ pub trait ModelHooks: Model {
         Ok(())
     }
 
+    /// A hook running before locking a model in the table.
+    #[inline]
+    async fn before_lock(&mut self) -> Result<Self::Data, Error> {
+        Ok(Self::Data::default())
+    }
+
+    /// A hook running after locking a model in the table.
+    #[inline]
+    async fn after_lock(ctx: &QueryContext, _data: Self::Data) -> Result<(), Error> {
+        if !ctx.is_success() {
+            ctx.record_error("fail to lock a model in the table");
+        }
+        ctx.emit_metrics("lock");
+        Ok(())
+    }
+
     /// A hook running before updating a model into the table.
     #[inline]
     async fn before_update(&mut self) -> Result<Self::Data, Error> {

@@ -7,8 +7,9 @@ pub trait TomlTableExt {
     /// Extracts the boolean value corresponding to the key.
     fn get_bool(&self, key: &str) -> Option<bool>;
 
-    /// Extracts the integer value corresponding to the key.
-    fn get_i64(&self, key: &str) -> Option<i64>;
+    /// Extracts the integer value corresponding to the key and
+    /// represents it as `u8` if possible.
+    fn get_u8(&self, key: &str) -> Option<u8>;
 
     /// Extracts the integer value corresponding to the key and
     /// represents it as `u16` if possible.
@@ -25,6 +26,17 @@ pub trait TomlTableExt {
     /// Extracts the integer value corresponding to the key and
     /// represents it as `usize` if possible.
     fn get_usize(&self, key: &str) -> Option<usize>;
+
+    /// Extracts the integer value corresponding to the key and
+    /// represents it as `i32` if possible.
+    fn get_i32(&self, key: &str) -> Option<i32>;
+
+    /// Extracts the integer value corresponding to the key.
+    fn get_i64(&self, key: &str) -> Option<i64>;
+
+    /// Extracts the float value corresponding to the key and
+    /// represents it as `f32` if possible.
+    fn get_f32(&self, key: &str) -> Option<f32>;
 
     /// Extracts the float value corresponding to the key.
     fn get_f64(&self, key: &str) -> Option<f64>;
@@ -59,8 +71,10 @@ impl TomlTableExt for Table {
     }
 
     #[inline]
-    fn get_i64(&self, key: &str) -> Option<i64> {
-        self.get(key).and_then(|v| v.as_integer())
+    fn get_u8(&self, key: &str) -> Option<u8> {
+        self.get(key)
+            .and_then(|v| v.as_integer())
+            .and_then(|i| u8::try_from(i).ok())
     }
 
     #[inline]
@@ -89,6 +103,23 @@ impl TomlTableExt for Table {
         self.get(key)
             .and_then(|v| v.as_integer())
             .and_then(|i| usize::try_from(i).ok())
+    }
+
+    #[inline]
+    fn get_i32(&self, key: &str) -> Option<i32> {
+        self.get(key)
+            .and_then(|v| v.as_integer())
+            .and_then(|i| i32::try_from(i).ok())
+    }
+
+    #[inline]
+    fn get_i64(&self, key: &str) -> Option<i64> {
+        self.get(key).and_then(|v| v.as_integer())
+    }
+
+    #[inline]
+    fn get_f32(&self, key: &str) -> Option<f32> {
+        self.get(key).and_then(|v| v.as_float()).map(|f| f as f32)
     }
 
     #[inline]
