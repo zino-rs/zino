@@ -101,7 +101,7 @@ impl Application for AxumCluster {
             let app_env = app_state.env();
             let listeners = app_state.listeners();
             let servers = listeners.iter().map(|listener| {
-                let swagger = SwaggerUi::new("/swagger-ui/{_:.*}")
+                let swagger = SwaggerUi::new("/swagger-ui")
                     .url("/api-docs/openapi.json", Self::openapi());
                 let mut app = Router::new()
                     .route_service("/", serve_file.clone())
