@@ -4,6 +4,7 @@ use crate::{
     datetime::DateTime,
     error::Error,
     extension::{HeaderMapExt, JsonObjectExt, TomlTableExt},
+    openapi,
     schedule::{AsyncCronJob, CronJob, Job, JobScheduler},
     state::State,
     trace::TraceContext,
@@ -13,6 +14,7 @@ use reqwest::Response;
 use serde::de::DeserializeOwned;
 use std::{env, path::PathBuf, sync::LazyLock, thread};
 use toml::value::Table;
+use utoipa::openapi::{Info, OpenApi, OpenApiBuilder};
 
 mod metrics_exporter;
 mod secret_key;
@@ -67,6 +69,15 @@ pub trait Application {
     /// Gets the system’s information.
     fn sysinfo() -> Map {
         system_monitor::refresh_and_retrieve()
+    }
+
+    /// Gets the [OpenAPI](https://spec.openapis.org/oas/latest.html) document.
+    fn openapi() -> OpenApi {
+        OpenApiBuilder::new()
+            .info(Info::new(Self::name(), Self::version()))
+            .paths(openapi::default_paths())
+            .components(Some(openapi::default_components()))
+            .build()
     }
 
     /// Returns a reference to the shared application state.
@@ -182,7 +193,11 @@ pub(crate) static APP_NMAE: LazyLock<&'static str> = LazyLock::new(|| {
     SHARED_APP_STATE
         .config()
         .get_str("name")
-        .expect("the `name` field should be specified")
+        .unwrap_or_else(|| {
+            env::var("CARGO_PKG_NAME")
+                .expect("fail to get the environment variable `CARGO_PKG_NAME`")
+                .leak()
+        })
 });
 
 /// App version.
@@ -190,7 +205,11 @@ pub(crate) static APP_VERSION: LazyLock<&'static str> = LazyLock::new(|| {
     SHARED_APP_STATE
         .config()
         .get_str("version")
-        .expect("the `version` field should be specified")
+        .unwrap_or_else(|| {
+            env::var("CARGO_PKG_VERSION")
+                .expect("fail to get the environment variable `CARGO_PKG_VERSION`")
+                .leak()
+        })
 });
 
 /// Domain.
@@ -216,10 +235,18 @@ static SHARED_APP_STATE: LazyLock<State<Map>> = LazyLock::new(|| {
     let config = state.config();
     let app_name = config
         .get_str("name")
-        .expect("the `name` field should be a str");
+        .map(|s| s.to_owned())
+        .unwrap_or_else(|| {
+            env::var("CARGO_PKG_NAME")
+                .expect("fail to get the environment variable `CARGO_PKG_NAME`")
+        });
     let app_version = config
         .get_str("version")
-        .expect("the `version` field should be a str");
+        .map(|s| s.to_owned())
+        .unwrap_or_else(|| {
+            env::var("CARGO_PKG_VERSION")
+                .expect("fail to get the environment variable `CARGO_PKG_VERSION`")
+        });
 
     let mut data = Map::new();
     data.upsert("app.name", app_name);

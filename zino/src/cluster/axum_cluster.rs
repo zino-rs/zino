@@ -21,6 +21,7 @@ use tower_http::{
     decompression::DecompressionLayer,
     services::{ServeDir, ServeFile},
 };
+use utoipa_swagger_ui::SwaggerUi;
 use zino_core::{
     application::Application,
     extension::TomlTableExt,
@@ -95,14 +96,19 @@ impl Application for AxumCluster {
         runtime.block_on(async {
             let routes = self.routes;
             let app_state = Self::shared_state();
+            let app_name = Self::name();
+            let app_version = Self::version();
             let app_env = app_state.env();
             let listeners = app_state.listeners();
             let servers = listeners.iter().map(|listener| {
+                let swagger = SwaggerUi::new("/swagger-ui/{_:.*}")
+                    .url("/api-docs/openapi.json", Self::openapi());
                 let mut app = Router::new()
                     .route_service("/", serve_file.clone())
                     .nest_service("/public", serve_dir.clone())
                     .route("/sse", routing::get(endpoint::sse_handler))
-                    .route("/websocket", routing::get(endpoint::websocket_handler));
+                    .route("/websocket", routing::get(endpoint::websocket_handler))
+                    .merge(swagger);
                 for route in &routes {
                     app = app.merge(route.clone());
                 }
@@ -140,7 +146,12 @@ impl Application for AxumCluster {
                             }))
                             .layer(TimeoutLayer::new(request_timeout)),
                     );
-                tracing::warn!(env = app_env, "listen on {listener}");
+                tracing::warn!(
+                    env = app_env,
+                    name = app_name,
+                    version = app_version,
+                    "listen on {listener}",
+                );
                 Server::bind(listener)
                     .serve(app.into_make_service_with_connect_info::<SocketAddr>())
             });

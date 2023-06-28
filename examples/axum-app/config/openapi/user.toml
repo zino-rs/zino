@@ -1,0 +1,40 @@
+[[endpoints]]
+path = "/user/new"
+method = "POST"
+description = "Creates a new user"
+
+[endpoints.requestBody]
+schema = "newUser"
+
+[[endpoints]]
+path = "/user/{user_id}/delete"
+method = "POST"
+
+[[endpoints]]
+path = "/user/{user_id}/update"
+method = "POST"
+
+[[endpoints]]
+path = "/user/{user_id}/view"
+method = "GET"
+
+[[endpoints]]
+path = "/user/list"
+method = "GET"
+
+[endpoints.query]
+name = "string"
+roles = "string"
+
+[schemas.userId]
+type = "string"
+format = "uuid"
+description = "User ID"
+
+[schemas.newUser]
+type = "object"
+required = ["name", "roles", "account", "password"]
+name = { type = "string", description = "User name" }
+roles = { type = "array", items = "string", description = "User roles" }
+account = { type = "string", description = "User account" }
+password = { type = "string", format = "password", description = "User password" }

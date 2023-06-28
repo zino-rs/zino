@@ -3,12 +3,13 @@ use actix_files::{Files, NamedFile};
 use actix_web::{
     dev::{fn_service, ServiceRequest, ServiceResponse},
     http::StatusCode,
-    middleware::{Compress, NormalizePath},
+    middleware::Compress,
     rt::{self, Runtime},
     web::{self, FormConfig, JsonConfig, PayloadConfig},
     App, HttpServer, Responder,
 };
 use std::path::PathBuf;
+use utoipa_swagger_ui::SwaggerUi;
 use zino_core::{
     application::Application,
     extension::TomlTableExt,
@@ -67,10 +68,17 @@ impl Application for ActixCluster {
             .block_on({
                 let routes = self.routes;
                 let app_state = Self::shared_state();
+                let app_name = Self::name();
+                let app_version = Self::version();
                 let app_env = app_state.env();
                 let listeners = app_state.listeners();
                 listeners.iter().for_each(|listener| {
-                    tracing::warn!(env = app_env, "listen on {listener}");
+                    tracing::warn!(
+                        env = app_env,
+                        name = app_name,
+                        version = app_version,
+                        "listen on {listener}",
+                    );
                 });
                 HttpServer::new(move || {
                     let index_file_handler = web::get()
@@ -85,9 +93,12 @@ impl Application for ActixCluster {
                             let res = file.into_response(&req);
                             Ok(ServiceResponse::new(req, res))
                         }));
+                    let swagger = SwaggerUi::new("/swagger-ui/{_:.*}")
+                        .url("/api-docs/openapi.json", Self::openapi());
                     let mut app = App::new()
                         .route("/", index_file_handler)
                         .service(static_files)
+                        .service(swagger)
                         .default_service(web::to(|req: Request| async {
                             let res = Response::new(StatusCode::NOT_FOUND);
                             ActixResponse::from(res).respond_to(&req.into())
@@ -99,7 +110,6 @@ impl Application for ActixCluster {
                         .app_data(JsonConfig::default().limit(body_limit))
                         .app_data(PayloadConfig::default().limit(body_limit))
                         .wrap(Compress::default())
-                        .wrap(NormalizePath::trim())
                         .wrap(middleware::RequestContextInitializer::default())
                         .wrap(middleware::tracing_middleware())
                         .wrap(middleware::cors_middleware())

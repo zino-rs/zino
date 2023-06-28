@@ -203,15 +203,14 @@ impl ConnectionPools {
 
 /// Shared connection pools.
 static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
-    let driver = DRIVER_NAME;
     let config = State::shared().config();
+    let Some(database_config) = config.get_table("database") else {
+        return ConnectionPools(Vec::new());
+    };
 
     // Database connection pools.
-    let database_type = config
-        .get_table("database")
-        .expect("the `database` field should be a table")
-        .get_str("type")
-        .unwrap_or(driver);
+    let driver = DRIVER_NAME;
+    let database_type = database_config.get_str("type").unwrap_or(driver);
     let databases = config
         .get_array(database_type)
         .unwrap_or_else(|| panic!("the `{database_type}` field should be an array of tables"));

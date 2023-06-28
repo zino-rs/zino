@@ -5,13 +5,13 @@ use crate::{
     extension,
     request::{RequestContext, Validation},
     trace::{ServerTiming, TimingMetric, TraceContext},
-    SharedString, Uuid,
+    JsonValue, SharedString, Uuid,
 };
 use bytes::Bytes;
 use http::header::{self, HeaderValue};
 use http_body::Full;
 use serde::Serialize;
-use serde_json::value::{RawValue, Value};
+use serde_json::value::RawValue;
 use std::{
     marker::PhantomData,
     time::{Duration, Instant},
@@ -418,8 +418,7 @@ impl<S: ResponseCode> Response<S> {
         let bytes = if extension::header::check_json_content_type(content_type) {
             if let Some(pointer) = self.json_pointer.as_deref() {
                 let data = serde_json::to_value(&self.data)?;
-                let bytes = serde_json::to_vec(&data.pointer(pointer))?;
-                bytes
+                serde_json::to_vec(&data.pointer(pointer))?
             } else {
                 let capacity = if let Some(data) = &self.data {
                     data.get().len() + 128
@@ -433,8 +432,8 @@ impl<S: ResponseCode> Response<S> {
         } else if let Some(data) = &self.data {
             let capacity = data.get().len();
             match serde_json::to_value(data)? {
-                Value::String(s) => s.into_bytes(),
-                Value::Array(vec) => {
+                JsonValue::String(s) => s.into_bytes(),
+                JsonValue::Array(vec) => {
                     if content_type.starts_with("application/msgpack") {
                         let mut bytes = Vec::with_capacity(capacity);
                         rmp_serde::encode::write(&mut bytes, &vec)?;
@@ -448,16 +447,16 @@ impl<S: ResponseCode> Response<S> {
                         }
                         bytes
                     } else {
-                        Value::Array(vec).to_string().into_bytes()
+                        JsonValue::Array(vec).to_string().into_bytes()
                     }
                 }
-                Value::Object(map) => {
+                JsonValue::Object(map) => {
                     if content_type.starts_with("application/msgpack") {
                         let mut bytes = Vec::with_capacity(capacity);
                         rmp_serde::encode::write(&mut bytes, &map)?;
                         bytes
                     } else {
-                        Value::Object(map).to_string().into_bytes()
+                        JsonValue::Object(map).to_string().into_bytes()
                     }
                 }
                 _ => data.to_string().into_bytes(),

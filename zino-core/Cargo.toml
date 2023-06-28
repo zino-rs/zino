@@ -185,6 +185,10 @@ features = ["env-filter", "json", "local-time"]
 version = "0.9.1"
 features = ["macros"]
 
+[dependencies.utoipa]
+version = "3.3.0"
+features = ["non_strict_integers", "uuid"]
+
 [dependencies.uuid]
 version = "1.4.0"
 features = [

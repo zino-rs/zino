@@ -6,7 +6,7 @@ use std::{net::IpAddr, time::Duration};
 /// Initializes the metrics exporters.
 pub(super) fn init<APP: Application + ?Sized>() {
     if let Some(metrics) = APP::config().get_table("metrics") {
-        let exporter = metrics.get_str("exporter").unwrap_or_default();
+        let exporter = metrics.get_str("exporter").unwrap_or("prometheus");
         if exporter == "prometheus" {
             let mut builder = if let Some(endpoint) = metrics.get_str("push-gateway") {
                 let interval = metrics

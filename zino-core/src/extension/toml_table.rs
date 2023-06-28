@@ -35,6 +35,9 @@ pub trait TomlTableExt {
     /// Extracts the array corresponding to the key.
     fn get_array(&self, key: &str) -> Option<&Array>;
 
+    /// Extracts the array value corresponding to the key and parses it as `Vec<&str>`.
+    fn get_str_array(&self, key: &str) -> Option<Vec<&str>>;
+
     /// Extracts the table corresponding to the key.
     fn get_table(&self, key: &str) -> Option<&Table>;
 
@@ -101,6 +104,12 @@ impl TomlTableExt for Table {
     #[inline]
     fn get_array(&self, key: &str) -> Option<&Array> {
         self.get(key).and_then(|v| v.as_array())
+    }
+
+    #[inline]
+    fn get_str_array(&self, key: &str) -> Option<Vec<&str>> {
+        self.get_array(key)
+            .map(|values| values.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
     }
 
     #[inline]

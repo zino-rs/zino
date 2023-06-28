@@ -7,7 +7,7 @@ use std::{
     net::{IpAddr, SocketAddr},
     sync::LazyLock,
 };
-use toml::value::{Table, Value};
+use toml::value::Table;
 
 /// A state is a record of the env, config and associated data.
 #[derive(Debug, Clone)]
@@ -35,20 +35,18 @@ impl<T> State<T> {
     pub fn load_config(&mut self) {
         let env = self.env;
         let config_file = application::PROJECT_DIR.join(format!("./config/config.{env}.toml"));
-        let config: Value = fs::read_to_string(&config_file)
-            .unwrap_or_else(|err| {
-                let config_file = config_file.to_string_lossy();
-                panic!("fail to read the config file `{config_file}`: {err}");
-            })
-            .parse()
-            .expect("fail to parse toml value");
-        match config {
-            Value::Table(table) => {
-                self.config = table;
+        let config = match fs::read_to_string(&config_file) {
+            Ok(value) => {
                 tracing::warn!(env, "`config.{env}.toml` loaded");
+                value.parse().unwrap_or_default()
             }
-            _ => panic!("toml config file should be a table"),
-        }
+            Err(err) => {
+                let config_file = config_file.to_string_lossy();
+                tracing::error!("fail to read the config file `{config_file}`: {err}");
+                Table::new()
+            }
+        };
+        self.config = config;
     }
 
     /// Set the state data.
@@ -93,16 +91,16 @@ impl<T> State<T> {
         let mut listeners = Vec::new();
 
         // Main server
-        let main = config
-            .get_table("main")
-            .expect("the `main` field should be a table");
-        let main_host = main
-            .get_str("host")
-            .and_then(|s| s.parse::<IpAddr>().ok())
-            .expect("the `main.host` field should be an IP address");
-        let main_port = main
-            .get_u16("port")
-            .expect("the `main.port` field should be an integer");
+        let (main_host, main_port) = if let Some(main) = config.get_table("main") {
+            let host = main
+                .get_str("host")
+                .and_then(|s| s.parse::<IpAddr>().ok())
+                .unwrap_or(IpAddr::from([127, 0, 0, 1]));
+            let port = main.get_u16("port").unwrap_or(6080);
+            (host, port)
+        } else {
+            (IpAddr::from([127, 0, 0, 1]), 6080)
+        };
         listeners.push((main_host, main_port).into());
 
         // Optional standbys

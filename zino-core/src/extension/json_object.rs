@@ -56,6 +56,9 @@ pub trait JsonObjectExt {
     /// Extracts the array value corresponding to the key.
     fn get_array(&self, key: &str) -> Option<&Vec<JsonValue>>;
 
+    /// Extracts the array value corresponding to the key and parses it as `Vec<&str>`.
+    fn get_str_array(&self, key: &str) -> Option<Vec<&str>>;
+
     /// Extracts the object value corresponding to the key.
     fn get_object(&self, key: &str) -> Option<&Map>;
 
@@ -221,6 +224,12 @@ impl JsonObjectExt for Map {
     #[inline]
     fn get_array(&self, key: &str) -> Option<&Vec<JsonValue>> {
         self.get(key).and_then(|v| v.as_array())
+    }
+
+    #[inline]
+    fn get_str_array(&self, key: &str) -> Option<Vec<&str>> {
+        self.get_array(key)
+            .map(|values| values.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
     }
 
     #[inline]
