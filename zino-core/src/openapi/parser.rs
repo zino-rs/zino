@@ -80,7 +80,10 @@ pub(super) fn parse_schema_object(config: &Table) -> Object {
                 }
             }
             "description" => {
-                if let Some(description) = value.as_str() {
+                if let Some(config) = value.as_table() {
+                    let object = parse_schema_object(config);
+                    object_builder = object_builder.property(key, object);
+                } else if let Some(description) = value.as_str() {
                     object_builder = object_builder.description(Some(description));
                 }
             }

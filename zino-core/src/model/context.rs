@@ -6,10 +6,12 @@ use std::time::Instant;
 pub struct QueryContext {
     /// Start time.
     start_time: Instant,
-    /// A query.
-    query: String,
     /// Query ID.
     query_id: Uuid,
+    /// A query.
+    query: String,
+    /// Arguments.
+    arguments: Vec<String>,
     /// Number of rows affected.
     rows_affected: Option<u64>,
     /// Indicates the query execution is successful or not.
@@ -22,8 +24,9 @@ impl QueryContext {
     pub fn new() -> Self {
         Self {
             start_time: Instant::now(),
-            query: String::new(),
             query_id: Uuid::new_v4(),
+            query: String::new(),
+            arguments: Vec::new(),
             rows_affected: None,
             success: false,
         }
@@ -33,6 +36,18 @@ impl QueryContext {
     #[inline]
     pub fn set_query(&mut self, query: impl Into<String>) {
         self.query = query.into();
+    }
+
+    /// Adds an argument to the list of query arguments.
+    #[inline]
+    pub fn add_argument(&mut self, value: impl Into<String>) {
+        self.arguments.push(value.into());
+    }
+
+    /// Appends the query arguments.
+    #[inline]
+    pub fn append_arguments(&mut self, arguments: &mut Vec<String>) {
+        self.arguments.append(arguments);
     }
 
     /// Sets the query result.
@@ -48,16 +63,22 @@ impl QueryContext {
         self.start_time
     }
 
+    /// Returns the query ID.
+    #[inline]
+    pub fn query_id(&self) -> Uuid {
+        self.query_id
+    }
+
     /// Returns the query.
     #[inline]
     pub fn query(&self) -> &str {
         &self.query
     }
 
-    /// Returns the query ID.
+    /// Returns the query arguments.
     #[inline]
-    pub fn query_id(&self) -> Uuid {
-        self.query_id
+    pub fn arguments(&self) -> &[String] {
+        &self.arguments
     }
 
     /// Returns the number of rows affected.
@@ -72,12 +93,19 @@ impl QueryContext {
         self.success
     }
 
+    /// Formats the query arguments.
+    #[inline]
+    pub fn format_arguments(&self) -> String {
+        self.arguments().join(", ")
+    }
+
     /// Records an error message for the query.
     #[inline]
     pub fn record_error(&self, message: impl AsRef<str>) {
-        let query = self.query();
         let query_id = self.query_id().to_string();
-        tracing::error!(query, query_id, message = message.as_ref());
+        let query = self.query();
+        let arguments = self.format_arguments();
+        tracing::error!(query_id, query, arguments, message = message.as_ref());
     }
 
     /// Emits the metrics for the query.

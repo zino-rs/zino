@@ -120,6 +120,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Creates table for the model.
     async fn create_table() -> Result<(), Error> {
         let pool = Self::init_writer()?.pool();
+        Self::before_create_table().await?;
+
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let columns = Self::columns()
@@ -145,6 +147,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             .join(",\n  ");
         let sql = format!("CREATE TABLE IF NOT EXISTS {table_name} (\n  {columns}\n);");
         sqlx::query(&sql).execute(pool).await?;
+        Self::after_create_table().await?;
         Ok(())
     }
 
@@ -496,6 +499,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let mut ctx = Self::before_scan(&sql).await?;
         let query = if cfg!(feature = "orm-mysql") {
+            ctx.add_argument(primary_key.to_string());
             sqlx::query(&sql).bind(primary_key.to_string())
         } else {
             sqlx::query(&sql)
@@ -912,14 +916,17 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_reader().await?.pool();
         let (sql, values) = Query::prepare_query(query, params);
         let mut query = sqlx::query(&sql);
+        let mut arguments = Vec::with_capacity(values.len());
         for value in values {
             query = query.bind(value.to_string());
+            arguments.push(value.to_string());
         }
 
         let mut ctx = Self::before_scan(&sql).await?;
         let query_result = query.execute(pool).await?;
         let rows_affected = query_result.rows_affected();
         ctx.set_query(sql);
+        ctx.append_arguments(&mut arguments);
         ctx.set_query_result(Some(rows_affected), true);
         Self::after_scan(&ctx).await?;
         Ok(rows_affected)
@@ -933,8 +940,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_reader().await?.pool();
         let (sql, values) = Query::prepare_query(query, params);
         let mut query = sqlx::query(&sql);
+        let mut arguments = Vec::with_capacity(values.len());
         for value in values {
             query = query.bind(value.to_string());
+            arguments.push(value.to_string());
         }
 
         let mut ctx = Self::before_scan(&sql).await?;
@@ -946,6 +955,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             max_rows -= 1;
         }
         ctx.set_query(sql.as_ref());
+        ctx.append_arguments(&mut arguments);
         ctx.set_query_result(Some(u64::try_from(data.len())?), true);
         Self::after_scan(&ctx).await?;
         Ok(data)
@@ -968,8 +978,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_reader().await?.pool();
         let (sql, values) = Query::prepare_query(query, params);
         let mut query = sqlx::query(&sql);
+        let mut arguments = Vec::with_capacity(values.len());
         for value in values {
             query = query.bind(value.to_string());
+            arguments.push(value.to_string());
         }
 
         let mut ctx = Self::before_scan(&sql).await?;
@@ -979,6 +991,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             (0, None)
         };
         ctx.set_query(sql);
+        ctx.append_arguments(&mut arguments);
         ctx.set_query_result(Some(num_rows), true);
         Self::after_scan(&ctx).await?;
         Ok(data)
@@ -1033,6 +1046,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let mut ctx = Self::before_scan(&sql).await?;
         let query = if cfg!(feature = "orm-mysql") {
+            ctx.add_argument(primary_key.to_string());
             sqlx::query(&sql).bind(primary_key.to_string())
         } else {
             sqlx::query(&sql)
@@ -1070,6 +1084,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let mut ctx = Self::before_scan(&sql).await?;
         let query = if cfg!(feature = "orm-mysql") {
+            ctx.add_argument(primary_key.to_string());
             sqlx::query(&sql).bind(primary_key.to_string())
         } else {
             sqlx::query(&sql)

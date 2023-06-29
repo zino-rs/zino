@@ -21,7 +21,7 @@ use tower_http::{
     decompression::DecompressionLayer,
     services::{ServeDir, ServeFile},
 };
-use utoipa_swagger_ui::SwaggerUi;
+use utoipa_swagger_ui::{Config, SwaggerUi};
 use zino_core::{
     application::Application,
     extension::TomlTableExt,
@@ -101,8 +101,17 @@ impl Application for AxumCluster {
             let app_env = app_state.env();
             let listeners = app_state.listeners();
             let servers = listeners.iter().map(|listener| {
+                let swagger_config = Config::default()
+                    .query_config_enabled(true)
+                    .display_request_duration(true)
+                    .show_extensions(true)
+                    .show_common_extensions(true)
+                    .request_snippets_enabled(true)
+                    .with_credentials(true)
+                    .persist_authorization(true);
                 let swagger = SwaggerUi::new("/swagger-ui")
-                    .url("/api-docs/openapi.json", Self::openapi());
+                    .url("/api-docs/openapi.json", Self::openapi())
+                    .config(swagger_config);
                 let mut app = Router::new()
                     .route_service("/", serve_file.clone())
                     .nest_service("/public", serve_dir.clone())

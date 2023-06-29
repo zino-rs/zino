@@ -16,10 +16,10 @@ proc-macro = true
 [dependencies]
 convert_case = "0.6.0"
 proc-macro2 = "1.0.63"
-quote = "1.0.28"
+quote = "1.0.29"
 syn = "2.0.22"
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.10.6"
+version = "0.10.7"
 features = ["orm"]

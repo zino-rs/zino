@@ -23,19 +23,32 @@ pub trait ModelHooks: Model {
         Ok(data)
     }
 
+    /// A hook running before creating the table.
+    #[inline]
+    async fn before_create_table() -> Result<(), Error> {
+        Ok(())
+    }
+
+    /// A hook running after creating the table.
+    #[inline]
+    async fn after_create_table() -> Result<(), Error> {
+        Ok(())
+    }
+
     /// A hook running before scanning the table.
     #[inline]
     async fn before_scan(query: &str) -> Result<QueryContext, Error> {
         let ctx = QueryContext::new();
         let query_id = ctx.query_id().to_string();
-        tracing::debug!(query, query_id);
+        tracing::debug!(query_id, query);
         Ok(ctx)
     }
 
     /// A hook running after scanning the table.
     async fn after_scan(ctx: &QueryContext) -> Result<(), Error> {
-        let query = ctx.query();
         let query_id = ctx.query_id().to_string();
+        let query = ctx.query();
+        let arguments = ctx.format_arguments();
         let message = match ctx.rows_affected() {
             Some(0) => Cow::Borrowed("no rows affected or fetched"),
             Some(1) => Cow::Borrowed("only one row affected or fetched"),
@@ -44,13 +57,31 @@ pub trait ModelHooks: Model {
             }
             _ => Cow::Borrowed("the query result has not been recorded"),
         };
-        let execution_time = ctx.start_time().elapsed().as_millis();
-        if execution_time > 1000 {
-            tracing::warn!(query, query_id, execution_time, "{message}");
-        } else if execution_time > 100 {
-            tracing::info!(query, query_id, execution_time, "{message}");
+        let execution_time_millis = ctx.start_time().elapsed().as_millis();
+        if execution_time_millis > 1000 {
+            tracing::warn!(
+                query_id,
+                query,
+                arguments,
+                execution_time_millis,
+                "{message}"
+            );
+        } else if execution_time_millis > 100 {
+            tracing::info!(
+                query_id,
+                query,
+                arguments,
+                execution_time_millis,
+                "{message}"
+            );
         } else {
-            tracing::debug!(query, query_id, execution_time, "{message}");
+            tracing::debug!(
+                query_id,
+                query,
+                arguments,
+                execution_time_millis,
+                "{message}"
+            );
         }
         Ok(())
     }

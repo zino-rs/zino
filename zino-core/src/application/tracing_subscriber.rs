@@ -20,7 +20,8 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let local_offset_time = OffsetTime::local_rfc_3339().expect("could not get local offset");
 
     let app_env = APP::env();
-    let mut env_filter = if app_env == "dev" {
+    let in_dev_mode = app_env == "dev";
+    let mut env_filter = if in_dev_mode {
         "info,zino=trace,zino_core=trace"
     } else {
         "info"
@@ -40,8 +41,10 @@ pub(super) fn init<APP: Application + ?Sized>() {
             env_filter = filter;
         }
         display_target = tracing.get_bool("display-target").unwrap_or(true);
-        display_filename = tracing.get_bool("display-filename").unwrap_or(false);
-        display_line_number = tracing.get_bool("display-line-number").unwrap_or(false);
+        display_filename = tracing.get_bool("display-filename").unwrap_or(in_dev_mode);
+        display_line_number = tracing
+            .get_bool("display-line-number")
+            .unwrap_or(in_dev_mode);
         display_thread_names = tracing.get_bool("display-thread-names").unwrap_or(false);
         display_span_list = tracing.get_bool("display-span-list").unwrap_or(false);
     }
@@ -64,7 +67,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let app_name = APP::name();
     let file_appender = rolling::hourly(rolling_file_dir, format!("{app_name}.{app_env}"));
     let (non_blocking_appender, worker_guard) = tracing_appender::non_blocking(file_appender);
-    let stdout = if APP::env() == "dev" {
+    let stdout = if in_dev_mode {
         io::stdout.with_max_level(Level::DEBUG)
     } else {
         io::stdout.with_max_level(Level::WARN)
@@ -79,7 +82,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let filter_layer = EnvFilter::builder()
         .with_default_directive(LevelFilter::WARN.into())
         .parse_lossy(env_filter);
-    if app_env == "dev" {
+    if in_dev_mode {
         let pretty_fmt_layer = fmt_layer.pretty();
         let subscriber = tracing_subscriber::registry()
             .with(filter_layer)

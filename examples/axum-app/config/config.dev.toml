@@ -35,9 +35,6 @@ password = "W2rHYCNbBmJ3WBsFPa65S5VAoQTONLzl+r0rAhxEr9pv59Pv"
 
 [tracing]
 filter = "info,sqlx=trace,zino=trace,zino_core=trace"
-display-filename = false
-display-line-number = false
-display-span-list = false
 
 [metrics]
 exporter = "prometheus"
