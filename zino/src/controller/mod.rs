@@ -19,6 +19,12 @@ pub trait DefaultController<T, U = T> {
 
     /// Lists models.
     async fn list(req: Self::Request) -> Self::Result;
+
+    /// Imports model data.
+    async fn import(req: Self::Request) -> Self::Result;
+
+    /// Exports model data.
+    async fn export(req: Self::Request) -> Self::Result;
 }
 
 #[cfg(any(feature = "actix", feature = "axum"))]
@@ -101,6 +107,50 @@ where
         };
         let data = Map::data_entries(models);
         res.set_data(&data);
+        Ok(res.into())
+    }
+
+    async fn import(mut req: Self::Request) -> Self::Result {
+        use zino_core::response::StatusCode;
+
+        let data = req.parse_body::<Vec<Map>>().await?;
+        let mut models = Vec::with_capacity(data.len());
+        let mut validations = Vec::new();
+        for (index, map) in data.iter().enumerate() {
+            let mut model = Self::new();
+            let mut validation = model.read_map(map);
+            if validation.is_success() {
+                validation = model.check_constraints().await.extract(&req)?;
+            }
+            if validation.is_success() {
+                models.push(model);
+            } else {
+                let mut map = validation.into_map();
+                map.upsert("index", index);
+                validations.push(map);
+            }
+        }
+        if !validations.is_empty() {
+            let mut res = crate::Response::new(StatusCode::BAD_REQUEST);
+            res.set_data(&validations);
+            Ok(res.into())
+        } else {
+            let rows_affected = Self::insert_many(models).await.extract(&req)?;
+            let data = Map::from_entry("rows_affected", rows_affected);
+            let mut res = crate::Response::default().context(&req);
+            res.set_code(StatusCode::CREATED);
+            res.set_data(&data);
+            Ok(res.into())
+        }
+    }
+
+    async fn export(req: Self::Request) -> Self::Result {
+        let mut query = Self::default_query();
+        let mut res = req.query_validation(&mut query)?;
+        let models = Self::find(&query).await.extract(&req)?;
+        let data = Map::data_entries(models);
+        res.set_data(&data);
+        res.set_json_pointer("/entries");
         Ok(res.into())
     }
 }

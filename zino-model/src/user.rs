@@ -84,17 +84,8 @@ impl Model for User {
 
     fn read_map(&mut self, data: &Map) -> Validation {
         let mut validation = Validation::new();
-        if let Some(result) = data.parse_uuid("id") {
-            match result {
-                Ok(id) => self.id = id,
-                Err(err) => validation.record_fail("id", err),
-            }
-        }
         if let Some(name) = data.parse_string("name") {
             self.name = name.into_owned();
-        }
-        if let Some(description) = data.parse_string("description") {
-            self.description = description.into_owned();
         }
         if let Some(account) = data.parse_string("account") {
             self.account = account.into_owned();

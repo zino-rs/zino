@@ -1,4 +1,4 @@
-use crate::datetime;
+use crate::{datetime, extension::TomlValueExt, Map};
 use std::time::Duration;
 use toml::value::{Array, Table};
 
@@ -62,6 +62,9 @@ pub trait TomlTableExt {
     /// Extracts the string corresponding to the key
     /// and parses it as `Duration`.
     fn get_duration(&self, key: &str) -> Option<Duration>;
+
+    /// Converts `self` to a JSON object.
+    fn to_map(&self) -> Map;
 }
 
 impl TomlTableExt for Table {
@@ -161,5 +164,13 @@ impl TomlTableExt for Table {
     fn get_duration(&self, key: &str) -> Option<Duration> {
         self.get_str(key)
             .and_then(|s| datetime::parse_duration(s).ok())
+    }
+
+    fn to_map(&self) -> Map {
+        let mut map = Map::with_capacity(self.len());
+        for (key, value) in self.iter() {
+            map.insert(key.to_owned(), value.to_json_value());
+        }
+        map
     }
 }

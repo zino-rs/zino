@@ -19,7 +19,9 @@ pub fn routes() -> Vec<Router> {
         .route("/user/:id/delete", post(User::delete))
         .route("/user/:id/update", post(User::update))
         .route("/user/:id/view", get(user::view))
-        .route("/user/list", get(User::list));
+        .route("/user/list", get(User::list))
+        .route("/user/import", post(User::import))
+        .route("/user/export", get(User::export));
     routes.push(router);
 
     // Tag controller.

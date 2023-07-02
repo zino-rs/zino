@@ -1,0 +1,48 @@
+[[endpoints]]
+path = "/tag/new"
+method = "POST"
+description = "Creates a new tag"
+
+[endpoints.requestBody]
+schema = "newTag"
+
+[[endpoints]]
+path = "/tag/{tag_id}/delete"
+method = "POST"
+
+[[endpoints]]
+path = "/tag/{tag_id}/update"
+method = "POST"
+
+[endpoints.requestBody]
+schema = "tagInfo"
+
+[[endpoints]]
+path = "/tag/{tag_id}/view"
+method = "GET"
+
+[[endpoints]]
+path = "/tag/list"
+method = "GET"
+
+[endpoints.query]
+category = { type = "string", description = "Tag category" }
+parent_id = { schema = "tagId" }
+
+[schemas.tagId]
+type = "string"
+format = "uuid"
+description = "Tag ID"
+
+[schemas.newTag]
+type = "object"
+required = ["name", "category"]
+name = { type = "string", description = "Tag name" }
+category = { type = "string", description = "Tag category" }
+parent_id = { type = "string", format = "uuid", description = "Optional parent tag" }
+
+[schemas.tagInfo]
+type = "object"
+name = { type = "string", description = "Tag name" }
+category = { type = "string", description = "Tag category" }
+parent_id = { type = "string", format = "uuid", description = "Optional parent tag" }

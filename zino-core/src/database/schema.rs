@@ -316,7 +316,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let table_name = Self::table_name();
         let fields = Self::fields().join(", ");
         let values = values.join(", ");
-        let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({values});");
+        let sql = format!("INSERT INTO {table_name} ({fields}) VALUES {values};");
 
         let mut ctx = Self::before_scan(&sql).await?;
         let query_result = sqlx::query(&sql).execute(pool).await?;

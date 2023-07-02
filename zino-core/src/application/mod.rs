@@ -77,6 +77,7 @@ pub trait Application {
             .info(Info::new(Self::name(), Self::version()))
             .paths(openapi::default_paths())
             .components(Some(openapi::default_components()))
+            .tags(Some(openapi::default_tags()))
             .build()
     }
 
