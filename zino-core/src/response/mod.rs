@@ -29,6 +29,9 @@ pub type StatusCode = http::StatusCode;
 /// An Http response with the body that consists of a single chunk.
 pub type FullResponse = http::Response<Full<Bytes>>;
 
+/// A function pointer of transforming the response data.
+pub type ResponseDataTransformer = fn(data: JsonValue) -> Result<Vec<u8>, Error>;
+
 /// An HTTP response.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -67,9 +70,9 @@ pub struct Response<S = StatusCode> {
     /// Response data.
     #[serde(skip_serializing_if = "Option::is_none")]
     data: Option<Box<RawValue>>,
-    /// JSON Pointer for identifying a specific value within the response data.
+    /// Transformer of the response data.
     #[serde(skip)]
-    json_pointer: Option<SharedString>,
+    data_transformer: Option<ResponseDataTransformer>,
     /// Content type.
     #[serde(skip)]
     content_type: Option<SharedString>,
@@ -104,7 +107,7 @@ impl<S: ResponseCode> Response<S> {
             start_time: Instant::now(),
             request_id: Uuid::nil(),
             data: None,
-            json_pointer: None,
+            data_transformer: None,
             content_type: None,
             trace_context: None,
             server_timing: ServerTiming::new(),
@@ -135,7 +138,7 @@ impl<S: ResponseCode> Response<S> {
             start_time: ctx.start_time(),
             request_id: ctx.request_id(),
             data: None,
-            json_pointer: ctx.get_query("json_pointer").map(|s| s.to_owned().into()),
+            data_transformer: None,
             content_type: None,
             trace_context: None,
             server_timing: ServerTiming::new(),
@@ -157,7 +160,6 @@ impl<S: ResponseCode> Response<S> {
         self.start_time = ctx.start_time();
         self.request_id = ctx.request_id();
         self.trace_context = Some(ctx.new_trace_context());
-        self.json_pointer = ctx.get_query("json_pointer").map(|s| s.to_owned().into());
         self
     }
 
@@ -264,10 +266,10 @@ impl<S: ResponseCode> Response<S> {
         }
     }
 
-    /// Sets a JSON Pointer for identifying a specific value within the response data.
+    /// Sets a transformer for the response data.
     #[inline]
-    pub fn set_json_pointer(&mut self, pointer: impl Into<SharedString>) {
-        self.json_pointer = Some(pointer.into());
+    pub fn set_data_transformer(&mut self, transformer: ResponseDataTransformer) {
+        self.data_transformer = Some(transformer);
     }
 
     /// Sets the content type.
@@ -414,21 +416,21 @@ impl<S: ResponseCode> Response<S> {
 
     /// Reads the response into a byte buffer.
     pub fn read_bytes(&self) -> Result<Vec<u8>, Error> {
+        if let Some(transformer) = self.data_transformer.as_ref() {
+            let data = serde_json::to_value(&self.data)?;
+            return transformer(data);
+        }
+
         let content_type = self.content_type();
         let bytes = if extension::header::check_json_content_type(content_type) {
-            if let Some(pointer) = self.json_pointer.as_deref() {
-                let data = serde_json::to_value(&self.data)?;
-                serde_json::to_vec(&data.pointer(pointer))?
+            let capacity = if let Some(data) = &self.data {
+                data.get().len() + 128
             } else {
-                let capacity = if let Some(data) = &self.data {
-                    data.get().len() + 128
-                } else {
-                    128
-                };
-                let mut bytes = Vec::with_capacity(capacity);
-                serde_json::to_writer(&mut bytes, &self)?;
-                bytes
-            }
+                128
+            };
+            let mut bytes = Vec::with_capacity(capacity);
+            serde_json::to_writer(&mut bytes, &self)?;
+            bytes
         } else if let Some(data) = &self.data {
             let capacity = data.get().len();
             match serde_json::to_value(data)? {

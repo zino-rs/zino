@@ -31,9 +31,10 @@ pub trait DefaultController<T, U = T> {
 #[cfg(feature = "orm")]
 use zino_core::{
     database::ModelAccessor,
+    error::Error,
     extension::JsonObjectExt,
     request::RequestContext,
-    response::{ExtractRejection, Rejection},
+    response::{ExtractRejection, Rejection, StatusCode},
     Map,
 };
 
@@ -57,7 +58,7 @@ where
 
         let data = Map::data_entry(model.snapshot());
         model.insert().await.extract(&req)?;
-        res.set_code(zino_core::response::StatusCode::CREATED);
+        res.set_code(StatusCode::CREATED);
         res.set_data(&data);
         Ok(res.into())
     }
@@ -111,8 +112,6 @@ where
     }
 
     async fn import(mut req: Self::Request) -> Self::Result {
-        use zino_core::response::StatusCode;
-
         let data = req.parse_body::<Vec<Map>>().await?;
         let mut models = Vec::with_capacity(data.len());
         let mut validations = Vec::new();
@@ -150,7 +149,28 @@ where
         let models = Self::find(&query).await.extract(&req)?;
         let data = Map::data_entries(models);
         res.set_data(&data);
-        res.set_json_pointer("/entries");
+
+        let format = req.get_query("format").unwrap_or("json");
+        match format {
+            "csv" => {
+                use zino_core::extension::JsonValueExt;
+
+                res.set_content_type("text/csv; charset=utf-8");
+                res.set_data_transformer(|data| {
+                    let bytes = if let Some(value) = data.pointer("/entries") {
+                        value.to_csv_writer(Vec::new())?
+                    } else {
+                        Vec::new()
+                    };
+                    Ok(bytes)
+                });
+            }
+            _ => {
+                res.set_data_transformer(|data| {
+                    serde_json::to_vec(&data.pointer("/entries")).map_err(Error::from)
+                });
+            }
+        }
         Ok(res.into())
     }
 }

@@ -17,7 +17,9 @@ fn user_router(cfg: &mut ServiceConfig) {
         .route("/user/{id}/delete", post().to(User::delete))
         .route("/user/{id}/update", post().to(User::update))
         .route("/user/{id}/view", get().to(user::view))
-        .route("/user/list", get().to(User::list));
+        .route("/user/list", get().to(User::list))
+        .route("/user/import", post().to(User::import))
+        .route("/user/export", get().to(User::export));
 }
 
 fn tag_router(cfg: &mut ServiceConfig) {
