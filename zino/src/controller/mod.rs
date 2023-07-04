@@ -32,7 +32,7 @@ pub trait DefaultController<T, U = T> {
 use zino_core::{
     database::ModelAccessor,
     error::Error,
-    extension::JsonObjectExt,
+    extension::{JsonObjectExt, JsonValueExt},
     request::RequestContext,
     response::{ExtractRejection, Rejection, StatusCode},
     Map,
@@ -153,16 +153,33 @@ where
         let format = req.get_query("format").unwrap_or("json");
         match format {
             "csv" => {
-                use zino_core::extension::JsonValueExt;
-
                 res.set_content_type("text/csv; charset=utf-8");
                 res.set_data_transformer(|data| {
-                    let bytes = if let Some(value) = data.pointer("/entries") {
-                        value.to_csv_writer(Vec::new())?
+                    if let Some(value) = data.pointer("/entries") {
+                        value.to_csv(Vec::new()).map_err(Error::from)
                     } else {
-                        Vec::new()
-                    };
-                    Ok(bytes)
+                        Ok(Vec::new())
+                    }
+                });
+            }
+            "jsonlines" => {
+                res.set_content_type("application/jsonlines; charset=utf-8");
+                res.set_data_transformer(|data| {
+                    if let Some(value) = data.pointer("/entries") {
+                        value.to_jsonlines(Vec::new()).map_err(Error::from)
+                    } else {
+                        Ok(Vec::new())
+                    }
+                });
+            }
+            "msgpack" => {
+                res.set_content_type("application/msgpack");
+                res.set_data_transformer(|data| {
+                    if let Some(value) = data.pointer("/entries") {
+                        value.to_msgpack(Vec::new()).map_err(Error::from)
+                    } else {
+                        Ok(Vec::new())
+                    }
                 });
             }
             _ => {

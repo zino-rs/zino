@@ -14,6 +14,9 @@ method = "POST"
 path = "/user/{user_id}/update"
 method = "POST"
 
+[endpoints.requestBody]
+schema = "userInfo"
+
 [[endpoints]]
 path = "/user/{user_id}/view"
 method = "GET"
@@ -23,8 +26,24 @@ path = "/user/list"
 method = "GET"
 
 [endpoints.query]
-name = "string"
-roles = "string"
+roles = { type = "string", description = "User roles" }
+tags = { type = "string", description = "User tags" }
+
+[[endpoints]]
+path = "/user/import"
+method = "POST"
+
+[endpoints.requestBody]
+schema = "userData"
+
+[[endpoints]]
+path = "/user/export"
+method = "GET"
+
+[endpoints.query]
+format = { type = "string", enum = ["csv", "json", "jsonlines", "msgpack"], default = "json", description = "File format" }
+roles = { type = "string", description = "User roles" }
+tags = { type = "string", description = "User tags" }
 
 [schemas.userId]
 type = "string"
@@ -35,6 +54,24 @@ description = "User ID"
 type = "object"
 required = ["name", "roles", "account", "password"]
 name = { type = "string", description = "User name" }
-roles = { type = "array", items = "string", description = "User roles" }
+roles = { type = "array", items = "string", example = ["admin"], description = "User roles" }
 account = { type = "string", description = "User account" }
 password = { type = "string", format = "password", description = "User password" }
+tags = { type = "array", items = { type = "string", format = "uuid" }, description = "User tags" }
+
+[schemas.userInfo]
+type = "object"
+name = { type = "string", description = "User name" }
+status = { type = "string", enum = ["Active", "Inactive", "Locked", "Deleted"], description = "User status" }
+roles = { type = "string", description = "User roles" }
+tags = { type = "string", description = "User tags" }
+
+[schemas.userData]
+type = "array"
+items = "object"
+required = ["name", "roles", "account", "password"]
+name = { type = "string", description = "User name" }
+roles = { type = "array", items = "string", example = ["admin"], description = "User roles" }
+account = { type = "string", description = "User account" }
+password = { type = "string", format = "password", description = "User password" }
+tags = { type = "array", items = { type = "string", format = "uuid" }, description = "User tags" }

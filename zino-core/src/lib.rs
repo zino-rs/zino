@@ -39,7 +39,7 @@ pub mod database;
 pub mod view;
 
 pub mod application;
-pub mod authentication;
+pub mod auth;
 pub mod channel;
 pub mod datetime;
 pub mod error;

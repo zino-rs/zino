@@ -2,7 +2,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
 use zino_core::{
-    authentication::AccessKeyId,
+    auth::AccessKeyId,
     datetime::DateTime,
     error::Error,
     extension::JsonObjectExt,

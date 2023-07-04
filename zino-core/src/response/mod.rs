@@ -2,7 +2,7 @@
 
 use crate::{
     error::Error,
-    extension,
+    extension::{self, JsonValueExt},
     request::{RequestContext, Validation},
     trace::{ServerTiming, TimingMetric, TraceContext},
     JsonValue, SharedString, Uuid,
@@ -282,6 +282,7 @@ impl<S: ResponseCode> Response<S> {
     /// - `application/jsonlines`
     /// - `application/msgpack`
     /// - `application/problem+json`
+    /// - `text/csv`
     /// - `text/html`
     /// - `text/plain`
     #[inline]
@@ -433,35 +434,17 @@ impl<S: ResponseCode> Response<S> {
             bytes
         } else if let Some(data) = &self.data {
             let capacity = data.get().len();
-            match serde_json::to_value(data)? {
-                JsonValue::String(s) => s.into_bytes(),
-                JsonValue::Array(vec) => {
-                    if content_type.starts_with("application/msgpack") {
-                        let mut bytes = Vec::with_capacity(capacity);
-                        rmp_serde::encode::write(&mut bytes, &vec)?;
-                        bytes
-                    } else if content_type.starts_with("application/jsonlines") {
-                        let mut bytes = Vec::with_capacity(capacity);
-                        for value in vec {
-                            let mut jsonline = serde_json::to_vec(&value)?;
-                            bytes.append(&mut jsonline);
-                            bytes.push(b'\n');
-                        }
-                        bytes
-                    } else {
-                        JsonValue::Array(vec).to_string().into_bytes()
-                    }
-                }
-                JsonValue::Object(map) => {
-                    if content_type.starts_with("application/msgpack") {
-                        let mut bytes = Vec::with_capacity(capacity);
-                        rmp_serde::encode::write(&mut bytes, &map)?;
-                        bytes
-                    } else {
-                        JsonValue::Object(map).to_string().into_bytes()
-                    }
-                }
-                _ => data.to_string().into_bytes(),
+            let value = serde_json::to_value(data)?;
+            if content_type.starts_with("text/csv") {
+                value.to_csv(Vec::with_capacity(capacity))?
+            } else if content_type.starts_with("application/jsonlines") {
+                value.to_jsonlines(Vec::with_capacity(capacity))?
+            } else if content_type.starts_with("application/msgpack") {
+                value.to_msgpack(Vec::with_capacity(capacity))?
+            } else if let JsonValue::String(s) = value {
+                s.into_bytes()
+            } else {
+                data.to_string().into_bytes()
             }
         } else {
             Vec::new()

@@ -2,7 +2,7 @@ use crate::{extension::JsonObjectExt, JsonValue};
 use csv::{ByteRecord, Writer};
 use std::{
     borrow::Cow,
-    io::{self, ErrorKind, Write},
+    io::{self, ErrorKind},
     num::{ParseFloatError, ParseIntError},
     str::{FromStr, ParseBoolError},
 };
@@ -75,8 +75,14 @@ pub trait JsonValueExt {
     /// If the vec is empty, it also returns `None`.
     fn parse_str_array(&self) -> Option<Vec<&str>>;
 
-    /// Attempts to convert the JSON value to a CSV writer.
-    fn to_csv_writer<W: Write>(&self, writer: W) -> Result<W, csv::Error>;
+    /// Attempts to convert the JSON value to the CSV bytes.
+    fn to_csv(&self, buffer: Vec<u8>) -> Result<Vec<u8>, csv::Error>;
+
+    /// Attempts to convert the JSON value to the JSON Lines bytes.
+    fn to_jsonlines(&self, buffer: Vec<u8>) -> Result<Vec<u8>, serde_json::Error>;
+
+    /// Attempts to convert the JSON value to the MsgPack bytes.
+    fn to_msgpack(&self, buffer: Vec<u8>) -> Result<Vec<u8>, rmp_serde::encode::Error>;
 }
 
 impl JsonValueExt for JsonValue {
@@ -214,10 +220,10 @@ impl JsonValueExt for JsonValue {
         (!vec.is_empty()).then_some(vec)
     }
 
-    fn to_csv_writer<W: Write>(&self, writer: W) -> Result<W, csv::Error> {
+    fn to_csv(&self, buffer: Vec<u8>) -> Result<Vec<u8>, csv::Error> {
         match &self {
             JsonValue::Array(vec) => {
-                let mut wtr = Writer::from_writer(writer);
+                let mut wtr = Writer::from_writer(buffer);
                 let mut headers = Vec::new();
                 if let Some(JsonValue::Object(map)) = vec.first() {
                     for key in map.keys() {
@@ -241,7 +247,51 @@ impl JsonValueExt for JsonValue {
                 wtr.flush()?;
                 wtr.into_inner().map_err(|err| err.into_error().into())
             }
+            JsonValue::Object(map) => {
+                let mut wtr = Writer::from_writer(buffer);
+                let mut headers = Vec::new();
+                for key in map.keys() {
+                    headers.push(key.to_owned());
+                }
+                wtr.write_record(&headers)?;
+
+                let num_fields = headers.len();
+                let buffer_size = num_fields * 8;
+                let mut record = ByteRecord::with_capacity(buffer_size, num_fields);
+                for field in headers.iter() {
+                    let value = map.parse_string(field).unwrap_or("".into());
+                    record.push_field(value.as_ref().as_bytes());
+                }
+                wtr.write_byte_record(&record)?;
+                wtr.flush()?;
+                wtr.into_inner().map_err(|err| err.into_error().into())
+            }
             _ => Err(io::Error::new(ErrorKind::InvalidData, "invalid JSON value for CSV").into()),
         }
+    }
+
+    fn to_jsonlines(&self, mut buffer: Vec<u8>) -> Result<Vec<u8>, serde_json::Error> {
+        match &self {
+            JsonValue::Array(vec) => {
+                for value in vec {
+                    let mut jsonline = serde_json::to_vec(&value)?;
+                    buffer.append(&mut jsonline);
+                    buffer.push(b'\n');
+                }
+                Ok(buffer)
+            }
+            _ => {
+                let mut jsonline = serde_json::to_vec(&self)?;
+                buffer.append(&mut jsonline);
+                buffer.push(b'\n');
+                Ok(buffer)
+            }
+        }
+    }
+
+    #[inline]
+    fn to_msgpack(&self, mut buffer: Vec<u8>) -> Result<Vec<u8>, rmp_serde::encode::Error> {
+        rmp_serde::encode::write(&mut buffer, &self)?;
+        Ok(buffer)
     }
 }

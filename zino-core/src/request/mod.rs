@@ -2,8 +2,8 @@
 
 use crate::{
     application::http_client,
-    authentication::{
-        AccessKeyId, Authentication, ParseSecurityTokenError, SecurityToken, SessionId,
+    auth::{
+        AccessKeyId, Authentication, JwtClaims, ParseSecurityTokenError, SecurityToken, SessionId,
     },
     channel::{CloudEvent, Subscription},
     datetime::DateTime,
@@ -19,6 +19,7 @@ use bytes::Bytes;
 use cookie::{Cookie, SameSite};
 use fluent::FluentArgs;
 use http::Uri;
+use jwt_simple::algorithms::MACLike;
 use multer::Multipart;
 use serde::de::DeserializeOwned;
 use std::{
@@ -274,8 +275,17 @@ pub trait RequestContext {
 
     /// Parses the query as an instance of type `T`.
     /// Returns a default value of `T` when the query is empty.
+    /// If the query has a `timestamp` parameter, it will be used to prevent replay attacks.
     fn parse_query<T: Default + DeserializeOwned>(&self) -> Result<T, Rejection> {
         if let Some(query) = self.original_uri().query() {
+            if let Some(timestamp) = self.get_query("timestamp").and_then(|s| s.parse().ok()) {
+                let duration = DateTime::from_timestamp(timestamp).span();
+                if duration > crate::auth::default_time_tolerance() {
+                    let err = Error::new(format!("the value `{timestamp}` is unacceptable"));
+                    let rejection = Rejection::from_validation_entry("timestamp", err);
+                    return Err(rejection.context(self));
+                }
+            }
             serde_qs::from_str::<T>(query)
                 .map_err(|err| Rejection::from_validation_entry("query", err).context(self))
         } else {
@@ -488,6 +498,36 @@ pub trait RequestContext {
                     Rejection::from_validation_entry("session-id", err).context(self)
                 })
             })
+    }
+
+    /// Attempts to construct an instance of `JwtClaims` from an HTTP request.
+    /// The value is extracted from the query parameter `access_token` or
+    /// the `authorization` header.
+    fn parse_jwt_claims<K: MACLike>(&self, key: &K) -> Result<JwtClaims, Rejection> {
+        let mut validation = Validation::new();
+        let (param, mut token) = match self.get_query("access_token") {
+            Some(access_token) => ("access_token", access_token),
+            None => ("authorization", ""),
+        };
+        if let Some(authorization) = self.get_header("authorization") {
+            token = authorization
+                .strip_prefix("Bearer ")
+                .unwrap_or(authorization);
+        }
+
+        let mut options = crate::auth::default_verification_options();
+        options.reject_before = self
+            .get_query("timestamp")
+            .and_then(|s| s.parse().ok())
+            .map(|i| Duration::from_secs(i).into());
+        options.required_nonce = self.get_query("nonce").map(|s| s.to_owned());
+        match key.verify_token(token, Some(options)) {
+            Ok(claims) => return Ok(JwtClaims(claims)),
+            Err(err) => {
+                validation.record(param, err.to_string());
+            }
+        }
+        Err(Rejection::bad_request(validation).context(self))
     }
 
     /// Returns a `Response` or `Rejection` from an SQL query validation.

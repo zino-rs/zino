@@ -1,6 +1,6 @@
-//! Zero trust authentication.
+//! Authentication and authorization.
 
-use crate::{datetime::DateTime, encoding::base64, request::Validation, Map};
+use crate::{datetime::DateTime, encoding::base64, error::Error, request::Validation, Map};
 use hmac::{
     digest::{FixedOutput, KeyInit, MacMarker, Update},
     Mac,
@@ -8,12 +8,15 @@ use hmac::{
 use std::time::Duration;
 
 mod access_key;
+mod jwt_claims;
 mod security_token;
 mod session_id;
 
+pub(crate) use jwt_claims::{default_time_tolerance, default_verification_options};
 pub(crate) use security_token::ParseSecurityTokenError;
 
 pub use access_key::{AccessKeyId, SecretAccessKey};
+pub use jwt_claims::JwtClaims;
 pub use security_token::SecurityToken;
 pub use session_id::SessionId;
 
@@ -244,15 +247,14 @@ impl Authentication {
     }
 
     /// Generates a signature with the secret access key.
-    pub fn sign_with<H>(&self, secret_access_key: SecretAccessKey) -> String
+    pub fn sign_with<H>(&self, secret_access_key: SecretAccessKey) -> Result<String, Error>
     where
         H: FixedOutput + KeyInit + MacMarker + Update,
     {
         let string_to_sign = self.string_to_sign();
-        let mut mac =
-            H::new_from_slice(secret_access_key.as_ref()).expect("HMAC can take key of any size");
+        let mut mac = H::new_from_slice(secret_access_key.as_ref())?;
         mac.update(string_to_sign.as_ref());
-        base64::encode(mac.finalize().into_bytes())
+        Ok(base64::encode(mac.finalize().into_bytes()))
     }
 
     /// Validates the signature using the secret access key.
@@ -276,7 +278,9 @@ impl Authentication {
         }
 
         let signature = self.signature();
-        if signature.is_empty() || self.sign_with::<H>(secret_access_key) != signature {
+        if signature.is_empty() {
+            validation.record("signature", "should be nonempty");
+        } else if let Ok(token) = self.sign_with::<H>(secret_access_key) && token != signature {
             validation.record("signature", "invalid signature");
         }
         validation

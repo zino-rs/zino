@@ -41,6 +41,7 @@ path = "/user/export"
 method = "GET"
 
 [endpoints.query]
+format = { type = "string", enum = ["csv", "json", "jsonlines", "msgpack"], default = "json", description = "File format" }
 roles = { type = "string", description = "User roles" }
 tags = { type = "string", description = "User tags" }
 

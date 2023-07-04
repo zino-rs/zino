@@ -1,7 +1,7 @@
 use crate::User;
 use serde::{Deserialize, Serialize};
 use zino_core::{
-    authentication::AccessKeyId,
+    auth::AccessKeyId,
     datetime::DateTime,
     extension::JsonObjectExt,
     model::{Model, ModelHooks},

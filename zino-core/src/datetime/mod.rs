@@ -80,6 +80,47 @@ impl DateTime {
         let datetime = self.0.with_timezone(&Utc);
         datetime.to_rfc3339_opts(SecondsFormat::Millis, true)
     }
+
+    /// Returns the amount of time elapsed from another datetime to this one,
+    /// or zero duration if that datetime is later than this one.
+    #[inline]
+    pub fn duration_since(&self, earlier: DateTime) -> Duration {
+        (self.0 - earlier.0).to_std().unwrap_or_default()
+    }
+
+    /// Returns the duration of time between `self` and `DateTime::now()`.
+    #[inline]
+    pub fn span(&self) -> Duration {
+        let timestamp = self.timestamp_nanos();
+        let current_timestamp = Local::now().timestamp_nanos();
+        Duration::from_nanos(current_timestamp.abs_diff(timestamp))
+    }
+
+    /// Returns the duration of time from `self` to `DateTime::now()`.
+    pub fn span_before_now(&self) -> Option<Duration> {
+        let timestamp = self.timestamp_nanos();
+        let current_timestamp = Local::now().timestamp_nanos();
+        if current_timestamp >= timestamp {
+            u64::try_from(current_timestamp - timestamp)
+                .ok()
+                .map(Duration::from_nanos)
+        } else {
+            None
+        }
+    }
+
+    /// Returns the duration of time from `DateTime::now()` to `self`.
+    pub fn span_after_now(&self) -> Option<Duration> {
+        let timestamp = self.timestamp_nanos();
+        let current_timestamp = Local::now().timestamp_nanos();
+        if current_timestamp <= timestamp {
+            u64::try_from(timestamp - current_timestamp)
+                .ok()
+                .map(Duration::from_nanos)
+        } else {
+            None
+        }
+    }
 }
 
 impl fmt::Display for DateTime {
