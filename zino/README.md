@@ -7,6 +7,7 @@
 
 - 🚀 Out-of-the-box features for rapid application development.
 - ✨ Minimal design, modular architecture and high-level abstractions.
+- 🌐 Adopt an API-first approch to development with open standards.
 - ⚡ Embrace practical conventions to get the best performance.
 - 💎 Highly optimized ORM for MySQL and PostgreSQL based on [`sqlx`].
 - 📅 Lightweight scheduler for sync and async cron jobs.

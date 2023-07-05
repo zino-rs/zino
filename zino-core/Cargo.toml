@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.10.7"
+version = "0.11.0"
 rust-version = "1.72"
 edition = "2021"
 license = "MIT"
@@ -38,7 +38,6 @@ all-connectors = [
     "connector",
     "connector-arrow",
     "connector-http",
-    "connector-mssql",
     "connector-mysql",
     "connector-postgres",
     "connector-sqlite",
@@ -50,7 +49,6 @@ all-chatbots = ["chatbot", "chatbot-openai"]
 connector = ["connector-http"]
 connector-arrow = ["dep:datafusion", "connector"]
 connector-http = ["connector"]
-connector-mssql = ["connector", "sqlx", "sqlx/mssql"]
 connector-mysql = ["connector", "sqlx", "sqlx/mysql"]
 connector-postgres = ["connector", "sqlx", "sqlx/postgres"]
 connector-sqlite = ["connector", "sqlx", "sqlx/sqlite"]
@@ -66,9 +64,8 @@ full = [
 orm = ["sqlx", "sqlx/postgres"]
 orm-mysql = ["orm", "sqlx/mysql"]
 orm-postgres = ["orm", "sqlx/postgres"]
-runtime-actix = ["sqlx/runtime-actix-rustls"]
-runtime-async-std = ["sqlx/runtime-async-std-rustls"]
-runtime-tokio = ["sqlx/runtime-tokio-rustls"]
+runtime-async-std = ["sqlx/runtime-async-std"]
+runtime-tokio = ["sqlx/runtime-tokio"]
 view = ["dep:minijinja"]
 view-tera = ["view", "dep:tera"]
 view-minijinja = ["view", "dep:minijinja"]
@@ -153,10 +150,6 @@ features = [
     "stream",
 ]
 
-[dependencies.rust_decimal]
-version = "1.30.0"
-features = ["serde-float"]
-
 [dependencies.serde]
 version = "1.0.164"
 features = ["derive"]
@@ -166,12 +159,13 @@ version = "1.0.99"
 features = ["raw_value"]
 
 [dependencies.sqlx]
-version = "0.6.3"
+version = "0.7.0"
 optional = true
 features = [
+    "bigdecimal",
     "chrono",
-    "decimal",
-    "json",
+    "rust_decimal",
+    "tls-rustls",
     "uuid",
 ]
 

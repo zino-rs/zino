@@ -7,8 +7,7 @@ use crate::{
     AvroValue, JsonValue, Map, Record, SharedString, Uuid,
 };
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
-use rust_decimal::Decimal;
-use sqlx::{Column as _, Row, TypeInfo, ValueRef};
+use sqlx::{types::Decimal, Column as _, Row, TypeInfo, ValueRef};
 use std::borrow::Cow;
 
 impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {

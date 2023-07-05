@@ -1,7 +1,7 @@
 [package]
 name = "axum-app"
 description = "An example for axum integration."
-version = "0.7.4"
+version = "0.8.0"
 rust-version = "1.72"
 edition = "2021"
 publish = false
@@ -18,12 +18,12 @@ features = ["derive"]
 
 [dependencies.zino]
 path = "../../zino"
-version = "0.9.7"
+version = "0.10.0"
 features = ["axum"]
 
 [dependencies.zino-core]
 path = "../../zino-core"
-version = "0.10.7"
+version = "0.11.0"
 features = [
     "connector",
     "connector-arrow",
@@ -33,8 +33,8 @@ features = [
 
 [dependencies.zino-derive]
 path = "../../zino-derive"
-version = "0.7.7"
+version = "0.8.0"
 
 [dependencies.zino-model]
 path = "../../zino-model"
-version = "0.7.7"
+version = "0.8.0"

@@ -7,8 +7,6 @@ use toml::Table;
 use super::ArrowConnector;
 #[cfg(feature = "connector-http")]
 use super::HttpConnector;
-#[cfg(feature = "connector-mssql")]
-use sqlx::mssql::MssqlPool;
 #[cfg(feature = "connector-mysql")]
 use sqlx::mysql::MySqlPool;
 #[cfg(feature = "connector-postgres")]
@@ -25,9 +23,6 @@ pub(super) enum DataSourceConnector {
     /// HTTP
     #[cfg(feature = "connector-http")]
     Http(HttpConnector),
-    /// MSSQL
-    #[cfg(feature = "connector-mssql")]
-    Mssql(MssqlPool),
     /// MySQL
     #[cfg(feature = "connector-mysql")]
     MySql(MySqlPool),
@@ -89,8 +84,6 @@ impl DataSource {
             "arrow" => ArrowConnector::try_new_data_source(config)?,
             #[cfg(feature = "connector-http")]
             "http" => HttpConnector::try_new_data_source(config)?,
-            #[cfg(feature = "connector-mssql")]
-            "mssql" => MssqlPool::try_new_data_source(config)?,
             #[cfg(feature = "connector-mysql")]
             "mysql" => MySqlPool::try_new_data_source(config)?,
             #[cfg(feature = "connector-postgres")]
@@ -162,7 +155,6 @@ impl Connector for DataSource {
         let protocol = match source_type {
             "arrow" => "arrow",
             "http" | "rest" | "graphql" => "http",
-            "mssql" => "mssql",
             "mysql" | "ceresdb" | "databend" | "mariadb" | "tidb" => "mysql",
             "postgres" | "citus" | "greptimedb" | "highgo" | "hologres" | "opengauss"
             | "postgis" | "timescaledb" => "postgres",
@@ -185,8 +177,6 @@ impl Connector for DataSource {
             Arrow(connector) => connector.execute(query, params).await,
             #[cfg(feature = "connector-http")]
             Http(connector) => connector.execute(query, params).await,
-            #[cfg(feature = "connector-mssql")]
-            Mssql(pool) => pool.execute(query, params).await,
             #[cfg(feature = "connector-mysql")]
             MySql(pool) => pool.execute(query, params).await,
             #[cfg(feature = "connector-postgres")]
@@ -202,8 +192,6 @@ impl Connector for DataSource {
             Arrow(connector) => connector.query(query, params).await,
             #[cfg(feature = "connector-http")]
             Http(connector) => connector.query(query, params).await,
-            #[cfg(feature = "connector-mssql")]
-            Mssql(pool) => pool.query(query, params).await,
             #[cfg(feature = "connector-mysql")]
             MySql(pool) => pool.query(query, params).await,
             #[cfg(feature = "connector-postgres")]
@@ -219,8 +207,6 @@ impl Connector for DataSource {
             Arrow(connector) => connector.query_one(query, params).await,
             #[cfg(feature = "connector-http")]
             Http(connector) => connector.query_one(query, params).await,
-            #[cfg(feature = "connector-mssql")]
-            Mssql(pool) => pool.query_one(query, params).await,
             #[cfg(feature = "connector-mysql")]
             MySql(pool) => pool.query_one(query, params).await,
             #[cfg(feature = "connector-postgres")]

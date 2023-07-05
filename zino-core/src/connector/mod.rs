@@ -14,7 +14,6 @@
 //! | `hologres`       | Aliyun Hologres        | `connector-postgres`   |
 //! | `http`           | HTTP services          | `connector-http`       |
 //! | `mariadb`        | MariaDB                | `connector-mysql`      |
-//! | `mssql`          | MSSQL (SQL Server)     | `connector-mssql`      |
 //! | `mysql`          | MySQL                  | `connector-mysql`      |
 //! | `opengauss`      | openGauss              | `connector-postgres`   |
 //! | `postgis`        | PostGIS                | `connector-postgres`   |
@@ -37,8 +36,6 @@ mod data_source;
 mod connector_arrow;
 #[cfg(feature = "connector-http")]
 mod connector_http;
-#[cfg(feature = "connector-mssql")]
-mod connector_mssql;
 #[cfg(feature = "connector-mysql")]
 mod connector_mysql;
 #[cfg(feature = "connector-postgres")]
@@ -47,7 +44,6 @@ mod connector_postgres;
 mod connector_sqlite;
 
 #[cfg(any(
-    feature = "connector-mssql",
     feature = "connector-mysql",
     feature = "connector-postgres",
     feature = "connector-sqlite"
