@@ -124,7 +124,7 @@ pub(crate) static DEFAULT_BUNDLE: LazyLock<Option<&'static Translation>> = LazyL
 
 /// Default locale.
 pub(crate) static DEFAULT_LOCALE: LazyLock<&'static str> = LazyLock::new(|| {
-    if let Some(i18n) = State::shared().config().get_table("i18n") {
+    if let Some(i18n) = State::shared().get_config("i18n") {
         i18n.get_str("default-locale").unwrap_or("en-US")
     } else {
         "en-US"

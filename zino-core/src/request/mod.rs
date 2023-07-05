@@ -281,7 +281,7 @@ pub trait RequestContext {
             if let Some(timestamp) = self.get_query("timestamp").and_then(|s| s.parse().ok()) {
                 let duration = DateTime::from_timestamp(timestamp).span();
                 if duration > crate::auth::default_time_tolerance() {
-                    let err = Error::new(format!("the value `{timestamp}` is unacceptable"));
+                    let err = Error::new(format!("the timestamp `{timestamp}` can not be trusted"));
                     let rejection = Rejection::from_validation_entry("timestamp", err);
                     return Err(rejection.context(self));
                 }

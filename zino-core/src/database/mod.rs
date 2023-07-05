@@ -233,8 +233,7 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
 /// Database namespace prefix.
 static NAMESPACE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
     let config = State::shared()
-        .config()
-        .get_table("database")
+        .get_config("database")
         .expect("the `database` field should be a table");
     let max_rows = config.get_usize("max-rows").unwrap_or(10000);
     MAX_ROWS.store(max_rows, Relaxed);

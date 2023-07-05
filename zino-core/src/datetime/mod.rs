@@ -44,6 +44,14 @@ impl DateTime {
         Self(Local.from_utc_datetime(&dt))
     }
 
+    /// Returns a new instance corresponding to a UTC date and time,
+    /// from the number of non-leap microseconds since the midnight UTC on January 1, 1970.
+    #[inline]
+    pub fn from_timestamp_micros(micros: i64) -> Self {
+        let dt = NaiveDateTime::from_timestamp_micros(micros).unwrap_or_default();
+        Self(Local.from_utc_datetime(&dt))
+    }
+
     /// Parses an RFC 2822 date and time.
     #[inline]
     pub fn parse_utc_str(s: &str) -> Result<Self, ParseError> {
@@ -91,19 +99,19 @@ impl DateTime {
     /// Returns the duration of time between `self` and `DateTime::now()`.
     #[inline]
     pub fn span(&self) -> Duration {
-        let timestamp = self.timestamp_nanos();
-        let current_timestamp = Local::now().timestamp_nanos();
-        Duration::from_nanos(current_timestamp.abs_diff(timestamp))
+        let timestamp = self.timestamp_micros();
+        let current_timestamp = Local::now().timestamp_micros();
+        Duration::from_micros(current_timestamp.abs_diff(timestamp))
     }
 
     /// Returns the duration of time from `self` to `DateTime::now()`.
     pub fn span_before_now(&self) -> Option<Duration> {
-        let timestamp = self.timestamp_nanos();
-        let current_timestamp = Local::now().timestamp_nanos();
+        let timestamp = self.timestamp_micros();
+        let current_timestamp = Local::now().timestamp_micros();
         if current_timestamp >= timestamp {
             u64::try_from(current_timestamp - timestamp)
                 .ok()
-                .map(Duration::from_nanos)
+                .map(Duration::from_micros)
         } else {
             None
         }
@@ -111,12 +119,12 @@ impl DateTime {
 
     /// Returns the duration of time from `DateTime::now()` to `self`.
     pub fn span_after_now(&self) -> Option<Duration> {
-        let timestamp = self.timestamp_nanos();
-        let current_timestamp = Local::now().timestamp_nanos();
+        let timestamp = self.timestamp_micros();
+        let current_timestamp = Local::now().timestamp_micros();
         if current_timestamp <= timestamp {
             u64::try_from(timestamp - current_timestamp)
                 .ok()
-                .map(Duration::from_nanos)
+                .map(Duration::from_micros)
         } else {
             None
         }

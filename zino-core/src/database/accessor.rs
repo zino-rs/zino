@@ -365,8 +365,9 @@ where
     }
 
     /// Encrypts the password for the model.
-    fn encrypt_password(passowrd: &[u8]) -> Result<String, Error> {
+    fn encrypt_password(passowrd: &str) -> Result<String, Error> {
         let key = Self::secret_key();
+        let passowrd = passowrd.as_bytes();
         if let Ok(bytes) = base64::decode(passowrd) && bytes.len() == 256 {
             crypto::encrypt_hashed_password(key, passowrd)
         } else {
@@ -375,8 +376,10 @@ where
     }
 
     /// Verifies the password for the model.
-    fn verify_password(passowrd: &[u8], encrypted_password: String) -> Result<bool, Error> {
+    fn verify_password(passowrd: &str, encrypted_password: &str) -> Result<bool, Error> {
         let key = Self::secret_key();
+        let passowrd = passowrd.as_bytes();
+        let encrypted_password = encrypted_password.as_bytes();
         if let Ok(bytes) = base64::decode(passowrd) && bytes.len() == 256 {
             crypto::verify_hashed_password(key, passowrd, encrypted_password)
         } else {
@@ -466,8 +469,7 @@ where
 /// Secret key.
 static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
     let config = State::shared()
-        .config()
-        .get_table("database")
+        .get_config("database")
         .expect("the `database` field should be a table");
     let database_checksum: [u8; 32] = config
         .get_str("checksum")

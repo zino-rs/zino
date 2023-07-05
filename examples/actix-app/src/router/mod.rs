@@ -1,15 +1,20 @@
-use crate::controller::{stats, task, user};
+use crate::controller::{auth, stats, task, user};
 use actix_web::web::{get, post, ServiceConfig};
 use zino::{DefaultController, RouterConfigure};
 use zino_model::{Tag, User};
 
 pub fn routes() -> Vec<RouterConfigure> {
     vec![
+        auth_router as RouterConfigure,
         user_router as RouterConfigure,
         tag_router as RouterConfigure,
         task_router as RouterConfigure,
         stats_router as RouterConfigure,
     ]
+}
+
+fn auth_router(cfg: &mut ServiceConfig) {
+    cfg.route("/auth/login", post().to(auth::login));
 }
 
 fn user_router(cfg: &mut ServiceConfig) {

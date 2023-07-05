@@ -31,7 +31,7 @@ where
 pub(crate) fn verify_hashed_password(
     key: &[u8],
     hashed_password: &[u8],
-    encrypted_password: String,
+    encrypted_password: &[u8],
 ) -> Result<bool, Error> {
     let ciphertext = base64::decode(encrypted_password)?;
     let password_hash = super::decrypt(key, &ciphertext)?;
@@ -44,7 +44,7 @@ pub(crate) fn verify_hashed_password(
 pub(crate) fn verify_raw_password<D>(
     key: &[u8],
     raw_password: &[u8],
-    encrypted_password: String,
+    encrypted_password: &[u8],
 ) -> Result<bool, Error>
 where
     D: Default + FixedOutput + HashMarker + Update,

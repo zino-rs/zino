@@ -1,0 +1,9 @@
+[[endpoints]]
+path = "/auth/login"
+method = "POST"
+description = "Account login"
+
+[endpoints.requestBody]
+type = "object"
+account = { type = "string", description = "User account" }
+password = { type = "string", format = "password", description = "User password" }

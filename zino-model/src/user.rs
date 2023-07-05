@@ -46,7 +46,7 @@ pub struct User {
     mobile: String,
     email: String,
     avatar: String,
-    #[schema(index_type = "gin")]
+    #[schema(snapshot, index_type = "gin")]
     roles: Vec<String>,
     #[cfg(feature = "tags")]
     #[schema(reference = "Tag", index_type = "gin")]
@@ -91,7 +91,7 @@ impl Model for User {
             self.account = account.into_owned();
         }
         if let Some(password) = data.parse_string("password") {
-            match User::encrypt_password(password.as_bytes()) {
+            match User::encrypt_password(&password) {
                 Ok(password) => self.password = password,
                 Err(err) => validation.record_fail("password", err),
             }

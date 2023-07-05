@@ -55,7 +55,7 @@ pub mod trace;
 /// A JSON value.
 pub type JsonValue = serde_json::Value;
 
-/// A JSON key/value type.
+/// A JSON key-value type.
 pub type Map = serde_json::Map<String, JsonValue>;
 
 /// An Avro value.

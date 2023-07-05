@@ -50,7 +50,7 @@ pub trait AvroRecordExt {
     /// Searches for the key and returns its index.
     fn position(&self, key: &str) -> Option<usize>;
 
-    /// Inserts or updates a key/value pair into the record.
+    /// Inserts or updates a  pair into the record.
     /// If the record did have this key, the value is updated and the old value is returned,
     /// otherwise `None` is returned.
     fn upsert(&mut self, key: impl Into<String>, value: impl Into<AvroValue>) -> Option<AvroValue>;

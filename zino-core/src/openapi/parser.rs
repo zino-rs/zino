@@ -10,7 +10,7 @@ use utoipa::openapi::{
     request_body::{RequestBody, RequestBodyBuilder},
     schema::{KnownFormat, Object, ObjectBuilder, Ref, Schema, SchemaFormat, SchemaType},
     tag::{Tag, TagBuilder},
-    Deprecated, Required,
+    Deprecated, RefOr, Required,
 };
 
 /// Parses the tag.
@@ -288,12 +288,13 @@ fn parse_query_parameters(query: &Table) -> Vec<Parameter> {
 
 /// Parses the request body.
 fn parse_request_body(config: &Table) -> RequestBody {
-    let mut body_builder = RequestBodyBuilder::new().required(Some(Required::True));
-    if let Some(schema) = config.get_str("schema") {
-        body_builder = body_builder.content(
-            "application/json",
-            Content::new(Ref::from_schema_name(schema)),
-        );
-    }
-    body_builder.build()
+    let schema = if let Some(schema) = config.get_str("schema") {
+        RefOr::Ref(Ref::from_schema_name(schema))
+    } else {
+        parse_schema(config).into()
+    };
+    RequestBodyBuilder::new()
+        .required(Some(Required::True))
+        .content("application/json", Content::new(schema))
+        .build()
 }

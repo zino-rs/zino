@@ -137,7 +137,7 @@ pub trait JsonObjectExt {
     /// The addressed value is returned and if there is no such value `None` is returned.
     fn lookup(&self, pointer: &str) -> Option<&JsonValue>;
 
-    /// Inserts or updates a key/value pair into the map.
+    /// Inserts or updates a  pair into the map.
     /// If the map did have this key present, the value is updated and the old value is returned,
     /// otherwise `None` is returned.
     fn upsert(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) -> Option<JsonValue>;

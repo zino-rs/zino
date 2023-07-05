@@ -67,6 +67,12 @@ impl<T> State<T> {
         &self.config
     }
 
+    /// Returns a reference to the config corresponding to the `key`.
+    #[inline]
+    pub fn get_config(&self, key: &str) -> Option<&Table> {
+        self.config().get_table(key)
+    }
+
     /// Returns a reference to the config corresponding to the `extension`.
     #[inline]
     pub fn get_extension_config(&self, extension: &str) -> Option<&Table> {
