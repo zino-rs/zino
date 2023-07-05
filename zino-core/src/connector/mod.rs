@@ -80,7 +80,7 @@ pub trait Connector {
         let data = self.query(query, params).await?;
         let value = data
             .into_iter()
-            .map(|record| AvroValue::Record(record))
+            .map(AvroValue::Record)
             .collect::<Vec<_>>();
         apache_avro::from_value(&AvroValue::Array(value)).map_err(|err| err.into())
     }

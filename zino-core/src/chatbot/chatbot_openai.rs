@@ -1,4 +1,4 @@
-use super::{chatbot::ChatbotClient::OpenAi, Chatbot, ChatbotService};
+use super::{client::ChatbotClient::OpenAi, Chatbot, ChatbotService};
 use crate::{
     application::http_client,
     error::Error,

@@ -78,10 +78,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         .collect::<Vec<_>>();
                     format!(r#"json_array({})"#, values.join(",")).into()
                 }
-                JsonValue::Object(_) => {
-                    let value = Query::escape_string(value);
-                    format!("{value}").into()
-                }
+                JsonValue::Object(_) => Query::escape_string(value).into(),
             }
         } else if self.default_value().is_some() {
             "DEFAULT".into()
@@ -140,7 +137,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 "midnight" => "'00:00:00'".into(),
                 _ => Query::escape_string(value).into(),
             },
-            "Vec<u8>" => format!("'value'").into(),
+            "Vec<u8>" => format!("'{value}'").into(),
             "Vec<String>" | "Vec<Uuid>" => {
                 if value.contains(',') {
                     let values = value
@@ -153,10 +150,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     format!(r#"json_array({value})"#).into()
                 }
             }
-            "Map" => {
-                let value = Query::escape_string(value);
-                format!("{value}").into()
-            }
+            "Map" => Query::escape_string(value).into(),
             _ => "NULL".into(),
         }
     }
@@ -365,7 +359,7 @@ impl DecodeRow<DatabaseRow> for Map {
                     "DOUBLE" => decode_column::<f64>(field, raw_value)?.into(),
                     "NUMERIC" => {
                         let value = decode_column::<Decimal>(field, raw_value)?;
-                        serde_json::to_value(&value)?
+                        serde_json::to_value(value)?
                     }
                     "TEXT" | "VARCHAR" | "CHAR" => {
                         decode_column::<String>(field, raw_value)?.into()

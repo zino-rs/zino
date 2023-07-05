@@ -103,7 +103,7 @@ impl DataSource {
     /// Returns the protocol.
     #[inline]
     pub fn protocol(&self) -> &'static str {
-        &self.protocol
+        self.protocol
     }
 
     /// Returns the data source type.

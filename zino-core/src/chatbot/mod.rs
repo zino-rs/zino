@@ -11,13 +11,13 @@ use crate::{error::Error, extension::TomlTableExt, state::State, Map};
 use std::sync::LazyLock;
 use toml::Table;
 
-mod chatbot;
+mod client;
 
 /// Supported chatbot services.
 #[cfg(feature = "chatbot-openai")]
 mod chatbot_openai;
 
-pub use chatbot::Chatbot;
+pub use client::Chatbot;
 
 #[cfg(feature = "chatbot-openai")]
 use chatbot_openai::OpenAiChatCompletion;

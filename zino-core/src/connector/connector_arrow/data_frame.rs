@@ -43,9 +43,8 @@ impl DataFrameExecutor for DataFrame {
             for field in &batch.schema().fields {
                 let field_name = field.name().as_str();
                 if let Some(array) = batch.column_by_name(field_name) {
-                    for i in 0..num_rows {
-                        let record = &mut records[i];
-                        let value = array.parse_avro_value(i)?;
+                    for (index, record) in records.iter_mut().enumerate() {
+                        let value = array.parse_avro_value(index)?;
                         record.push((field_name.to_owned(), value));
                     }
                 }
@@ -67,9 +66,8 @@ impl DataFrameExecutor for DataFrame {
             for field in &batch.schema().fields {
                 let field_name = field.name().as_str();
                 if let Some(array) = batch.column_by_name(field_name) {
-                    for i in 0..num_rows {
-                        let map = &mut data[i];
-                        let value = array.parse_json_value(i)?;
+                    for (index, map) in data.iter_mut().enumerate() {
+                        let value = array.parse_json_value(index)?;
                         map.insert(field_name.to_owned(), value);
                     }
                 }

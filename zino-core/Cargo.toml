@@ -155,7 +155,7 @@ version = "1.0.164"
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1.0.99"
+version = "1.0.100"
 features = ["raw_value"]
 
 [dependencies.sqlx]

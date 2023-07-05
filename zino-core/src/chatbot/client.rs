@@ -47,7 +47,7 @@ impl Chatbot {
             "openai" => OpenAiChatCompletion::try_new_chatbot(config),
             _ => {
                 let message = format!("chatbot service `{service}` is unsupported");
-                return Err(Error::new(message));
+                Err(Error::new(message))
             }
         }
     }

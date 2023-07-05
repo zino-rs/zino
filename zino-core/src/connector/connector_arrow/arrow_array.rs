@@ -266,7 +266,7 @@ impl ArrowArrayExt for dyn Array {
                 let position = dictionary_array.lookup_key(value).ok_or_else(|| {
                     Error::new(format!("value `{value}` is not in the dictionary"))
                 })?;
-                AvroValue::Enum(position.try_into()?, value.to_owned())
+                AvroValue::Enum(position, value.to_owned())
             }
             data_type => {
                 let message = format!("cannot convert the `{data_type}` value to an Avro value");

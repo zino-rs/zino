@@ -18,6 +18,6 @@ pub(crate) fn decode(data: impl AsRef<[u8]>) -> Result<Vec<u8>, DecodeError> {
 pub(crate) fn encode_data_url(data: impl AsRef<[u8]>) -> String {
     let bytes = data.as_ref();
     let mut data = String::with_capacity(bytes.len() * 3 / 4);
-    base64::engine::general_purpose::STANDARD.encode_string(&bytes, &mut data);
+    base64::engine::general_purpose::STANDARD.encode_string(bytes, &mut data);
     format!("data:text/plain;base64,{data}")
 }
