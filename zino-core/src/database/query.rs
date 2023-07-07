@@ -17,6 +17,12 @@ pub(super) trait QueryExt<DB> {
     /// Returns the sort order.
     fn query_order(&self) -> (&str, bool);
 
+    /// Returns the query offset.
+    fn query_offset(&self) -> usize;
+
+    /// Returns the query limit.
+    fn query_limit(&self) -> usize;
+
     /// Returns a placeholder for the n-th parameter.
     fn placeholder(n: usize) -> SharedString;
 
@@ -25,9 +31,6 @@ pub(super) trait QueryExt<DB> {
         query: &'a str,
         params: Option<&'a Map>,
     ) -> (Cow<'a, str>, Vec<&'a JsonValue>);
-
-    /// Formats the query pagination to generate SQL `LIMIT` expression.
-    fn format_pagination(&self) -> String;
 
     /// Formats a field for the query.
     fn format_field(field: &str) -> Cow<'_, str>;
@@ -71,6 +74,7 @@ pub(super) trait QueryExt<DB> {
         }
 
         let (sort_by, ascending) = self.query_order();
+        let offset = self.query_offset();
         let mut expression = String::new();
         let mut conditions = Vec::with_capacity(filters.len());
         for (key, value) in filters {
@@ -114,7 +118,7 @@ pub(super) trait QueryExt<DB> {
                 }
                 _ => {
                     if let Some(col) = M::get_column(key) {
-                        let condition = if key == sort_by {
+                        let condition = if key == sort_by && offset > 0 {
                             // Use the filter condition to optimize pagination offset.
                             let key = Self::format_field(key);
                             let operator = if ascending { ">" } else { "<" };
@@ -157,6 +161,22 @@ pub(super) trait QueryExt<DB> {
         } else {
             let sort_order = if ascending { "ASC" } else { "DESC" };
             format!("ORDER BY {sort_by} {sort_order}")
+        }
+    }
+
+    /// Formats the query pagination to generate SQL `LIMIT` expression.
+    fn format_pagination(&self) -> String {
+        let limit = self.query_limit();
+        if limit == usize::MAX {
+            return String::new();
+        }
+
+        let (sort_by, _) = self.query_order();
+        if self.query_filters().contains_key(sort_by) {
+            format!("LIMIT {limit}")
+        } else {
+            let offset = self.query_offset();
+            format!("LIMIT {limit} OFFSET {offset}")
         }
     }
 

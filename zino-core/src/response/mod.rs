@@ -30,7 +30,7 @@ pub type StatusCode = http::StatusCode;
 pub type FullResponse = http::Response<Full<Bytes>>;
 
 /// A function pointer of transforming the response data.
-pub type ResponseDataTransformer = fn(data: JsonValue) -> Result<Vec<u8>, Error>;
+pub type DataTransformer = fn(data: JsonValue) -> Result<Vec<u8>, Error>;
 
 /// An HTTP response.
 #[derive(Debug, Serialize)]
@@ -72,7 +72,7 @@ pub struct Response<S = StatusCode> {
     data: Option<Box<RawValue>>,
     /// Transformer of the response data.
     #[serde(skip)]
-    data_transformer: Option<ResponseDataTransformer>,
+    data_transformer: Option<DataTransformer>,
     /// Content type.
     #[serde(skip)]
     content_type: Option<SharedString>,
@@ -268,7 +268,7 @@ impl<S: ResponseCode> Response<S> {
 
     /// Sets a transformer for the response data.
     #[inline]
-    pub fn set_data_transformer(&mut self, transformer: ResponseDataTransformer) {
+    pub fn set_data_transformer(&mut self, transformer: DataTransformer) {
         self.data_transformer = Some(transformer);
     }
 

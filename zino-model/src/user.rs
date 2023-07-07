@@ -31,7 +31,7 @@ pub struct User {
     #[cfg(feature = "visibility")]
     #[schema(default_value = "Internal")]
     visibility: String,
-    #[schema(default_value = "Active", index_type = "hash")]
+    #[schema(default_value = "Inactive", index_type = "hash")]
     status: String,
     #[schema(index_type = "text")]
     description: String,

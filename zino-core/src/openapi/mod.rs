@@ -35,6 +35,8 @@ pub(crate) fn default_paths() -> Paths {
 /// Returns the default OpenAPI components.
 pub(crate) fn default_components() -> Components {
     let mut components = OPENAPI_COMPONENTS.get_or_init(Components::new).clone();
+
+    // Default response
     let status_schema = ObjectBuilder::new()
         .schema_type(SchemaType::Integer)
         .example(Some(200.into()))
@@ -47,8 +49,6 @@ pub(crate) fn default_components() -> Components {
         .schema_type(SchemaType::String)
         .format(Some(SchemaFormat::KnownFormat(KnownFormat::Uuid)))
         .build();
-
-    // Default response
     let message_schema = ObjectBuilder::new()
         .schema_type(SchemaType::String)
         .example(Some("OK".into()))
@@ -90,6 +90,18 @@ pub(crate) fn default_components() -> Components {
     let model_id_example = Uuid::new_v4();
     let detail_example = format!("404 Not Found: cannot find the model `{model_id_example}`");
     let instance_example = format!("/model/{model_id_example}/view");
+    let status_schema = ObjectBuilder::new()
+        .schema_type(SchemaType::Integer)
+        .example(Some(404.into()))
+        .build();
+    let success_schema = ObjectBuilder::new()
+        .schema_type(SchemaType::Boolean)
+        .example(Some(false.into()))
+        .build();
+    let request_id_schema = ObjectBuilder::new()
+        .schema_type(SchemaType::String)
+        .format(Some(SchemaFormat::KnownFormat(KnownFormat::Uuid)))
+        .build();
     let title_schema = ObjectBuilder::new()
         .schema_type(SchemaType::String)
         .example(Some("NotFound".into()))

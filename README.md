@@ -61,3 +61,7 @@ This project is licensed under the [MIT license][license].
 [`actix-app`]: https://github.com/photino/zino/tree/main/examples/actix-app
 [`axum-app`]: https://github.com/photino/zino/tree/main/examples/axum-app
 [license]: https://github.com/photino/zino/blob/main/LICENSE
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=photino/zino&type=Date)](https://star-history.com/#photino/zino&Date)

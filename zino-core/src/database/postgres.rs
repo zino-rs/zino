@@ -199,7 +199,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         let condition = format!(r#"array_length({field}, 1) = {value}"#);
                         conditions.push(condition);
                     } else if operator == "IN" || operator == "NOT IN" {
-                        if let Some(values) = value.as_array() && !values.is_empty() {
+                        if let Some(values) = value.as_array() {
                             let field = Query::format_field(field);
                             let value = values
                                 .iter()
@@ -495,6 +495,16 @@ impl QueryExt<DatabaseDriver> for Query {
     }
 
     #[inline]
+    fn query_offset(&self) -> usize {
+        self.offset()
+    }
+
+    #[inline]
+    fn query_limit(&self) -> usize {
+        self.limit()
+    }
+
+    #[inline]
     fn placeholder(n: usize) -> SharedString {
         if n == 1 {
             "$1".into()
@@ -509,21 +519,6 @@ impl QueryExt<DatabaseDriver> for Query {
         params: Option<&'a Map>,
     ) -> (Cow<'a, str>, Vec<&'a JsonValue>) {
         crate::format::query::prepare_sql_query(query, params, '$')
-    }
-
-    fn format_pagination(&self) -> String {
-        let limit = self.limit();
-        if limit == usize::MAX {
-            return String::new();
-        }
-
-        let (sort_by, _) = self.sort_order();
-        if self.filters().contains_key(sort_by) {
-            format!("LIMIT {limit}")
-        } else {
-            let offset = self.offset();
-            format!("OFFSET {offset} LIMIT {limit} ")
-        }
     }
 
     fn format_field(field: &str) -> Cow<'_, str> {

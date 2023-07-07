@@ -76,6 +76,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut query = Query::default();
         query.allow_fields(Self::fields());
         query.deny_fields(Self::writeonly_fields());
+        query.set_limit(super::MAX_ROWS.load(Relaxed));
         query
     }
 

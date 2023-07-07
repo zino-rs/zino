@@ -28,7 +28,7 @@ impl Query {
             filters,
             sort_order: (None, false),
             offset: 0,
-            limit: usize::MAX,
+            limit: 10,
         }
     }
 

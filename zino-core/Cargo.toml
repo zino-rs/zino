@@ -66,6 +66,8 @@ orm-mysql = ["orm", "sqlx/mysql"]
 orm-postgres = ["orm", "sqlx/postgres"]
 runtime-async-std = ["sqlx/runtime-async-std"]
 runtime-tokio = ["sqlx/runtime-tokio"]
+tls-native = ["sqlx/tls-native-tls"]
+tls-rustls = ["sqlx/tls-rustls"]
 view = ["dep:minijinja"]
 view-tera = ["view", "dep:tera"]
 view-minijinja = ["view", "dep:minijinja"]
@@ -94,7 +96,7 @@ metrics-exporter-prometheus = "0.12.1"
 multer = "2.1.0"
 parking_lot = "0.12.1"
 rand = "0.8.5"
-regex = "1.8.4"
+regex = "1.9.0"
 reqwest-middleware = "0.2.2"
 reqwest-retry = "0.2.2"
 reqwest-tracing = "0.4.5"
@@ -165,7 +167,6 @@ features = [
     "bigdecimal",
     "chrono",
     "rust_decimal",
-    "tls-rustls",
     "uuid",
 ]
 

@@ -129,7 +129,7 @@ impl ConnectionPool {
         if let Some(host) = config.get_str("host") {
             connect_options = connect_options.host(host);
         }
-        if let Some(port) = config.get_u16("hport") {
+        if let Some(port) = config.get_u16("port") {
             connect_options = connect_options.port(port);
         }
         if let Some(statement_cache_capacity) = config.get_usize("statement-cache-capacity") {

@@ -489,6 +489,16 @@ impl QueryExt<DatabaseDriver> for Query {
     }
 
     #[inline]
+    fn query_offset(&self) -> usize {
+        self.offset()
+    }
+
+    #[inline]
+    fn query_limit(&self) -> usize {
+        self.limit()
+    }
+
+    #[inline]
     fn placeholder(_n: usize) -> SharedString {
         "?".into()
     }
@@ -499,21 +509,6 @@ impl QueryExt<DatabaseDriver> for Query {
         params: Option<&'a Map>,
     ) -> (Cow<'a, str>, Vec<&'a JsonValue>) {
         crate::format::query::prepare_sql_query(query, params, '?')
-    }
-
-    fn format_pagination(&self) -> String {
-        let limit = self.limit();
-        if limit == usize::MAX {
-            return String::new();
-        }
-
-        let (sort_by, _) = self.sort_order();
-        if self.filters().contains_key(sort_by) {
-            format!("LIMIT {limit}")
-        } else {
-            let offset = self.offset();
-            format!("LIMIT {offset}, {limit}")
-        }
     }
 
     fn format_field(field: &str) -> Cow<'_, str> {
