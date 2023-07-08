@@ -2,7 +2,7 @@ use super::{query::QueryExt, DatabaseDriver, DatabaseRow};
 use crate::{
     datetime::DateTime,
     error::Error,
-    extension::JsonObjectExt,
+    extension::{AvroRecordExt, JsonObjectExt},
     model::{Column, DecodeRow, EncodeColumn, Query},
     AvroValue, JsonValue, Map, Record, SharedString, Uuid,
 };
@@ -168,11 +168,15 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 for (name, value) in filter {
                     let operator = match name.as_str() {
                         "$eq" => "=",
-                        "$ne" => "<>",
+                        "$ne" | "$neq" => "<>",
                         "$lt" => "<",
-                        "$lte" => "<=",
+                        "$le" | "$lte" => "<=",
                         "$gt" => ">",
-                        "$gte" => ">=",
+                        "$ge" | "$gte" => ">=",
+                        "$like" => "LIKE",
+                        "$ilike" => "ILIKE",
+                        "$rlike" | "$regexp" => "RLIKE",
+                        "$is" => "IS",
                         "$in" => "IN",
                         "$nin" => "NOT IN",
                         _ => "=",
@@ -397,6 +401,11 @@ impl DecodeRow<DatabaseRow> for Map {
         }
         Ok(map)
     }
+
+    #[inline]
+    fn update(&mut self, field: &str, value: JsonValue) {
+        self.upsert(field, value);
+    }
 }
 
 impl DecodeRow<DatabaseRow> for Record {
@@ -469,6 +478,11 @@ impl DecodeRow<DatabaseRow> for Record {
             record.push((field.to_owned(), value));
         }
         Ok(record)
+    }
+
+    #[inline]
+    fn update(&mut self, field: &str, value: JsonValue) {
+        self.upsert(field, value);
     }
 }
 

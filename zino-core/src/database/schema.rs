@@ -598,7 +598,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Finds models selected by the query in the table,
     /// and parses it as `Vec<T>`.
     async fn find_as<T: DeserializeOwned>(query: &Query) -> Result<Vec<T>, Error> {
-        let data = Self::find::<Map>(query).await?;
+        let mut data = Self::find::<Map>(query).await?;
+        for model in data.iter_mut() {
+            Self::after_decode(model).await?;
+        }
         serde_json::from_value(data.into()).map_err(Error::from)
     }
 
@@ -633,7 +636,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// and parses it as an instance of type `T`.
     async fn find_one_as<T: DeserializeOwned>(query: &Query) -> Result<Option<T>, Error> {
         match Self::find_one::<Map>(query).await? {
-            Some(data) => serde_json::from_value(data.into()).map_err(Error::from),
+            Some(mut data) => {
+                Self::after_decode(&mut data).await?;
+                serde_json::from_value(data.into()).map_err(Error::from)
+            }
             None => Ok(None),
         }
     }
@@ -675,11 +681,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut associations = Map::with_capacity(num_values);
         while let Some(row) = rows.try_next().await? {
-            let map = Map::decode_row(&row)?;
+            let mut map = Map::decode_row(&row)?;
             let primary_key_value = map
                 .get_str(primary_key_name)
                 .map(|s| s.to_owned())
                 .unwrap_or_default();
+            Self::after_decode(&mut map).await?;
             associations.upsert(primary_key_value, map);
         }
         ctx.set_query(&sql);
@@ -744,11 +751,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut associations = Map::with_capacity(num_values);
         while let Some(row) = rows.try_next().await? {
-            let map = Map::decode_row(&row)?;
+            let mut map = Map::decode_row(&row)?;
             let primary_key_value = map
                 .get_str(primary_key_name)
                 .map(|s| s.to_owned())
                 .unwrap_or_default();
+            Self::after_decode(&mut map).await?;
             associations.upsert(primary_key_value, map);
         }
         ctx.set_query(&sql);
@@ -832,35 +840,28 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         left_columns: &[&str],
         right_columns: &[&str],
     ) -> Result<Vec<T>, Error> {
-        let data = Self::lookup::<M, Map>(query, left_columns, right_columns).await?;
+        let mut data = Self::lookup::<M, Map>(query, left_columns, right_columns).await?;
+        for model in data.iter_mut() {
+            Self::after_decode(model).await?;
+        }
         serde_json::from_value(data.into()).map_err(Error::from)
     }
 
     /// Counts the number of rows selected by the query in the table.
-    async fn count(query: &Query, column: &str, distinct: bool) -> Result<u64, Error> {
+    async fn count(query: &Query) -> Result<u64, Error> {
         let pool = Self::acquire_writer().await?.pool();
-        Self::before_select(query).await?;
+        Self::before_count(query).await?;
 
         let table_name = Self::table_name();
         let filters = query.format_filters::<Self>();
-        let field = Query::format_field(column);
-        let projection = if column != "*" {
-            if distinct {
-                format!(r#"count(distinct {field}) as {column}_count_distinct"#)
-            } else {
-                format!(r#"count({field}) as {column}_count"#)
-            }
-        } else {
-            "count(*)".to_owned()
-        };
-        let sql = format!("SELECT {projection} FROM {table_name} {filters};");
+        let sql = format!("SELECT count(*) FROM {table_name} {filters};");
 
         let mut ctx = Self::before_scan(&sql).await?;
         let count: i64 = sqlx::query_scalar(&sql).fetch_one(pool).await?;
         ctx.set_query(sql);
         ctx.set_query_result(Some(1), true);
         Self::after_scan(&ctx).await?;
-        Self::after_select(&ctx).await?;
+        Self::after_count(&ctx).await?;
         u64::try_from(count).map_err(Error::from)
     }
 
@@ -871,7 +872,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         columns: &[(&str, bool)],
     ) -> Result<T, Error> {
         let pool = Self::acquire_writer().await?.pool();
-        Self::before_select(query).await?;
+        Self::before_count(query).await?;
 
         let table_name = Self::table_name();
         let filters = query.format_filters::<Self>();
@@ -898,7 +899,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(sql);
         ctx.set_query_result(Some(1), true);
         Self::after_scan(&ctx).await?;
-        Self::after_select(&ctx).await?;
+        Self::after_count(&ctx).await?;
         T::decode_row(&row).map_err(Error::from)
     }
 
@@ -967,7 +968,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         query: &str,
         params: Option<&Map>,
     ) -> Result<Vec<T>, Error> {
-        let data = Self::query::<Map>(query, params).await?;
+        let mut data = Self::query::<Map>(query, params).await?;
+        for model in data.iter_mut() {
+            Self::after_decode(model).await?;
+        }
         serde_json::from_value(data.into()).map_err(Error::from)
     }
 
@@ -1004,7 +1008,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         params: Option<&Map>,
     ) -> Result<Option<T>, Error> {
         match Self::query_one::<Map>(query, params).await? {
-            Some(data) => serde_json::from_value(data.into()).map_err(Error::from),
+            Some(mut data) => {
+                Self::after_decode(&mut data).await?;
+                serde_json::from_value(data.into()).map_err(Error::from)
+            }
             None => Ok(None),
         }
     }
@@ -1096,7 +1103,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             Self::after_scan(&ctx).await?;
             Self::after_select(&ctx).await?;
 
-            let map = Map::decode_row(&row)?;
+            let mut map = Map::decode_row(&row)?;
+            Self::after_decode(&mut map).await?;
             Self::try_from_map(map).map_err(Error::from)
         } else {
             ctx.set_query(sql);

@@ -6,13 +6,13 @@
 //! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?labelColor=555555&logo=rust
 //! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?labelColor=555555&logo=docs.rs
 //!
-//! [`zino`] is a **full-featured application framework** for Rust which emphasizes
-//! **simplicity**, **extensibility** and **productivity**.
+//! [`zino`] is a **full-featured** framework for **composable** applications in Rust
+//! which emphasizes **simplicity**, **extensibility** and **productivity**.
 //!
 //! ## Highlights
 //!
 //! - 🚀 Out-of-the-box features for rapid application development.
-//! - ✨ Minimal design, modular architecture and high-level abstractions.
+//! - ✨ Minimal design, composable architecture and high-level abstractions.
 //! - 🌐 Adopt an API-first approch to development with open standards.
 //! - ⚡ Embrace practical conventions to get the best performance.
 //! - 💎 Highly optimized ORM for MySQL and PostgreSQL based on [`sqlx`].

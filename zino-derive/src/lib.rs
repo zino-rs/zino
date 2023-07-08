@@ -759,21 +759,29 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
         }
         if model_references.is_empty() {
             populated_queries.push(quote! {
-                let models = Self::find(query).await?;
-            });
-            populated_one_queries.push(quote! {
-                let model = Self::find_by_id::<Map>(id)
-                    .await?
-                    .ok_or_else(|| ZinoError::new(format!("404 Not Found: cannot find the model `{id}`")))?;
-            });
-        } else {
-            populated_queries.push(quote! {
-                let mut models = Self::find(query).await?;
+                let mut models = Self::find::<Map>(query).await?;
+                for model in models.iter_mut() {
+                    Self::after_decode(model).await?;
+                }
             });
             populated_one_queries.push(quote! {
                 let mut model = Self::find_by_id::<Map>(id)
                     .await?
                     .ok_or_else(|| ZinoError::new(format!("404 Not Found: cannot find the model `{id}`")))?;
+                Self::after_decode(&mut model).await?;
+            });
+        } else {
+            populated_queries.push(quote! {
+                let mut models = Self::find::<Map>(query).await?;
+                for model in models.iter_mut() {
+                    Self::after_decode(model).await?;
+                }
+            });
+            populated_one_queries.push(quote! {
+                let mut model = Self::find_by_id::<Map>(id)
+                    .await?
+                    .ok_or_else(|| ZinoError::new(format!("404 Not Found: cannot find the model `{id}`")))?;
+                Self::after_decode(&mut model).await?;
             });
             for (model, fields) in model_references.into_iter() {
                 let model_ident = format_ident!("{}", model);

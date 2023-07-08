@@ -13,14 +13,14 @@ pub trait ModelHooks: Model {
 
     /// A hook running before validating the model data.
     #[inline]
-    async fn before_validation(data: Map) -> Result<Map, Error> {
-        Ok(data)
+    async fn before_validation(_model: &mut Map) -> Result<(), Error> {
+        Ok(())
     }
 
     /// A hook running after validating the model data.
     #[inline]
-    async fn after_validation(data: Map) -> Result<Map, Error> {
-        Ok(data)
+    async fn after_validation(_model: &mut Map) -> Result<(), Error> {
+        Ok(())
     }
 
     /// A hook running before creating the table.
@@ -199,6 +199,28 @@ pub trait ModelHooks: Model {
             ctx.record_error("fail to select the models from the table");
         }
         ctx.emit_metrics("select");
+        Ok(())
+    }
+
+    /// A hook running before counting the models in the table.
+    #[inline]
+    async fn before_count(_query: &Query) -> Result<(), Error> {
+        Ok(())
+    }
+
+    /// A hook running after counting the models in the table.
+    #[inline]
+    async fn after_count(ctx: &QueryContext) -> Result<(), Error> {
+        if !ctx.is_success() {
+            ctx.record_error("fail to count the models in the table");
+        }
+        ctx.emit_metrics("count");
+        Ok(())
+    }
+
+    /// A hook running after decoding the model as a `Map`.
+    #[inline]
+    async fn after_decode(_model: &mut Map) -> Result<(), Error> {
         Ok(())
     }
 }

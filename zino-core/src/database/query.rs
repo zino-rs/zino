@@ -74,7 +74,6 @@ pub(super) trait QueryExt<DB> {
         }
 
         let (sort_by, ascending) = self.query_order();
-        let offset = self.query_offset();
         let mut expression = String::new();
         let mut conditions = Vec::with_capacity(filters.len());
         for (key, value) in filters {
@@ -118,7 +117,7 @@ pub(super) trait QueryExt<DB> {
                 }
                 _ => {
                     if let Some(col) = M::get_column(key) {
-                        let condition = if key == sort_by && offset > 0 {
+                        let condition = if key == sort_by && col.type_name() == "DateTime" {
                             // Use the filter condition to optimize pagination offset.
                             let key = Self::format_field(key);
                             let operator = if ascending { ">" } else { "<" };

@@ -36,6 +36,13 @@ pub(crate) fn default_paths() -> Paths {
 pub(crate) fn default_components() -> Components {
     let mut components = OPENAPI_COMPONENTS.get_or_init(Components::new).clone();
 
+    // Request ID
+    let request_id_example = Uuid::new_v4();
+    let request_id_schema = ObjectBuilder::new()
+        .schema_type(SchemaType::String)
+        .format(Some(SchemaFormat::KnownFormat(KnownFormat::Uuid)))
+        .build();
+
     // Default response
     let status_schema = ObjectBuilder::new()
         .schema_type(SchemaType::Integer)
@@ -45,18 +52,14 @@ pub(crate) fn default_components() -> Components {
         .schema_type(SchemaType::Boolean)
         .example(Some(true.into()))
         .build();
-    let request_id_schema = ObjectBuilder::new()
-        .schema_type(SchemaType::String)
-        .format(Some(SchemaFormat::KnownFormat(KnownFormat::Uuid)))
-        .build();
     let message_schema = ObjectBuilder::new()
         .schema_type(SchemaType::String)
         .example(Some("OK".into()))
         .build();
     let default_response_schema = ObjectBuilder::new()
         .schema_type(SchemaType::Object)
-        .property("status", status_schema.clone())
-        .property("success", success_schema.clone())
+        .property("status", status_schema)
+        .property("success", success_schema)
         .property("message", message_schema)
         .property("request_id", request_id_schema.clone())
         .property("data", Object::new())
@@ -69,7 +72,7 @@ pub(crate) fn default_components() -> Components {
         "status": 200,
         "success": true,
         "message": "OK",
-        "request_id": Uuid::new_v4(),
+        "request_id": request_id_example,
         "data": {},
     });
     let default_response_content = ContentBuilder::new()
@@ -97,10 +100,6 @@ pub(crate) fn default_components() -> Components {
     let success_schema = ObjectBuilder::new()
         .schema_type(SchemaType::Boolean)
         .example(Some(false.into()))
-        .build();
-    let request_id_schema = ObjectBuilder::new()
-        .schema_type(SchemaType::String)
-        .format(Some(SchemaFormat::KnownFormat(KnownFormat::Uuid)))
         .build();
     let title_schema = ObjectBuilder::new()
         .schema_type(SchemaType::String)
@@ -135,7 +134,7 @@ pub(crate) fn default_components() -> Components {
         "title": "NotFound",
         "detail": detail_example,
         "instance": instance_example,
-        "request_id": Uuid::new_v4(),
+        "request_id": request_id_example,
     });
     let error_response_content = ContentBuilder::new()
         .schema(Ref::from_schema_name("errorResponse"))

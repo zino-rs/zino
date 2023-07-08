@@ -36,6 +36,7 @@ impl Query {
     #[must_use]
     pub fn read_map(&mut self, data: &Map) -> Validation {
         let mut validation = Validation::new();
+        let mut pagination_current_page = None;
         let filters = &mut self.filters;
         for (key, value) in data {
             match key.as_str() {
@@ -62,11 +63,19 @@ impl Query {
                         }
                     }
                 }
-                "limit" => {
+                "limit" | "page_size" => {
                     if let Some(result) = value.parse_usize() {
                         match result {
                             Ok(limit) => self.limit = limit,
                             Err(err) => validation.record_fail("limit", err),
+                        }
+                    }
+                }
+                "current_page" => {
+                    if let Some(result) = value.parse_usize() {
+                        match result {
+                            Ok(current_page) => pagination_current_page = Some(current_page),
+                            Err(err) => validation.record_fail("current_page", err),
                         }
                     }
                 }
@@ -103,6 +112,9 @@ impl Query {
                     }
                 }
             }
+        }
+        if let Some(current_page) = pagination_current_page {
+            self.offset = self.limit * current_page;
         }
         validation
     }

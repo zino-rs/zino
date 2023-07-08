@@ -398,26 +398,30 @@ where
 
     /// Fetches the data of models seleted by the `Query`.
     async fn fetch(query: &Query) -> Result<Vec<Map>, Error> {
-        let models = Self::find(query).await?;
+        let mut models = Self::find(query).await?;
+        for model in models.iter_mut() {
+            Self::after_decode(model).await?;
+        }
         Ok(models)
     }
 
     /// Fetches the data of a model seleted by the primary key.
     async fn fetch_by_id(id: &T) -> Result<Map, Error> {
-        let model = Self::find_by_id::<Map>(id)
+        let mut model = Self::find_by_id::<Map>(id)
             .await?
             .ok_or_else(|| Error::new(format!("404 Not Found: cannot find the model `{id}`")))?;
+        Self::after_decode(&mut model).await?;
         Ok(model)
     }
 
     /// Updates a model of the primary key using the json object.
-    async fn update_by_id(id: &T, data: Map) -> Result<(Validation, Self), Error> {
+    async fn update_by_id(id: &T, mut data: Map) -> Result<(Validation, Self), Error> {
         let mut model = Self::try_get_model(id).await?;
         if let Some(version) = data.get_u64("version") && model.version() != version {
             return Err(Error::new("409 Conflict: there is a version control conflict"));
         }
+        Self::before_validation(&mut data).await?;
 
-        let mut data = Self::before_validation(data).await?;
         let validation = model.read_map(&data);
         if !validation.is_success() {
             return Ok((validation, model));
@@ -432,8 +436,8 @@ where
         } else if model.is_deleted() {
             data.retain(|key, _value| key == "status");
         }
+        Self::after_validation(&mut data).await?;
 
-        let data = Self::after_validation(data).await?;
         let query = model.current_version_query();
         let mutation = model.next_version_mutation(data);
 

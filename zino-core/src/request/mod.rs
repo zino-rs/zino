@@ -333,7 +333,8 @@ pub trait RequestContext {
             return Err(Rejection::from_validation_entry(
                 "content_type",
                 Error::new("invalid `content-type` header"),
-            ).context(self));
+            )
+            .context(self));
         };
         match multer::parse_boundary(content_type) {
             Ok(boundary) => {
@@ -570,12 +571,12 @@ pub trait RequestContext {
             .await
             .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
         if data_type == "form" {
-            let data = serde_urlencoded::from_bytes(&bytes)
+            let mut data = serde_urlencoded::from_bytes(&bytes)
                 .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
-            match M::before_validation(data).await {
-                Ok(data) => {
+            match M::before_validation(&mut data).await {
+                Ok(()) => {
                     let validation = model.read_map(&data);
-                    M::after_validation(data)
+                    M::after_validation(&mut data)
                         .await
                         .map_err(|err| Rejection::from_error(err).context(self))?;
                     if validation.is_success() {
@@ -587,12 +588,12 @@ pub trait RequestContext {
                 Err(err) => Err(Rejection::from_error(err).context(self)),
             }
         } else if data_type == "msgpack" {
-            let data = rmp_serde::from_slice(&bytes)
+            let mut data = rmp_serde::from_slice(&bytes)
                 .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
-            match M::before_validation(data).await {
-                Ok(data) => {
+            match M::before_validation(&mut data).await {
+                Ok(()) => {
                     let validation = model.read_map(&data);
-                    M::after_validation(data)
+                    M::after_validation(&mut data)
                         .await
                         .map_err(|err| Rejection::from_error(err).context(self))?;
                     if validation.is_success() {
@@ -604,12 +605,12 @@ pub trait RequestContext {
                 Err(err) => Err(Rejection::from_error(err).context(self)),
             }
         } else {
-            let data = serde_json::from_slice(&bytes)
+            let mut data = serde_json::from_slice(&bytes)
                 .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
-            match M::before_validation(data).await {
-                Ok(data) => {
+            match M::before_validation(&mut data).await {
+                Ok(()) => {
                     let validation = model.read_map(&data);
-                    M::after_validation(data)
+                    M::after_validation(&mut data)
                         .await
                         .map_err(|err| Rejection::from_error(err).context(self))?;
                     if validation.is_success() {

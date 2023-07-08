@@ -64,10 +64,10 @@ full = [
 orm = ["sqlx", "sqlx/postgres"]
 orm-mysql = ["orm", "sqlx/mysql"]
 orm-postgres = ["orm", "sqlx/postgres"]
-runtime-async-std = ["sqlx/runtime-async-std"]
-runtime-tokio = ["sqlx/runtime-tokio"]
-tls-native = ["sqlx/tls-native-tls"]
-tls-rustls = ["sqlx/tls-rustls"]
+runtime-async-std = ["sqlx?/runtime-async-std"]
+runtime-tokio = ["sqlx?/runtime-tokio"]
+tls-native = ["opendal?/native-tls", "reqwest/native-tls", "sqlx?/tls-native-tls"]
+tls-rustls = ["opendal?/rustls", "reqwest/rustls-tls", "sqlx?/tls-rustls"]
 view = ["dep:minijinja"]
 view-tera = ["view", "dep:tera"]
 view-minijinja = ["view", "dep:minijinja"]
@@ -139,7 +139,7 @@ features = ["debug", "loader"]
 [dependencies.opendal]
 version = "0.38.0"
 optional = true
-features = ["layers-all", "native-tls"]
+features = ["layers-all"]
 
 [dependencies.reqwest]
 version = "0.11.18"
@@ -148,7 +148,6 @@ features = [
     "gzip",
     "json",
     "multipart",
-    "native-tls",
     "stream",
 ]
 

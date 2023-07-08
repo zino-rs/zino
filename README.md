@@ -1,7 +1,7 @@
 # zino
 
-`zino` is a **full-featured application framework** for Rust which emphasizes
-**simplicity**, **extensibility** and **productivity**.
+`zino` is a **full-featured** framework for **composable** applications in Rust
+which emphasizes **simplicity**, **extensibility** and **productivity**.
 
 [![Crates.io](https://img.shields.io/crates/v/zino)][zino]
 [![Documentation](https://shields.io/docsrs/zino)][zino-docs]
@@ -11,7 +11,7 @@
 ## Highlights
 
 - 🚀 Out-of-the-box features for rapid application development.
-- ✨ Minimal design, modular architecture and high-level abstractions.
+- ✨ Minimal design, composable architecture and high-level abstractions.
 - 🌐 Adopt an API-first approch to development with open standards.
 - ⚡ Embrace practical conventions to get the best performance.
 - 💎 Highly optimized ORM for MySQL and PostgreSQL based on [`sqlx`].
@@ -61,7 +61,3 @@ This project is licensed under the [MIT license][license].
 [`actix-app`]: https://github.com/photino/zino/tree/main/examples/actix-app
 [`axum-app`]: https://github.com/photino/zino/tree/main/examples/axum-app
 [license]: https://github.com/photino/zino/blob/main/LICENSE
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=photino/zino&type=Date)](https://star-history.com/#photino/zino&Date)
