@@ -78,7 +78,7 @@ pub trait Connector {
         params: Option<&Map>,
     ) -> Result<Vec<T>, Error> {
         let data = self.query(query, params).await?;
-        let value = data.into_iter().map(AvroValue::Record).collect::<Vec<_>>();
+        let value = data.into_iter().map(AvroValue::Record).collect();
         apache_avro::from_value(&AvroValue::Array(value)).map_err(|err| err.into())
     }
 

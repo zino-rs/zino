@@ -106,7 +106,12 @@ where
         } else {
             Self::find(&query).await.extract(&req)?
         };
-        let data = Map::data_entries(models);
+
+        let mut data = Map::data_entries(models);
+        if req.get_query("page_size").is_some() {
+            let total_rows = Self::count(&query).await.extract(&req)?;
+            data.upsert("total_rows", total_rows);
+        }
         res.set_data(&data);
         Ok(res.into())
     }

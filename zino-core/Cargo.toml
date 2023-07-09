@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.11.0"
+version = "0.11.1"
 rust-version = "1.72"
 edition = "2021"
 license = "MIT"
@@ -75,7 +75,7 @@ view-minijinja = ["view", "dep:minijinja"]
 [dependencies]
 aes-gcm-siv = "0.11.1"
 apache-avro = "0.14.0"
-async-trait = "0.1.68"
+async-trait = "0.1.71"
 base64 = "0.21.2"
 bytes = "1.4.0"
 cfg-if = "1.0"
@@ -106,7 +106,7 @@ serde_urlencoded = "0.7.1"
 sha2 = "0.10.7"
 sysinfo = "0.29.3"
 task-local-extensions = "0.1.4"
-toml = "0.7.5"
+toml = "0.7.6"
 tracing = "0.1.37"
 tracing-appender = "0.2.2"
 url = "2.4.0"
@@ -152,7 +152,7 @@ features = [
 ]
 
 [dependencies.serde]
-version = "1.0.164"
+version = "1.0.167"
 features = ["derive"]
 
 [dependencies.serde_json]

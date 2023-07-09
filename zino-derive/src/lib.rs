@@ -441,6 +441,12 @@ pub fn decode_row_macro(item: TokenStream) -> TokenStream {
 /// Derive the `ModelAccessor` trait.
 #[proc_macro_derive(ModelAccessor, attributes(schema))]
 pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
+    /// Primitive types
+    const PRIMITIVE_TYPES: [&str; 13] = [
+        "u64", "i64", "u32", "i32", "u16", "i16", "u8", "i8", "usize", "isize", "f32", "f64",
+        "bool",
+    ];
+
     // Input
     let input = parse_macro_input!(item as DeriveInput);
 
@@ -478,6 +484,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
     let name = input.ident;
     let mut column_methods = Vec::new();
     let mut snapshot_fields = Vec::new();
+    let mut snapshot_entries = Vec::new();
     let mut field_constraints = Vec::new();
     let mut populated_queries = Vec::new();
     let mut populated_one_queries = Vec::new();
@@ -499,7 +506,31 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                 primary_key_name = name.clone();
                             }
                             "snapshot" => {
-                                snapshot_fields.push(name.clone());
+                                let field = name.clone();
+                                let field_ident = format_ident!("{}", field);
+                                if type_name.starts_with("Vec") {
+                                    snapshot_entries.push(quote! {
+                                        let snapshot_value = self.#field_ident.iter()
+                                            .map(|v| v.to_string())
+                                            .collect::<Vec<_>>();
+                                        snapshot.upsert(#field, snapshot_value);
+                                    });
+                                } else if type_name == "Option<Uuid>" {
+                                    snapshot_entries.push(quote! {
+                                        let snapshot_value = self.#field_ident
+                                            .map(|v| v.to_string());
+                                        snapshot.upsert(#field, snapshot_value);
+                                    });
+                                }  else if PRIMITIVE_TYPES.contains(&type_name.as_str()) {
+                                    snapshot_entries.push(quote! {
+                                        snapshot.upsert(#field, self.#field_ident);
+                                    });
+                                } else {
+                                    snapshot_entries.push(quote! {
+                                        snapshot.upsert(#field, self.#field_ident.to_string());
+                                    });
+                                }
+                                snapshot_fields.push(field);
                             }
                             "reference" => {
                                 if let Some(value) = value {
@@ -752,6 +783,10 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                         _ => (),
                     }
                     if let Some(field) = snapshot_field {
+                        let field_ident = format_ident!("{}", field);
+                        snapshot_entries.push(quote! {
+                            snapshot.upsert(#field, self.#field_ident.clone());
+                        });
                         snapshot_fields.push(field.to_owned());
                     }
                 }
@@ -820,6 +855,13 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
             }
 
             #(#column_methods)*
+
+            fn snapshot(&self) -> Map {
+                let mut snapshot = Map::new();
+                snapshot.upsert(Self::PRIMARY_KEY_NAME, self.id().to_string());
+                #(#snapshot_entries)*
+                snapshot
+            }
 
             fn default_snapshot_query() -> Query {
                 let mut query = Self::default_query();
