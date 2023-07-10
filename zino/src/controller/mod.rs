@@ -120,9 +120,11 @@ where
         let data = req.parse_body::<Vec<Map>>().await?;
         let mut models = Vec::with_capacity(data.len());
         let mut validations = Vec::new();
-        for (index, map) in data.iter().enumerate() {
+        for (index, mut map) in data.into_iter().enumerate() {
+            Self::before_validation(&mut map).await.extract(&req)?;
+
             let mut model = Self::new();
-            let mut validation = model.read_map(map);
+            let mut validation = model.read_map(&map);
             if validation.is_success() {
                 validation = model.check_constraints().await.extract(&req)?;
             }

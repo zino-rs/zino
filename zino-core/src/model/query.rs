@@ -22,7 +22,12 @@ pub struct Query {
 impl Query {
     /// Creates a new instance.
     #[inline]
-    pub fn new(filters: Map) -> Self {
+    pub fn new(filters: impl Into<JsonValue>) -> Self {
+        let filters = if let JsonValue::Object(map) = filters.into() {
+            map
+        } else {
+            Map::new()
+        };
         Self {
             fields: Vec::new(),
             filters,
@@ -114,7 +119,7 @@ impl Query {
             }
         }
         if let Some(current_page) = pagination_current_page {
-            self.offset = self.limit * current_page;
+            self.offset = self.limit * current_page.saturating_sub(1);
         }
         validation
     }

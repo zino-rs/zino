@@ -5,12 +5,14 @@ use crate::{
     state::State,
     JsonValue, Map,
 };
+use hkdf::Hkdf;
 use jwt_simple::{
     algorithms::{HS256Key, MACLike},
     claims::{self, Claims, JWTClaims},
     common::VerificationOptions,
 };
-use std::{sync::LazyLock, time::Duration};
+use sha2::{Digest, Sha256};
+use std::{env, sync::LazyLock, time::Duration};
 
 /// JWT Claims.
 pub struct JwtClaims(pub(crate) JWTClaims<Map>);
@@ -144,9 +146,29 @@ static DEFAULT_MAX_AGE: LazyLock<Duration> = LazyLock::new(|| {
 
 /// Shared secret access key for the `HS256` JWT algorithm.
 static SECRET_KEY: LazyLock<HS256Key> = LazyLock::new(|| {
-    if let Some(secret_key) = crate::application::SECRET_KEY.get() {
-        HS256Key::from_bytes(secret_key)
-    } else {
-        HS256Key::generate()
-    }
+    let config = State::shared().config();
+    let jwt_checksum: [u8; 32] = config
+        .get_table("jwt")
+        .and_then(|t| t.get_str("checksum"))
+        .and_then(|checksum| checksum.as_bytes().try_into().ok())
+        .unwrap_or_else(|| {
+            let app_name = config
+                .get_str("name")
+                .map(|s| s.to_owned())
+                .unwrap_or_else(|| {
+                    env::var("CARGO_PKG_NAME")
+                        .expect("fail to get the environment variable `CARGO_PKG_NAME`")
+                });
+            let mut hasher = Sha256::new();
+            hasher.update(app_name.as_bytes());
+            hasher.finalize().into()
+        });
+
+    let mut secret_key = [0; 64];
+    let info = "ZINO:JWT;CHECKSUM:SHA256;HKDF:HMAC-SHA256";
+    Hkdf::<Sha256>::from_prk(&jwt_checksum)
+        .expect("pseudorandom key is not long enough")
+        .expand(info.as_bytes(), &mut secret_key)
+        .expect("invalid length for Sha256 to output");
+    HS256Key::from_bytes(&secret_key)
 });

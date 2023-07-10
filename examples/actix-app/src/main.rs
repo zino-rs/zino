@@ -3,6 +3,7 @@
 
 mod controller;
 mod extension;
+mod logic;
 mod middleware;
 mod model;
 mod router;

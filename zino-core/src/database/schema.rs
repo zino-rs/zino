@@ -7,7 +7,7 @@ use crate::{
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
-use sqlx::Transaction;
+use sqlx::{Decode, Transaction, Type};
 use std::{fmt::Display, sync::atomic::Ordering::Relaxed};
 
 /// Database schema.
@@ -644,6 +644,30 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         }
     }
 
+    /// Finds a value selected by the query in the table,
+    /// and decodes it as a single concrete type `T`.
+    async fn find_scalar<T>(query: &Query) -> Result<T, Error>
+    where
+        T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
+    {
+        let pool = Self::acquire_reader().await?.pool();
+        Self::before_select(query).await?;
+
+        let table_name = Self::table_name();
+        let projection = query.format_fields();
+        let filters = query.format_filters::<Self>();
+        let sort = query.format_sort();
+        let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} LIMIT 1;");
+
+        let mut ctx = Self::before_scan(&sql).await?;
+        let scalar = sqlx::query_scalar(&sql).fetch_one(pool).await?;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(1), true);
+        Self::after_scan(&ctx).await?;
+        Self::after_select(&ctx).await?;
+        Ok(scalar)
+    }
+
     /// Populates the related data in the corresponding `columns` for `Vec<Map>` using
     /// a merged select on the primary key, which solves the `N+1` problem.
     async fn populate<const N: usize>(
@@ -1014,6 +1038,29 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             }
             None => Ok(None),
         }
+    }
+
+    /// Executes the query in the table, and decodes it as a single concrete type `T`.
+    async fn query_scalar<T>(query: &str, params: Option<&Map>) -> Result<T, Error>
+    where
+        T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
+    {
+        let pool = Self::acquire_reader().await?.pool();
+        let (sql, values) = Query::prepare_query(query, params);
+        let mut query = sqlx::query_scalar(&sql);
+        let mut arguments = Vec::with_capacity(values.len());
+        for value in values {
+            query = query.bind(value.to_string());
+            arguments.push(value.to_string());
+        }
+
+        let mut ctx = Self::before_scan(&sql).await?;
+        let scalar = query.fetch_one(pool).await?;
+        ctx.set_query(sql);
+        ctx.append_arguments(&mut arguments);
+        ctx.set_query_result(Some(1), true);
+        Self::after_scan(&ctx).await?;
+        Ok(scalar)
     }
 
     /// Executes the specific operations inside a transaction.
