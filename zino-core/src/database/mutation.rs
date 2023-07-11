@@ -17,6 +17,7 @@ impl MutationExt<DatabaseDriver> for Mutation {
 
         let fields = self.fields();
         let permissive = fields.is_empty();
+        let readonly_fields = M::readonly_fields();
         let mut mutations = Vec::new();
         for (key, value) in updates.iter() {
             match key.as_str() {
@@ -69,7 +70,10 @@ impl MutationExt<DatabaseDriver> for Mutation {
                     }
                 }
                 _ => {
-                    if (permissive || fields.contains(key)) && let Some(col) = M::get_column(key) {
+                    if (permissive || fields.contains(key)) &&
+                        !readonly_fields.contains(&key.as_str()) &&
+                        let Some(col) = M::get_column(key)
+                    {
                         let key = Query::format_field(key);
                         let value = col.encode_value(Some(value));
                         let mutation = format!(r#"{key} = {value}"#);

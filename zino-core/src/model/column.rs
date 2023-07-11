@@ -2,7 +2,7 @@ use super::Reference;
 use crate::JsonValue;
 use apache_avro::schema::{Name, RecordField, RecordFieldOrder, Schema};
 use serde::Serialize;
-use std::borrow::Cow;
+use std::{borrow::Cow, collections::BTreeMap};
 
 /// A model field with associated metadata.
 #[derive(Debug, Clone, Serialize)]
@@ -142,10 +142,12 @@ impl<'a> Column<'a> {
         RecordField {
             name: self.name().to_owned(),
             doc: None,
+            aliases: None,
             default: default_value,
             schema,
             order: RecordFieldOrder::Ascending,
             position: 0,
+            custom_attributes: BTreeMap::new(),
         }
     }
 }

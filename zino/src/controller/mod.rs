@@ -20,6 +20,12 @@ pub trait DefaultController<T, U = T> {
     /// Lists models.
     async fn list(req: Self::Request) -> Self::Result;
 
+    /// Batch inserts multiple models.
+    async fn batch_insert(req: Self::Request) -> Self::Result;
+
+    /// Batch deletes multiple models.
+    async fn batch_delete(req: Self::Request) -> Self::Result;
+
     /// Imports model data.
     async fn import(req: Self::Request) -> Self::Result;
 
@@ -33,9 +39,10 @@ use zino_core::{
     database::ModelAccessor,
     error::Error,
     extension::{JsonObjectExt, JsonValueExt},
+    model::Query,
     request::RequestContext,
     response::{ExtractRejection, Rejection, StatusCode},
-    Map,
+    JsonValue, Map,
 };
 
 #[cfg(any(feature = "actix", feature = "axum"))]
@@ -116,7 +123,7 @@ where
         Ok(res.into())
     }
 
-    async fn import(mut req: Self::Request) -> Self::Result {
+    async fn batch_insert(mut req: Self::Request) -> Self::Result {
         let data = req.parse_body::<Vec<Map>>().await?;
         let mut models = Vec::with_capacity(data.len());
         let mut validations = Vec::new();
@@ -148,6 +155,57 @@ where
             res.set_data(&data);
             Ok(res.into())
         }
+    }
+
+    async fn batch_delete(mut req: Self::Request) -> Self::Result {
+        let data = req.parse_body::<Vec<JsonValue>>().await?;
+        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_values = Map::from_entry("$in", data);
+        let query = Query::new(Map::from_entry(primary_key_name, primary_key_values));
+
+        let rows_affected = Self::delete_many(&query).await.extract(&req)?;
+        let data = Map::from_entry("rows_affected", rows_affected);
+        let mut res = crate::Response::default().context(&req);
+        res.set_data(&data);
+        Ok(res.into())
+    }
+
+    async fn import(mut req: Self::Request) -> Self::Result {
+        let is_upsert_mode = req
+            .get_query("mode")
+            .map(|s| s == "upsert")
+            .unwrap_or_default();
+        let data = req.parse_body::<Vec<Map>>().await?;
+        let mut rows_affected = 0;
+        for (index, mut map) in data.into_iter().enumerate() {
+            Self::before_validation(&mut map).await.extract(&req)?;
+
+            let mut model = Self::new();
+            let mut validation = model.read_map(&map);
+            if validation.is_success() {
+                validation = model.check_constraints().await.extract(&req)?;
+            }
+            if validation.is_success() {
+                if is_upsert_mode {
+                    model.upsert().await.extract(&req)?;
+                } else {
+                    model.insert().await.extract(&req)?;
+                }
+                rows_affected += 1;
+            } else {
+                let mut map = validation.into_map();
+                map.upsert("index", index);
+
+                let mut res = crate::Response::new(StatusCode::BAD_REQUEST);
+                res.set_data(&map);
+                return Ok(res.into());
+            }
+        }
+
+        let data = Map::from_entry("rows_affected", rows_affected);
+        let mut res = crate::Response::default().context(&req);
+        res.set_data(&data);
+        Ok(res.into())
     }
 
     async fn export(req: Self::Request) -> Self::Result {

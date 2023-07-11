@@ -457,8 +457,7 @@ impl DecodeRow<DatabaseRow> for Record {
                     "TIME" => decode_column::<NaiveTime>(field, raw_value)?
                         .to_string()
                         .into(),
-                    // deserialize Avro Uuid value wasn't supported in 0.14.0
-                    "UUID" => decode_column::<Uuid>(field, raw_value)?.to_string().into(),
+                    "UUID" => decode_column::<Uuid>(field, raw_value)?.into(),
                     "BYTEA" => decode_column::<Vec<u8>>(field, raw_value)?.into(),
                     "TEXT[]" => {
                         let values = decode_column::<Vec<String>>(field, raw_value)?;
@@ -469,12 +468,8 @@ impl DecodeRow<DatabaseRow> for Record {
                         AvroValue::Array(vec)
                     }
                     "UUID[]" => {
-                        // deserialize Avro Uuid value wasn't supported in 0.14.0
                         let values = decode_column::<Vec<Uuid>>(field, raw_value)?;
-                        let vec = values
-                            .into_iter()
-                            .map(|v| AvroValue::String(v.to_string()))
-                            .collect::<Vec<_>>();
+                        let vec = values.into_iter().map(AvroValue::Uuid).collect::<Vec<_>>();
                         AvroValue::Array(vec)
                     }
                     "JSONB" | "JSON" => decode_column::<JsonValue>(field, raw_value)?.into(),

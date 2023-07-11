@@ -226,7 +226,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                     field
                 })
                 .collect::<Vec<_>>();
-            schema::Schema::Record {
+            let record_schema = schema::RecordSchema {
                 name: schema::Name {
                     name: #model_name.to_owned(),
                     namespace: Some(<#name>::model_namespace().to_owned()),
@@ -235,7 +235,9 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 doc: #quote_documentation,
                 fields,
                 lookup: std::collections::BTreeMap::new(),
-            }
+                attributes: std::collections::BTreeMap::new(),
+            };
+            schema::Schema::Record(record_schema)
         });
         static #schema_columns: std::sync::LazyLock<[Column; #num_columns]> =
             std::sync::LazyLock::new(|| [#(#columns),*]);
@@ -676,7 +678,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                     let name_ident = format_ident!("{}", name);
                     let mut snapshot_field = None;
                     match name.as_str() {
-                        "name" => {
+                        "name" if type_name == "String" => {
                             let method = quote! {
                                 #[inline]
                                 fn #name_ident(&self) -> &str {
@@ -686,7 +688,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                             column_methods.push(method);
                             snapshot_field = Some("name");
                         }
-                        "namespace" | "visibility" | "description" => {
+                        "namespace" | "visibility" | "description" if type_name == "String" => {
                             let method = quote! {
                                 #[inline]
                                 fn #name_ident(&self) -> &str {
@@ -695,7 +697,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                             };
                             column_methods.push(method);
                         }
-                        "status" => {
+                        "status" if type_name == "String" => {
                             let method = quote! {
                                 #[inline]
                                 fn #name_ident(&self) -> &str {
@@ -705,7 +707,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                             column_methods.push(method);
                             snapshot_field = Some("status");
                         }
-                        "content" | "extra" => {
+                        "content" | "extra" if type_name == "Map" => {
                             let method = quote! {
                                 #[inline]
                                 fn #name_ident(&self) -> Option<&Map> {
@@ -742,7 +744,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                             column_methods.push(method);
                             user_id_type = user_type;
                         }
-                        "created_at" => {
+                        "created_at" if type_name == "DateTime" => {
                             let method = quote! {
                                 #[inline]
                                 fn #name_ident(&self) -> DateTime {
@@ -751,7 +753,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                             };
                             column_methods.push(method);
                         }
-                        "updated_at" => {
+                        "updated_at" if type_name == "DateTime" => {
                             let method = quote! {
                                 #[inline]
                                 fn #name_ident(&self) -> DateTime {
@@ -761,7 +763,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                             column_methods.push(method);
                             snapshot_field = Some("updated_at");
                         }
-                        "version" => {
+                        "version" if type_name == "u64" => {
                             let method = quote! {
                                 #[inline]
                                 fn #name_ident(&self) -> u64 {
@@ -771,7 +773,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                             column_methods.push(method);
                             snapshot_field = Some("version");
                         }
-                        "edition" => {
+                        "edition" if type_name == "u32" => {
                             let method = quote! {
                                 #[inline]
                                 fn #name_ident(&self) -> u32 {
