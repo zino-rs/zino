@@ -8,18 +8,35 @@ use std::borrow::Cow;
 
 /// Hooks for the model.
 pub trait ModelHooks: Model {
-    /// Associated data.
+    /// Model data.
     type Data: Default = ();
+    /// Extension data.
+    type Extension: Clone + Send + Sync + 'static = ();
+
+    /// A hook running before extracting the model data.
+    #[inline]
+    async fn before_extract() -> Result<(), Error> {
+        Ok(())
+    }
+
+    /// A hook running after extracting the model data.
+    #[inline]
+    async fn after_extract(&mut self, _extension: Self::Extension) -> Result<(), Error> {
+        Ok(())
+    }
 
     /// A hook running before validating the model data.
     #[inline]
-    async fn before_validation(_model: &mut Map) -> Result<(), Error> {
+    async fn before_validation(
+        _data: &mut Map,
+        _extension: Option<&Self::Extension>,
+    ) -> Result<(), Error> {
         Ok(())
     }
 
     /// A hook running after validating the model data.
     #[inline]
-    async fn after_validation(_model: &mut Map) -> Result<(), Error> {
+    async fn after_validation(&mut self, _data: &mut Map) -> Result<(), Error> {
         Ok(())
     }
 
@@ -220,7 +237,7 @@ pub trait ModelHooks: Model {
 
     /// A hook running after decoding the model as a `Map`.
     #[inline]
-    async fn after_decode(_model: &mut Map) -> Result<(), Error> {
+    async fn after_decode(_data: &mut Map) -> Result<(), Error> {
         Ok(())
     }
 }

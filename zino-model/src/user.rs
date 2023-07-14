@@ -2,7 +2,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
 use zino_core::{
-    auth::AccessKeyId,
+    auth::{AccessKeyId, UserSession},
     datetime::DateTime,
     error::Error,
     extension::JsonObjectExt,
@@ -84,6 +84,12 @@ impl Model for User {
 
     fn read_map(&mut self, data: &Map) -> Validation {
         let mut validation = Validation::new();
+        if let Some(result) = data.parse_uuid("id") {
+            match result {
+                Ok(id) => self.id = id,
+                Err(err) => validation.record_fail("id", err),
+            }
+        }
         if let Some(name) = data.parse_string("name") {
             self.name = name.into_owned();
         }
@@ -108,11 +114,47 @@ impl Model for User {
         if let Some(tags) = data.parse_array("tags") {
             self.tags = tags;
         }
+        #[cfg(feature = "owner-id")]
+        if let Some(result) = data.parse_uuid("owner_id") {
+            match result {
+                Ok(owner_id) => self.owner_id = Some(owner_id),
+                Err(err) => validation.record_fail("owner_id", err),
+            }
+        }
+        #[cfg(feature = "maintainer-id")]
+        if let Some(result) = data.parse_uuid("maintainer_id") {
+            match result {
+                Ok(maintainer_id) => self.maintainer_id = Some(maintainer_id),
+                Err(err) => validation.record_fail("maintainer_id", err),
+            }
+        }
         validation
     }
 }
 
-impl ModelHooks for User {}
+impl ModelHooks for User {
+    #[cfg(feature = "maintainer-id")]
+    type Extension = UserSession<Uuid, String>;
+
+    #[cfg(feature = "maintainer-id")]
+    #[inline]
+    async fn after_extract(&mut self, session: Self::Extension) -> Result<(), Error> {
+        self.maintainer_id = Some(*session.user_id());
+        Ok(())
+    }
+
+    #[cfg(feature = "maintainer-id")]
+    #[inline]
+    async fn before_validation(
+        data: &mut Map,
+        extension: Option<&Self::Extension>,
+    ) -> Result<(), Error> {
+        if let Some(session) = extension {
+            data.upsert("maintainer_id", session.user_id().to_string());
+        }
+        Ok(())
+    }
+}
 
 impl User {
     /// Sets the `access_key_id`.
@@ -138,24 +180,10 @@ impl User {
         Ok(())
     }
 
-    /// Sets the `owner_id` field.
-    #[cfg(feature = "owner-id")]
+    /// Returns the `access_key_id` field.
     #[inline]
-    pub fn set_owner_id(&mut self, owner_id: Uuid) {
-        self.owner_id = Some(owner_id);
-    }
-
-    /// Sets the `maintainer_id` field.
-    #[cfg(feature = "maintainer-id")]
-    #[inline]
-    pub fn set_maintainer_id(&mut self, maintainer_id: Uuid) {
-        self.maintainer_id = Some(maintainer_id);
-    }
-
-    /// Returns a reference to the `access_key_id`.
-    #[inline]
-    pub fn access_key_id(&self) -> &[u8] {
-        self.access_key_id.as_ref()
+    pub fn access_key_id(&self) -> &str {
+        self.access_key_id.as_str()
     }
 
     /// Returns the `roles` field.

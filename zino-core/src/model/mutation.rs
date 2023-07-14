@@ -16,7 +16,12 @@ pub struct Mutation {
 impl Mutation {
     /// Creates a new instance.
     #[inline]
-    pub fn new(updates: Map) -> Self {
+    pub fn new(updates: impl Into<JsonValue>) -> Self {
+        let updates = if let JsonValue::Object(map) = updates.into() {
+            map
+        } else {
+            Map::new()
+        };
         Self {
             fields: Vec::new(),
             updates,

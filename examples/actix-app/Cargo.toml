@@ -9,11 +9,11 @@ publish = false
 [dependencies]
 actix-web = "4.3.1"
 fluent = "0.16.0"
-serde_json = "1.0.100"
+serde_json = "1.0.102"
 tracing = "0.1.37"
 
 [dependencies.serde]
-version = "1.0.162"
+version = "1.0.171"
 features = ["derive"]
 
 [dependencies.zino]

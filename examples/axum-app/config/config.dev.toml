@@ -34,7 +34,7 @@ username = "postgres"
 password = "D2m/CORXdT/zHw/pD3lWF2HejeGGTnhvkgfMV7biZctNAKlx"
 
 [tracing]
-filter = "info,sqlx=trace,zino=trace,zino_core=trace"
+filter = "info,sqlx=info,zino=trace,zino_core=trace"
 
 [metrics]
 exporter = "prometheus"

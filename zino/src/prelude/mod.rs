@@ -5,7 +5,7 @@
 #[doc(no_inline)]
 pub use zino_core::{
     application::Application,
-    auth::{AccessKeyId, JwtClaims},
+    auth::{AccessKeyId, JwtClaims, UserSession},
     datetime::DateTime,
     error::Error,
     extension::{JsonObjectExt, TomlTableExt},
@@ -13,7 +13,7 @@ pub use zino_core::{
     request::{RequestContext, Validation},
     response::{ExtractRejection, Rejection, StatusCode},
     schedule::{AsyncCronJob, CronJob},
-    state::State,
+    state::{Data, SharedData, State},
     BoxFuture, Map, Record, Uuid,
 };
 

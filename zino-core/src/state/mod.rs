@@ -9,6 +9,10 @@ use std::{
 };
 use toml::value::Table;
 
+mod data;
+
+pub use data::{Data, SharedData};
+
 /// A state is a record of the env, config and associated data.
 #[derive(Debug, Clone)]
 pub struct State<T = ()> {

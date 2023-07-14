@@ -14,6 +14,7 @@ use std::{
 use zino_core::{
     error::Error,
     request::{Context, RequestContext},
+    state::Data,
 };
 
 /// An HTTP request extractor for `actix-web`.
@@ -81,6 +82,18 @@ impl RequestContext for ActixExtractor<HttpRequest> {
     #[inline]
     fn get_cookie(&self, name: &str) -> Option<Cookie<'static>> {
         self.cookie(name)
+    }
+
+    #[inline]
+    fn get_data<T: Clone + Send + Sync + 'static>(&self) -> Option<T> {
+        self.extensions().get::<Data<T>>().map(|data| data.get())
+    }
+
+    #[inline]
+    fn set_data<T: Clone + Send + Sync + 'static>(&mut self, value: T) -> Option<T> {
+        self.extensions_mut()
+            .insert(Data::new(value))
+            .map(|data| data.into_inner())
     }
 
     #[inline]

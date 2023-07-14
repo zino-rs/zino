@@ -15,6 +15,7 @@ use zino_core::{
     application::Application,
     error::Error,
     request::{Context, RequestContext},
+    state::Data,
 };
 
 /// An HTTP request extractor for `axum`.
@@ -104,6 +105,18 @@ impl RequestContext for AxumExtractor<Request<Body>> {
         let key = LazyLock::force(&COOKIE_PRIVATE_KEY);
         let signed_cookies = cookies.signed(key);
         signed_cookies.get(name)
+    }
+
+    #[inline]
+    fn get_data<T: Clone + Send + Sync + 'static>(&self) -> Option<T> {
+        self.extensions().get::<Data<T>>().map(|data| data.get())
+    }
+
+    #[inline]
+    fn set_data<T: Clone + Send + Sync + 'static>(&mut self, value: T) -> Option<T> {
+        self.extensions_mut()
+            .insert(Data::new(value))
+            .map(|data| data.into_inner())
     }
 
     #[inline]

@@ -5,7 +5,8 @@ use zino_model::User;
 pub async fn login(mut req: Request) -> Result {
     let body: Map = req.parse_body().await?;
     let (user_id, token) = service::auth::generate_token(body).await.extract(&req)?;
-    let (validation, user) = User::update_by_id(&user_id, Map::from_entry("status", "Active"))
+    let mutations = Map::from_entry("status", "Active");
+    let (validation, user) = User::update_by_id(&user_id, mutations, None)
         .await
         .extract(&req)?;
     if !validation.is_success() {

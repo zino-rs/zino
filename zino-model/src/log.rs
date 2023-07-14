@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use zino_core::{
+    auth::UserSession,
     datetime::DateTime,
+    error::Error,
     extension::JsonObjectExt,
     model::{Model, ModelHooks},
     request::Validation,
@@ -93,24 +95,44 @@ impl Model for Log {
         if let Some(description) = data.parse_string("description") {
             self.description = description.into_owned();
         }
+        #[cfg(feature = "owner-id")]
+        if let Some(result) = data.parse_uuid("owner_id") {
+            match result {
+                Ok(owner_id) => self.owner_id = Some(owner_id),
+                Err(err) => validation.record_fail("owner_id", err),
+            }
+        }
+        #[cfg(feature = "maintainer-id")]
+        if let Some(result) = data.parse_uuid("maintainer_id") {
+            match result {
+                Ok(maintainer_id) => self.maintainer_id = Some(maintainer_id),
+                Err(err) => validation.record_fail("maintainer_id", err),
+            }
+        }
         validation
     }
 }
 
-impl ModelHooks for Log {}
+impl ModelHooks for Log {
+    #[cfg(feature = "maintainer-id")]
+    type Extension = UserSession<Uuid, String>;
 
-impl Log {
-    /// Sets the `owner_id` field.
-    #[cfg(feature = "owner-id")]
-    #[inline]
-    pub fn set_owner_id(&mut self, owner_id: Uuid) {
-        self.owner_id = Some(owner_id);
-    }
-
-    /// Sets the `maintainer_id` field.
     #[cfg(feature = "maintainer-id")]
     #[inline]
-    pub fn set_maintainer_id(&mut self, maintainer_id: Uuid) {
-        self.maintainer_id = Some(maintainer_id);
+    async fn after_extract(&mut self, session: Self::Extension) -> Result<(), Error> {
+        self.maintainer_id = Some(*session.user_id());
+        Ok(())
+    }
+
+    #[cfg(feature = "maintainer-id")]
+    #[inline]
+    async fn before_validation(
+        data: &mut Map,
+        extension: Option<&Self::Extension>,
+    ) -> Result<(), Error> {
+        if let Some(session) = extension {
+            data.upsert("maintainer_id", session.user_id().to_string());
+        }
+        Ok(())
     }
 }

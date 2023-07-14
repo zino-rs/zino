@@ -1,7 +1,9 @@
 //! ISO 8601 combined date and time with local time zone.
 
 use crate::{AvroValue, JsonValue};
-use chrono::{format::ParseError, Local, NaiveDateTime, SecondsFormat, TimeZone, Utc};
+use chrono::{
+    format::ParseError, Local, NaiveDate, NaiveDateTime, NaiveTime, SecondsFormat, TimeZone, Utc,
+};
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
     fmt,
@@ -195,9 +197,20 @@ impl From<DateTime> for JsonValue {
 impl FromStr for DateTime {
     type Err = ParseError;
 
-    #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        LocalDateTime::from_str(s).map(Self)
+        let length = s.len();
+        if length == 10 {
+            let date = s.parse::<NaiveDate>()?;
+            let dt = NaiveDateTime::new(date, NaiveTime::default());
+            let offset = Local.offset_from_utc_datetime(&dt);
+            Ok(LocalDateTime::from_local(dt, offset).into())
+        } else if length == 19 {
+            let dt = s.parse::<NaiveDateTime>()?;
+            let offset = Local.offset_from_utc_datetime(&dt);
+            Ok(LocalDateTime::from_local(dt, offset).into())
+        } else {
+            LocalDateTime::from_str(s).map(Self)
+        }
     }
 }
 
@@ -240,5 +253,20 @@ impl SubAssign<Duration> for DateTime {
     #[inline]
     fn sub_assign(&mut self, rhs: Duration) {
         *self = *self - rhs;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::DateTime;
+
+    #[test]
+    fn it_parses_datetime() {
+        assert!("2023-12-31".parse::<DateTime>().is_ok());
+        assert!("2023-12-31T18:00:00".parse::<DateTime>().is_ok());
+        assert!("2023-07-13T02:16:33.449Z".parse::<DateTime>().is_ok());
+        assert!("2023-06-10 05:17:23.713071 +0800"
+            .parse::<DateTime>()
+            .is_ok());
     }
 }

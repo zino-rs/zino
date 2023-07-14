@@ -6,7 +6,7 @@ use std::{env, sync::OnceLock};
 
 /// Initializes the secret key.
 pub(super) fn init<APP: Application + ?Sized>() {
-    let app_checksum: [u8; 32] = APP::config()
+    let checksum: [u8; 32] = APP::config()
         .get_str("checksum")
         .and_then(|checksum| checksum.as_bytes().try_into().ok())
         .unwrap_or_else(|| {
@@ -20,7 +20,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
 
     let mut secret_key = [0; 64];
     let info = "ZINO:APPLICATION;CHECKSUM:SHA256;HKDF:HMAC-SHA256";
-    Hkdf::<Sha256>::from_prk(&app_checksum)
+    Hkdf::<Sha256>::from_prk(&checksum)
         .expect("pseudorandom key is not long enough")
         .expand(info.as_bytes(), &mut secret_key)
         .expect("invalid length for Sha256 to output");

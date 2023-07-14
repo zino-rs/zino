@@ -15,6 +15,7 @@ use sha2::{Digest, Sha256};
 use std::{env, sync::LazyLock, time::Duration};
 
 /// JWT Claims.
+#[derive(Debug)]
 pub struct JwtClaims(pub(crate) JWTClaims<Map>);
 
 impl JwtClaims {
@@ -147,7 +148,7 @@ static DEFAULT_MAX_AGE: LazyLock<Duration> = LazyLock::new(|| {
 /// Shared secret access key for the `HS256` JWT algorithm.
 static SECRET_KEY: LazyLock<HS256Key> = LazyLock::new(|| {
     let config = State::shared().config();
-    let jwt_checksum: [u8; 32] = config
+    let checksum: [u8; 32] = config
         .get_table("jwt")
         .and_then(|t| t.get_str("checksum"))
         .and_then(|checksum| checksum.as_bytes().try_into().ok())
@@ -166,7 +167,7 @@ static SECRET_KEY: LazyLock<HS256Key> = LazyLock::new(|| {
 
     let mut secret_key = [0; 64];
     let info = "ZINO:JWT;CHECKSUM:SHA256;HKDF:HMAC-SHA256";
-    Hkdf::<Sha256>::from_prk(&jwt_checksum)
+    Hkdf::<Sha256>::from_prk(&checksum)
         .expect("pseudorandom key is not long enough")
         .expand(info.as_bytes(), &mut secret_key)
         .expect("invalid length for Sha256 to output");

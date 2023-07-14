@@ -25,7 +25,8 @@ pub fn routes() -> Vec<Router> {
         .route("/user/:id/view", get(user::view))
         .route("/user/list", get(User::list))
         .route("/user/import", post(User::import))
-        .route("/user/export", get(User::export));
+        .route("/user/export", get(User::export))
+        .layer(from_fn(middleware::init_user_session));
     routes.push(router);
 
     // Tag controller.
@@ -34,7 +35,8 @@ pub fn routes() -> Vec<Router> {
         .route("/tag/:id/delete", post(Tag::delete))
         .route("/tag/:id/update", post(Tag::update))
         .route("/tag/:id/view", get(Tag::view))
-        .route("/tag/list", get(Tag::list));
+        .route("/tag/list", get(Tag::list))
+        .layer(from_fn(middleware::init_user_session));
     routes.push(router);
 
     // Task controller.
@@ -42,9 +44,7 @@ pub fn routes() -> Vec<Router> {
     routes.push(router);
 
     // Stats controller.
-    let router = Router::new()
-        .route("/stats", get(stats::index))
-        .layer(from_fn(middleware::check_client_ip));
+    let router = Router::new().route("/stats", get(stats::index));
     routes.push(router);
 
     routes

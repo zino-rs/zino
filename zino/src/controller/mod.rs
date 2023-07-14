@@ -39,7 +39,7 @@ use zino_core::{
     database::ModelAccessor,
     error::Error,
     extension::{JsonObjectExt, JsonValueExt},
-    model::Query,
+    model::{ModelHooks, Query},
     request::RequestContext,
     response::{ExtractRejection, Rejection, StatusCode},
     JsonValue, Map,
@@ -81,7 +81,10 @@ where
     async fn update(mut req: Self::Request) -> Self::Result {
         let id = req.parse_param::<T>("id")?;
         let body = req.parse_body().await?;
-        let (validation, model) = Self::update_by_id(&id, body).await.extract(&req)?;
+        let extension = req.get_data::<<Self as ModelHooks>::Extension>();
+        let (validation, model) = Self::update_by_id(&id, body, extension)
+            .await
+            .extract(&req)?;
         let mut res = crate::Response::from(validation).context(&req);
         if res.is_success() {
             let data = Map::data_entry(model.next_version_filters());
@@ -125,10 +128,16 @@ where
 
     async fn batch_insert(mut req: Self::Request) -> Self::Result {
         let data = req.parse_body::<Vec<Map>>().await?;
+        let extension = req.get_data::<<Self as ModelHooks>::Extension>();
         let mut models = Vec::with_capacity(data.len());
         let mut validations = Vec::new();
         for (index, mut map) in data.into_iter().enumerate() {
-            Self::before_validation(&mut map).await.extract(&req)?;
+            Self::before_extract()
+                .await
+                .map_err(|err| Rejection::from_error(err).context(&req))?;
+            Self::before_validation(&mut map, extension.as_ref())
+                .await
+                .extract(&req)?;
 
             let mut model = Self::new();
             let mut validation = model.read_map(&map);
@@ -136,6 +145,13 @@ where
                 validation = model.check_constraints().await.extract(&req)?;
             }
             if validation.is_success() {
+                model.after_validation(&mut map).await.extract(&req)?;
+                if let Some(ref extension) = extension {
+                    model
+                        .after_extract(extension.clone())
+                        .await
+                        .map_err(|err| Rejection::from_error(err).context(&req))?;
+                }
                 models.push(model);
             } else {
                 let mut map = validation.into_map();
@@ -176,9 +192,15 @@ where
             .map(|s| s == "upsert")
             .unwrap_or_default();
         let data = req.parse_body::<Vec<Map>>().await?;
+        let extension = req.get_data::<<Self as ModelHooks>::Extension>();
         let mut rows_affected = 0;
         for (index, mut map) in data.into_iter().enumerate() {
-            Self::before_validation(&mut map).await.extract(&req)?;
+            Self::before_extract()
+                .await
+                .map_err(|err| Rejection::from_error(err).context(&req))?;
+            Self::before_validation(&mut map, extension.as_ref())
+                .await
+                .extract(&req)?;
 
             let mut model = Self::new();
             let mut validation = model.read_map(&map);
@@ -186,6 +208,13 @@ where
                 validation = model.check_constraints().await.extract(&req)?;
             }
             if validation.is_success() {
+                model.after_validation(&mut map).await.extract(&req)?;
+                if let Some(ref extension) = extension {
+                    model
+                        .after_extract(extension.clone())
+                        .await
+                        .map_err(|err| Rejection::from_error(err).context(&req))?;
+                }
                 if is_upsert_mode {
                     model.upsert().await.extract(&req)?;
                 } else {

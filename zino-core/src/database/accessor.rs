@@ -5,7 +5,7 @@ use crate::{
     encoding::base64,
     error::Error,
     extension::{JsonObjectExt, TomlTableExt},
-    model::{Mutation, Query},
+    model::{ModelHooks, Mutation, Query},
     request::Validation,
     state::State,
     JsonValue, Map,
@@ -150,6 +150,12 @@ where
     #[inline]
     fn is_internal(&self) -> bool {
         self.visibility().eq_ignore_ascii_case("Internal")
+    }
+
+    /// Returns `true` if the `visibility` is `Protected`.
+    #[inline]
+    fn is_protected(&self) -> bool {
+        self.visibility().eq_ignore_ascii_case("Protected")
     }
 
     /// Returns `true` if the `visibility` is `Private`.
@@ -413,39 +419,6 @@ where
         Ok(model)
     }
 
-    /// Updates a model of the primary key using the json object.
-    async fn update_by_id(id: &T, mut data: Map) -> Result<(Validation, Self), Error> {
-        let mut model = Self::try_get_model(id).await?;
-        if let Some(version) = data.get_u64("version") && model.version() != version {
-            return Err(Error::new("409 Conflict: there is a version control conflict"));
-        }
-        Self::before_validation(&mut data).await?;
-
-        let validation = model.read_map(&data);
-        if !validation.is_success() {
-            return Ok((validation, model));
-        }
-
-        let validation = model.check_constraints().await?;
-        if !validation.is_success() {
-            return Ok((validation, model));
-        }
-        if model.is_locked() {
-            data.retain(|key, _value| key == "visibility" || key == "status");
-        } else if model.is_deleted() {
-            data.retain(|key, _value| key == "status");
-        }
-        Self::after_validation(&mut data).await?;
-
-        let query = model.current_version_query();
-        let mutation = model.next_version_mutation(data);
-
-        let model_data = model.before_update().await?;
-        let ctx = Self::update_one(&query, &mutation).await?;
-        Self::after_update(&ctx, model_data).await?;
-        Ok((validation, model))
-    }
-
     /// Deletes a model of the primary key by setting the status as `Deleted`.
     async fn soft_delete_by_id(id: &T) -> Result<(), Error> {
         let mut model = Self::try_get_model(id).await?;
@@ -467,6 +440,48 @@ where
         Self::after_lock(&ctx, model_data).await?;
         Ok(())
     }
+
+    /// Updates a model of the primary key using the json object.
+    async fn update_by_id(
+        id: &T,
+        mut data: Map,
+        extension: Option<<Self as ModelHooks>::Extension>,
+    ) -> Result<(Validation, Self), Error> {
+        Self::before_extract().await?;
+
+        let mut model = Self::try_get_model(id).await?;
+        if let Some(version) = data.get_u64("version") && model.version() != version {
+            return Err(Error::new("409 Conflict: there is a version control conflict"));
+        }
+        Self::before_validation(&mut data, extension.as_ref()).await?;
+
+        let validation = model.read_map(&data);
+        if !validation.is_success() {
+            return Ok((validation, model));
+        }
+        if let Some(extension) = extension {
+            model.after_extract(extension).await?;
+        }
+
+        let validation = model.check_constraints().await?;
+        if !validation.is_success() {
+            return Ok((validation, model));
+        }
+        if model.is_locked() {
+            data.retain(|key, _value| key == "visibility" || key == "status");
+        } else if model.is_deleted() {
+            data.retain(|key, _value| key == "status");
+        }
+        model.after_validation(&mut data).await?;
+
+        let query = model.current_version_query();
+        let mutation = model.next_version_mutation(data);
+
+        let model_data = model.before_update().await?;
+        let ctx = Self::update_one(&query, &mutation).await?;
+        Self::after_update(&ctx, model_data).await?;
+        Ok((validation, model))
+    }
 }
 
 /// Secret key.
@@ -474,19 +489,19 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
     let config = State::shared()
         .get_config("database")
         .expect("the `database` field should be a table");
-    let database_checksum: [u8; 32] = config
+    let checksum: [u8; 32] = config
         .get_str("checksum")
         .and_then(|checksum| checksum.as_bytes().try_into().ok())
         .unwrap_or_else(|| {
-            let database_key = format!("{}_{}", *super::NAMESPACE_PREFIX, super::DRIVER_NAME);
+            let key = format!("{}_{}", *super::NAMESPACE_PREFIX, super::DRIVER_NAME);
             let mut hasher = Sha256::new();
-            hasher.update(database_key.as_bytes());
+            hasher.update(key.as_bytes());
             hasher.finalize().into()
         });
 
     let mut secret_key = [0; 64];
     let info = "ZINO:ORM;CHECKSUM:SHA256;HKDF:HMAC-SHA256";
-    Hkdf::<Sha256>::from_prk(&database_checksum)
+    Hkdf::<Sha256>::from_prk(&checksum)
         .expect("pseudorandom key is not long enough")
         .expand(info.as_bytes(), &mut secret_key)
         .expect("invalid length for Sha256 to output");

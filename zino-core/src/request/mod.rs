@@ -53,7 +53,7 @@ pub trait RequestContext {
     /// Returns a reference to the request headers.
     fn header_map(&self) -> &Self::Headers;
 
-    /// Gets an HTTP header with the given name.
+    /// Gets an HTTP header value with the given name.
     fn get_header(&self, name: &str) -> Option<&str>;
 
     /// Gets the request context.
@@ -61,6 +61,13 @@ pub trait RequestContext {
 
     /// Gets a cookie with the given name.
     fn get_cookie(&self, name: &str) -> Option<Cookie<'static>>;
+
+    /// Gets the request scoped data.
+    fn get_data<T: Clone + Send + Sync + 'static>(&self) -> Option<T>;
+
+    /// Sets the request scoped data and returns the old value
+    /// if an item of this type was already stored.
+    fn set_data<T: Clone + Send + Sync + 'static>(&mut self, value: T) -> Option<T>;
 
     /// Reads the entire request body into a byte buffer.
     async fn read_body_bytes(&mut self) -> Result<Bytes, Error>;
@@ -100,7 +107,10 @@ pub trait RequestContext {
         let trace_id = self
             .get_trace_context()
             .map_or_else(Uuid::new_v4, |t| Uuid::from_u128(t.trace_id()));
-        let session_id = self.get_header("session-id").and_then(|s| s.parse().ok());
+        let session_id = self
+            .get_header("x-session-id")
+            .or_else(|| self.get_header("session_id"))
+            .and_then(|s| s.parse().ok());
 
         // Generate new context.
         let mut ctx = Context::new(request_id);
@@ -566,19 +576,31 @@ pub trait RequestContext {
                 Rejection::from_validation_entry("data_type", Error::new(message)).context(self);
             return Err(rejection);
         }
+        M::before_extract()
+            .await
+            .map_err(|err| Rejection::from_error(err).context(self))?;
+
         let bytes = self
             .read_body_bytes()
             .await
             .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
+        let extension = self.get_data::<M::Extension>();
         if data_type == "form" {
             let mut data = serde_urlencoded::from_bytes(&bytes)
                 .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
-            match M::before_validation(&mut data).await {
+            match M::before_validation(&mut data, extension.as_ref()).await {
                 Ok(()) => {
                     let validation = model.read_map(&data);
-                    M::after_validation(&mut data)
+                    model
+                        .after_validation(&mut data)
                         .await
                         .map_err(|err| Rejection::from_error(err).context(self))?;
+                    if let Some(extension) = extension {
+                        model
+                            .after_extract(extension)
+                            .await
+                            .map_err(|err| Rejection::from_error(err).context(self))?;
+                    }
                     if validation.is_success() {
                         Ok(Response::with_context(S::OK, self))
                     } else {
@@ -590,12 +612,19 @@ pub trait RequestContext {
         } else if data_type == "msgpack" {
             let mut data = rmp_serde::from_slice(&bytes)
                 .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
-            match M::before_validation(&mut data).await {
+            match M::before_validation(&mut data, extension.as_ref()).await {
                 Ok(()) => {
                     let validation = model.read_map(&data);
-                    M::after_validation(&mut data)
+                    model
+                        .after_validation(&mut data)
                         .await
                         .map_err(|err| Rejection::from_error(err).context(self))?;
+                    if let Some(extension) = extension {
+                        model
+                            .after_extract(extension)
+                            .await
+                            .map_err(|err| Rejection::from_error(err).context(self))?;
+                    }
                     if validation.is_success() {
                         Ok(Response::with_context(S::OK, self))
                     } else {
@@ -607,12 +636,19 @@ pub trait RequestContext {
         } else {
             let mut data = serde_json::from_slice(&bytes)
                 .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
-            match M::before_validation(&mut data).await {
+            match M::before_validation(&mut data, extension.as_ref()).await {
                 Ok(()) => {
                     let validation = model.read_map(&data);
-                    M::after_validation(&mut data)
+                    model
+                        .after_validation(&mut data)
                         .await
                         .map_err(|err| Rejection::from_error(err).context(self))?;
+                    if let Some(extension) = extension {
+                        model
+                            .after_extract(extension)
+                            .await
+                            .map_err(|err| Rejection::from_error(err).context(self))?;
+                    }
                     if validation.is_success() {
                         Ok(Response::with_context(S::OK, self))
                     } else {

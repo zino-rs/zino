@@ -11,6 +11,7 @@ mod access_key;
 mod jwt_claims;
 mod security_token;
 mod session_id;
+mod user_session;
 
 pub(crate) use jwt_claims::{default_time_tolerance, default_verification_options};
 pub(crate) use security_token::ParseSecurityTokenError;
@@ -19,6 +20,7 @@ pub use access_key::{AccessKeyId, SecretAccessKey};
 pub use jwt_claims::JwtClaims;
 pub use security_token::SecurityToken;
 pub use session_id::SessionId;
+pub use user_session::UserSession;
 
 /// HTTP signature using HMAC.
 pub struct Authentication {
