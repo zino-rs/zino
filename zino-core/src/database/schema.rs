@@ -372,8 +372,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Updates at most one model selected by the query in the table.
-    async fn update_one(query: &Query, mutation: &Mutation) -> Result<QueryContext, Error> {
+    async fn update_one(query: &mut Query, mutation: &mut Mutation) -> Result<QueryContext, Error> {
         let pool = Self::acquire_writer().await?.pool();
+        Self::before_mutation(query, mutation).await?;
+
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let filters = query.format_filters::<Self>();
@@ -400,6 +402,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(sql);
         ctx.set_query_result(Some(rows_affected), success);
         Self::after_scan(&ctx).await?;
+        Self::after_mutation(&ctx).await?;
         if success {
             Ok(ctx)
         } else {
@@ -410,8 +413,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Updates many models selected by the query in the table.
-    async fn update_many(query: &Query, mutation: &Mutation) -> Result<u64, Error> {
+    async fn update_many(query: &mut Query, mutation: &mut Mutation) -> Result<u64, Error> {
         let pool = Self::acquire_writer().await?.pool();
+        Self::before_mutation(query, mutation).await?;
+
         let table_name = Self::table_name();
         let filters = query.format_filters::<Self>();
         let updates = mutation.format_updates::<Self>();
@@ -423,6 +428,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(sql);
         ctx.set_query_result(Some(rows_affected), true);
         Self::after_scan(&ctx).await?;
+        Self::after_mutation(&ctx).await?;
         Ok(rows_affected)
     }
 
@@ -522,8 +528,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Deletes at most one model selected by the query in the table.
-    async fn delete_one(query: &Query) -> Result<QueryContext, Error> {
+    async fn delete_one(query: &mut Query) -> Result<QueryContext, Error> {
         let pool = Self::acquire_writer().await?.pool();
+        Self::before_query(query).await?;
+
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let filters = query.format_filters::<Self>();
@@ -540,6 +548,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(sql);
         ctx.set_query_result(Some(rows_affected), success);
         Self::after_scan(&ctx).await?;
+        Self::after_query(&ctx).await?;
         if success {
             Ok(ctx)
         } else {
@@ -550,8 +559,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Deletes many models selected by the query in the table.
-    async fn delete_many(query: &Query) -> Result<u64, Error> {
+    async fn delete_many(query: &mut Query) -> Result<u64, Error> {
         let pool = Self::acquire_writer().await?.pool();
+        Self::before_query(query).await?;
+
         let table_name = Self::table_name();
         let filters = query.format_filters::<Self>();
         let sql = format!("DELETE FROM {table_name} {filters};");
@@ -562,16 +573,17 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(sql);
         ctx.set_query_result(Some(rows_affected), true);
         Self::after_scan(&ctx).await?;
+        Self::after_query(&ctx).await?;
         Ok(rows_affected)
     }
 
     /// Finds models selected by the query in the table,
     /// and decodes it as `Vec<T>`.
     async fn find<T: DecodeRow<DatabaseRow, Error = Error>>(
-        query: &Query,
+        query: &mut Query,
     ) -> Result<Vec<T>, Error> {
         let pool = Self::acquire_reader().await?.pool();
-        Self::before_select(query).await?;
+        Self::before_query(query).await?;
 
         let table_name = Self::table_name();
         let projection = query.format_fields();
@@ -591,13 +603,13 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(&sql);
         ctx.set_query_result(Some(u64::try_from(data.len())?), true);
         Self::after_scan(&ctx).await?;
-        Self::after_select(&ctx).await?;
+        Self::after_query(&ctx).await?;
         Ok(data)
     }
 
     /// Finds models selected by the query in the table,
     /// and parses it as `Vec<T>`.
-    async fn find_as<T: DeserializeOwned>(query: &Query) -> Result<Vec<T>, Error> {
+    async fn find_as<T: DeserializeOwned>(query: &mut Query) -> Result<Vec<T>, Error> {
         let mut data = Self::find::<Map>(query).await?;
         for model in data.iter_mut() {
             Self::after_decode(model).await?;
@@ -608,10 +620,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Finds one model selected by the query in the table,
     /// and decodes it as an instance of type `T`.
     async fn find_one<T: DecodeRow<DatabaseRow, Error = Error>>(
-        query: &Query,
+        query: &mut Query,
     ) -> Result<Option<T>, Error> {
         let pool = Self::acquire_reader().await?.pool();
-        Self::before_select(query).await?;
+        Self::before_query(query).await?;
 
         let table_name = Self::table_name();
         let projection = query.format_fields();
@@ -628,13 +640,13 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(sql);
         ctx.set_query_result(Some(num_rows), true);
         Self::after_scan(&ctx).await?;
-        Self::after_select(&ctx).await?;
+        Self::after_query(&ctx).await?;
         Ok(data)
     }
 
     /// Finds one model selected by the query in the table,
     /// and parses it as an instance of type `T`.
-    async fn find_one_as<T: DeserializeOwned>(query: &Query) -> Result<Option<T>, Error> {
+    async fn find_one_as<T: DeserializeOwned>(query: &mut Query) -> Result<Option<T>, Error> {
         match Self::find_one::<Map>(query).await? {
             Some(mut data) => {
                 Self::after_decode(&mut data).await?;
@@ -646,12 +658,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Finds a value selected by the query in the table,
     /// and decodes it as a single concrete type `T`.
-    async fn find_scalar<T>(query: &Query) -> Result<T, Error>
+    async fn find_scalar<T>(query: &mut Query) -> Result<T, Error>
     where
         T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
     {
         let pool = Self::acquire_reader().await?.pool();
-        Self::before_select(query).await?;
+        Self::before_query(query).await?;
 
         let table_name = Self::table_name();
         let projection = query.format_fields();
@@ -664,7 +676,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(sql);
         ctx.set_query_result(Some(1), true);
         Self::after_scan(&ctx).await?;
-        Self::after_select(&ctx).await?;
+        Self::after_query(&ctx).await?;
         Ok(scalar)
     }
 
@@ -676,7 +688,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         columns: [&str; N],
     ) -> Result<u64, Error> {
         let pool = Self::acquire_reader().await?.pool();
-        Self::before_select(query).await?;
+        Self::before_query(query).await?;
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
@@ -716,7 +728,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(&sql);
         ctx.set_query_result(Some(u64::try_from(associations.len())?), true);
         Self::after_scan(&ctx).await?;
-        Self::after_select(&ctx).await?;
+        Self::after_query(&ctx).await?;
 
         for row in data {
             for col in columns {
@@ -748,7 +760,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         columns: [&str; N],
     ) -> Result<(), Error> {
         let pool = Self::acquire_reader().await?.pool();
-        Self::before_select(query).await?;
+        Self::before_query(query).await?;
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
@@ -786,7 +798,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(&sql);
         ctx.set_query_result(Some(u64::try_from(associations.len())?), true);
         Self::after_scan(&ctx).await?;
-        Self::after_select(&ctx).await?;
+        Self::after_query(&ctx).await?;
 
         for col in columns {
             if let Some(value) = data.get_mut(col) {
@@ -811,12 +823,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Performs a left outer join to another table to filter rows in the "joined" table,
     /// and decodes it as `Vec<T>`.
     async fn lookup<M: Schema, T: DecodeRow<DatabaseRow, Error = Error>>(
-        query: &Query,
+        query: &mut Query,
         left_columns: &[&str],
         right_columns: &[&str],
     ) -> Result<Vec<T>, Error> {
         let pool = Self::acquire_reader().await?.pool();
-        Self::before_select(query).await?;
+        Self::before_query(query).await?;
 
         let table_name = Self::table_name();
         let model_name = Query::format_field(Self::model_name());
@@ -853,14 +865,14 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(&sql);
         ctx.set_query_result(Some(u64::try_from(data.len())?), true);
         Self::after_scan(&ctx).await?;
-        Self::after_select(&ctx).await?;
+        Self::after_query(&ctx).await?;
         Ok(data)
     }
 
     /// Performs a left outer join to another table to filter rows in the "joined" table,
     /// and parses it as `Vec<T>`.
     async fn lookup_as<M: Schema, T: DeserializeOwned>(
-        query: &Query,
+        query: &mut Query,
         left_columns: &[&str],
         right_columns: &[&str],
     ) -> Result<Vec<T>, Error> {
@@ -872,7 +884,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Counts the number of rows selected by the query in the table.
-    async fn count(query: &Query) -> Result<u64, Error> {
+    async fn count(query: &mut Query) -> Result<u64, Error> {
         let pool = Self::acquire_writer().await?.pool();
         Self::before_count(query).await?;
 
@@ -892,7 +904,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Counts the number of rows selected by the query in the table.
     /// The boolean value determines whether it only counts distinct values or not.
     async fn count_many<T: DecodeRow<DatabaseRow, Error = Error>>(
-        query: &Query,
+        query: &mut Query,
         columns: &[(&str, bool)],
     ) -> Result<T, Error> {
         let pool = Self::acquire_writer().await?.pool();
@@ -930,7 +942,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Counts the number of rows selected by the query in the table,
     /// and parses it as an instance of type `T`.
     async fn count_many_as<T: DeserializeOwned>(
-        query: &Query,
+        query: &mut Query,
         columns: &[(&str, bool)],
     ) -> Result<T, Error> {
         let map = Self::count_many::<Map>(query, columns).await?;
@@ -1114,7 +1126,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(sql);
         ctx.set_query_result(Some(num_rows), true);
         Self::after_scan(&ctx).await?;
-        Self::after_select(&ctx).await?;
+        Self::after_query(&ctx).await?;
         Ok(data)
     }
 
@@ -1148,7 +1160,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             ctx.set_query(sql);
             ctx.set_query_result(Some(1), true);
             Self::after_scan(&ctx).await?;
-            Self::after_select(&ctx).await?;
+            Self::after_query(&ctx).await?;
 
             let mut map = Map::decode_row(&row)?;
             Self::after_decode(&mut map).await?;
@@ -1157,7 +1169,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             ctx.set_query(sql);
             ctx.set_query_result(Some(0), true);
             Self::after_scan(&ctx).await?;
-            Self::after_select(&ctx).await?;
+            Self::after_query(&ctx).await?;
 
             let model_name = Self::MODEL_NAME;
             Err(Error::new(format!(
@@ -1177,7 +1189,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         query.add_filter(primary_key_name, Map::from_entry("$in", primary_key_values));
         query.set_limit(limit);
 
-        let data = Self::find::<Map>(&query).await?;
+        let data = Self::find::<Map>(&mut query).await?;
         let mut primary_key_values = Vec::with_capacity(data.len());
         for map in data.into_iter() {
             for (_key, value) in map.into_iter() {
@@ -1202,7 +1214,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         query.allow_fields(&fields);
         query.set_limit(2);
 
-        let mut data = Self::find::<Map>(&query).await?;
+        let mut data = Self::find::<Map>(&mut query).await?;
         match data.len() {
             0 => Ok(true),
             1 => {

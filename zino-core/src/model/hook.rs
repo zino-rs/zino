@@ -1,7 +1,7 @@
 use super::QueryContext;
 use crate::{
     error::Error,
-    model::{Model, Query},
+    model::{Model, Mutation, Query},
     Map,
 };
 use std::borrow::Cow;
@@ -171,17 +171,17 @@ pub trait ModelHooks: Model {
         Ok(())
     }
 
-    /// A hook running before updating a model into the table.
+    /// A hook running before updating a model in the table.
     #[inline]
     async fn before_update(&mut self) -> Result<Self::Data, Error> {
         Ok(Self::Data::default())
     }
 
-    /// A hook running after updating a model into the table.
+    /// A hook running after updating a model in the table.
     #[inline]
     async fn after_update(ctx: &QueryContext, _data: Self::Data) -> Result<(), Error> {
         if !ctx.is_success() {
-            ctx.record_error("fail to update a model into the table");
+            ctx.record_error("fail to update a model in the table");
         }
         ctx.emit_metrics("update");
         Ok(())
@@ -203,25 +203,9 @@ pub trait ModelHooks: Model {
         Ok(())
     }
 
-    /// A hook running before selecting the models from the table.
-    #[inline]
-    async fn before_select(_query: &Query) -> Result<(), Error> {
-        Ok(())
-    }
-
-    /// A hook running after selecting the models from the table.
-    #[inline]
-    async fn after_select(ctx: &QueryContext) -> Result<(), Error> {
-        if !ctx.is_success() {
-            ctx.record_error("fail to select the models from the table");
-        }
-        ctx.emit_metrics("select");
-        Ok(())
-    }
-
     /// A hook running before counting the models in the table.
     #[inline]
-    async fn before_count(_query: &Query) -> Result<(), Error> {
+    async fn before_count(_query: &mut Query) -> Result<(), Error> {
         Ok(())
     }
 
@@ -232,6 +216,38 @@ pub trait ModelHooks: Model {
             ctx.record_error("fail to count the models in the table");
         }
         ctx.emit_metrics("count");
+        Ok(())
+    }
+
+    /// A hook running before selecting the models with a `Query` from the table.
+    #[inline]
+    async fn before_query(_query: &mut Query) -> Result<(), Error> {
+        Ok(())
+    }
+
+    /// A hook running after selecting the models with a `Query` from the table.
+    #[inline]
+    async fn after_query(ctx: &QueryContext) -> Result<(), Error> {
+        if !ctx.is_success() {
+            ctx.record_error("fail to select the models from the table");
+        }
+        ctx.emit_metrics("query");
+        Ok(())
+    }
+
+    /// A hook running before updating the models with a `Mutation` in the table.
+    #[inline]
+    async fn before_mutation(_query: &mut Query, _mutation: &mut Mutation) -> Result<(), Error> {
+        Ok(())
+    }
+
+    /// A hook running after updating the models with a `Mutation` in the table.
+    #[inline]
+    async fn after_mutation(ctx: &QueryContext) -> Result<(), Error> {
+        if !ctx.is_success() {
+            ctx.record_error("fail to update the models in the table");
+        }
+        ctx.emit_metrics("mutation");
         Ok(())
     }
 

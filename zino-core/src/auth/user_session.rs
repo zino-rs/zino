@@ -1,10 +1,11 @@
-use super::{AccessKeyId, SessionId};
-use crate::application::APP_DOMAIN;
+use super::{AccessKeyId, JwtClaims, SessionId};
+use crate::{application::APP_DOMAIN, error::Error, extension::JsonObjectExt};
 use sha2::Sha256;
+use std::str::FromStr;
 
 /// Role-based user sessions.
 #[derive(Debug, Clone)]
-pub struct UserSession<U, R> {
+pub struct UserSession<U, R = String> {
     /// User ID.
     user_id: U,
     /// Session ID.
@@ -71,5 +72,24 @@ impl<U, R> UserSession<U, R> {
     #[inline]
     pub fn roles(&self) -> &[R] {
         &self.roles
+    }
+}
+
+impl<U, R> UserSession<U, R>
+where
+    U: FromStr,
+    R: FromStr,
+    <U as FromStr>::Err: std::error::Error,
+{
+    /// Attempts to construct an instance from a `JwtClaims`.
+    pub fn try_from_jwt_claims(claims: JwtClaims) -> Result<Self, Error> {
+        let user_id = claims
+            .subject()
+            .ok_or_else(|| Error::new("the subject of a JWT token shoud be specified"))?
+            .parse()?;
+        let roles = claims.data().parse_array("roles").unwrap_or_default();
+        let mut user_session = Self::new(user_id, None);
+        user_session.set_roles(roles);
+        Ok(user_session)
     }
 }

@@ -70,7 +70,7 @@ impl Error {
     }
 }
 
-impl<E: error::Error + 'static> From<E> for Error {
+impl<E: error::Error> From<E> for Error {
     #[inline]
     fn from(err: E) -> Self {
         Self {

@@ -1,5 +1,5 @@
 /// Default controller for the `Model`.
-pub trait DefaultController<T, U = T> {
+pub trait DefaultController<K, U = K> {
     /// The request extractor.
     type Request;
     /// The response result.
@@ -47,9 +47,9 @@ use zino_core::{
 
 #[cfg(any(feature = "actix", feature = "axum"))]
 #[cfg(feature = "orm")]
-impl<T, U, M: ModelAccessor<T, U>> DefaultController<T, U> for M
+impl<K, U, M: ModelAccessor<K, U>> DefaultController<K, U> for M
 where
-    T: Default + std::fmt::Display + PartialEq + serde::de::DeserializeOwned,
+    K: Default + std::fmt::Display + PartialEq + serde::de::DeserializeOwned,
     U: Default + std::fmt::Display + PartialEq,
 {
     type Request = crate::Request;
@@ -63,7 +63,12 @@ where
             return Err(Rejection::bad_request(validation).context(&req).into());
         }
 
-        let data = Map::data_entry(model.snapshot());
+        let mut model_snapshot = model.snapshot();
+        Self::after_decode(&mut model_snapshot)
+            .await
+            .extract(&req)?;
+
+        let data = Map::data_entry(model_snapshot);
         model.insert().await.extract(&req)?;
         res.set_code(StatusCode::CREATED);
         res.set_data(&data);
@@ -71,7 +76,7 @@ where
     }
 
     async fn delete(req: Self::Request) -> Self::Result {
-        let id = req.parse_param::<T>("id")?;
+        let id = req.parse_param::<K>("id")?;
         Self::soft_delete_by_id(&id).await.extract(&req)?;
 
         let res = crate::Response::default().context(&req);
@@ -79,7 +84,7 @@ where
     }
 
     async fn update(mut req: Self::Request) -> Self::Result {
-        let id = req.parse_param::<T>("id")?;
+        let id = req.parse_param::<K>("id")?;
         let body = req.parse_body().await?;
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
         let (validation, model) = Self::update_by_id(&id, body, extension)
@@ -87,14 +92,17 @@ where
             .extract(&req)?;
         let mut res = crate::Response::from(validation).context(&req);
         if res.is_success() {
-            let data = Map::data_entry(model.next_version_filters());
+            let mut model_filters = model.next_version_filters();
+            Self::after_decode(&mut model_filters).await.extract(&req)?;
+
+            let data = Map::data_entry(model_filters);
             res.set_data(&data);
         }
         Ok(res.into())
     }
 
     async fn view(req: Self::Request) -> Self::Result {
-        let id = req.parse_param::<T>("id")?;
+        let id = req.parse_param::<K>("id")?;
         let model = Self::fetch_by_id(&id).await.extract(&req)?;
 
         let data = Map::data_entry(model);
@@ -112,14 +120,14 @@ where
             .and_then(|r| r.ok())
             .unwrap_or(false);
         let models = if populate {
-            Self::fetch(&query).await.extract(&req)?
+            Self::fetch(&mut query).await.extract(&req)?
         } else {
-            Self::find(&query).await.extract(&req)?
+            Self::find(&mut query).await.extract(&req)?
         };
 
         let mut data = Map::data_entries(models);
         if req.get_query("page_size").is_some() {
-            let total_rows = Self::count(&query).await.extract(&req)?;
+            let total_rows = Self::count(&mut query).await.extract(&req)?;
             data.upsert("total_rows", total_rows);
         }
         res.set_data(&data);
@@ -177,9 +185,9 @@ where
         let data = req.parse_body::<Vec<JsonValue>>().await?;
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let primary_key_values = Map::from_entry("$in", data);
-        let query = Query::new(Map::from_entry(primary_key_name, primary_key_values));
+        let mut query = Query::new(Map::from_entry(primary_key_name, primary_key_values));
 
-        let rows_affected = Self::delete_many(&query).await.extract(&req)?;
+        let rows_affected = Self::delete_many(&mut query).await.extract(&req)?;
         let data = Map::from_entry("rows_affected", rows_affected);
         let mut res = crate::Response::default().context(&req);
         res.set_data(&data);
@@ -240,7 +248,11 @@ where
     async fn export(req: Self::Request) -> Self::Result {
         let mut query = Self::default_query();
         let mut res = req.query_validation(&mut query)?;
-        let models = Self::find(&query).await.extract(&req)?;
+        let mut models = Self::find(&mut query).await.extract(&req)?;
+        for model in models.iter_mut() {
+            Self::after_decode(model).await.extract(&req)?;
+        }
+
         let data = Map::data_entries(models);
         res.set_data(&data);
 

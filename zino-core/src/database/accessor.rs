@@ -15,13 +15,13 @@ use sha2::{Digest, Sha256};
 use std::{fmt::Display, sync::LazyLock};
 
 /// Access model fields.
-pub trait ModelAccessor<T, U = T>: Schema<PrimaryKey = T>
+pub trait ModelAccessor<K, U = K>: Schema<PrimaryKey = K>
 where
-    T: Default + Display + PartialEq,
+    K: Default + Display + PartialEq,
     U: Default + Display + PartialEq,
 {
     /// Returns the `id` field, i.e. the primary key.
-    fn id(&self) -> &T;
+    fn id(&self) -> &K;
 
     /// Returns the `name` field.
     #[inline]
@@ -395,14 +395,14 @@ where
     /// Checks the constraints for the model.
     async fn check_constraints(&self) -> Result<Validation, Error> {
         let mut validation = Validation::new();
-        if self.id() == &T::default() {
+        if self.id() == &K::default() {
             validation.record(Self::PRIMARY_KEY_NAME, "should not be a default value");
         }
         Ok(validation)
     }
 
     /// Fetches the data of models seleted by the `Query`.
-    async fn fetch(query: &Query) -> Result<Vec<Map>, Error> {
+    async fn fetch(query: &mut Query) -> Result<Vec<Map>, Error> {
         let mut models = Self::find(query).await?;
         for model in models.iter_mut() {
             Self::after_decode(model).await?;
@@ -411,7 +411,7 @@ where
     }
 
     /// Fetches the data of a model seleted by the primary key.
-    async fn fetch_by_id(id: &T) -> Result<Map, Error> {
+    async fn fetch_by_id(id: &K) -> Result<Map, Error> {
         let mut model = Self::find_by_id::<Map>(id)
             .await?
             .ok_or_else(|| Error::new(format!("404 Not Found: cannot find the model `{id}`")))?;
@@ -420,30 +420,38 @@ where
     }
 
     /// Deletes a model of the primary key by setting the status as `Deleted`.
-    async fn soft_delete_by_id(id: &T) -> Result<(), Error> {
+    async fn soft_delete_by_id(id: &K) -> Result<(), Error> {
         let mut model = Self::try_get_model(id).await?;
         let model_data = model.before_soft_delete().await?;
-        let query = model.current_version_query();
-        let mutation = model.soft_delete_mutation();
-        let ctx = Self::update_one(&query, &mutation).await?;
+
+        let mut query = model.current_version_query();
+        let mut mutation = model.soft_delete_mutation();
+        Self::before_mutation(&mut query, &mut mutation).await?;
+
+        let ctx = Self::update_one(&mut query, &mut mutation).await?;
+        Self::after_mutation(&ctx).await?;
         Self::after_soft_delete(&ctx, model_data).await?;
         Ok(())
     }
 
     /// Locks a model of the primary key by setting the status as `Locked`.
-    async fn lock_by_id(id: &T) -> Result<(), Error> {
+    async fn lock_by_id(id: &K) -> Result<(), Error> {
         let mut model = Self::try_get_model(id).await?;
         let model_data = model.before_lock().await?;
-        let query = model.current_version_query();
-        let mutation = model.lock_mutation();
-        let ctx = Self::update_one(&query, &mutation).await?;
+
+        let mut query = model.current_version_query();
+        let mut mutation = model.lock_mutation();
+        Self::before_mutation(&mut query, &mut mutation).await?;
+
+        let ctx = Self::update_one(&mut query, &mut mutation).await?;
+        Self::after_mutation(&ctx).await?;
         Self::after_lock(&ctx, model_data).await?;
         Ok(())
     }
 
     /// Updates a model of the primary key using the json object.
     async fn update_by_id(
-        id: &T,
+        id: &K,
         mut data: Map,
         extension: Option<<Self as ModelHooks>::Extension>,
     ) -> Result<(Validation, Self), Error> {
@@ -474,11 +482,13 @@ where
         }
         model.after_validation(&mut data).await?;
 
-        let query = model.current_version_query();
-        let mutation = model.next_version_mutation(data);
+        let mut query = model.current_version_query();
+        let mut mutation = model.next_version_mutation(data);
+        Self::before_mutation(&mut query, &mut mutation).await?;
 
         let model_data = model.before_update().await?;
-        let ctx = Self::update_one(&query, &mutation).await?;
+        let ctx = Self::update_one(&mut query, &mut mutation).await?;
+        Self::after_mutation(&ctx).await?;
         Self::after_update(&ctx, model_data).await?;
         Ok((validation, model))
     }

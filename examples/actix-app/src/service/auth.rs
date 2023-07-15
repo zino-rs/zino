@@ -14,7 +14,7 @@ pub async fn generate_token(body: Map) -> Result<(Uuid, String), Error> {
     query.add_filter("status", json!({ "$nin": ["Locked", "Deleted"] }));
     query.add_filter("account", account);
 
-    let user: Map = User::find_one(&query)
+    let user: Map = User::find_one(&mut query)
         .await?
         .ok_or_else(|| Error::new("404 Not Found: invalid user account or password"))?;
     let encrypted_password = user.get_str("password").unwrap_or_default();
