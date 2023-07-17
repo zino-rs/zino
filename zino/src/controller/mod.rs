@@ -67,9 +67,14 @@ where
         Self::after_decode(&mut model_snapshot)
             .await
             .extract(&req)?;
+        model.insert().await.extract(&req)?;
+
+        let extension = req.get_data::<<Self as ModelHooks>::Extension>();
+        Self::before_respond(&mut model_snapshot, extension.as_ref())
+            .await
+            .extract(&req)?;
 
         let data = Map::data_entry(model_snapshot);
-        model.insert().await.extract(&req)?;
         res.set_code(StatusCode::CREATED);
         res.set_data(&data);
         Ok(res.into())
@@ -85,16 +90,15 @@ where
 
     async fn update(mut req: Self::Request) -> Self::Result {
         let id = req.parse_param::<K>("id")?;
-        let body = req.parse_body().await?;
+        let mut body = req.parse_body().await?;
+
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
-        let (validation, model) = Self::update_by_id(&id, body, extension)
+        let (validation, model) = Self::update_by_id(&id, &mut body, extension)
             .await
             .extract(&req)?;
         let mut res = crate::Response::from(validation).context(&req);
         if res.is_success() {
-            let mut model_filters = model.next_version_filters();
-            Self::after_decode(&mut model_filters).await.extract(&req)?;
-
+            let model_filters = model.next_version_filters();
             let data = Map::data_entry(model_filters);
             res.set_data(&data);
         }
@@ -103,7 +107,10 @@ where
 
     async fn view(req: Self::Request) -> Self::Result {
         let id = req.parse_param::<K>("id")?;
-        let model = Self::fetch_by_id(&id).await.extract(&req)?;
+        let mut model = Self::fetch_by_id(&id).await.extract(&req)?;
+        if req.get_query("translate").is_some_and(|s| s == "true") {
+            Self::translate(&mut model);
+        }
 
         let data = Map::data_entry(model);
         let mut res = crate::Response::default().context(&req);
@@ -114,15 +121,40 @@ where
     async fn list(req: Self::Request) -> Self::Result {
         let mut query = Self::default_list_query();
         let mut res = req.query_validation(&mut query)?;
-        let populate = query
-            .filters()
+        let extension = req.get_data::<<Self as ModelHooks>::Extension>();
+
+        let filters = query.filters();
+        let populate = filters
             .parse_bool("populate")
             .and_then(|r| r.ok())
             .unwrap_or(false);
+        let translate = filters
+            .parse_bool("translate")
+            .and_then(|r| r.ok())
+            .unwrap_or(false);
         let models = if populate {
-            Self::fetch(&mut query).await.extract(&req)?
+            let mut models = Self::fetch(&mut query).await.extract(&req)?;
+            for model in models.iter_mut() {
+                if translate {
+                    Self::translate(model);
+                }
+                Self::before_respond(model, extension.as_ref())
+                    .await
+                    .extract(&req)?;
+            }
+            models
         } else {
-            Self::find(&mut query).await.extract(&req)?
+            let mut models = Self::find(&mut query).await.extract(&req)?;
+            for model in models.iter_mut() {
+                Self::after_decode(model).await.extract(&req)?;
+                if translate {
+                    Self::translate(model);
+                }
+                Self::before_respond(model, extension.as_ref())
+                    .await
+                    .extract(&req)?;
+            }
+            models
         };
 
         let mut data = Map::data_entries(models);
@@ -195,10 +227,7 @@ where
     }
 
     async fn import(mut req: Self::Request) -> Self::Result {
-        let is_upsert_mode = req
-            .get_query("mode")
-            .map(|s| s == "upsert")
-            .unwrap_or_default();
+        let is_upsert_mode = req.get_query("mode").is_some_and(|s| s == "upsert");
         let data = req.parse_body::<Vec<Map>>().await?;
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
         let mut rows_affected = 0;
@@ -249,8 +278,16 @@ where
         let mut query = Self::default_query();
         let mut res = req.query_validation(&mut query)?;
         let mut models = Self::find(&mut query).await.extract(&req)?;
+        let extension = req.get_data::<<Self as ModelHooks>::Extension>();
+        let translate = req.get_query("translate").is_some_and(|s| s == "true");
         for model in models.iter_mut() {
             Self::after_decode(model).await.extract(&req)?;
+            if translate {
+                Self::translate(model);
+            }
+            Self::before_respond(model, extension.as_ref())
+                .await
+                .extract(&req)?;
         }
 
         let data = Map::data_entries(models);

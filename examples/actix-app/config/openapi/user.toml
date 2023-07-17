@@ -75,3 +75,11 @@ roles = { type = "array", items = "string", example = ["admin"], description = "
 account = { type = "string", description = "User account" }
 password = { type = "string", format = "password", description = "User password" }
 tags = { type = "array", items = { type = "string", format = "uuid" }, description = "User tags" }
+
+[models.user.visibility]
+translations = [
+    ["Public", "🌐"],
+    ["Internal", "🔵"],
+    ["Proteched", "⛔"],
+    ["Private", "🔴"],
+]

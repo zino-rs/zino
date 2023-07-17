@@ -28,7 +28,7 @@ pub trait ModelHooks: Model {
     /// A hook running before validating the model data.
     #[inline]
     async fn before_validation(
-        _data: &mut Map,
+        _model: &mut Map,
         _extension: Option<&Self::Extension>,
     ) -> Result<(), Error> {
         Ok(())
@@ -36,7 +36,7 @@ pub trait ModelHooks: Model {
 
     /// A hook running after validating the model data.
     #[inline]
-    async fn after_validation(&mut self, _data: &mut Map) -> Result<(), Error> {
+    async fn after_validation(&mut self, _model: &mut Map) -> Result<(), Error> {
         Ok(())
     }
 
@@ -253,7 +253,16 @@ pub trait ModelHooks: Model {
 
     /// A hook running after decoding the model as a `Map`.
     #[inline]
-    async fn after_decode(_data: &mut Map) -> Result<(), Error> {
+    async fn after_decode(_model: &mut Map) -> Result<(), Error> {
+        Ok(())
+    }
+
+    /// A hook running before returning the model data as a HTTP response.
+    #[inline]
+    async fn before_respond(
+        _model: &mut Map,
+        _extension: Option<&Self::Extension>,
+    ) -> Result<(), Error> {
         Ok(())
     }
 }

@@ -24,6 +24,7 @@ where
 }
 
 /// Decodes a raw value at the index.
+#[inline]
 pub(super) fn decode_column<'r, T>(
     field: &str,
     value: <DatabaseDriver as HasValueRef<'r>>::ValueRef,

@@ -87,9 +87,10 @@ where
             .subject()
             .ok_or_else(|| Error::new("the subject of a JWT token shoud be specified"))?
             .parse()?;
-        let roles = claims.data().parse_array("roles").unwrap_or_default();
         let mut user_session = Self::new(user_id, None);
-        user_session.set_roles(roles);
+        if let Some(roles) = claims.data().parse_array("roles") {
+            user_session.set_roles(roles);
+        }
         Ok(user_session)
     }
 }

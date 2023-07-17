@@ -6,6 +6,7 @@ use crate::{
     error::Error,
     extension::{JsonObjectExt, TomlTableExt},
     model::{ModelHooks, Mutation, Query},
+    openapi,
     request::Validation,
     state::State,
     JsonValue, Map,
@@ -264,9 +265,9 @@ where
     }
 
     /// Constructs the `Mutation` for the model of the next version.
-    fn next_version_mutation(&self, mut updates: Map) -> Mutation {
+    fn next_version_mutation(&self, updates: &mut Map) -> Mutation {
         let mut mutation = Self::default_mutation();
-        mutation.append_updates(&mut updates);
+        mutation.append_updates(updates);
         mutation.append_updates(&mut self.next_version_updates());
         mutation
     }
@@ -310,9 +311,9 @@ where
     }
 
     /// Constructs the `Mutation` for the model of the next edition.
-    fn next_edition_mutation(&self, mut updates: Map) -> Mutation {
+    fn next_edition_mutation(&self, updates: &mut Map) -> Mutation {
         let mut mutation = Self::default_mutation();
-        mutation.append_updates(&mut updates);
+        mutation.append_updates(updates);
         mutation.append_updates(&mut self.next_edition_updates());
         mutation
     }
@@ -392,6 +393,12 @@ where
         }
     }
 
+    /// Translates the model data.
+    #[inline]
+    fn translate(model: &mut Map) {
+        openapi::translate_model_entry(model, Self::model_name());
+    }
+
     /// Checks the constraints for the model.
     async fn check_constraints(&self) -> Result<Validation, Error> {
         let mut validation = Validation::new();
@@ -452,7 +459,7 @@ where
     /// Updates a model of the primary key using the json object.
     async fn update_by_id(
         id: &K,
-        mut data: Map,
+        data: &mut Map,
         extension: Option<<Self as ModelHooks>::Extension>,
     ) -> Result<(Validation, Self), Error> {
         Self::before_extract().await?;
@@ -461,7 +468,7 @@ where
         if let Some(version) = data.get_u64("version") && model.version() != version {
             return Err(Error::new("409 Conflict: there is a version control conflict"));
         }
-        Self::before_validation(&mut data, extension.as_ref()).await?;
+        Self::before_validation(data, extension.as_ref()).await?;
 
         let validation = model.read_map(&data);
         if !validation.is_success() {
@@ -480,7 +487,7 @@ where
         } else if model.is_deleted() {
             data.retain(|key, _value| key == "status");
         }
-        model.after_validation(&mut data).await?;
+        model.after_validation(data).await?;
 
         let mut query = model.current_version_query();
         let mut mutation = model.next_version_mutation(data);

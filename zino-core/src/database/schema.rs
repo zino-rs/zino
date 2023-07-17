@@ -7,7 +7,7 @@ use crate::{
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
-use sqlx::{Decode, Transaction, Type};
+use sqlx::{Decode, Row, Transaction, Type};
 use std::{fmt::Display, sync::atomic::Ordering::Relaxed};
 
 /// Database schema.
@@ -680,6 +680,37 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Ok(scalar)
     }
 
+    /// Finds a list of scalar values selected by the query in the table,
+    /// and decodes it as a `Vec<T>`.
+    async fn find_scalars<T>(query: &mut Query) -> Result<Vec<T>, Error>
+    where
+        T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
+    {
+        let pool = Self::acquire_reader().await?.pool();
+        Self::before_query(query).await?;
+
+        let table_name = Self::table_name();
+        let projection = query.format_fields();
+        let filters = query.format_filters::<Self>();
+        let sort = query.format_sort();
+        let pagination = query.format_pagination();
+        let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} {pagination};");
+
+        let mut ctx = Self::before_scan(&sql).await?;
+        let mut rows = sqlx::query(&sql).fetch(pool);
+        let mut data = Vec::new();
+        let mut max_rows = super::MAX_ROWS.load(Relaxed);
+        while let Some(row) = rows.try_next().await? && max_rows > 0 {
+            data.push(row.try_get_unchecked(0)?);
+            max_rows -= 1;
+        }
+        ctx.set_query(&sql);
+        ctx.set_query_result(Some(u64::try_from(data.len())?), true);
+        Self::after_scan(&ctx).await?;
+        Self::after_query(&ctx).await?;
+        Ok(data)
+    }
+
     /// Populates the related data in the corresponding `columns` for `Vec<Map>` using
     /// a merged select on the primary key, which solves the `N+1` problem.
     async fn populate<const N: usize>(
@@ -1075,6 +1106,35 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Ok(scalar)
     }
 
+    /// Executes the query in the table, and decodes the scalar values as `Vec<T>`.
+    async fn query_scalars<T>(query: &str, params: Option<&Map>) -> Result<Vec<T>, Error>
+    where
+        T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
+    {
+        let pool = Self::acquire_reader().await?.pool();
+        let (sql, values) = Query::prepare_query(query, params);
+        let mut query = sqlx::query(&sql);
+        let mut arguments = Vec::with_capacity(values.len());
+        for value in values {
+            query = query.bind(value.to_string());
+            arguments.push(value.to_string());
+        }
+
+        let mut ctx = Self::before_scan(&sql).await?;
+        let mut rows = query.fetch(pool);
+        let mut data = Vec::new();
+        let mut max_rows = super::MAX_ROWS.load(Relaxed);
+        while let Some(row) = rows.try_next().await? && max_rows > 0 {
+            data.push(row.try_get_unchecked(0)?);
+            max_rows -= 1;
+        }
+        ctx.set_query(sql.as_ref());
+        ctx.append_arguments(&mut arguments);
+        ctx.set_query_result(Some(u64::try_from(data.len())?), true);
+        Self::after_scan(&ctx).await?;
+        Ok(data)
+    }
+
     /// Executes the specific operations inside a transaction.
     /// If the operations return an error, the transaction will be rolled back;
     /// if not, the transaction will be committed.
@@ -1181,7 +1241,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Filters the values of the primary key.
     async fn filter<T: Into<JsonValue>>(
         primary_key_values: Vec<T>,
-    ) -> Result<Vec<JsonValue>, Error> {
+    ) -> Result<Vec<Self::PrimaryKey>, Error>
+    where
+        Self::PrimaryKey: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
+    {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let limit = primary_key_values.len();
         let mut query = Query::default();
@@ -1189,21 +1252,18 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         query.add_filter(primary_key_name, Map::from_entry("$in", primary_key_values));
         query.set_limit(limit);
 
-        let data = Self::find::<Map>(&mut query).await?;
-        let mut primary_key_values = Vec::with_capacity(data.len());
-        for map in data.into_iter() {
-            for (_key, value) in map.into_iter() {
-                primary_key_values.push(value);
-            }
-        }
-        Ok(primary_key_values)
+        let data = Self::find_scalars::<Self::PrimaryKey>(&mut query).await?;
+        Ok(data)
     }
 
     /// Returns `true` if the model is unique on the column values.
     async fn is_unique_on<const N: usize>(
         &self,
         columns: [(&str, JsonValue); N],
-    ) -> Result<bool, Error> {
+    ) -> Result<bool, Error>
+    where
+        Self::PrimaryKey: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
+    {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut query = Query::default();
         let mut fields = vec![primary_key_name];
@@ -1214,16 +1274,16 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         query.allow_fields(&fields);
         query.set_limit(2);
 
-        let mut data = Self::find::<Map>(&mut query).await?;
+        let data = Self::find_scalars::<Self::PrimaryKey>(&mut query).await?;
         match data.len() {
             0 => Ok(true),
             1 => {
-                if let Some(map) = data.pop() && let Some(value) = map.get_str(primary_key_name) {
-                    Ok(self.primary_key().to_string() == value)
+                if let Some(value) = data.first() {
+                    Ok(self.primary_key() == value)
                 } else {
                     Ok(true)
                 }
-            },
+            }
             _ => Ok(false),
         }
     }

@@ -1,6 +1,6 @@
 # zino
 
-`zino` is a **full-featured** framework for **composable** applications in Rust
+`zino` is a **next-generation** framework for **composable** applications in Rust
 which emphasizes **simplicity**, **extensibility** and **productivity**.
 
 ## Highlights

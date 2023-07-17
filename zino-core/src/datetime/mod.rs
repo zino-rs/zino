@@ -2,7 +2,8 @@
 
 use crate::{AvroValue, JsonValue};
 use chrono::{
-    format::ParseError, Local, NaiveDate, NaiveDateTime, NaiveTime, SecondsFormat, TimeZone, Utc,
+    format::ParseError, Datelike, Local, NaiveDate, NaiveDateTime, NaiveTime, SecondsFormat,
+    TimeZone, Utc,
 };
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
@@ -100,7 +101,7 @@ impl DateTime {
 
     /// Returns the duration of time between `self` and `DateTime::now()`.
     #[inline]
-    pub fn span(&self) -> Duration {
+    pub fn span_between_now(&self) -> Duration {
         let timestamp = self.timestamp_micros();
         let current_timestamp = Local::now().timestamp_micros();
         Duration::from_micros(current_timestamp.abs_diff(timestamp))
@@ -130,6 +131,118 @@ impl DateTime {
         } else {
             None
         }
+    }
+
+    /// Returns the start of the current year.
+    pub fn start_of_current_year(&self) -> Self {
+        let date = NaiveDate::from_ymd_opt(self.year(), 1, 1).unwrap_or_default();
+        let dt = NaiveDateTime::new(date, NaiveTime::default());
+        let offset = Local.offset_from_utc_datetime(&dt);
+        Self(LocalDateTime::from_local(dt, offset))
+    }
+
+    /// Returns the end of the current year.
+    pub fn end_of_current_year(&self) -> Self {
+        let date = NaiveDate::from_ymd_opt(self.year() + 1, 1, 1).unwrap_or_default();
+        let dt = date
+            .pred_opt()
+            .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
+            .unwrap_or_default();
+        let offset = Local.offset_from_utc_datetime(&dt);
+        Self(LocalDateTime::from_local(dt, offset))
+    }
+
+    /// Returns the start of the current month.
+    pub fn start_of_current_month(&self) -> Self {
+        let date = NaiveDate::from_ymd_opt(self.year(), self.month(), 1).unwrap_or_default();
+        let dt = NaiveDateTime::new(date, NaiveTime::default());
+        let offset = Local.offset_from_utc_datetime(&dt);
+        Self(LocalDateTime::from_local(dt, offset))
+    }
+
+    /// Returns the end of the current month.
+    pub fn end_of_current_month(&self) -> Self {
+        let date = NaiveDate::from_ymd_opt(self.year(), self.month() + 1, 1).unwrap_or_default();
+        let dt = date
+            .pred_opt()
+            .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
+            .unwrap_or_default();
+        let offset = Local.offset_from_utc_datetime(&dt);
+        Self(LocalDateTime::from_local(dt, offset))
+    }
+
+    /// Returns the start of the current day.
+    pub fn start_of_current_day(&self) -> Self {
+        let date = self.date_naive();
+        let dt = NaiveDateTime::new(date, NaiveTime::default());
+        let offset = Local.offset_from_utc_datetime(&dt);
+        Self(LocalDateTime::from_local(dt, offset))
+    }
+
+    /// Returns the end of the current day.
+    pub fn end_of_current_day(&self) -> Self {
+        let date = self.date_naive();
+        let dt = date
+            .and_hms_milli_opt(23, 59, 59, 1_000)
+            .unwrap_or_default();
+        let offset = Local.offset_from_utc_datetime(&dt);
+        Self(LocalDateTime::from_local(dt, offset))
+    }
+
+    /// Returns the start of the year.
+    pub fn start_of_year(year: i32) -> Self {
+        let date = NaiveDate::from_ymd_opt(year, 1, 1).unwrap_or_default();
+        let dt = NaiveDateTime::new(date, NaiveTime::default());
+        let offset = Local.offset_from_utc_datetime(&dt);
+        Self(LocalDateTime::from_local(dt, offset))
+    }
+
+    /// Returns the end of the year.
+    pub fn end_of_year(year: i32) -> Self {
+        let date = NaiveDate::from_ymd_opt(year + 1, 1, 1).unwrap_or_default();
+        let dt = date
+            .pred_opt()
+            .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
+            .unwrap_or_default();
+        let offset = Local.offset_from_utc_datetime(&dt);
+        Self(LocalDateTime::from_local(dt, offset))
+    }
+
+    /// Returns the start of the month.
+    pub fn start_of_month(year: i32, month: u32) -> Self {
+        let date = NaiveDate::from_ymd_opt(year, month, 1).unwrap_or_default();
+        let dt = NaiveDateTime::new(date, NaiveTime::default());
+        let offset = Local.offset_from_utc_datetime(&dt);
+        Self(LocalDateTime::from_local(dt, offset))
+    }
+
+    /// Returns the end of the month.
+    pub fn end_of_month(year: i32, month: u32) -> Self {
+        let date = NaiveDate::from_ymd_opt(year, month + 1, 1).unwrap_or_default();
+        let dt = date
+            .pred_opt()
+            .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
+            .unwrap_or_default();
+        let offset = Local.offset_from_utc_datetime(&dt);
+        Self(LocalDateTime::from_local(dt, offset))
+    }
+
+    /// Returns the start of the day.
+    pub fn start_of_day(year: i32, month: u32, day: u32) -> Self {
+        let date = NaiveDate::from_ymd_opt(year, month, day).unwrap_or_default();
+        let dt = NaiveDateTime::new(date, NaiveTime::default());
+        let offset = Local.offset_from_utc_datetime(&dt);
+        Self(LocalDateTime::from_local(dt, offset))
+    }
+
+    /// Returns the end of the month.
+    pub fn end_of_day(year: i32, month: u32, day: u32) -> Self {
+        let date = NaiveDate::from_ymd_opt(year, month, day).unwrap_or_default();
+        let dt = date
+            .and_hms_milli_opt(23, 59, 59, 1_000)
+            .unwrap_or_default();
+        let offset = Local.offset_from_utc_datetime(&dt);
+        Self(LocalDateTime::from_local(dt, offset))
     }
 }
 
@@ -268,5 +381,59 @@ mod tests {
         assert!("2023-06-10 05:17:23.713071 +0800"
             .parse::<DateTime>()
             .is_ok());
+    }
+
+    #[test]
+    fn it_constructs_datetime() {
+        let dt = "2023-07-13T02:16:33.449 +0800".parse::<DateTime>().unwrap();
+        assert_eq!(
+            dt.start_of_current_year().to_string(),
+            "2023-01-01 00:00:00.000000 +0800"
+        );
+        assert_eq!(
+            dt.end_of_current_year().to_string(),
+            "2023-12-31 23:59:60.000000 +0800"
+        );
+        assert_eq!(
+            dt.start_of_current_month().to_string(),
+            "2023-07-01 00:00:00.000000 +0800"
+        );
+        assert_eq!(
+            dt.end_of_current_month().to_string(),
+            "2023-07-31 23:59:60.000000 +0800"
+        );
+        assert_eq!(
+            dt.start_of_current_day().to_string(),
+            "2023-07-13 00:00:00.000000 +0800"
+        );
+        assert_eq!(
+            dt.end_of_current_day().to_string(),
+            "2023-07-13 23:59:60.000000 +0800"
+        );
+
+        assert_eq!(
+            DateTime::start_of_year(2023).to_string(),
+            "2023-01-01 00:00:00.000000 +0800"
+        );
+        assert_eq!(
+            DateTime::end_of_year(2023).to_string(),
+            "2023-12-31 23:59:60.000000 +0800"
+        );
+        assert_eq!(
+            DateTime::start_of_day(2023, 7, 1).to_string(),
+            "2023-07-01 00:00:00.000000 +0800"
+        );
+        assert_eq!(
+            DateTime::end_of_day(2023, 7, 31).to_string(),
+            "2023-07-31 23:59:60.000000 +0800"
+        );
+        assert_eq!(
+            DateTime::start_of_month(2023, 7).to_string(),
+            "2023-07-01 00:00:00.000000 +0800"
+        );
+        assert_eq!(
+            DateTime::end_of_month(2023, 7).to_string(),
+            "2023-07-31 23:59:60.000000 +0800"
+        );
     }
 }

@@ -289,7 +289,7 @@ pub trait RequestContext {
     fn parse_query<T: Default + DeserializeOwned>(&self) -> Result<T, Rejection> {
         if let Some(query) = self.original_uri().query() {
             if let Some(timestamp) = self.get_query("timestamp").and_then(|s| s.parse().ok()) {
-                let duration = DateTime::from_timestamp(timestamp).span();
+                let duration = DateTime::from_timestamp(timestamp).span_between_now();
                 if duration > crate::auth::default_time_tolerance() {
                     let err = Error::new(format!("the timestamp `{timestamp}` can not be trusted"));
                     let rejection = Rejection::from_validation_entry("timestamp", err);
