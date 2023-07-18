@@ -36,7 +36,7 @@ pub trait DefaultController<K, U = K> {
 #[cfg(any(feature = "actix", feature = "axum"))]
 #[cfg(feature = "orm")]
 use zino_core::{
-    database::ModelAccessor,
+    database::{ModelAccessor, ModelHelper},
     error::Error,
     extension::{JsonObjectExt, JsonValueExt},
     model::{ModelHooks, Query},
@@ -70,6 +70,7 @@ where
         model.insert().await.extract(&req)?;
 
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
+        Self::translate_model(&mut model_snapshot);
         Self::before_respond(&mut model_snapshot, extension.as_ref())
             .await
             .extract(&req)?;
@@ -107,11 +108,7 @@ where
 
     async fn view(req: Self::Request) -> Self::Result {
         let id = req.parse_param::<K>("id")?;
-        let mut model = Self::fetch_by_id(&id).await.extract(&req)?;
-        if req.get_query("translate").is_some_and(|s| s == "true") {
-            Self::translate(&mut model);
-        }
-
+        let model = Self::fetch_by_id(&id).await.extract(&req)?;
         let data = Map::data_entry(model);
         let mut res = crate::Response::default().context(&req);
         res.set_data(&data);
@@ -122,22 +119,9 @@ where
         let mut query = Self::default_list_query();
         let mut res = req.query_validation(&mut query)?;
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
-
-        let filters = query.filters();
-        let populate = filters
-            .parse_bool("populate")
-            .and_then(|r| r.ok())
-            .unwrap_or(false);
-        let translate = filters
-            .parse_bool("translate")
-            .and_then(|r| r.ok())
-            .unwrap_or(false);
-        let models = if populate {
+        let models = if query.populate_enabled() {
             let mut models = Self::fetch(&mut query).await.extract(&req)?;
             for model in models.iter_mut() {
-                if translate {
-                    Self::translate(model);
-                }
                 Self::before_respond(model, extension.as_ref())
                     .await
                     .extract(&req)?;
@@ -145,11 +129,10 @@ where
             models
         } else {
             let mut models = Self::find(&mut query).await.extract(&req)?;
+            let translate_enabled = query.translate_enabled();
             for model in models.iter_mut() {
                 Self::after_decode(model).await.extract(&req)?;
-                if translate {
-                    Self::translate(model);
-                }
+                translate_enabled.then(|| Self::translate_model(model));
                 Self::before_respond(model, extension.as_ref())
                     .await
                     .extract(&req)?;
@@ -217,7 +200,8 @@ where
         let data = req.parse_body::<Vec<JsonValue>>().await?;
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let primary_key_values = Map::from_entry("$in", data);
-        let mut query = Query::new(Map::from_entry(primary_key_name, primary_key_values));
+        let filters = Map::from_entry(primary_key_name, primary_key_values);
+        let mut query = Query::new(filters);
 
         let rows_affected = Self::delete_many(&mut query).await.extract(&req)?;
         let data = Map::from_entry("rows_affected", rows_affected);
@@ -279,12 +263,10 @@ where
         let mut res = req.query_validation(&mut query)?;
         let mut models = Self::find(&mut query).await.extract(&req)?;
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
-        let translate = req.get_query("translate").is_some_and(|s| s == "true");
+        let translate_enabled = query.translate_enabled();
         for model in models.iter_mut() {
             Self::after_decode(model).await.extract(&req)?;
-            if translate {
-                Self::translate(model);
-            }
+            translate_enabled.then(|| Self::translate_model(model));
             Self::before_respond(model, extension.as_ref())
                 .await
                 .extract(&req)?;

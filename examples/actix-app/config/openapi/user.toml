@@ -83,3 +83,21 @@ translations = [
     ["Proteched", "⛔"],
     ["Private", "🔴"],
 ]
+
+[models.user.status]
+translations = [
+    ["Active", "😄"],
+    ["Inactive", "😴"],
+]
+
+[models.user.roles]
+translations = [
+    ["admin", "👮"],
+    ["worker", "👷"],
+]
+
+[models.user.updated_at]
+translations = [
+    ["$span:24h", "Updated within 1 day"],
+    ["$span:7d", "Updated within 1 week"],
+]

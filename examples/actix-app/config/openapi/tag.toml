@@ -46,3 +46,17 @@ type = "object"
 name = { type = "string", description = "Tag name" }
 category = { type = "string", description = "Tag category" }
 parent_id = { type = "string", format = "uuid", description = "Optional parent tag" }
+
+[models.tag.visibility]
+translations = [
+    ["Public", "🌐"],
+    ["Internal", "🔵"],
+    ["Proteched", "⛔"],
+    ["Private", "🔴"],
+]
+
+[models.tag.status]
+translations = [
+    ["Active", "😄"],
+    ["Inactive", "😴"],
+]

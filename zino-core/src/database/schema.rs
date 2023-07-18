@@ -1,4 +1,7 @@
-use super::{mutation::MutationExt, query::QueryExt, ConnectionPool, DatabaseDriver, DatabaseRow};
+use super::{
+    mutation::MutationExt, query::QueryExt, ConnectionPool, DatabaseDriver, DatabaseRow,
+    ModelHelper,
+};
 use crate::{
     error::Error,
     extension::JsonObjectExt,
@@ -611,8 +614,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// and parses it as `Vec<T>`.
     async fn find_as<T: DeserializeOwned>(query: &mut Query) -> Result<Vec<T>, Error> {
         let mut data = Self::find::<Map>(query).await?;
+        let translate_enabled = query.translate_enabled();
         for model in data.iter_mut() {
             Self::after_decode(model).await?;
+            translate_enabled.then(|| Self::translate_model(model));
         }
         serde_json::from_value(data.into()).map_err(Error::from)
     }
@@ -650,6 +655,9 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         match Self::find_one::<Map>(query).await? {
             Some(mut data) => {
                 Self::after_decode(&mut data).await?;
+                query
+                    .translate_enabled()
+                    .then(|| Self::translate_model(&mut data));
                 serde_json::from_value(data.into()).map_err(Error::from)
             }
             None => Ok(None),
@@ -747,6 +755,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut ctx = Self::before_scan(&sql).await?;
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut associations = Map::with_capacity(num_values);
+        let translate_enabled = query.translate_enabled();
         while let Some(row) = rows.try_next().await? {
             let mut map = Map::decode_row(&row)?;
             let primary_key_value = map
@@ -754,6 +763,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 .map(|s| s.to_owned())
                 .unwrap_or_default();
             Self::after_decode(&mut map).await?;
+            translate_enabled.then(|| Self::translate_model(&mut map));
             associations.upsert(primary_key_value, map);
         }
         ctx.set_query(&sql);
@@ -817,6 +827,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut ctx = Self::before_scan(&sql).await?;
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut associations = Map::with_capacity(num_values);
+        let translate_enabled = query.translate_enabled();
         while let Some(row) = rows.try_next().await? {
             let mut map = Map::decode_row(&row)?;
             let primary_key_value = map
@@ -824,6 +835,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 .map(|s| s.to_owned())
                 .unwrap_or_default();
             Self::after_decode(&mut map).await?;
+            translate_enabled.then(|| Self::translate_model(&mut map));
             associations.upsert(primary_key_value, map);
         }
         ctx.set_query(&sql);
@@ -908,8 +920,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         right_columns: &[&str],
     ) -> Result<Vec<T>, Error> {
         let mut data = Self::lookup::<M, Map>(query, left_columns, right_columns).await?;
+        let translate_enabled = query.translate_enabled();
         for model in data.iter_mut() {
             Self::after_decode(model).await?;
+            translate_enabled.then(|| Self::translate_model(model));
         }
         serde_json::from_value(data.into()).map_err(Error::from)
     }

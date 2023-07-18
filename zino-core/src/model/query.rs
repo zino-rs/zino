@@ -84,6 +84,16 @@ impl Query {
                         }
                     }
                 }
+                "populate" | "translate" => {
+                    if let Some(result) = value.parse_bool() {
+                        match result {
+                            Ok(flag) => {
+                                filters.upsert(key, flag);
+                            }
+                            Err(err) => validation.record_fail(key.to_owned(), err),
+                        }
+                    }
+                }
                 "timestamp" | "nonce" | "signature" => (),
                 _ => {
                     if !key.starts_with('$') {
@@ -208,6 +218,24 @@ impl Query {
     #[inline]
     pub fn limit(&self) -> usize {
         self.limit
+    }
+
+    /// Returns `true` if the `flag` has been enabled.
+    #[inline]
+    pub fn enabled(&self, flag: &str) -> bool {
+        self.filters.get_bool(flag).is_some_and(|b| b)
+    }
+
+    /// Returns `true` if the `populate` flag has been enabled.
+    #[inline]
+    pub fn populate_enabled(&self) -> bool {
+        self.enabled("populate")
+    }
+
+    /// Returns `true` if the `translate` flag has been enabled.
+    #[inline]
+    pub fn translate_enabled(&self) -> bool {
+        self.enabled("translate")
     }
 }
 

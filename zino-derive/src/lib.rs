@@ -799,6 +799,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                 let mut models = Self::find::<Map>(query).await?;
                 for model in models.iter_mut() {
                     Self::after_decode(model).await?;
+                    translate_enabled.then(|| Self::translate_model(model));
                 }
             });
             populated_one_queries.push(quote! {
@@ -806,12 +807,14 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                     .await?
                     .ok_or_else(|| ZinoError::new(format!("404 Not Found: cannot find the model `{id}`")))?;
                 Self::after_decode(&mut model).await?;
+                Self::translate_model(&mut model);
             });
         } else {
             populated_queries.push(quote! {
                 let mut models = Self::find::<Map>(query).await?;
                 for model in models.iter_mut() {
                     Self::after_decode(model).await?;
+                    translate_enabled.then(|| Self::translate_model(model));
                 }
             });
             populated_one_queries.push(quote! {
@@ -824,10 +827,12 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                 let model_ident = format_ident!("{}", model);
                 let populated_query = quote! {
                     let mut query = #model_ident::default_snapshot_query();
+                    query.add_filter("translate", translate_enabled);
                     #model_ident::populate(&mut query, &mut models, [#(#fields),*]).await?;
                 };
                 let populated_one_query = quote! {
                     let mut query = #model_ident::default_query();
+                    query.add_filter("translate", true);
                     #model_ident::populate_one(&mut query, &mut model, [#(#fields),*]).await?;
                 };
                 populated_queries.push(populated_query);
@@ -844,7 +849,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
     let model_user_id_type = format_ident!("{}", user_id_type);
     let output = quote! {
         use zino_core::{
-            database::ModelAccessor,
+            database::{ModelAccessor, ModelHelper as _},
             model::Query,
             request::Validation as ZinoValidation,
             Map as ZinoMap,
@@ -886,6 +891,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
             }
 
             async fn fetch(query: &mut Query) -> Result<Vec<ZinoMap>, ZinoError> {
+                let translate_enabled = query.translate_enabled();
                 #(#populated_queries)*
             }
 

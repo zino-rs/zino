@@ -167,6 +167,7 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
     let openapi_dir = application::PROJECT_DIR.join("./config/openapi");
     match fs::read_dir(openapi_dir) {
         Ok(entries) => {
+            let mut model_translation_keys = Vec::new();
             let mut model_translations = HashMap::new();
             let mut openapi_tags = Vec::new();
             let mut components_builder = ComponentsBuilder::new();
@@ -225,7 +226,9 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
                                     !translations.is_empty()
                                 {
                                     let model_name = model_name.to_case(Case::Snake);
-                                    let key = format!("{model_name}.{field}.translations");
+                                    let model_key = format!("{model_name}.{field}.translations");
+                                    let key: &'static str = model_key.leak();
+                                    model_translation_keys.push(key);
                                     model_translations.insert(key, translations);
                                 }
                             }
@@ -240,8 +243,16 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
             if OPENAPI_TAGS.set(openapi_tags).is_err() {
                 panic!("fail to set OpenAPI tags");
             }
-            if model::MODEL_TRANSLATIONS.set(model_translations).is_err() {
-                panic!("fail to set model translations");
+            if !model_translation_keys.is_empty() {
+                if model::MODEL_TRANSLATION_KEYS
+                    .set(model_translation_keys)
+                    .is_err()
+                {
+                    panic!("fail to set model translation keys");
+                }
+                if model::MODEL_TRANSLATIONS.set(model_translations).is_err() {
+                    panic!("fail to set model translations");
+                }
             }
         }
         Err(err) => {

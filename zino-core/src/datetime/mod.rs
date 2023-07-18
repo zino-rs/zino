@@ -133,9 +133,44 @@ impl DateTime {
         }
     }
 
+    /// Returns `true` if the current year is a leap year.
+    #[inline]
+    pub fn is_leap_year(&self) -> bool {
+        let year = self.year();
+        year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
+    }
+
+    /// Returns the number of days in the current year.
+    #[inline]
+    pub fn days_in_current_year(&self) -> u32 {
+        if self.is_leap_year() {
+            366
+        } else {
+            365
+        }
+    }
+
+    /// Returns the number of days in the current month.
+    pub fn days_in_current_month(&self) -> u32 {
+        let month = self.month();
+        match month {
+            1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+            4 | 6 | 9 | 11 => 30,
+            2 => {
+                if self.is_leap_year() {
+                    29
+                } else {
+                    28
+                }
+            }
+            _ => panic!("invalid month: {month}"),
+        }
+    }
+
     /// Returns the start of the current year.
     pub fn start_of_current_year(&self) -> Self {
-        let date = NaiveDate::from_ymd_opt(self.year(), 1, 1).unwrap_or_default();
+        let year = self.year();
+        let date = NaiveDate::from_ymd_opt(year, 1, 1).unwrap_or_default();
         let dt = NaiveDateTime::new(date, NaiveTime::default());
         let offset = Local.offset_from_utc_datetime(&dt);
         Self(LocalDateTime::from_local(dt, offset))
@@ -143,9 +178,8 @@ impl DateTime {
 
     /// Returns the end of the current year.
     pub fn end_of_current_year(&self) -> Self {
-        let date = NaiveDate::from_ymd_opt(self.year() + 1, 1, 1).unwrap_or_default();
-        let dt = date
-            .pred_opt()
+        let year = self.year();
+        let dt = NaiveDate::from_ymd_opt(year, 12, 31)
             .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
@@ -154,7 +188,9 @@ impl DateTime {
 
     /// Returns the start of the current month.
     pub fn start_of_current_month(&self) -> Self {
-        let date = NaiveDate::from_ymd_opt(self.year(), self.month(), 1).unwrap_or_default();
+        let year = self.year();
+        let month = self.month();
+        let date = NaiveDate::from_ymd_opt(year, month, 1).unwrap_or_default();
         let dt = NaiveDateTime::new(date, NaiveTime::default());
         let offset = Local.offset_from_utc_datetime(&dt);
         Self(LocalDateTime::from_local(dt, offset))
@@ -162,9 +198,10 @@ impl DateTime {
 
     /// Returns the end of the current month.
     pub fn end_of_current_month(&self) -> Self {
-        let date = NaiveDate::from_ymd_opt(self.year(), self.month() + 1, 1).unwrap_or_default();
-        let dt = date
-            .pred_opt()
+        let year = self.year();
+        let month = self.month();
+        let day = self.days_in_current_month();
+        let dt = NaiveDate::from_ymd_opt(year, month, day)
             .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
@@ -199,9 +236,8 @@ impl DateTime {
 
     /// Returns the end of the year.
     pub fn end_of_year(year: i32) -> Self {
-        let date = NaiveDate::from_ymd_opt(year + 1, 1, 1).unwrap_or_default();
-        let dt = date
-            .pred_opt()
+        let dt = NaiveDate::from_ymd_opt(year + 1, 1, 1)
+            .and_then(|date| date.pred_opt())
             .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
@@ -218,9 +254,8 @@ impl DateTime {
 
     /// Returns the end of the month.
     pub fn end_of_month(year: i32, month: u32) -> Self {
-        let date = NaiveDate::from_ymd_opt(year, month + 1, 1).unwrap_or_default();
-        let dt = date
-            .pred_opt()
+        let dt = NaiveDate::from_ymd_opt(year, month + 1, 1)
+            .and_then(|date| date.pred_opt())
             .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);

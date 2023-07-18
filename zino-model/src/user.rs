@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
 use zino_core::{
     auth::{AccessKeyId, UserSession},
+    database::ModelHelper,
     datetime::DateTime,
     error::Error,
     extension::JsonObjectExt,
