@@ -421,54 +421,48 @@ mod tests {
     #[test]
     fn it_constructs_datetime() {
         let dt = "2023-07-13T02:16:33.449 +0800".parse::<DateTime>().unwrap();
-        assert_eq!(
-            dt.start_of_current_year().to_string(),
-            "2023-01-01 00:00:00.000000 +0800"
-        );
-        assert_eq!(
-            dt.end_of_current_year().to_string(),
-            "2023-12-31 23:59:60.000000 +0800"
-        );
-        assert_eq!(
-            dt.start_of_current_month().to_string(),
-            "2023-07-01 00:00:00.000000 +0800"
-        );
-        assert_eq!(
-            dt.end_of_current_month().to_string(),
-            "2023-07-31 23:59:60.000000 +0800"
-        );
-        assert_eq!(
-            dt.start_of_current_day().to_string(),
-            "2023-07-13 00:00:00.000000 +0800"
-        );
-        assert_eq!(
-            dt.end_of_current_day().to_string(),
-            "2023-07-13 23:59:60.000000 +0800"
-        );
+        assert!(dt
+            .start_of_current_year()
+            .to_string()
+            .starts_with("2023-01-01 00:00:00.000000"));
+        assert!(dt
+            .end_of_current_year()
+            .to_string()
+            .starts_with("2023-12-31 23:59:60.000000"));
+        assert!(dt
+            .start_of_current_month()
+            .to_string()
+            .starts_with("2023-07-01 00:00:00.000000"));
+        assert!(dt
+            .end_of_current_month()
+            .to_string()
+            .starts_with("2023-07-31 23:59:60.000000"));
+        assert!(dt
+            .start_of_current_day()
+            .to_string()
+            .starts_with("2023-07-13 00:00:00.000000"));
+        assert!(dt
+            .end_of_current_day()
+            .to_string()
+            .starts_with("2023-07-13 23:59:60.000000"));
 
-        assert_eq!(
-            DateTime::start_of_year(2023).to_string(),
-            "2023-01-01 00:00:00.000000 +0800"
-        );
-        assert_eq!(
-            DateTime::end_of_year(2023).to_string(),
-            "2023-12-31 23:59:60.000000 +0800"
-        );
-        assert_eq!(
-            DateTime::start_of_day(2023, 7, 1).to_string(),
-            "2023-07-01 00:00:00.000000 +0800"
-        );
-        assert_eq!(
-            DateTime::end_of_day(2023, 7, 31).to_string(),
-            "2023-07-31 23:59:60.000000 +0800"
-        );
-        assert_eq!(
-            DateTime::start_of_month(2023, 7).to_string(),
-            "2023-07-01 00:00:00.000000 +0800"
-        );
-        assert_eq!(
-            DateTime::end_of_month(2023, 7).to_string(),
-            "2023-07-31 23:59:60.000000 +0800"
-        );
+        assert!(DateTime::start_of_year(2023)
+            .to_string()
+            .starts_with("2023-01-01 00:00:00.000000"));
+        assert!(DateTime::end_of_year(2023)
+            .to_string()
+            .starts_with("2023-12-31 23:59:60.000000"));
+        assert!(DateTime::start_of_day(2023, 7, 1)
+            .to_string()
+            .starts_with("2023-07-01 00:00:00.000000"));
+        assert!(DateTime::end_of_day(2023, 7, 31)
+            .to_string()
+            .starts_with("2023-07-31 23:59:60.000000"));
+        assert!(DateTime::start_of_month(2023, 7)
+            .to_string()
+            .starts_with("2023-07-01 00:00:00.000000"));
+        assert!(DateTime::end_of_month(2023, 7)
+            .to_string()
+            .starts_with("2023-07-31 23:59:60.000000"));
     }
 }

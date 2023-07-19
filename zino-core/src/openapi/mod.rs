@@ -1,6 +1,6 @@
 //! OpenAPI specification and API documentation.
 
-use crate::{application, extension::TomlTableExt, Uuid};
+use crate::{application, extension::TomlTableExt, model::Translation, Uuid};
 use convert_case::{Case, Casing};
 use serde_json::json;
 use std::{
@@ -220,16 +220,13 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
                     for (model_name, model_fields) in models {
                         if let Some(fields) = model_fields.as_table() {
                             for (field, value) in fields {
-                                let translations =
-                                    value.as_table().map(model::parse_field_translations);
-                                if let Some(translations) = translations &&
-                                    !translations.is_empty()
-                                {
+                                let translation = value.as_table().map(Translation::with_config);
+                                if let Some(translation) = translation && translation.is_ready() {
                                     let model_name = model_name.to_case(Case::Snake);
                                     let model_key = format!("{model_name}.{field}.translations");
                                     let key: &'static str = model_key.leak();
                                     model_translation_keys.push(key);
-                                    model_translations.insert(key, translations);
+                                    model_translations.insert(key, translation);
                                 }
                             }
                         }

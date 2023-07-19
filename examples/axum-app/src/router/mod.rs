@@ -14,7 +14,12 @@ pub fn routes() -> Vec<Router> {
     let mut routes = Vec::new();
 
     // Auth controller.
-    let router = Router::new().route("/auth/login", post(auth::login));
+    let router = Router::new().route("/auth/login", post(auth::login)).merge(
+        Router::new()
+            .route("/auth/refresh", get(auth::refresh))
+            .route("/auth/logout", post(auth::logout))
+            .layer(from_fn(middleware::init_user_session)),
+    );
     routes.push(router);
 
     // User controller.

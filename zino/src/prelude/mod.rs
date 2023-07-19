@@ -13,7 +13,7 @@ pub use zino_core::{
     request::{RequestContext, Validation},
     response::{ExtractRejection, Rejection, StatusCode},
     schedule::{AsyncCronJob, CronJob},
-    state::{Data, SharedData, State},
+    state::State,
     BoxFuture, Map, Record, Uuid,
 };
 

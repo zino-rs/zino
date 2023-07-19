@@ -356,11 +356,7 @@ impl JsonObjectExt for Map {
                 _ => None,
             })
             .and_then(|values| {
-                let vec = values
-                    .iter()
-                    .map(|s| s.trim())
-                    .filter(|s| !s.is_empty())
-                    .collect::<Vec<_>>();
+                let vec = values.iter().map(|s| s.trim()).collect::<Vec<_>>();
                 (!vec.is_empty()).then_some(vec)
             })
     }

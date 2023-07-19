@@ -7,3 +7,13 @@ description = "Account login"
 type = "object"
 account = { type = "string", description = "User account" }
 password = { type = "string", format = "password", description = "User password" }
+
+[[endpoints]]
+path = "/auth/refresh"
+method = "GET"
+description = "Refresh access token"
+
+[[endpoints]]
+path = "/auth/logout"
+method = "POST"
+description = "Account logout"

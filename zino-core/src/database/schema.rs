@@ -1255,10 +1255,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Filters the values of the primary key.
     async fn filter<T: Into<JsonValue>>(
         primary_key_values: Vec<T>,
-    ) -> Result<Vec<Self::PrimaryKey>, Error>
-    where
-        Self::PrimaryKey: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
-    {
+    ) -> Result<Vec<JsonValue>, Error> {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let limit = primary_key_values.len();
         let mut query = Query::default();
@@ -1266,18 +1263,21 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         query.add_filter(primary_key_name, Map::from_entry("$in", primary_key_values));
         query.set_limit(limit);
 
-        let data = Self::find_scalars::<Self::PrimaryKey>(&mut query).await?;
-        Ok(data)
+        let data = Self::find::<Map>(&mut query).await?;
+        let mut primary_key_values = Vec::with_capacity(data.len());
+        for map in data.into_iter() {
+            for (_key, value) in map.into_iter() {
+                primary_key_values.push(value);
+            }
+        }
+        Ok(primary_key_values)
     }
 
     /// Returns `true` if the model is unique on the column values.
     async fn is_unique_on<const N: usize>(
         &self,
         columns: [(&str, JsonValue); N],
-    ) -> Result<bool, Error>
-    where
-        Self::PrimaryKey: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
-    {
+    ) -> Result<bool, Error> {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut query = Query::default();
         let mut fields = vec![primary_key_name];
@@ -1288,12 +1288,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         query.allow_fields(&fields);
         query.set_limit(2);
 
-        let data = Self::find_scalars::<Self::PrimaryKey>(&mut query).await?;
+        let data = Self::find::<Map>(&mut query).await?;
         match data.len() {
             0 => Ok(true),
             1 => {
-                if let Some(value) = data.first() {
-                    Ok(self.primary_key() == value)
+                if let Some(value) = data.first().and_then(|m| m.get_str(primary_key_name)) {
+                    Ok(self.primary_key().to_string() == value)
                 } else {
                     Ok(true)
                 }

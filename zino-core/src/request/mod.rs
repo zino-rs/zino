@@ -21,7 +21,7 @@ use fluent::FluentArgs;
 use http::Uri;
 use jwt_simple::algorithms::MACLike;
 use multer::Multipart;
-use serde::de::DeserializeOwned;
+use serde::{de::DeserializeOwned, Serialize};
 use std::{
     borrow::Cow,
     time::{Duration, Instant},
@@ -514,7 +514,11 @@ pub trait RequestContext {
     /// Attempts to construct an instance of `JwtClaims` from an HTTP request.
     /// The value is extracted from the query parameter `access_token` or
     /// the `authorization` header.
-    fn parse_jwt_claims<K: MACLike>(&self, key: &K) -> Result<JwtClaims, Rejection> {
+    fn parse_jwt_claims<T, K>(&self, key: &K) -> Result<JwtClaims<T>, Rejection>
+    where
+        T: Default + Serialize + DeserializeOwned,
+        K: MACLike,
+    {
         let mut validation = Validation::new();
         let (param, mut token) = match self.get_query("access_token") {
             Some(access_token) => ("access_token", access_token),
@@ -532,6 +536,7 @@ pub trait RequestContext {
             .and_then(|s| s.parse().ok())
             .map(|i| Duration::from_secs(i).into());
         options.required_nonce = self.get_query("nonce").map(|s| s.to_owned());
+
         match key.verify_token(token, Some(options)) {
             Ok(claims) => return Ok(JwtClaims(claims)),
             Err(err) => {

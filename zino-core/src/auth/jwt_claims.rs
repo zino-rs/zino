@@ -11,32 +11,19 @@ use jwt_simple::{
     claims::{self, Claims, JWTClaims},
     common::VerificationOptions,
 };
+use serde::{de::DeserializeOwned, Serialize};
 use sha2::{Digest, Sha256};
 use std::{env, sync::LazyLock, time::Duration};
 
 /// JWT Claims.
-#[derive(Debug)]
-pub struct JwtClaims(pub(crate) JWTClaims<Map>);
+#[derive(Debug, Clone)]
+pub struct JwtClaims<T = Map>(pub(crate) JWTClaims<T>);
 
-impl JwtClaims {
-    /// Creates a new instance.
-    #[inline]
-    pub fn new(subject: impl ToString) -> Self {
-        let mut claims = Self::default();
-        claims.0.subject = Some(subject.to_string());
-        claims
-    }
-
+impl<T> JwtClaims<T> {
     /// Sets the nonce.
     #[inline]
     pub fn set_nonce(&mut self, nonce: impl ToString) {
         self.0.nonce = Some(nonce.to_string());
-    }
-
-    /// Adds a key-value pair to the custom data.
-    #[inline]
-    pub fn add_data_entry(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) {
-        self.0.custom.upsert(key.into(), value.into());
     }
 
     /// Returns the time the claims were created at.
@@ -73,8 +60,45 @@ impl JwtClaims {
 
     /// Returns the custom data.
     #[inline]
-    pub fn data(&self) -> &Map {
+    pub fn data(&self) -> &T {
         &self.0.custom
+    }
+}
+
+impl<T: Default + Serialize + DeserializeOwned> JwtClaims<T> {
+    /// Creates a new instance.
+    pub fn new(subject: impl ToString) -> Self {
+        let mut claims = Claims::with_custom_claims(T::default(), (*DEFAULT_MAX_AGE).into());
+        claims.invalid_before = None;
+        claims.subject = Some(subject.to_string());
+        Self(claims)
+    }
+
+    /// Creates a new instance, expiring in `max-age`.
+    pub fn with_max_age(subject: impl ToString, max_age: Duration) -> Self {
+        let mut claims = Claims::with_custom_claims(T::default(), max_age.into());
+        claims.invalid_before = None;
+        claims.subject = Some(subject.to_string());
+        Self(claims)
+    }
+
+    /// Generates an access token signed with the shared secret access key.
+    pub fn refresh_token(&self) -> Result<String, Error> {
+        let mut claims = Claims::create((*DEFAULT_REFRESH_INTERVAL).into());
+        claims.invalid_before = self
+            .0
+            .expires_at
+            .map(|max_age| max_age - (*DEFAULT_TIME_TOLERANCE).into());
+        claims.subject = self.0.subject.as_ref().cloned();
+        JwtClaims::shared_key()
+            .authenticate(claims)
+            .map_err(|err| Error::new(err.to_string()))
+    }
+
+    /// Generates an access token signed with the shared secret access key.
+    #[inline]
+    pub fn access_token(self) -> Result<String, Error> {
+        self.sign_with(JwtClaims::shared_key())
     }
 
     /// Generates a signature with the secret access key.
@@ -83,20 +107,21 @@ impl JwtClaims {
         key.authenticate(self.0)
             .map_err(|err| Error::new(err.to_string()))
     }
+}
 
+impl JwtClaims<Map> {
+    /// Adds a key-value pair to the custom data.
+    #[inline]
+    pub fn add_data_entry(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) {
+        self.0.custom.upsert(key.into(), value.into());
+    }
+}
+
+impl JwtClaims<()> {
     /// Returns the shared secret access key for the `HS256` JWT algorithm.
     #[inline]
     pub fn shared_key() -> &'static HS256Key {
         LazyLock::force(&SECRET_KEY)
-    }
-}
-
-impl Default for JwtClaims {
-    #[inline]
-    fn default() -> Self {
-        let mut claims = Claims::with_custom_claims(Map::new(), (*DEFAULT_MAX_AGE).into());
-        claims.invalid_before = None;
-        Self(claims)
     }
 }
 
@@ -120,8 +145,8 @@ static SHARED_VERIFICATION_OPTIONS: LazyLock<VerificationOptions> = LazyLock::ne
             required_subject: config.get_str("required-subject").map(|s| s.to_owned()),
             time_tolerance: config.get_duration("time-tolerance").map(|d| d.into()),
             max_validity: config.get_duration("max-validity").map(|d| d.into()),
-            max_token_length: config.get_usize("max_token_length"),
-            max_header_length: config.get_usize("max_header_length"),
+            max_token_length: config.get_usize("max-token-length"),
+            max_header_length: config.get_usize("max-header-length"),
             ..VerificationOptions::default()
         }
     } else {
@@ -137,12 +162,20 @@ static DEFAULT_TIME_TOLERANCE: LazyLock<Duration> = LazyLock::new(|| {
         .unwrap_or_else(|| Duration::from_secs(claims::DEFAULT_TIME_TOLERANCE_SECS))
 });
 
-/// Default max age.
+/// Default max age for the access token.
 static DEFAULT_MAX_AGE: LazyLock<Duration> = LazyLock::new(|| {
     State::shared()
         .get_config("jwt")
         .and_then(|config| config.get_duration("max-age"))
         .unwrap_or_else(|| Duration::from_secs(60 * 60 * 24))
+});
+
+/// Default refresh interval for the refresh token.
+static DEFAULT_REFRESH_INTERVAL: LazyLock<Duration> = LazyLock::new(|| {
+    State::shared()
+        .get_config("jwt")
+        .and_then(|config| config.get_duration("refresh-interval"))
+        .unwrap_or_else(|| Duration::from_secs(60 * 60 * 24 * 30))
 });
 
 /// Shared secret access key for the `HS256` JWT algorithm.

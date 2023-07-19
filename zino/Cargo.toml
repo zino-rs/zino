@@ -73,7 +73,7 @@ optional = true
 features = ["opentelemetry_0_19"]
 
 [dependencies.axum]
-version = "0.6.18"
+version = "0.6.19"
 optional = true
 default-features = false
 features = [

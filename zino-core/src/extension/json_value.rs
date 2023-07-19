@@ -212,11 +212,7 @@ impl JsonValueExt for JsonValue {
             JsonValue::Array(vec) => Some(vec.iter().filter_map(|v| v.as_str()).collect()),
             _ => None,
         };
-        let vec = values?
-            .iter()
-            .map(|s| s.trim())
-            .filter(|s| !s.is_empty())
-            .collect::<Vec<_>>();
+        let vec = values?.iter().map(|s| s.trim()).collect::<Vec<_>>();
         (!vec.is_empty()).then_some(vec)
     }
 

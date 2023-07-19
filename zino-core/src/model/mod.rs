@@ -12,6 +12,7 @@ mod mutation;
 mod query;
 mod reference;
 mod row;
+mod translation;
 
 pub use column::{Column, EncodeColumn};
 pub use context::QueryContext;
@@ -20,6 +21,7 @@ pub use mutation::Mutation;
 pub use query::Query;
 pub use reference::Reference;
 pub use row::DecodeRow;
+pub use translation::Translation;
 
 /// General data model.
 pub trait Model: Default + Serialize + DeserializeOwned {

@@ -18,6 +18,12 @@ pub fn routes() -> Vec<RouterConfigure> {
 
 fn auth_router(cfg: &mut ServiceConfig) {
     cfg.route("/auth/login", post().to(auth::login));
+    cfg.service(
+        scope("/auth")
+            .route("/refresh", get().to(auth::refresh))
+            .route("/logout", post().to(auth::logout))
+            .wrap(middleware::UserSessionInitializer),
+    );
 }
 
 fn user_router(cfg: &mut ServiceConfig) {
