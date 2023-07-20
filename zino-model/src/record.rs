@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use zino_core::{
-    auth::UserSession,
     datetime::DateTime,
     error::Error,
     extension::JsonObjectExt,
@@ -12,6 +11,9 @@ use zino_derive::{ModelAccessor, Schema};
 
 #[cfg(any(feature = "owner-id", feature = "maintainer-id"))]
 use crate::User;
+
+#[cfg(feature = "maintainer-id")]
+use zino_core::auth::UserSession;
 
 /// The `record` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]

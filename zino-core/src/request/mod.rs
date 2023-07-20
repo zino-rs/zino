@@ -326,7 +326,7 @@ pub trait RequestContext {
             .await
             .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
         if data_type == "form" {
-            serde_urlencoded::from_bytes(&bytes)
+            serde_qs::from_bytes(&bytes)
                 .map_err(|err| Rejection::from_validation_entry("body", err).context(self))
         } else if data_type == "msgpack" {
             rmp_serde::from_slice(&bytes)
@@ -591,7 +591,7 @@ pub trait RequestContext {
             .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
         let extension = self.get_data::<M::Extension>();
         if data_type == "form" {
-            let mut data = serde_urlencoded::from_bytes(&bytes)
+            let mut data = serde_qs::from_bytes(&bytes)
                 .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
             match M::before_validation(&mut data, extension.as_ref()).await {
                 Ok(()) => {

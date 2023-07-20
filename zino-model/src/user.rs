@@ -193,103 +193,12 @@ impl User {
         self.roles.as_slice()
     }
 
-    /// Returns `true` if the user has a role of `superuser`.
-    #[inline]
-    pub fn is_superuser(&self) -> bool {
-        self.roles() == ["superuser"]
-    }
-
-    /// Returns `true` if the user has a role of `user`.
-    #[inline]
-    pub fn is_user(&self) -> bool {
-        self.roles() == ["user"]
-    }
-
-    /// Returns `true` if the user has a role of `guest`.
-    #[inline]
-    pub fn is_guest(&self) -> bool {
-        self.roles() == ["guest"]
-    }
-
-    /// Returns `true` if the user has a role of `admin`.
-    pub fn is_admin(&self) -> bool {
-        let role = "admin";
-        let role_prefix = format!("{role}:");
-        for r in &self.roles {
-            if r == role || r.starts_with(&role_prefix) {
-                return true;
-            }
-        }
-        false
-    }
-
-    /// Returns `true` if the user has a role of `worker`.
-    pub fn is_worker(&self) -> bool {
-        let role = "worker";
-        let role_prefix = format!("{role}:");
-        for r in &self.roles {
-            if r == role || r.starts_with(&role_prefix) {
-                return true;
-            }
-        }
-        false
-    }
-
-    /// Returns `true` if the user has a role of `auditor`.
-    pub fn is_auditor(&self) -> bool {
-        let role = "auditor";
-        let role_prefix = format!("{role}:");
-        for r in &self.roles {
-            if r == role || r.starts_with(&role_prefix) {
-                return true;
-            }
-        }
-        false
-    }
-
-    /// Returns `true` if the user has one of the roles: `superuser`, `user`,
-    /// `admin`, `worker` and `auditor`.
-    pub fn has_user_role(&self) -> bool {
-        self.is_superuser()
-            || self.is_user()
-            || self.is_admin()
-            || self.is_worker()
-            || self.is_auditor()
-    }
-
-    /// Returns `true` if the user has a role of `superuser` or `admin`.
-    pub fn has_admin_role(&self) -> bool {
-        self.is_superuser() || self.is_admin()
-    }
-
-    /// Returns `true` if the user has a role of `superuser` or `worker`.
-    pub fn has_worker_role(&self) -> bool {
-        self.is_superuser() || self.is_worker()
-    }
-
-    /// Returns `true` if the user has a role of `superuser` or `auditor`.
-    pub fn has_auditor_role(&self) -> bool {
-        self.is_superuser() || self.is_auditor()
-    }
-
-    /// Returns `true` if the user has the specific `role`.
-    pub fn has_role(&self, role: &str) -> bool {
-        let length = role.len();
-        for r in &self.roles {
-            if r == role {
-                return true;
-            } else {
-                let remainder = if r.len() > length {
-                    r.strip_prefix(role)
-                } else {
-                    role.strip_prefix(r.as_str())
-                };
-                if let Some(s) = remainder && s.starts_with(':') {
-                    return true;
-                }
-            }
-        }
-        false
+    /// Returns a session for the user.
+    pub fn user_session(&self) -> UserSession<Uuid, String> {
+        let mut user_session = UserSession::new(self.id, None);
+        user_session.set_access_key_id(self.access_key_id().into());
+        user_session.set_roles(self.roles());
+        user_session
     }
 }
 
@@ -312,12 +221,14 @@ mod tests {
 
         let validation = alice.read_map(&data);
         assert!(validation.is_success());
-        assert!(alice.is_admin());
-        assert!(!alice.is_worker());
-        assert!(alice.is_auditor());
-        assert!(alice.has_role("admin:user"));
-        assert!(!alice.has_role("admin:group"));
-        assert!(alice.has_role("auditor:log"));
-        assert!(!alice.has_role("auditor_record"));
+
+        let user_session = alice.user_session();
+        assert!(user_session.is_admin());
+        assert!(!user_session.is_worker());
+        assert!(user_session.is_auditor());
+        assert!(user_session.has_role("admin:user"));
+        assert!(!user_session.has_role("admin:group"));
+        assert!(user_session.has_role("auditor:log"));
+        assert!(!user_session.has_role("auditor_record"));
     }
 }

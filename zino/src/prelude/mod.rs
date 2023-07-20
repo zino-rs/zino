@@ -11,7 +11,7 @@ pub use zino_core::{
     extension::{JsonObjectExt, TomlTableExt},
     model::{Model, ModelHooks, Mutation, Query, QueryContext},
     request::{RequestContext, Validation},
-    response::{ExtractRejection, Rejection, StatusCode},
+    response::{ExtractRejection, Rejection, StatusCode, WebHook},
     schedule::{AsyncCronJob, CronJob},
     state::State,
     BoxFuture, Map, Record, Uuid,

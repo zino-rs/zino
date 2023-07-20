@@ -63,6 +63,16 @@ pub(super) fn parse_operation(name: &str, path: &str, config: &Table) -> Operati
             operation_builder = operation_builder.parameter(parameter);
         }
     }
+    if let Some(headers) = config.get_table("headers") {
+        for parameter in self::parse_header_parameters(headers).into_iter() {
+            operation_builder = operation_builder.parameter(parameter);
+        }
+    }
+    if let Some(cookies) = config.get_table("cookies") {
+        for parameter in self::parse_cookie_parameters(cookies).into_iter() {
+            operation_builder = operation_builder.parameter(parameter);
+        }
+    }
     if let Some(body) = config.get_table("requestBody") {
         let request_body = self::parse_request_body(body);
         operation_builder = operation_builder.request_body(Some(request_body));
@@ -266,8 +276,58 @@ fn parse_query_parameters(query: &Table) -> Vec<Parameter> {
     let mut parameters = Vec::new();
     for (key, value) in query {
         let mut parameter_builder = ParameterBuilder::new()
-            .name(key)
+            .name(key.to_case(Case::Snake))
             .parameter_in(ParameterIn::Query);
+        if let Some(config) = value.as_table() {
+            if let Some(schema) = config.get_str("schema") {
+                let schema_name = schema.to_case(Case::Camel);
+                let schema_object = Ref::from_schema_name(schema_name);
+                parameter_builder = parameter_builder.schema(Some(schema_object));
+            } else {
+                let object = parse_schema(config);
+                parameter_builder = parameter_builder.schema(Some(object));
+            };
+        } else if let Some(basic_type) = value.as_str() {
+            let object = Object::with_type(parse_schema_type(basic_type));
+            parameter_builder = parameter_builder.schema(Some(object));
+        }
+        parameters.push(parameter_builder.build());
+    }
+    parameters
+}
+
+/// Parses the header parameters.
+fn parse_header_parameters(headers: &Table) -> Vec<Parameter> {
+    let mut parameters = Vec::new();
+    for (key, value) in headers {
+        let mut parameter_builder = ParameterBuilder::new()
+            .name(key.to_case(Case::Kebab))
+            .parameter_in(ParameterIn::Header);
+        if let Some(config) = value.as_table() {
+            if let Some(schema) = config.get_str("schema") {
+                let schema_name = schema.to_case(Case::Camel);
+                let schema_object = Ref::from_schema_name(schema_name);
+                parameter_builder = parameter_builder.schema(Some(schema_object));
+            } else {
+                let object = parse_schema(config);
+                parameter_builder = parameter_builder.schema(Some(object));
+            };
+        } else if let Some(basic_type) = value.as_str() {
+            let object = Object::with_type(parse_schema_type(basic_type));
+            parameter_builder = parameter_builder.schema(Some(object));
+        }
+        parameters.push(parameter_builder.build());
+    }
+    parameters
+}
+
+/// Parses the cookie parameters.
+fn parse_cookie_parameters(cookies: &Table) -> Vec<Parameter> {
+    let mut parameters = Vec::new();
+    for (key, value) in cookies {
+        let mut parameter_builder = ParameterBuilder::new()
+            .name(key)
+            .parameter_in(ParameterIn::Cookie);
         if let Some(config) = value.as_table() {
             if let Some(schema) = config.get_str("schema") {
                 let schema_name = schema.to_case(Case::Camel);

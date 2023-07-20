@@ -19,9 +19,11 @@ use std::{
 
 mod rejection;
 mod response_code;
+mod webhook;
 
 pub use rejection::{ExtractRejection, Rejection};
 pub use response_code::ResponseCode;
+pub use webhook::WebHook;
 
 /// An HTTP status code.
 pub type StatusCode = http::StatusCode;

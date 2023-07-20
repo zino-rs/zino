@@ -378,7 +378,7 @@ impl DecodeRow<DatabaseRow> for Map {
                     "TIME" => decode_column::<NaiveTime>(field, raw_value)?
                         .to_string()
                         .into(),
-                    "BYTE" => {
+                    "BYTE" | "BINARY" | "VARBINARY" | "BLOB" => {
                         let bytes = decode_column::<Vec<u8>>(field, raw_value)?;
                         if bytes.len() == 16 {
                             if let Ok(value) = Uuid::from_slice(&bytes) {
@@ -389,9 +389,6 @@ impl DecodeRow<DatabaseRow> for Map {
                         } else {
                             bytes.into()
                         }
-                    }
-                    "BLOB" | "VARBINARY" | "BINARY" => {
-                        decode_column::<Vec<u8>>(field, raw_value)?.into()
                     }
                     "JSON" => decode_column::<JsonValue>(field, raw_value)?,
                     _ => JsonValue::Null,
@@ -456,20 +453,17 @@ impl DecodeRow<DatabaseRow> for Record {
                     "TIME" => decode_column::<NaiveTime>(field, raw_value)?
                         .to_string()
                         .into(),
-                    "BYTE" => {
+                    "BYTE" | "BINARY" | "VARBINARY" | "BLOB" => {
                         let bytes = decode_column::<Vec<u8>>(field, raw_value)?;
                         if bytes.len() == 16 {
                             if let Ok(value) = Uuid::from_slice(&bytes) {
-                                value.to_string().into()
+                                value.into()
                             } else {
                                 bytes.into()
                             }
                         } else {
                             bytes.into()
                         }
-                    }
-                    "BLOB" | "VARBINARY" | "BINARY" => {
-                        decode_column::<Vec<u8>>(field, raw_value)?.into()
                     }
                     "JSON" => decode_column::<JsonValue>(field, raw_value)?.into(),
                     _ => AvroValue::Null,

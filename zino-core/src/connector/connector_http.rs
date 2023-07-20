@@ -2,7 +2,7 @@ use super::{Connector, DataSource, DataSourceConnector::Http};
 use crate::{
     application::http_client,
     error::Error,
-    extension::{AvroRecordExt, HeaderMapExt, JsonObjectExt, TomlTableExt},
+    extension::{AvroRecordExt, HeaderMapExt, JsonObjectExt, TomlTableExt, TomlValueExt},
     format,
     trace::TraceContext,
     JsonValue, Map, Record,
@@ -12,7 +12,7 @@ use http::{
     Method,
 };
 use reqwest::Response;
-use serde::de::DeserializeOwned;
+use serde::{de::DeserializeOwned, Serialize};
 use serde_json::value::RawValue;
 use toml::Table;
 use url::Url;
@@ -40,34 +40,56 @@ impl HttpConnector {
         })
     }
 
-    /// Returns the request method.
+    /// Attempts to construct a new instance from the config.
     #[inline]
-    pub fn method(&self) -> &str {
-        self.method.as_str()
+    pub fn try_from_config(config: &Table) -> Result<Self, Error> {
+        let method = config.get_str("method").unwrap_or("GET");
+        let base_url = config
+            .get_str("base-url")
+            .ok_or_else(|| Error::new("the base URL should be specified"))?;
+
+        let mut connector = HttpConnector::try_new(method, base_url)?;
+        let headers = config.get("headers").map(|v| v.to_json_value());
+        if let Some(JsonValue::Object(headers)) = headers {
+            connector.headers = headers;
+        }
+        if let Some(body) = config.get_table("body") {
+            let raw_value = serde_json::value::to_raw_value(body)?;
+            connector.body = Some(raw_value);
+        }
+        Ok(connector)
     }
 
-    /// Returns the optional body.
+    /// Inserts a key/value pair into the request headers.
     #[inline]
-    pub fn body(&self) -> Option<&str> {
-        self.body.as_deref().map(|raw_value| raw_value.get())
+    pub fn insert_header(&mut self, key: &str, value: impl Into<JsonValue>) {
+        self.headers.upsert(key, value.into());
+    }
+
+    /// Sets the request body.
+    #[inline]
+    pub fn set_body<T: Serialize>(&mut self, body: &T) {
+        self.body = serde_json::value::to_raw_value(body).ok();
     }
 
     /// Makes an HTTP request with the given query and params.
     pub async fn fetch(&self, query: &str, params: Option<&Map>) -> Result<Response, Error> {
-        let url = self.base_url.join(query)?;
+        let mut url = self.base_url.clone();
+        url.set_query(Some(query));
+
         let resource = format::query::format_query(url.as_str(), params);
-        let mut options = Map::from_entry("method", self.method());
-        if let Some(body) = self.body() {
+        let mut options = Map::from_entry("method", self.method.as_str());
+        if let Some(body) = self.body.as_deref().map(|v| v.get()) {
             options.upsert("body", format::query::format_query(body, params));
         }
 
         let mut headers = HeaderMap::new();
         for (key, value) in self.headers.iter() {
             if let Ok(header_name) = HeaderName::try_from(key) {
-                if let Some(header_value) = value
+                let header_value = value
                     .as_str()
-                    .and_then(|s| format::query::format_query(s, params).parse().ok())
-                {
+                    .and_then(|s| format::query::format_query(s, params).parse().ok());
+                if let Some(header_value) = header_value {
                     headers.insert(header_name, header_value);
                 }
             }
@@ -110,9 +132,7 @@ impl Connector for HttpConnector {
         let name = config.get_str("name").unwrap_or("http");
         let catalog = config.get_str("catalog").unwrap_or(name);
 
-        let method = config.get_str("method").unwrap_or_default();
-        let base_url = config.get_str("base-url").unwrap_or_default();
-        let connector = HttpConnector::try_new(method, base_url)?;
+        let connector = HttpConnector::try_from_config(config)?;
         let data_source = DataSource::new("http", None, name, catalog, Http(connector));
         Ok(data_source)
     }

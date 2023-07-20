@@ -1,7 +1,6 @@
 use crate::{Group, Resource, User};
 use serde::{Deserialize, Serialize};
 use zino_core::{
-    auth::UserSession,
     datetime::DateTime,
     error::Error,
     extension::JsonObjectExt,
@@ -13,6 +12,9 @@ use zino_derive::{ModelAccessor, Schema};
 
 #[cfg(feature = "tags")]
 use crate::Tag;
+
+#[cfg(feature = "maintainer-id")]
+use zino_core::auth::UserSession;
 
 /// The `message` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
