@@ -473,7 +473,7 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Consumes `self` and returns the custom headers.
-    pub fn finalize(mut self) -> Vec<(&'static str, String)> {
+    pub fn finalize(mut self) -> impl Iterator<Item = (&'static str, String)> {
         let request_id = self.request_id();
         if !request_id.is_nil() {
             self.insert_header("x-request-id", request_id.to_string());
@@ -487,7 +487,7 @@ impl<S: ResponseCode> Response<S> {
         self.record_server_timing("total", None, Some(duration));
         self.insert_header("server-timing", self.server_timing());
 
-        self.headers
+        self.headers.into_iter()
     }
 }
 

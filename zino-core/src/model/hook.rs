@@ -75,7 +75,7 @@ pub trait ModelHooks: Model {
             _ => Cow::Borrowed("the query result has not been recorded"),
         };
         let execution_time_millis = ctx.start_time().elapsed().as_millis();
-        if execution_time_millis > 1000 {
+        if execution_time_millis > 3000 {
             tracing::warn!(
                 query_id,
                 query,
@@ -83,7 +83,7 @@ pub trait ModelHooks: Model {
                 execution_time_millis,
                 "{message}"
             );
-        } else if execution_time_millis > 100 {
+        } else if execution_time_millis > 1000 {
             tracing::info!(
                 query_id,
                 query,

@@ -1,4 +1,4 @@
-use crate::{extension::JsonObjectExt, JsonValue};
+use crate::{extension::JsonObjectExt, JsonValue, Map};
 use csv::{ByteRecord, Writer};
 use std::{
     borrow::Cow,
@@ -83,6 +83,9 @@ pub trait JsonValueExt {
 
     /// Attempts to convert the JSON value to the MsgPack bytes.
     fn to_msgpack(&self, buffer: Vec<u8>) -> Result<Vec<u8>, rmp_serde::encode::Error>;
+
+    /// Converts `self` into a map option.
+    fn into_map_opt(self) -> Option<Map>;
 }
 
 impl JsonValueExt for JsonValue {
@@ -289,5 +292,14 @@ impl JsonValueExt for JsonValue {
     fn to_msgpack(&self, mut buffer: Vec<u8>) -> Result<Vec<u8>, rmp_serde::encode::Error> {
         rmp_serde::encode::write(&mut buffer, &self)?;
         Ok(buffer)
+    }
+
+    #[inline]
+    fn into_map_opt(self) -> Option<Map> {
+        if let JsonValue::Object(map) = self {
+            Some(map)
+        } else {
+            None
+        }
     }
 }

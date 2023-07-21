@@ -3,7 +3,7 @@ path = "/user/new"
 method = "POST"
 description = "Creates a new user"
 
-[endpoints.requestBody]
+[endpoints.body]
 schema = "newUser"
 
 [[endpoints]]
@@ -14,7 +14,7 @@ method = "POST"
 path = "/user/{user_id}/update"
 method = "POST"
 
-[endpoints.requestBody]
+[endpoints.body]
 schema = "userInfo"
 
 [[endpoints]]
@@ -33,7 +33,7 @@ tags = { type = "string", description = "User tags" }
 path = "/user/import"
 method = "POST"
 
-[endpoints.requestBody]
+[endpoints.body]
 schema = "userData"
 
 [[endpoints]]

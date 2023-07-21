@@ -1,8 +1,8 @@
 use crate::{
     application::http_client,
     error::Error,
-    extension::{HeaderMapExt, JsonObjectExt, TomlTableExt, TomlValueExt},
-    format,
+    extension::{HeaderMapExt, JsonObjectExt, JsonValueExt, TomlTableExt, TomlValueExt},
+    format, openapi,
     trace::TraceContext,
     JsonValue, Map,
 };
@@ -34,43 +34,51 @@ pub struct WebHook {
 }
 
 impl WebHook {
-    /// Constructs a new instance, returning an error if it fails.
-    #[inline]
-    pub fn try_new(name: &str, method: &str, base_url: &str) -> Result<Self, Error> {
+    /// Attempts to construct a new instance from the config.
+    pub fn try_new(config: &Table) -> Result<Self, Error> {
+        let name = config.get_str("name").unwrap_or("webhook");
+        let method = if let Some(method) = config.get_str("method") {
+            method.parse()?
+        } else {
+            Method::GET
+        };
+        let base_url = if let Some(base_url) = config.get_str("base-url") {
+            base_url.parse()?
+        } else {
+            return Err(Error::new("the base URL should be specified"));
+        };
+        let query = if let Some(query) = config.get_table("query") {
+            serde_qs::to_string(query)?
+        } else {
+            String::new()
+        };
+        let headers = config
+            .get("headers")
+            .and_then(|v| v.to_json_value().into_map_opt())
+            .unwrap_or_default();
+        let body = if let Some(body) = config.get_table("body") {
+            Some(serde_json::value::to_raw_value(body)?)
+        } else {
+            None
+        };
+        let params = config
+            .get("params")
+            .and_then(|v| v.to_json_value().into_map_opt());
         Ok(Self {
             name: name.to_owned(),
-            method: method.parse()?,
-            base_url: base_url.parse()?,
-            query: String::new(),
-            headers: Map::new(),
-            body: None,
-            params: None,
+            method,
+            base_url,
+            query,
+            headers,
+            body,
+            params,
         })
     }
 
-    /// Attempts to construct a new instance from the config.
+    /// Gets a webhook with the specific name from the OpenAPI docs.
     #[inline]
-    pub fn try_from_config(config: &Table) -> Result<Self, Error> {
-        let name = config.get_str("name").unwrap_or("webhook");
-        let method = config.get_str("method").unwrap_or("GET");
-        let base_url = config
-            .get_str("base-url")
-            .ok_or_else(|| Error::new("the base URL should be specified"))?;
-
-        let mut webhook = Self::try_new(name, method, base_url)?;
-        if let Some(query) = config.get_table("query") {
-            webhook.query = serde_qs::to_string(query)?;
-        }
-        if let Some(headers) = config.get("headers") &&
-            let JsonValue::Object(headers) = headers.to_json_value()
-        {
-            webhook.headers = headers;
-        }
-        if let Some(body) = config.get_table("body") {
-            let raw_value = serde_json::value::to_raw_value(body)?;
-            webhook.body = Some(raw_value);
-        }
-        Ok(webhook)
+    pub fn get_from_openapi(name: &str) -> Option<&'static WebHook> {
+        openapi::get_webhook(name)
     }
 
     /// Inserts a key/value pair into the webhook request headers.
@@ -94,11 +102,7 @@ impl WebHook {
     /// Sets the request params.
     #[inline]
     pub fn set_params(&mut self, params: impl Into<JsonValue>) {
-        self.params = if let JsonValue::Object(params) = params.into() {
-            Some(params)
-        } else {
-            None
-        };
+        self.params = params.into().into_map_opt();
     }
 
     /// Returns the webhook name.

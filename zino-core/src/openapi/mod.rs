@@ -1,6 +1,6 @@
 //! OpenAPI specification and API documentation.
 
-use crate::{application, extension::TomlTableExt, model::Translation, Uuid};
+use crate::{application, extension::TomlTableExt, response::WebHook, Uuid};
 use convert_case::{Case, Casing};
 use serde_json::json;
 use std::{
@@ -23,8 +23,10 @@ use utoipa::openapi::{
 
 mod model;
 mod parser;
+mod webhook;
 
 pub(crate) use model::translate_model_entry;
+pub(crate) use webhook::get_webhook;
 
 /// Returns the default OpenAPI paths.
 pub(crate) fn default_paths() -> Paths {
@@ -167,9 +169,9 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
     let openapi_dir = application::PROJECT_DIR.join("./config/openapi");
     match fs::read_dir(openapi_dir) {
         Ok(entries) => {
-            let mut model_translation_keys = Vec::new();
-            let mut model_translations = HashMap::new();
             let mut openapi_tags = Vec::new();
+            let mut model_definitions = HashMap::new();
+            let mut webhook_definitions = HashMap::new();
             let mut components_builder = ComponentsBuilder::new();
             let files = entries.filter_map(|entry| entry.ok());
             for file in files {
@@ -219,16 +221,18 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
                 if let Some(models) = openapi_config.get_table("models") {
                     for (model_name, model_fields) in models {
                         if let Some(fields) = model_fields.as_table() {
-                            for (field, value) in fields {
-                                let translation = value.as_table().map(Translation::with_config);
-                                if let Some(translation) = translation && translation.is_ready() {
-                                    let model_name = model_name.to_case(Case::Snake);
-                                    let model_key = format!("{model_name}.{field}.translations");
-                                    let key: &'static str = model_key.leak();
-                                    model_translation_keys.push(key);
-                                    model_translations.insert(key, translation);
-                                }
-                            }
+                            let model_name = model_name.to_owned().leak() as &'static str;
+                            model_definitions.insert(model_name, fields.to_owned());
+                        }
+                    }
+                }
+                if let Some(webhooks) = openapi_config.get_table("webhooks") {
+                    for (webhook_name, webhook_request) in webhooks {
+                        if let Some(request) = webhook_request.as_table() &&
+                            let Ok(webhook) = WebHook::try_new(request)
+                        {
+                            let webhook_name = webhook_name.to_owned().leak() as &'static str;
+                            webhook_definitions.insert(webhook_name, webhook);
                         }
                     }
                 }
@@ -240,16 +244,11 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
             if OPENAPI_TAGS.set(openapi_tags).is_err() {
                 panic!("fail to set OpenAPI tags");
             }
-            if !model_translation_keys.is_empty() {
-                if model::MODEL_TRANSLATION_KEYS
-                    .set(model_translation_keys)
-                    .is_err()
-                {
-                    panic!("fail to set model translation keys");
-                }
-                if model::MODEL_TRANSLATIONS.set(model_translations).is_err() {
-                    panic!("fail to set model translations");
-                }
+            if MODEL_DEFINITIONS.set(model_definitions).is_err() {
+                panic!("fail to set model definitions");
+            }
+            if WEBHOOK_DEFINITIONS.set(webhook_definitions).is_err() {
+                panic!("fail to set webhook definitions");
             }
         }
         Err(err) => {
@@ -266,3 +265,9 @@ static OPENAPI_COMPONENTS: OnceLock<Components> = OnceLock::new();
 
 /// OpenAPI tags.
 static OPENAPI_TAGS: OnceLock<Vec<Tag>> = OnceLock::new();
+
+/// Model definitions.
+static MODEL_DEFINITIONS: OnceLock<HashMap<&str, Table>> = OnceLock::new();
+
+/// WebHook definitions.
+static WEBHOOK_DEFINITIONS: OnceLock<HashMap<&str, WebHook>> = OnceLock::new();

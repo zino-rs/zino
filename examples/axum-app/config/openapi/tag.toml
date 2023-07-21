@@ -3,7 +3,7 @@ path = "/tag/new"
 method = "POST"
 description = "Creates a new tag"
 
-[endpoints.requestBody]
+[endpoints.body]
 schema = "newTag"
 
 [[endpoints]]
@@ -14,7 +14,7 @@ method = "POST"
 path = "/tag/{tag_id}/update"
 method = "POST"
 
-[endpoints.requestBody]
+[endpoints.body]
 schema = "tagInfo"
 
 [[endpoints]]

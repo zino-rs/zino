@@ -281,6 +281,14 @@ impl DateTime {
     }
 }
 
+impl Default for DateTime {
+    /// Returns an instance which corresponds to **the current date and time**.
+    #[inline]
+    fn default() -> Self {
+        Self::now()
+    }
+}
+
 impl fmt::Display for DateTime {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -294,14 +302,6 @@ impl Serialize for DateTime {
         let datetime = self.0.with_timezone(&Utc);
         let s = format!("{}", datetime.format("%Y-%m-%d %H:%M:%S%.6f"));
         serializer.serialize_str(&s)
-    }
-}
-
-impl Default for DateTime {
-    /// Returns an instance which corresponds to **the current date and time**.
-    #[inline]
-    fn default() -> Self {
-        Self::now()
     }
 }
 

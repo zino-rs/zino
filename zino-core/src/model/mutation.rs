@@ -17,14 +17,9 @@ impl Mutation {
     /// Creates a new instance.
     #[inline]
     pub fn new(updates: impl Into<JsonValue>) -> Self {
-        let updates = if let JsonValue::Object(map) = updates.into() {
-            map
-        } else {
-            Map::new()
-        };
         Self {
             fields: Vec::new(),
-            updates,
+            updates: updates.into().into_map_opt().unwrap_or_default(),
         }
     }
 

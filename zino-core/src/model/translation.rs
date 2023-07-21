@@ -6,13 +6,13 @@ use crate::{
 use toml::Table;
 
 /// Model field translations.
-#[derive(Debug, Clone)]
-pub struct Translation {
+#[derive(Default, Debug, Clone)]
+pub struct Translation<'a> {
     /// Mappings.
-    mappings: Vec<(String, String)>,
+    mappings: Vec<(&'a str, &'a str)>,
 }
 
-impl Translation {
+impl<'a> Translation<'a> {
     /// Creates a new instance.
     #[inline]
     pub fn new() -> Self {
@@ -21,8 +21,14 @@ impl Translation {
         }
     }
 
+    /// Inserts a mapping.
+    #[inline]
+    pub fn insert_mapping(&mut self, raw_value: &'a str, mapping_value: &'a str) {
+        self.mappings.push((raw_value, mapping_value));
+    }
+
     /// Creates a new instance with the configuration.
-    pub fn with_config(config: &Table) -> Self {
+    pub fn with_config(config: &'a Table) -> Self {
         let Some(translations) = config.get_array("translations") else {
             return Self::default();
         };
@@ -31,9 +37,7 @@ impl Translation {
             .filter_map(|v| v.as_array())
             .filter_map(|v| {
                 if let [v0, v1, ..] = v.as_slice() {
-                    v0.as_str()
-                        .zip(v1.as_str())
-                        .map(|(s0, s1)| (s0.to_owned(), s1.to_owned()))
+                    v0.as_str().zip(v1.as_str())
                 } else {
                     None
                 }
@@ -53,9 +57,9 @@ impl Translation {
                     let Ok(dt) = s.parse::<DateTime>() else {
                         return None;
                     };
-                    (dt.span_between_now() <= duration).then_some(v.as_str().into())
+                    (dt.span_between_now() <= duration).then_some((*v).into())
                 } else {
-                    (k == s).then_some(v.as_str().into())
+                    (k == s).then_some((*v).into())
                 }
             }),
             JsonValue::Array(vec) => {
@@ -73,12 +77,5 @@ impl Translation {
     #[inline]
     pub fn is_ready(&self) -> bool {
         !self.mappings.is_empty()
-    }
-}
-
-impl Default for Translation {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
     }
 }

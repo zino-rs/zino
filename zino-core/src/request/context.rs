@@ -1,6 +1,6 @@
+use crate::Uuid;
 use std::time::Instant;
 use unic_langid::LanguageIdentifier;
-use uuid::Uuid;
 
 /// Data associated with a request-response lifecycle.
 #[derive(Debug, Clone)]

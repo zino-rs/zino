@@ -5,7 +5,7 @@ use std::fmt;
 #[derive(Debug, Clone)]
 pub struct TraceState {
     /// Vendor-specific trace state.
-    states: Vec<(SharedString, SharedString)>,
+    states: Vec<(SharedString, String)>,
 }
 
 impl TraceState {
@@ -23,7 +23,7 @@ impl TraceState {
             .filter_map(|state| {
                 state
                     .split_once('=')
-                    .map(|(key, value)| (key.to_owned().into(), value.to_owned().into()))
+                    .map(|(key, value)| (key.to_owned().into(), value.to_owned()))
             })
             .collect::<Vec<_>>();
         Self { states }
@@ -32,7 +32,7 @@ impl TraceState {
     /// Pushes a key-value pair into the list of states. If an entry with the key already exists,
     /// the value will be updated.
     #[inline]
-    pub fn push(&mut self, key: impl Into<SharedString>, value: impl Into<SharedString>) {
+    pub fn push(&mut self, key: impl Into<SharedString>, value: impl Into<String>) {
         let states = &mut self.states;
         let key = key.into();
         let value = value.into();

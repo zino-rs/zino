@@ -1,26 +1,16 @@
 use crate::{extension::JsonObjectExt, model::Translation, Map};
-use std::{collections::HashMap, sync::OnceLock};
+use convert_case::{Case, Casing};
+use std::{collections::HashMap, sync::LazyLock};
 
 /// Translates the model data.
 pub(crate) fn translate_model_entry(model: &mut Map, model_name: &str) {
-    let Some(translation_keys) = MODEL_TRANSLATION_KEYS.get() else {
-        return;
-    };
-    let Some(translations) = MODEL_TRANSLATIONS.get() else {
-        return;
-    };
-
     let mut data = Map::new();
-    for (field, value) in model.iter() {
-        let key = format!("{model_name}.{field}.translations");
-        if !translation_keys.contains(&key.as_str()) {
-            continue;
-        }
-
-        let Some(translation) = translations.get(key.as_str()) else {
-            continue;
-        };
-        if let Some(text_value) = translation.translate(value) {
+    let model_name_prefix = format!("{model_name}.");
+    for (key, translation) in MODEL_TRANSLATIONS.iter() {
+        if let Some(field) = key.strip_prefix(&model_name_prefix) &&
+            let Some(value) = model.get(field) &&
+            let Some(text_value) = translation.translate(value)
+        {
             let text_field = format!("{field}_text");
             data.upsert(text_field, text_value);
         }
@@ -29,7 +19,19 @@ pub(crate) fn translate_model_entry(model: &mut Map, model_name: &str) {
 }
 
 /// Model translations.
-pub(super) static MODEL_TRANSLATIONS: OnceLock<HashMap<&str, Translation>> = OnceLock::new();
-
-/// Model translation keys.
-pub(super) static MODEL_TRANSLATION_KEYS: OnceLock<Vec<&str>> = OnceLock::new();
+static MODEL_TRANSLATIONS: LazyLock<HashMap<&str, Translation>> = LazyLock::new(|| {
+    let mut model_translations = HashMap::new();
+    if let Some(definitions) = super::MODEL_DEFINITIONS.get() {
+        for (model_name, fields) in definitions.iter() {
+            for (field, value) in fields {
+                let translation = value.as_table().map(Translation::with_config);
+                if let Some(translation) = translation && translation.is_ready() {
+                    let model_name = model_name.to_case(Case::Snake);
+                    let model_key = format!("{model_name}.{field}").leak() as &'static str;
+                    model_translations.insert(model_key, translation);
+                }
+            }
+        }
+    }
+    model_translations
+});

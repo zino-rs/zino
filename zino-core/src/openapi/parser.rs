@@ -73,7 +73,7 @@ pub(super) fn parse_operation(name: &str, path: &str, config: &Table) -> Operati
             operation_builder = operation_builder.parameter(parameter);
         }
     }
-    if let Some(body) = config.get_table("requestBody") {
+    if let Some(body) = config.get_table("body") {
         let request_body = self::parse_request_body(body);
         operation_builder = operation_builder.request_body(Some(request_body));
     }

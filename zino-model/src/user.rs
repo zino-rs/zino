@@ -38,6 +38,8 @@ pub struct User {
     description: String,
 
     // Info fields.
+    #[schema(unique)]
+    union_id: String,
     #[schema(not_null, unique, writeonly)]
     access_key_id: String,
     #[schema(not_null, unique, writeonly)]
@@ -93,6 +95,9 @@ impl Model for User {
         }
         if let Some(name) = data.parse_string("name") {
             self.name = name.into_owned();
+        }
+        if let Some(union_id) = data.parse_string("union_id") {
+            self.union_id = union_id.into_owned();
         }
         if let Some(account) = data.parse_string("account") {
             self.account = account.into_owned();
@@ -179,6 +184,12 @@ impl User {
         }
         self.roles = roles.into_iter().map(|s| s.to_owned()).collect();
         Ok(())
+    }
+
+    /// Returns the `union_id` field.
+    #[inline]
+    pub fn union_id(&self) -> &str {
+        &self.union_id
     }
 
     /// Returns the `access_key_id` field.

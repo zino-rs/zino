@@ -2,7 +2,9 @@ use super::{Connector, DataSource, DataSourceConnector::Http};
 use crate::{
     application::http_client,
     error::Error,
-    extension::{AvroRecordExt, HeaderMapExt, JsonObjectExt, TomlTableExt, TomlValueExt},
+    extension::{
+        AvroRecordExt, HeaderMapExt, JsonObjectExt, JsonValueExt, TomlTableExt, TomlValueExt,
+    },
     format,
     trace::TraceContext,
     JsonValue, Map, Record,
@@ -138,41 +140,28 @@ impl Connector for HttpConnector {
     }
 
     async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, Error> {
-        if let JsonValue::Object(map) = self.fetch_json(query, params).await? &&
-            let Some(total) = map
-                .get_u64("total")
+        let data: JsonValue = self.fetch_json(query, params).await?;
+        let rows_affected = data.into_map_opt().and_then(|map| {
+            map.get_u64("total")
                 .or_else(|| map.get_u64("total_rows"))
                 .or_else(|| map.get_u64("rows_affected"))
-        {
-            Ok(Some(total))
-        } else {
-            Ok(None)
-        }
+        });
+        Ok(rows_affected)
     }
 
     async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, Error> {
         let records = match self.fetch_json(query, params).await? {
             JsonValue::Array(vec) => vec
                 .into_iter()
-                .filter_map(|value| {
-                    if let JsonValue::Object(map) = value {
-                        Some(map.into_avro_record())
-                    } else {
-                        None
-                    }
-                })
+                .filter_map(|value| value.into_map_opt())
+                .map(|m| m.into_avro_record())
                 .collect::<Vec<_>>(),
             JsonValue::Object(mut map) => {
                 if let Some(value) = map.remove("data").or_else(|| map.remove("result")) {
                     if let JsonValue::Array(vec) = value {
                         vec.into_iter()
-                            .filter_map(|value| {
-                                if let JsonValue::Object(map) = value {
-                                    Some(map.into_avro_record())
-                                } else {
-                                    None
-                                }
-                            })
+                            .filter_map(|value| value.into_map_opt())
+                            .map(|m| m.into_avro_record())
                             .collect::<Vec<_>>()
                     } else {
                         vec![Record::from_entry("data", value)]
@@ -194,25 +183,13 @@ impl Connector for HttpConnector {
         let data = match self.fetch_json(query, params).await? {
             JsonValue::Array(vec) => vec
                 .into_iter()
-                .filter_map(|value| {
-                    if let JsonValue::Object(map) = value {
-                        Some(map)
-                    } else {
-                        None
-                    }
-                })
+                .filter_map(|value| value.into_map_opt())
                 .collect::<Vec<_>>(),
             JsonValue::Object(mut map) => {
                 if let Some(value) = map.remove("data").or_else(|| map.remove("result")) {
                     if let JsonValue::Array(vec) = value {
                         vec.into_iter()
-                            .filter_map(|value| {
-                                if let JsonValue::Object(map) = value {
-                                    Some(map)
-                                } else {
-                                    None
-                                }
-                            })
+                            .filter_map(|value| value.into_map_opt())
                             .collect::<Vec<_>>()
                     } else {
                         vec![Map::from_entry("data", value)]
