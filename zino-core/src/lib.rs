@@ -22,7 +22,6 @@
 
 mod crypto;
 mod encoding;
-mod format;
 mod openapi;
 
 #[cfg(feature = "accessor")]
@@ -44,6 +43,7 @@ pub mod channel;
 pub mod datetime;
 pub mod error;
 pub mod extension;
+pub mod format;
 pub mod i18n;
 pub mod model;
 pub mod request;

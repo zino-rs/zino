@@ -9,7 +9,7 @@ use std::{
 
 /// Extension trait for [`serde_json::Value`].
 pub trait JsonValueExt {
-    /// Returns `true` if the JSON value is ignorable.
+    /// Returns `true` if the JSON value can be ignorable.
     fn is_ignorable(&self) -> bool;
 
     /// If the `Value` is an integer, represent it as `u8` if possible.
@@ -35,6 +35,14 @@ pub trait JsonValueExt {
     /// If the `Value` is a float, represent it as `f32` if possible.
     /// Returns `None` otherwise.
     fn as_f32(&self) -> Option<f32>;
+
+    /// If the `Value` is an array of strings, returns the associated vector.
+    /// Returns `None` otherwise.
+    fn as_str_array(&self) -> Option<Vec<&str>>;
+
+    /// If the `Value` is an array of maps, returns the associated vector.
+    /// Returns `None` otherwise.
+    fn as_map_array(&self) -> Option<Vec<&Map>>;
 
     /// Parses the JSON value as `bool`.
     fn parse_bool(&self) -> Option<Result<bool, ParseBoolError>>;
@@ -87,6 +95,9 @@ pub trait JsonValueExt {
     /// Attempts to convert the JSON value to the MsgPack bytes.
     fn to_msgpack(&self, buffer: Vec<u8>) -> Result<Vec<u8>, rmp_serde::encode::Error>;
 
+    /// Converts `self` into a map array.
+    fn into_map_array(self) -> Vec<Map>;
+
     /// Converts `self` into a map option.
     fn into_map_opt(self) -> Option<Map>;
 }
@@ -108,24 +119,45 @@ impl JsonValueExt for JsonValue {
         self.as_u64().and_then(|i| u8::try_from(i).ok())
     }
 
+    #[inline]
     fn as_u16(&self) -> Option<u16> {
         self.as_u64().and_then(|i| u16::try_from(i).ok())
     }
 
+    #[inline]
     fn as_u32(&self) -> Option<u32> {
         self.as_u64().and_then(|i| u32::try_from(i).ok())
     }
 
+    #[inline]
     fn as_usize(&self) -> Option<usize> {
         self.as_u64().and_then(|i| usize::try_from(i).ok())
     }
 
+    #[inline]
     fn as_i32(&self) -> Option<i32> {
         self.as_i64().and_then(|i| i32::try_from(i).ok())
     }
 
+    #[inline]
     fn as_f32(&self) -> Option<f32> {
         self.as_f64().map(|f| f as f32)
+    }
+
+    #[inline]
+    fn as_str_array(&self) -> Option<Vec<&str>> {
+        self.as_array()
+            .map(|values| values.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
+    }
+
+    #[inline]
+    fn as_map_array(&self) -> Option<Vec<&Map>> {
+        self.as_array().map(|values| {
+            values
+                .iter()
+                .filter_map(|v| v.as_object())
+                .collect::<Vec<_>>()
+        })
     }
 
     fn parse_bool(&self) -> Option<Result<bool, ParseBoolError>> {
@@ -296,6 +328,18 @@ impl JsonValueExt for JsonValue {
     fn to_msgpack(&self, mut buffer: Vec<u8>) -> Result<Vec<u8>, rmp_serde::encode::Error> {
         rmp_serde::encode::write(&mut buffer, &self)?;
         Ok(buffer)
+    }
+
+    #[inline]
+    fn into_map_array(self) -> Vec<Map> {
+        match self {
+            JsonValue::Array(vec) => vec
+                .into_iter()
+                .filter_map(|v| v.into_map_opt())
+                .collect::<Vec<_>>(),
+            JsonValue::Object(map) => vec![map],
+            _ => vec![],
+        }
     }
 
     #[inline]

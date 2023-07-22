@@ -49,7 +49,7 @@ impl<'a> Translation<'a> {
     /// Translates the value.
     pub fn translate(&self, value: &JsonValue) -> Option<JsonValue> {
         match value {
-            JsonValue::String(s) => self.mappings.iter().find_map(|(k, v)| {
+            JsonValue::String(s) if !s.is_empty() => self.mappings.iter().find_map(|(k, v)| {
                 if let Some(duration) = k.strip_prefix("$span:") {
                     let Ok(duration) = datetime::parse_duration(duration) else {
                         return None;
@@ -62,7 +62,7 @@ impl<'a> Translation<'a> {
                     (k == s).then_some((*v).into())
                 }
             }),
-            JsonValue::Array(vec) => {
+            JsonValue::Array(vec) if !vec.is_empty() => {
                 let values = vec
                     .iter()
                     .map(|v| self.translate(v).unwrap_or_default())

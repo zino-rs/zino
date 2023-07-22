@@ -39,6 +39,7 @@ use zino_core::{
     database::{ModelAccessor, ModelHelper},
     error::Error,
     extension::{JsonObjectExt, JsonValueExt},
+    format::PdfDocument,
     model::{ModelHooks, Query},
     request::RequestContext,
     response::{ExtractRejection, Rejection, StatusCode},
@@ -313,6 +314,22 @@ where
                     } else {
                         Ok(Vec::new())
                     }
+                });
+            }
+            "pdf" => {
+                res.set_content_type("application/pdf");
+                res.set_data_transformer(|data| {
+                    let model_name = M::model_name();
+                    PdfDocument::try_new(model_name, None)
+                        .and_then(|mut doc| {
+                            let data = data
+                                .pointer("/entries")
+                                .and_then(|v| v.as_map_array())
+                                .unwrap_or_default();
+                            doc.add_data_table(data, ["name", "visibility", "status", "version"]);
+                            doc.save_to_bytes()
+                        })
+                        .map_err(Error::from)
                 });
             }
             _ => {
