@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 /// Role-based user sessions.
 #[derive(Debug, Clone)]
-pub struct UserSession<U, R = String> {
+pub struct UserSession<U, R = String, T = U> {
     /// User ID.
     user_id: U,
     /// Session ID.
@@ -14,9 +14,11 @@ pub struct UserSession<U, R = String> {
     access_key_id: Option<AccessKeyId>,
     /// A list of user roles.
     roles: Vec<R>,
+    /// Tenant ID.
+    tenant_id: Option<T>,
 }
 
-impl<U, R> UserSession<U, R> {
+impl<U, R, T> UserSession<U, R, T> {
     /// Creates a new instance with empty roles.
     #[inline]
     pub fn new(user_id: U, session_id: impl Into<Option<SessionId>>) -> Self {
@@ -25,6 +27,7 @@ impl<U, R> UserSession<U, R> {
             session_id: session_id.into(),
             access_key_id: None,
             roles: Vec::new(),
+            tenant_id: None,
         }
     }
 
@@ -50,10 +53,22 @@ impl<U, R> UserSession<U, R> {
         self.roles = roles.into();
     }
 
+    /// Sets the tenant ID.
+    #[inline]
+    pub fn set_tenant_id(&mut self, tenant_id: T) {
+        self.tenant_id = Some(tenant_id);
+    }
+
     /// Returns the user ID.
     #[inline]
     pub fn user_id(&self) -> &U {
         &self.user_id
+    }
+
+    /// Returns the tenant ID.
+    #[inline]
+    pub fn tenant_id(&self) -> Option<&T> {
+        self.tenant_id.as_ref()
     }
 
     /// Returns the session ID.
@@ -75,27 +90,41 @@ impl<U, R> UserSession<U, R> {
     }
 }
 
-impl<U, R> UserSession<U, R>
+impl<U, R, T> UserSession<U, R, T>
 where
     U: FromStr,
     R: FromStr,
+    T: FromStr,
     <U as FromStr>::Err: std::error::Error,
 {
     /// Attempts to construct an instance from a `JwtClaims`.
     pub fn try_from_jwt_claims(claims: JwtClaims) -> Result<Self, Error> {
+        let data = claims.data();
         let user_id = claims
             .subject()
+            .map(|s| s.into())
+            .or_else(|| data.parse_string("uid"))
             .ok_or_else(|| Error::new("the subject of a JWT token shoud be specified"))?
             .parse()?;
         let mut user_session = Self::new(user_id, None);
-        if let Some(roles) = claims.data().parse_array("roles") {
+        if let Some(roles) = data
+            .parse_array("roles")
+            .or_else(|| data.parse_array("role"))
+        {
             user_session.set_roles(roles);
+        }
+        if let Some(tenant_id) = data
+            .parse_string("tenant_id")
+            .or_else(|| data.parse_string("tid"))
+            .and_then(|s| s.parse().ok())
+        {
+            user_session.set_tenant_id(tenant_id);
         }
         Ok(user_session)
     }
 }
 
-impl<U> UserSession<U, String> {
+impl<U, T> UserSession<U, String, T> {
     /// Returns `true` if the user has a role of `superuser`.
     #[inline]
     pub fn is_superuser(&self) -> bool {

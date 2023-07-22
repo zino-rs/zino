@@ -324,8 +324,8 @@ impl<S: ResponseCode> Response<S> {
 
     /// Inserts a custom header.
     #[inline]
-    pub fn insert_header(&mut self, name: &'static str, value: impl Into<String>) {
-        self.headers.push((name, value.into()));
+    pub fn insert_header(&mut self, name: &'static str, value: impl ToString) {
+        self.headers.push((name, value.to_string()));
     }
 
     /// Gets a custome header with the given name.
@@ -525,7 +525,7 @@ impl<S: ResponseCode> From<Response<S>> for FullResponse {
                 .unwrap_or_default(),
         };
 
-        for (key, value) in response.finalize().into_iter() {
+        for (key, value) in response.finalize() {
             if let Ok(header_value) = HeaderValue::try_from(value) {
                 res.headers_mut().insert(key, header_value);
             }

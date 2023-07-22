@@ -21,12 +21,6 @@ impl<'a> Translation<'a> {
         }
     }
 
-    /// Inserts a mapping.
-    #[inline]
-    pub fn insert_mapping(&mut self, raw_value: &'a str, mapping_value: &'a str) {
-        self.mappings.push((raw_value, mapping_value));
-    }
-
     /// Creates a new instance with the configuration.
     pub fn with_config(config: &'a Table) -> Self {
         let Some(translations) = config.get_array("translations") else {
@@ -44,6 +38,12 @@ impl<'a> Translation<'a> {
             })
             .collect::<Vec<_>>();
         Self { mappings }
+    }
+
+    /// Inserts a mapping.
+    #[inline]
+    pub fn insert_mapping(&mut self, raw_value: &'a str, mapping_value: &'a str) {
+        self.mappings.push((raw_value, mapping_value));
     }
 
     /// Translates the value.

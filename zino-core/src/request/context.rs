@@ -34,8 +34,8 @@ impl Context {
 
     /// Sets the instance.
     #[inline]
-    pub fn set_instance(&mut self, instance: impl Into<String>) {
-        self.instance = instance.into();
+    pub fn set_instance(&mut self, instance: impl ToString) {
+        self.instance = instance.to_string();
     }
 
     /// Sets the trace ID.

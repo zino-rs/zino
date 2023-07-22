@@ -34,14 +34,14 @@ impl QueryContext {
 
     /// Sets the query.
     #[inline]
-    pub fn set_query(&mut self, query: impl Into<String>) {
-        self.query = query.into();
+    pub fn set_query(&mut self, query: impl ToString) {
+        self.query = query.to_string();
     }
 
     /// Adds an argument to the list of query arguments.
     #[inline]
-    pub fn add_argument(&mut self, value: impl Into<String>) {
-        self.arguments.push(value.into());
+    pub fn add_argument(&mut self, value: impl ToString) {
+        self.arguments.push(value.to_string());
     }
 
     /// Appends the query arguments.

@@ -51,12 +51,11 @@ impl fmt::Display for TimingMetric {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let name = self.name();
         if let Some(duration) = self.duration() {
-            let duration_millis = format!("{:.3}", duration.as_secs_f64() * 1000.0);
-            let duration = duration_millis.trim_end_matches(['.', '0']);
+            let duration_millis = (duration.as_micros() as f64) / 1000.0;
             if let Some(description) = self.description() {
-                write!(f, "{name};desc={description};dur={duration}")
+                write!(f, "{name};desc={description};dur={duration_millis}")
             } else {
-                write!(f, "{name};dur={duration}")
+                write!(f, "{name};dur={duration_millis}")
             }
         } else if let Some(description) = self.description() {
             write!(f, "{name};desc={description}")

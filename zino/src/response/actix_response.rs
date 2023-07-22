@@ -33,7 +33,7 @@ impl Responder for ActixResponse<StatusCode> {
         }
 
         let mut res = build_http_response(&response);
-        for (key, value) in response.finalize().into_iter() {
+        for (key, value) in response.finalize() {
             if let Ok(header_value) = HeaderValue::try_from(value) {
                 let header_name = HeaderName::from_static(key);
                 res.headers_mut().insert(header_name, header_value);

@@ -44,7 +44,7 @@ impl HttpConnector {
 
     /// Attempts to construct a new instance from the config.
     #[inline]
-    pub fn try_from_config(config: &Table) -> Result<Self, Error> {
+    pub fn try_with_config(config: &Table) -> Result<Self, Error> {
         let method = config.get_str("method").unwrap_or("GET");
         let base_url = config
             .get_str("base-url")
@@ -134,7 +134,7 @@ impl Connector for HttpConnector {
         let name = config.get_str("name").unwrap_or("http");
         let catalog = config.get_str("catalog").unwrap_or(name);
 
-        let connector = HttpConnector::try_from_config(config)?;
+        let connector = HttpConnector::try_with_config(config)?;
         let data_source = DataSource::new("http", None, name, catalog, Http(connector));
         Ok(data_source)
     }

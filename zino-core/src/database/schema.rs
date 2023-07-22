@@ -173,9 +173,9 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             for col in columns {
                 if let Some(index_type) = col.index_type() {
                     let column_name = col.name();
-                    if index_type == "fulltext" || index_type == "text" {
+                    if matches!(index_type, "fulltext" | "text") {
                         text_search_columns.push(column_name);
-                    } else if index_type == "unique" || index_type == "spatial" {
+                    } else if matches!(index_type, "unique" | "spatial") {
                         let index_type = index_type.to_uppercase();
                         let sql = format!(
                             "CREATE {index_type} INDEX {table_name}_{column_name}_index \
@@ -186,7 +186,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                             .await?
                             .rows_affected()
                             .max(rows);
-                    } else if index_type == "btree" || index_type == "hash" {
+                    } else if matches!(index_type, "btree" | "hash") {
                         let index_type = index_type.to_uppercase();
                         let sql = format!(
                             "CREATE INDEX {table_name}_{column_name}_index \

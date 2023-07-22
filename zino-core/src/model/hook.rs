@@ -74,7 +74,8 @@ pub trait ModelHooks: Model {
             }
             _ => Cow::Borrowed("the query result has not been recorded"),
         };
-        let execution_time_millis = ctx.start_time().elapsed().as_millis();
+        let execution_time = ctx.start_time().elapsed();
+        let execution_time_millis = execution_time.as_millis();
         if execution_time_millis > 3000 {
             tracing::warn!(
                 query_id,
@@ -96,7 +97,7 @@ pub trait ModelHooks: Model {
                 query_id,
                 query,
                 arguments,
-                execution_time_millis,
+                execution_time_micros = execution_time.as_micros(),
                 "{message}"
             );
         }
@@ -248,6 +249,15 @@ pub trait ModelHooks: Model {
             ctx.record_error("fail to update the models in the table");
         }
         ctx.emit_metrics("mutation");
+        Ok(())
+    }
+
+    /// A hook running before listing the models with a `Query` from the table.
+    #[inline]
+    async fn before_list(
+        _query: &mut Query,
+        _extension: Option<&Self::Extension>,
+    ) -> Result<(), Error> {
         Ok(())
     }
 

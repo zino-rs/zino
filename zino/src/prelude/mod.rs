@@ -5,7 +5,7 @@
 #[doc(no_inline)]
 pub use zino_core::{
     application::Application,
-    auth::{AccessKeyId, JwtClaims, UserSession},
+    auth::{AccessKeyId, AuthorizationProvider, JwtClaims, UserSession},
     datetime::DateTime,
     error::Error,
     extension::{JsonObjectExt, TomlTableExt},

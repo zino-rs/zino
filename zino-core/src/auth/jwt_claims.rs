@@ -46,6 +46,15 @@ impl<T> JwtClaims<T> {
             .unwrap_or_default()
     }
 
+    /// Returns the time when the claims will expire in.
+    #[inline]
+    pub fn expires_in(&self) -> Duration {
+        self.0
+            .expires_at
+            .map(|d| Duration::from_micros(d.as_micros()))
+            .unwrap_or_default()
+    }
+
     /// Returns the subject.
     #[inline]
     pub fn subject(&self) -> Option<&str> {

@@ -32,7 +32,7 @@ edition = []
 regex = "1.9.1"
 
 [dependencies.serde]
-version = "1.0.171"
+version = "1.0.174"
 features = ["derive"]
 
 [dependencies.zino-core]

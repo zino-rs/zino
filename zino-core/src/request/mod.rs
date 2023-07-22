@@ -409,9 +409,7 @@ pub trait RequestContext {
         if let Some(date) = self.get_header("date") {
             match DateTime::parse_utc_str(date) {
                 Ok(date) => {
-                    let current = DateTime::now();
-                    let max_tolerance = Duration::from_secs(900);
-                    if date >= current - max_tolerance && date <= current + max_tolerance {
+                    if date.span_between_now() <= crate::auth::default_time_tolerance() {
                         authentication.set_date_header("date", date);
                     } else {
                         validation.record("date", "untrusted date");

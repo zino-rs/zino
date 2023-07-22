@@ -2,7 +2,7 @@ use super::{query::QueryExt, DatabaseDriver, DatabaseRow};
 use crate::{
     datetime::DateTime,
     error::Error,
-    extension::{AvroRecordExt, JsonObjectExt},
+    extension::{AvroRecordExt, JsonObjectExt, JsonValueExt},
     model::{Column, DecodeRow, EncodeColumn, Query},
     AvroValue, JsonValue, Map, Record, SharedString, Uuid,
 };
@@ -394,7 +394,9 @@ impl DecodeRow<DatabaseRow> for Map {
                     _ => JsonValue::Null,
                 }
             };
-            map.insert(field.to_owned(), value);
+            if !value.is_ignorable() {
+                map.insert(field.to_owned(), value);
+            }
         }
         Ok(map)
     }

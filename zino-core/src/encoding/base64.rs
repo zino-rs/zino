@@ -10,7 +10,7 @@ pub(crate) fn encode(data: impl AsRef<[u8]>) -> String {
 /// Decodes the base64-encoded data as `Vec<u8>`.
 #[inline]
 pub(crate) fn decode(data: impl AsRef<[u8]>) -> Result<Vec<u8>, Error> {
-    base64_simd::forgiving_decode_to_vec(data.as_ref())
+    STANDARD_NO_PAD.decode_to_vec(data.as_ref())
 }
 
 /// Encodes the data as base64-encoded data URL string.

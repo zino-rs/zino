@@ -2,7 +2,7 @@ use serde_json::json;
 use zino::prelude::*;
 use zino_model::User;
 
-pub async fn generate_token(body: Map) -> Result<(Uuid, String, String), Error> {
+pub async fn generate_token(body: Map) -> Result<(Uuid, Map), Error> {
     let account = body
         .get_str("account")
         .ok_or_else(|| Error::new("403 Forbidden: the user `account` shoud be specified"))?;
@@ -23,16 +23,17 @@ pub async fn generate_token(body: Map) -> Result<(Uuid, String, String), Error> 
         let mut claims = JwtClaims::new(user_id);
         claims.add_data_entry("roles", user.parse_str_array("roles"));
 
-        let user_id = user_id.parse()?;
-        let refresh_token = claims.refresh_token()?;
-        let access_token = claims.access_token()?;
-        Ok((user_id, access_token, refresh_token))
+        let mut data = Map::new();
+        data.upsert("expires_in", claims.expires_in().as_secs());
+        data.upsert("refresh_token", claims.refresh_token()?);
+        data.upsert("access_token", claims.access_token()?);
+        Ok((user_id.parse()?, data))
     } else {
         Err(Error::new("fail to generate access token"))
     }
 }
 
-pub async fn refresh_token(claims: &JwtClaims) -> Result<String, Error> {
+pub async fn refresh_token(claims: &JwtClaims) -> Result<Map, Error> {
     if !claims.data().is_empty() {
         return Err(Error::new("the JWT token is not a refresh token"));
     }
@@ -52,5 +53,9 @@ pub async fn refresh_token(claims: &JwtClaims) -> Result<String, Error> {
     })?;
     let mut claims = JwtClaims::new(user_id);
     claims.add_data_entry("roles", user.parse_str_array("roles"));
-    claims.access_token()
+
+    let mut data = Map::new();
+    data.upsert("expires_in", claims.expires_in().as_secs());
+    data.upsert("access_token", claims.access_token()?);
+    Ok(data)
 }

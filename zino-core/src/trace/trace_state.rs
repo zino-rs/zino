@@ -32,10 +32,10 @@ impl TraceState {
     /// Pushes a key-value pair into the list of states. If an entry with the key already exists,
     /// the value will be updated.
     #[inline]
-    pub fn push(&mut self, key: impl Into<SharedString>, value: impl Into<String>) {
+    pub fn push(&mut self, key: impl Into<SharedString>, value: impl ToString) {
         let states = &mut self.states;
         let key = key.into();
-        let value = value.into();
+        let value = value.to_string();
         if let Some(index) = states.iter().position(|(k, _)| k.as_ref() == key.as_ref()) {
             states[index] = (key, value);
         } else {

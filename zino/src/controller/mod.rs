@@ -117,8 +117,12 @@ where
 
     async fn list(req: Self::Request) -> Self::Result {
         let mut query = Self::default_list_query();
-        let mut res = req.query_validation(&mut query)?;
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
+        Self::before_list(&mut query, extension.as_ref())
+            .await
+            .extract(&req)?;
+
+        let mut res = req.query_validation(&mut query)?;
         let models = if query.populate_enabled() {
             let mut models = Self::fetch(&mut query).await.extract(&req)?;
             for model in models.iter_mut() {
@@ -260,9 +264,13 @@ where
 
     async fn export(req: Self::Request) -> Self::Result {
         let mut query = Self::default_query();
+        let extension = req.get_data::<<Self as ModelHooks>::Extension>();
+        Self::before_list(&mut query, extension.as_ref())
+            .await
+            .extract(&req)?;
+
         let mut res = req.query_validation(&mut query)?;
         let mut models = Self::find(&mut query).await.extract(&req)?;
-        let extension = req.get_data::<<Self as ModelHooks>::Extension>();
         let translate_enabled = query.translate_enabled();
         for model in models.iter_mut() {
             Self::after_decode(model).await.extract(&req)?;

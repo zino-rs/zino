@@ -38,12 +38,12 @@ orm = ["zino-core/orm"]
 view = ["zino-core/view"]
 
 [dependencies]
-async-trait = "0.1.71"
+async-trait = "0.1.72"
 cfg-if = "1.0"
 futures = "0.3.28"
 hyper = "0.14.27"
 parking_lot = "0.12.1"
-serde = "1.0.171"
+serde = "1.0.174"
 serde_json = "1.0.103"
 toml = "0.7.6"
 tracing = "0.1.37"
@@ -109,7 +109,7 @@ version = "0.8.0"
 features= ["signed"]
 
 [dependencies.tower-http]
-version = "0.4.1"
+version = "0.4.3"
 optional = true
 features = [
     "add-extension",
