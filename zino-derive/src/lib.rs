@@ -822,18 +822,19 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                     .await?
                     .ok_or_else(|| ZinoError::new(format!("404 Not Found: cannot find the model `{id}`")))?;
                 Self::after_decode(&mut model).await?;
+                Self::translate_model(&mut model);
             });
-            for (model, fields) in model_references.into_iter() {
+            for (model, ref_fields) in model_references.into_iter() {
                 let model_ident = format_ident!("{}", model);
                 let populated_query = quote! {
                     let mut query = #model_ident::default_snapshot_query();
                     query.add_filter("translate", translate_enabled);
-                    #model_ident::populate(&mut query, &mut models, [#(#fields),*]).await?;
+                    #model_ident::populate(&mut query, &mut models, [#(#ref_fields),*]).await?;
                 };
                 let populated_one_query = quote! {
                     let mut query = #model_ident::default_query();
                     query.add_filter("translate", true);
-                    #model_ident::populate_one(&mut query, &mut model, [#(#fields),*]).await?;
+                    #model_ident::populate_one(&mut query, &mut model, [#(#ref_fields),*]).await?;
                 };
                 populated_queries.push(populated_query);
                 populated_one_queries.push(populated_one_query);
