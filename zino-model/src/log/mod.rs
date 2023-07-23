@@ -1,7 +1,7 @@
-use crate::User;
+//! The `log` model and related services.
+
 use serde::{Deserialize, Serialize};
 use zino_core::{
-    auth::AccessKeyId,
     datetime::DateTime,
     error::Error,
     extension::JsonObjectExt,
@@ -11,24 +11,24 @@ use zino_core::{
 };
 use zino_derive::{ModelAccessor, Schema};
 
-#[cfg(feature = "tags")]
-use crate::Tag;
+#[cfg(any(feature = "owner-id", feature = "maintainer-id"))]
+use crate::user::User;
 
 #[cfg(feature = "maintainer-id")]
 use zino_core::auth::UserSession;
 
-/// The `application` model.
+/// The `log` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
-pub struct Application {
+pub struct Log {
     // Basic fields.
     #[schema(readonly)]
     id: Uuid,
     #[schema(not_null, index_type = "text")]
     name: String,
     #[cfg(feature = "namespace")]
-    #[schema(default_value = "Application::model_namespace", index_type = "hash")]
+    #[schema(default_value = "Log::model_namespace", index_type = "hash")]
     namespace: String,
     #[cfg(feature = "visibility")]
     #[schema(default_value = "Internal")]
@@ -39,15 +39,24 @@ pub struct Application {
     description: String,
 
     // Info fields.
-    #[schema(reference = "User")]
-    manager_id: Uuid, // user.id
-    #[schema(not_null, unique, writeonly)]
-    access_key_id: String,
-    #[cfg(feature = "tags")]
-    #[schema(reference = "Tag", index_type = "gin")]
-    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:application"
+    #[schema(not_null, readonly)]
+    service: String,
+    #[schema(readonly)]
+    server_host: String,
+    #[schema(readonly)]
+    client_ip: String,
+    topic: String,
+    #[schema(readonly)]
+    level: String,
+    #[schema(readonly, index_type = "text")]
+    message: String,
+    #[schema(readonly)]
+    source: String,
+    #[schema(readonly, index_type = "btree")]
+    recorded_at: DateTime,
 
     // Extensions.
+    #[schema(readonly)]
     content: Map,
     extra: Map,
 
@@ -67,12 +76,11 @@ pub struct Application {
     edition: u32,
 }
 
-impl Model for Application {
+impl Model for Log {
     #[inline]
     fn new() -> Self {
         Self {
             id: Uuid::new_v4(),
-            access_key_id: AccessKeyId::new().to_string(),
             ..Self::default()
         }
     }
@@ -90,16 +98,6 @@ impl Model for Application {
         }
         if let Some(description) = data.parse_string("description") {
             self.description = description.into_owned();
-        }
-        if let Some(result) = data.parse_uuid("manager_id") {
-            match result {
-                Ok(manager_id) => self.manager_id = manager_id,
-                Err(err) => validation.record_fail("manager_id", err),
-            }
-        }
-        #[cfg(feature = "tags")]
-        if let Some(tags) = data.parse_array("tags") {
-            self.tags = tags;
         }
         #[cfg(feature = "owner-id")]
         if let Some(result) = data.parse_uuid("owner_id") {
@@ -119,7 +117,7 @@ impl Model for Application {
     }
 }
 
-impl ModelHooks for Application {
+impl ModelHooks for Log {
     #[cfg(feature = "maintainer-id")]
     type Extension = UserSession<Uuid, String>;
 
@@ -140,13 +138,5 @@ impl ModelHooks for Application {
             data.upsert("maintainer_id", session.user_id().to_string());
         }
         Ok(())
-    }
-}
-
-impl Application {
-    /// Sets the `access_key_id`.
-    #[inline]
-    pub fn set_access_key_id(&mut self, access_key_id: AccessKeyId) {
-        self.access_key_id = access_key_id.to_string();
     }
 }

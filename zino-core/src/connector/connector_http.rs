@@ -5,7 +5,7 @@ use crate::{
     extension::{
         AvroRecordExt, HeaderMapExt, JsonObjectExt, JsonValueExt, TomlTableExt, TomlValueExt,
     },
-    format,
+    helper,
     trace::TraceContext,
     JsonValue, Map, Record,
 };
@@ -79,10 +79,10 @@ impl HttpConnector {
         let mut url = self.base_url.clone();
         url.set_query(Some(query));
 
-        let resource = format::query::format_query(url.as_str(), params);
+        let resource = helper::format_query(url.as_str(), params);
         let mut options = Map::from_entry("method", self.method.as_str());
         if let Some(body) = self.body.as_deref().map(|v| v.get()) {
-            options.upsert("body", format::query::format_query(body, params));
+            options.upsert("body", helper::format_query(body, params));
         }
 
         let mut headers = HeaderMap::new();
@@ -90,7 +90,7 @@ impl HttpConnector {
             if let Ok(header_name) = HeaderName::try_from(key) {
                 let header_value = value
                     .as_str()
-                    .and_then(|s| format::query::format_query(s, params).parse().ok());
+                    .and_then(|s| helper::format_query(s, params).parse().ok());
                 if let Some(header_value) = header_value {
                     headers.insert(header_name, header_value);
                 }

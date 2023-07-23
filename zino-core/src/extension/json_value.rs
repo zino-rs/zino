@@ -1,4 +1,4 @@
-use crate::{extension::JsonObjectExt, JsonValue, Map};
+use crate::{extension::JsonObjectExt, helper, JsonValue, Map};
 use csv::{ByteRecord, Writer};
 use std::{
     borrow::Cow,
@@ -234,7 +234,7 @@ impl JsonValueExt for JsonValue {
 
     fn parse_array<T: FromStr>(&self) -> Option<Vec<T>> {
         let values = match &self {
-            JsonValue::String(s) => Some(crate::format::parse_str_array(s)),
+            JsonValue::String(s) => Some(helper::parse_str_array(s)),
             JsonValue::Array(vec) => Some(vec.iter().filter_map(|v| v.as_str()).collect()),
             _ => None,
         };
@@ -247,7 +247,7 @@ impl JsonValueExt for JsonValue {
 
     fn parse_str_array(&self) -> Option<Vec<&str>> {
         let values = match &self {
-            JsonValue::String(s) => Some(crate::format::parse_str_array(s)),
+            JsonValue::String(s) => Some(helper::parse_str_array(s)),
             JsonValue::Array(vec) => Some(vec.iter().filter_map(|v| v.as_str()).collect()),
             _ => None,
         };

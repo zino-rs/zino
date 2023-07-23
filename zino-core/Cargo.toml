@@ -42,10 +42,11 @@ all-connectors = [
     "connector-postgres",
     "connector-sqlite",
 ]
+all-chatbots = ["chatbot", "chatbot-openai"]
+all-formats = ["format", "format-pdf"]
 cache = ["dep:lru"]
 chatbot = []
 chatbot-openai = ["dep:async-openai", "chatbot"]
-all-chatbots = ["chatbot", "chatbot-openai"]
 connector = ["connector-http"]
 connector-arrow = ["dep:datafusion", "connector"]
 connector-http = ["connector"]
@@ -53,10 +54,13 @@ connector-mysql = ["connector", "sqlx", "sqlx/mysql"]
 connector-postgres = ["connector", "sqlx", "sqlx/postgres"]
 connector-sqlite = ["connector", "sqlx", "sqlx/sqlite"]
 default = ["runtime-tokio"]
+format = []
+format-pdf = ["format", "dep:printpdf"]
 full = [
     "all-accessors",
     "all-chatbots",
     "all-connectors",
+    "all-formats",
     "cache",
     "orm",
     "view",
@@ -95,7 +99,6 @@ metrics = "0.21.0"
 metrics-exporter-prometheus = "0.12.1"
 multer = "2.1.0"
 parking_lot = "0.12.1"
-printpdf = "0.5.3"
 rand = "0.8.5"
 regex = "1.9.1"
 reqwest-middleware = "0.2.2"
@@ -140,6 +143,10 @@ features = ["debug", "loader"]
 version = "0.38.1"
 optional = true
 features = ["layers-all"]
+
+[dependencies.printpdf]
+version = "0.5.3"
+optional = true
 
 [dependencies.reqwest]
 version = "0.11.18"

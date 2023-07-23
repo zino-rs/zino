@@ -891,7 +891,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                 Ok(validation)
             }
 
-            async fn fetch(query: &mut Query) -> Result<Vec<ZinoMap>, ZinoError> {
+            async fn fetch(query: &Query) -> Result<Vec<ZinoMap>, ZinoError> {
                 let translate_enabled = query.translate_enabled();
                 #(#populated_queries)*
             }

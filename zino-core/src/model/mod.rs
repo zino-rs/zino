@@ -2,9 +2,6 @@
 use crate::{request::Validation, AvroValue, JsonValue, Map, Record};
 use serde::{de::DeserializeOwned, Serialize};
 
-#[doc(no_inline)]
-pub use apache_avro::schema;
-
 mod column;
 mod context;
 mod hook;
@@ -13,6 +10,9 @@ mod query;
 mod reference;
 mod row;
 mod translation;
+
+#[doc(no_inline)]
+pub use apache_avro::schema;
 
 pub use column::{Column, EncodeColumn};
 pub use context::QueryContext;

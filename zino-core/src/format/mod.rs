@@ -1,12 +1,7 @@
-//! Utilities for formatting and parsing.
+//! Wrappers for manipulating common file formats.
 
-mod mask_text;
+#[cfg(feature = "format-pdf")]
 mod pdf_document;
-mod str_array;
 
-pub(crate) mod query;
-
-pub(crate) use mask_text::mask_text;
-pub(crate) use str_array::parse_str_array;
-
+#[cfg(feature = "format-pdf")]
 pub use pdf_document::PdfDocument;

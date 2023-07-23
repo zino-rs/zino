@@ -51,7 +51,11 @@ impl<T> JwtClaims<T> {
     pub fn expires_in(&self) -> Duration {
         self.0
             .expires_at
-            .map(|d| Duration::from_micros(d.as_micros()))
+            .and_then(|dt| {
+                dt.as_secs()
+                    .checked_add_signed(-DateTime::current_timestamp())
+            })
+            .map(|secs| Duration::from_secs(secs))
             .unwrap_or_default()
     }
 

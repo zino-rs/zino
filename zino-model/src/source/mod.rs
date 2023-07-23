@@ -1,4 +1,5 @@
-use crate::User;
+//! The `source` model and related services.
+
 use serde::{Deserialize, Serialize};
 use zino_core::{
     datetime::DateTime,
@@ -11,23 +12,26 @@ use zino_core::{
 use zino_derive::{ModelAccessor, Schema};
 
 #[cfg(feature = "tags")]
-use crate::Tag;
+use crate::tag::Tag;
+
+#[cfg(any(feature = "owner-id", feature = "maintainer-id"))]
+use crate::user::User;
 
 #[cfg(feature = "maintainer-id")]
 use zino_core::auth::UserSession;
 
-/// The `group` model.
+/// The `source` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
-pub struct Group {
+pub struct Source {
     // Basic fields.
     #[schema(readonly)]
     id: Uuid,
     #[schema(not_null, index_type = "text")]
     name: String,
     #[cfg(feature = "namespace")]
-    #[schema(default_value = "Group::model_namespace", index_type = "hash")]
+    #[schema(default_value = "Source::model_namespace", index_type = "hash")]
     namespace: String,
     #[cfg(feature = "visibility")]
     #[schema(default_value = "Internal")]
@@ -38,13 +42,9 @@ pub struct Group {
     description: String,
 
     // Info fields.
-    #[schema(reference = "User")]
-    manager_id: Uuid, // user.id
-    #[schema(reference = "User", index_type = "gin")]
-    members: Vec<Uuid>, // user.id
     #[cfg(feature = "tags")]
     #[schema(reference = "Tag", index_type = "gin")]
-    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:group"
+    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:source"
 
     // Extensions.
     content: Map,
@@ -66,7 +66,7 @@ pub struct Group {
     edition: u32,
 }
 
-impl Model for Group {
+impl Model for Source {
     #[inline]
     fn new() -> Self {
         Self {
@@ -88,15 +88,6 @@ impl Model for Group {
         }
         if let Some(description) = data.parse_string("description") {
             self.description = description.into_owned();
-        }
-        if let Some(result) = data.parse_uuid("manager_id") {
-            match result {
-                Ok(manager_id) => self.manager_id = manager_id,
-                Err(err) => validation.record_fail("manager_id", err),
-            }
-        }
-        if let Some(members) = data.parse_array("members") {
-            self.members = members;
         }
         #[cfg(feature = "tags")]
         if let Some(tags) = data.parse_array("tags") {
@@ -120,7 +111,7 @@ impl Model for Group {
     }
 }
 
-impl ModelHooks for Group {
+impl ModelHooks for Source {
     #[cfg(feature = "maintainer-id")]
     type Extension = UserSession<Uuid, String>;
 

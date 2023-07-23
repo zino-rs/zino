@@ -149,6 +149,12 @@ impl Rejection {
         }
     }
 
+    /// Creates a new instance with the error message.
+    #[inline]
+    pub fn with_message(message: impl Into<SharedString>) -> Self {
+        Self::from_error(Error::new(message))
+    }
+
     /// Provides the request context for the rejection.
     #[inline]
     pub fn context<T: RequestContext + ?Sized>(mut self, ctx: &T) -> Self {

@@ -1,5 +1,5 @@
 use super::{sqlx_common::SerializeRow, Connector, DataSource, DataSourceConnector::Postgres};
-use crate::{error::Error, extension::TomlTableExt, format, state::State, AvroValue, Map, Record};
+use crate::{error::Error, extension::TomlTableExt, helper, state::State, AvroValue, Map, Record};
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use sqlx::postgres::{PgPool, PgPoolOptions};
@@ -36,7 +36,7 @@ impl Connector for PgPool {
     }
 
     async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, Error> {
-        let (sql, values) = format::query::prepare_sql_query(query, params, '$');
+        let (sql, values) = helper::prepare_sql_query(query, params, '$');
         let mut query = sqlx::query(&sql);
         for value in values {
             query = query.bind(value.to_string());
@@ -47,7 +47,7 @@ impl Connector for PgPool {
     }
 
     async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, Error> {
-        let (sql, values) = format::query::prepare_sql_query(query, params, '$');
+        let (sql, values) = helper::prepare_sql_query(query, params, '$');
         let mut query = sqlx::query(&sql);
         for value in values {
             query = query.bind(value.to_string());
@@ -69,7 +69,7 @@ impl Connector for PgPool {
         query: &str,
         params: Option<&Map>,
     ) -> Result<Vec<T>, Error> {
-        let (sql, values) = format::query::prepare_sql_query(query, params, '$');
+        let (sql, values) = helper::prepare_sql_query(query, params, '$');
         let mut query = sqlx::query(&sql);
         for value in values {
             query = query.bind(value.to_string());
@@ -86,7 +86,7 @@ impl Connector for PgPool {
     }
 
     async fn query_one(&self, query: &str, params: Option<&Map>) -> Result<Option<Record>, Error> {
-        let (sql, values) = format::query::prepare_sql_query(query, params, '$');
+        let (sql, values) = helper::prepare_sql_query(query, params, '$');
         let mut query = sqlx::query(&sql);
         for value in values {
             query = query.bind(value.to_string());
@@ -110,7 +110,7 @@ impl Connector for PgPool {
         query: &str,
         params: Option<&Map>,
     ) -> Result<Option<T>, Error> {
-        let (sql, values) = format::query::prepare_sql_query(query, params, '$');
+        let (sql, values) = helper::prepare_sql_query(query, params, '$');
         let mut query = sqlx::query(&sql);
         for value in values {
             query = query.bind(value.to_string());

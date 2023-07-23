@@ -1,6 +1,6 @@
 use crate::{
     datetime::{self, DateTime},
-    JsonValue, Map, Record, Uuid,
+    helper, openapi, JsonValue, Map, Record, Uuid,
 };
 use std::{
     borrow::Cow,
@@ -144,6 +144,9 @@ pub trait JsonObjectExt {
     /// If the map did have this key present, the value is updated and the old value is returned,
     /// otherwise `None` is returned.
     fn upsert(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) -> Option<JsonValue>;
+
+    /// Translates the map with the OpenAPI data.
+    fn translate_with_openapi(&mut self, name: &str);
 
     /// Consumes `self` and constructs an Avro record value.
     fn into_avro_record(self) -> Record;
@@ -348,7 +351,7 @@ impl JsonObjectExt for Map {
     fn parse_array<T: FromStr>(&self, key: &str) -> Option<Vec<T>> {
         self.get(key)
             .and_then(|v| match v {
-                JsonValue::String(s) => Some(crate::format::parse_str_array(s)),
+                JsonValue::String(s) => Some(helper::parse_str_array(s)),
                 JsonValue::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
                 _ => None,
             })
@@ -364,7 +367,7 @@ impl JsonObjectExt for Map {
     fn parse_str_array(&self, key: &str) -> Option<Vec<&str>> {
         self.get(key)
             .and_then(|v| match v {
-                JsonValue::String(s) => Some(crate::format::parse_str_array(s)),
+                JsonValue::String(s) => Some(helper::parse_str_array(s)),
                 JsonValue::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
                 _ => None,
             })
@@ -431,6 +434,11 @@ impl JsonObjectExt for Map {
     #[inline]
     fn upsert(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) -> Option<JsonValue> {
         self.insert(key.into(), value.into())
+    }
+
+    #[inline]
+    fn translate_with_openapi(&mut self, name: &str) {
+        openapi::translate_model_entry(self, name);
     }
 
     fn into_avro_record(self) -> Record {

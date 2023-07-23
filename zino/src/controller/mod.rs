@@ -39,7 +39,6 @@ use zino_core::{
     database::{ModelAccessor, ModelHelper},
     error::Error,
     extension::{JsonObjectExt, JsonValueExt},
-    format::PdfDocument,
     model::{ModelHooks, Query},
     request::RequestContext,
     response::{ExtractRejection, Rejection, StatusCode},
@@ -119,13 +118,13 @@ where
     async fn list(req: Self::Request) -> Self::Result {
         let mut query = Self::default_list_query();
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
-        Self::before_list(&mut query, extension.as_ref())
+        Self::before_list(&query, extension.as_ref())
             .await
             .extract(&req)?;
 
         let mut res = req.query_validation(&mut query)?;
         let models = if query.populate_enabled() {
-            let mut models = Self::fetch(&mut query).await.extract(&req)?;
+            let mut models = Self::fetch(&query).await.extract(&req)?;
             for model in models.iter_mut() {
                 Self::before_respond(model, extension.as_ref())
                     .await
@@ -133,7 +132,7 @@ where
             }
             models
         } else {
-            let mut models = Self::find(&mut query).await.extract(&req)?;
+            let mut models = Self::find(&query).await.extract(&req)?;
             let translate_enabled = query.translate_enabled();
             for model in models.iter_mut() {
                 Self::after_decode(model).await.extract(&req)?;
@@ -147,7 +146,7 @@ where
 
         let mut data = Map::data_entries(models);
         if req.get_query("page_size").is_some() {
-            let total_rows = Self::count(&mut query).await.extract(&req)?;
+            let total_rows = Self::count(&query).await.extract(&req)?;
             data.upsert("total_rows", total_rows);
         }
         res.set_data(&data);
@@ -206,9 +205,8 @@ where
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let primary_key_values = Map::from_entry("$in", data);
         let filters = Map::from_entry(primary_key_name, primary_key_values);
-        let mut query = Query::new(filters);
-
-        let rows_affected = Self::delete_many(&mut query).await.extract(&req)?;
+        let query = Query::new(filters);
+        let rows_affected = Self::delete_many(&query).await.extract(&req)?;
         let data = Map::from_entry("rows_affected", rows_affected);
         let mut res = crate::Response::default().context(&req);
         res.set_data(&data);
@@ -266,12 +264,12 @@ where
     async fn export(req: Self::Request) -> Self::Result {
         let mut query = Self::default_query();
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
-        Self::before_list(&mut query, extension.as_ref())
+        Self::before_list(&query, extension.as_ref())
             .await
             .extract(&req)?;
 
         let mut res = req.query_validation(&mut query)?;
-        let mut models = Self::find(&mut query).await.extract(&req)?;
+        let mut models = Self::find(&query).await.extract(&req)?;
         let translate_enabled = query.translate_enabled();
         for model in models.iter_mut() {
             Self::after_decode(model).await.extract(&req)?;
@@ -316,11 +314,12 @@ where
                     }
                 });
             }
+            #[cfg(feature = "export-pdf")]
             "pdf" => {
                 res.set_content_type("application/pdf");
                 res.set_data_transformer(|data| {
                     let model_name = M::model_name();
-                    PdfDocument::try_new(model_name, None)
+                    zino_core::format::PdfDocument::try_new(model_name, None)
                         .and_then(|mut doc| {
                             let data = data
                                 .pointer("/entries")

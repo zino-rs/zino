@@ -1,7 +1,7 @@
 //! Utilities for DataFusion.
 
 use super::{Connector, DataSource, DataSourceConnector::Arrow};
-use crate::{application::http_client, error::Error, extension::TomlTableExt, format, Map, Record};
+use crate::{application::http_client, error::Error, extension::TomlTableExt, helper, Map, Record};
 use datafusion::{
     arrow::{datatypes::Schema, record_batch::RecordBatch},
     dataframe::DataFrame,
@@ -246,14 +246,14 @@ impl Connector for ArrowConnector {
 
     async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, Error> {
         let ctx = self.try_get_session_context().await?;
-        let sql = format::query::format_query(query, params);
+        let sql = helper::format_query(query, params);
         let df = ctx.sql(&sql).await?;
         df.execute().await
     }
 
     async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, Error> {
         let ctx = self.try_get_session_context().await?;
-        let sql = format::query::format_query(query, params);
+        let sql = helper::format_query(query, params);
         let df = ctx.sql(&sql).await?;
         df.query().await
     }
@@ -264,14 +264,14 @@ impl Connector for ArrowConnector {
         params: Option<&Map>,
     ) -> Result<Vec<T>, Error> {
         let ctx = self.try_get_session_context().await?;
-        let sql = format::query::format_query(query, params);
+        let sql = helper::format_query(query, params);
         let df = ctx.sql(&sql).await?;
         df.query_as().await
     }
 
     async fn query_one(&self, query: &str, params: Option<&Map>) -> Result<Option<Record>, Error> {
         let ctx = self.try_get_session_context().await?;
-        let sql = format::query::format_query(query, params);
+        let sql = helper::format_query(query, params);
         let df = ctx.sql(&sql).await?;
         df.query_one().await
     }
@@ -282,7 +282,7 @@ impl Connector for ArrowConnector {
         params: Option<&Map>,
     ) -> Result<Option<T>, Error> {
         let ctx = self.try_get_session_context().await?;
-        let sql = format::query::format_query(query, params);
+        let sql = helper::format_query(query, params);
         let df = ctx.sql(&sql).await?;
         df.query_one_as().await
     }

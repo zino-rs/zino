@@ -22,6 +22,7 @@
 
 mod crypto;
 mod encoding;
+mod helper;
 mod openapi;
 
 #[cfg(feature = "accessor")]
@@ -34,6 +35,8 @@ pub mod chatbot;
 pub mod connector;
 #[cfg(feature = "orm")]
 pub mod database;
+#[cfg(feature = "format")]
+pub mod format;
 #[cfg(feature = "view")]
 pub mod view;
 
@@ -43,7 +46,6 @@ pub mod channel;
 pub mod datetime;
 pub mod error;
 pub mod extension;
-pub mod format;
 pub mod i18n;
 pub mod model;
 pub mod request;

@@ -31,6 +31,24 @@ impl DateTime {
         Self(Local::now())
     }
 
+    /// Returns the number of non-leap seconds since the midnight UTC on January 1, 1970.
+    #[inline]
+    pub fn current_timestamp() -> i64 {
+        Utc::now().timestamp()
+    }
+
+    /// Returns the number of non-leap milliseconds since the midnight UTC on January 1, 1970.
+    #[inline]
+    pub fn current_timestamp_millis() -> i64 {
+        Utc::now().timestamp_millis()
+    }
+
+    /// Returns the number of non-leap microseconds since the midnight UTC on January 1, 1970.
+    #[inline]
+    pub fn current_timestamp_micros() -> i64 {
+        Utc::now().timestamp_micros()
+    }
+
     /// Returns a new instance corresponding to a UTC date and time,
     /// from the number of non-leap seconds since the midnight UTC on January 1, 1970.
     #[inline]

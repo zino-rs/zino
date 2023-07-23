@@ -1,6 +1,6 @@
 //! Application scoped state.
 
-use crate::{application, crypto, encoding::base64, extension::TomlTableExt, format};
+use crate::{application, crypto, encoding::base64, extension::TomlTableExt, helper};
 use std::{
     borrow::Cow,
     env, fs,
@@ -169,7 +169,7 @@ impl State {
         }
         if let Some(encrypted_password) = Self::encrypt_password(config).as_deref() {
             let num_chars = password.len() / 4;
-            let masked_password = format::mask_text(password, num_chars, num_chars);
+            let masked_password = helper::mask_text(password, num_chars, num_chars);
             tracing::warn!(
                 encrypted_password,
                 "raw passowrd `{masked_password}` should be encypted"

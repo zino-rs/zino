@@ -1,4 +1,6 @@
-use crate::{Project, Source};
+//! The `policy` model and related services.
+
+use crate::group::Group;
 use serde::{Deserialize, Serialize};
 use zino_core::{
     datetime::DateTime,
@@ -11,26 +13,26 @@ use zino_core::{
 use zino_derive::{ModelAccessor, Schema};
 
 #[cfg(feature = "tags")]
-use crate::Tag;
+use crate::tag::Tag;
 
 #[cfg(any(feature = "owner-id", feature = "maintainer-id"))]
-use crate::User;
+use crate::user::User;
 
 #[cfg(feature = "maintainer-id")]
 use zino_core::auth::UserSession;
 
-/// The `task` model.
+/// The `policy` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
-pub struct Task {
+pub struct Policy {
     // Basic fields.
     #[schema(readonly)]
     id: Uuid,
     #[schema(not_null, index_type = "text")]
     name: String,
     #[cfg(feature = "namespace")]
-    #[schema(default_value = "Task::model_namespace", index_type = "hash")]
+    #[schema(default_value = "Policy::model_namespace", index_type = "hash")]
     namespace: String,
     #[cfg(feature = "visibility")]
     #[schema(default_value = "Internal")]
@@ -41,23 +43,17 @@ pub struct Task {
     description: String,
 
     // Info fields.
-    #[schema(reference = "Project")]
-    project_id: Uuid, // project.id, project.namespace = "*:task"
-    #[schema(reference = "Source")]
-    input_id: Uuid, // source.id
-    #[schema(reference = "Source")]
-    output_id: Option<Uuid>, // source.id
-    #[schema(reference = "Task", index_type = "gin")]
-    dependencies: Vec<Uuid>, // task.id
+    #[schema(reference = "Group")]
+    tenant_id: Uuid, // group.id, group.namespace = "*:policy"
+    #[schema(not_null)]
+    resource: String,
+    actions: Vec<String>,
+    effect: String,
     valid_from: DateTime,
     expires_at: DateTime,
-    schedule: String,
-    last_time: DateTime,
-    next_time: DateTime,
-    priority: u16,
     #[cfg(feature = "tags")]
     #[schema(reference = "Tag", index_type = "gin")]
-    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:task"
+    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:policy"
 
     // Extensions.
     content: Map,
@@ -79,7 +75,7 @@ pub struct Task {
     edition: u32,
 }
 
-impl Model for Task {
+impl Model for Policy {
     #[inline]
     fn new() -> Self {
         Self {
@@ -124,7 +120,7 @@ impl Model for Task {
     }
 }
 
-impl ModelHooks for Task {
+impl ModelHooks for Policy {
     #[cfg(feature = "maintainer-id")]
     type Extension = UserSession<Uuid, String>;
 

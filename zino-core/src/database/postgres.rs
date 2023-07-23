@@ -529,7 +529,7 @@ impl QueryExt<DatabaseDriver> for Query {
         query: &'a str,
         params: Option<&'a Map>,
     ) -> (Cow<'a, str>, Vec<&'a JsonValue>) {
-        crate::format::query::prepare_sql_query(query, params, '$')
+        crate::helper::prepare_sql_query(query, params, '$')
     }
 
     fn format_field(field: &str) -> Cow<'_, str> {

@@ -31,6 +31,9 @@ use toml::Table;
 
 mod data_source;
 
+pub use data_source::DataSource;
+use data_source::DataSourceConnector;
+
 /// Supported connectors.
 #[cfg(feature = "connector-arrow")]
 mod connector_arrow;
@@ -49,9 +52,6 @@ mod connector_sqlite;
     feature = "connector-sqlite"
 ))]
 mod sqlx_common;
-
-pub use data_source::DataSource;
-use data_source::DataSourceConnector;
 
 #[cfg(feature = "connector-arrow")]
 pub use connector_arrow::{ArrowConnector, DataFrameExecutor};

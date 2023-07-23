@@ -16,24 +16,24 @@
 #![feature(let_chains)]
 #![forbid(unsafe_code)]
 
-mod group;
-mod policy;
-mod resource;
-mod tag;
-mod user;
+pub mod group;
+pub mod policy;
+pub mod resource;
+pub mod tag;
+pub mod user;
 
-mod application;
-mod message;
-mod order;
+pub mod application;
+pub mod message;
+pub mod order;
 
-mod collection;
-mod dataset;
-mod project;
-mod source;
-mod task;
+pub mod collection;
+pub mod dataset;
+pub mod project;
+pub mod source;
+pub mod task;
 
-mod log;
-mod record;
+pub mod log;
+pub mod record;
 
 pub use group::Group;
 pub use policy::Policy;

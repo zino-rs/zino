@@ -1,4 +1,6 @@
-use crate::{Group, Resource, User};
+//! The `group` model and related services.
+
+use crate::user::User;
 use serde::{Deserialize, Serialize};
 use zino_core::{
     datetime::DateTime,
@@ -11,23 +13,23 @@ use zino_core::{
 use zino_derive::{ModelAccessor, Schema};
 
 #[cfg(feature = "tags")]
-use crate::Tag;
+use crate::tag::Tag;
 
 #[cfg(feature = "maintainer-id")]
 use zino_core::auth::UserSession;
 
-/// The `message` model.
+/// The `group` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
-pub struct Message {
+pub struct Group {
     // Basic fields.
     #[schema(readonly)]
     id: Uuid,
     #[schema(not_null, index_type = "text")]
     name: String,
     #[cfg(feature = "namespace")]
-    #[schema(default_value = "Message::model_namespace", index_type = "hash")]
+    #[schema(default_value = "Group::model_namespace", index_type = "hash")]
     namespace: String,
     #[cfg(feature = "visibility")]
     #[schema(default_value = "Internal")]
@@ -39,16 +41,12 @@ pub struct Message {
 
     // Info fields.
     #[schema(reference = "User")]
-    producer_id: Uuid, // user.id
-    #[schema(reference = "Resource")]
-    channel_id: Uuid, // resource.id, resource.namespace = "*:channel"
-    #[schema(reference = "Group")]
-    consumer_id: Option<Uuid>, // group.id
-    #[schema(index_type = "text")]
-    message: String,
+    manager_id: Uuid, // user.id
+    #[schema(reference = "User", index_type = "gin")]
+    members: Vec<Uuid>, // user.id
     #[cfg(feature = "tags")]
     #[schema(reference = "Tag", index_type = "gin")]
-    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:message"
+    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:group"
 
     // Extensions.
     content: Map,
@@ -70,7 +68,7 @@ pub struct Message {
     edition: u32,
 }
 
-impl Model for Message {
+impl Model for Group {
     #[inline]
     fn new() -> Self {
         Self {
@@ -92,6 +90,15 @@ impl Model for Message {
         }
         if let Some(description) = data.parse_string("description") {
             self.description = description.into_owned();
+        }
+        if let Some(result) = data.parse_uuid("manager_id") {
+            match result {
+                Ok(manager_id) => self.manager_id = manager_id,
+                Err(err) => validation.record_fail("manager_id", err),
+            }
+        }
+        if let Some(members) = data.parse_array("members") {
+            self.members = members;
         }
         #[cfg(feature = "tags")]
         if let Some(tags) = data.parse_array("tags") {
@@ -115,7 +122,7 @@ impl Model for Message {
     }
 }
 
-impl ModelHooks for Message {
+impl ModelHooks for Group {
     #[cfg(feature = "maintainer-id")]
     type Extension = UserSession<Uuid, String>;
 

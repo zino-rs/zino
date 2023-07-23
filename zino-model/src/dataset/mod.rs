@@ -1,3 +1,6 @@
+//! The `dataset` model and related services.
+
+use crate::{project::Project, task::Task};
 use serde::{Deserialize, Serialize};
 use zino_core::{
     datetime::DateTime,
@@ -9,24 +12,27 @@ use zino_core::{
 };
 use zino_derive::{ModelAccessor, Schema};
 
+#[cfg(feature = "tags")]
+use crate::tag::Tag;
+
 #[cfg(any(feature = "owner-id", feature = "maintainer-id"))]
-use crate::User;
+use crate::user::User;
 
 #[cfg(feature = "maintainer-id")]
 use zino_core::auth::UserSession;
 
-/// The `log` model.
+/// The `dataset` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
-pub struct Log {
+pub struct Dataset {
     // Basic fields.
     #[schema(readonly)]
     id: Uuid,
     #[schema(not_null, index_type = "text")]
     name: String,
     #[cfg(feature = "namespace")]
-    #[schema(default_value = "Log::model_namespace", index_type = "hash")]
+    #[schema(default_value = "Dataset::model_namespace", index_type = "hash")]
     namespace: String,
     #[cfg(feature = "visibility")]
     #[schema(default_value = "Internal")]
@@ -37,24 +43,17 @@ pub struct Log {
     description: String,
 
     // Info fields.
-    #[schema(not_null, readonly)]
-    service: String,
-    #[schema(readonly)]
-    server_host: String,
-    #[schema(readonly)]
-    client_ip: String,
-    topic: String,
-    #[schema(readonly)]
-    level: String,
-    #[schema(readonly, index_type = "text")]
-    message: String,
-    #[schema(readonly)]
-    source: String,
-    #[schema(readonly, index_type = "btree")]
-    recorded_at: DateTime,
+    #[schema(reference = "Project")]
+    project_id: Uuid, // project.id, group.namespace = "*:dataset"
+    #[schema(reference = "Task")]
+    task_id: Option<Uuid>, // task.id
+    valid_from: DateTime,
+    expires_at: DateTime,
+    #[cfg(feature = "tags")]
+    #[schema(reference = "Tag", index_type = "gin")]
+    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:dataset"
 
     // Extensions.
-    #[schema(readonly)]
     content: Map,
     extra: Map,
 
@@ -74,7 +73,7 @@ pub struct Log {
     edition: u32,
 }
 
-impl Model for Log {
+impl Model for Dataset {
     #[inline]
     fn new() -> Self {
         Self {
@@ -97,6 +96,10 @@ impl Model for Log {
         if let Some(description) = data.parse_string("description") {
             self.description = description.into_owned();
         }
+        #[cfg(feature = "tags")]
+        if let Some(tags) = data.parse_array("tags") {
+            self.tags = tags;
+        }
         #[cfg(feature = "owner-id")]
         if let Some(result) = data.parse_uuid("owner_id") {
             match result {
@@ -115,7 +118,7 @@ impl Model for Log {
     }
 }
 
-impl ModelHooks for Log {
+impl ModelHooks for Dataset {
     #[cfg(feature = "maintainer-id")]
     type Extension = UserSession<Uuid, String>;
 

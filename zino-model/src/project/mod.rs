@@ -1,4 +1,6 @@
-use crate::{Project, Task};
+//! The `project` model and related services.
+
+use crate::user::User;
 use serde::{Deserialize, Serialize};
 use zino_core::{
     datetime::DateTime,
@@ -11,26 +13,23 @@ use zino_core::{
 use zino_derive::{ModelAccessor, Schema};
 
 #[cfg(feature = "tags")]
-use crate::Tag;
-
-#[cfg(any(feature = "owner-id", feature = "maintainer-id"))]
-use crate::User;
+use crate::tag::Tag;
 
 #[cfg(feature = "maintainer-id")]
 use zino_core::auth::UserSession;
 
-/// The `dataset` model.
+/// The `project` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
-pub struct Dataset {
+pub struct Project {
     // Basic fields.
     #[schema(readonly)]
     id: Uuid,
     #[schema(not_null, index_type = "text")]
     name: String,
     #[cfg(feature = "namespace")]
-    #[schema(default_value = "Dataset::model_namespace", index_type = "hash")]
+    #[schema(default_value = "Project::model_namespace", index_type = "hash")]
     namespace: String,
     #[cfg(feature = "visibility")]
     #[schema(default_value = "Internal")]
@@ -41,15 +40,11 @@ pub struct Dataset {
     description: String,
 
     // Info fields.
-    #[schema(reference = "Project")]
-    project_id: Uuid, // project.id, group.namespace = "*:dataset"
-    #[schema(reference = "Task")]
-    task_id: Option<Uuid>, // task.id
-    valid_from: DateTime,
-    expires_at: DateTime,
+    #[schema(reference = "User")]
+    manager_id: Uuid, // user.id
     #[cfg(feature = "tags")]
     #[schema(reference = "Tag", index_type = "gin")]
-    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:dataset"
+    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:group"
 
     // Extensions.
     content: Map,
@@ -71,7 +66,7 @@ pub struct Dataset {
     edition: u32,
 }
 
-impl Model for Dataset {
+impl Model for Project {
     #[inline]
     fn new() -> Self {
         Self {
@@ -93,6 +88,12 @@ impl Model for Dataset {
         }
         if let Some(description) = data.parse_string("description") {
             self.description = description.into_owned();
+        }
+        if let Some(result) = data.parse_uuid("manager_id") {
+            match result {
+                Ok(manager_id) => self.manager_id = manager_id,
+                Err(err) => validation.record_fail("manager_id", err),
+            }
         }
         #[cfg(feature = "tags")]
         if let Some(tags) = data.parse_array("tags") {
@@ -116,7 +117,7 @@ impl Model for Dataset {
     }
 }
 
-impl ModelHooks for Dataset {
+impl ModelHooks for Project {
     #[cfg(feature = "maintainer-id")]
     type Extension = UserSession<Uuid, String>;
 

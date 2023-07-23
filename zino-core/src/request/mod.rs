@@ -237,6 +237,7 @@ pub trait RequestContext {
             "application/jsonlines" | "application/x-ndjson" => "ndjson".into(),
             "application/msgpack" | "application/x-msgpack" => "msgpack".into(),
             "application/octet-stream" => "bytes".into(),
+            "application/pdf" => "pdf".into(),
             "application/x-www-form-urlencoded" => "form".into(),
             "multipart/form-data" => "multipart".into(),
             "text/csv" => "csv".into(),

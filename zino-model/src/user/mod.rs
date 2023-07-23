@@ -1,3 +1,5 @@
+//! The `user` model and related services.
+
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
@@ -14,7 +16,11 @@ use zino_core::{
 use zino_derive::{ModelAccessor, Schema};
 
 #[cfg(feature = "tags")]
-use crate::Tag;
+use crate::tag::Tag;
+
+mod jwt_auth;
+
+pub use jwt_auth::JwtAuthService;
 
 /// The `user` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]

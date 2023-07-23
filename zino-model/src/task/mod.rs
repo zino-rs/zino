@@ -1,4 +1,6 @@
-use crate::User;
+//! The `task` model and related services.
+
+use crate::{project::Project, source::Source};
 use serde::{Deserialize, Serialize};
 use zino_core::{
     datetime::DateTime,
@@ -11,23 +13,26 @@ use zino_core::{
 use zino_derive::{ModelAccessor, Schema};
 
 #[cfg(feature = "tags")]
-use crate::Tag;
+use crate::tag::Tag;
+
+#[cfg(any(feature = "owner-id", feature = "maintainer-id"))]
+use crate::user::User;
 
 #[cfg(feature = "maintainer-id")]
 use zino_core::auth::UserSession;
 
-/// The `project` model.
+/// The `task` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
-pub struct Project {
+pub struct Task {
     // Basic fields.
     #[schema(readonly)]
     id: Uuid,
     #[schema(not_null, index_type = "text")]
     name: String,
     #[cfg(feature = "namespace")]
-    #[schema(default_value = "Project::model_namespace", index_type = "hash")]
+    #[schema(default_value = "Task::model_namespace", index_type = "hash")]
     namespace: String,
     #[cfg(feature = "visibility")]
     #[schema(default_value = "Internal")]
@@ -38,11 +43,23 @@ pub struct Project {
     description: String,
 
     // Info fields.
-    #[schema(reference = "User")]
-    manager_id: Uuid, // user.id
+    #[schema(reference = "Project")]
+    project_id: Uuid, // project.id, project.namespace = "*:task"
+    #[schema(reference = "Source")]
+    input_id: Uuid, // source.id
+    #[schema(reference = "Source")]
+    output_id: Option<Uuid>, // source.id
+    #[schema(reference = "Task", index_type = "gin")]
+    dependencies: Vec<Uuid>, // task.id
+    valid_from: DateTime,
+    expires_at: DateTime,
+    schedule: String,
+    last_time: DateTime,
+    next_time: DateTime,
+    priority: u16,
     #[cfg(feature = "tags")]
     #[schema(reference = "Tag", index_type = "gin")]
-    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:group"
+    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:task"
 
     // Extensions.
     content: Map,
@@ -64,7 +81,7 @@ pub struct Project {
     edition: u32,
 }
 
-impl Model for Project {
+impl Model for Task {
     #[inline]
     fn new() -> Self {
         Self {
@@ -86,12 +103,6 @@ impl Model for Project {
         }
         if let Some(description) = data.parse_string("description") {
             self.description = description.into_owned();
-        }
-        if let Some(result) = data.parse_uuid("manager_id") {
-            match result {
-                Ok(manager_id) => self.manager_id = manager_id,
-                Err(err) => validation.record_fail("manager_id", err),
-            }
         }
         #[cfg(feature = "tags")]
         if let Some(tags) = data.parse_array("tags") {
@@ -115,7 +126,7 @@ impl Model for Project {
     }
 }
 
-impl ModelHooks for Project {
+impl ModelHooks for Task {
     #[cfg(feature = "maintainer-id")]
     type Extension = UserSession<Uuid, String>;
 

@@ -1,4 +1,6 @@
-use crate::{Group, Source};
+//! The `order` model and related services.
+
+use crate::{application::Application, resource::Resource};
 use serde::{Deserialize, Serialize};
 use zino_core::{
     datetime::DateTime,
@@ -11,26 +13,26 @@ use zino_core::{
 use zino_derive::{ModelAccessor, Schema};
 
 #[cfg(feature = "tags")]
-use crate::Tag;
+use crate::tag::Tag;
 
 #[cfg(any(feature = "owner-id", feature = "maintainer-id"))]
-use crate::User;
+use crate::user::User;
 
 #[cfg(feature = "maintainer-id")]
 use zino_core::auth::UserSession;
 
-/// The `collection` model.
+/// The `order` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
-pub struct Collection {
+pub struct Order {
     // Basic fields.
     #[schema(readonly)]
     id: Uuid,
     #[schema(not_null, index_type = "text")]
     name: String,
     #[cfg(feature = "namespace")]
-    #[schema(default_value = "Collection::model_namespace", index_type = "hash")]
+    #[schema(default_value = "Order::model_namespace", index_type = "hash")]
     namespace: String,
     #[cfg(feature = "visibility")]
     #[schema(default_value = "Internal")]
@@ -41,13 +43,15 @@ pub struct Collection {
     description: String,
 
     // Info fields.
-    #[schema(reference = "Group")]
-    consumer_id: Option<Uuid>, // group.id
-    #[schema(reference = "Source")]
-    source_id: Uuid, // source.id
+    #[schema(default_value = "Resource::model_name")]
+    subject: String,
+    #[schema(reference = "Application")]
+    application_id: Uuid, // application.id, application.namespace = "*:order"
+    #[schema(index_type = "text")]
+    message: String,
     #[cfg(feature = "tags")]
     #[schema(reference = "Tag", index_type = "gin")]
-    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:collection"
+    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:order"
 
     // Extensions.
     content: Map,
@@ -69,7 +73,7 @@ pub struct Collection {
     edition: u32,
 }
 
-impl Model for Collection {
+impl Model for Order {
     #[inline]
     fn new() -> Self {
         Self {
@@ -114,7 +118,7 @@ impl Model for Collection {
     }
 }
 
-impl ModelHooks for Collection {
+impl ModelHooks for Order {
     #[cfg(feature = "maintainer-id")]
     type Extension = UserSession<Uuid, String>;
 

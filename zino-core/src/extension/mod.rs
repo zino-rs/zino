@@ -7,8 +7,6 @@ mod json_value;
 mod toml_table;
 mod toml_value;
 
-pub(crate) mod header;
-
 pub use avro_record::AvroRecordExt;
 pub use header_map::HeaderMapExt;
 pub use json_object::JsonObjectExt;

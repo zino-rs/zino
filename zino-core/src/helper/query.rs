@@ -23,52 +23,9 @@ pub(crate) fn format_query<'a>(query: &'a str, params: Option<&'a Map>) -> Cow<'
     }
 }
 
-/// Prepares the SQL query for binding parameters
-/// (`?` for most SQL flavors and `$N` for PostgreSQL).
-///
-/// The parameter is represented as `${param}` or `#{param}`,
-/// in which `param` can only contain restricted chracters `[a-zA-Z]+[\w\.]*`.
-#[cfg(any(
-    feature = "connector-mssql",
-    feature = "connector-mysql",
-    feature = "connector-sqlite",
-    feature = "connector-postgres",
-    feature = "orm",
-    feature = "orm-mysql",
-    feature = "orm-postgres",
-))]
-pub(crate) fn prepare_sql_query<'a>(
-    query: &'a str,
-    params: Option<&'a Map>,
-    placeholder: char,
-) -> (Cow<'a, str>, Vec<&'a JsonValue>) {
-    let sql = format_query(query, params);
-    if let Some(params) = params && sql.contains('#') {
-        let mut values = Vec::new();
-        let sql = STATEMENT_PATTERN.replace_all(&sql, |captures: &Captures| {
-            let key = &captures[1];
-            let value = params.get(key).unwrap_or(&JsonValue::Null);
-            values.push(value);
-            if placeholder == '$' {
-                Cow::Owned(format!("${}", values.len()))
-            } else {
-                Cow::Borrowed("?")
-            }
-        });
-        (sql.into_owned().into(), values)
-    } else {
-        (sql, Vec::new())
-    }
-}
-
 /// Interpolation pattern.
 static INTERPOLATION_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"\$\{\s*([a-zA-Z]+[\w\.]*)\s*\}").expect("fail to create the interpolation pattern")
-});
-
-/// Statement pattern.
-static STATEMENT_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"\#\{\s*([a-zA-Z]+[\w\.]*)\s*\}").expect("fail to create the query pattern")
 });
 
 #[cfg(test)]

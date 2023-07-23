@@ -375,7 +375,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Updates at most one model selected by the query in the table.
-    async fn update_one(query: &mut Query, mutation: &mut Mutation) -> Result<QueryContext, Error> {
+    async fn update_one(query: &Query, mutation: &mut Mutation) -> Result<QueryContext, Error> {
         let pool = Self::acquire_writer().await?.pool();
         Self::before_mutation(query, mutation).await?;
 
@@ -416,7 +416,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Updates many models selected by the query in the table.
-    async fn update_many(query: &mut Query, mutation: &mut Mutation) -> Result<u64, Error> {
+    async fn update_many(query: &Query, mutation: &mut Mutation) -> Result<u64, Error> {
         let pool = Self::acquire_writer().await?.pool();
         Self::before_mutation(query, mutation).await?;
 
@@ -531,7 +531,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Deletes at most one model selected by the query in the table.
-    async fn delete_one(query: &mut Query) -> Result<QueryContext, Error> {
+    async fn delete_one(query: &Query) -> Result<QueryContext, Error> {
         let pool = Self::acquire_writer().await?.pool();
         Self::before_query(query).await?;
 
@@ -562,7 +562,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Deletes many models selected by the query in the table.
-    async fn delete_many(query: &mut Query) -> Result<u64, Error> {
+    async fn delete_many(query: &Query) -> Result<u64, Error> {
         let pool = Self::acquire_writer().await?.pool();
         Self::before_query(query).await?;
 
@@ -583,7 +583,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Finds models selected by the query in the table,
     /// and decodes it as `Vec<T>`.
     async fn find<T: DecodeRow<DatabaseRow, Error = Error>>(
-        query: &mut Query,
+        query: &Query,
     ) -> Result<Vec<T>, Error> {
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
@@ -612,7 +612,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Finds models selected by the query in the table,
     /// and parses it as `Vec<T>`.
-    async fn find_as<T: DeserializeOwned>(query: &mut Query) -> Result<Vec<T>, Error> {
+    async fn find_as<T: DeserializeOwned>(query: &Query) -> Result<Vec<T>, Error> {
         let mut data = Self::find::<Map>(query).await?;
         let translate_enabled = query.translate_enabled();
         for model in data.iter_mut() {
@@ -625,7 +625,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Finds one model selected by the query in the table,
     /// and decodes it as an instance of type `T`.
     async fn find_one<T: DecodeRow<DatabaseRow, Error = Error>>(
-        query: &mut Query,
+        query: &Query,
     ) -> Result<Option<T>, Error> {
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
@@ -651,7 +651,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Finds one model selected by the query in the table,
     /// and parses it as an instance of type `T`.
-    async fn find_one_as<T: DeserializeOwned>(query: &mut Query) -> Result<Option<T>, Error> {
+    async fn find_one_as<T: DeserializeOwned>(query: &Query) -> Result<Option<T>, Error> {
         match Self::find_one::<Map>(query).await? {
             Some(mut data) => {
                 Self::after_decode(&mut data).await?;
@@ -666,7 +666,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Finds a value selected by the query in the table,
     /// and decodes it as a single concrete type `T`.
-    async fn find_scalar<T>(query: &mut Query) -> Result<T, Error>
+    async fn find_scalar<T>(query: &Query) -> Result<T, Error>
     where
         T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
     {
@@ -690,7 +690,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Finds a list of scalar values selected by the query in the table,
     /// and decodes it as a `Vec<T>`.
-    async fn find_scalars<T>(query: &mut Query) -> Result<Vec<T>, Error>
+    async fn find_scalars<T>(query: &Query) -> Result<Vec<T>, Error>
     where
         T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
     {
@@ -866,7 +866,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Performs a left outer join to another table to filter rows in the "joined" table,
     /// and decodes it as `Vec<T>`.
     async fn lookup<M: Schema, T: DecodeRow<DatabaseRow, Error = Error>>(
-        query: &mut Query,
+        query: &Query,
         left_columns: &[&str],
         right_columns: &[&str],
     ) -> Result<Vec<T>, Error> {
@@ -915,7 +915,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Performs a left outer join to another table to filter rows in the "joined" table,
     /// and parses it as `Vec<T>`.
     async fn lookup_as<M: Schema, T: DeserializeOwned>(
-        query: &mut Query,
+        query: &Query,
         left_columns: &[&str],
         right_columns: &[&str],
     ) -> Result<Vec<T>, Error> {
@@ -929,7 +929,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Counts the number of rows selected by the query in the table.
-    async fn count(query: &mut Query) -> Result<u64, Error> {
+    async fn count(query: &Query) -> Result<u64, Error> {
         let pool = Self::acquire_writer().await?.pool();
         Self::before_count(query).await?;
 
@@ -949,7 +949,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Counts the number of rows selected by the query in the table.
     /// The boolean value determines whether it only counts distinct values or not.
     async fn count_many<T: DecodeRow<DatabaseRow, Error = Error>>(
-        query: &mut Query,
+        query: &Query,
         columns: &[(&str, bool)],
     ) -> Result<T, Error> {
         let pool = Self::acquire_writer().await?.pool();
@@ -987,7 +987,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Counts the number of rows selected by the query in the table,
     /// and parses it as an instance of type `T`.
     async fn count_many_as<T: DeserializeOwned>(
-        query: &mut Query,
+        query: &Query,
         columns: &[(&str, bool)],
     ) -> Result<T, Error> {
         let map = Self::count_many::<Map>(query, columns).await?;
@@ -1263,7 +1263,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         query.add_filter(primary_key_name, Map::from_entry("$in", primary_key_values));
         query.set_limit(limit);
 
-        let data = Self::find::<Map>(&mut query).await?;
+        let data = Self::find::<Map>(&query).await?;
         let mut primary_key_values = Vec::with_capacity(data.len());
         for map in data.into_iter() {
             for (_key, value) in map.into_iter() {
@@ -1288,7 +1288,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         query.allow_fields(&fields);
         query.set_limit(2);
 
-        let data = Self::find::<Map>(&mut query).await?;
+        let data = Self::find::<Map>(&query).await?;
         match data.len() {
             0 => Ok(true),
             1 => {

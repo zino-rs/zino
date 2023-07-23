@@ -1,4 +1,6 @@
-use crate::Group;
+//! The `message` model and related services.
+
+use crate::{group::Group, resource::Resource, user::User};
 use serde::{Deserialize, Serialize};
 use zino_core::{
     datetime::DateTime,
@@ -11,26 +13,23 @@ use zino_core::{
 use zino_derive::{ModelAccessor, Schema};
 
 #[cfg(feature = "tags")]
-use crate::Tag;
-
-#[cfg(any(feature = "owner-id", feature = "maintainer-id"))]
-use crate::User;
+use crate::tag::Tag;
 
 #[cfg(feature = "maintainer-id")]
 use zino_core::auth::UserSession;
 
-/// The `policy` model.
+/// The `message` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
-pub struct Policy {
+pub struct Message {
     // Basic fields.
     #[schema(readonly)]
     id: Uuid,
     #[schema(not_null, index_type = "text")]
     name: String,
     #[cfg(feature = "namespace")]
-    #[schema(default_value = "Policy::model_namespace", index_type = "hash")]
+    #[schema(default_value = "Message::model_namespace", index_type = "hash")]
     namespace: String,
     #[cfg(feature = "visibility")]
     #[schema(default_value = "Internal")]
@@ -41,17 +40,17 @@ pub struct Policy {
     description: String,
 
     // Info fields.
+    #[schema(reference = "User")]
+    producer_id: Uuid, // user.id
+    #[schema(reference = "Resource")]
+    channel_id: Uuid, // resource.id, resource.namespace = "*:channel"
     #[schema(reference = "Group")]
-    tenant_id: Uuid, // group.id, group.namespace = "*:policy"
-    #[schema(not_null)]
-    resource: String,
-    actions: Vec<String>,
-    effect: String,
-    valid_from: DateTime,
-    expires_at: DateTime,
+    consumer_id: Option<Uuid>, // group.id
+    #[schema(index_type = "text")]
+    message: String,
     #[cfg(feature = "tags")]
     #[schema(reference = "Tag", index_type = "gin")]
-    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:policy"
+    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:message"
 
     // Extensions.
     content: Map,
@@ -73,7 +72,7 @@ pub struct Policy {
     edition: u32,
 }
 
-impl Model for Policy {
+impl Model for Message {
     #[inline]
     fn new() -> Self {
         Self {
@@ -118,7 +117,7 @@ impl Model for Policy {
     }
 }
 
-impl ModelHooks for Policy {
+impl ModelHooks for Message {
     #[cfg(feature = "maintainer-id")]
     type Extension = UserSession<Uuid, String>;
 

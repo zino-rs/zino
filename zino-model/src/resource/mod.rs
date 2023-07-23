@@ -1,3 +1,5 @@
+//! The `resource` model and related services.
+
 use serde::{Deserialize, Serialize};
 use zino_core::{
     datetime::DateTime,
@@ -9,24 +11,27 @@ use zino_core::{
 };
 use zino_derive::{ModelAccessor, Schema};
 
+#[cfg(feature = "tags")]
+use crate::tag::Tag;
+
 #[cfg(any(feature = "owner-id", feature = "maintainer-id"))]
-use crate::User;
+use crate::user::User;
 
 #[cfg(feature = "maintainer-id")]
 use zino_core::auth::UserSession;
 
-/// The `tag` model.
+/// The `resource` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
-pub struct Tag {
+pub struct Resource {
     // Basic fields.
     #[schema(readonly)]
     id: Uuid,
     #[schema(not_null, index_type = "text")]
     name: String,
     #[cfg(feature = "namespace")]
-    #[schema(default_value = "Tag::model_namespace", index_type = "hash")]
+    #[schema(default_value = "Resource::model_namespace", index_type = "hash")]
     namespace: String,
     #[cfg(feature = "visibility")]
     #[schema(default_value = "Internal")]
@@ -39,8 +44,13 @@ pub struct Tag {
     // Info fields.
     #[schema(not_null)]
     category: String,
-    #[schema(reference = "Tag")]
-    parent_id: Option<Uuid>, // tag.id, tag.namespace = {tag.namespace}, tag.category = {tag.category}
+    #[schema(not_null)]
+    mime_type: String,
+    #[schema(not_null)]
+    location: String,
+    #[cfg(feature = "tags")]
+    #[schema(reference = "Tag", index_type = "gin")]
+    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:resource"
 
     // Extensions.
     content: Map,
@@ -62,7 +72,7 @@ pub struct Tag {
     edition: u32,
 }
 
-impl Model for Tag {
+impl Model for Resource {
     #[inline]
     fn new() -> Self {
         Self {
@@ -85,14 +95,9 @@ impl Model for Tag {
         if let Some(description) = data.parse_string("description") {
             self.description = description.into_owned();
         }
-        if let Some(category) = data.parse_string("category") {
-            self.category = category.into_owned();
-        }
-        if let Some(result) = data.parse_uuid("parent_id") {
-            match result {
-                Ok(parent_id) => self.parent_id = Some(parent_id),
-                Err(err) => validation.record_fail("parent_id", err),
-            }
+        #[cfg(feature = "tags")]
+        if let Some(tags) = data.parse_array("tags") {
+            self.tags = tags;
         }
         #[cfg(feature = "owner-id")]
         if let Some(result) = data.parse_uuid("owner_id") {
@@ -112,23 +117,7 @@ impl Model for Tag {
     }
 }
 
-impl Tag {
-    /// Returns the `category`.
-    #[inline]
-    pub fn category(&self) -> &str {
-        &self.category
-    }
-
-    /// Returns the `parent_id`.
-    #[inline]
-    pub fn parent_id(&self) -> Option<&Uuid> {
-        self.parent_id
-            .as_ref()
-            .filter(|parent_id| !parent_id.is_nil())
-    }
-}
-
-impl ModelHooks for Tag {
+impl ModelHooks for Resource {
     #[cfg(feature = "maintainer-id")]
     type Extension = UserSession<Uuid, String>;
 

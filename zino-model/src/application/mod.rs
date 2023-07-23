@@ -1,5 +1,9 @@
+//! The `application` model and related services.
+
+use crate::user::User;
 use serde::{Deserialize, Serialize};
 use zino_core::{
+    auth::AccessKeyId,
     datetime::DateTime,
     error::Error,
     extension::JsonObjectExt,
@@ -10,26 +14,23 @@ use zino_core::{
 use zino_derive::{ModelAccessor, Schema};
 
 #[cfg(feature = "tags")]
-use crate::Tag;
-
-#[cfg(any(feature = "owner-id", feature = "maintainer-id"))]
-use crate::User;
+use crate::tag::Tag;
 
 #[cfg(feature = "maintainer-id")]
 use zino_core::auth::UserSession;
 
-/// The `resource` model.
+/// The `application` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
-pub struct Resource {
+pub struct Application {
     // Basic fields.
     #[schema(readonly)]
     id: Uuid,
     #[schema(not_null, index_type = "text")]
     name: String,
     #[cfg(feature = "namespace")]
-    #[schema(default_value = "Resource::model_namespace", index_type = "hash")]
+    #[schema(default_value = "Application::model_namespace", index_type = "hash")]
     namespace: String,
     #[cfg(feature = "visibility")]
     #[schema(default_value = "Internal")]
@@ -40,15 +41,13 @@ pub struct Resource {
     description: String,
 
     // Info fields.
-    #[schema(not_null)]
-    category: String,
-    #[schema(not_null)]
-    mime_type: String,
-    #[schema(not_null)]
-    location: String,
+    #[schema(reference = "User")]
+    manager_id: Uuid, // user.id
+    #[schema(not_null, unique, writeonly)]
+    access_key_id: String,
     #[cfg(feature = "tags")]
     #[schema(reference = "Tag", index_type = "gin")]
-    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:resource"
+    tags: Vec<Uuid>, // tag.id, tag.namespace = "*:application"
 
     // Extensions.
     content: Map,
@@ -70,11 +69,12 @@ pub struct Resource {
     edition: u32,
 }
 
-impl Model for Resource {
+impl Model for Application {
     #[inline]
     fn new() -> Self {
         Self {
             id: Uuid::new_v4(),
+            access_key_id: AccessKeyId::new().to_string(),
             ..Self::default()
         }
     }
@@ -92,6 +92,12 @@ impl Model for Resource {
         }
         if let Some(description) = data.parse_string("description") {
             self.description = description.into_owned();
+        }
+        if let Some(result) = data.parse_uuid("manager_id") {
+            match result {
+                Ok(manager_id) => self.manager_id = manager_id,
+                Err(err) => validation.record_fail("manager_id", err),
+            }
         }
         #[cfg(feature = "tags")]
         if let Some(tags) = data.parse_array("tags") {
@@ -115,7 +121,7 @@ impl Model for Resource {
     }
 }
 
-impl ModelHooks for Resource {
+impl ModelHooks for Application {
     #[cfg(feature = "maintainer-id")]
     type Extension = UserSession<Uuid, String>;
 
@@ -136,5 +142,13 @@ impl ModelHooks for Resource {
             data.upsert("maintainer_id", session.user_id().to_string());
         }
         Ok(())
+    }
+}
+
+impl Application {
+    /// Sets the `access_key_id`.
+    #[inline]
+    pub fn set_access_key_id(&mut self, access_key_id: AccessKeyId) {
+        self.access_key_id = access_key_id.to_string();
     }
 }

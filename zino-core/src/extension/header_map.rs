@@ -63,7 +63,7 @@ pub trait HeaderMapExt {
     /// Checks whether it has a `content-type: application/json` or similar header.
     fn has_json_content_type(&self) -> bool {
         if let Some(content_type) = self.get_str("content-type") {
-            super::header::check_json_content_type(content_type)
+            crate::helper::check_json_content_type(content_type)
         } else {
             false
         }

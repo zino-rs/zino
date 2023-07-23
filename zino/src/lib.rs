@@ -51,8 +51,6 @@
 #![feature(result_option_inspect)]
 #![forbid(unsafe_code)]
 
-pub mod prelude;
-
 mod channel;
 mod cluster;
 mod controller;
@@ -60,6 +58,8 @@ mod endpoint;
 mod middleware;
 mod request;
 mod response;
+
+pub mod prelude;
 
 pub use controller::DefaultController;
 

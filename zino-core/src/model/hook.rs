@@ -206,7 +206,7 @@ pub trait ModelHooks: Model {
 
     /// A hook running before counting the models in the table.
     #[inline]
-    async fn before_count(_query: &mut Query) -> Result<(), Error> {
+    async fn before_count(_query: &Query) -> Result<(), Error> {
         Ok(())
     }
 
@@ -222,7 +222,7 @@ pub trait ModelHooks: Model {
 
     /// A hook running before selecting the models with a `Query` from the table.
     #[inline]
-    async fn before_query(_query: &mut Query) -> Result<(), Error> {
+    async fn before_query(_query: &Query) -> Result<(), Error> {
         Ok(())
     }
 
@@ -238,7 +238,7 @@ pub trait ModelHooks: Model {
 
     /// A hook running before updating the models with a `Mutation` in the table.
     #[inline]
-    async fn before_mutation(_query: &mut Query, _mutation: &mut Mutation) -> Result<(), Error> {
+    async fn before_mutation(_query: &Query, _mutation: &mut Mutation) -> Result<(), Error> {
         Ok(())
     }
 
@@ -255,7 +255,7 @@ pub trait ModelHooks: Model {
     /// A hook running before listing the models with a `Query` from the table.
     #[inline]
     async fn before_list(
-        _query: &mut Query,
+        _query: &Query,
         _extension: Option<&Self::Extension>,
     ) -> Result<(), Error> {
         Ok(())

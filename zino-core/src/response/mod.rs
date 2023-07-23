@@ -2,7 +2,7 @@
 
 use crate::{
     error::Error,
-    extension::{self, JsonValueExt},
+    extension::JsonValueExt,
     request::{RequestContext, Validation},
     trace::{ServerTiming, TimingMetric, TraceContext},
     JsonValue, SharedString, Uuid,
@@ -425,7 +425,7 @@ impl<S: ResponseCode> Response<S> {
         }
 
         let content_type = self.content_type();
-        let bytes = if extension::header::check_json_content_type(content_type) {
+        let bytes = if crate::helper::check_json_content_type(content_type) {
             let capacity = if let Some(data) = &self.data {
                 data.get().len() + 128
             } else {

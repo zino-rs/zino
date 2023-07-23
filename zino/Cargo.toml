@@ -36,6 +36,7 @@ axum = [
 default = ["orm", "view"]
 orm = ["zino-core/orm"]
 view = ["zino-core/view"]
+export-pdf = ["zino-core/format-pdf"]
 
 [dependencies]
 async-trait = "0.1.72"

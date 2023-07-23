@@ -363,7 +363,7 @@ where
     }
 
     /// Fetches the data of models seleted by the `Query`.
-    async fn fetch(query: &mut Query) -> Result<Vec<Map>, Error> {
+    async fn fetch(query: &Query) -> Result<Vec<Map>, Error> {
         let mut models = Self::find(query).await?;
         let translate_enabled = query.translate_enabled();
         for model in models.iter_mut() {
@@ -388,11 +388,11 @@ where
         let mut model = Self::try_get_model(id).await?;
         let model_data = model.before_soft_delete().await?;
 
-        let mut query = model.current_version_query();
+        let query = model.current_version_query();
         let mut mutation = model.soft_delete_mutation();
-        Self::before_mutation(&mut query, &mut mutation).await?;
+        Self::before_mutation(&query, &mut mutation).await?;
 
-        let ctx = Self::update_one(&mut query, &mut mutation).await?;
+        let ctx = Self::update_one(&query, &mut mutation).await?;
         Self::after_mutation(&ctx).await?;
         Self::after_soft_delete(&ctx, model_data).await?;
         Ok(())
@@ -403,11 +403,11 @@ where
         let mut model = Self::try_get_model(id).await?;
         let model_data = model.before_lock().await?;
 
-        let mut query = model.current_version_query();
+        let query = model.current_version_query();
         let mut mutation = model.lock_mutation();
-        Self::before_mutation(&mut query, &mut mutation).await?;
+        Self::before_mutation(&query, &mut mutation).await?;
 
-        let ctx = Self::update_one(&mut query, &mut mutation).await?;
+        let ctx = Self::update_one(&query, &mut mutation).await?;
         Self::after_mutation(&ctx).await?;
         Self::after_lock(&ctx, model_data).await?;
         Ok(())
@@ -446,12 +446,12 @@ where
         }
         model.after_validation(data).await?;
 
-        let mut query = model.current_version_query();
+        let query = model.current_version_query();
         let mut mutation = model.next_version_mutation(data);
-        Self::before_mutation(&mut query, &mut mutation).await?;
+        Self::before_mutation(&query, &mut mutation).await?;
 
         let model_data = model.before_update().await?;
-        let ctx = Self::update_one(&mut query, &mut mutation).await?;
+        let ctx = Self::update_one(&query, &mut mutation).await?;
         Self::after_mutation(&ctx).await?;
         Self::after_update(&ctx, model_data).await?;
         Ok((validation, model))
