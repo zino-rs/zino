@@ -4,7 +4,6 @@ mod mask_text;
 mod pdf_document;
 mod str_array;
 
-#[cfg(any(feature = "connector", feature = "orm"))]
 pub(crate) mod query;
 
 pub(crate) use mask_text::mask_text;
