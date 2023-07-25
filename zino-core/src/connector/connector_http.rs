@@ -90,7 +90,7 @@ impl HttpConnector {
     }
 
     /// Sets a JSON Pointer for looking up a value from the response data.
-    /// It only applies when the response data a JSON object.
+    /// It only applies when the response data is a JSON object.
     #[inline]
     pub fn set_json_pointer(&mut self, pointer: impl Into<String>) {
         self.json_pointer = Some(pointer.into());

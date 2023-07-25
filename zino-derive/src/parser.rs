@@ -5,13 +5,13 @@ use syn::{
 /// Returns `true` if the type is `Vec<T>`.
 #[inline]
 pub(super) fn check_vec_type(type_name: &str) -> bool {
-    type_name.split_once("<").is_some_and(|(t, s)| t == "Vec" && s.ends_with(">"))
+    type_name.split_once('<').is_some_and(|(t, s)| t == "Vec" && s.ends_with('>'))
 }
 
 /// Returns `true` if the type is `Option<T>`.
 #[inline]
 pub(super) fn check_option_type(type_name: &str) -> bool {
-    type_name.split_once("<").is_some_and(|(t, s)| t == "Option" && s.ends_with(">"))
+    type_name.split_once('<').is_some_and(|(t, s)| t == "Option" && s.ends_with('>'))
 }
 
 /// Returns the type name as a str.
