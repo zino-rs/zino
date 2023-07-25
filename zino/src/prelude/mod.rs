@@ -8,7 +8,7 @@ pub use zino_core::{
     auth::{AccessKeyId, AuthorizationProvider, JwtClaims, UserSession},
     datetime::DateTime,
     error::Error,
-    extension::{JsonObjectExt, TomlTableExt},
+    extension::{JsonObjectExt, JsonValueExt, TomlTableExt},
     model::{Model, ModelHooks, Mutation, Query, QueryContext},
     request::{RequestContext, Validation},
     response::{ExtractRejection, Rejection, StatusCode, WebHook},

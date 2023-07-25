@@ -29,6 +29,8 @@ pub struct HttpConnector {
     headers: Map,
     /// Optional request body.
     body: Option<Box<RawValue>>,
+    /// JSON Pointer for looking up a value from the response data.
+    json_pointer: Option<String>,
 }
 
 impl HttpConnector {
@@ -39,6 +41,7 @@ impl HttpConnector {
             base_url: base_url.parse()?,
             headers: Map::new(),
             body: None,
+            json_pointer: None,
         })
     }
 
@@ -59,6 +62,10 @@ impl HttpConnector {
             let raw_value = serde_json::value::to_raw_value(body)?;
             connector.body = Some(raw_value);
         }
+        if let Some(json_pointer) = config.get_str("json-pointer") {
+            connector.json_pointer = Some(json_pointer.into());
+        }
+
         Ok(connector)
     }
 
@@ -68,10 +75,25 @@ impl HttpConnector {
         self.headers.upsert(key, value.into());
     }
 
+    /// Sets the request query.
+    #[inline]
+    pub fn set_query<T: Serialize>(&mut self, query: &T) {
+        if let Ok(query) = serde_qs::to_string(query) {
+            self.base_url.set_query(Some(&query));
+        }
+    }
+
     /// Sets the request body.
     #[inline]
     pub fn set_body<T: Serialize>(&mut self, body: &T) {
         self.body = serde_json::value::to_raw_value(body).ok();
+    }
+
+    /// Sets a JSON Pointer for looking up a value from the response data.
+    /// It only applies when the response data a JSON object.
+    #[inline]
+    pub fn set_json_pointer(&mut self, pointer: impl Into<String>) {
+        self.json_pointer = Some(pointer.into());
     }
 
     /// Makes an HTTP request with the given query and params.
@@ -153,14 +175,19 @@ impl Connector for HttpConnector {
         let records = match self.fetch_json(query, params).await? {
             JsonValue::Array(vec) => vec
                 .into_iter()
-                .filter_map(|value| value.into_map_opt())
+                .filter_map(|v| v.into_map_opt())
                 .map(|m| m.into_avro_record())
                 .collect::<Vec<_>>(),
             JsonValue::Object(mut map) => {
-                if let Some(value) = map.remove("data").or_else(|| map.remove("result")) {
+                let data = if let Some(json_pointer) = &self.json_pointer {
+                    map.lookup(json_pointer).cloned()
+                } else {
+                    map.remove("data").or_else(|| map.remove("result"))
+                };
+                if let Some(value) = data {
                     if let JsonValue::Array(vec) = value {
                         vec.into_iter()
-                            .filter_map(|value| value.into_map_opt())
+                            .filter_map(|v| v.into_map_opt())
                             .map(|m| m.into_avro_record())
                             .collect::<Vec<_>>()
                     } else {
@@ -186,10 +213,15 @@ impl Connector for HttpConnector {
                 .filter_map(|value| value.into_map_opt())
                 .collect::<Vec<_>>(),
             JsonValue::Object(mut map) => {
-                if let Some(value) = map.remove("data").or_else(|| map.remove("result")) {
+                let data = if let Some(json_pointer) = &self.json_pointer {
+                    map.lookup(json_pointer).cloned()
+                } else {
+                    map.remove("data").or_else(|| map.remove("result"))
+                };
+                if let Some(value) = data {
                     if let JsonValue::Array(vec) = value {
                         vec.into_iter()
-                            .filter_map(|value| value.into_map_opt())
+                            .filter_map(|v| v.into_map_opt())
                             .collect::<Vec<_>>()
                     } else {
                         vec![Map::from_entry("data", value)]
@@ -206,7 +238,12 @@ impl Connector for HttpConnector {
     async fn query_one(&self, query: &str, params: Option<&Map>) -> Result<Option<Record>, Error> {
         let record = match self.fetch_json(query, params).await? {
             JsonValue::Object(mut map) => {
-                if let Some(value) = map.remove("data").or_else(|| map.remove("result")) {
+                let data = if let Some(json_pointer) = &self.json_pointer {
+                    map.lookup(json_pointer).cloned()
+                } else {
+                    map.remove("data").or_else(|| map.remove("result"))
+                };
+                if let Some(value) = data {
                     if let JsonValue::Object(data) = value {
                         data.into_avro_record()
                     } else {
@@ -227,7 +264,12 @@ impl Connector for HttpConnector {
         params: Option<&Map>,
     ) -> Result<Option<T>, Error> {
         if let JsonValue::Object(mut map) = self.fetch_json(query, params).await? {
-            if let Some(value) = map.remove("data").or_else(|| map.remove("result")) {
+            let data = if let Some(json_pointer) = &self.json_pointer {
+                map.lookup(json_pointer).cloned()
+            } else {
+                map.remove("data").or_else(|| map.remove("result"))
+            };
+            if let Some(value) = data {
                 serde_json::from_value(value).map_err(Error::from)
             } else {
                 serde_json::from_value(map.into()).map_err(Error::from)

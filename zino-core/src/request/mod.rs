@@ -224,33 +224,16 @@ pub trait RequestContext {
     }
 
     /// Gets the data type by parsing the `content-type` header.
-    fn data_type(&self) -> Option<SharedString> {
-        let content_type = self.get_header("content-type").map(|content_type| {
-            if let Some((essence, _)) = content_type.split_once(';') {
-                essence
-            } else {
-                content_type
-            }
-        })?;
-        let data_type = match content_type {
-            "application/json" | "application/problem+json" => "json".into(),
-            "application/jsonlines" | "application/x-ndjson" => "ndjson".into(),
-            "application/msgpack" | "application/x-msgpack" => "msgpack".into(),
-            "application/octet-stream" => "bytes".into(),
-            "application/pdf" => "pdf".into(),
-            "application/x-www-form-urlencoded" => "form".into(),
-            "multipart/form-data" => "multipart".into(),
-            "text/csv" => "csv".into(),
-            "text/plain" => "text".into(),
-            _ => {
-                if content_type.starts_with("application/") && content_type.ends_with("+json") {
-                    "json".into()
+    fn data_type(&self) -> Option<&str> {
+        self.get_header("content-type")
+            .map(|content_type| {
+                if let Some((essence, _)) = content_type.split_once(';') {
+                    essence
                 } else {
-                    content_type.to_owned().into()
+                    content_type
                 }
-            }
-        };
-        Some(data_type)
+            })
+            .map(crate::helper::get_data_type)
     }
 
     /// Parses the route parameter by name as an instance of type `T`.
@@ -315,21 +298,24 @@ pub trait RequestContext {
     /// - `application/problem+json`
     /// - `application/x-www-form-urlencoded`
     async fn parse_body<T: DeserializeOwned>(&mut self) -> Result<T, Rejection> {
-        let data_type = self.data_type().unwrap_or("form".into());
+        let data_type = self.data_type().unwrap_or("form");
         if data_type.contains('/') {
             let message = format!("deserialization of the data type `{data_type}` is unsupported");
             let rejection =
                 Rejection::from_validation_entry("data_type", Error::new(message)).context(self);
             return Err(rejection);
         }
+
+        let is_form = data_type == "form";
+        let is_msgpack = data_type == "msgpack";
         let bytes = self
             .read_body_bytes()
             .await
             .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
-        if data_type == "form" {
+        if is_form {
             serde_qs::from_bytes(&bytes)
                 .map_err(|err| Rejection::from_validation_entry("body", err).context(self))
-        } else if data_type == "msgpack" {
+        } else if is_msgpack {
             rmp_serde::from_slice(&bytes)
                 .map_err(|err| Rejection::from_validation_entry("body", err).context(self))
         } else {
@@ -573,7 +559,7 @@ pub trait RequestContext {
     where
         Self: Sized,
     {
-        let data_type = self.data_type().unwrap_or("form".into());
+        let data_type = self.data_type().unwrap_or("form");
         if data_type.contains('/') {
             let message = format!("deserialization of the data type `{data_type}` is unsupported");
             let rejection =
@@ -584,12 +570,14 @@ pub trait RequestContext {
             .await
             .map_err(|err| Rejection::from_error(err).context(self))?;
 
+        let is_form = data_type == "form";
+        let is_msgpack = data_type == "msgpack";
         let bytes = self
             .read_body_bytes()
             .await
             .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
         let extension = self.get_data::<M::Extension>();
-        if data_type == "form" {
+        if is_form {
             let mut data = serde_qs::from_bytes(&bytes)
                 .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
             match M::before_validation(&mut data, extension.as_ref()).await {
@@ -613,7 +601,7 @@ pub trait RequestContext {
                 }
                 Err(err) => Err(Rejection::from_error(err).context(self)),
             }
-        } else if data_type == "msgpack" {
+        } else if is_msgpack {
             let mut data = rmp_serde::from_slice(&bytes)
                 .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
             match M::before_validation(&mut data, extension.as_ref()).await {

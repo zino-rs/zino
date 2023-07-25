@@ -15,10 +15,10 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
         let type_name = self.type_name();
         match type_name {
             "bool" => "BOOLEAN",
-            "u64" | "usize" => "BIGINT UNSIGNED",
-            "i64" | "isize" => "BIGINT",
-            "u32" => "INT UNSIGNED",
-            "i32" => "INT",
+            "u64" | "usize" | "Option<u64>" => "BIGINT UNSIGNED",
+            "i64" | "isize" | "Option<i64>" => "BIGINT",
+            "u32" | "Option<u32>" => "INT UNSIGNED",
+            "i32" | "Option<i32>" => "INT",
             "u16" => "SMALLINT UNSIGNED",
             "i16" => "SMALLINT",
             "u8" => "TINYINT UNSIGNED",
@@ -93,14 +93,14 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 let value = if value == "true" { "TRUE" } else { "FALSE" };
                 value.into()
             }
-            "u64" | "u32" | "u16" | "u8" | "usize" => {
+            "u64" | "u32" | "u16" | "u8" | "usize" | "Option<u64>" | "Option<u32>" => {
                 if value.parse::<u64>().is_ok() {
                     value.into()
                 } else {
                     "NULL".into()
                 }
             }
-            "i64" | "i32" | "i16" | "i8" | "isize" => {
+            "i64" | "i32" | "i16" | "i8" | "isize" | "Option<i64>" | "Option<i32>" => {
                 if value.parse::<i64>().is_ok() {
                     value.into()
                 } else {
@@ -206,9 +206,10 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 }
             }
         }
+
+        let field = Query::format_field(field);
         match type_name {
             "bool" => {
-                let field = Query::format_field(field);
                 let value = self.encode_value(Some(value));
                 if value == "TRUE" {
                     format!(r#"{field} IS TRUE"#)
@@ -216,10 +217,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     format!(r#"{field} IS NOT TRUE"#)
                 }
             }
-            "u64" | "i64" | "u32" | "i32" | "u16" | "i16" | "u8" | "i8" | "usize" | "isize"
-            | "f64" | "f32" | "Decimal" | "DateTime" | "Date" | "Time" | "NaiveDateTime"
-            | "NaiveDate" | "NaiveTime" => {
-                let field = Query::format_field(field);
+            "DateTime" | "Date" | "Time" | "NaiveDateTime" | "NaiveDate" | "NaiveTime" => {
                 if let Some(value) = value.as_str() {
                     if let Some((min_value, max_value)) = value.split_once(',') {
                         let min_value = self.format_value(min_value);
@@ -241,8 +239,26 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     format!(r#"{field} = {value}"#)
                 }
             }
+            "u64" | "i64" | "u32" | "i32" | "Option<u64>" | "Option<i64>" | "Option<u32>"
+            | "Option<i32>" => {
+                if let Some(value) = value.as_str() {
+                    if value == "null" {
+                        format!(r#"{field} IS NULL"#)
+                    } else if value == "notnull" {
+                        format!(r#"{field} IS NOT NULL"#)
+                    } else if value.contains(',') {
+                        let value = value.split(',').collect::<Vec<_>>().join(",");
+                        format!(r#"{field} IN ({value})"#)
+                    } else {
+                        let value = self.format_value(value);
+                        format!(r#"{field} = {value}"#)
+                    }
+                } else {
+                    let value = self.encode_value(Some(value));
+                    format!(r#"{field} = {value}"#)
+                }
+            }
             "String" | "Option<String>" => {
-                let field = Query::format_field(field);
                 if let Some(value) = value.as_str() {
                     if value == "null" {
                         // either NULL or empty
@@ -266,7 +282,6 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 }
             }
             "Uuid" | "Option<Uuid>" => {
-                let field = Query::format_field(field);
                 if let Some(value) = value.as_str() {
                     if value == "null" {
                         format!(r#"{field} IS NULL"#)
@@ -288,8 +303,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     format!(r#"{field} = {value}"#)
                 }
             }
-            "Vec<String>" | "Vec<Uuid>" => {
-                let field = Query::format_field(field);
+            "Vec<String>" | "Vec<Uuid>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>" => {
                 if let Some(value) = value.as_str() {
                     if value.contains(';') {
                         if value.contains(',') {
@@ -322,12 +336,10 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 }
             }
             "Map" => {
-                let field = Query::format_field(field);
                 let value = self.encode_value(Some(value));
                 format!(r#"json_overlaps({field}, {value})"#)
             }
             _ => {
-                let field = Query::format_field(field);
                 let value = self.encode_value(Some(value));
                 format!(r#"{field} = {value}"#)
             }

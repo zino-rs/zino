@@ -44,19 +44,5 @@ mod tests {
             sql,
             "SELECT id, name, age FROM users WHERE name = 'alice' AND age >= #{age};"
         );
-
-        let (sql, values) = super::prepare_sql_query(query, Some(&params), '?');
-        assert_eq!(
-            sql,
-            "SELECT id, name, age FROM users WHERE name = 'alice' AND age >= ?;"
-        );
-        assert_eq!(values[0], 18);
-
-        let (sql, values) = super::prepare_sql_query(query, Some(&params), '$');
-        assert_eq!(
-            sql,
-            "SELECT id, name, age FROM users WHERE name = 'alice' AND age >= $1;"
-        );
-        assert_eq!(values[0], 18);
     }
 }

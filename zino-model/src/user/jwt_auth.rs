@@ -22,6 +22,58 @@ where
     /// Tenant ID field name.
     const TENANT_ID_FIELD: Option<&'static str> = None;
 
+    /// Returns the standard claims parsed from the `content` field.
+    /// See [the spec](https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims).
+    fn standard_claims(&self) -> Map {
+        let standard_fields = [
+            "name",
+            "given_name",
+            "family_name",
+            "middle_name",
+            "nickname",
+            "preferred_username",
+            "profile",
+            "picture",
+            "website",
+            "email",
+            "email_verified",
+            "gender",
+            "birthdate",
+            "zoneinfo",
+            "locale",
+            "phone_number",
+            "phone_number_verified",
+            "address",
+        ];
+        let address_fields = [
+            "formatted",
+            "street_address",
+            "locality",
+            "region",
+            "postal_code",
+            "country",
+        ];
+        let mut claims = Map::new();
+        if let Some(map) = self.content() {
+            for (key, value) in map {
+                if key == "address" {
+                    if let Some(map) = value.as_object() {
+                        let mut address = Map::new();
+                        for (key, value) in map {
+                            if address_fields.contains(&key.as_str()) {
+                                address.upsert(key, value.clone());
+                            }
+                        }
+                        claims.upsert(key, address);
+                    }
+                } else if standard_fields.contains(&key.as_str()) {
+                    claims.upsert(key, value.clone());
+                }
+            }
+        }
+        claims
+    }
+
     /// Generates the access token and refresh token.
     async fn generate_token(body: Map) -> Result<(K, Map), Error> {
         let account = body
@@ -39,7 +91,7 @@ where
             fields.push(tenant_id_field);
         }
         query.allow_fields(&fields);
-        query.add_filter("status", Map::from_entry("$nin", vec!["Locked", "Deleted"]));
+        query.add_filter("status", Map::from_entry("$in", vec!["Active", "Inactive"]));
         query.add_filter("account", account);
 
         let mut user: Map = Self::find_one(&query)
@@ -90,7 +142,7 @@ where
         }
         query.allow_fields(&fields);
         query.add_filter("id", user_id);
-        query.add_filter("status", Map::from_entry("$nin", vec!["Locked", "Deleted"]));
+        query.add_filter("status", Map::from_entry("$in", vec!["Active", "Inactive"]));
 
         let mut user: Map = Self::find_one(&query).await?.ok_or_else(|| {
             let message = format!("404 Not Found: the user `{user_id}` does not exist");

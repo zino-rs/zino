@@ -55,7 +55,7 @@ impl<T> JwtClaims<T> {
                 dt.as_secs()
                     .checked_add_signed(-DateTime::current_timestamp())
             })
-            .map(|secs| Duration::from_secs(secs))
+            .map(Duration::from_secs)
             .unwrap_or_default()
     }
 

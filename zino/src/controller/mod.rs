@@ -74,10 +74,8 @@ where
         Self::before_respond(&mut model_snapshot, extension.as_ref())
             .await
             .extract(&req)?;
-
-        let data = Map::data_entry(model_snapshot);
         res.set_code(StatusCode::CREATED);
-        res.set_data(&data);
+        res.set_json_data(Map::data_entry(model_snapshot));
         Ok(res.into())
     }
 
@@ -100,8 +98,7 @@ where
         let mut res = crate::Response::from(validation).context(&req);
         if res.is_success() {
             let model_filters = model.next_version_filters();
-            let data = Map::data_entry(model_filters);
-            res.set_data(&data);
+            res.set_json_data(Map::data_entry(model_filters));
         }
         Ok(res.into())
     }
@@ -109,9 +106,8 @@ where
     async fn view(req: Self::Request) -> Self::Result {
         let id = req.parse_param::<K>("id")?;
         let model = Self::fetch_by_id(&id).await.extract(&req)?;
-        let data = Map::data_entry(model);
         let mut res = crate::Response::default().context(&req);
-        res.set_data(&data);
+        res.set_json_data(Map::data_entry(model));
         Ok(res.into())
     }
 
@@ -149,7 +145,7 @@ where
             let total_rows = Self::count(&query).await.extract(&req)?;
             data.upsert("total_rows", total_rows);
         }
-        res.set_data(&data);
+        res.set_json_data(data);
         Ok(res.into())
     }
 
@@ -195,7 +191,7 @@ where
             let data = Map::from_entry("rows_affected", rows_affected);
             let mut res = crate::Response::default().context(&req);
             res.set_code(StatusCode::CREATED);
-            res.set_data(&data);
+            res.set_json_data(data);
             Ok(res.into())
         }
     }
@@ -209,7 +205,7 @@ where
         let rows_affected = Self::delete_many(&query).await.extract(&req)?;
         let data = Map::from_entry("rows_affected", rows_affected);
         let mut res = crate::Response::default().context(&req);
-        res.set_data(&data);
+        res.set_json_data(data);
         Ok(res.into())
     }
 
@@ -250,14 +246,14 @@ where
                 map.upsert("index", index);
 
                 let mut res = crate::Response::new(StatusCode::BAD_REQUEST);
-                res.set_data(&map);
+                res.set_json_data(map);
                 return Ok(res.into());
             }
         }
 
         let data = Map::from_entry("rows_affected", rows_affected);
         let mut res = crate::Response::default().context(&req);
-        res.set_data(&data);
+        res.set_json_data(data);
         Ok(res.into())
     }
 
@@ -279,63 +275,27 @@ where
                 .extract(&req)?;
         }
 
-        let data = Map::data_entries(models);
-        res.set_data(&data);
-
         let format = req.get_query("format").unwrap_or("json");
         match format {
-            "csv" => {
-                res.set_content_type("text/csv; charset=utf-8");
-                res.set_data_transformer(|data| {
-                    if let Some(value) = data.pointer("/entries") {
-                        value.to_csv(Vec::new()).map_err(Error::from)
-                    } else {
-                        Ok(Vec::new())
-                    }
-                });
-            }
-            "jsonlines" => {
-                res.set_content_type("application/jsonlines; charset=utf-8");
-                res.set_data_transformer(|data| {
-                    if let Some(value) = data.pointer("/entries") {
-                        value.to_jsonlines(Vec::new()).map_err(Error::from)
-                    } else {
-                        Ok(Vec::new())
-                    }
-                });
-            }
-            "msgpack" => {
-                res.set_content_type("application/msgpack");
-                res.set_data_transformer(|data| {
-                    if let Some(value) = data.pointer("/entries") {
-                        value.to_msgpack(Vec::new()).map_err(Error::from)
-                    } else {
-                        Ok(Vec::new())
-                    }
-                });
-            }
+            "csv" => res.set_csv_response(models),
+            "jsonlines" => res.set_jsonlines_response(models),
+            "msgpack" => res.set_msgpack_response(models),
             #[cfg(feature = "export-pdf")]
             "pdf" => {
+                res.set_json_data(models);
                 res.set_content_type("application/pdf");
                 res.set_data_transformer(|data| {
                     let model_name = M::model_name();
                     zino_core::format::PdfDocument::try_new(model_name, None)
                         .and_then(|mut doc| {
-                            let data = data
-                                .pointer("/entries")
-                                .and_then(|v| v.as_map_array())
-                                .unwrap_or_default();
+                            let data = data.as_map_array().unwrap_or_default();
                             doc.add_data_table(data, ["name", "visibility", "status", "version"]);
                             doc.save_to_bytes()
                         })
                         .map_err(Error::from)
                 });
             }
-            _ => {
-                res.set_data_transformer(|data| {
-                    serde_json::to_vec(&data.pointer("/entries")).map_err(Error::from)
-                });
-            }
+            _ => res.set_json_response(models),
         }
         Ok(res.into())
     }

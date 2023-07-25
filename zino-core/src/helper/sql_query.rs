@@ -34,3 +34,30 @@ pub(crate) fn prepare_sql_query<'a>(
 static STATEMENT_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"\#\{\s*([a-zA-Z]+[\w\.]*)\s*\}").expect("fail to create the query pattern")
 });
+
+#[cfg(test)]
+mod tests {
+    use crate::{extension::JsonObjectExt, Map};
+
+    #[test]
+    fn it_formats_sql_query_params() {
+        let query = "SELECT ${fields} FROM users WHERE name = 'alice' AND age >= #{age};";
+        let mut params = Map::new();
+        params.upsert("fields", "id, name, age");
+        params.upsert("age", 18);
+
+        let (sql, values) = super::prepare_sql_query(query, Some(&params), '?');
+        assert_eq!(
+            sql,
+            "SELECT id, name, age FROM users WHERE name = 'alice' AND age >= ?;"
+        );
+        assert_eq!(values[0], 18);
+
+        let (sql, values) = super::prepare_sql_query(query, Some(&params), '$');
+        assert_eq!(
+            sql,
+            "SELECT id, name, age FROM users WHERE name = 'alice' AND age >= $1;"
+        );
+        assert_eq!(values[0], 18);
+    }
+}

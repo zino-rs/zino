@@ -38,6 +38,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     // Parsing struct attrs
     let mut reader_name = String::from("main");
     let mut writer_name = String::from("main");
+    let mut table_name = None;
     let mut documentation = None;
     for attr in input.attrs.iter() {
         for (key, value) in parser::parse_schema_attr(attr).into_iter() {
@@ -51,6 +52,9 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                     }
                     "writer_name" => {
                         writer_name = value;
+                    }
+                    "table_name" => {
+                        table_name = Some(value);
                     }
                     "doc" => {
                         documentation = Some(value);
@@ -137,7 +141,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                 if primary_key_name == name {
                     primary_key_type = type_name.clone();
                     not_null = true;
-                } else if type_name.starts_with("Option") {
+                } else if parser::check_option_type(&type_name) {
                     not_null = false;
                 } else if INTEGER_TYPES.contains(&type_name.as_str()) {
                     default_value = default_value.or_else(|| Some("0".to_owned()));
@@ -206,6 +210,11 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     let num_columns = columns.len();
     let num_readonly_fields = readonly_fields.len();
     let num_writeonly_fields = writeonly_fields.len();
+    let quote_table_name = if let Some(table_name) = table_name {
+        quote! { Some(#table_name) }
+    } else {
+        quote! { None }
+    };
     let quote_documentation = if let Some(doc) = documentation {
         quote! { Some(#doc) }
     } else {
@@ -257,6 +266,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
             const PRIMARY_KEY_NAME: &'static str = #primary_key_name;
             const READER_NAME: &'static str = #reader_name;
             const WRITER_NAME: &'static str = #writer_name;
+            const TABLE_NAME: Option<&'static str> = #quote_table_name;
 
             #[inline]
             fn primary_key(&self) -> &Self::PrimaryKey {
@@ -385,7 +395,7 @@ pub fn decode_row_macro(item: TokenStream) -> TokenStream {
                             model.#ident = map;
                         }
                     });
-                } else if type_name.starts_with("Vec") {
+                } else if parser::check_vec_type(&type_name) {
                     mysql_decode_model_fields.push(quote! {
                         let value = database::decode::<JsonValue>(row, #name)?;
                         if let Some(vec) = value.parse_array() {
@@ -443,12 +453,6 @@ pub fn decode_row_macro(item: TokenStream) -> TokenStream {
 /// Derive the `ModelAccessor` trait.
 #[proc_macro_derive(ModelAccessor, attributes(schema))]
 pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
-    /// Primitive types
-    const PRIMITIVE_TYPES: [&str; 13] = [
-        "u64", "i64", "u32", "i32", "u16", "i16", "u8", "i8", "usize", "isize", "f32", "f64",
-        "bool",
-    ];
-
     // Input
     let input = parse_macro_input!(item as DeriveInput);
 
@@ -475,7 +479,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                 compound_constraints.push(quote! {
                     let columns = [#(#column_values),*];
                     if !self.is_unique_on(columns).await? {
-                        validation.record(#compound_field, "it should be unique");
+                        validation.record(#compound_field, "the compound field values should be unique");
                     }
                 });
             }
@@ -510,12 +514,9 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                             "snapshot" => {
                                 let field = name.clone();
                                 let field_ident = format_ident!("{}", field);
-                                if type_name.starts_with("Vec") {
+                                if type_name == "Uuid" {
                                     snapshot_entries.push(quote! {
-                                        let snapshot_value = self.#field_ident.iter()
-                                            .map(|v| v.to_string())
-                                            .collect::<Vec<_>>();
-                                        snapshot.upsert(#field, snapshot_value);
+                                        snapshot.upsert(#field, self.#field_ident.to_string());
                                     });
                                 } else if type_name == "Option<Uuid>" {
                                     snapshot_entries.push(quote! {
@@ -523,13 +524,16 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                             .map(|v| v.to_string());
                                         snapshot.upsert(#field, snapshot_value);
                                     });
-                                }  else if PRIMITIVE_TYPES.contains(&type_name.as_str()) {
+                                } else if type_name == "Vec<Uuid>" {
                                     snapshot_entries.push(quote! {
-                                        snapshot.upsert(#field, self.#field_ident);
+                                        let snapshot_value = self.#field_ident.iter()
+                                            .map(|v| v.to_string())
+                                            .collect::<Vec<_>>();
+                                        snapshot.upsert(#field, snapshot_value);
                                     });
                                 } else {
                                     snapshot_entries.push(quote! {
-                                        snapshot.upsert(#field, self.#field_ident.to_string());
+                                        snapshot.upsert(#field, self.#field_ident.clone());
                                     });
                                 }
                                 snapshot_fields.push(field);
@@ -537,21 +541,15 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                             "reference" => {
                                 if let Some(value) = value {
                                     let model_ident = format_ident!("{}", value);
-                                    if type_name.starts_with("Vec") {
+                                    if type_name == "Uuid" {
                                         field_constraints.push(quote! {
-                                            let values = self.#ident
-                                                .iter()
-                                                .map(|value| value.to_string())
-                                                .collect::<Vec<_>>();
-                                            let length = values.len();
-                                            if length > 0 {
-                                                let data = <#model_ident>::filter(values).await?;
-                                                if data.len() != length {
-                                                    validation.record(#name, "there are nonexistent values");
-                                                }
+                                            let values = vec![self.#ident.to_string()];
+                                            let data = <#model_ident>::filter(values).await?;
+                                            if data.len() != 1 {
+                                                validation.record(#name, "it is a nonexistent value");
                                             }
                                         });
-                                    } else if type_name.starts_with("Option") {
+                                    } else if type_name == "Option<Uuid>" || type_name == "Option<String>" {
                                         field_constraints.push(quote! {
                                             if let Some(value) = self.#ident {
                                                 let values = vec![value.to_string()];
@@ -561,9 +559,48 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                                 }
                                             }
                                         });
+                                    } else if type_name == "Vec<Uuid>" || type_name == "Vec<String>" {
+                                        field_constraints.push(quote! {
+                                            let values = self.#ident
+                                                .iter()
+                                                .map(|v| v.to_string())
+                                                .collect::<Vec<_>>();
+                                            let length = values.len();
+                                            if length > 0 {
+                                                let data = <#model_ident>::filter(values).await?;
+                                                if data.len() != length {
+                                                    validation.record(#name, "there are nonexistent values");
+                                                }
+                                            }
+                                        });
+                                    } else if parser::check_vec_type(&type_name) {
+                                        field_constraints.push(quote! {
+                                            let values = self.#ident.clone();
+                                            let length = values.len();
+                                            if length > 0 {
+                                                let data = <#model_ident>::filter(values).await?;
+                                                if data.len() != length {
+                                                    validation.record(#name, "there are nonexistent values");
+                                                }
+                                            }
+                                        });
+                                    } else if parser::check_vec_type(&type_name) {
+                                        field_constraints.push(quote! {
+                                            let values = self.#ident
+                                                .iter()
+                                                .map(|v| v.to_string())
+                                                .collect::<Vec<_>>();
+                                            let length = values.len();
+                                            if length > 0 {
+                                                let data = <#model_ident>::filter(values).await?;
+                                                if data.len() != length {
+                                                    validation.record(#name, "there are nonexistent values");
+                                                }
+                                            }
+                                        });
                                     } else {
                                         field_constraints.push(quote! {
-                                            let values = vec![self.#ident.to_string()];
+                                            let values = vec![self.#ident.clone()];
                                             let data = <#model_ident>::filter(values).await?;
                                             if data.len() != 1 {
                                                 validation.record(#name, "it is a nonexistent value");
@@ -577,15 +614,68 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                 }
                             }
                             "unique" => {
-                                field_constraints.push(quote! {
-                                    let value = self.#ident.to_string();
-                                    if !value.is_empty() {
+                                if type_name == "Uuid" {
+                                    field_constraints.push(quote! {
+                                        let value = self.#ident;
+                                        if !value.is_nil() {
+                                            let columns = [(#name, value.to_string().into())];
+                                            if !self.is_unique_on(columns).await? {
+                                                let message = format!("the value `{value}` is not unique");
+                                                validation.record(#name, message);
+                                            }
+                                        }
+                                    });
+                                } else if type_name == "String" {
+                                    field_constraints.push(quote! {
+                                        let value = self.#ident.as_str();
+                                        if !value.is_empty() {
+                                            let columns = [(#name, value.into())];
+                                            if !self.is_unique_on(columns).await? {
+                                                let message = format!("the value `{value}` is not unique");
+                                                validation.record(#name, message);
+                                            }
+                                        }
+                                    });
+                                } else if type_name == "Option<String>" {
+                                    field_constraints.push(quote! {
+                                        if let Some(value) = self.#ident.as_deref() && !value.is_empty() {
+                                            let columns = [(#name, value.into())];
+                                            if !self.is_unique_on(columns).await? {
+                                                let message = format!("the value `{value}` is not unique");
+                                                validation.record(#name, message);
+                                            }
+                                        }
+                                    });
+                                } else if type_name == "Option<Uuid>" {
+                                    field_constraints.push(quote! {
+                                        if let Some(value) = self.#ident && !value.is_nil() {
+                                            let columns = [(#name, value.to_string().into())];
+                                            if !self.is_unique_on(columns).await? {
+                                                let message = format!("the value `{value}` is not unique");
+                                                validation.record(#name, message);
+                                            }
+                                        }
+                                    });
+                                } else if parser::check_option_type(&type_name) {
+                                    field_constraints.push(quote! {
+                                        if let Some(value) = self.#ident {
+                                            let columns = [(#name, value.into())];
+                                            if !self.is_unique_on(columns).await? {
+                                                let message = format!("the value `{value}` is not unique");
+                                                validation.record(#name, message);
+                                            }
+                                        }
+                                    });
+                                } else {
+                                    field_constraints.push(quote! {
+                                        let value = self.#ident;
                                         let columns = [(#name, value.into())];
                                         if !self.is_unique_on(columns).await? {
-                                            validation.record(#name, "it should be unique");
+                                            let message = format!("the value `{value}` is not unique");
+                                            validation.record(#name, message);
                                         }
-                                    }
-                                });
+                                    });
+                                }
                             }
                             "not_null" if is_readable => {
                                 if type_name == "String" {
@@ -602,11 +692,22 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                     });
                                 }
                             }
+                            "not_empty" if is_readable => {
+                                if parser::check_vec_type(&type_name) ||
+                                    matches!(type_name.as_str(), "String" | "Map")
+                                {
+                                    field_constraints.push(quote! {
+                                        if self.#ident.is_empty() {
+                                            validation.record(#name, "it should not be nil");
+                                        }
+                                    });
+                                }
+                            }
                             "length" => {
                                 let length: usize = value
                                     .and_then(|s| s.parse().ok())
                                     .unwrap_or_default();
-                                if type_name == "String" || type_name.starts_with("Vec") {
+                                if type_name == "String" || parser::check_vec_type(&type_name) {
                                     field_constraints.push(quote! {
                                         let length = #length;
                                         if self.#ident.len() != length {
@@ -628,7 +729,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                 let length: usize = value
                                     .and_then(|s| s.parse().ok())
                                     .unwrap_or_default();
-                                if type_name == "String" || type_name.starts_with("Vec") {
+                                if type_name == "String" || parser::check_vec_type(&type_name) {
                                     field_constraints.push(quote! {
                                         let length = #length;
                                         if self.#ident.len() > length {
@@ -650,7 +751,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                 let length: usize = value
                                     .and_then(|s| s.parse().ok())
                                     .unwrap_or_default();
-                                if type_name == "String" || type_name.starts_with("Vec") {
+                                if type_name == "String" || parser::check_vec_type(&type_name) {
                                     field_constraints.push(quote! {
                                         let length = #length;
                                         if self.#ident.len() < length {

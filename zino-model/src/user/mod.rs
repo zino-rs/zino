@@ -52,9 +52,13 @@ pub struct User {
     account: String,
     #[schema(not_null, writeonly)]
     password: String,
-    mobile: String,
-    email: String,
+    nickname: String,
     avatar: String,
+    website: String,
+    email: String,
+    location: String,
+    locale: String,
+    mobile: String,
     #[schema(snapshot, index_type = "gin")]
     roles: Vec<String>,
     #[cfg(feature = "tags")]
@@ -216,6 +220,45 @@ impl User {
         user_session.set_access_key_id(self.access_key_id().into());
         user_session.set_roles(self.roles());
         user_session
+    }
+
+    /// Returns the user info as standard claims defined in the
+    /// [OpenID Connect](https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims).
+    pub fn user_info(&self) -> Map {
+        let mut claims = self.standard_claims();
+        claims.upsert("sub", self.id.to_string());
+        claims.upsert("updated_at", self.updated_at.timestamp());
+        if !claims.get_str("name").is_some_and(|s| !s.is_empty()) {
+            claims.upsert("name", self.name.clone());
+        }
+        if !claims.get_str("nickname").is_some_and(|s| !s.is_empty()) {
+            claims.upsert("nickname", self.nickname.clone());
+        }
+        if !claims.get_str("picture").is_some_and(|s| !s.is_empty()) {
+            claims.upsert("picture", self.avatar.clone());
+        }
+        if !claims.get_str("website").is_some_and(|s| !s.is_empty()) {
+            claims.upsert("website", self.website.clone());
+        }
+        if !claims.get_str("email").is_some_and(|s| !s.is_empty()) {
+            claims.upsert("email", self.email.clone());
+        }
+        if !claims.get_object("address").is_some_and(|o| !o.is_empty()) {
+            claims.upsert(
+                "address",
+                Map::from_entry("locality", self.location.clone()),
+            );
+        }
+        if !claims.get_str("locale").is_some_and(|s| !s.is_empty()) {
+            claims.upsert("locale", self.locale.clone());
+        }
+        if !claims
+            .get_str("phone_number")
+            .is_some_and(|s| !s.is_empty())
+        {
+            claims.upsert("phone_number", self.mobile.clone());
+        }
+        claims
     }
 }
 

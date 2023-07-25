@@ -23,8 +23,6 @@ pub struct WebHook {
     method: Method,
     /// Base URL.
     base_url: Url,
-    /// Query string.
-    query: String,
     /// HTTP request headers.
     headers: Map,
     /// Optional request body.
@@ -42,16 +40,16 @@ impl WebHook {
         } else {
             Method::GET
         };
-        let base_url = if let Some(base_url) = config.get_str("base-url") {
-            base_url.parse()?
+        let mut base_url = if let Some(base_url) = config.get_str("base-url") {
+            base_url.parse::<Url>()?
         } else {
             return Err(Error::new("the base URL should be specified"));
         };
-        let query = if let Some(query) = config.get_table("query") {
-            serde_qs::to_string(query)?
-        } else {
-            String::new()
-        };
+        if let Some(query) = config.get_table("query") {
+            let query = serde_qs::to_string(query)?;
+            base_url.set_query(Some(&query));
+        }
+
         let headers = config
             .get("headers")
             .and_then(|v| v.to_json_value().into_map_opt())
@@ -68,7 +66,6 @@ impl WebHook {
             name: name.to_owned(),
             method,
             base_url,
-            query,
             headers,
             body,
             params,
@@ -90,7 +87,9 @@ impl WebHook {
     /// Sets the request query.
     #[inline]
     pub fn set_query<T: Serialize>(&mut self, query: &T) {
-        self.query = serde_qs::to_string(query).unwrap_or_default();
+        if let Ok(query) = serde_qs::to_string(query) {
+            self.base_url.set_query(Some(&query));
+        }
     }
 
     /// Sets the request body.
@@ -113,11 +112,8 @@ impl WebHook {
 
     /// Triggers the webhook and deserializes the response body via JSON.
     pub async fn trigger<T: DeserializeOwned>(&self) -> Result<T, Error> {
-        let mut url = self.base_url.clone();
-        url.set_query(Some(self.query.as_str()));
-
         let params = self.params.as_ref();
-        let resource = helper::format_query(url.as_str(), params);
+        let resource = helper::format_query(self.base_url.as_str(), params);
         let mut options = Map::from_entry("method", self.method.as_str());
         if let Some(body) = self.body.as_deref().map(|v| v.get()) {
             options.upsert("body", helper::format_query(body, params));

@@ -26,6 +26,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     const READER_NAME: &'static str = "main";
     /// Writer name.
     const WRITER_NAME: &'static str = "main";
+    /// Optional custom table name.
+    const TABLE_NAME: Option<&'static str> = None;
 
     /// Returns the primary key value.
     fn primary_key(&self) -> &Self::PrimaryKey;
@@ -68,9 +70,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Returns the table name.
     #[inline]
     fn table_name() -> &'static str {
-        [*super::NAMESPACE_PREFIX, Self::MODEL_NAME]
-            .join("_")
-            .leak()
+        Self::TABLE_NAME.unwrap_or_else(|| {
+            [*super::NAMESPACE_PREFIX, Self::MODEL_NAME]
+                .join("_")
+                .leak()
+        })
     }
 
     /// Constructs a default `Query` for the model.

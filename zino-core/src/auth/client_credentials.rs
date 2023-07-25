@@ -5,11 +5,12 @@ use crate::{
     extension::{JsonObjectExt, TomlTableExt},
     Map, SharedString,
 };
+use parking_lot::RwLock;
 use std::{marker::PhantomData, time::Duration};
 use toml::Table;
 
 /// Credentials for the client authentication.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ClientCredentials<S: ?Sized> {
     /// Client ID.
     client_id: SharedString,
@@ -18,9 +19,9 @@ pub struct ClientCredentials<S: ?Sized> {
     /// Client secret.
     client_secret: SharedString,
     /// Access token.
-    access_token: String,
+    access_token: RwLock<String>,
     /// Expires time.
-    expires_at: DateTime,
+    expires_at: RwLock<DateTime>,
     /// Phantom type of authorization server.
     phantom: PhantomData<S>,
 }
@@ -33,8 +34,8 @@ impl<S: ?Sized> ClientCredentials<S> {
             client_id: client_id.into(),
             client_key: "".into(),
             client_secret: client_secret.into(),
-            access_token: String::new(),
-            expires_at: DateTime::now(),
+            access_token: RwLock::new(String::new()),
+            expires_at: RwLock::new(DateTime::now()),
             phantom: PhantomData,
         }
     }
@@ -53,8 +54,8 @@ impl<S: ?Sized> ClientCredentials<S> {
             client_id: client_id.into(),
             client_key: client_key.into(),
             client_secret: client_secret.into(),
-            access_token: String::new(),
-            expires_at: DateTime::now(),
+            access_token: RwLock::new(String::new()),
+            expires_at: RwLock::new(DateTime::now()),
             phantom: PhantomData,
         })
     }
@@ -67,14 +68,14 @@ impl<S: ?Sized> ClientCredentials<S> {
 
     /// Sets the access token.
     #[inline]
-    pub fn set_access_token(&mut self, access_token: impl ToString) {
-        self.access_token = access_token.to_string();
+    pub fn set_access_token(&self, access_token: impl ToString) {
+        *self.access_token.write() = access_token.to_string();
     }
 
     /// Sets the expires.
     #[inline]
-    pub fn set_expires(&mut self, expires_in: Duration) {
-        self.expires_at = DateTime::now() + expires_in
+    pub fn set_expires(&self, expires_in: Duration) {
+        *self.expires_at.write() = DateTime::now() + expires_in
     }
 
     /// Returns the client ID.
@@ -97,14 +98,14 @@ impl<S: ?Sized> ClientCredentials<S> {
 
     /// Returns the access token regardless of whether it has been expired.
     #[inline]
-    pub fn access_token(&self) -> &str {
-        &self.access_token
+    pub fn access_token(&self) -> String {
+        self.access_token.read().clone()
     }
 
     /// Returns the time the client credentials expire at.
     #[inline]
     pub fn expires_at(&self) -> DateTime {
-        self.expires_at
+        *self.expires_at.read()
     }
 
     /// Returns `true` if the access token for the client credentials has been expired.
@@ -135,7 +136,7 @@ impl<S: ?Sized> ClientCredentials<S> {
 impl<S: ?Sized + AuthorizationProvider> ClientCredentials<S> {
     /// Requests an access token for the client credentials.
     #[inline]
-    pub async fn request(&mut self) -> Result<&str, Error> {
+    pub async fn request(&self) -> Result<String, Error> {
         if self.is_expired() {
             S::grant_client_credentials(self).await?;
         }

@@ -2,8 +2,20 @@ use syn::{
     punctuated::Punctuated, Attribute, Expr, GenericArgument, Lit, Meta, PathArguments, Token, Type,
 };
 
-/// Returns the Postgres type name as a str.
-pub(crate) fn get_type_name(ty: &Type) -> String {
+/// Returns `true` if the type is `Vec<T>`.
+#[inline]
+pub(super) fn check_vec_type(type_name: &str) -> bool {
+    type_name.split_once("<").is_some_and(|(t, s)| t == "Vec" && s.ends_with(">"))
+}
+
+/// Returns `true` if the type is `Option<T>`.
+#[inline]
+pub(super) fn check_option_type(type_name: &str) -> bool {
+    type_name.split_once("<").is_some_and(|(t, s)| t == "Option" && s.ends_with(">"))
+}
+
+/// Returns the type name as a str.
+pub(super) fn get_type_name(ty: &Type) -> String {
     if let Type::Path(ty) = ty && let Some(segment) = ty.path.segments.last() {
         let type_name = segment.ident.to_string();
         if let PathArguments::AngleBracketed(ref generics) = segment.arguments {
@@ -18,7 +30,7 @@ pub(crate) fn get_type_name(ty: &Type) -> String {
 }
 
 /// Parses an attribute and returns a list of arguments
-pub(crate) fn parse_schema_attr(attr: &Attribute) -> Vec<(String, Option<String>)> {
+pub(super) fn parse_schema_attr(attr: &Attribute) -> Vec<(String, Option<String>)> {
     let mut arguments = Vec::new();
     if attr.path().is_ident("schema") {
         if let Ok(nested) = attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated) {

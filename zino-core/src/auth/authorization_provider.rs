@@ -5,6 +5,6 @@ use crate::error::Error;
 pub trait AuthorizationProvider {
     /// Grants an access token for the client credentials.
     async fn grant_client_credentials(
-        client_credentials: &mut ClientCredentials<Self>,
+        client_credentials: &ClientCredentials<Self>,
     ) -> Result<(), Error>;
 }
