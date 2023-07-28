@@ -1,10 +1,11 @@
-use crate::encoding::base64;
+use crate::{crypto, encoding::base64, extension::TomlTableExt, state::State};
 use hmac::{
     digest::{FixedOutput, KeyInit, MacMarker, Update},
-    Mac,
+    Hmac, Mac,
 };
 use rand::{distributions::Alphanumeric, Rng};
-use std::{borrow::Cow, fmt, iter};
+use sha2::Sha256;
+use std::{borrow::Cow, env, fmt, iter, sync::LazyLock};
 
 /// Access key ID.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -69,14 +70,19 @@ impl<'a> From<Cow<'a, str>> for AccessKeyId {
 pub struct SecretAccessKey(String);
 
 impl SecretAccessKey {
-    /// Creates a new instance.
-    pub fn new<H>(key: impl AsRef<[u8]>, access_key_id: impl Into<AccessKeyId>) -> Self
+    /// Creates a new instance for the Access key ID.
+    #[inline]
+    pub fn new(access_key_id: &AccessKeyId) -> Self {
+        Self::with_key::<Hmac<Sha256>>(access_key_id, SECRET_KEY.as_ref())
+    }
+
+    /// Creates a new instance with the specific key.
+    pub fn with_key<H>(access_key_id: &AccessKeyId, key: impl AsRef<[u8]>) -> Self
     where
         H: FixedOutput + KeyInit + MacMarker + Update,
     {
-        let data = access_key_id.into();
         let mut mac = H::new_from_slice(key.as_ref()).expect("HMAC can take key of any size");
-        mac.update(data.as_ref());
+        mac.update(access_key_id.as_ref());
         Self(base64::encode(mac.finalize().into_bytes()))
     }
 
@@ -100,3 +106,26 @@ impl AsRef<[u8]> for SecretAccessKey {
         self.0.as_ref()
     }
 }
+
+/// Shared secret.
+static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
+    let config = State::shared().config();
+    let checksum: [u8; 32] = config
+        .get_table("access-key")
+        .and_then(|t| t.get_str("checksum"))
+        .and_then(|checksum| checksum.as_bytes().try_into().ok())
+        .unwrap_or_else(|| {
+            let app_name = config
+                .get_str("name")
+                .map(|s| s.to_owned())
+                .unwrap_or_else(|| {
+                    env::var("CARGO_PKG_NAME")
+                        .expect("fail to get the environment variable `CARGO_PKG_NAME`")
+                });
+            crypto::sha256(app_name.as_bytes())
+        });
+    crypto::hkdf_sha256(
+        b"ZINO:ACCESS-KEY;CHECKSUM:SHA256;HKDF:HMAC-SHA256",
+        &checksum,
+    )
+});

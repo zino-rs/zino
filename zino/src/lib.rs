@@ -12,14 +12,15 @@
 //! ## Highlights
 //!
 //! - 🚀 Out-of-the-box features for rapid application development.
-//! - ✨ Minimal design, composable architecture and high-level abstractions.
+//! - 🎨 Minimal design, composable architecture and high-level abstractions.
 //! - 🌐 Adopt an API-first approch to development with open standards.
 //! - ⚡ Embrace practical conventions to get the best performance.
 //! - 💎 Highly optimized ORM for MySQL and PostgreSQL based on [`sqlx`].
+//! - ✨ Innovations on query population, field translation and model hooks.
 //! - 📅 Lightweight scheduler for sync and async cron jobs.
 //! - 💠 Unified access to storage services, data sources and chatbots.
 //! - 📊 Built-in support for [`tracing`], [`metrics`] and logging.
-//! - 🎨 Full integrations with [`actix-web`] and [`axum`].
+//! - 💖 Full integrations with [`actix-web`] and [`axum`].
 //!
 //! ## Getting started
 //!
@@ -51,8 +52,8 @@
 #![feature(result_option_inspect)]
 #![forbid(unsafe_code)]
 
+mod application;
 mod channel;
-mod cluster;
 mod controller;
 mod endpoint;
 mod middleware;
@@ -67,7 +68,7 @@ cfg_if::cfg_if! {
     if #[cfg(feature = "actix")] {
         use actix_web::{http::StatusCode, web::ServiceConfig, HttpRequest};
 
-        use cluster::actix_cluster::ActixCluster;
+        use application::actix_cluster::ActixCluster;
         use request::actix_request::ActixExtractor;
         use response::actix_response::{ActixRejection, ActixResponse};
 
@@ -88,7 +89,7 @@ cfg_if::cfg_if! {
     } else if #[cfg(feature = "axum")] {
         use axum::{body::Body, http::{self, StatusCode}};
 
-        use cluster::axum_cluster::AxumCluster;
+        use application::axum_cluster::AxumCluster;
         use request::axum_request::AxumExtractor;
         use response::axum_response::{AxumRejection, AxumResponse};
 

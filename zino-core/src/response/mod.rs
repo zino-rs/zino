@@ -3,6 +3,8 @@
 use crate::{
     error::Error,
     extension::JsonValueExt,
+    file::NamedFile,
+    helper,
     request::{RequestContext, Validation},
     trace::{ServerTiming, TimingMetric, TraceContext},
     JsonValue, SharedString, Uuid,
@@ -32,7 +34,7 @@ pub type StatusCode = http::StatusCode;
 pub type FullResponse = http::Response<Full<Bytes>>;
 
 /// A function pointer of transforming the response data.
-pub type DataTransformer = fn(data: &JsonValue) -> Result<Vec<u8>, Error>;
+pub type DataTransformer = fn(data: &JsonValue) -> Result<Bytes, Error>;
 
 /// An HTTP response.
 #[derive(Debug, Serialize)]
@@ -76,6 +78,9 @@ pub struct Response<S = StatusCode> {
     #[serde(rename = "data")]
     #[serde(skip_serializing_if = "JsonValue::is_null")]
     json_data: JsonValue,
+    /// Bytes data.
+    #[serde(skip)]
+    bytes_data: Bytes,
     /// Transformer of the response data.
     #[serde(skip)]
     data_transformer: Option<DataTransformer>,
@@ -114,6 +119,7 @@ impl<S: ResponseCode> Response<S> {
             request_id: Uuid::nil(),
             data: None,
             json_data: JsonValue::Null,
+            bytes_data: Bytes::new(),
             data_transformer: None,
             content_type: None,
             trace_context: None,
@@ -146,6 +152,7 @@ impl<S: ResponseCode> Response<S> {
             request_id: ctx.request_id(),
             data: None,
             json_data: JsonValue::Null,
+            bytes_data: Bytes::new(),
             data_transformer: None,
             content_type: None,
             trace_context: None,
@@ -191,6 +198,7 @@ impl<S: ResponseCode> Response<S> {
             Ok(raw_value) => {
                 self.data = Some(raw_value);
                 self.json_data = JsonValue::Null;
+                self.bytes_data = Bytes::new();
                 self.content_type = Some("text/html; charset=utf-8".into());
             }
             Err(err) => {
@@ -204,6 +212,7 @@ impl<S: ResponseCode> Response<S> {
                 self.message = None;
                 self.data = None;
                 self.json_data = JsonValue::Null;
+                self.bytes_data = Bytes::new();
             }
         }
         self
@@ -265,6 +274,7 @@ impl<S: ResponseCode> Response<S> {
             Ok(raw_value) => {
                 self.data = Some(raw_value);
                 self.json_data = JsonValue::Null;
+                self.bytes_data = Bytes::new();
             }
             Err(err) => self.set_error_message(err),
         }
@@ -275,6 +285,15 @@ impl<S: ResponseCode> Response<S> {
     pub fn set_json_data(&mut self, data: impl Into<JsonValue>) {
         self.data = None;
         self.json_data = data.into();
+        self.bytes_data = Bytes::new();
+    }
+
+    /// Sets the bytes data.
+    #[inline]
+    pub fn set_bytes_data(&mut self, bytes: impl Into<Bytes>) {
+        self.data = None;
+        self.json_data = JsonValue::Null;
+        self.bytes_data = bytes.into();
     }
 
     /// Sets the response data for the validation.
@@ -284,6 +303,7 @@ impl<S: ResponseCode> Response<S> {
             Ok(raw_value) => {
                 self.data = Some(raw_value);
                 self.json_data = JsonValue::Null;
+                self.bytes_data = Bytes::new();
             }
             Err(err) => self.set_error_message(err),
         }
@@ -318,13 +338,12 @@ impl<S: ResponseCode> Response<S> {
     /// Sets the response body as the form data.
     #[inline]
     pub fn set_form_response(&mut self, data: impl Into<JsonValue>) {
-        self.data = None;
-        self.json_data = data.into();
+        self.set_json_data(data);
         self.set_content_type("application/x-www-form-urlencoded");
         self.set_data_transformer(|data| {
             let mut bytes = Vec::new();
-            serde_qs::to_writer(&data, &mut bytes).map_err(Error::from)?;
-            Ok(bytes)
+            serde_qs::to_writer(&data, &mut bytes)?;
+            Ok(bytes.into())
         });
     }
 
@@ -332,7 +351,7 @@ impl<S: ResponseCode> Response<S> {
     #[inline]
     pub fn set_json_response(&mut self, data: impl Into<JsonValue>) {
         self.set_json_data(data);
-        self.set_data_transformer(|data| serde_json::to_vec(&data).map_err(Error::from));
+        self.set_data_transformer(|data| Ok(serde_json::to_vec(&data)?.into()));
     }
 
     /// Sets the response body as the JSON Lines data.
@@ -340,7 +359,7 @@ impl<S: ResponseCode> Response<S> {
     pub fn set_jsonlines_response(&mut self, data: impl Into<JsonValue>) {
         self.set_json_data(data);
         self.set_content_type("application/jsonlines; charset=utf-8");
-        self.set_data_transformer(|data| data.to_jsonlines(Vec::new()).map_err(Error::from));
+        self.set_data_transformer(|data| Ok(data.to_jsonlines(Vec::new())?.into()));
     }
 
     /// Sets the response body as the MsgPack data.
@@ -348,7 +367,7 @@ impl<S: ResponseCode> Response<S> {
     pub fn set_msgpack_response(&mut self, data: impl Into<JsonValue>) {
         self.set_json_data(data);
         self.set_content_type("application/msgpack");
-        self.set_data_transformer(|data| data.to_msgpack(Vec::new()).map_err(Error::from));
+        self.set_data_transformer(|data| Ok(data.to_msgpack(Vec::new())?.into()));
     }
 
     /// Sets the response body as the CSV data.
@@ -356,7 +375,7 @@ impl<S: ResponseCode> Response<S> {
     pub fn set_csv_response(&mut self, data: impl Into<JsonValue>) {
         self.set_json_data(data);
         self.set_content_type("text/csv; charset=utf-8");
-        self.set_data_transformer(|data| data.to_csv(Vec::new()).map_err(Error::from));
+        self.set_data_transformer(|data| Ok(data.to_csv(Vec::new())?.into()));
     }
 
     /// Sets the request ID.
@@ -450,7 +469,9 @@ impl<S: ResponseCode> Response<S> {
     #[inline]
     pub fn content_type(&self) -> &str {
         self.content_type.as_deref().unwrap_or_else(|| {
-            if self.is_success() {
+            if !self.bytes_data.is_empty() {
+                "application/octet-stream"
+            } else if self.is_success() {
                 "application/json; charset=utf-8"
             } else {
                 "application/problem+json; charset=utf-8"
@@ -485,7 +506,10 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Reads the response into a byte buffer.
-    pub fn read_bytes(&self) -> Result<Vec<u8>, Error> {
+    pub fn read_bytes(&self) -> Result<Bytes, Error> {
+        if !self.bytes_data.is_empty() {
+            return Ok(self.bytes_data.clone());
+        }
         if let Some(transformer) = self.data_transformer.as_ref() {
             if !self.json_data.is_null() {
                 return transformer(&self.json_data);
@@ -535,7 +559,7 @@ impl<S: ResponseCode> Response<S> {
         } else {
             Vec::new()
         };
-        Ok(bytes)
+        Ok(bytes.into())
     }
 
     /// Gets the response time.
@@ -554,6 +578,22 @@ impl<S: ResponseCode> Response<S> {
             &labels,
         );
         duration
+    }
+
+    /// Sends a file to the client.
+    pub fn send_file(&mut self, file: NamedFile) {
+        let mut displayed_inline = false;
+        if let Some(content_type) = file.content_type() {
+            displayed_inline = helper::displayed_inline(content_type);
+            self.set_content_type(content_type.to_string());
+        }
+        if let Some(file_name) = file.file_name() && !displayed_inline {
+            self.insert_header(
+                "content-disposition",
+                format!(r#"attachment; filename="{file_name}""#),
+            );
+        }
+        self.set_bytes_data(Bytes::from(file));
     }
 
     /// Consumes `self` and returns the custom headers.

@@ -15,7 +15,7 @@ pub async fn login(mut req: Request) -> Result {
     data.upsert("entry", user.snapshot());
 
     let mut res = Response::default().context(&req);
-    res.set_data(&data);
+    res.set_json_data(data);
     Ok(res.into())
 }
 
@@ -23,7 +23,7 @@ pub async fn refresh(req: Request) -> Result {
     let claims = req.parse_jwt_claims(JwtClaims::shared_key())?;
     let data = User::refresh_token(&claims).await.extract(&req)?;
     let mut res = Response::default().context(&req);
-    res.set_data(&data);
+    res.set_json_data(data);
     Ok(res.into())
 }
 
@@ -33,7 +33,7 @@ pub async fn logout(req: Request) -> Result {
         .ok_or_else(|| Error::new("401 Unauthorized: the user session is invalid"))
         .extract(&req)?;
 
-    let mut mutations = Map::from_entry("status", "Inactive");
+    let mut mutations = Map::from_entry("status", "SignedOut");
     let user_id = user_session.user_id();
     let (validation, user) = User::update_by_id(user_id, &mut mutations, None)
         .await
@@ -44,6 +44,6 @@ pub async fn logout(req: Request) -> Result {
 
     let data = Map::data_entry(user.snapshot());
     let mut res = Response::default().context(&req);
-    res.set_data(&data);
+    res.set_json_data(data);
     Ok(res.into())
 }

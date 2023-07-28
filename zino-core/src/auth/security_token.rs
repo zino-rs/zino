@@ -17,26 +17,25 @@ pub struct SecurityToken {
 }
 
 impl SecurityToken {
-    /// Creates a new instance.
-    pub fn new(
-        key: impl AsRef<[u8]>,
-        access_key_id: impl Into<AccessKeyId>,
+    /// Attempts to create a new instance.
+    pub fn try_new(
+        grantor_id: AccessKeyId,
         expires: DateTime,
-    ) -> Self {
+        key: impl AsRef<[u8]>,
+    ) -> Result<Self, Error> {
         let key = key.as_ref();
-        let grantor_id = access_key_id.into();
         let timestamp = expires.timestamp();
-        let grantor_id_cipher = crypto::encrypt(key, grantor_id.as_ref()).unwrap_or_default();
+        let grantor_id_cipher = crypto::encrypt(grantor_id.as_ref(), key)?;
         let assignee_id = base64::encode(grantor_id_cipher).into();
         let authorization = format!("{assignee_id}:{timestamp}");
-        let authorization_cipher = crypto::encrypt(key, authorization.as_ref()).unwrap_or_default();
+        let authorization_cipher = crypto::encrypt(authorization.as_ref(), key)?;
         let token = base64::encode(authorization_cipher);
-        Self {
+        Ok(Self {
             grantor_id,
             assignee_id,
             expires,
             token,
-        }
+        })
     }
 
     /// Returns the expires.
@@ -64,20 +63,20 @@ impl SecurityToken {
     }
 
     /// Encrypts the plaintext using AES-GCM-SIV.
-    pub fn encrypt(key: impl AsRef<[u8]>, plaintext: impl AsRef<[u8]>) -> Option<String> {
-        crypto::encrypt(key.as_ref(), plaintext.as_ref())
+    pub fn encrypt(plaintext: impl AsRef<[u8]>, key: impl AsRef<[u8]>) -> Option<String> {
+        crypto::encrypt(plaintext.as_ref(), key.as_ref())
             .inspect_err(|_| tracing::error!("fail to encrypt the plaintext"))
             .ok()
             .map(base64::encode)
     }
 
     /// Decrypts the data using AES-GCM-SIV.
-    pub fn decrypt(key: impl AsRef<[u8]>, data: impl AsRef<[u8]>) -> Option<String> {
+    pub fn decrypt(data: impl AsRef<[u8]>, key: impl AsRef<[u8]>) -> Option<String> {
         base64::decode(data)
             .inspect_err(|_| tracing::error!("fail to encode the data with base64"))
             .ok()
             .and_then(|cipher| {
-                crypto::decrypt(key.as_ref(), &cipher)
+                crypto::decrypt(&cipher, key.as_ref())
                     .inspect_err(|_| tracing::error!("fail to decrypt the data"))
                     .ok()
             })
@@ -87,14 +86,14 @@ impl SecurityToken {
     pub(crate) fn parse_with(token: String, key: &[u8]) -> Result<Self, ParseSecurityTokenError> {
         match base64::decode(&token) {
             Ok(data) => {
-                let authorization = crypto::decrypt(key, &data)
+                let authorization = crypto::decrypt(&data, key)
                     .map_err(|_| DecodeError(Error::new("fail to decrypt authorization")))?;
                 if let Some((assignee_id, timestamp)) = authorization.split_once(':') {
                     match timestamp.parse() {
                         Ok(secs) => {
                             if DateTime::now().timestamp() <= secs {
                                 let expires = DateTime::from_timestamp(secs);
-                                let grantor_id = crypto::decrypt(key, assignee_id.as_ref())
+                                let grantor_id = crypto::decrypt(assignee_id.as_ref(), key)
                                     .map_err(|_| {
                                         DecodeError(Error::new("fail to decrypt grantor id"))
                                     })?;

@@ -233,7 +233,7 @@ impl Authentication {
     }
 
     /// Generates a signature with the secret access key.
-    pub fn sign_with<H>(&self, secret_access_key: SecretAccessKey) -> Result<String, Error>
+    pub fn sign_with<H>(&self, secret_access_key: &SecretAccessKey) -> Result<String, Error>
     where
         H: FixedOutput + KeyInit + MacMarker + Update,
     {
@@ -244,7 +244,7 @@ impl Authentication {
     }
 
     /// Validates the signature using the secret access key.
-    pub fn validate_with<H>(&self, secret_access_key: SecretAccessKey) -> Validation
+    pub fn validate_with<H>(&self, secret_access_key: &SecretAccessKey) -> Validation
     where
         H: FixedOutput + KeyInit + MacMarker + Update,
     {

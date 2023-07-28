@@ -146,11 +146,11 @@ impl State {
         let password = config.get_str("password")?;
         application::SECRET_KEY.get().and_then(|key| {
             if let Ok(data) = base64::decode(password) &&
-                crypto::decrypt(key, &data).is_ok()
+                crypto::decrypt(&data, key).is_ok()
             {
                 Some(password.into())
             } else {
-                crypto::encrypt(key, password.as_bytes())
+                crypto::encrypt(password.as_bytes(), key)
                     .ok()
                     .map(|bytes| base64::encode(bytes).into())
             }
@@ -162,7 +162,7 @@ impl State {
         let password = config.get_str("password")?;
         if let Ok(data) = base64::decode(password) {
             if let Some(key) = application::SECRET_KEY.get() &&
-                let Ok(plaintext) = crypto::decrypt(key, &data)
+                let Ok(plaintext) = crypto::decrypt(&data, key)
             {
                 return Some(plaintext.into());
             }
@@ -215,13 +215,15 @@ impl<T: Default> Default for State<T> {
 
 /// Default env.
 static DEFAULT_ENV: LazyLock<&'static str> = LazyLock::new(|| {
-    let mut default_env = "dev";
     for arg in env::args().skip(1) {
         if let Some(value) = arg.strip_prefix("--env=") {
-            default_env = value.to_owned().leak();
+            return value.to_owned().leak();
         }
     }
-    default_env
+    if let Ok(value) = env::var("ZINO_APP_ENV") {
+        return value.to_owned().leak();
+    }
+    "dev"
 });
 
 /// Shared application state.

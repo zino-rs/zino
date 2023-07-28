@@ -6,14 +6,15 @@ which emphasizes **simplicity**, **extensibility** and **productivity**.
 ## Highlights
 
 - 🚀 Out-of-the-box features for rapid application development.
-- ✨ Minimal design, composable architecture and high-level abstractions.
+- 🎨 Minimal design, composable architecture and high-level abstractions.
 - 🌐 Adopt an API-first approch to development with open standards.
 - ⚡ Embrace practical conventions to get the best performance.
 - 💎 Highly optimized ORM for MySQL and PostgreSQL based on [`sqlx`].
+- ✨ Innovations on query population, field translation and model hooks.
 - 📅 Lightweight scheduler for sync and async cron jobs.
 - 💠 Unified access to storage services, data sources and chatbots.
 - 📊 Built-in support for [`tracing`], [`metrics`] and logging.
-- 🎨 Full integrations with [`actix-web`] and [`axum`].
+- 💖 Full integrations with [`actix-web`] and [`axum`].
 
 ## Getting started
 

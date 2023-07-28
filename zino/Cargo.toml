@@ -1,6 +1,6 @@
 [package]
 name = "zino"
-description = "Full-featured web application framework for Rust."
+description = "Next-generation framework for composable applications in Rust."
 version = "0.10.4"
 rust-version = "1.72"
 edition = "2021"
@@ -44,7 +44,7 @@ cfg-if = "1.0"
 futures = "0.3.28"
 hyper = "0.14.27"
 parking_lot = "0.12.1"
-serde = "1.0.174"
+serde = "1.0.175"
 serde_json = "1.0.103"
 toml = "0.7.6"
 tracing = "0.1.37"
@@ -86,10 +86,6 @@ features = [
     "ws",
 ]
 
-[dependencies.utoipa-swagger-ui]
-version = "3.1.4"
-optional = true
-
 [dependencies.tokio]
 version = "1.29.1"
 optional = true
@@ -122,6 +118,10 @@ features = [
     "fs",
     "trace",
 ]
+
+[dependencies.utoipa-swagger-ui]
+version = "3.1.4"
+optional = true
 
 [dependencies.zino-core]
 path = "../zino-core"

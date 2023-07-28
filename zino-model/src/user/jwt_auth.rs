@@ -91,7 +91,7 @@ where
             fields.push(tenant_id_field);
         }
         query.allow_fields(&fields);
-        query.add_filter("status", Map::from_entry("$in", vec!["Active", "Inactive"]));
+        query.add_filter("status", Map::from_entry("$nin", vec!["Locked", "Deleted"]));
         query.add_filter("account", account);
 
         let mut user: Map = Self::find_one(&query)
@@ -142,10 +142,13 @@ where
         }
         query.allow_fields(&fields);
         query.add_filter("id", user_id);
-        query.add_filter("status", Map::from_entry("$in", vec!["Active", "Inactive"]));
+        query.add_filter(
+            "status",
+            Map::from_entry("$nin", vec!["SignedOut", "Locked", "Deleted"]),
+        );
 
         let mut user: Map = Self::find_one(&query).await?.ok_or_else(|| {
-            let message = format!("404 Not Found: the user `{user_id}` does not exist");
+            let message = format!("403 Forbidden: cannot get the user `{user_id}`");
             Error::new(message)
         })?;
         let mut claims = JwtClaims::new(user_id);

@@ -255,7 +255,7 @@ pub trait ModelHooks: Model {
     /// A hook running before listing the models with a `Query` from the table.
     #[inline]
     async fn before_list(
-        _query: &Query,
+        _query: &mut Query,
         _extension: Option<&Self::Extension>,
     ) -> Result<(), Error> {
         Ok(())

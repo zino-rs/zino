@@ -2,8 +2,7 @@ use super::Schema;
 use crate::{
     crypto, encoding::base64, error::Error, extension::TomlTableExt, openapi, state::State, Map,
 };
-use hkdf::Hkdf;
-use sha2::{Digest, Sha256};
+use sha2::Sha256;
 use std::{fmt::Display, sync::LazyLock};
 
 /// Helper utilities for models.
@@ -27,9 +26,9 @@ where
         let key = Self::secret_key();
         let passowrd = passowrd.as_bytes();
         if let Ok(bytes) = base64::decode(passowrd) && bytes.len() == 256 {
-            crypto::encrypt_hashed_password(key, passowrd)
+            crypto::encrypt_hashed_password(passowrd, key)
         } else {
-            crypto::encrypt_raw_password::<Sha256>(key, passowrd)
+            crypto::encrypt_raw_password::<Sha256>(passowrd, key)
         }
     }
 
@@ -39,9 +38,9 @@ where
         let passowrd = passowrd.as_bytes();
         let encrypted_password = encrypted_password.as_bytes();
         if let Ok(bytes) = base64::decode(passowrd) && bytes.len() == 256 {
-            crypto::verify_hashed_password(key, passowrd, encrypted_password)
+            crypto::verify_hashed_password(passowrd, encrypted_password, key)
         } else {
-            crypto::verify_raw_password::<Sha256>(key, passowrd, encrypted_password)
+            crypto::verify_raw_password::<Sha256>(passowrd, encrypted_password, key)
         }
     }
 
@@ -68,17 +67,8 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
         .get_str("checksum")
         .and_then(|checksum| checksum.as_bytes().try_into().ok())
         .unwrap_or_else(|| {
-            let key = format!("{}_{}", *super::NAMESPACE_PREFIX, super::DRIVER_NAME);
-            let mut hasher = Sha256::new();
-            hasher.update(key.as_bytes());
-            hasher.finalize().into()
+            let driver_name = format!("{}_{}", *super::NAMESPACE_PREFIX, super::DRIVER_NAME);
+            crypto::sha256(driver_name.as_bytes())
         });
-
-    let mut secret_key = [0; 64];
-    let info = "ZINO:ORM;CHECKSUM:SHA256;HKDF:HMAC-SHA256";
-    Hkdf::<Sha256>::from_prk(&checksum)
-        .expect("pseudorandom key is not long enough")
-        .expand(info.as_bytes(), &mut secret_key)
-        .expect("invalid length for Sha256 to output");
-    secret_key
+    crypto::hkdf_sha256(b"ZINO:ORM;CHECKSUM:SHA256;HKDF:HMAC-SHA256", &checksum)
 });

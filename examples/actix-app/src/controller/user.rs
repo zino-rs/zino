@@ -25,7 +25,7 @@ pub async fn new(mut req: Request) -> Result {
         "user_intro": user_intro,
     });
     res.set_code(StatusCode::CREATED);
-    res.set_data(&data);
+    res.set_json_data(data);
     Ok(res.into())
 }
 
@@ -39,6 +39,6 @@ pub async fn view(req: Request) -> Result {
     let data = Map::data_entry(user);
     let mut res = Response::default().context(&req);
     res.record_server_timing("db", None, Some(db_query_duration));
-    res.set_data(&data);
+    res.set_json_data(data);
     Ok(res.into())
 }

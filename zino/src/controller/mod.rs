@@ -37,7 +37,6 @@ pub trait DefaultController<K, U = K> {
 #[cfg(feature = "orm")]
 use zino_core::{
     database::{ModelAccessor, ModelHelper},
-    error::Error,
     extension::{JsonObjectExt, JsonValueExt},
     model::{ModelHooks, Query},
     request::RequestContext,
@@ -114,7 +113,7 @@ where
     async fn list(req: Self::Request) -> Self::Result {
         let mut query = Self::default_list_query();
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
-        Self::before_list(&query, extension.as_ref())
+        Self::before_list(&mut query, extension.as_ref())
             .await
             .extract(&req)?;
 
@@ -141,7 +140,7 @@ where
         };
 
         let mut data = Map::data_entries(models);
-        if req.get_query("page_size").is_some() {
+        if req.get_query("page_size").is_some() && req.get_query("total_rows").is_none() {
             let total_rows = Self::count(&query).await.extract(&req)?;
             data.upsert("total_rows", total_rows);
         }
@@ -260,7 +259,7 @@ where
     async fn export(req: Self::Request) -> Self::Result {
         let mut query = Self::default_query();
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
-        Self::before_list(&query, extension.as_ref())
+        Self::before_list(&mut query, extension.as_ref())
             .await
             .extract(&req)?;
 
@@ -286,13 +285,13 @@ where
                 res.set_content_type("application/pdf");
                 res.set_data_transformer(|data| {
                     let model_name = M::model_name();
-                    zino_core::format::PdfDocument::try_new(model_name, None)
+                    let bytes = zino_core::format::PdfDocument::try_new(model_name, None)
                         .and_then(|mut doc| {
                             let data = data.as_map_array().unwrap_or_default();
                             doc.add_data_table(data, ["name", "visibility", "status", "version"]);
                             doc.save_to_bytes()
-                        })
-                        .map_err(Error::from)
+                        })?;
+                    Ok(bytes.into())
                 });
             }
             _ => res.set_json_response(models),

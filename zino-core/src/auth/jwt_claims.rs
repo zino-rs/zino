@@ -1,18 +1,17 @@
 use crate::{
+    crypto,
     datetime::DateTime,
     error::Error,
     extension::{JsonObjectExt, TomlTableExt},
     state::State,
     JsonValue, Map,
 };
-use hkdf::Hkdf;
 use jwt_simple::{
     algorithms::{HS256Key, MACLike},
     claims::{self, Claims, JWTClaims},
     common::VerificationOptions,
 };
 use serde::{de::DeserializeOwned, Serialize};
-use sha2::{Digest, Sha256};
 use std::{env, sync::LazyLock, time::Duration};
 
 /// JWT Claims.
@@ -206,16 +205,8 @@ static SECRET_KEY: LazyLock<HS256Key> = LazyLock::new(|| {
                     env::var("CARGO_PKG_NAME")
                         .expect("fail to get the environment variable `CARGO_PKG_NAME`")
                 });
-            let mut hasher = Sha256::new();
-            hasher.update(app_name.as_bytes());
-            hasher.finalize().into()
+            crypto::sha256(app_name.as_bytes())
         });
-
-    let mut secret_key = [0; 64];
-    let info = "ZINO:JWT;CHECKSUM:SHA256;HKDF:HMAC-SHA256";
-    Hkdf::<Sha256>::from_prk(&checksum)
-        .expect("pseudorandom key is not long enough")
-        .expand(info.as_bytes(), &mut secret_key)
-        .expect("invalid length for Sha256 to output");
+    let secret_key = crypto::hkdf_sha256(b"ZINO:JWT;CHECKSUM:SHA256;HKDF:HMAC-SHA256", &checksum);
     HS256Key::from_bytes(&secret_key)
 });

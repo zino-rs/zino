@@ -1,5 +1,5 @@
 use crate::{
-    controller::{auth, stats, task, user},
+    controller::{auth, file, stats, task, user},
     middleware,
 };
 use axum::{
@@ -20,6 +20,13 @@ pub fn routes() -> Vec<Router> {
             .route("/auth/logout", post(auth::logout))
             .layer(from_fn(middleware::init_user_session)),
     );
+    routes.push(router);
+
+    // File controller.
+    let router = Router::new()
+        .route("/file/upload", post(file::upload))
+        .route("/file/decrypt", get(file::decrypt))
+        .layer(from_fn(middleware::init_user_session));
     routes.push(router);
 
     // User controller.

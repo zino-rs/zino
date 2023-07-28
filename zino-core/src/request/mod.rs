@@ -3,13 +3,15 @@
 use crate::{
     application::http_client,
     auth::{
-        AccessKeyId, Authentication, JwtClaims, ParseSecurityTokenError, SecurityToken, SessionId,
+        self, AccessKeyId, Authentication, JwtClaims, ParseSecurityTokenError, SecurityToken,
+        SessionId,
     },
     channel::{CloudEvent, Subscription},
     datetime::DateTime,
     error::Error,
     extension::{HeaderMapExt, JsonObjectExt},
-    i18n,
+    file::NamedFile,
+    helper, i18n,
     model::{ModelHooks, Query},
     response::{Rejection, Response, ResponseCode},
     trace::{TraceContext, TraceState},
@@ -233,7 +235,7 @@ pub trait RequestContext {
                     content_type
                 }
             })
-            .map(crate::helper::get_data_type)
+            .map(helper::get_data_type)
     }
 
     /// Parses the route parameter by name as an instance of type `T`.
@@ -274,7 +276,7 @@ pub trait RequestContext {
         if let Some(query) = self.original_uri().query() {
             if let Some(timestamp) = self.get_query("timestamp").and_then(|s| s.parse().ok()) {
                 let duration = DateTime::from_timestamp(timestamp).span_between_now();
-                if duration > crate::auth::default_time_tolerance() {
+                if duration > auth::default_time_tolerance() {
                     let err = Error::new(format!("the timestamp `{timestamp}` can not be trusted"));
                     let rejection = Rejection::from_validation_entry("timestamp", err);
                     return Err(rejection.context(self));
@@ -343,6 +345,32 @@ pub trait RequestContext {
         }
     }
 
+    /// Parses the request body as a file.
+    async fn parse_file(&mut self) -> Result<NamedFile, Rejection> {
+        let multipart = self.parse_multipart().await?;
+        NamedFile::try_from_multipart(multipart)
+            .await
+            .map_err(|err| Rejection::from_validation_entry("body", err).context(self))
+    }
+
+    /// Parses the request body as a list of files.
+    async fn parse_files(&mut self) -> Result<Vec<NamedFile>, Rejection> {
+        let multipart = self.parse_multipart().await?;
+        NamedFile::try_collect_from_multipart(multipart)
+            .await
+            .map_err(|err| Rejection::from_validation_entry("body", err).context(self))
+    }
+
+    /// Parses the `multipart/form-data` as an instance of type `T` and a list of files.
+    async fn parse_form_data<T: DeserializeOwned>(
+        &mut self,
+    ) -> Result<(T, Vec<NamedFile>), Rejection> {
+        let multipart = self.parse_multipart().await?;
+        helper::parse_form_data(multipart)
+            .await
+            .map_err(|err| Rejection::from_validation_entry("body", err).context(self))
+    }
+
     /// Attempts to construct an instance of `Authentication` from an HTTP request.
     /// The value is extracted from the query or the `authorization` header.
     /// By default, the `Accept` header value is ignored and
@@ -396,7 +424,7 @@ pub trait RequestContext {
         if let Some(date) = self.get_header("date") {
             match DateTime::parse_utc_str(date) {
                 Ok(date) => {
-                    if date.span_between_now() <= crate::auth::default_time_tolerance() {
+                    if date.span_between_now() <= auth::default_time_tolerance() {
                         authentication.set_date_header("date", date);
                     } else {
                         validation.record("date", "untrusted date");
@@ -515,7 +543,7 @@ pub trait RequestContext {
                 .unwrap_or(authorization);
         }
 
-        let mut options = crate::auth::default_verification_options();
+        let mut options = auth::default_verification_options();
         options.reject_before = self
             .get_query("timestamp")
             .and_then(|s| s.parse().ok())

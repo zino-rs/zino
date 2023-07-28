@@ -7,6 +7,12 @@ use aes_gcm_siv::{
 };
 use rand::Rng;
 
+mod hash;
+mod key_derivation;
+
+pub(crate) use hash::sha256;
+pub(crate) use key_derivation::hkdf_sha256;
+
 #[cfg(feature = "orm")]
 mod password;
 
@@ -14,7 +20,7 @@ mod password;
 pub(crate) use password::*;
 
 /// Encrypts the plaintext using `AES-GCM-SIV`.
-pub(crate) fn encrypt(key: &[u8], plaintext: &[u8]) -> Result<Vec<u8>, Error> {
+pub(crate) fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
     const KEY_SIZE: usize = 32;
     const NONCE_SIZE: usize = 12;
 
@@ -34,7 +40,7 @@ pub(crate) fn encrypt(key: &[u8], plaintext: &[u8]) -> Result<Vec<u8>, Error> {
 }
 
 /// Decrypts the data using `AES-GCM-SIV`.
-pub(crate) fn decrypt(key: &[u8], data: &[u8]) -> Result<String, Error> {
+pub(crate) fn decrypt(data: &[u8], key: &[u8]) -> Result<String, Error> {
     const KEY_SIZE: usize = 32;
     const NONCE_SIZE: usize = 12;
 

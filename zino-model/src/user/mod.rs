@@ -19,8 +19,16 @@ use zino_derive::{ModelAccessor, Schema};
 use crate::tag::Tag;
 
 mod jwt_auth;
+mod status;
 
 pub use jwt_auth::JwtAuthService;
+pub use status::UserStatus;
+
+#[cfg(feature = "visibility")]
+mod visibility;
+
+#[cfg(feature = "visibility")]
+pub use visibility::UserVisibility;
 
 /// The `user` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
@@ -36,10 +44,14 @@ pub struct User {
     #[schema(default_value = "User::model_namespace", index_type = "hash")]
     namespace: String,
     #[cfg(feature = "visibility")]
-    #[schema(default_value = "Internal")]
-    visibility: String,
-    #[schema(default_value = "Inactive", index_type = "hash")]
-    status: String,
+    #[schema(column_type = "String", default_value = "UserVisibility::default")]
+    visibility: UserVisibility,
+    #[schema(
+        column_type = "String",
+        default_value = "UserStatus::default",
+        index_type = "hash"
+    )]
+    status: UserStatus,
     #[schema(index_type = "text")]
     description: String,
 

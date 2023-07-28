@@ -1,5 +1,5 @@
 use crate::{
-    controller::{auth, stats, task, user},
+    controller::{auth, file, stats, task, user},
     middleware,
 };
 use actix_web::web::{get, post, scope, ServiceConfig};
@@ -9,6 +9,7 @@ use zino_model::{Tag, User};
 pub fn routes() -> Vec<RouterConfigure> {
     vec![
         auth_router as RouterConfigure,
+        file_router as RouterConfigure,
         user_router as RouterConfigure,
         tag_router as RouterConfigure,
         task_router as RouterConfigure,
@@ -22,6 +23,15 @@ fn auth_router(cfg: &mut ServiceConfig) {
         scope("/auth")
             .route("/refresh", get().to(auth::refresh))
             .route("/logout", post().to(auth::logout))
+            .wrap(middleware::UserSessionInitializer),
+    );
+}
+
+fn file_router(cfg: &mut ServiceConfig) {
+    cfg.service(
+        scope("/file")
+            .route("/upload", post().to(file::upload))
+            .route("/decrypt", get().to(file::decrypt))
             .wrap(middleware::UserSessionInitializer),
     );
 }

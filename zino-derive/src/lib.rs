@@ -151,7 +151,7 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                         if let Some((type_name, type_fn)) = value.split_once("::") {
                             let type_name_ident = format_ident!("{}", type_name);
                             let type_fn_ident = format_ident!("{}", type_fn);
-                            quote! { Some(<#type_name_ident>::#type_fn_ident()) }
+                            quote! { Some(<#type_name_ident>::#type_fn_ident().into()) }
                         } else {
                             quote! { Some(#value) }
                         }
@@ -779,34 +779,24 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                     let name_ident = format_ident!("{}", name);
                     let mut snapshot_field = None;
                     match name.as_str() {
-                        "name" if type_name == "String" => {
+                        "name" | "status" => {
                             let method = quote! {
                                 #[inline]
                                 fn #name_ident(&self) -> &str {
-                                    &self.#name_ident
+                                    self.#name_ident.as_ref()
                                 }
                             };
                             column_methods.push(method);
-                            snapshot_field = Some("name");
+                            snapshot_field = Some(name.as_str());
                         }
-                        "namespace" | "visibility" | "description" if type_name == "String" => {
+                        "namespace" | "visibility" | "description" => {
                             let method = quote! {
                                 #[inline]
                                 fn #name_ident(&self) -> &str {
-                                    &self.#name_ident
+                                    self.#name_ident.as_ref()
                                 }
                             };
                             column_methods.push(method);
-                        }
-                        "status" if type_name == "String" => {
-                            let method = quote! {
-                                #[inline]
-                                fn #name_ident(&self) -> &str {
-                                    &self.#name_ident
-                                }
-                            };
-                            column_methods.push(method);
-                            snapshot_field = Some("status");
                         }
                         "content" | "extra" if type_name == "Map" => {
                             let method = quote! {

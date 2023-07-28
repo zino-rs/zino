@@ -8,6 +8,6 @@ pub async fn execute(mut req: Request) -> Result {
     let data = service::task::execute_query(&mut query, body)
         .await
         .extract(&req)?;
-    res.set_data(&data);
+    res.set_json_data(data);
     Ok(res.into())
 }

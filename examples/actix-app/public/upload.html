@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>File Uploader</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <form method="POST" action="/file/upload" enctype="multipart/form-data">
+    <div>Title: <input name="title"/></div>
+    <div>File: <input type="file" name="files" multiple/></div>
+    <button type="submit">Upload</button>
+  </form>
+</body>
+</html>
