@@ -4,7 +4,7 @@ use std::{error, fmt};
 
 mod source;
 
-pub use source::Source;
+use source::Source;
 
 /// An error type backed by an allocation-optimized string.
 #[derive(Debug)]
@@ -57,7 +57,7 @@ impl Error {
 
     /// Returns an iterator of the source errors contained by `self`.
     #[inline]
-    pub fn sources(&self) -> Source<'_> {
+    pub fn sources(&self) -> impl Iterator<Item = &Error> {
         Source::new(self)
     }
 

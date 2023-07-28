@@ -4,7 +4,12 @@ use crate::{crypto, encoding::hex, error::Error};
 use bytes::Bytes;
 use mime::Mime;
 use multer::{Field, Multipart};
-use std::{convert::AsRef, fs::{self, OpenOptions}, io::{self, Write}, path::Path};
+use std::{
+    convert::AsRef,
+    fs::{self, OpenOptions},
+    io::{self, Write},
+    path::Path,
+};
 
 /// A file with an associated name.
 #[derive(Debug, Clone, Default)]
@@ -89,10 +94,7 @@ impl NamedFile {
     /// Appends the bytes into path.
     #[inline]
     pub fn append<P: AsRef<Path>>(&self, path: P) -> Result<(), io::Error> {
-        let mut file = OpenOptions::new()
-            .write(true)
-            .append(true)
-            .open(path)?;
+        let mut file = OpenOptions::new().write(true).append(true).open(path)?;
         file.write_all(self.as_ref())
     }
 
