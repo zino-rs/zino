@@ -39,8 +39,8 @@ pub(crate) fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
     Ok(ciphertext)
 }
 
-/// Decrypts the data using `AES-GCM-SIV`.
-pub(crate) fn decrypt(data: &[u8], key: &[u8]) -> Result<String, Error> {
+/// Decrypts the data as bytes using `AES-GCM-SIV`.
+pub(crate) fn decrypt(data: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
     const KEY_SIZE: usize = 32;
     const NONCE_SIZE: usize = 12;
 
@@ -53,8 +53,7 @@ pub(crate) fn decrypt(data: &[u8], key: &[u8]) -> Result<String, Error> {
 
     let (ciphertext, bytes) = data.split_at(data.len() - NONCE_SIZE);
     let nonce = GenericArray::from_slice(bytes);
-    let plaintext = cipher
+    cipher
         .decrypt(nonce, ciphertext)
-        .map_err(|_| Error::new("fail to decrypt the ciphertext"))?;
-    Ok(String::from_utf8_lossy(&plaintext).into_owned())
+        .map_err(|_| Error::new("fail to decrypt the ciphertext"))
 }

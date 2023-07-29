@@ -41,8 +41,8 @@ pub(super) fn parse_schema_attr(attr: &Attribute) -> Vec<(String, Option<String>
             for meta in nested {
                 if let Some(ident) = meta.path().get_ident() {
                     let key = ident.to_string();
-                    let value = if let Meta::NameValue(name_value) = meta &&
-                        let Expr::Lit(expr_lit) = name_value.value
+                    let value = if let Meta::NameValue(name_value) = meta
+                        && let Expr::Lit(expr_lit) = name_value.value
                     {
                         match expr_lit.lit {
                             Lit::Str(ref lit_str) => Some(lit_str.value()),

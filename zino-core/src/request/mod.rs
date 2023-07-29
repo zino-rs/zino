@@ -165,8 +165,8 @@ pub trait RequestContext {
     /// Creates a new cookie with the given name and value.
     fn new_cookie(
         &self,
-        name: impl Into<SharedString>,
-        value: impl Into<SharedString>,
+        name: SharedString,
+        value: SharedString,
         max_age: Option<Duration>,
     ) -> Cookie<'static> {
         let mut cookie_builder = Cookie::build(name, value)
@@ -461,7 +461,7 @@ pub trait RequestContext {
                     validation.record("authorization", "invalid service name");
                 }
             } else {
-                validation.record("authorization", "invalid header value");
+                validation.record("authorization", "invalid value to get the access key id");
             }
             Err(Rejection::bad_request(validation).context(self))
         }
@@ -469,26 +469,25 @@ pub trait RequestContext {
 
     /// Attempts to construct an instance of `SecurityToken` from an HTTP request.
     /// The value is extracted from the `x-security-token` header.
-    fn parse_security_token(&self, key: impl AsRef<[u8]>) -> Result<SecurityToken, Rejection> {
+    fn parse_security_token(&self, key: &[u8]) -> Result<SecurityToken, Rejection> {
         use ParseSecurityTokenError::*;
+        let query = self.parse_query::<Map>()?;
         let mut validation = Validation::new();
-        if let Some(token) = self.get_header("x-security-token") {
+        if let Some(token) = self
+            .get_header("x-security-token")
+            .or_else(|| query.get_str("security_token"))
+        {
             match SecurityToken::parse_with(token.to_owned(), key.as_ref()) {
                 Ok(security_token) => {
-                    let query = self.parse_query::<Map>().unwrap_or_default();
-                    if let Some(assignee_id) = query.parse_string("access_key_id") {
-                        if security_token.assignee_id().as_str() != assignee_id {
+                    if let Some(access_key_id) = query.get_str("access_key_id") {
+                        if security_token.access_key_id().as_str() != access_key_id {
                             validation.record("access_key_id", "untrusted access key ID");
                         }
-                    } else {
-                        validation.record("access_key_id", "should be nonempty");
                     }
                     if let Some(Ok(expires)) = query.parse_i64("expires") {
-                        if security_token.expires().timestamp() != expires {
+                        if security_token.expires_at().timestamp() != expires {
                             validation.record("expires", "untrusted timestamp");
                         }
-                    } else {
-                        validation.record("expires", "invalid timestamp");
                     }
                     if validation.is_success() {
                         return Ok(security_token);
@@ -496,14 +495,14 @@ pub trait RequestContext {
                 }
                 Err(err) => {
                     let field = match err {
-                        DecodeError(_) | InvalidFormat => "x-security-token",
-                        ParseExpiresError(_) | ValidPeriodExpired => "expires",
+                        DecodeError(_) | InvalidFormat => "security_token",
+                        ParseExpiresError(_) | ValidPeriodExpired(_) => "expires",
                     };
                     validation.record_fail(field, err);
                 }
             }
         } else {
-            validation.record("x-security-token", "should be nonempty");
+            validation.record("security_token", "should be nonempty");
         }
         Err(Rejection::bad_request(validation).context(self))
     }
@@ -733,10 +732,10 @@ pub trait RequestContext {
     }
 
     /// Creates a new cloud event instance.
-    fn cloud_event(&self, topic: impl Into<String>, data: impl Into<JsonValue>) -> CloudEvent {
+    fn cloud_event(&self, topic: String, data: JsonValue) -> CloudEvent {
         let id = self.request_id().to_string();
         let source = self.instance();
-        let mut event = CloudEvent::new(id, source, topic.into(), data.into());
+        let mut event = CloudEvent::new(id, source, topic, data);
         if let Some(session_id) = self.session_id() {
             event.set_session_id(session_id);
         }

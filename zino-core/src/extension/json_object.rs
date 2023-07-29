@@ -138,7 +138,7 @@ pub trait JsonObjectExt {
     /// A Pointer is a Unicode string with the reference tokens separated by `/`.
     /// Inside tokens `/` is replaced by `~1` and `~` is replaced by `~0`.
     /// The addressed value is returned and if there is no such value `None` is returned.
-    fn lookup(&self, pointer: &str) -> Option<&JsonValue>;
+    fn pointer(&self, pointer: &str) -> Option<&JsonValue>;
 
     /// Inserts or updates a  pair into the map.
     /// If the map did have this key present, the value is updated and the old value is returned,
@@ -147,6 +147,9 @@ pub trait JsonObjectExt {
 
     /// Translates the map with the OpenAPI data.
     fn translate_with_openapi(&mut self, name: &str);
+
+    /// Serializes the map into a query string.
+    fn to_query_string(&self) -> String;
 
     /// Consumes `self` and constructs an Avro record value.
     fn into_avro_record(self) -> Record;
@@ -419,7 +422,7 @@ impl JsonObjectExt for Map {
         self.get_str(key).map(|s| s.parse())
     }
 
-    fn lookup(&self, pointer: &str) -> Option<&JsonValue> {
+    fn pointer(&self, pointer: &str) -> Option<&JsonValue> {
         let Some(path) = pointer.strip_prefix('/') else {
             return None;
         };
@@ -439,6 +442,11 @@ impl JsonObjectExt for Map {
     #[inline]
     fn translate_with_openapi(&mut self, name: &str) {
         openapi::translate_model_entry(self, name);
+    }
+
+    #[inline]
+    fn to_query_string(&self) -> String {
+        serde_qs::to_string(&self).unwrap_or_default()
     }
 
     fn into_avro_record(self) -> Record {

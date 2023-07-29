@@ -35,7 +35,8 @@ pub(crate) fn verify_hashed_password(
 ) -> Result<bool, Error> {
     let ciphertext = base64::decode(encrypted_password)?;
     let password_hash = super::decrypt(&ciphertext, key)?;
-    let parsed_hash = PasswordHash::new(&password_hash)?;
+    let password_hash_str = String::from_utf8_lossy(&password_hash);
+    let parsed_hash = PasswordHash::new(&password_hash_str)?;
     Argon2::default().verify_password(hashed_password, &parsed_hash)?;
     Ok(true)
 }

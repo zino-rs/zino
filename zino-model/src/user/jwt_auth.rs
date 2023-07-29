@@ -106,8 +106,8 @@ where
             if let Some(role_field) = Self::ROLE_FIELD && user.contains_key(role_field) {
                 claims.add_data_entry("roles", user.parse_str_array(role_field));
             }
-            if let Some(tenant_id_field) = Self::TENANT_ID_FIELD &&
-                let Some(tenant_id) = user.remove(tenant_id_field)
+            if let Some(tenant_id_field) = Self::TENANT_ID_FIELD
+                && let Some(tenant_id) = user.remove(tenant_id_field)
             {
                 claims.add_data_entry("tenant_id", tenant_id);
             }
@@ -155,8 +155,8 @@ where
         if let Some(role_field) = Self::ROLE_FIELD && user.contains_key(role_field) {
             claims.add_data_entry("roles", user.parse_str_array(role_field));
         }
-        if let Some(tenant_id_field) = Self::TENANT_ID_FIELD &&
-            let Some(tenant_id) = user.remove(tenant_id_field)
+        if let Some(tenant_id_field) = Self::TENANT_ID_FIELD
+            && let Some(tenant_id) = user.remove(tenant_id_field)
         {
             claims.add_data_entry("tenant_id", tenant_id);
         }

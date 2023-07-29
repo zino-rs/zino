@@ -7,8 +7,8 @@ pub(crate) fn translate_model_entry(model: &mut Map, model_name: &str) {
     let mut data = Map::new();
     let model_name_prefix = format!("{model_name}.");
     for (key, translation) in MODEL_TRANSLATIONS.iter() {
-        if let Some(field) = key.strip_prefix(&model_name_prefix) &&
-            let Some(value) = model.get(field)
+        if let Some(field) = key.strip_prefix(&model_name_prefix)
+            && let Some(value) = model.get(field)
         {
             let text_field = format!("{field}_text");
             let text_value = translation.translate(value).unwrap_or_else(|| value.clone());

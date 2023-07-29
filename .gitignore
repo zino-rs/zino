@@ -12,3 +12,6 @@ Cargo.lock
 
 # Logs
 **/logs/*
+
+# Uploads
+**/uploads/*

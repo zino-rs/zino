@@ -70,9 +70,9 @@ impl MutationExt<DatabaseDriver> for Mutation {
                     }
                 }
                 _ => {
-                    if (permissive || fields.contains(key)) &&
-                        !readonly_fields.contains(&key.as_str()) &&
-                        let Some(col) = M::get_column(key)
+                    if (permissive || fields.contains(key))
+                        && !readonly_fields.contains(&key.as_str())
+                        && let Some(col) = M::get_column(key)
                     {
                         let key = Query::format_field(key);
                         let value = col.encode_value(Some(value));

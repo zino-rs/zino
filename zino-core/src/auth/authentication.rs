@@ -177,13 +177,11 @@ impl Authentication {
         let mut sign_parts = Vec::new();
 
         // HTTP verb
-        let method = self.method.clone();
-        sign_parts.push(method);
+        sign_parts.push(self.method.clone());
 
         // Accept
         if let Some(accept) = self.accept.as_ref() {
-            let accept = accept.to_owned();
-            sign_parts.push(accept);
+            sign_parts.push(accept.to_owned());
         }
 
         // Content-MD5
@@ -204,8 +202,7 @@ impl Authentication {
 
         // Expires
         if let Some(expires) = self.expires.as_ref() {
-            let expires = expires.timestamp().to_string();
-            sign_parts.push(expires);
+            sign_parts.push(expires.timestamp().to_string());
         } else {
             // Date
             let date_header = &self.date_header;
@@ -226,8 +223,7 @@ impl Authentication {
         sign_parts.extend(headers);
 
         // Canonicalized resource
-        let resource = self.resource.clone();
-        sign_parts.push(resource);
+        sign_parts.push(self.resource.clone());
 
         sign_parts.join("\n")
     }

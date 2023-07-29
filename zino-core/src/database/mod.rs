@@ -160,8 +160,8 @@ impl ConnectionPool {
             .test_before_acquire(false)
             .before_acquire(move |conn, meta| {
                 Box::pin(async move {
-                    if meta.idle_for.as_secs() > health_check_interval &&
-                        let Some(cp) = SHARED_CONNECTION_POOLS.get_pool(name)
+                    if meta.idle_for.as_secs() > health_check_interval
+                        && let Some(cp) = SHARED_CONNECTION_POOLS.get_pool(name)
                     {
                         if let Err(err) = conn.ping().await {
                             cp.store_availability(false);

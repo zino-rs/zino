@@ -12,7 +12,7 @@ use crate::{
 };
 use reqwest::Response;
 use serde::de::DeserializeOwned;
-use std::{env, path::PathBuf, sync::LazyLock, thread};
+use std::{env, fs, path::PathBuf, sync::LazyLock, thread};
 use toml::value::Table;
 use utoipa::openapi::{Info, OpenApi, OpenApiBuilder};
 
@@ -56,7 +56,6 @@ pub trait Application {
     }
 
     /// Boots the application with a custom initialization.
-    #[inline]
     fn boot_with<F>(init: F) -> Self
     where
         Self: Default,
@@ -66,12 +65,35 @@ pub trait Application {
         Self::boot()
     }
 
+    /// Initializes the directories to ensure that they are ready for use,
+    /// then boots the application.
+    fn init_dirs(dirs: &[&'static str]) -> Self
+    where
+        Self: Default,
+    {
+        let project_dir = Self::project_dir();
+        for dir in dirs {
+            let path = if dir.starts_with('/') {
+                PathBuf::from(dir)
+            } else {
+                project_dir.join(dir)
+            };
+            if !path.exists() && let Err(err) = fs::create_dir_all(&path) {
+                let path = path.to_string_lossy();
+                tracing::error!("fail to create the directory {}: {}", path, err);
+            }
+        }
+        Self::boot()
+    }
+
     /// Gets the system’s information.
+    #[inline]
     fn sysinfo() -> Map {
         system_monitor::refresh_and_retrieve()
     }
 
     /// Gets the [OpenAPI](https://spec.openapis.org/oas/latest.html) document.
+    #[inline]
     fn openapi() -> OpenApi {
         OpenApiBuilder::new()
             .info(Info::new(Self::name(), Self::version()))

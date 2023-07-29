@@ -96,7 +96,7 @@ impl<S: ?Sized> ClientCredentials<S> {
         self.client_secret.as_ref()
     }
 
-    /// Returns the access token regardless of whether it has been expired.
+    /// Returns the access token regardless of whether it has expired.
     #[inline]
     pub fn access_token(&self) -> String {
         self.access_token.read().clone()
@@ -108,7 +108,13 @@ impl<S: ?Sized> ClientCredentials<S> {
         *self.expires_at.read()
     }
 
-    /// Returns `true` if the access token for the client credentials has been expired.
+    /// Returns the time when the client credentials will expire in.
+    #[inline]
+    pub fn expires_in(&self) -> Duration {
+        self.expires_at().span_after_now().unwrap_or_default()
+    }
+
+    /// Returns `true` if the access token for the client credentials has expired.
     #[inline]
     pub fn is_expired(&self) -> bool {
         self.expires_at() <= DateTime::now()

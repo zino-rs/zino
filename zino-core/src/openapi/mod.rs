@@ -228,8 +228,8 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
                 }
                 if let Some(webhooks) = openapi_config.get_table("webhooks") {
                     for (webhook_name, webhook_request) in webhooks {
-                        if let Some(request) = webhook_request.as_table() &&
-                            let Ok(webhook) = WebHook::try_new(request)
+                        if let Some(request) = webhook_request.as_table()
+                            && let Ok(webhook) = WebHook::try_new(request)
                         {
                             let webhook_name = webhook_name.to_owned().leak() as &'static str;
                             webhook_definitions.insert(webhook_name, webhook);

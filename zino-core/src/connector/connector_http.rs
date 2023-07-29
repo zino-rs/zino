@@ -180,7 +180,7 @@ impl Connector for HttpConnector {
                 .collect::<Vec<_>>(),
             JsonValue::Object(mut map) => {
                 let data = if let Some(json_pointer) = &self.json_pointer {
-                    map.lookup(json_pointer).cloned()
+                    map.pointer(json_pointer).cloned()
                 } else {
                     map.remove("data").or_else(|| map.remove("result"))
                 };
@@ -214,7 +214,7 @@ impl Connector for HttpConnector {
                 .collect::<Vec<_>>(),
             JsonValue::Object(mut map) => {
                 let data = if let Some(json_pointer) = &self.json_pointer {
-                    map.lookup(json_pointer).cloned()
+                    map.pointer(json_pointer).cloned()
                 } else {
                     map.remove("data").or_else(|| map.remove("result"))
                 };
@@ -239,7 +239,7 @@ impl Connector for HttpConnector {
         let record = match self.fetch_json(query, params).await? {
             JsonValue::Object(mut map) => {
                 let data = if let Some(json_pointer) = &self.json_pointer {
-                    map.lookup(json_pointer).cloned()
+                    map.pointer(json_pointer).cloned()
                 } else {
                     map.remove("data").or_else(|| map.remove("result"))
                 };
@@ -265,7 +265,7 @@ impl Connector for HttpConnector {
     ) -> Result<Option<T>, Error> {
         if let JsonValue::Object(mut map) = self.fetch_json(query, params).await? {
             let data = if let Some(json_pointer) = &self.json_pointer {
-                map.lookup(json_pointer).cloned()
+                map.pointer(json_pointer).cloned()
             } else {
                 map.remove("data").or_else(|| map.remove("result"))
             };

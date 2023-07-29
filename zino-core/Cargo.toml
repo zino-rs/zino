@@ -162,11 +162,11 @@ features = [
 ]
 
 [dependencies.serde]
-version = "1.0.175"
+version = "1.0.178"
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1.0.103"
+version = "1.0.104"
 features = ["raw_value"]
 
 [dependencies.sqlx]

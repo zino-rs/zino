@@ -1,6 +1,10 @@
 //! HTTP file uploading and downloading.
 
-use crate::{crypto, encoding::hex, error::Error};
+use crate::{
+    crypto,
+    encoding::{base64, hex},
+    error::Error,
+};
 use bytes::Bytes;
 use mime::Mime;
 use multer::{Field, Multipart};
@@ -85,6 +89,42 @@ impl NamedFile {
         Vec::from(checksum).into()
     }
 
+    /// Returns the hex representation of the file bytes.
+    #[inline]
+    pub fn to_hex_string(&self) -> String {
+        hex::encode(self.as_ref())
+    }
+
+    /// Returns the base64 representation of the file bytes.
+    #[inline]
+    pub fn to_base64_string(&self) -> String {
+        base64::encode(self.as_ref())
+    }
+
+    /// Reads the hex string and sets the bytes.
+    #[inline]
+    pub fn read_hex_string(&mut self, data: &str) -> Result<(), Error> {
+        let bytes = hex::decode(data)?;
+        self.bytes = bytes.into();
+        Ok(())
+    }
+
+    /// Reads the base64 string and sets the bytes.
+    #[inline]
+    pub fn read_base64_string(&mut self, data: &str) -> Result<(), Error> {
+        let bytes = base64::decode(data)?;
+        self.bytes = bytes.into();
+        Ok(())
+    }
+
+    /// Reads the entire contents of a local file and sets the bytes.
+    #[inline]
+    pub fn read_from_local<P: AsRef<Path>>(&mut self, path: P) -> Result<(), io::Error> {
+        let bytes = fs::read(path)?;
+        self.bytes = bytes.into();
+        Ok(())
+    }
+
     /// Writes the bytes into path.
     #[inline]
     pub fn write<P: AsRef<Path>>(&self, path: P) -> Result<(), io::Error> {
@@ -98,20 +138,11 @@ impl NamedFile {
         file.write_all(self.as_ref())
     }
 
-    /// Reads the entire contents of a file and sets the bytes.
-    #[inline]
-    pub fn read_bytes<P: AsRef<Path>>(&mut self, path: P) -> Result<(), io::Error> {
-        let bytes = fs::read(path)?;
-        self.bytes = bytes.into();
-        Ok(())
-    }
-
     /// Encrypts the file with a key.
     #[inline]
     pub fn encrypt_with(&mut self, key: impl AsRef<[u8]>) -> Result<(), Error> {
         let suffix = ".encrypted";
-        let encoded_bytes = hex::encode(self.as_ref());
-        let bytes = crypto::encrypt(encoded_bytes.as_ref(), key.as_ref())?;
+        let bytes = crypto::encrypt(self.as_ref(), key.as_ref())?;
         if let Some(ref mut file_name) = self.file_name && !file_name.ends_with(suffix) {
             file_name.push_str(suffix);
         }
@@ -124,11 +155,10 @@ impl NamedFile {
     pub fn decrypt_with(&mut self, key: impl AsRef<[u8]>) -> Result<(), Error> {
         let suffix = ".encrypted";
         let bytes = crypto::decrypt(self.as_ref(), key.as_ref())?;
-        let decoded_bytes = hex::decode(bytes.as_bytes())?;
         if let Some(ref mut file_name) = self.file_name && file_name.ends_with(suffix) {
             file_name.truncate(file_name.len() - suffix.len());
         }
-        self.bytes = decoded_bytes.into();
+        self.bytes = bytes.into();
         Ok(())
     }
 

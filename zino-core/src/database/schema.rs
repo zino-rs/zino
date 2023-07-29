@@ -99,8 +99,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Gets a column for the field.
     #[inline]
     fn get_column(key: &str) -> Option<&Column<'static>> {
-        let key = if let Some((name, field)) = key.split_once('.') &&
-            (Self::model_name() == name || Self::table_name() == name)
+        let key = if let Some((name, field)) = key.split_once('.')
+            && (Self::model_name() == name || Self::table_name() == name)
         {
             field
         } else {
