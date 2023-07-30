@@ -10,7 +10,7 @@ pub async fn login(mut req: Request) -> Result {
         .await
         .extract(&req)?;
     if !validation.is_success() {
-        return Err(Rejection::bad_request(validation).context(&req).into());
+        reject!(req, validation);
     }
     data.upsert("entry", user.snapshot());
 
@@ -39,7 +39,7 @@ pub async fn logout(req: Request) -> Result {
         .await
         .extract(&req)?;
     if !validation.is_success() {
-        return Err(Rejection::bad_request(validation).context(&req).into());
+        reject!(req, validation);
     }
 
     let data = Map::data_entry(user.snapshot());

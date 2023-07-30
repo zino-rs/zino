@@ -492,10 +492,10 @@ mod tests {
         map.upsert("entries", vec![Map::from_entry("name", "alice")]);
         map.upsert("total", 1);
 
-        assert_eq!(map.lookup("total"), None);
-        assert_eq!(map.lookup("/total").and_then(|v| v.as_usize()), Some(1));
+        assert_eq!(map.pointer("total"), None);
+        assert_eq!(map.pointer("/total").and_then(|v| v.as_usize()), Some(1));
         assert_eq!(
-            map.lookup("/entries/0/name").and_then(|v| v.as_str()),
+            map.pointer("/entries/0/name").and_then(|v| v.as_str()),
             Some("alice")
         );
     }

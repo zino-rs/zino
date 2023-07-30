@@ -13,6 +13,7 @@ pub use zino_core::{
     extension::{JsonObjectExt, JsonValueExt, TomlTableExt},
     file::NamedFile,
     model::{Model, ModelHooks, Mutation, Query, QueryContext},
+    reject,
     request::{RequestContext, Validation},
     response::{ExtractRejection, Rejection, StatusCode, WebHook},
     schedule::{AsyncCronJob, CronJob},

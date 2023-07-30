@@ -698,7 +698,7 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
                                 {
                                     field_constraints.push(quote! {
                                         if self.#ident.is_empty() {
-                                            validation.record(#name, "it should not be nil");
+                                            validation.record(#name, "it should be nonempty");
                                         }
                                     });
                                 }

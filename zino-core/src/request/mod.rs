@@ -477,7 +477,7 @@ pub trait RequestContext {
             .get_header("x-security-token")
             .or_else(|| query.get_str("security_token"))
         {
-            match SecurityToken::parse_with(token.to_owned(), key.as_ref()) {
+            match SecurityToken::parse_with(token.to_owned(), key) {
                 Ok(security_token) => {
                     if let Some(access_key_id) = query.get_str("access_key_id") {
                         if security_token.access_key_id().as_str() != access_key_id {

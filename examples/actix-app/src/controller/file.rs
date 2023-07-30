@@ -48,13 +48,11 @@ pub async fn decrypt(req: Request) -> Result {
     let secret_key = SecretAccessKey::new(&access_key_id);
     let security_token = req.parse_security_token(secret_key.as_ref())?;
     if security_token.is_expired() {
-        let err = Error::new("the seurity token has expired");
-        return Err(Rejection::forbidden(err).into());
+        reject!(req, forbidden, "the seurity token has expired");
     }
 
     let Some(file_name) = query.get_str("file_name") else {
-        let err = Error::new("it should be specified");
-        return Err(Rejection::from_validation_entry("file_name", err).into());
+        reject!(req, "file_name", "it should be specified");
     };
     let file_path = Cluster::project_dir().join(format!("assets/uploads/{file_name}"));
 
