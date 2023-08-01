@@ -560,9 +560,10 @@ pub trait RequestContext {
 
     /// Returns a `Response` or `Rejection` from an SQL query validation.
     /// The data is extracted from [`parse_query()`](RequestContext::parse_query).
-    fn query_validation<S: ResponseCode>(&self, query: &mut Query) -> Result<Response<S>, Rejection>
+    fn query_validation<S>(&self, query: &mut Query) -> Result<Response<S>, Rejection>
     where
         Self: Sized,
+        S: ResponseCode,
     {
         match self.parse_query() {
             Ok(data) => {
@@ -579,12 +580,11 @@ pub trait RequestContext {
 
     /// Returns a `Response` or `Rejection` from a model validation.
     /// The data is extracted from [`parse_body()`](RequestContext::parse_body).
-    async fn model_validation<M: ModelHooks, S: ResponseCode>(
-        &mut self,
-        model: &mut M,
-    ) -> Result<Response<S>, Rejection>
+    async fn model_validation<M, S>(&mut self, model: &mut M) -> Result<Response<S>, Rejection>
     where
         Self: Sized,
+        M: ModelHooks,
+        S: ResponseCode,
     {
         let data_type = self.data_type().unwrap_or("form");
         if data_type.contains('/') {

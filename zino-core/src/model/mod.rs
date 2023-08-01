@@ -1,4 +1,4 @@
-//! Application specific models.
+//! Domain specific models.
 use crate::{request::Validation, AvroValue, JsonValue, Map, Record};
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -17,8 +17,8 @@ pub use apache_avro::schema;
 pub use column::{Column, EncodeColumn};
 pub use context::QueryContext;
 pub use hook::ModelHooks;
-pub use mutation::Mutation;
-pub use query::Query;
+pub use mutation::{Mutation, MutationBuilder};
+pub use query::{Query, QueryBuilder};
 pub use reference::Reference;
 pub use row::DecodeRow;
 pub use translation::Translation;

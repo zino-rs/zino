@@ -92,3 +92,32 @@ impl Mutation {
         &self.updates
     }
 }
+
+/// A builder for model mutations.
+#[derive(Debug, Default)]
+pub struct MutationBuilder {
+    // Editable fields.
+    fields: Vec<String>,
+    // Updates.
+    updates: Map,
+}
+
+impl MutationBuilder {
+    /// Creates a new instance.
+    #[inline]
+    pub fn new() -> Self {
+        Self {
+            fields: Vec::new(),
+            updates: Map::new(),
+        }
+    }
+
+    /// Constructs an instance of `Mutation`.
+    #[inline]
+    pub fn build(self) -> Mutation {
+        Mutation {
+            fields: self.fields,
+            updates: self.updates,
+        }
+    }
+}

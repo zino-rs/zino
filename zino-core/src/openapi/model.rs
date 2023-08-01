@@ -10,9 +10,9 @@ pub(crate) fn translate_model_entry(model: &mut Map, model_name: &str) {
         if let Some(field) = key.strip_prefix(&model_name_prefix)
             && let Some(value) = model.get(field)
         {
-            let text_field = format!("{field}_text");
-            let text_value = translation.translate(value).unwrap_or_else(|| value.clone());
-            data.upsert(text_field, text_value);
+            let translated_field = [field, "translated"].join("_");
+            let translated_value = translation.translate(value).unwrap_or_else(|| value.clone());
+            data.upsert(translated_field, translated_value);
         }
     }
     model.append(&mut data);

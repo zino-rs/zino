@@ -6,7 +6,7 @@
 //! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?labelColor=555555&logo=rust
 //! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?labelColor=555555&logo=docs.rs
 //!
-//! Model types for [`zino`].
+//! Domain models for [`zino`].
 //!
 //! [`zino`]: https://github.com/photino/zino
 

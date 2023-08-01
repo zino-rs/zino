@@ -1,6 +1,6 @@
 [package]
 name = "zino-model"
-description = "Model types for zino."
+description = "Domain models for zino."
 version = "0.8.5"
 rust-version = "1.72"
 edition = "2021"

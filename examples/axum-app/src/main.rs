@@ -3,6 +3,7 @@
 #![feature(let_chains)]
 
 mod controller;
+mod domain;
 mod extension;
 mod logic;
 mod middleware;

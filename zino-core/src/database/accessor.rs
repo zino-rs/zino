@@ -349,7 +349,7 @@ where
         let mut query = Self::default_query();
         query.deny_fields(&["content", "extra"]);
         query.add_filter("status", Map::from_entry("$ne", "Deleted"));
-        query.set_sort_order("updated_at", false);
+        query.set_sort_order("updated_at", true);
         query
     }
 

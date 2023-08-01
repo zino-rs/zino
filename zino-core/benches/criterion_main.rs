@@ -4,6 +4,7 @@ mod format_duration;
 mod hashmap_vec;
 mod json_raw_value;
 mod serde_map;
+mod str_join;
 mod uuid_simd;
 
 criterion::criterion_group!(
@@ -14,6 +15,7 @@ criterion::criterion_group!(
     hashmap_vec::bench,
     json_raw_value::bench,
     serde_map::bench,
+    str_join::bench,
     uuid_simd::bench,
 );
 criterion::criterion_main!(benches);

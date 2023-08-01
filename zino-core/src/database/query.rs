@@ -15,7 +15,7 @@ pub(super) trait QueryExt<DB> {
     fn query_filters(&self) -> &Map;
 
     /// Returns the sort order.
-    fn query_order(&self) -> (&str, bool);
+    fn query_order(&self) -> &[(SharedString, bool)];
 
     /// Returns the query offset.
     fn query_offset(&self) -> usize;
@@ -73,7 +73,6 @@ pub(super) trait QueryExt<DB> {
             return String::new();
         }
 
-        let (sort_by, ascending) = self.query_order();
         let mut expression = String::new();
         let mut conditions = Vec::with_capacity(filters.len());
         for (key, value) in filters {
@@ -117,15 +116,7 @@ pub(super) trait QueryExt<DB> {
                 }
                 _ => {
                     if let Some(col) = M::get_column(key) {
-                        let condition = if key == sort_by && col.type_name() == "DateTime" {
-                            // Use the filter condition to optimize pagination offset.
-                            let key = Self::format_field(key);
-                            let operator = if ascending { ">" } else { "<" };
-                            let value = col.encode_value(Some(value));
-                            format!(r#"{key} {operator} {value}"#)
-                        } else {
-                            col.format_filter(key, value)
-                        };
+                        let condition = col.format_filter(key, value);
                         if !condition.is_empty() {
                             conditions.push(condition);
                         }
@@ -154,12 +145,21 @@ pub(super) trait QueryExt<DB> {
 
     /// Formats the query sort to generate SQL `ORDER BY` expression.
     fn format_sort(&self) -> String {
-        let (sort_by, ascending) = self.query_order();
-        if sort_by.is_empty() {
+        let sort_order = self.query_order();
+        if sort_order.is_empty() {
             String::new()
         } else {
-            let sort_order = if ascending { "ASC" } else { "DESC" };
-            format!("ORDER BY {sort_by} {sort_order}")
+            let sort_order = sort_order
+                .iter()
+                .map(|(sort, descending)| {
+                    if *descending {
+                        format!("{sort} DESC")
+                    } else {
+                        format!("{sort} ASC")
+                    }
+                })
+                .collect::<Vec<_>>();
+            format!("ORDER BY {}", sort_order.join(", "))
         }
     }
 
@@ -170,13 +170,8 @@ pub(super) trait QueryExt<DB> {
             return String::new();
         }
 
-        let (sort_by, _) = self.query_order();
-        if self.query_filters().contains_key(sort_by) {
-            format!("LIMIT {limit}")
-        } else {
-            let offset = self.query_offset();
-            format!("LIMIT {limit} OFFSET {offset}")
-        }
+        let offset = self.query_offset();
+        format!("LIMIT {limit} OFFSET {offset}")
     }
 
     // Formats the selection with a logic operator.
@@ -247,9 +242,9 @@ pub(super) trait QueryExt<DB> {
                         "$eq" => "=",
                         "$ne" => "<>",
                         "$lt" => "<",
-                        "$lte" => "<=",
+                        "$le" => "<=",
                         "$gt" => ">",
-                        "$gte" => ">=",
+                        "$ge" => ">=",
                         _ => "=",
                     };
                     let field = Self::format_field(key);

@@ -168,17 +168,17 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 for (name, value) in filter {
                     let operator = match name.as_str() {
                         "$eq" => "=",
-                        "$ne" | "$neq" => "<>",
+                        "$ne" => "<>",
                         "$lt" => "<",
-                        "$le" | "$lte" => "<=",
+                        "$le" => "<=",
                         "$gt" => ">",
-                        "$ge" | "$gte" => ">=",
-                        "$like" => "LIKE",
-                        "$ilike" => "ILIKE",
-                        "$rlike" | "$regexp" => "RLIKE",
-                        "$is" => "IS",
+                        "$ge" => ">=",
                         "$in" => "IN",
                         "$nin" => "NOT IN",
+                        "$like" => "LIKE",
+                        "$ilike" => "ILIKE",
+                        "$rlike" => "RLIKE",
+                        "$is" => "IS",
                         _ => "=",
                     };
                     if operator == "IN" || operator == "NOT IN" {
@@ -265,6 +265,13 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         format!(r#"({field} = '') IS NOT FALSE"#)
                     } else if value == "notnull" {
                         format!(r#"({field} = '') IS FALSE"#)
+                    } else if value.contains(',') {
+                        let value = value
+                            .split(',')
+                            .map(Query::escape_string)
+                            .collect::<Vec<_>>()
+                            .join(",");
+                        format!(r#"{field} IN ({value})"#)
                     } else {
                         let index = value.find(|ch| !"!~*".contains(ch)).unwrap_or(0);
                         if index > 0 {
@@ -272,8 +279,9 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                             let value = Query::escape_string(value);
                             format!(r#"{field} {operator} {value}"#)
                         } else {
+                            let operator = self.default_value().map(|_| "=").unwrap_or("RLIKE");
                             let value = Query::escape_string(value);
-                            format!(r#"{field} = {value}"#)
+                            format!(r#"{field} {operator} {value}"#)
                         }
                     }
                 } else {
@@ -506,7 +514,7 @@ impl QueryExt<DatabaseDriver> for Query {
     }
 
     #[inline]
-    fn query_order(&self) -> (&str, bool) {
+    fn query_order(&self) -> &[(SharedString, bool)] {
         self.sort_order()
     }
 

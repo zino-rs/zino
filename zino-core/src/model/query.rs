@@ -12,7 +12,7 @@ pub struct Query {
     // Filters.
     filters: Map,
     // Sort order.
-    sort_order: (Option<SharedString>, bool),
+    sort_order: Vec<(SharedString, bool)>,
     // Offset.
     offset: usize,
     // Limit.
@@ -26,7 +26,7 @@ impl Query {
         Self {
             fields: Vec::new(),
             filters: filters.into().into_map_opt().unwrap_or_default(),
-            sort_order: (None, false),
+            sort_order: Vec::new(),
             offset: 0,
             limit: 10,
         }
@@ -40,19 +40,25 @@ impl Query {
         let filters = &mut self.filters;
         for (key, value) in data {
             match key.as_str() {
-                "fields" | "columns" | "select" => {
+                "fields" | "columns" => {
                     if let Some(fields) = value.parse_str_array() {
                         self.fields = fields.into_iter().map(|s| s.to_owned()).collect();
                     }
                 }
-                "sort" | "sort_by" | "order" | "order_by" => {
-                    if let Some(sort_by) = value.parse_string() {
-                        self.sort_order.0 = Some(sort_by.into_owned().into());
-                    }
-                }
-                "ascending" => {
-                    if let Some(Ok(ascending)) = value.parse_bool() {
-                        self.sort_order.1 = ascending;
+                "order_by" | "sort_by" => {
+                    if let Some(sort_order) = value.parse_str_array() {
+                        self.sort_order = sort_order
+                            .into_iter()
+                            .map(|s| {
+                                if let Some(sort) = s.strip_suffix("|asc") {
+                                    (sort.to_owned().into(), false)
+                                } else if let Some(sort) = s.strip_suffix("|desc") {
+                                    (sort.to_owned().into(), true)
+                                } else {
+                                    (s.to_owned().into(), true)
+                                }
+                            })
+                            .collect::<Vec<_>>();
                     }
                 }
                 "offset" | "skip" => {
@@ -168,8 +174,10 @@ impl Query {
 
     /// Sets the sort order.
     #[inline]
-    pub fn set_sort_order(&mut self, sort_by: impl Into<SharedString>, ascending: bool) {
-        self.sort_order = (Some(sort_by.into()), ascending);
+    pub fn set_sort_order(&mut self, field: impl Into<SharedString>, descending: bool) {
+        let field = field.into();
+        self.sort_order.retain(|(s, _)| s != &field);
+        self.sort_order.push((field, descending));
     }
 
     /// Sets the query offset.
@@ -198,9 +206,8 @@ impl Query {
 
     /// Returns the sort order.
     #[inline]
-    pub fn sort_order(&self) -> (&str, bool) {
-        let sort_order = &self.sort_order;
-        (sort_order.0.as_deref().unwrap_or_default(), sort_order.1)
+    pub fn sort_order(&self) -> &[(SharedString, bool)] {
+        &self.sort_order
     }
 
     /// Returns the query offset.
@@ -240,9 +247,172 @@ impl Default for Query {
         Self {
             fields: Vec::new(),
             filters: Map::new(),
-            sort_order: (None, false),
+            sort_order: Vec::new(),
             offset: 0,
             limit: 10,
+        }
+    }
+}
+
+/// A builder type for model queries.
+#[derive(Debug, Default)]
+pub struct QueryBuilder {
+    // Projection fields.
+    fields: Vec<String>,
+    // Filters.
+    filters: Map,
+    // Sort order.
+    sort_order: Vec<(SharedString, bool)>,
+    // Offset.
+    offset: usize,
+    // Limit.
+    limit: usize,
+}
+
+impl QueryBuilder {
+    /// Creates a new instance.
+    #[inline]
+    pub fn new() -> Self {
+        Self {
+            fields: Vec::new(),
+            filters: Map::new(),
+            sort_order: Vec::new(),
+            offset: 0,
+            limit: usize::MAX,
+        }
+    }
+
+    /// Adds a filter with the condition for equal parts.
+    #[inline]
+    pub fn and_eq<S, T>(&mut self, field: S, value: T)
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.filters.upsert(field.into(), value);
+    }
+
+    /// Adds a filter with the condition for non-equal parts.
+    #[inline]
+    pub fn and_ne<S, T>(&mut self, field: S, value: T)
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.filters
+            .upsert(field.into(), Map::from_entry("$ne", value));
+    }
+
+    /// Adds a filter with the condition for a field less than the value.
+    #[inline]
+    pub fn and_lt<S, T>(&mut self, field: S, value: T)
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.filters
+            .upsert(field.into(), Map::from_entry("$lt", value));
+    }
+
+    /// Adds a filter with the condition for a field not greater than the value.
+    #[inline]
+    pub fn and_le<S, T>(&mut self, field: S, value: T)
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.filters
+            .upsert(field.into(), Map::from_entry("$le", value));
+    }
+
+    /// Adds a filter with the condition for a field greater than the value.
+    #[inline]
+    pub fn and_gt<S, T>(&mut self, field: S, value: T)
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.filters
+            .upsert(field.into(), Map::from_entry("$lt", value));
+    }
+
+    /// Adds a filter with the condition for a field not less than the value.
+    #[inline]
+    pub fn and_ge<S, T>(&mut self, field: S, value: T)
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.filters
+            .upsert(field.into(), Map::from_entry("$ge", value));
+    }
+
+    /// Adds a filter with the condition for a field whose value is in the list.
+    #[inline]
+    pub fn and_in<S, T>(&mut self, field: S, list: &[T])
+    where
+        S: Into<String>,
+        T: Into<JsonValue> + Clone,
+    {
+        self.filters
+            .upsert(field.into(), Map::from_entry("$in", list));
+    }
+
+    /// Adds a filter with the condition for a field whose value is not in the list.
+    #[inline]
+    pub fn and_not_in<S, T>(&mut self, field: S, list: &[T])
+    where
+        S: Into<String>,
+        T: Into<JsonValue> + Clone,
+    {
+        self.filters
+            .upsert(field.into(), Map::from_entry("$nin", list));
+    }
+
+    /// Adds a sort with the specific order.
+    #[inline]
+    pub fn order_by(&mut self, field: impl Into<SharedString>, descending: bool) -> &mut Self {
+        self.sort_order.push((field.into(), descending));
+        self
+    }
+
+    /// Adds a sort with the ascending order.
+    #[inline]
+    pub fn order_asc(&mut self, field: impl Into<SharedString>) -> &mut Self {
+        self.sort_order.push((field.into(), false));
+        self
+    }
+
+    /// Adds a sort with the descending order.
+    #[inline]
+    pub fn order_desc(&mut self, field: impl Into<SharedString>) -> &mut Self {
+        self.sort_order.push((field.into(), true));
+        self
+    }
+
+    /// Sets the offset.
+    #[inline]
+    pub fn offset(&mut self, offset: usize) -> &mut Self {
+        self.offset = offset;
+        self
+    }
+
+    /// Sets the limit.
+    #[inline]
+    pub fn limit(&mut self, limit: usize) -> &mut Self {
+        self.limit = limit;
+        self
+    }
+
+    /// Constructs an instance of `Query`.
+    #[inline]
+    pub fn build(self) -> Query {
+        Query {
+            fields: self.fields,
+            filters: self.filters,
+            sort_order: self.sort_order,
+            offset: self.offset,
+            limit: self.limit,
         }
     }
 }

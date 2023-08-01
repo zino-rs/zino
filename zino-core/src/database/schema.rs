@@ -83,7 +83,6 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut query = Query::default();
         query.allow_fields(Self::fields());
         query.deny_fields(Self::writeonly_fields());
-        query.set_limit(super::MAX_ROWS.load(Relaxed));
         query
     }
 
@@ -758,17 +757,16 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let mut ctx = Self::before_scan(&sql).await?;
         let mut rows = sqlx::query(&sql).fetch(pool);
-        let mut associations = Map::with_capacity(num_values);
+        let mut associations = Vec::with_capacity(num_values);
         let translate_enabled = query.translate_enabled();
         while let Some(row) = rows.try_next().await? {
             let mut map = Map::decode_row(&row)?;
-            let primary_key_value = map
-                .get_str(primary_key_name)
-                .map(|s| s.to_owned())
-                .unwrap_or_default();
+            let primary_key = map.get(primary_key_name).cloned();
             Self::after_decode(&mut map).await?;
             translate_enabled.then(|| Self::translate_model(&mut map));
-            associations.upsert(primary_key_value, map);
+            if let Some(key) = primary_key {
+                associations.push((key, map));
+            }
         }
         ctx.set_query(&sql);
         ctx.set_query_result(Some(u64::try_from(associations.len())?), true);
@@ -777,19 +775,26 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         for row in data {
             for col in columns {
-                if let Some(value) = row.get_mut(col) {
-                    if let Some(value) = value.as_str() {
-                        if let Some(value) = associations.get(value) {
-                            row.upsert(col, value.clone());
+                if let Some(vec) = row.get_array(col) && !vec.is_empty() {
+                    let populated_field = [col, "populated"].join("_");
+                    let populated_values = vec.iter().map(|key| {
+                        let populated_value = associations
+                            .iter()
+                            .find_map(|(k, v)| (key == k).then_some(v));
+                        if let Some(value) = populated_value {
+                            value.clone().into()
+                        } else {
+                            key.clone()
                         }
-                    } else if let Some(entries) = value.as_array_mut() {
-                        for entry in entries {
-                            if let Some(value) = entry.as_str() {
-                                if let Some(value) = associations.get(value) {
-                                    *entry = value.clone();
-                                }
-                            }
-                        }
+                    }).collect::<Vec<_>>();
+                    row.upsert(populated_field, populated_values);
+                } else if let Some(key) = row.get(col) {
+                    let populated_value = associations
+                        .iter()
+                        .find_map(|(k, v)| (key == k).then_some(v));
+                    if let Some(value) = populated_value {
+                        let populated_field = [col, "populated"].join("_");
+                        row.upsert(populated_field, value.clone());
                     }
                 }
             }
@@ -830,17 +835,16 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let mut ctx = Self::before_scan(&sql).await?;
         let mut rows = sqlx::query(&sql).fetch(pool);
-        let mut associations = Map::with_capacity(num_values);
+        let mut associations = Vec::with_capacity(num_values);
         let translate_enabled = query.translate_enabled();
         while let Some(row) = rows.try_next().await? {
             let mut map = Map::decode_row(&row)?;
-            let primary_key_value = map
-                .get_str(primary_key_name)
-                .map(|s| s.to_owned())
-                .unwrap_or_default();
+            let primary_key = map.get(primary_key_name).cloned();
             Self::after_decode(&mut map).await?;
             translate_enabled.then(|| Self::translate_model(&mut map));
-            associations.upsert(primary_key_value, map);
+            if let Some(key) = primary_key {
+                associations.push((key, map));
+            }
         }
         ctx.set_query(&sql);
         ctx.set_query_result(Some(u64::try_from(associations.len())?), true);
@@ -848,19 +852,26 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::after_query(&ctx).await?;
 
         for col in columns {
-            if let Some(value) = data.get_mut(col) {
-                if let Some(value) = value.as_str() {
-                    if let Some(value) = associations.get(value) {
-                        data.upsert(col, value.clone());
+            if let Some(vec) = data.get_array(col) && !vec.is_empty() {
+                let populated_field = [col, "populated"].join("_");
+                let populated_values = vec.iter().map(|key| {
+                    let populated_value = associations
+                        .iter()
+                        .find_map(|(k, v)| (key == k).then_some(v));
+                    if let Some(value) = populated_value {
+                        value.clone().into()
+                    } else {
+                        key.clone()
                     }
-                } else if let Some(entries) = value.as_array_mut() {
-                    for entry in entries {
-                        if let Some(value) = entry.as_str() {
-                            if let Some(value) = associations.get(value) {
-                                *entry = value.clone();
-                            }
-                        }
-                    }
+                }).collect::<Vec<_>>();
+                data.upsert(populated_field, populated_values);
+            } else if let Some(key) = data.get(col) {
+                let populated_value = associations
+                    .iter()
+                    .find_map(|(k, v)| (key == k).then_some(v));
+                if let Some(value) = populated_value {
+                    let populated_field = [col, "populated"].join("_");
+                    data.upsert(populated_field, value.clone());
                 }
             }
         }
