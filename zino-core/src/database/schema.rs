@@ -592,7 +592,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::before_query(query).await?;
 
         let table_name = Self::table_name();
-        let projection = query.format_fields();
+        let projection = query.format_projection();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let pagination = query.format_pagination();
@@ -634,7 +634,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::before_query(query).await?;
 
         let table_name = Self::table_name();
-        let projection = query.format_fields();
+        let projection = query.format_projection();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} LIMIT 1;");
@@ -677,7 +677,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::before_query(query).await?;
 
         let table_name = Self::table_name();
-        let projection = query.format_fields();
+        let projection = query.format_projection();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} LIMIT 1;");
@@ -701,7 +701,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::before_query(query).await?;
 
         let table_name = Self::table_name();
-        let projection = query.format_fields();
+        let projection = query.format_projection();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let pagination = query.format_pagination();
@@ -751,7 +751,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         }
 
         let table_name = Self::table_name();
-        let projection = query.format_fields();
+        let projection = query.format_projection();
         let filters = query.format_filters::<Self>();
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
 
@@ -829,7 +829,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         }
 
         let table_name = Self::table_name();
-        let projection = query.format_fields();
+        let projection = query.format_projection();
         let filters = query.format_filters::<Self>();
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
 
@@ -892,7 +892,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let model_name = Query::format_field(Self::model_name());
         let other_table_name = M::table_name();
         let other_model_name = Query::format_field(M::model_name());
-        let projection = query.format_fields();
+        let projection = query.format_projection();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let pagination = query.format_pagination();
@@ -1187,7 +1187,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let query = Self::default_query();
-        let projection = query.format_fields();
+        let projection = query.format_projection();
         let sql = if cfg!(feature = "orm-mysql") {
             let placeholder = Query::placeholder(1);
             format!(
@@ -1225,7 +1225,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let query = Self::default_query();
-        let projection = query.format_fields();
+        let projection = query.format_projection();
         let sql = if cfg!(feature = "orm-mysql") {
             let placeholder = Query::placeholder(1);
             format!(

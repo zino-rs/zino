@@ -5,7 +5,6 @@ which emphasizes **simplicity**, **extensibility** and **productivity**.
 
 [![Crates.io](https://img.shields.io/crates/v/zino)][zino]
 [![Documentation](https://shields.io/docsrs/zino)][zino-docs]
-[![Downloads](https://img.shields.io/crates/d/zino)][zino]
 [![License](https://img.shields.io/crates/l/zino)][license]
 
 ## Highlights

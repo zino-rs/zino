@@ -12,7 +12,12 @@ use crate::{
 };
 use reqwest::Response;
 use serde::de::DeserializeOwned;
-use std::{env, fs, path::PathBuf, sync::LazyLock, thread};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+    sync::LazyLock,
+    thread,
+};
 use toml::value::Table;
 use utoipa::openapi::{Info, OpenApi, OpenApiBuilder};
 
@@ -149,6 +154,12 @@ pub trait Application {
     #[inline]
     fn project_dir() -> &'static PathBuf {
         LazyLock::force(&PROJECT_DIR)
+    }
+
+    /// Returns the path relative to the project directory.
+    #[inline]
+    fn relative_path<P: AsRef<Path>>(path: P) -> PathBuf {
+        PROJECT_DIR.join(path)
     }
 
     /// Returns the secret key for the application.

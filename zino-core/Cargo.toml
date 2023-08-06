@@ -110,7 +110,7 @@ reqwest-tracing = "0.4.5"
 rmp-serde = "1.1.2"
 serde_qs = "0.12.0"
 sha2 = "0.10.7"
-sysinfo = "0.29.6"
+sysinfo = "0.29.7"
 task-local-extensions = "0.1.4"
 toml = "0.7.6"
 tracing = "0.1.37"
@@ -163,7 +163,7 @@ features = [
 ]
 
 [dependencies.serde]
-version = "1.0.178"
+version = "1.0.180"
 features = ["derive"]
 
 [dependencies.serde_json]

@@ -69,7 +69,7 @@ impl Application for AxumCluster {
         let mut body_limit = 100 * 1024 * 1024; // 100MB
         let mut request_timeout = Duration::from_secs(10); // 10 seconds
         let mut public_dir = PathBuf::new();
-        let default_public_dir = Self::project_dir().join("public");
+        let default_public_dir = Self::relative_path("public");
         if let Some(server) = Self::config().get_table("server") {
             if let Some(limit) = server.get_usize("body-limit") {
                 body_limit = limit;

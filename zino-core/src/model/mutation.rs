@@ -93,7 +93,7 @@ impl Mutation {
     }
 }
 
-/// A builder for model mutations.
+/// A builder type for model mutations.
 #[derive(Debug, Default)]
 pub struct MutationBuilder {
     // Editable fields.

@@ -45,7 +45,7 @@ pub(super) trait QueryExt<DB> {
     }
 
     /// Formats projection fields.
-    fn format_fields(&self) -> Cow<'_, str> {
+    fn format_projection(&self) -> Cow<'_, str> {
         let fields = self.query_fields();
         if fields.is_empty() {
             "*".into()
@@ -133,9 +133,13 @@ pub(super) trait QueryExt<DB> {
             expression += &format!("WHERE {}", conditions.join(" AND "));
         };
         if let Some(groups) = filters.parse_str_array("$group") {
-            let groups = groups.join(", ");
+            let groups = groups
+                .into_iter()
+                .map(Self::format_field)
+                .collect::<Vec<_>>()
+                .join(", ");
             expression += &format!(" GROUP BY {groups}");
-            if let Some(JsonValue::Object(selection)) = filters.get("$match") {
+            if let Some(JsonValue::Object(selection)) = filters.get("$having") {
                 let condition = Self::format_selection::<M>(selection, " AND ");
                 expression += &format!(" HAVING {condition}");
             }

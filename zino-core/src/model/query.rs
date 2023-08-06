@@ -369,23 +369,47 @@ impl QueryBuilder {
             .upsert(field.into(), Map::from_entry("$nin", list));
     }
 
+    /// Adds a filter with the condition for a field whose value is within a given range.
+    pub fn and_between<S, T>(&mut self, field: S, min: T, max: T)
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.filters.upsert(
+            field.into(),
+            Map::from_entry("$range", vec![min.into(), max.into()]),
+        );
+    }
+
+    /// Adds a filter which groups rows that have the same values into summary rows.
+    #[inline]
+    pub fn group_by<T: Into<JsonValue>>(&mut self, fields: T) {
+        self.filters.upsert("$group", fields);
+    }
+
+    /// Adds a filter which can be used with aggregate functions.
+    #[inline]
+    pub fn having<T: Into<JsonValue>>(&mut self, selection: T) {
+        self.filters.upsert("$having", selection);
+    }
+
     /// Adds a sort with the specific order.
     #[inline]
-    pub fn order_by(&mut self, field: impl Into<SharedString>, descending: bool) -> &mut Self {
+    pub fn order_by<S: Into<SharedString>>(&mut self, field: S, descending: bool) -> &mut Self {
         self.sort_order.push((field.into(), descending));
         self
     }
 
     /// Adds a sort with the ascending order.
     #[inline]
-    pub fn order_asc(&mut self, field: impl Into<SharedString>) -> &mut Self {
+    pub fn order_asc<S: Into<SharedString>>(&mut self, field: S) -> &mut Self {
         self.sort_order.push((field.into(), false));
         self
     }
 
     /// Adds a sort with the descending order.
     #[inline]
-    pub fn order_desc(&mut self, field: impl Into<SharedString>) -> &mut Self {
+    pub fn order_desc<S: Into<SharedString>>(&mut self, field: S) -> &mut Self {
         self.sort_order.push((field.into(), true));
         self
     }
