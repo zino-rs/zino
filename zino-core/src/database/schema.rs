@@ -108,6 +108,21 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::columns().iter().find(|col| col.name() == key)
     }
 
+    /// Returns `true` if the model has a column for the specific field.
+    #[inline]
+    fn has_column(key: &str) -> bool {
+        let key = if let Some((name, field)) = key.split_once('.') {
+            if Self::model_name() == name || Self::table_name() == name {
+                field
+            } else {
+                return false;
+            }
+        } else {
+            key
+        };
+        Self::columns().iter().any(|col| col.name() == key)
+    }
+
     /// Initializes the model reader.
     #[inline]
     fn init_reader() -> Result<&'static ConnectionPool, Error> {

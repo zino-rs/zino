@@ -1,6 +1,10 @@
 /// Generates SQL `SET` expressions.
 use super::{query::QueryExt, DatabaseDriver, Schema};
-use crate::model::{EncodeColumn, Mutation, Query};
+use crate::{
+    extension::JsonObjectExt,
+    model::{EncodeColumn, Mutation, Query},
+    Map,
+};
 
 /// Extension trait for [`Mutation`](crate::model::Mutation).
 pub(super) trait MutationExt<DB> {
@@ -20,65 +24,127 @@ impl MutationExt<DatabaseDriver> for Mutation {
         let readonly_fields = M::readonly_fields();
         let mut mutations = Vec::new();
         for (key, value) in updates.iter() {
-            match key.as_str() {
-                "$inc" => {
-                    if let Some(update) = value.as_object() {
-                        for (key, value) in update.iter() {
-                            if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let key = Query::format_field(key);
-                                let value = col.encode_value(Some(value));
-                                let mutation = format!(r#"{key} = {key} + {value}"#);
+            if (permissive || fields.contains(key))
+                && !readonly_fields.contains(&key.as_str())
+                && let Some(col) = M::get_column(key)
+            {
+                let key = Query::format_field(key);
+                let Some(map) = value.as_object() else {
+                    let value = col.encode_value(Some(value));
+                    let mutation = format!(r#"{key} = {value}"#);
+                    mutations.push(mutation);
+                    continue;
+                };
+
+                let mut updates = Map::new();
+                for (operator, value) in map {
+                    match operator.as_str() {
+                        "$add" => {
+                            if let Some(values) = value.as_array() && values.len() >= 2 {
+                                let value = values.iter()
+                                    .map(|v| {
+                                        if let Some(s) = v.as_str() && M::has_column(s) {
+                                            Query::format_field(s)
+                                        } else {
+                                            col.encode_value(Some(v))
+                                        }
+                                    })
+                                    .collect::<Vec<_>>()
+                                    .join(" + ");
+                                let mutation = format!(r#"{key} = {value}"#);
                                 mutations.push(mutation);
                             }
                         }
-                    }
-                }
-                "$mul" => {
-                    if let Some(update) = value.as_object() {
-                        for (key, value) in update.iter() {
-                            if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let key = Query::format_field(key);
-                                let value = col.encode_value(Some(value));
-                                let mutation = format!(r#"{key} = {key} * {value}"#);
+                        "$sub" => {
+                            if let Some(values) = value.as_array() && values.len() == 2 {
+                                let value = values.iter()
+                                    .map(|v| {
+                                        if let Some(s) = v.as_str() && M::has_column(s) {
+                                            Query::format_field(s)
+                                        } else {
+                                            col.encode_value(Some(v))
+                                        }
+                                    })
+                                    .collect::<Vec<_>>()
+                                    .join(" - ");
+                                let mutation = format!(r#"{key} = {value}"#);
                                 mutations.push(mutation);
                             }
                         }
-                    }
-                }
-                "$min" => {
-                    if let Some(update) = value.as_object() {
-                        for (key, value) in update.iter() {
-                            if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let key = Query::format_field(key);
-                                let value = col.encode_value(Some(value));
-                                let mutation = format!(r#"{key} = LEAST({key}, {value})"#);
+                        "$mul" => {
+                            if let Some(values) = value.as_array() && values.len() >= 2 {
+                                let value = values.iter()
+                                    .map(|v| {
+                                        if let Some(s) = v.as_str() && M::has_column(s) {
+                                            Query::format_field(s)
+                                        } else {
+                                            col.encode_value(Some(v))
+                                        }
+                                    })
+                                    .collect::<Vec<_>>()
+                                    .join(" * ");
+                                let mutation = format!(r#"{key} = {value}"#);
                                 mutations.push(mutation);
                             }
                         }
-                    }
-                }
-                "$max" => {
-                    if let Some(update) = value.as_object() {
-                        for (key, value) in update.iter() {
-                            if fields.contains(key) && let Some(col) = M::get_column(key) {
-                                let key = Query::format_field(key);
-                                let value = col.encode_value(Some(value));
-                                let mutation = format!(r#"{key} = GREATEST({key}, {value})"#);
+                        "$div" => {
+                            if let Some(values) = value.as_array() && values.len() == 2 {
+                                let value = values.iter()
+                                    .map(|v| {
+                                        if let Some(s) = v.as_str() && M::has_column(s) {
+                                            Query::format_field(s)
+                                        } else {
+                                            col.encode_value(Some(v))
+                                        }
+                                    })
+                                    .collect::<Vec<_>>()
+                                    .join(" / ");
+                                let mutation = format!(r#"{key} = {value}"#);
                                 mutations.push(mutation);
                             }
                         }
+                        "$min" => {
+                            if let Some(values) = value.as_array() && values.len() >= 2 {
+                                let value = values.iter()
+                                    .map(|v| {
+                                        if let Some(s) = v.as_str() && M::has_column(s) {
+                                            Query::format_field(s)
+                                        } else {
+                                            col.encode_value(Some(v))
+                                        }
+                                    })
+                                    .collect::<Vec<_>>()
+                                    .join(", ");
+                                let mutation = format!(r#"{key} = LEAST({value})"#);
+                                mutations.push(mutation);
+                            }
+                        }
+                        "$max" => {
+                            if let Some(values) = value.as_array() && values.len() >= 2 {
+                                let value = values.iter()
+                                    .map(|v| {
+                                        if let Some(s) = v.as_str() && M::has_column(s) {
+                                            Query::format_field(s)
+                                        } else {
+                                            col.encode_value(Some(v))
+                                        }
+                                    })
+                                    .collect::<Vec<_>>()
+                                    .join(", ");
+                                let mutation = format!(r#"{key} = GREATEST({value})"#);
+                                mutations.push(mutation);
+                            }
+                        }
+                        _ => {
+                            updates.upsert(operator, value.clone());
+                        }
                     }
                 }
-                _ => {
-                    if (permissive || fields.contains(key))
-                        && !readonly_fields.contains(&key.as_str())
-                        && let Some(col) = M::get_column(key)
-                    {
-                        let key = Query::format_field(key);
-                        let value = col.encode_value(Some(value));
-                        let mutation = format!(r#"{key} = {value}"#);
-                        mutations.push(mutation);
-                    }
+                if !updates.is_empty() {
+                    let updates = updates.into();
+                    let value = col.encode_value(Some(&updates));
+                    let mutation = format!(r#"{key} = {value}"#);
+                    mutations.push(mutation);
                 }
             }
         }

@@ -38,7 +38,7 @@ impl Query {
         let mut validation = Validation::new();
         let mut pagination_current_page = None;
         let filters = &mut self.filters;
-        for (key, value) in data {
+        for (key, value) in data.iter().filter(|(_, v)| !v.is_ignorable()) {
             match key.as_str() {
                 "fields" | "columns" => {
                     if let Some(fields) = value.parse_str_array() {
@@ -85,7 +85,7 @@ impl Query {
                         }
                     }
                 }
-                "populate" | "translate" => {
+                "populate" | "translate" | "show_deleted" | "validate_only" => {
                     if let Some(result) = value.parse_bool() {
                         match result {
                             Ok(flag) => {
@@ -97,34 +97,20 @@ impl Query {
                 }
                 "timestamp" | "nonce" | "signature" => (),
                 _ => {
-                    if !key.starts_with('$') {
-                        if key.contains('.') {
-                            if let Some((key, path)) = key.split_once('.') {
-                                if let Ok(index) = path.parse::<usize>() {
-                                    if let Some(vec) = filters.get_mut(key) {
-                                        if let Some(vec) = vec.as_array_mut() {
-                                            if index > vec.len() {
-                                                vec.resize(index, JsonValue::Null);
-                                            }
-                                            vec.insert(index, value.to_owned());
-                                        }
-                                    } else {
-                                        let mut vec = Vec::with_capacity(index);
-                                        vec.resize(index, JsonValue::Null);
-                                        vec.push(value.to_owned());
-                                        filters.upsert(key, vec);
-                                    }
-                                } else if let Some(map) = filters.get_mut(key) {
-                                    if let Some(map) = map.as_object_mut() {
-                                        map.upsert(path, value.to_owned());
-                                    }
-                                } else {
-                                    filters.upsert(key, Map::from_entry(path, value.to_owned()));
-                                }
-                            }
-                        } else if value != "" && value != "all" {
-                            filters.insert(key.to_owned(), value.to_owned());
+                    if let Some(value) = value.as_str() && value != "all" {
+                        if key.starts_with('$') &&
+                            let Some(expr) = value.strip_prefix('(')
+                        {
+                            filters.upsert(key, Self::parse_logical_query(expr));
+                        } else if value.starts_with('$') &&
+                            let Some((operator, value)) = value.split_once('.')
+                        {
+                            filters.upsert(key, Map::from_entry(operator, value));
+                        } else {
+                            filters.upsert(key, value);
                         }
+                    } else {
+                        filters.upsert(key, value.clone());
                     }
                 }
             }
@@ -133,6 +119,27 @@ impl Query {
             self.offset = self.limit * current_page.saturating_sub(1);
         }
         validation
+    }
+
+    /// Parses the query expression with logical operators.
+    fn parse_logical_query(expr: &str) -> Vec<Map> {
+        let mut filters = Vec::new();
+        for expr in expr.trim_end_matches(')').split(',') {
+            if let Some((key, expr)) = expr.split_once('.') &&
+                let Some((operator, value)) = expr.split_once('.')
+            {
+                let value = if value.starts_with('$') &&
+                    let Some((operator, expr)) = value.split_once('(')
+                {
+                    Map::from_entry(operator, Self::parse_logical_query(expr)).into()
+                } else {
+                    JsonValue::from(value)
+                };
+                let filter = Map::from_entry(key, Map::from_entry(operator, value));
+                filters.push(filter);
+            }
+        }
+        filters
     }
 
     /// Retains the projection fields in the allow list.
@@ -238,6 +245,18 @@ impl Query {
     #[inline]
     pub fn translate_enabled(&self) -> bool {
         self.enabled("translate")
+    }
+
+    /// Returns `true` if the `show_deleted` flag has been enabled.
+    #[inline]
+    pub fn show_deleted(&self) -> bool {
+        self.enabled("show_deleted")
+    }
+
+    /// Returns `true` if the `validate_only` flag has been enabled.
+    #[inline]
+    pub fn validate_only(&self) -> bool {
+        self.enabled("validate_only")
     }
 }
 
@@ -377,8 +396,18 @@ impl QueryBuilder {
     {
         self.filters.upsert(
             field.into(),
-            Map::from_entry("$range", vec![min.into(), max.into()]),
+            Map::from_entry("$between", vec![min.into(), max.into()]),
         );
+    }
+
+    /// Adds a filter with the condition to search for a specified pattern in a column.
+    pub fn and_like<S, T>(&mut self, field: S, value: T)
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.filters
+            .upsert(field.into(), Map::from_entry("$like", value));
     }
 
     /// Adds a filter which groups rows that have the same values into summary rows.

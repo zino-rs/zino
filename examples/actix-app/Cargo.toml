@@ -13,7 +13,7 @@ serde_json = "1.0.104"
 tracing = "0.1.37"
 
 [dependencies.serde]
-version = "1.0.180"
+version = "1.0.183"
 features = ["derive"]
 
 [dependencies.zino]

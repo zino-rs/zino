@@ -78,32 +78,36 @@ pub(super) trait QueryExt<DB> {
         for (key, value) in filters {
             match key.as_str() {
                 "$and" => {
-                    if let Some(selection) = value.as_object() {
-                        let condition = Self::format_selection::<M>(selection, " AND ");
+                    if let Some(filters) = value.as_array() {
+                        let condition = Self::format_logical_filters::<M>(filters, " AND ");
                         conditions.push(condition);
                     }
                 }
                 "$not" => {
-                    if let Some(selection) = value.as_object() {
-                        let condition = Self::format_selection::<M>(selection, " AND ");
-                        conditions.push(format!("NOT {condition}"));
+                    if let Some(filters) = value.as_array() {
+                        let condition = Self::format_logical_filters::<M>(filters, " AND ");
+                        conditions.push(format!("(NOT {condition})"));
                     }
                 }
                 "$nor" => {
-                    if let Some(selection) = value.as_object() {
-                        let condition = Self::format_selection::<M>(selection, " OR ");
-                        conditions.push(format!("NOT {condition}"));
+                    if let Some(filters) = value.as_array() {
+                        let condition = Self::format_logical_filters::<M>(filters, " OR ");
+                        conditions.push(format!("(NOT {condition})"));
                     }
                 }
                 "$or" => {
-                    if let Some(selection) = value.as_object() {
-                        let condition = Self::format_selection::<M>(selection, " OR ");
+                    if let Some(filters) = value.as_array() {
+                        let condition = Self::format_logical_filters::<M>(filters, " OR ");
                         conditions.push(condition);
                     }
                 }
                 "$rand" => {
                     if let Some(Ok(value)) = value.parse_f64() {
-                        let condition = format!("random() < {value}");
+                        let condition = if cfg!(feature = "orm-mysql") {
+                            format!("rand() < {value}")
+                        } else {
+                            format!("random() < {value}")
+                        };
                         conditions.push(condition);
                     }
                 }
@@ -139,91 +143,57 @@ pub(super) trait QueryExt<DB> {
                 .collect::<Vec<_>>()
                 .join(", ");
             expression += &format!(" GROUP BY {groups}");
-            if let Some(JsonValue::Object(selection)) = filters.get("$having") {
-                let condition = Self::format_selection::<M>(selection, " AND ");
+            if let Some(filters) = filters.get_array("$having") {
+                let condition = Self::format_logical_filters::<M>(filters, " AND ");
                 expression += &format!(" HAVING {condition}");
             }
         }
         expression
     }
 
-    /// Formats the query sort to generate SQL `ORDER BY` expression.
-    fn format_sort(&self) -> String {
-        let sort_order = self.query_order();
-        if sort_order.is_empty() {
-            String::new()
-        } else {
-            let sort_order = sort_order
-                .iter()
-                .map(|(sort, descending)| {
-                    if *descending {
-                        format!("{sort} DESC")
-                    } else {
-                        format!("{sort} ASC")
-                    }
-                })
-                .collect::<Vec<_>>();
-            format!("ORDER BY {}", sort_order.join(", "))
-        }
-    }
-
-    /// Formats the query pagination to generate SQL `LIMIT` expression.
-    fn format_pagination(&self) -> String {
-        let limit = self.query_limit();
-        if limit == usize::MAX {
-            return String::new();
-        }
-
-        let offset = self.query_offset();
-        format!("LIMIT {limit} OFFSET {offset}")
-    }
-
-    // Formats the selection with a logic operator.
-    fn format_selection<M: Schema>(selection: &Map, operator: &str) -> String {
-        let mut conditions = Vec::with_capacity(selection.len());
-        for (key, value) in selection {
-            match key.as_str() {
-                "$and" => {
-                    if let Some(selection) = value.as_object() {
-                        let condition = Self::format_selection::<M>(selection, " AND ");
-                        conditions.push(condition);
-                    }
-                }
-                "$not" => {
-                    if let Some(selection) = value.as_object() {
-                        let condition = Self::format_selection::<M>(selection, " AND ");
-                        conditions.push(format!("(NOT {condition})"));
-                    }
-                }
-                "$nor" => {
-                    if let Some(selection) = value.as_object() {
-                        let condition = Self::format_selection::<M>(selection, " OR ");
-                        conditions.push(format!("(NOT {condition})"));
-                    }
-                }
-                "$or" => {
-                    if let Some(selection) = value.as_object() {
-                        let condition = Self::format_selection::<M>(selection, " OR ");
-                        conditions.push(condition);
-                    }
-                }
-                "$text" => {
-                    if let Some(value) = value.as_object() {
-                        if let Some(condition) = Self::parse_text_search(value) {
-                            conditions.push(condition);
+    // Formats the filters with a logic operator.
+    fn format_logical_filters<M: Schema>(filters: &[JsonValue], operator: &str) -> String {
+        let mut conditions = Vec::with_capacity(filters.len());
+        for filter in filters {
+            if let JsonValue::Object(filter) = filter {
+                for (key, value) in filter {
+                    match key.as_str() {
+                        "$and" => {
+                            if let Some(filters) = value.as_array() {
+                                let condition = Self::format_logical_filters::<M>(filters, " AND ");
+                                conditions.push(condition);
+                            }
                         }
-                    }
-                }
-                _ => {
-                    if let Some(col) = M::get_column(key) {
-                        let condition = col.format_filter(key, value);
-                        if !condition.is_empty() {
-                            conditions.push(condition);
+                        "$not" => {
+                            if let Some(filters) = value.as_array() {
+                                let condition = Self::format_logical_filters::<M>(filters, " AND ");
+                                conditions.push(format!("(NOT {condition})"));
+                            }
                         }
-                    } else if key.contains('.') {
-                        let condition = Self::format_filter(key, value);
-                        if !condition.is_empty() {
-                            conditions.push(condition);
+                        "$nor" => {
+                            if let Some(filters) = value.as_array() {
+                                let condition = Self::format_logical_filters::<M>(filters, " OR ");
+                                conditions.push(format!("(NOT {condition})"));
+                            }
+                        }
+                        "$or" => {
+                            if let Some(filters) = value.as_array() {
+                                let condition = Self::format_logical_filters::<M>(filters, " OR ");
+                                conditions.push(condition);
+                            }
+                        }
+                        _ => {
+                            if let Some(col) = M::get_column(key) {
+                                let condition = col.format_filter(key, value);
+                                if !condition.is_empty() {
+                                    conditions.push(condition);
+                                }
+                            } else if key.contains('.') {
+                                let condition = Self::format_filter(key, value);
+                                if !condition.is_empty() {
+                                    conditions.push(condition);
+                                }
+                            }
                         }
                     }
                 }
@@ -269,5 +239,36 @@ pub(super) trait QueryExt<DB> {
         } else {
             String::new()
         }
+    }
+
+    /// Formats the query sort to generate SQL `ORDER BY` expression.
+    fn format_sort(&self) -> String {
+        let sort_order = self.query_order();
+        if sort_order.is_empty() {
+            String::new()
+        } else {
+            let sort_order = sort_order
+                .iter()
+                .map(|(sort, descending)| {
+                    if *descending {
+                        format!("{sort} DESC")
+                    } else {
+                        format!("{sort} ASC")
+                    }
+                })
+                .collect::<Vec<_>>();
+            format!("ORDER BY {}", sort_order.join(", "))
+        }
+    }
+
+    /// Formats the query pagination to generate SQL `LIMIT` expression.
+    fn format_pagination(&self) -> String {
+        let limit = self.query_limit();
+        if limit == usize::MAX {
+            return String::new();
+        }
+
+        let offset = self.query_offset();
+        format!("LIMIT {limit} OFFSET {offset}")
     }
 }

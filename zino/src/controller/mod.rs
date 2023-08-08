@@ -196,10 +196,13 @@ where
     }
 
     async fn batch_delete(mut req: Self::Request) -> Self::Result {
-        let data = req.parse_body::<Vec<JsonValue>>().await?;
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let primary_key_values = Map::from_entry("$in", data);
-        let filters = Map::from_entry(primary_key_name, primary_key_values);
+        let data = req.parse_body::<JsonValue>().await?;
+        let filters = if let JsonValue::Object(map) = data {
+            map
+        } else {
+            let primary_key_values = Map::from_entry("$in", data);
+            Map::from_entry(Self::PRIMARY_KEY_NAME, primary_key_values)
+        };
         let query = Query::new(filters);
         let rows_affected = Self::delete_many(&query).await.extract(&req)?;
         let data = Map::from_entry("rows_affected", rows_affected);

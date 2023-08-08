@@ -166,7 +166,8 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             } else {
                 let mut conditions = Vec::with_capacity(filter.len());
                 for (name, value) in filter {
-                    let operator = match name.as_str() {
+                    let name = name.as_str();
+                    let operator = match name {
                         "$eq" => "=",
                         "$ne" => "<>",
                         "$lt" => "<",
@@ -175,11 +176,12 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         "$ge" => ">=",
                         "$in" => "IN",
                         "$nin" => "NOT IN",
+                        "$between" => "BETWEEN",
                         "$like" => "LIKE",
                         "$ilike" => "ILIKE",
                         "$rlike" => "RLIKE",
                         "$is" => "IS",
-                        _ => "=",
+                        _ => name,
                     };
                     if operator == "IN" || operator == "NOT IN" {
                         if let Some(values) = value.as_array() && !values.is_empty() {
@@ -190,6 +192,14 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                                 .collect::<Vec<_>>()
                                 .join(",");
                             let condition = format!(r#"{field} {operator} ({value})"#);
+                            conditions.push(condition);
+                        }
+                    } else if operator == "BETWEEN" {
+                        if let Some(values) = value.as_array() &&
+                            let [min_value, max_value, ..] = values.as_slice()
+                        {
+                            let field = Query::format_field(field);
+                            let condition = format!(r#"{field} BETWEEN {min_value} AND {max_value}"#);
                             conditions.push(condition);
                         }
                     } else {
