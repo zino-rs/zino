@@ -112,6 +112,17 @@ impl MutationBuilder {
         }
     }
 
+    /// Sets the value of the field.
+    #[inline]
+    pub fn set<S, T>(&mut self, field: S, value: T) -> &mut Self
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.updates.upsert(field, value);
+        self
+    }
+
     /// Constructs an instance of `Mutation`.
     #[inline]
     pub fn build(self) -> Mutation {

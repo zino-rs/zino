@@ -149,22 +149,15 @@ impl Query {
         if self.fields.is_empty() {
             self.fields = fields.iter().map(|&key| key.to_owned()).collect::<Vec<_>>();
         } else {
-            self.fields.retain(|field| {
-                fields
-                    .iter()
-                    .any(|key| field == key || field.starts_with(&format!("{key}:")))
-            })
+            self.fields.retain(|field| fields.contains(&field.as_str()))
         }
     }
 
     /// Removes the projection fields in the deny list.
     #[inline]
     pub fn deny_fields(&mut self, fields: &[&str]) {
-        self.fields.retain(|field| {
-            !fields
-                .iter()
-                .any(|key| field == key || field.starts_with(&format!("{key}:")))
-        })
+        self.fields
+            .retain(|field| !fields.contains(&field.as_str()))
     }
 
     /// Adds a key-value pair to the query filters.
@@ -301,125 +294,146 @@ impl QueryBuilder {
         }
     }
 
+    /// Adds a field to the projection.
+    #[inline]
+    pub fn field<S: Into<String>>(&mut self, field: S) -> &mut Self {
+        let field = field.into();
+        if !self.fields.contains(&field) {
+            self.fields.push(field);
+        }
+        self
+    }
+
     /// Adds a filter with the condition for equal parts.
     #[inline]
-    pub fn and_eq<S, T>(&mut self, field: S, value: T)
+    pub fn and_eq<S, T>(&mut self, field: S, value: T) -> &mut Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
     {
         self.filters.upsert(field.into(), value);
+        self
     }
 
     /// Adds a filter with the condition for non-equal parts.
     #[inline]
-    pub fn and_ne<S, T>(&mut self, field: S, value: T)
+    pub fn and_ne<S, T>(&mut self, field: S, value: T) -> &mut Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
     {
         self.filters
             .upsert(field.into(), Map::from_entry("$ne", value));
+        self
     }
 
     /// Adds a filter with the condition for a field less than the value.
     #[inline]
-    pub fn and_lt<S, T>(&mut self, field: S, value: T)
+    pub fn and_lt<S, T>(&mut self, field: S, value: T) -> &mut Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
     {
         self.filters
             .upsert(field.into(), Map::from_entry("$lt", value));
+        self
     }
 
     /// Adds a filter with the condition for a field not greater than the value.
     #[inline]
-    pub fn and_le<S, T>(&mut self, field: S, value: T)
+    pub fn and_le<S, T>(&mut self, field: S, value: T) -> &mut Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
     {
         self.filters
             .upsert(field.into(), Map::from_entry("$le", value));
+        self
     }
 
     /// Adds a filter with the condition for a field greater than the value.
     #[inline]
-    pub fn and_gt<S, T>(&mut self, field: S, value: T)
+    pub fn and_gt<S, T>(&mut self, field: S, value: T) -> &mut Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
     {
         self.filters
             .upsert(field.into(), Map::from_entry("$lt", value));
+        self
     }
 
     /// Adds a filter with the condition for a field not less than the value.
     #[inline]
-    pub fn and_ge<S, T>(&mut self, field: S, value: T)
+    pub fn and_ge<S, T>(&mut self, field: S, value: T) -> &mut Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
     {
         self.filters
             .upsert(field.into(), Map::from_entry("$ge", value));
+        self
     }
 
     /// Adds a filter with the condition for a field whose value is in the list.
     #[inline]
-    pub fn and_in<S, T>(&mut self, field: S, list: &[T])
+    pub fn and_in<S, T>(&mut self, field: S, list: &[T]) -> &mut Self
     where
         S: Into<String>,
         T: Into<JsonValue> + Clone,
     {
         self.filters
             .upsert(field.into(), Map::from_entry("$in", list));
+        self
     }
 
     /// Adds a filter with the condition for a field whose value is not in the list.
     #[inline]
-    pub fn and_not_in<S, T>(&mut self, field: S, list: &[T])
+    pub fn and_not_in<S, T>(&mut self, field: S, list: &[T]) -> &mut Self
     where
         S: Into<String>,
         T: Into<JsonValue> + Clone,
     {
         self.filters
             .upsert(field.into(), Map::from_entry("$nin", list));
+        self
     }
 
     /// Adds a filter with the condition for a field whose value is within a given range.
-    pub fn and_between<S, T>(&mut self, field: S, min: T, max: T)
+    pub fn and_between<S, T>(&mut self, field: S, min: T, max: T) -> &mut Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
     {
-        self.filters.upsert(
-            field.into(),
-            Map::from_entry("$between", vec![min.into(), max.into()]),
-        );
+        let values = vec![min.into(), max.into()];
+        self.filters
+            .upsert(field.into(), Map::from_entry("$between", values));
+        self
     }
 
     /// Adds a filter with the condition to search for a specified pattern in a column.
-    pub fn and_like<S, T>(&mut self, field: S, value: T)
+    pub fn and_like<S, T>(&mut self, field: S, value: T) -> &mut Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
     {
         self.filters
             .upsert(field.into(), Map::from_entry("$like", value));
+        self
     }
 
     /// Adds a filter which groups rows that have the same values into summary rows.
     #[inline]
-    pub fn group_by<T: Into<JsonValue>>(&mut self, fields: T) {
+    pub fn group_by<T: Into<JsonValue>>(&mut self, fields: T) -> &mut Self {
         self.filters.upsert("$group", fields);
+        self
     }
 
     /// Adds a filter which can be used with aggregate functions.
     #[inline]
-    pub fn having<T: Into<JsonValue>>(&mut self, selection: T) {
+    pub fn having<T: Into<JsonValue>>(&mut self, selection: T) -> &mut Self {
         self.filters.upsert("$having", selection);
+        self
     }
 
     /// Adds a sort with the specific order.
