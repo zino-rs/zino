@@ -114,7 +114,7 @@ impl MutationBuilder {
 
     /// Sets the value of the field.
     #[inline]
-    pub fn set<S, T>(&mut self, field: S, value: T) -> &mut Self
+    pub fn set<S, T>(mut self, field: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,

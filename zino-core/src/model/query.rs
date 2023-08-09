@@ -296,7 +296,7 @@ impl QueryBuilder {
 
     /// Adds a field to the projection.
     #[inline]
-    pub fn field<S: Into<String>>(&mut self, field: S) -> &mut Self {
+    pub fn field<S: Into<String>>(mut self, field: S) -> Self {
         let field = field.into();
         if !self.fields.contains(&field) {
             self.fields.push(field);
@@ -306,7 +306,7 @@ impl QueryBuilder {
 
     /// Adds a filter with the condition for equal parts.
     #[inline]
-    pub fn and_eq<S, T>(&mut self, field: S, value: T) -> &mut Self
+    pub fn and_eq<S, T>(mut self, field: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
@@ -317,7 +317,7 @@ impl QueryBuilder {
 
     /// Adds a filter with the condition for non-equal parts.
     #[inline]
-    pub fn and_ne<S, T>(&mut self, field: S, value: T) -> &mut Self
+    pub fn and_ne<S, T>(mut self, field: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
@@ -329,7 +329,7 @@ impl QueryBuilder {
 
     /// Adds a filter with the condition for a field less than the value.
     #[inline]
-    pub fn and_lt<S, T>(&mut self, field: S, value: T) -> &mut Self
+    pub fn and_lt<S, T>(mut self, field: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
@@ -341,7 +341,7 @@ impl QueryBuilder {
 
     /// Adds a filter with the condition for a field not greater than the value.
     #[inline]
-    pub fn and_le<S, T>(&mut self, field: S, value: T) -> &mut Self
+    pub fn and_le<S, T>(mut self, field: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
@@ -353,7 +353,7 @@ impl QueryBuilder {
 
     /// Adds a filter with the condition for a field greater than the value.
     #[inline]
-    pub fn and_gt<S, T>(&mut self, field: S, value: T) -> &mut Self
+    pub fn and_gt<S, T>(mut self, field: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
@@ -365,7 +365,7 @@ impl QueryBuilder {
 
     /// Adds a filter with the condition for a field not less than the value.
     #[inline]
-    pub fn and_ge<S, T>(&mut self, field: S, value: T) -> &mut Self
+    pub fn and_ge<S, T>(mut self, field: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
@@ -377,7 +377,7 @@ impl QueryBuilder {
 
     /// Adds a filter with the condition for a field whose value is in the list.
     #[inline]
-    pub fn and_in<S, T>(&mut self, field: S, list: &[T]) -> &mut Self
+    pub fn and_in<S, T>(mut self, field: S, list: &[T]) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue> + Clone,
@@ -389,7 +389,7 @@ impl QueryBuilder {
 
     /// Adds a filter with the condition for a field whose value is not in the list.
     #[inline]
-    pub fn and_not_in<S, T>(&mut self, field: S, list: &[T]) -> &mut Self
+    pub fn and_not_in<S, T>(mut self, field: S, list: &[T]) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue> + Clone,
@@ -400,7 +400,7 @@ impl QueryBuilder {
     }
 
     /// Adds a filter with the condition for a field whose value is within a given range.
-    pub fn and_between<S, T>(&mut self, field: S, min: T, max: T) -> &mut Self
+    pub fn and_between<S, T>(mut self, field: S, min: T, max: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
@@ -412,7 +412,7 @@ impl QueryBuilder {
     }
 
     /// Adds a filter with the condition to search for a specified pattern in a column.
-    pub fn and_like<S, T>(&mut self, field: S, value: T) -> &mut Self
+    pub fn and_like<S, T>(mut self, field: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
@@ -424,49 +424,49 @@ impl QueryBuilder {
 
     /// Adds a filter which groups rows that have the same values into summary rows.
     #[inline]
-    pub fn group_by<T: Into<JsonValue>>(&mut self, fields: T) -> &mut Self {
+    pub fn group_by<T: Into<JsonValue>>(mut self, fields: T) -> Self {
         self.filters.upsert("$group", fields);
         self
     }
 
     /// Adds a filter which can be used with aggregate functions.
     #[inline]
-    pub fn having<T: Into<JsonValue>>(&mut self, selection: T) -> &mut Self {
+    pub fn having<T: Into<JsonValue>>(mut self, selection: T) -> Self {
         self.filters.upsert("$having", selection);
         self
     }
 
     /// Adds a sort with the specific order.
     #[inline]
-    pub fn order_by<S: Into<SharedString>>(&mut self, field: S, descending: bool) -> &mut Self {
+    pub fn order_by<S: Into<SharedString>>(mut self, field: S, descending: bool) -> Self {
         self.sort_order.push((field.into(), descending));
         self
     }
 
     /// Adds a sort with the ascending order.
     #[inline]
-    pub fn order_asc<S: Into<SharedString>>(&mut self, field: S) -> &mut Self {
+    pub fn order_asc<S: Into<SharedString>>(mut self, field: S) -> Self {
         self.sort_order.push((field.into(), false));
         self
     }
 
     /// Adds a sort with the descending order.
     #[inline]
-    pub fn order_desc<S: Into<SharedString>>(&mut self, field: S) -> &mut Self {
+    pub fn order_desc<S: Into<SharedString>>(mut self, field: S) -> Self {
         self.sort_order.push((field.into(), true));
         self
     }
 
     /// Sets the offset.
     #[inline]
-    pub fn offset(&mut self, offset: usize) -> &mut Self {
+    pub fn offset(mut self, offset: usize) -> Self {
         self.offset = offset;
         self
     }
 
     /// Sets the limit.
     #[inline]
-    pub fn limit(&mut self, limit: usize) -> &mut Self {
+    pub fn limit(mut self, limit: usize) -> Self {
         self.limit = limit;
         self
     }
