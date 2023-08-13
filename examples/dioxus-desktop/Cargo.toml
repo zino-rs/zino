@@ -1,0 +1,30 @@
+[package]
+name = "dioxus-desktop"
+description = "An example for Dioxus desktop integration."
+version = "0.0.1"
+rust-version = "1.72"
+edition = "2021"
+publish = false
+
+[dependencies]
+dioxus = "0.4.0"
+dioxus-router = "0.4.1"
+tracing = "0.1.37"
+
+[dependencies.serde]
+version = "1.0.183"
+features = ["derive"]
+
+[dependencies.zino]
+path = "../../zino"
+version = "0.11.0"
+features = ["dioxus"]
+
+[dependencies.zino-core]
+path = "../../zino-core"
+version = "0.12.0"
+features = ["orm-postgres"]
+
+[dependencies.zino-model]
+path = "../../zino-model"
+version = "0.9.0"

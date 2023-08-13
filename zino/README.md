@@ -14,11 +14,11 @@ which emphasizes **simplicity**, **extensibility** and **productivity**.
 - 📅 Lightweight scheduler for sync and async cron jobs.
 - 💠 Unified access to storage services, data sources and chatbots.
 - 📊 Built-in support for [`tracing`], [`metrics`] and logging.
-- 💖 Full integrations with [`actix-web`] and [`axum`].
+- 💖 Full integrations with [`actix-web`], [`axum`] and [`dioxus`].
 
 ## Getting started
 
-You can start with the example [`actix-app`] or [`axum-app`].
+You can start with the example [`actix-app`], [`axum-app`] or [`dioxus-desktop`].
 
 ## Feature flags
 
@@ -36,5 +36,7 @@ The following optional features are available:
 [`metrics`]: https://crates.io/crates/metrics
 [`actix-web`]: https://crates.io/crates/actix-web
 [`axum`]: https://crates.io/crates/axum
+[`dioxus`]: https://crates.io/crates/dioxus
 [`actix-app`]: https://github.com/photino/zino/tree/main/examples/actix-app
 [`axum-app`]: https://github.com/photino/zino/tree/main/examples/axum-app
+[`dioxus-desktop`]: https://github.com/photino/zino/tree/main/examples/dioxus-desktop

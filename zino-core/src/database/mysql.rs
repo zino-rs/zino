@@ -157,9 +157,9 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
 
     fn format_filter(&self, field: &str, value: &JsonValue) -> String {
         let type_name = self.type_name();
+        let field = Query::format_field(field);
         if let Some(filter) = value.as_object() {
             if type_name == "Map" {
-                let field = Query::format_field(field);
                 let value = self.encode_value(Some(value));
                 // `json_overlaps()` was added in MySQL 8.0.17.
                 return format!(r#"json_overlaps({field}, {value})"#);
@@ -185,7 +185,6 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     };
                     if operator == "IN" || operator == "NOT IN" {
                         if let Some(values) = value.as_array() && !values.is_empty() {
-                            let field = Query::format_field(field);
                             let value = values
                                 .iter()
                                 .map(|v| self.encode_value(Some(v)))
@@ -198,12 +197,10 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         if let Some(values) = value.as_array() &&
                             let [min_value, max_value, ..] = values.as_slice()
                         {
-                            let field = Query::format_field(field);
                             let condition = format!(r#"{field} BETWEEN {min_value} AND {max_value}"#);
                             conditions.push(condition);
                         }
                     } else {
-                        let field = Query::format_field(field);
                         let value = self.encode_value(Some(value));
                         let condition = format!(r#"{field} {operator} {value}"#);
                         conditions.push(condition);
@@ -212,12 +209,15 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 if conditions.is_empty() {
                     return String::new();
                 } else {
-                    return format!("({})", conditions.join(" AND "));
+                    return conditions.join(" AND ");
                 }
             }
+        } else if let Some(range) = value.as_array() && range.len() == 2 {
+            let min_value = self.encode_value(range.first());
+            let max_value = self.encode_value(range.last());
+            return format!(r#"{field} >= {min_value} AND {field} < {max_value}"#);
         }
 
-        let field = Query::format_field(field);
         match type_name {
             "bool" => {
                 let value = self.encode_value(Some(value));
@@ -225,28 +225,6 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     format!(r#"{field} IS TRUE"#)
                 } else {
                     format!(r#"{field} IS NOT TRUE"#)
-                }
-            }
-            "DateTime" | "Date" | "Time" | "NaiveDateTime" | "NaiveDate" | "NaiveTime" => {
-                if let Some(value) = value.as_str() {
-                    if let Some((min_value, max_value)) = value.split_once(',') {
-                        let min_value = self.format_value(min_value);
-                        let max_value = self.format_value(max_value);
-                        format!(r#"{field} >= {min_value} AND {field} < {max_value}"#)
-                    } else {
-                        let index = value.find(|ch| !"<>=".contains(ch)).unwrap_or(0);
-                        if index > 0 {
-                            let (operator, value) = value.split_at(index);
-                            let value = self.format_value(value);
-                            format!(r#"{field} {operator} {value}"#)
-                        } else {
-                            let value = self.format_value(value);
-                            format!(r#"{field} = {value}"#)
-                        }
-                    }
-                } else {
-                    let value = self.encode_value(Some(value));
-                    format!(r#"{field} = {value}"#)
                 }
             }
             "u64" | "i64" | "u32" | "i32" | "Option<u64>" | "Option<i64>" | "Option<u32>"
@@ -289,10 +267,29 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                             let value = Query::escape_string(value);
                             format!(r#"{field} {operator} {value}"#)
                         } else {
-                            let operator = self.default_value().map(|_| "=").unwrap_or("RLIKE");
+                            let operator = if self.default_value().is_some() {
+                                "="
+                            } else {
+                                "RLIKE"
+                            };
                             let value = Query::escape_string(value);
                             format!(r#"{field} {operator} {value}"#)
                         }
+                    }
+                } else {
+                    let value = self.encode_value(Some(value));
+                    format!(r#"{field} = {value}"#)
+                }
+            }
+            "DateTime" | "Date" | "Time" | "NaiveDateTime" | "NaiveDate" | "NaiveTime" => {
+                if let Some(value) = value.as_str() {
+                    if let Some((min_value, max_value)) = value.split_once(',') {
+                        let min_value = self.format_value(min_value);
+                        let max_value = self.format_value(max_value);
+                        format!(r#"{field} >= {min_value} AND {field} < {max_value}"#)
+                    } else {
+                        let value = self.format_value(value);
+                        format!(r#"{field} = {value}"#)
                     }
                 } else {
                     let value = self.encode_value(Some(value));

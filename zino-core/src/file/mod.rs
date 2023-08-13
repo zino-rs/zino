@@ -119,7 +119,7 @@ impl NamedFile {
 
     /// Reads the entire contents of a local file and sets the bytes.
     #[inline]
-    pub fn read_from_local<P: AsRef<Path>>(&mut self, path: P) -> Result<(), io::Error> {
+    pub fn read_from_local(&mut self, path: impl AsRef<Path>) -> Result<(), io::Error> {
         let bytes = fs::read(path)?;
         self.bytes = bytes.into();
         Ok(())
@@ -127,13 +127,13 @@ impl NamedFile {
 
     /// Writes the bytes into path.
     #[inline]
-    pub fn write<P: AsRef<Path>>(&self, path: P) -> Result<(), io::Error> {
+    pub fn write(&self, path: impl AsRef<Path>) -> Result<(), io::Error> {
         fs::write(path, self.as_ref())
     }
 
     /// Appends the bytes into path.
     #[inline]
-    pub fn append<P: AsRef<Path>>(&self, path: P) -> Result<(), io::Error> {
+    pub fn append(&self, path: impl AsRef<Path>) -> Result<(), io::Error> {
         let mut file = OpenOptions::new().write(true).append(true).open(path)?;
         file.write_all(self.as_ref())
     }
@@ -163,7 +163,7 @@ impl NamedFile {
     }
 
     /// Attempts to create an instance from reading a local file.
-    pub fn try_from_local<P: AsRef<Path>>(path: P) -> Result<Self, io::Error> {
+    pub fn try_from_local(path: impl AsRef<Path>) -> Result<Self, io::Error> {
         let path = path.as_ref();
         let bytes = fs::read(path)?;
         let file_name = path.file_name().map(|s| s.to_string_lossy().into_owned());

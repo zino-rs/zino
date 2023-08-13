@@ -37,9 +37,9 @@ pub struct AxumCluster {
 }
 
 impl Application for AxumCluster {
-    type Router = Router;
+    type Routes = Vec<Router>;
 
-    fn register(mut self, routes: Vec<Self::Router>) -> Self {
+    fn register(mut self, routes: Self::Routes) -> Self {
         self.routes = routes;
         self
     }

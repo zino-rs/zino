@@ -15,6 +15,8 @@ where
     K: Default + Display + FromStr + PartialEq + serde::de::DeserializeOwned,
     <K as FromStr>::Err: std::error::Error,
 {
+    /// Account field name.
+    const ACCOUNT_FIELD: &'static str = "account";
     /// Password field name.
     const PASSWORD_FIELD: &'static str = "password";
     /// Role field name.
@@ -92,12 +94,12 @@ where
         }
         query.allow_fields(&fields);
         query.add_filter("status", Map::from_entry("$nin", vec!["Locked", "Deleted"]));
-        query.add_filter("account", account);
+        query.add_filter(Self::ACCOUNT_FIELD, account);
 
         let mut user: Map = Self::find_one(&query)
             .await?
             .ok_or_else(|| Error::new("404 Not Found: invalid user account or password"))?;
-        let encrypted_password = user.get_str("password").unwrap_or_default();
+        let encrypted_password = user.get_str(Self::PASSWORD_FIELD).unwrap_or_default();
         if Self::verify_password(passowrd, encrypted_password)? {
             let user_id = user.get_str("id").unwrap_or_default();
             let mut claims = JwtClaims::new(user_id);
@@ -164,6 +166,43 @@ where
         let mut data = Map::new();
         data.upsert("expires_in", claims.expires_in().as_secs());
         data.upsert("access_token", claims.access_token()?);
+        Ok(data)
+    }
+
+    /// Verifies the user identity.
+    async fn verify_identity(user_id: K, body: &Map) -> Result<Map, Error> {
+        let mut query = Query::default();
+        let mut fields = vec![Self::PRIMARY_KEY_NAME];
+        let account = if let Some(account) = body.get_str("account") {
+            fields.push(Self::ACCOUNT_FIELD);
+            account
+        } else {
+            ""
+        };
+        let password = if let Some(passowrd) = body.get_str("password") {
+            fields.push(Self::PASSWORD_FIELD);
+            passowrd
+        } else {
+            ""
+        };
+        query.allow_fields(&fields);
+        query.add_filter(Self::PRIMARY_KEY_NAME, user_id.to_string());
+        query.add_filter("status", Map::from_entry("$nin", vec!["Locked", "Deleted"]));
+
+        let user: Map = Self::find_one(&query).await?.ok_or_else(|| {
+            let message = format!("403 Forbidden: cannot get the user `{user_id}`");
+            Error::new(message)
+        })?;
+
+        let mut data = Map::new();
+        if let Some(user_account) = user.get_str(Self::ACCOUNT_FIELD) {
+            let account_verified = user_account == account;
+            data.upsert("account_verified", account_verified);
+        }
+        if let Some(encrypted_password) = user.get_str(Self::PASSWORD_FIELD) {
+            let password_verified = Self::verify_password(password, encrypted_password)?;
+            data.upsert("password_verified", password_verified);
+        }
         Ok(data)
     }
 }

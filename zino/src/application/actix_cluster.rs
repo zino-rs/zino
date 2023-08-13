@@ -25,9 +25,9 @@ pub struct ActixCluster {
 }
 
 impl Application for ActixCluster {
-    type Router = RouterConfigure;
+    type Routes = Vec<RouterConfigure>;
 
-    fn register(mut self, routes: Vec<Self::Router>) -> Self {
+    fn register(mut self, routes: Self::Routes) -> Self {
         self.routes = routes;
         self
     }

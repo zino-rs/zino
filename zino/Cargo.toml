@@ -33,6 +33,12 @@ axum = [
     "utoipa-swagger-ui/axum",
     "zino-core/runtime-tokio",
 ]
+dioxus = [
+    "dep:dioxus",
+    "dep:dioxus-desktop",
+    "dep:dioxus-router",
+    "dep:tokio",
+]
 default = ["orm", "view"]
 orm = ["zino-core/orm"]
 view = ["zino-core/view"]
@@ -67,6 +73,18 @@ features = [
     "cookies",
     "secure-cookies",
 ]
+
+[dependencies.dioxus]
+version = "0.4.0"
+optional = true
+
+[dependencies.dioxus-desktop]
+version = "0.4.0"
+optional = true
+
+[dependencies.dioxus-router]
+version = "0.4.1"
+optional = true
 
 [dependencies.tracing-actix-web]
 version = "0.7.6"

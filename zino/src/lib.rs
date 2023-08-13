@@ -20,11 +20,11 @@
 //! - 📅 Lightweight scheduler for sync and async cron jobs.
 //! - 💠 Unified access to storage services, data sources and chatbots.
 //! - 📊 Built-in support for [`tracing`], [`metrics`] and logging.
-//! - 💖 Full integrations with [`actix-web`] and [`axum`].
+//! - 💖 Full integrations with [`actix-web`], [`axum`] and [`dioxus`].
 //!
 //! ## Getting started
 //!
-//! You can start with the example [`actix-app`] or [`axum-app`].
+//! You can start with the example [`actix-app`], [`axum-app`] or [`dioxus-desktop`].
 //!
 //! ## Feature flags
 //!
@@ -34,6 +34,7 @@
 //! |--------------|------------------------------------------------------|----------|
 //! | `actix`      | Enables the integration with [`actix-web`].          | No       |
 //! | `axum`       | Enables the integration with [`axum`].               | No       |
+//! | `dioxus`     | Enables the integration with [`dioxus`].             | No       |
 //! | `orm`        | Enables the ORM for MySQL or **PostgreSQL**.         | Yes      |
 //! | `view`       | Enables the HTML template rendering.                 | Yes      |
 //!
@@ -43,8 +44,10 @@
 //! [`metrics`]: https://crates.io/crates/metrics
 //! [`actix-web`]: https://crates.io/crates/actix-web
 //! [`axum`]: https://crates.io/crates/axum
+//! [`dioxus`]: https://crates.io/crates/dioxus
 //! [`actix-app`]: https://github.com/photino/zino/tree/main/examples/actix-app
 //! [`axum-app`]: https://github.com/photino/zino/tree/main/examples/axum-app
+//! [`dioxus-desktop`]: https://github.com/photino/zino/tree/main/examples/dioxus-desktop
 
 #![feature(async_fn_in_trait)]
 #![feature(doc_auto_cfg)]
@@ -106,5 +109,7 @@ cfg_if::cfg_if! {
 
         /// A specialized `Result` type for `axum`.
         pub type Result<T = AxumResponse<StatusCode>> = std::result::Result<T, AxumRejection>;
+    } else if #[cfg(feature = "dioxus")] {
+        pub use application::dioxus_desktop::DioxusDesktop;
     }
 }

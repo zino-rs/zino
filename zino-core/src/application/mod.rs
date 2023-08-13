@@ -32,11 +32,11 @@ pub(crate) use secret_key::SECRET_KEY;
 
 /// Application.
 pub trait Application {
-    /// Router.
-    type Router;
+    /// Routes.
+    type Routes;
 
     /// Registers routes.
-    fn register(self, routes: Vec<Self::Router>) -> Self;
+    fn register(self, routes: Self::Routes) -> Self;
 
     /// Runs the application.
     fn run(self, async_jobs: Vec<(&'static str, AsyncCronJob)>);

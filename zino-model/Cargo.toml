@@ -30,7 +30,7 @@ edition = []
 
 [dependencies]
 regex = "1.9.3"
-strum_macros = "0.25.1"
+strum_macros = "0.25.2"
 
 [dependencies.serde]
 version = "1.0.183"

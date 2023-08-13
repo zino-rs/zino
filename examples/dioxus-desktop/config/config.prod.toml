@@ -1,0 +1,59 @@
+# --env=prod
+
+name = "data-cube"
+version = "0.1.0"
+
+[window]
+title = "DataCube"
+theme = "Dark"
+
+[database]
+type = "mysql"
+namespace = "dc"
+
+[[mysql]]
+host = "127.0.0.1"
+port = 3306
+database = "data_cube"
+username = "root"
+password = "4Ks/H8GGtFvkFPcrDdqPiYZLEQ6N1ZhqFnD+oI4nmMQ"
+
+[[postgres]]
+host = "127.0.0.1"
+port = 5432
+database = "data_cube"
+username = "postgres"
+password = "ua/d2YH8LgYpkE4awRdJC10wDFV5RU4aZtM30ztjdbGvZqEO"
+
+[tracing]
+filter = "warn"
+
+[metrics]
+exporter = "prometheus"
+host = "127.0.0.1"
+port = 9000
+
+[[connector]]
+type = "arrow"
+name = "mock"
+root = "./assets/data/mock/"
+
+[[connector.tables]]
+type = "csv"
+name = "users"
+path = "./users.csv"
+
+[[connector.tables]]
+type = "ndjson"
+name = "logs"
+url = "http://localhost:6080/public/data/logs.ndjson"
+
+[connector.tables.schema]
+timestamp = "string"
+level = "string"
+fields = { message = "string" }
+target = "string"
+span = { "http.method" = "string", "http.target" = "string", "http.status_code" = "int" }
+
+[connector.variables]
+app-name = "data-cube"

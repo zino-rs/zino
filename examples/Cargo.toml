@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "actix-app",
     "axum-app",
+    "dioxus-desktop",
 ]
 
 [profile.release]
