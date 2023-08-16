@@ -33,6 +33,9 @@ database = "data_cube"
 username = "postgres"
 password = "oAMk4OLvYhScFXT1R5NIIGZBJrjShQuedqavJW7fYfi+TQ/j"
 
+[[sqlite]]
+database = "local/data/main.db"
+
 [tracing]
 filter = "info,sqlx=info,zino=trace,zino_core=trace"
 
@@ -48,7 +51,7 @@ refresh-interval = "7d"
 [[connector]]
 type = "arrow"
 name = "mock"
-root = "./assets/data/mock/"
+root = "./local/data/mock/"
 
 [[connector.tables]]
 type = "csv"

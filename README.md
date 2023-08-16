@@ -13,7 +13,7 @@ which emphasizes **simplicity**, **extensibility** and **productivity**.
 - 🎨 Minimal design, composable architecture and high-level abstractions.
 - 🌐 Adopt an API-first approch to development with open standards.
 - ⚡ Embrace practical conventions to get the best performance.
-- 💎 Highly optimized ORM for MySQL and PostgreSQL based on [`sqlx`].
+- 💎 Highly optimized ORM for MySQL, PostgreSQL and SQLite based on [`sqlx`].
 - ✨ Innovations on query population, field translation and model hooks.
 - 📅 Lightweight scheduler for sync and async cron jobs.
 - 💠 Unified access to storage services, data sources and chatbots.

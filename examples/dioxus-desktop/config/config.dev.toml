@@ -12,19 +12,8 @@ transparent = false
 namespace = "dc"
 max-rows = 10000
 
-[[mysql]]
-host = "127.0.0.1"
-port = 3306
-database = "data_cube"
-username = "root"
-password = "nlKwD0fIuddneyCQ7X3wVg900eNIG7F12NYnWN/w/SE"
-
-[[postgres]]
-host = "127.0.0.1"
-port = 5432
-database = "data_cube"
-username = "postgres"
-password = "5a8WxAG9MpeO9wPGs4f8vz88lIHXpljXg7frvCxJidSfm94j"
+[[sqlite]]
+database = "local/data/main.db"
 
 [tracing]
 filter = "info,sqlx=info,zino=trace,zino_core=trace"
@@ -41,7 +30,7 @@ refresh-interval = "7d"
 [[connector]]
 type = "arrow"
 name = "mock"
-root = "./assets/data/mock/"
+root = "./local/data/mock/"
 
 [[connector.tables]]
 type = "csv"

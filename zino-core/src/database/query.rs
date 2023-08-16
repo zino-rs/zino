@@ -35,6 +35,12 @@ pub(super) trait QueryExt<DB> {
     /// Formats a field for the query.
     fn format_field(field: &str) -> Cow<'_, str>;
 
+    /// Formats table fields.
+    fn format_table_fields<M: Schema>(&self) -> Cow<'_, str>;
+
+    /// Formats the table name.
+    fn format_table_name<M: Schema>(&self) -> String;
+
     /// Parses text search filter.
     fn parse_text_search(filter: &Map) -> Option<String>;
 
@@ -105,8 +111,11 @@ pub(super) trait QueryExt<DB> {
                     if let Some(Ok(value)) = value.parse_f64() {
                         let condition = if cfg!(feature = "orm-mysql") {
                             format!("rand() < {value}")
-                        } else {
+                        } else if cfg!(feature = "orm-postgres") {
                             format!("random() < {value}")
+                        } else {
+                            let value = (value * i64::MAX as f64) as i64;
+                            format!("abs(random()) < {value}")
                         };
                         conditions.push(condition);
                     }

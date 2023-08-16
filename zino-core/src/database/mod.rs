@@ -2,7 +2,13 @@
 //!
 //! # Supported database drivers
 //!
-//! You can enable the `orm-mysql` feature to use MySQL or `orm-postgres` to use PostgreSQL.
+//! The following optional features are available:
+//!
+//! | Feature flag   | Description                                          | Default? |
+//! |----------------|------------------------------------------------------|----------|
+//! | `orm-mysql`    | Enables the MySQL database driver.                   | No       |
+//! | `orm-postgres` | Enables the PostgreSQL database driver.              | No       |
+//! | `orm-sqlite`   | Enables the SQLite database driver.                  | Yes      |
 
 use crate::{extension::TomlTableExt, state::State};
 use convert_case::{Case, Casing};
@@ -47,8 +53,26 @@ cfg_if::cfg_if! {
         pub type DatabaseRow = MySqlRow;
 
         /// Options and flags which can be used to configure a MySQL connection.
-        type DatabaseConnectOptions = MySqlConnectOptions;
-    } else {
+        fn new_connect_options(database: &'static str, config: &'static Table) -> MySqlConnectOptions {
+            let username = config
+                .get_str("username")
+                .expect("the `username` field should be a str");
+            let password =
+                State::decrypt_password(config).expect("the `password` field should be a str");
+
+            let mut connect_options = MySqlConnectOptions::new()
+                .database(database)
+                .username(username)
+                .password(password.as_ref());
+            if let Some(host) = config.get_str("host") {
+                connect_options = connect_options.host(host);
+            }
+            if let Some(port) = config.get_u16("port") {
+                connect_options = connect_options.port(port);
+            }
+            connect_options
+        }
+    } else if #[cfg(feature = "orm-postgres")] {
         use sqlx::postgres::{PgConnectOptions, PgRow, Postgres};
 
         mod postgres;
@@ -63,7 +87,54 @@ cfg_if::cfg_if! {
         pub type DatabaseRow = PgRow;
 
         /// Options and flags which can be used to configure a PostgreSQL connection.
-        type DatabaseConnectOptions = PgConnectOptions;
+        fn new_connect_options(database: &'static str, config: &'static Table) -> PgConnectOptions {
+            let username = config
+                .get_str("username")
+                .expect("the `username` field should be a str");
+            let password =
+                State::decrypt_password(config).expect("the `password` field should be a str");
+
+            let mut connect_options = PgConnectOptions::new()
+                .database(database)
+                .username(username)
+                .password(password.as_ref());
+            if let Some(host) = config.get_str("host") {
+                connect_options = connect_options.host(host);
+            }
+            if let Some(port) = config.get_u16("port") {
+                connect_options = connect_options.port(port);
+            }
+            connect_options
+        }
+    } else {
+        use sqlx::sqlite::{Sqlite, SqliteConnectOptions, SqliteRow};
+
+        mod sqlite;
+
+        /// Driver name.
+        static DRIVER_NAME: &str = "sqlite";
+
+        /// SQLite database driver.
+        pub type DatabaseDriver = Sqlite;
+
+        /// A single row from the SQLite database.
+        pub type DatabaseRow = SqliteRow;
+
+        /// Options and flags which can be used to configure a SQLite connection.
+        fn new_connect_options(database: &'static str, config: &'static Table) -> SqliteConnectOptions {
+            let mut connect_options = SqliteConnectOptions::new().create_if_missing(true);
+            if let Some(read_only) = config.get_bool("read_only") {
+                connect_options = connect_options.read_only(read_only);
+            }
+
+            let database_path = std::path::Path::new(database);
+            let database_file = if database_path.is_relative() {
+                crate::application::PROJECT_DIR.join(database_path)
+            } else {
+                database_path.to_path_buf()
+            };
+            connect_options.filename(database_file)
+        }
     }
 }
 
@@ -119,21 +190,7 @@ impl ConnectionPool {
         let database = config
             .get_str("database")
             .expect("the `database` field should be a str");
-        let username = config
-            .get_str("username")
-            .expect("the `username` field should be a str");
-        let password =
-            State::decrypt_password(config).expect("the `password` field should be a str");
-        let mut connect_options = DatabaseConnectOptions::new()
-            .database(database)
-            .username(username)
-            .password(password.as_ref());
-        if let Some(host) = config.get_str("host") {
-            connect_options = connect_options.host(host);
-        }
-        if let Some(port) = config.get_u16("port") {
-            connect_options = connect_options.port(port);
-        }
+        let mut connect_options = new_connect_options(database, config);
         if let Some(statement_cache_capacity) = config.get_usize("statement-cache-capacity") {
             connect_options = connect_options.statement_cache_capacity(statement_cache_capacity);
         }

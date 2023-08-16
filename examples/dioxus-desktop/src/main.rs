@@ -3,11 +3,12 @@
 mod controller;
 mod router;
 mod schedule;
+mod service;
 
 use zino::prelude::*;
 
 fn main() {
-    zino::DioxusDesktop::init_dirs(&["assets/uploads"])
+    zino::Desktop::init_dirs(&["local/uploads"])
         .register(router::Route::default())
         .spawn(schedule::jobs())
         .run(schedule::async_jobs())

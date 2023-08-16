@@ -1,4 +1,4 @@
-use super::{query::QueryExt, DatabaseDriver, DatabaseRow};
+use super::{query::QueryExt, DatabaseDriver, DatabaseRow, Schema};
 use crate::{
     datetime::DateTime,
     error::Error,
@@ -284,10 +284,10 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                             let value = Query::escape_string(value);
                             format!(r#"{field} {operator} {value}"#)
                         } else {
-                            let operator = if self.default_value().is_some() {
-                                "="
-                            } else {
+                            let operator = if self.index_type() == Some("text") {
                                 "~*"
+                            } else {
+                                "="
                             };
                             let value = Query::escape_string(value);
                             format!(r#"{field} {operator} {value}"#)
@@ -338,21 +338,15 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             "Vec<Uuid>" | "Vec<String>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>" => {
                 if let Some(value) = value.as_str() {
                     if value.contains(';') {
-                        if value.contains(',') {
-                            value
-                                .split(',')
-                                .map(|v| {
-                                    let s = v.replace(';', ",");
-                                    let value = self.format_value(&s);
-                                    format!(r#"{field} @> {value}"#)
-                                })
-                                .collect::<Vec<_>>()
-                                .join(" OR ")
-                        } else {
-                            let s = value.replace(';', ",");
-                            let value = self.format_value(&s);
-                            format!(r#"{field} @> {value}"#)
-                        }
+                        value
+                            .split(',')
+                            .map(|v| {
+                                let s = v.replace(';', ",");
+                                let value = self.format_value(&s);
+                                format!(r#"{field} @> {value}"#)
+                            })
+                            .collect::<Vec<_>>()
+                            .join(" OR ")
                     } else {
                         let value = self.format_value(value);
                         format!(r#"{field} && {value}"#)
@@ -578,6 +572,41 @@ impl QueryExt<DatabaseDriver> for Query {
         } else {
             format!(r#""{field}""#).into()
         }
+    }
+
+    fn format_table_fields<M: Schema>(&self) -> Cow<'_, str> {
+        let model_name = M::model_name();
+        let fields = self.query_fields();
+        if fields.is_empty() {
+            "*".into()
+        } else {
+            fields
+                .iter()
+                .map(|field| {
+                    if let Some((alias, expr)) = field.split_once(':') {
+                        let alias = Self::format_field(alias.trim());
+                        format!(r#"{expr} AS {alias}"#)
+                    } else if field.contains('.') {
+                        field
+                            .split('.')
+                            .map(|s| format!(r#""{s}""#))
+                            .collect::<Vec<_>>()
+                            .join(".")
+                    } else {
+                        format!(r#""{model_name}"."{field}""#)
+                    }
+                })
+                .collect::<Vec<_>>()
+                .join(", ")
+                .into()
+        }
+    }
+
+    #[inline]
+    fn format_table_name<M: Schema>(&self) -> String {
+        let table_name = M::table_name();
+        let model_name = M::model_name();
+        format!(r#""{table_name}" "{model_name}""#)
     }
 
     fn parse_text_search(filter: &Map) -> Option<String> {

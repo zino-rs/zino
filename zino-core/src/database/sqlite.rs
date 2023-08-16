@@ -6,8 +6,8 @@ use crate::{
     model::{Column, DecodeRow, EncodeColumn, Query},
     AvroValue, JsonValue, Map, Record, SharedString, Uuid,
 };
-use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
-use sqlx::{types::Decimal, Column as _, Row, TypeInfo, ValueRef};
+use chrono::{NaiveDate, NaiveTime};
+use sqlx::{Column as _, Row, TypeInfo, ValueRef};
 use std::borrow::Cow;
 
 impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
@@ -15,33 +15,14 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
         let type_name = self.type_name();
         match type_name {
             "bool" => "BOOLEAN",
-            "u64" | "usize" | "Option<u64>" => "BIGINT UNSIGNED",
-            "i64" | "isize" | "Option<i64>" => "BIGINT",
-            "u32" | "Option<u32>" => "INT UNSIGNED",
-            "i32" | "Option<i32>" => "INT",
-            "u16" => "SMALLINT UNSIGNED",
-            "i16" => "SMALLINT",
-            "u8" => "TINYINT UNSIGNED",
-            "i8" => "TINYINT",
-            "f64" => "DOUBLE",
-            "f32" => "FLOAT",
-            "Decimal" => "NUMERIC",
-            "String" | "Option<String>" => {
-                if self.default_value().or(self.index_type()).is_some() {
-                    "VARCHAR(255)"
-                } else {
-                    "TEXT"
-                }
-            }
-            "DateTime" => "TIMESTAMP(6)",
-            "NaiveDateTime" => "DATETIME(6)",
-            "NaiveDate" | "Date" => "DATE",
-            "NaiveTime" | "Time" => "TIME",
-            "Uuid" | "Option<Uuid>" => "VARCHAR(36)",
+            "u64" | "i64" | "usize" | "isize" | "Option<u64>" | "Option<i64>" | "u32" | "i32"
+            | "u16" | "i16" | "u8" | "i8" | "Option<u32>" | "Option<i32>" => "INTEGER",
+            "f64" | "f32" => "REAL",
+            "String" | "Option<String>" => "TEXT",
+            "DateTime" | "NaiveDateTime" | "NaiveDate" | "Date" | "NaiveTime" | "Time" => "TEXT",
+            "Uuid" | "Option<Uuid>" => "TEXT",
             "Vec<u8>" => "BLOB",
-            "Vec<String>" => "JSON",
-            "Vec<Uuid>" => "JSON",
-            "Map" => "JSON",
+            "Vec<String>" | "Vec<Uuid>" | "Map" => "TEXT",
             _ => type_name,
         }
     }
@@ -93,21 +74,15 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 let value = if value == "true" { "TRUE" } else { "FALSE" };
                 value.into()
             }
-            "u64" | "u32" | "u16" | "u8" | "usize" | "Option<u64>" | "Option<u32>" => {
-                if value.parse::<u64>().is_ok() {
-                    value.into()
-                } else {
-                    "NULL".into()
-                }
-            }
-            "i64" | "i32" | "i16" | "i8" | "isize" | "Option<i64>" | "Option<i32>" => {
+            "u64" | "i64" | "u32" | "i32" | "u16" | "i16" | "u8" | "i8" | "usize" | "isize"
+            | "Option<u64>" | "Option<i64>" | "Option<u32>" | "Option<i32>" => {
                 if value.parse::<i64>().is_ok() {
                     value.into()
                 } else {
                     "NULL".into()
                 }
             }
-            "f64" | "f32" | "Decimal" => {
+            "f64" | "f32" => {
                 if value.parse::<f64>().is_ok() {
                     value.into()
                 } else {
@@ -118,22 +93,22 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 Query::escape_string(value).into()
             }
             "DateTime" | "NaiveDateTime" => match value {
-                "epoch" => "from_unixtime(0)".into(),
-                "now" => "current_timestamp(6)".into(),
-                "today" => "curdate()".into(),
-                "tomorrow" => "curdate() + INTERVAL 1 DAY".into(),
-                "yesterday" => "curdate() - INTERVAL 1 DAY".into(),
+                "epoch" => "datetime(0, 'unixepoch')".into(),
+                "now" => "datetime('now', 'localtime')".into(),
+                "today" => "datetime('now', 'start of day')".into(),
+                "tomorrow" => "datetime('now', 'start of day', '+1 day')".into(),
+                "yesterday" => "datetime('now', 'start of day', '-1 day')".into(),
                 _ => Query::escape_string(value).into(),
             },
             "Date" | "NaiveDate" => match value {
                 "epoch" => "'1970-01-01'".into(),
-                "today" => "curdate()".into(),
-                "tomorrow" => "curdate() + INTERVAL 1 DAY".into(),
-                "yesterday" => "curdate() - INTERVAL 1 DAY".into(),
+                "today" => "date('now', 'localtime')".into(),
+                "tomorrow" => "date('now', '+1 day')".into(),
+                "yesterday" => "date('now', '-1 day')".into(),
                 _ => Query::escape_string(value).into(),
             },
             "Time" | "NaiveTime" => match value {
-                "now" => "curtime()".into(),
+                "now" => "time('now', 'localtime')".into(),
                 "midnight" => "'00:00:00'".into(),
                 _ => Query::escape_string(value).into(),
             },
@@ -159,11 +134,20 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
         let type_name = self.type_name();
         let field = Query::format_field(field);
         if let Some(filter) = value.as_object() {
+            let mut conditions = Vec::with_capacity(filter.len());
             if type_name == "Map" {
-                let value = self.encode_value(Some(value));
-                return format!(r#"json_contains({field}, {value})"#);
+                for (key, value) in filter {
+                    let key = Query::escape_string(key);
+                    let value = self.encode_value(Some(value));
+                    let condition = format!(r#"json_tree.key = {key} AND json_tree.value = {value}"#);
+                    conditions.push(condition);
+                }
+                if conditions.is_empty() {
+                    return String::new();
+                } else {
+                    return conditions.join(" OR ");
+                }
             } else {
-                let mut conditions = Vec::with_capacity(filter.len());
                 for (name, value) in filter {
                     let name = name.as_str();
                     let operator = match name {
@@ -176,11 +160,11 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         "$in" => "IN",
                         "$nin" => "NOT IN",
                         "$between" => "BETWEEN",
+                        "$glob" => "GLOB",
                         "$like" => "LIKE",
-                        "$ilike" => "ILIKE",
-                        "$rlike" => "RLIKE",
+                        "$rlike" => "REGEXP",
                         "$is" => "IS",
-                        "$size" => "json_length",
+                        "$size" => "json_array_length",
                         _ => name,
                     };
                     if operator == "IN" || operator == "NOT IN" {
@@ -200,9 +184,9 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                             let condition = format!(r#"{field} BETWEEN {min_value} AND {max_value}"#);
                             conditions.push(condition);
                         }
-                    } else if operator == "json_length" {
+                    } else if operator == "json_array_length" {
                         let value = self.encode_value(Some(value));
-                        let condition = format!(r#"json_length({field}) = {value}"#);
+                        let condition = format!(r#"json_array_length({field}) = {value}"#);
                         conditions.push(condition);
                     } else {
                         let value = self.encode_value(Some(value));
@@ -324,28 +308,27 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             }
             "Vec<String>" | "Vec<Uuid>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>" => {
                 if let Some(value) = value.as_str() {
-                    if value.contains(';') {
-                        value
-                            .split(',')
-                            .map(|v| {
-                                let s = v.replace(';', ",");
-                                let value = self.format_value(&s);
-                                format!(r#"json_contains({field}, {value})"#)
-                            })
-                            .collect::<Vec<_>>()
-                            .join(" OR ")
-                    } else {
-                        let value = self.format_value(value);
-                        format!(r#"json_overlaps({field}, {value})"#)
-                    }
+                    value
+                        .split(',')
+                        .map(|v| {
+                            let value = Query::escape_string(v);
+                            format!(r#"json_each.value = {value}"#)
+                        })
+                        .collect::<Vec<_>>()
+                        .join(" OR ")
+                } else if let Some(values) = value.as_array() {
+                    values
+                        .iter()
+                        .map(|v| {
+                            let value = self.encode_value(Some(v));
+                            format!(r#"json_each.value = {value}"#)
+                        })
+                        .collect::<Vec<_>>()
+                        .join(" OR ")
                 } else {
                     let value = self.encode_value(Some(value));
-                    format!(r#"json_overlaps({field}, {value})"#)
+                    format!(r#"{field} = {value}"#)
                 }
-            }
-            "Map" => {
-                let value = self.encode_value(Some(value));
-                format!(r#"json_contains({field}, {value})"#)
             }
             _ => {
                 let value = self.encode_value(Some(value));
@@ -371,34 +354,26 @@ impl DecodeRow<DatabaseRow> for Map {
                 use super::decode::decode_column;
                 match col.type_info().name() {
                     "BOOLEAN" => decode_column::<bool>(field, raw_value)?.into(),
-                    "TINYINT" => decode_column::<i8>(field, raw_value)?.into(),
-                    "TINYINT UNSIGNED" => decode_column::<u8>(field, raw_value)?.into(),
-                    "SMALLINT" => decode_column::<i16>(field, raw_value)?.into(),
-                    "SMALLINT UNSIGNED" => decode_column::<u16>(field, raw_value)?.into(),
-                    "INT" => decode_column::<i32>(field, raw_value)?.into(),
-                    "INT UNSIGNED" => decode_column::<u32>(field, raw_value)?.into(),
-                    "BIGINT" => decode_column::<i64>(field, raw_value)?.into(),
-                    "BIGINT UNSIGNED" => decode_column::<u64>(field, raw_value)?.into(),
-                    "FLOAT" => decode_column::<f32>(field, raw_value)?.into(),
-                    "DOUBLE" => decode_column::<f64>(field, raw_value)?.into(),
-                    "NUMERIC" => {
-                        let value = decode_column::<Decimal>(field, raw_value)?;
-                        serde_json::to_value(value)?
+                    "INTEGER" | "BIGINT" => decode_column::<i64>(field, raw_value)?.into(),
+                    "REAL" => decode_column::<f64>(field, raw_value)?.into(),
+                    "TEXT" => {
+                        let value = decode_column::<String>(field, raw_value)?;
+                        if value.starts_with('[') && value.ends_with(']')
+                            || value.starts_with('{') && value.ends_with('}')
+                        {
+                            serde_json::from_str(&value)?
+                        } else {
+                            value.into()
+                        }
                     }
-                    "TEXT" | "VARCHAR" | "CHAR" => {
-                        decode_column::<String>(field, raw_value)?.into()
-                    }
-                    "TIMESTAMP" => decode_column::<DateTime>(field, raw_value)?.into(),
-                    "DATETIME" => decode_column::<NaiveDateTime>(field, raw_value)?
-                        .to_string()
-                        .into(),
+                    "DATETIME" => decode_column::<DateTime>(field, raw_value)?.into(),
                     "DATE" => decode_column::<NaiveDate>(field, raw_value)?
                         .to_string()
                         .into(),
                     "TIME" => decode_column::<NaiveTime>(field, raw_value)?
                         .to_string()
                         .into(),
-                    "BYTE" | "BINARY" | "VARBINARY" | "BLOB" => {
+                    "BLOB" => {
                         let bytes = decode_column::<Vec<u8>>(field, raw_value)?;
                         if bytes.len() == 16 {
                             if let Ok(value) = Uuid::from_slice(&bytes) {
@@ -410,7 +385,6 @@ impl DecodeRow<DatabaseRow> for Map {
                             bytes.into()
                         }
                     }
-                    "JSON" => decode_column::<JsonValue>(field, raw_value)?,
                     _ => JsonValue::Null,
                 }
             };
@@ -443,30 +417,19 @@ impl DecodeRow<DatabaseRow> for Record {
                 use super::decode::decode_column;
                 match col.type_info().name() {
                     "BOOLEAN" => decode_column::<bool>(field, raw_value)?.into(),
-                    "TINYINT" => i32::from(decode_column::<i8>(field, raw_value)?).into(),
-                    "TINYINT UNSIGNED" => i32::from(decode_column::<u8>(field, raw_value)?).into(),
-                    "SMALLINT" => i32::from(decode_column::<i16>(field, raw_value)?).into(),
-                    "SMALLINT UNSIGNED" => {
-                        i32::from(decode_column::<u16>(field, raw_value)?).into()
+                    "INTEGER" | "BIGINT" => decode_column::<i64>(field, raw_value)?.into(),
+                    "REAL" => decode_column::<f64>(field, raw_value)?.into(),
+                    "TEXT" => {
+                        let value = decode_column::<String>(field, raw_value)?;
+                        if value.starts_with('[') && value.ends_with(']')
+                            || value.starts_with('{') && value.ends_with('}')
+                        {
+                            serde_json::from_str::<JsonValue>(&value)?.into()
+                        } else {
+                            value.into()
+                        }
                     }
-                    "INT" => decode_column::<i32>(field, raw_value)?.into(),
-                    "INT UNSIGNED" => {
-                        i32::try_from(decode_column::<u32>(field, raw_value)?)?.into()
-                    }
-                    "BIGINT" => decode_column::<i64>(field, raw_value)?.into(),
-                    "BIGINT UNSIGNED" => {
-                        i64::try_from(decode_column::<u64>(field, raw_value)?)?.into()
-                    }
-                    "FLOAT" => decode_column::<f32>(field, raw_value)?.into(),
-                    "DOUBLE" => decode_column::<f64>(field, raw_value)?.into(),
-                    "NUMERIC" => decode_column::<Decimal>(field, raw_value)?
-                        .to_string()
-                        .into(),
-                    "TEXT" | "VARCHAR" | "CHAR" => {
-                        decode_column::<String>(field, raw_value)?.into()
-                    }
-                    "TIMESTAMP" => decode_column::<DateTime>(field, raw_value)?.into(),
-                    "DATETIME" => decode_column::<NaiveDateTime>(field, raw_value)?
+                    "DATETIME" => decode_column::<DateTime>(field, raw_value)?
                         .to_string()
                         .into(),
                     "DATE" => decode_column::<NaiveDate>(field, raw_value)?
@@ -475,7 +438,7 @@ impl DecodeRow<DatabaseRow> for Record {
                     "TIME" => decode_column::<NaiveTime>(field, raw_value)?
                         .to_string()
                         .into(),
-                    "BYTE" | "BINARY" | "VARBINARY" | "BLOB" => {
+                    "BLOB" => {
                         let bytes = decode_column::<Vec<u8>>(field, raw_value)?;
                         if bytes.len() == 16 {
                             if let Ok(value) = Uuid::from_slice(&bytes) {
@@ -487,7 +450,6 @@ impl DecodeRow<DatabaseRow> for Record {
                             bytes.into()
                         }
                     }
-                    "JSON" => decode_column::<JsonValue>(field, raw_value)?.into(),
                     _ => AvroValue::Null,
                 }
             };
@@ -582,11 +544,36 @@ impl QueryExt<DatabaseDriver> for Query {
         }
     }
 
-    #[inline]
     fn format_table_name<M: Schema>(&self) -> String {
         let table_name = M::table_name();
         let model_name = M::model_name();
-        format!(r#"`{table_name}` `{model_name}`"#)
+        let filters = self.query_filters();
+        let mut virtual_tables = Vec::new();
+        for col in M::columns() {
+            let col_name = col.name();
+            if filters.contains_key(col_name) {
+                match col.type_name() {
+                    "Vec<String>" | "Vec<Uuid>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>"
+                    | "Vec<i32>" => {
+                        let virtual_table = format!("json_each(`{model_name}`.`{col_name}`)");
+                        virtual_tables.push(virtual_table);
+                    }
+                    "Map" => {
+                        let virtual_table = format!("json_tree(`{model_name}`.`{col_name}`)");
+                        virtual_tables.push(virtual_table);
+                    }
+                    _ => (),
+                }
+            }
+        }
+        if virtual_tables.is_empty() {
+            format!(r#"`{table_name}` `{model_name}`"#)
+        } else {
+            format!(
+                r#"`{table_name}` `{model_name}`, {}"#,
+                virtual_tables.join(", ")
+            )
+        }
     }
 
     fn parse_text_search(filter: &Map) -> Option<String> {
@@ -594,7 +581,7 @@ impl QueryExt<DatabaseDriver> for Query {
         filter.parse_string("$search").map(|search| {
             let fields = fields.join(",");
             let search = Query::escape_string(search.as_ref());
-            format!("match({fields}) against({search})")
+            format!("{fields} MATCH {search}")
         })
     }
 }

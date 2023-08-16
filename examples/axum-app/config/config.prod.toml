@@ -33,6 +33,9 @@ database = "data_cube"
 username = "postgres"
 password = "BAydY/V1w/IESDcoUygvNBQj6l3euOl5QnvimHtTyAbA6NJV"
 
+[[sqlite]]
+database = "local/data/main.db"
+
 [tracing]
 filter = "warn"
 
@@ -44,7 +47,7 @@ port = 9000
 [[connector]]
 type = "arrow"
 name = "mock"
-root = "./assets/data/mock/"
+root = "./local/data/mock/"
 
 [[connector.tables]]
 type = "csv"

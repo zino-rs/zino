@@ -144,8 +144,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::init_writer()?.pool();
         Self::before_create_table().await?;
 
-        let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let table_name = Self::table_name();
         let columns = Self::columns()
             .iter()
             .map(|col| {
@@ -155,10 +155,19 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 if column_name == primary_key_name {
                     column += " PRIMARY KEY";
                 } else if let Some(value) = col.default_value() {
-                    if cfg!(feature = "orm-mysql") && col.auto_increment() {
-                        column += " AUTO_INCREMENT";
+                    if col.auto_increment() {
+                        column += if cfg!(feature = "orm-mysql") {
+                            " AUTO_INCREMENT"
+                        } else {
+                            " AUTOINCREMENT"
+                        };
                     } else {
-                        column = column + " DEFAULT " + &col.format_value(value);
+                        let value = col.format_value(value);
+                        if cfg!(feature = "orm-sqlite") && value.contains('(') {
+                            column = format!("{column} DEFAULT ({value})");
+                        } else {
+                            column = format!("{column} DEFAULT {value}");
+                        }
                     }
                 } else if col.is_not_null() {
                     column += " NOT NULL";
@@ -230,34 +239,66 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     .rows_affected()
                     .max(rows);
             }
-            return Ok(rows);
-        }
-
-        let mut text_search_columns = Vec::new();
-        let mut text_search_languages = Vec::new();
-        for col in columns {
-            if let Some(index_type) = col.index_type() {
-                let column_name = col.name();
-                if index_type.starts_with("text") {
-                    let language = index_type.strip_prefix("text:").unwrap_or("english");
-                    let column = format!("coalesce({column_name}, '')");
-                    text_search_languages.push(language);
-                    text_search_columns.push((language, column));
-                } else if index_type == "unique" {
+        } else if cfg!(feature = "orm-postgres") {
+            let mut text_search_columns = Vec::new();
+            let mut text_search_languages = Vec::new();
+            for col in columns {
+                if let Some(index_type) = col.index_type() {
+                    let column_name = col.name();
+                    if index_type.starts_with("text") {
+                        let language = index_type.strip_prefix("text:").unwrap_or("english");
+                        let column = format!("coalesce({column_name}, '')");
+                        text_search_languages.push(language);
+                        text_search_columns.push((language, column));
+                    } else if index_type == "unique" {
+                        let sql = format!(
+                            "CREATE UNIQUE INDEX IF NOT EXISTS {table_name}_{column_name}_index \
+                                ON {table_name} ({column_name});"
+                        );
+                        rows = sqlx::query(&sql)
+                            .execute(pool)
+                            .await?
+                            .rows_affected()
+                            .max(rows);
+                    } else {
+                        let sort_order = if index_type == "btree" { " DESC" } else { "" };
+                        let sql = format!(
+                            "CREATE INDEX IF NOT EXISTS {table_name}_{column_name}_index \
+                                ON {table_name} USING {index_type}({column_name}{sort_order});"
+                        );
+                        rows = sqlx::query(&sql)
+                            .execute(pool)
+                            .await?
+                            .rows_affected()
+                            .max(rows);
+                    }
+                }
+            }
+            for language in text_search_languages {
+                let text = text_search_columns
+                    .iter()
+                    .filter_map(|col| (col.0 == language).then_some(col.1.as_str()))
+                    .intersperse(" || ' ' || ")
+                    .collect::<String>();
+                let text_search = format!("to_tsvector('{language}', {text})");
+                let sql = format!(
+                    "CREATE INDEX IF NOT EXISTS {table_name}_text_search_{language}_index \
+                        ON {table_name} USING gin({text_search});"
+                );
+                rows = sqlx::query(&sql)
+                    .execute(pool)
+                    .await?
+                    .rows_affected()
+                    .max(rows);
+            }
+        } else {
+            for col in columns {
+                if let Some(index_type) = col.index_type() {
+                    let column_name = col.name();
+                    let index_type = if index_type == "unique" { "UNIQUE" } else { "" };
                     let sql = format!(
-                        "CREATE UNIQUE INDEX IF NOT EXISTS {table_name}_{column_name}_index \
+                        "CREATE {index_type} INDEX IF NOT EXISTS {table_name}_{column_name}_index \
                             ON {table_name} ({column_name});"
-                    );
-                    rows = sqlx::query(&sql)
-                        .execute(pool)
-                        .await?
-                        .rows_affected()
-                        .max(rows);
-                } else {
-                    let sort_order = if index_type == "btree" { " DESC" } else { "" };
-                    let sql = format!(
-                        "CREATE INDEX IF NOT EXISTS {table_name}_{column_name}_index \
-                            ON {table_name} USING {index_type}({column_name}{sort_order});"
                     );
                     rows = sqlx::query(&sql)
                         .execute(pool)
@@ -267,23 +308,6 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 }
             }
         }
-        for language in text_search_languages {
-            let text = text_search_columns
-                .iter()
-                .filter_map(|col| (col.0 == language).then_some(col.1.as_str()))
-                .intersperse(" || ' ' || ")
-                .collect::<String>();
-            let text_search = format!("to_tsvector('{language}', {text})");
-            let sql = format!(
-                "CREATE INDEX IF NOT EXISTS {table_name}_text_search_{language}_index \
-                    ON {table_name} USING gin({text_search});"
-            );
-            rows = sqlx::query(&sql)
-                .execute(pool)
-                .await?
-                .rows_affected()
-                .max(rows);
-        }
         Ok(rows)
     }
 
@@ -292,8 +316,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_writer().await?.pool();
         let model_data = self.before_insert().await?;
 
-        let table_name = Self::table_name();
         let map = self.into_map();
+        let table_name = Self::table_name();
         let fields = Self::fields().join(", ");
         let values = Self::columns()
             .iter()
@@ -354,8 +378,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_writer().await?.pool();
         let model_data = self.before_update().await?;
 
-        let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let table_name = Self::table_name();
         let primary_key = Query::escape_string(self.primary_key());
         let map = self.into_map();
         let readonly_fields = Self::readonly_fields();
@@ -397,8 +421,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_writer().await?.pool();
         Self::before_mutation(query, mutation).await?;
 
-        let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let table_name = query.format_table_name::<Self>();
         let filters = query.format_filters::<Self>();
         let updates = mutation.format_updates::<Self>();
         let sql = if cfg!(feature = "orm-mysql") {
@@ -409,6 +433,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     (SELECT * from (SELECT {primary_key_name} FROM {table_name} {filters}) AS t);"
             )
         } else {
+            // Both PostgreQL and SQLite support a `LIMIT` in subquery..
             let sort = query.format_sort();
             format!(
                 "UPDATE {table_name} SET {updates} WHERE {primary_key_name} IN \
@@ -438,7 +463,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_writer().await?.pool();
         Self::before_mutation(query, mutation).await?;
 
-        let table_name = Self::table_name();
+        let table_name = query.format_table_name::<Self>();
         let filters = query.format_filters::<Self>();
         let updates = mutation.format_updates::<Self>();
         let sql = format!("UPDATE {table_name} SET {updates} {filters};");
@@ -458,9 +483,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_writer().await?.pool();
         let model_data = self.before_upsert().await?;
 
-        let table_name = Self::table_name();
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
         let map = self.into_map();
+        let table_name = Self::table_name();
         let fields = Self::fields();
         let num_fields = fields.len();
         let readonly_fields = Self::readonly_fields();
@@ -486,6 +510,9 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     ON DUPLICATE KEY UPDATE {mutations};"
             )
         } else {
+            let primary_key_name = Self::PRIMARY_KEY_NAME;
+
+            // Both PostgreQL and SQLite (3.24+) support this syntax.
             format!(
                 "INSERT INTO {table_name} ({fields}) VALUES ({values}) \
                     ON CONFLICT ({primary_key_name}) DO UPDATE SET {mutations};"
@@ -514,23 +541,23 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_writer().await?.pool();
         let model_data = self.before_delete().await?;
 
-        let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let table_name = Self::table_name();
         let primary_key = self.primary_key();
-        let sql = if cfg!(feature = "orm-mysql") {
-            let placeholder = Query::placeholder(1);
-            format!("DELETE FROM {table_name} WHERE {primary_key_name} = {placeholder};")
-        } else {
+        let sql = if cfg!(feature = "orm-postgres") {
             let primary_key = Query::escape_string(primary_key);
             format!("DELETE FROM {table_name} WHERE {primary_key_name} = {primary_key};")
+        } else {
+            let placeholder = Query::placeholder(1);
+            format!("DELETE FROM {table_name} WHERE {primary_key_name} = {placeholder};")
         };
 
         let mut ctx = Self::before_scan(&sql).await?;
-        let query = if cfg!(feature = "orm-mysql") {
+        let query = if cfg!(feature = "orm-postgres") {
+            sqlx::query(&sql)
+        } else {
             ctx.add_argument(primary_key.to_string());
             sqlx::query(&sql).bind(primary_key.to_string())
-        } else {
-            sqlx::query(&sql)
         };
         let query_result = query.execute(pool).await?;
         let rows_affected = query_result.rows_affected();
@@ -553,8 +580,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_writer().await?.pool();
         Self::before_query(query).await?;
 
-        let table_name = Self::table_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let table_name = query.format_table_name::<Self>();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let sql = format!(
@@ -584,7 +611,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_writer().await?.pool();
         Self::before_query(query).await?;
 
-        let table_name = Self::table_name();
+        let table_name = query.format_table_name::<Self>();
         let filters = query.format_filters::<Self>();
         let sql = format!("DELETE FROM {table_name} {filters};");
 
@@ -606,8 +633,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
-        let table_name = Self::table_name();
-        let projection = query.format_projection();
+        let table_name = query.format_table_name::<Self>();
+        let projection = query.format_table_fields::<Self>();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let pagination = query.format_pagination();
@@ -648,8 +675,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
-        let table_name = Self::table_name();
-        let projection = query.format_projection();
+        let table_name = query.format_table_name::<Self>();
+        let projection = query.format_table_fields::<Self>();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} LIMIT 1;");
@@ -715,8 +742,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
-        let table_name = Self::table_name();
-        let projection = query.format_projection();
+        let table_name = query.format_table_name::<Self>();
+        let projection = query.format_table_fields::<Self>();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let pagination = query.format_pagination();
@@ -765,8 +792,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             return Ok(0);
         }
 
-        let table_name = Self::table_name();
-        let projection = query.format_projection();
+        let table_name = query.format_table_name::<Self>();
+        let projection = query.format_table_fields::<Self>();
         let filters = query.format_filters::<Self>();
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
 
@@ -903,11 +930,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
-        let table_name = Self::table_name();
-        let model_name = Query::format_field(Self::model_name());
-        let other_table_name = M::table_name();
-        let other_model_name = Query::format_field(M::model_name());
-        let projection = query.format_projection();
+        let model_name = Self::model_name();
+        let other_model_name = M::model_name();
+        let table_name = query.format_table_name::<Self>();
+        let other_table_name = query.format_table_name::<M>();
+        let projection = query.format_table_fields::<Self>();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let pagination = query.format_pagination();
@@ -915,15 +942,17 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             .iter()
             .zip(right_columns.iter())
             .map(|(left_col, right_col)| {
-                let left_col = Query::format_field(left_col);
-                let right_col = Query::format_field(right_col);
-                format!("{model_name}.{left_col} = {other_model_name}.{right_col}")
+                let left_col = format!("{model_name}.{left_col}");
+                let right_col = format!("{other_model_name}.{right_col}");
+                let left_col_field = Query::format_field(&left_col);
+                let right_col_field = Query::format_field(&right_col);
+                format!("{left_col_field} = {right_col_field}")
             })
             .collect::<Vec<_>>()
             .join(" AND ");
         let sql = format!(
-            "SELECT {projection} FROM {table_name} {model_name} \
-                LEFT OUTER JOIN {other_table_name} {other_model_name} \
+            "SELECT {projection} FROM {table_name} \
+                LEFT OUTER JOIN {other_table_name} \
                     ON {on_expressions} {filters} {sort} {pagination};"
         );
 
@@ -985,7 +1014,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_writer().await?.pool();
         Self::before_count(query).await?;
 
-        let table_name = Self::table_name();
+        let table_name = query.format_table_name::<Self>();
         let filters = query.format_filters::<Self>();
         let projection = columns
             .iter()
@@ -1199,28 +1228,29 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         primary_key: &Self::PrimaryKey,
     ) -> Result<Option<T>, Error> {
         let pool = Self::acquire_reader().await?.pool();
-        let table_name = Self::table_name();
+
         let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let table_name = Self::table_name();
         let query = Self::default_query();
         let projection = query.format_projection();
-        let sql = if cfg!(feature = "orm-mysql") {
-            let placeholder = Query::placeholder(1);
-            format!(
-                "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {placeholder};"
-            )
-        } else {
+        let sql = if cfg!(feature = "orm-postgres") {
             let primary_key = Query::escape_string(primary_key);
             format!(
                 "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {primary_key};"
             )
+        } else {
+            let placeholder = Query::placeholder(1);
+            format!(
+                "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {placeholder};"
+            )
         };
 
         let mut ctx = Self::before_scan(&sql).await?;
-        let query = if cfg!(feature = "orm-mysql") {
+        let query = if cfg!(feature = "orm-postgres") {
+            sqlx::query(&sql)
+        } else {
             ctx.add_argument(primary_key.to_string());
             sqlx::query(&sql).bind(primary_key.to_string())
-        } else {
-            sqlx::query(&sql)
         };
         let (num_rows, data) = if let Some(row) = query.fetch_optional(pool).await? {
             (1, Some(T::decode_row(&row)?))
@@ -1237,28 +1267,29 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Finds one model selected by the primary key in the table, and parses it as `Self`.
     async fn try_get_model(primary_key: &Self::PrimaryKey) -> Result<Self, Error> {
         let pool = Self::acquire_reader().await?.pool();
-        let table_name = Self::table_name();
+
         let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let table_name = Self::table_name();
         let query = Self::default_query();
         let projection = query.format_projection();
-        let sql = if cfg!(feature = "orm-mysql") {
-            let placeholder = Query::placeholder(1);
-            format!(
-                "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {placeholder};"
-            )
-        } else {
+        let sql = if cfg!(feature = "orm-postgres") {
             let primary_key = Query::escape_string(primary_key);
             format!(
                 "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {primary_key};"
             )
+        } else {
+            let placeholder = Query::placeholder(1);
+            format!(
+                "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {placeholder};"
+            )
         };
 
         let mut ctx = Self::before_scan(&sql).await?;
-        let query = if cfg!(feature = "orm-mysql") {
+        let query = if cfg!(feature = "orm-postgres") {
+            sqlx::query(&sql)
+        } else {
             ctx.add_argument(primary_key.to_string());
             sqlx::query(&sql).bind(primary_key.to_string())
-        } else {
-            sqlx::query(&sql)
         };
         if let Some(row) = query.fetch_optional(pool).await? {
             ctx.set_query(sql);

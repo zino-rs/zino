@@ -101,15 +101,15 @@ where
             .ok_or_else(|| Error::new("404 Not Found: invalid user account or password"))?;
         let encrypted_password = user.get_str(Self::PASSWORD_FIELD).unwrap_or_default();
         if Self::verify_password(passowrd, encrypted_password)? {
-            let user_id = user.get_str("id").unwrap_or_default();
+            let user_id = user.get_str(Self::PRIMARY_KEY_NAME).unwrap_or_default();
             let mut claims = JwtClaims::new(user_id);
 
             let user_id = user_id.parse()?;
             if let Some(role_field) = Self::ROLE_FIELD && user.contains_key(role_field) {
                 claims.add_data_entry("roles", user.parse_str_array(role_field));
             }
-            if let Some(tenant_id_field) = Self::TENANT_ID_FIELD
-                && let Some(tenant_id) = user.remove(tenant_id_field)
+            if let Some(tenant_id_field) = Self::TENANT_ID_FIELD &&
+                let Some(tenant_id) = user.remove(tenant_id_field)
             {
                 claims.add_data_entry("tenant_id", tenant_id);
             }
@@ -143,7 +143,7 @@ where
             fields.push(tenant_id_field);
         }
         query.allow_fields(&fields);
-        query.add_filter("id", user_id);
+        query.add_filter(Self::PRIMARY_KEY_NAME, user_id);
         query.add_filter(
             "status",
             Map::from_entry("$nin", vec!["SignedOut", "Locked", "Deleted"]),
@@ -157,8 +157,8 @@ where
         if let Some(role_field) = Self::ROLE_FIELD && user.contains_key(role_field) {
             claims.add_data_entry("roles", user.parse_str_array(role_field));
         }
-        if let Some(tenant_id_field) = Self::TENANT_ID_FIELD
-            && let Some(tenant_id) = user.remove(tenant_id_field)
+        if let Some(tenant_id_field) = Self::TENANT_ID_FIELD &&
+            let Some(tenant_id) = user.remove(tenant_id_field)
         {
             claims.add_data_entry("tenant_id", tenant_id);
         }

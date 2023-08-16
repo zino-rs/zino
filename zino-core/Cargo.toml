@@ -65,9 +65,10 @@ full = [
     "orm",
     "view",
 ]
-orm = ["sqlx", "sqlx/postgres"]
+orm = ["sqlx", "sqlx/sqlite"]
 orm-mysql = ["orm", "sqlx/mysql"]
 orm-postgres = ["orm", "sqlx/postgres"]
+orm-sqlite = ["orm", "sqlx/sqlite"]
 runtime-async-std = ["sqlx?/runtime-async-std"]
 runtime-tokio = ["sqlx?/runtime-tokio"]
 tls-native = ["opendal?/native-tls", "reqwest/native-tls", "sqlx?/tls-native-tls"]

@@ -23,7 +23,7 @@ features = ["dioxus"]
 [dependencies.zino-core]
 path = "../../zino-core"
 version = "0.12.0"
-features = ["orm-postgres"]
+features = ["orm-sqlite"]
 
 [dependencies.zino-model]
 path = "../../zino-model"

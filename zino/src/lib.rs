@@ -15,7 +15,7 @@
 //! - 🎨 Minimal design, composable architecture and high-level abstractions.
 //! - 🌐 Adopt an API-first approch to development with open standards.
 //! - ⚡ Embrace practical conventions to get the best performance.
-//! - 💎 Highly optimized ORM for MySQL and PostgreSQL based on [`sqlx`].
+//! - 💎 Highly optimized ORM for MySQL, PostgreSQL and SQLite based on [`sqlx`].
 //! - ✨ Innovations on query population, field translation and model hooks.
 //! - 📅 Lightweight scheduler for sync and async cron jobs.
 //! - 💠 Unified access to storage services, data sources and chatbots.
@@ -35,7 +35,7 @@
 //! | `actix`      | Enables the integration with [`actix-web`].          | No       |
 //! | `axum`       | Enables the integration with [`axum`].               | No       |
 //! | `dioxus`     | Enables the integration with [`dioxus`].             | No       |
-//! | `orm`        | Enables the ORM for MySQL or **PostgreSQL**.         | Yes      |
+//! | `orm`        | Enables the ORM for MySQL, PostgreSQL or **SQLite**. | Yes      |
 //! | `view`       | Enables the HTML template rendering.                 | Yes      |
 //!
 //! [`zino`]: https://github.com/photino/zino
@@ -75,7 +75,7 @@ cfg_if::cfg_if! {
         use request::actix_request::ActixExtractor;
         use response::actix_response::{ActixRejection, ActixResponse};
 
-        /// Cluster for `actix-web`.
+        /// HTTP server cluster for `actix-web`.
         pub type Cluster = ActixCluster;
 
         /// Router configure for `actix-web`.
@@ -98,7 +98,7 @@ cfg_if::cfg_if! {
 
         pub use channel::axum_channel::MessageChannel;
 
-        /// Cluster for `axum`.
+        /// HTTP server cluster for `axum`.
         pub type Cluster = AxumCluster;
 
         /// A specialized request extractor for `axum`.
@@ -110,6 +110,9 @@ cfg_if::cfg_if! {
         /// A specialized `Result` type for `axum`.
         pub type Result<T = AxumResponse<StatusCode>> = std::result::Result<T, AxumRejection>;
     } else if #[cfg(feature = "dioxus")] {
-        pub use application::dioxus_desktop::DioxusDesktop;
+        use application::dioxus_desktop::DioxusDesktop;
+
+        /// Desktop applications for `dioxus`.
+        pub type Desktop<R> = DioxusDesktop<R>;
     }
 }

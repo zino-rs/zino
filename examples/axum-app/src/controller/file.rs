@@ -4,7 +4,7 @@ use zino::{prelude::*, Cluster, Request, Response, Result};
 pub async fn upload(mut req: Request) -> Result {
     let (mut body, files) = req.parse_form_data::<Map>().await?;
 
-    let dir = Cluster::relative_path("assets/uploads");
+    let dir = Cluster::relative_path("local/uploads");
     let expires = DateTime::now() + Duration::from_secs(600);
     let mut encryption_duration = Duration::ZERO;
     let mut uploads = Vec::new();
@@ -54,7 +54,7 @@ pub async fn decrypt(req: Request) -> Result {
     let Some(file_name) = query.get_str("file_name") else {
         reject!(req, "file_name", "it should be specified");
     };
-    let file_path = Cluster::relative_path(format!("assets/uploads/{file_name}"));
+    let file_path = Cluster::relative_path(format!("local/uploads/{file_name}"));
 
     let mut file = NamedFile::try_from_local(file_path).extract(&req)?;
     let decryption_start_time = Instant::now();

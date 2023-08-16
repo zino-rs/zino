@@ -8,22 +8,11 @@ title = "DataCube"
 theme = "Dark"
 
 [database]
-type = "mysql"
+type = "sqlite"
 namespace = "dc"
 
-[[mysql]]
-host = "127.0.0.1"
-port = 3306
-database = "data_cube"
-username = "root"
-password = "4Ks/H8GGtFvkFPcrDdqPiYZLEQ6N1ZhqFnD+oI4nmMQ"
-
-[[postgres]]
-host = "127.0.0.1"
-port = 5432
-database = "data_cube"
-username = "postgres"
-password = "ua/d2YH8LgYpkE4awRdJC10wDFV5RU4aZtM30ztjdbGvZqEO"
+[[sqlite]]
+database = "local/data/main.db"
 
 [tracing]
 filter = "warn"
@@ -36,7 +25,7 @@ port = 9000
 [[connector]]
 type = "arrow"
 name = "mock"
-root = "./assets/data/mock/"
+root = "./local/data/mock/"
 
 [[connector.tables]]
 type = "csv"

@@ -30,7 +30,7 @@ pub(crate) mod http_client;
 
 pub(crate) use secret_key::SECRET_KEY;
 
-/// Application.
+/// Application interfaces.
 pub trait Application {
     /// Routes.
     type Routes;
