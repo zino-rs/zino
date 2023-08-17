@@ -45,13 +45,13 @@ view = ["zino-core/view"]
 export-pdf = ["zino-core/format-pdf"]
 
 [dependencies]
-async-trait = "0.1.72"
+async-trait = "0.1.73"
 cfg-if = "1.0"
 futures = "0.3.28"
 hyper = "0.14.27"
 parking_lot = "0.12.1"
 serde = "1.0.183"
-serde_json = "1.0.104"
+serde_json = "1.0.105"
 toml = "0.7.6"
 tracing = "0.1.37"
 
@@ -74,23 +74,6 @@ features = [
     "secure-cookies",
 ]
 
-[dependencies.dioxus]
-version = "0.4.0"
-optional = true
-
-[dependencies.dioxus-desktop]
-version = "0.4.0"
-optional = true
-
-[dependencies.dioxus-router]
-version = "0.4.1"
-optional = true
-
-[dependencies.tracing-actix-web]
-version = "0.7.6"
-optional = true
-features = ["opentelemetry_0_20"]
-
 [dependencies.axum]
 version = "0.6.20"
 optional = true
@@ -104,8 +87,20 @@ features = [
     "ws",
 ]
 
+[dependencies.dioxus]
+version = "0.4.0"
+optional = true
+
+[dependencies.dioxus-desktop]
+version = "0.4.0"
+optional = true
+
+[dependencies.dioxus-router]
+version = "0.4.1"
+optional = true
+
 [dependencies.tokio]
-version = "1.29.1"
+version = "1.32.0"
 optional = true
 features = ["parking_lot", "rt-multi-thread"]
 
@@ -136,6 +131,11 @@ features = [
     "fs",
     "trace",
 ]
+
+[dependencies.tracing-actix-web]
+version = "0.7.6"
+optional = true
+features = ["opentelemetry_0_20"]
 
 [dependencies.utoipa-swagger-ui]
 version = "3.1.5"

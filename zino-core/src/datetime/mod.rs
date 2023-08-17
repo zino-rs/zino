@@ -2,13 +2,13 @@
 
 use crate::{AvroValue, JsonValue};
 use chrono::{
-    format::ParseError, Datelike, Local, NaiveDate, NaiveDateTime, NaiveTime, SecondsFormat,
-    TimeZone, Utc,
+    format::ParseError, Datelike, Days, Local, Months, NaiveDate, NaiveDateTime, NaiveTime,
+    SecondsFormat, TimeZone, Utc,
 };
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
     fmt,
-    ops::{Add, AddAssign, Deref, Sub, SubAssign},
+    ops::{Add, AddAssign, Sub, SubAssign},
     str::FromStr,
     time::Duration,
 };
@@ -73,6 +73,31 @@ impl DateTime {
         Self(Local.from_utc_datetime(&dt))
     }
 
+    /// Returns the number of non-leap seconds since the midnight UTC on January 1, 1970.
+    #[inline]
+    pub fn timestamp(&self) -> i64 {
+        self.0.timestamp()
+    }
+
+    /// Returns the number of non-leap milliseconds since the midnight UTC on January 1, 1970.
+    #[inline]
+    pub fn timestamp_millis(&self) -> i64 {
+        self.0.timestamp_millis()
+    }
+
+    /// Returns the number of non-leap microseconds since the midnight UTC on January 1, 1970.
+    #[inline]
+    pub fn timestamp_micros(&self) -> i64 {
+        self.0.timestamp_micros()
+    }
+
+    /// Returns the difference in seconds between `self` and
+    /// the same date-time as evaluated in the UTC time zone.
+    #[inline]
+    pub fn timezone_offset(&self) -> i32 {
+        self.0.offset().local_minus_utc()
+    }
+
     /// Parses an RFC 2822 date and time.
     #[inline]
     pub fn parse_utc_str(s: &str) -> Result<Self, ParseError> {
@@ -95,6 +120,18 @@ impl DateTime {
         Ok(Self(datetime.with_timezone(&Local)))
     }
 
+    /// Returns a date-only string in the format `%Y-%m-%d`.
+    #[inline]
+    pub fn to_date_string(&self) -> String {
+        format!("{}", self.0.date_naive().format("%Y-%m-%d"))
+    }
+
+    /// Returns a time-only string in the format `%H:%M:%S`.
+    #[inline]
+    pub fn to_time_string(&self) -> String {
+        format!("{}", self.0.time().format("%H:%M:%S"))
+    }
+
     /// Returns an RFC 2822 date and time string.
     #[inline]
     pub fn to_utc_string(&self) -> String {
@@ -108,6 +145,13 @@ impl DateTime {
     pub fn to_iso_string(&self) -> String {
         let datetime = self.0.with_timezone(&Utc);
         datetime.to_rfc3339_opts(SecondsFormat::Millis, true)
+    }
+
+    /// Formats the combined date and time with the specified format string.
+    /// See [`format::strftime`](chrono::format::strftime) for the supported escape sequences.
+    #[inline]
+    pub fn format(&self, fmt: &str) -> String {
+        format!("{}", self.0.format(fmt))
     }
 
     /// Returns the amount of time elapsed from another datetime to this one,
@@ -149,6 +193,28 @@ impl DateTime {
         } else {
             None
         }
+    }
+
+    /// Returns the year number in the calendar date.
+    #[inline]
+    pub fn year(&self) -> i32 {
+        self.0.year()
+    }
+
+    /// Returns the month number starting from 1.
+    ///
+    /// The return value ranges from 1 to 12.
+    #[inline]
+    pub fn month(&self) -> u32 {
+        self.0.month()
+    }
+
+    /// Returns the day of month starting from 1.
+    ///
+    /// The return value ranges from 1 to 31. (The last day of month differs by months.)
+    #[inline]
+    pub fn day(&self) -> u32 {
+        self.0.day()
     }
 
     /// Returns `true` if the current year is a leap year.
@@ -228,7 +294,7 @@ impl DateTime {
 
     /// Returns the start of the current day.
     pub fn start_of_current_day(&self) -> Self {
-        let date = self.date_naive();
+        let date = self.0.date_naive();
         let dt = NaiveDateTime::new(date, NaiveTime::default());
         let offset = Local.offset_from_utc_datetime(&dt);
         Self(LocalDateTime::from_local(dt, offset))
@@ -236,7 +302,7 @@ impl DateTime {
 
     /// Returns the end of the current day.
     pub fn end_of_current_day(&self) -> Self {
-        let date = self.date_naive();
+        let date = self.0.date_naive();
         let dt = date
             .and_hms_milli_opt(23, 59, 59, 1_000)
             .unwrap_or_default();
@@ -297,6 +363,38 @@ impl DateTime {
         let offset = Local.offset_from_utc_datetime(&dt);
         Self(LocalDateTime::from_local(dt, offset))
     }
+
+    /// Adds a duration in months to the date part of the `DateTime`.
+    /// Returns `None` if the resulting date would be out of range.
+    #[inline]
+    pub fn checked_add_months(self, months: u32) -> Option<Self> {
+        self.0.checked_add_months(Months::new(months)).map(Self)
+    }
+
+    /// Subtracts a duration in months from the date part of the `DateTime`.
+    /// Returns `None` if the resulting date would be out of range.
+    #[inline]
+    pub fn checked_sub_months(self, months: u32) -> Option<Self> {
+        self.0.checked_sub_months(Months::new(months)).map(Self)
+    }
+
+    /// Adds a duration in days to the date part of the `DateTime`.
+    /// Returns `None` if the resulting date would be out of range.
+    #[inline]
+    pub fn checked_add_days(self, days: u32) -> Option<Self> {
+        self.0
+            .checked_add_days(Days::new(u64::from(days)))
+            .map(Self)
+    }
+
+    /// Subtracts a duration in days from the date part of the `DateTime`.
+    /// Returns `None` if the resulting date would be out of range.
+    #[inline]
+    pub fn checked_sub_days(self, days: u32) -> Option<Self> {
+        self.0
+            .checked_sub_days(Days::new(u64::from(days)))
+            .map(Self)
+    }
 }
 
 impl Default for DateTime {
@@ -320,15 +418,6 @@ impl Serialize for DateTime {
         let datetime = self.0.with_timezone(&Utc);
         let s = format!("{}", datetime.format("%Y-%m-%d %H:%M:%S%.6f"));
         serializer.serialize_str(&s)
-    }
-}
-
-impl Deref for DateTime {
-    type Target = LocalDateTime;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.0
     }
 }
 

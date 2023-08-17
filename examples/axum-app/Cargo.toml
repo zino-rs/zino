@@ -7,9 +7,9 @@ edition = "2021"
 publish = false
 
 [dependencies]
-axum = "0.6.19"
+axum = "0.6.20"
 fluent = "0.16.0"
-serde_json = "1.0.104"
+serde_json = "1.0.105"
 tracing = "0.1.37"
 
 [dependencies.serde]
