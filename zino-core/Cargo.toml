@@ -107,7 +107,7 @@ rand = "0.8.5"
 regex = "1.9.3"
 reqwest-middleware = "0.2.3"
 reqwest-retry = "0.2.2"
-reqwest-tracing = "0.4.5"
+reqwest-tracing = "0.4.6"
 rmp-serde = "1.1.2"
 serde_qs = "0.12.0"
 sha2 = "0.10.7"
@@ -123,7 +123,7 @@ version = "0.5.1"
 features = ["std"]
 
 [dependencies.async-openai]
-version = "0.13.0"
+version = "0.14.0"
 optional = true
 
 [dependencies.chrono]
@@ -153,7 +153,7 @@ version = "0.5.3"
 optional = true
 
 [dependencies.reqwest]
-version = "0.11.18"
+version = "0.11.20"
 default-features = false
 features = [
     "cookies",
@@ -164,7 +164,7 @@ features = [
 ]
 
 [dependencies.serde]
-version = "1.0.183"
+version = "1.0.186"
 features = ["derive"]
 
 [dependencies.serde_json]
@@ -198,7 +198,7 @@ version = "0.9.1"
 features = ["macros"]
 
 [dependencies.utoipa]
-version = "3.4.4"
+version = "3.5.0"
 features = ["non_strict_integers", "uuid"]
 
 [dependencies.uuid]
