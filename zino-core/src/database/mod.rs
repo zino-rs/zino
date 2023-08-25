@@ -8,7 +8,7 @@
 //! |----------------|------------------------------------------------------|----------|
 //! | `orm-mysql`    | Enables the MySQL database driver.                   | No       |
 //! | `orm-postgres` | Enables the PostgreSQL database driver.              | No       |
-//! | `orm-sqlite`   | Enables the SQLite database driver.                  | Yes      |
+//! | `orm-sqlite`   | Enables the SQLite database driver.                  | No       |
 
 use crate::{extension::TomlTableExt, state::State};
 use convert_case::{Case, Casing};

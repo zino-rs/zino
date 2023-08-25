@@ -140,7 +140,7 @@ impl DateTime {
     }
 
     /// Return an RFC 3339 and ISO 8601 date and time string with subseconds
-    /// formatted as [`SecondsFormat::Millis`](chrono::SecondsFormat::Millis).
+    /// formatted as [`SecondsFormat::Millis`].
     #[inline]
     pub fn to_iso_string(&self) -> String {
         let datetime = self.0.with_timezone(&Utc);

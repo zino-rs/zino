@@ -5,7 +5,7 @@ use lru::LruCache;
 use parking_lot::RwLock;
 use std::{num::NonZeroUsize, sync::LazyLock};
 
-/// Global cache built on the top of [`LruCache`](lru::LruCache).
+/// Global cache built on the top of [`LruCache`].
 #[derive(Debug, Clone, Copy, Default)]
 pub struct GlobalCache;
 
