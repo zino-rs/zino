@@ -42,6 +42,13 @@ cargo run -- --env=dev
 
 This project is licensed under the [MIT license][license].
 
+## Community
+
+If you have any poroblems or ideas, please don't hesitate to [open an issue][zino-issue].
+For Chineses users, you can also follow our WeChat official account to cantact us:
+
+![zino-web](https://foruda.gitee.com/images/1693469268337449782/f4089986_145641.png)
+
 [`zino-core`]: https://github.com/photino/zino/tree/main/zino-core
 [`zino-derive`]: https://github.com/photino/zino/tree/main/zino-derive
 [`zino-model`]: https://github.com/photino/zino/tree/main/zino-model
@@ -63,3 +70,4 @@ This project is licensed under the [MIT license][license].
 [`axum-app`]: https://github.com/photino/zino/tree/main/examples/axum-app
 [`dioxus-desktop`]: https://github.com/photino/zino/tree/main/examples/dioxus-desktop
 [license]: https://github.com/photino/zino/blob/main/LICENSE
+[zino-issue]: https://github.com/photino/zino/issues/new

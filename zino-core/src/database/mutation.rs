@@ -45,101 +45,15 @@ impl MutationExt<DatabaseDriver> for Mutation {
                             let mutation = format!(r#"{key} = {key} * {value}"#);
                             mutations.push(mutation);
                         }
-                        "$add" => {
-                            if let Some(values) = value.as_array() && values.len() >= 2 {
-                                let value = values.iter()
-                                    .map(|v| {
-                                        if let Some(s) = v.as_str() && M::has_column(s) {
-                                            Query::format_field(s)
-                                        } else {
-                                            col.encode_value(Some(v))
-                                        }
-                                    })
-                                    .collect::<Vec<_>>()
-                                    .join(" + ");
-                                let mutation = format!(r#"{key} = {value}"#);
-                                mutations.push(mutation);
-                            }
-                        }
-                        "$multiply" => {
-                            if let Some(values) = value.as_array() && values.len() >= 2 {
-                                let value = values.iter()
-                                    .map(|v| {
-                                        if let Some(s) = v.as_str() && M::has_column(s) {
-                                            Query::format_field(s)
-                                        } else {
-                                            col.encode_value(Some(v))
-                                        }
-                                    })
-                                    .collect::<Vec<_>>()
-                                    .join(" * ");
-                                let mutation = format!(r#"{key} = {value}"#);
-                                mutations.push(mutation);
-                            }
-                        }
-                        "$subtract" => {
-                            if let Some(values) = value.as_array() && values.len() == 2 {
-                                let value = values.iter()
-                                    .map(|v| {
-                                        if let Some(s) = v.as_str() && M::has_column(s) {
-                                            Query::format_field(s)
-                                        } else {
-                                            col.encode_value(Some(v))
-                                        }
-                                    })
-                                    .collect::<Vec<_>>()
-                                    .join(" - ");
-                                let mutation = format!(r#"{key} = {value}"#);
-                                mutations.push(mutation);
-                            }
-                        }
-                        "$divide" => {
-                            if let Some(values) = value.as_array() && values.len() == 2 {
-                                let value = values.iter()
-                                    .map(|v| {
-                                        if let Some(s) = v.as_str() && M::has_column(s) {
-                                            Query::format_field(s)
-                                        } else {
-                                            col.encode_value(Some(v))
-                                        }
-                                    })
-                                    .collect::<Vec<_>>()
-                                    .join(" / ");
-                                let mutation = format!(r#"{key} = {value}"#);
-                                mutations.push(mutation);
-                            }
-                        }
                         "$min" => {
-                            if let Some(values) = value.as_array() && values.len() >= 2 {
-                                let value = values.iter()
-                                    .map(|v| {
-                                        if let Some(s) = v.as_str() && M::has_column(s) {
-                                            Query::format_field(s)
-                                        } else {
-                                            col.encode_value(Some(v))
-                                        }
-                                    })
-                                    .collect::<Vec<_>>()
-                                    .join(", ");
-                                let mutation = format!(r#"{key} = LEAST({value})"#);
-                                mutations.push(mutation);
-                            }
+                            let value = col.encode_value(Some(value));
+                            let mutation = format!(r#"{key} = LEAST({key}, {value})"#);
+                            mutations.push(mutation);
                         }
                         "$max" => {
-                            if let Some(values) = value.as_array() && values.len() >= 2 {
-                                let value = values.iter()
-                                    .map(|v| {
-                                        if let Some(s) = v.as_str() && M::has_column(s) {
-                                            Query::format_field(s)
-                                        } else {
-                                            col.encode_value(Some(v))
-                                        }
-                                    })
-                                    .collect::<Vec<_>>()
-                                    .join(", ");
-                                let mutation = format!(r#"{key} = GREATEST({value})"#);
-                                mutations.push(mutation);
-                            }
+                            let value = col.encode_value(Some(value));
+                            let mutation = format!(r#"{key} = GREATEST({key}, {value})"#);
+                            mutations.push(mutation);
                         }
                         _ => ()
                     }
@@ -149,7 +63,7 @@ impl MutationExt<DatabaseDriver> for Mutation {
                     }
                 }
                 if set_json_object {
-                    let value = col.encode_value(Some(&value));
+                    let value = col.encode_value(Some(value));
                     let mutation = format!(r#"{key} = {value}"#);
                     mutations.push(mutation);
                 }

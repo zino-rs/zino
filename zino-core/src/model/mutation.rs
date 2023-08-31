@@ -123,6 +123,28 @@ impl MutationBuilder {
         self
     }
 
+    /// Increments the field by a specified value
+    #[inline]
+    pub fn inc<S, T>(mut self, field: S, value: T) -> Self
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.updates.upsert(field, Map::from_entry("$inc", value));
+        self
+    }
+
+    /// Multiplies the value of a field by a number.
+    #[inline]
+    pub fn mul<S, T>(mut self, field: S, value: T) -> Self
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.updates.upsert(field, Map::from_entry("$mul", value));
+        self
+    }
+
     /// Constructs an instance of `Mutation`.
     #[inline]
     pub fn build(self) -> Mutation {
