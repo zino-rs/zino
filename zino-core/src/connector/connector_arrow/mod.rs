@@ -4,8 +4,8 @@ use super::{Connector, DataSource, DataSourceConnector::Arrow};
 use crate::{application::http_client, error::Error, extension::TomlTableExt, helper, Map, Record};
 use datafusion::{
     arrow::{datatypes::Schema, record_batch::RecordBatch},
+    common::FileCompressionType,
     dataframe::DataFrame,
-    datasource::file_format::file_type::FileCompressionType,
     execution::{
         context::{SessionConfig, SessionContext, SessionState},
         options::{AvroReadOptions, CsvReadOptions, NdJsonReadOptions, ParquetReadOptions},

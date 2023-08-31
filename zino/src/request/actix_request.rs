@@ -9,6 +9,7 @@ use std::{
     borrow::Cow,
     convert::Infallible,
     future,
+    net::IpAddr,
     ops::{Deref, DerefMut},
 };
 use zino_core::{
@@ -94,6 +95,13 @@ impl RequestContext for ActixExtractor<HttpRequest> {
         self.extensions_mut()
             .insert(Data::new(value))
             .map(|data| data.into_inner())
+    }
+
+    #[inline]
+    fn client_ip(&self) -> Option<IpAddr> {
+        self.connection_info()
+            .realip_remote_addr()
+            .and_then(|s| s.parse().ok())
     }
 
     #[inline]

@@ -1,10 +1,6 @@
 /// Generates SQL `SET` expressions.
 use super::{query::QueryExt, DatabaseDriver, Schema};
-use crate::{
-    extension::JsonObjectExt,
-    model::{EncodeColumn, Mutation, Query},
-    Map,
-};
+use crate::model::{EncodeColumn, Mutation, Query};
 
 /// Extension trait for [`Mutation`](crate::model::Mutation).
 pub(super) trait MutationExt<DB> {
@@ -36,9 +32,19 @@ impl MutationExt<DatabaseDriver> for Mutation {
                     continue;
                 };
 
-                let mut updates = Map::new();
+                let mut set_json_object = true;
                 for (operator, value) in map {
                     match operator.as_str() {
+                        "$inc" => {
+                            let value = col.encode_value(Some(value));
+                            let mutation = format!(r#"{key} = {key} + {value}"#);
+                            mutations.push(mutation);
+                        }
+                        "$mul" => {
+                            let value = col.encode_value(Some(value));
+                            let mutation = format!(r#"{key} = {key} * {value}"#);
+                            mutations.push(mutation);
+                        }
                         "$add" => {
                             if let Some(values) = value.as_array() && values.len() >= 2 {
                                 let value = values.iter()
@@ -55,23 +61,7 @@ impl MutationExt<DatabaseDriver> for Mutation {
                                 mutations.push(mutation);
                             }
                         }
-                        "$sub" => {
-                            if let Some(values) = value.as_array() && values.len() == 2 {
-                                let value = values.iter()
-                                    .map(|v| {
-                                        if let Some(s) = v.as_str() && M::has_column(s) {
-                                            Query::format_field(s)
-                                        } else {
-                                            col.encode_value(Some(v))
-                                        }
-                                    })
-                                    .collect::<Vec<_>>()
-                                    .join(" - ");
-                                let mutation = format!(r#"{key} = {value}"#);
-                                mutations.push(mutation);
-                            }
-                        }
-                        "$mul" => {
+                        "$multiply" => {
                             if let Some(values) = value.as_array() && values.len() >= 2 {
                                 let value = values.iter()
                                     .map(|v| {
@@ -87,7 +77,23 @@ impl MutationExt<DatabaseDriver> for Mutation {
                                 mutations.push(mutation);
                             }
                         }
-                        "$div" => {
+                        "$subtract" => {
+                            if let Some(values) = value.as_array() && values.len() == 2 {
+                                let value = values.iter()
+                                    .map(|v| {
+                                        if let Some(s) = v.as_str() && M::has_column(s) {
+                                            Query::format_field(s)
+                                        } else {
+                                            col.encode_value(Some(v))
+                                        }
+                                    })
+                                    .collect::<Vec<_>>()
+                                    .join(" - ");
+                                let mutation = format!(r#"{key} = {value}"#);
+                                mutations.push(mutation);
+                            }
+                        }
+                        "$divide" => {
                             if let Some(values) = value.as_array() && values.len() == 2 {
                                 let value = values.iter()
                                     .map(|v| {
@@ -135,14 +141,15 @@ impl MutationExt<DatabaseDriver> for Mutation {
                                 mutations.push(mutation);
                             }
                         }
-                        _ => {
-                            updates.upsert(operator, value.clone());
-                        }
+                        _ => ()
+                    }
+                    if operator.starts_with('$') {
+                        set_json_object = false;
+                        break;
                     }
                 }
-                if !updates.is_empty() {
-                    let updates = updates.into();
-                    let value = col.encode_value(Some(&updates));
+                if set_json_object {
+                    let value = col.encode_value(Some(&value));
                     let mutation = format!(r#"{key} = {value}"#);
                     mutations.push(mutation);
                 }

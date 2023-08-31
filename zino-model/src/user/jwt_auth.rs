@@ -2,6 +2,7 @@ use std::{fmt::Display, str::FromStr};
 use zino_core::{
     auth::JwtClaims,
     database::{ModelAccessor, ModelHelper},
+    datetime::DateTime,
     error::Error,
     extension::JsonObjectExt,
     model::Query,
@@ -21,8 +22,12 @@ where
     const PASSWORD_FIELD: &'static str = "password";
     /// Role field name.
     const ROLE_FIELD: Option<&'static str> = Some("roles");
-    /// Tenant ID field name.
+    /// Tenant-ID field name.
     const TENANT_ID_FIELD: Option<&'static str> = None;
+    /// Login-at field name.
+    const LOGIN_AT_FIELD: Option<&'static str> = None;
+    /// Login-IP field name.
+    const LOGIN_IP_FIELD: Option<&'static str> = None;
 
     /// Returns the standard claims parsed from the `content` field.
     /// See [the spec](https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims).
@@ -92,6 +97,12 @@ where
         if let Some(tenant_id_field) = Self::TENANT_ID_FIELD {
             fields.push(tenant_id_field);
         }
+        if let Some(login_at_field) = Self::LOGIN_AT_FIELD {
+            fields.push(login_at_field);
+        }
+        if let Some(login_ip_field) = Self::LOGIN_IP_FIELD {
+            fields.push(login_ip_field);
+        }
         query.allow_fields(&fields);
         query.add_filter("status", Map::from_entry("$nin", vec!["Locked", "Deleted"]));
         query.add_filter(Self::ACCOUNT_FIELD, account);
@@ -118,6 +129,12 @@ where
             data.upsert("expires_in", claims.expires_in().as_secs());
             data.upsert("refresh_token", claims.refresh_token()?);
             data.upsert("access_token", claims.access_token()?);
+            if let Some(login_at_field) = Self::LOGIN_AT_FIELD {
+                data.upsert(login_at_field, user.remove(login_at_field));
+            }
+            if let Some(login_ip_field) = Self::LOGIN_IP_FIELD {
+                data.upsert(login_ip_field, user.remove(login_ip_field));
+            }
             Ok((user_id, data))
         } else {
             Err(Error::new("fail to generate access token"))
@@ -169,6 +186,58 @@ where
         Ok(data)
     }
 
+    /// Verfifies the JWT claims.
+    async fn verify_jwt_claims(claims: &JwtClaims) -> Result<bool, Error> {
+        let Some(user_id) = claims.subject() else {
+            return Err(Error::new("the JWT token does not have a subject"));
+        };
+
+        let mut query = Query::default();
+        let mut fields = vec![Self::PRIMARY_KEY_NAME];
+        if let Some(role_field) = Self::ROLE_FIELD {
+            fields.push(role_field);
+        }
+        if let Some(tenant_id_field) = Self::TENANT_ID_FIELD {
+            fields.push(tenant_id_field);
+        }
+        if let Some(login_at_field) = Self::LOGIN_AT_FIELD {
+            fields.push(login_at_field);
+        }
+        query.allow_fields(&fields);
+        query.add_filter(Self::PRIMARY_KEY_NAME, user_id);
+        query.add_filter(
+            "status",
+            Map::from_entry("$nin", vec!["SignedOut", "Locked", "Deleted"]),
+        );
+
+        let user: Map = Self::find_one(&query).await?.ok_or_else(|| {
+            let message = format!("403 Forbidden: cannot get the user `{user_id}`");
+            Error::new(message)
+        })?;
+        let data = claims.data();
+        if let Some(role_field) = Self::ROLE_FIELD &&
+            data.get(role_field) != user.get(role_field)
+        {
+            let message = format!("403 Forbidden: invalid for the `{role_field}` field");
+            return Err(Error::new(message));
+        }
+        if let Some(tenant_id_field) = Self::TENANT_ID_FIELD &&
+            data.get(tenant_id_field) != user.get(tenant_id_field)
+        {
+            let message = format!("403 Forbidden: invalid for the `{tenant_id_field}` field");
+            return Err(Error::new(message));
+        }
+        if let Some(login_at_field) = Self::LOGIN_AT_FIELD &&
+            let Some(login_at_str) = user.get_str(login_at_field) &&
+            let Ok(login_at) = login_at_str.parse::<DateTime>() &&
+            claims.issued_at().timestamp() < login_at.timestamp()
+        {
+            let message = format!("403 Forbidden: invalid before the `{login_at_field}` time");
+            return Err(Error::new(message));
+        }
+        Ok(true)
+    }
+
     /// Verifies the user identity.
     async fn verify_identity(user_id: K, body: &Map) -> Result<Map, Error> {
         let mut query = Query::default();
@@ -207,4 +276,7 @@ where
     }
 }
 
-impl JwtAuthService for super::User {}
+impl JwtAuthService for super::User {
+    const LOGIN_AT_FIELD: Option<&'static str> = Some("current_login_at");
+    const LOGIN_IP_FIELD: Option<&'static str> = Some("current_login_ip");
+}

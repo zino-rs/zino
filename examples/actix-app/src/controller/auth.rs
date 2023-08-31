@@ -3,9 +3,17 @@ use zino_model::user::{JwtAuthService, User};
 
 pub async fn login(mut req: Request) -> Result {
     let body: Map = req.parse_body().await?;
+    let current_time = DateTime::now();
     let (user_id, mut data) = User::generate_token(body).await.extract(&req)?;
 
-    let mut mutations = Map::from_entry("status", "Active");
+    let mut mutations = Map::new();
+    mutations.upsert("status", "Active");
+    mutations.upsert("last_login_at", data.remove("current_login_at"));
+    mutations.upsert("last_login_ip", data.remove("current_login_ip"));
+    mutations.upsert("current_login_at", current_time.to_utc_timestamp());
+    mutations.upsert("current_login_ip", req.client_ip().map(|ip| ip.to_string()));
+    mutations.upsert("login_count", Map::from_entry("$inc", 1));
+
     let (validation, user) = User::update_by_id(&user_id, &mut mutations, None)
         .await
         .extract(&req)?;

@@ -77,6 +77,14 @@ pub struct User {
     #[schema(reference = "Tag", index_type = "gin")]
     tags: Vec<Uuid>, // tag.id, tag.namespace = "*:user"
 
+    // Security.
+    last_login_at: DateTime,
+    last_login_ip: String,
+    current_login_at: DateTime,
+    current_login_ip: String,
+    login_count: u32,
+    failed_login_count: u8,
+
     // Extensions.
     content: Map,
     extra: Map,

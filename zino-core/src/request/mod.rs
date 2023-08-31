@@ -26,6 +26,7 @@ use multer::Multipart;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
     borrow::Cow,
+    net::IpAddr,
     time::{Duration, Instant},
 };
 use unic_langid::LanguageIdentifier;
@@ -70,6 +71,9 @@ pub trait RequestContext {
     /// Sets the request scoped data and returns the old value
     /// if an item of this type was already stored.
     fn set_data<T: Clone + Send + Sync + 'static>(&mut self, value: T) -> Option<T>;
+
+    /// Returns the client's remote IP.
+    fn client_ip(&self) -> Option<IpAddr>;
 
     /// Reads the entire request body into a byte buffer.
     async fn read_body_bytes(&mut self) -> Result<Bytes, Error>;

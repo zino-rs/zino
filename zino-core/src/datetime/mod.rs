@@ -120,16 +120,11 @@ impl DateTime {
         Ok(Self(datetime.with_timezone(&Local)))
     }
 
-    /// Returns a date-only string in the format `%Y-%m-%d`.
+    /// Returns a UTC timestamp string.
     #[inline]
-    pub fn to_date_string(&self) -> String {
-        format!("{}", self.0.date_naive().format("%Y-%m-%d"))
-    }
-
-    /// Returns a time-only string in the format `%H:%M:%S`.
-    #[inline]
-    pub fn to_time_string(&self) -> String {
-        format!("{}", self.0.time().format("%H:%M:%S"))
+    pub fn to_utc_timestamp(&self) -> String {
+        let datetime = self.0.with_timezone(&Utc);
+        format!("{}", datetime.format("%Y-%m-%d %H:%M:%S%.6f"))
     }
 
     /// Returns an RFC 2822 date and time string.
@@ -154,11 +149,43 @@ impl DateTime {
         format!("{}", self.0.format(fmt))
     }
 
+    /// Returns a date-only string in the format `%Y-%m-%d`.
+    #[inline]
+    pub fn format_date(&self) -> String {
+        format!("{}", self.0.format("%Y-%m-%d"))
+    }
+
+    /// Returns a time-only string in the format `%H:%M:%S`.
+    #[inline]
+    pub fn format_time(&self) -> String {
+        format!("{}", self.0.format("%H:%M:%S"))
+    }
+
+    /// Returns a date-time string in the format `%Y-%m-%d %H:%M:%S` with the `Local` time zone.
+    pub fn format_local(&self) -> String {
+        format!("{}", self.0.format("%Y-%m-%d %H:%M:%S"))
+    }
+
+    /// Returns a date-time string in the format `%Y-%m-%d %H:%M:%S` with the `Utc` time zone.
+    #[inline]
+    pub fn format_utc(&self) -> String {
+        let datetime = self.0.with_timezone(&Utc);
+        format!("{}", datetime.format("%Y-%m-%d %H:%M:%S"))
+    }
+
     /// Returns the amount of time elapsed from another datetime to this one,
     /// or zero duration if that datetime is later than this one.
     #[inline]
     pub fn duration_since(&self, earlier: DateTime) -> Duration {
         (self.0 - earlier.0).to_std().unwrap_or_default()
+    }
+
+    /// Returns the duration of time between `self` and `other`.
+    #[inline]
+    pub fn span_between(&self, other: DateTime) -> Duration {
+        let timestamp = self.timestamp_micros();
+        let current_timestamp = other.timestamp_micros();
+        Duration::from_micros(current_timestamp.abs_diff(timestamp))
     }
 
     /// Returns the duration of time between `self` and `DateTime::now()`.
@@ -257,7 +284,7 @@ impl DateTime {
         let date = NaiveDate::from_ymd_opt(year, 1, 1).unwrap_or_default();
         let dt = NaiveDateTime::new(date, NaiveTime::default());
         let offset = Local.offset_from_utc_datetime(&dt);
-        Self(LocalDateTime::from_local(dt, offset))
+        Self(LocalDateTime::from_naive_utc_and_offset(dt, offset))
     }
 
     /// Returns the end of the current year.
@@ -267,7 +294,7 @@ impl DateTime {
             .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
-        Self(LocalDateTime::from_local(dt, offset))
+        Self(LocalDateTime::from_naive_utc_and_offset(dt, offset))
     }
 
     /// Returns the start of the current month.
@@ -277,7 +304,7 @@ impl DateTime {
         let date = NaiveDate::from_ymd_opt(year, month, 1).unwrap_or_default();
         let dt = NaiveDateTime::new(date, NaiveTime::default());
         let offset = Local.offset_from_utc_datetime(&dt);
-        Self(LocalDateTime::from_local(dt, offset))
+        Self(LocalDateTime::from_naive_utc_and_offset(dt, offset))
     }
 
     /// Returns the end of the current month.
@@ -289,7 +316,7 @@ impl DateTime {
             .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
-        Self(LocalDateTime::from_local(dt, offset))
+        Self(LocalDateTime::from_naive_utc_and_offset(dt, offset))
     }
 
     /// Returns the start of the current day.
@@ -297,7 +324,7 @@ impl DateTime {
         let date = self.0.date_naive();
         let dt = NaiveDateTime::new(date, NaiveTime::default());
         let offset = Local.offset_from_utc_datetime(&dt);
-        Self(LocalDateTime::from_local(dt, offset))
+        Self(LocalDateTime::from_naive_utc_and_offset(dt, offset))
     }
 
     /// Returns the end of the current day.
@@ -307,7 +334,7 @@ impl DateTime {
             .and_hms_milli_opt(23, 59, 59, 1_000)
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
-        Self(LocalDateTime::from_local(dt, offset))
+        Self(LocalDateTime::from_naive_utc_and_offset(dt, offset))
     }
 
     /// Returns the start of the year.
@@ -315,7 +342,7 @@ impl DateTime {
         let date = NaiveDate::from_ymd_opt(year, 1, 1).unwrap_or_default();
         let dt = NaiveDateTime::new(date, NaiveTime::default());
         let offset = Local.offset_from_utc_datetime(&dt);
-        Self(LocalDateTime::from_local(dt, offset))
+        Self(LocalDateTime::from_naive_utc_and_offset(dt, offset))
     }
 
     /// Returns the end of the year.
@@ -325,7 +352,7 @@ impl DateTime {
             .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
-        Self(LocalDateTime::from_local(dt, offset))
+        Self(LocalDateTime::from_naive_utc_and_offset(dt, offset))
     }
 
     /// Returns the start of the month.
@@ -333,7 +360,7 @@ impl DateTime {
         let date = NaiveDate::from_ymd_opt(year, month, 1).unwrap_or_default();
         let dt = NaiveDateTime::new(date, NaiveTime::default());
         let offset = Local.offset_from_utc_datetime(&dt);
-        Self(LocalDateTime::from_local(dt, offset))
+        Self(LocalDateTime::from_naive_utc_and_offset(dt, offset))
     }
 
     /// Returns the end of the month.
@@ -343,7 +370,7 @@ impl DateTime {
             .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
-        Self(LocalDateTime::from_local(dt, offset))
+        Self(LocalDateTime::from_naive_utc_and_offset(dt, offset))
     }
 
     /// Returns the start of the day.
@@ -351,7 +378,7 @@ impl DateTime {
         let date = NaiveDate::from_ymd_opt(year, month, day).unwrap_or_default();
         let dt = NaiveDateTime::new(date, NaiveTime::default());
         let offset = Local.offset_from_utc_datetime(&dt);
-        Self(LocalDateTime::from_local(dt, offset))
+        Self(LocalDateTime::from_naive_utc_and_offset(dt, offset))
     }
 
     /// Returns the end of the month.
@@ -361,7 +388,7 @@ impl DateTime {
             .and_hms_milli_opt(23, 59, 59, 1_000)
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
-        Self(LocalDateTime::from_local(dt, offset))
+        Self(LocalDateTime::from_naive_utc_and_offset(dt, offset))
     }
 
     /// Adds a duration in months to the date part of the `DateTime`.
@@ -415,9 +442,7 @@ impl fmt::Display for DateTime {
 impl Serialize for DateTime {
     #[inline]
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        let datetime = self.0.with_timezone(&Utc);
-        let s = format!("{}", datetime.format("%Y-%m-%d %H:%M:%S%.6f"));
-        serializer.serialize_str(&s)
+        serializer.serialize_str(&self.to_utc_timestamp())
     }
 }
 
@@ -458,11 +483,11 @@ impl FromStr for DateTime {
             let date = s.parse::<NaiveDate>()?;
             let dt = NaiveDateTime::new(date, NaiveTime::default());
             let offset = Local.offset_from_utc_datetime(&dt);
-            Ok(LocalDateTime::from_local(dt, offset).into())
+            Ok(LocalDateTime::from_naive_utc_and_offset(dt, offset).into())
         } else if length == 19 {
             let dt = s.parse::<NaiveDateTime>()?;
             let offset = Local.offset_from_utc_datetime(&dt);
-            Ok(LocalDateTime::from_local(dt, offset).into())
+            Ok(LocalDateTime::from_naive_utc_and_offset(dt, offset).into())
         } else {
             LocalDateTime::from_str(s).map(Self)
         }

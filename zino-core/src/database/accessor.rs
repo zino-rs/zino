@@ -253,7 +253,7 @@ where
     /// Constructs the mutation updates for the model of the next version.
     fn next_version_updates(&self) -> Map {
         let mut updates = Map::with_capacity(2);
-        updates.upsert("updated_at", DateTime::now().to_string());
+        updates.upsert("updated_at", DateTime::now().to_utc_timestamp());
         updates.upsert("version", self.next_version());
         updates
     }
@@ -298,7 +298,7 @@ where
     /// Constructs the mutation updates for the model of the next edition.
     fn next_edition_updates(&self) -> Map {
         let mut updates = Map::with_capacity(2);
-        updates.upsert("updated_at", DateTime::now().to_string());
+        updates.upsert("updated_at", DateTime::now().to_utc_timestamp());
         updates.upsert("version", self.next_version());
         updates.upsert("edition", self.next_edition());
         updates

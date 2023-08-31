@@ -1,12 +1,13 @@
 use async_trait::async_trait;
 use axum::{
     body::{Body, Bytes},
-    extract::{FromRequest, MatchedPath, OriginalUri},
+    extract::{ConnectInfo, FromRequest, MatchedPath, OriginalUri},
     http::{HeaderMap, Method, Request, Uri},
 };
 use std::{
     borrow::Cow,
     convert::Infallible,
+    net::{IpAddr, SocketAddr},
     ops::{Deref, DerefMut},
     sync::LazyLock,
 };
@@ -14,6 +15,7 @@ use tower_cookies::{Cookie, Cookies, Key};
 use zino_core::{
     application::Application,
     error::Error,
+    extension::HeaderMapExt,
     request::{Context, RequestContext},
     state::Data,
 };
@@ -117,6 +119,15 @@ impl RequestContext for AxumExtractor<Request<Body>> {
         self.extensions_mut()
             .insert(Data::new(value))
             .map(|data| data.into_inner())
+    }
+
+    #[inline]
+    fn client_ip(&self) -> Option<IpAddr> {
+        self.header_map().get_client_ip().or_else(|| {
+            self.extensions()
+                .get::<ConnectInfo<SocketAddr>>()
+                .map(|socket| socket.ip())
+        })
     }
 
     #[inline]
