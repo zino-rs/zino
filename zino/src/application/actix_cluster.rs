@@ -9,6 +9,8 @@ use actix_web::{
     App, HttpServer, Responder,
 };
 use std::path::PathBuf;
+use utoipa_rapidoc::RapiDoc;
+use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::{Config, SwaggerUi};
 use zino_core::{
     application::Application,
@@ -93,6 +95,8 @@ impl Application for ActixCluster {
                             let res = file.into_response(&req);
                             Ok(ServiceResponse::new(req, res))
                         }));
+                    let rapidoc = RapiDoc::new("/api-docs/openapi.json").path("/rapidoc");
+                    let redoc = Redoc::with_url("/redoc", Self::openapi());
                     let swagger_config = Config::default()
                         .query_config_enabled(true)
                         .display_request_duration(true)
@@ -107,6 +111,8 @@ impl Application for ActixCluster {
                     let mut app = App::new()
                         .route("/", index_file_handler)
                         .service(static_files)
+                        .service(rapidoc)
+                        .service(redoc)
                         .service(swagger)
                         .default_service(web::to(|req: Request| async {
                             let res = Response::new(StatusCode::NOT_FOUND);

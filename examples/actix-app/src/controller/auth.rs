@@ -1,20 +1,23 @@
+use serde_json::json;
 use zino::{prelude::*, Request, Response, Result};
 use zino_model::user::{JwtAuthService, User};
 
 pub async fn login(mut req: Request) -> Result {
-    let body: Map = req.parse_body().await?;
     let current_time = DateTime::now();
+    let body: Map = req.parse_body().await?;
     let (user_id, mut data) = User::generate_token(body).await.extract(&req)?;
 
-    let mut mutations = Map::new();
-    mutations.upsert("status", "Active");
-    mutations.upsert("last_login_at", data.remove("current_login_at"));
-    mutations.upsert("last_login_ip", data.remove("current_login_ip"));
-    mutations.upsert("current_login_at", current_time.to_utc_timestamp());
-    mutations.upsert("current_login_ip", req.client_ip().map(|ip| ip.to_string()));
-    mutations.upsert("login_count", Map::from_entry("$inc", 1));
+    let user_updates = json!({
+        "status": "Active",
+        "last_login_at": data.remove("current_login_at"),
+        "last_login_ip": data.remove("current_login_ip"),
+        "current_login_at": current_time,
+        "current_login_ip": req.client_ip(),
+        "login_count": { "$inc": 1 },
+    });
 
-    let (validation, user) = User::update_by_id(&user_id, &mut mutations, None)
+    let mut user_mutations = user_updates.into_map_opt().unwrap_or_default();
+    let (validation, user) = User::update_by_id(&user_id, &mut user_mutations, None)
         .await
         .extract(&req)?;
     if !validation.is_success() {

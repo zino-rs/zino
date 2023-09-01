@@ -44,7 +44,7 @@ This project is licensed under the [MIT license][license].
 
 ## Community
 
-If you have any poroblems or ideas, please don't hesitate to [open an issue][zino-issue].
+If you have any problems or ideas, please don't hesitate to [open an issue][zino-issue].
 For Chinese rustaceans, you can also follow our WeChat official account to cantact us:
 
 ![zino-web](https://foruda.gitee.com/images/1693469268337449782/f4089986_145641.png)

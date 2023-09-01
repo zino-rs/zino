@@ -21,6 +21,8 @@ use tower_http::{
     decompression::DecompressionLayer,
     services::{ServeDir, ServeFile},
 };
+use utoipa_rapidoc::RapiDoc;
+use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::{Config, SwaggerUi};
 use zino_core::{
     application::Application,
@@ -101,6 +103,8 @@ impl Application for AxumCluster {
             let app_env = app_state.env();
             let listeners = app_state.listeners();
             let servers = listeners.iter().map(|listener| {
+                let rapidoc = RapiDoc::new("/api-docs/openapi.json").path("/rapidoc");
+                let redoc = Redoc::with_url("/redoc", Self::openapi());
                 let swagger_config = Config::default()
                     .query_config_enabled(true)
                     .display_request_duration(true)
@@ -117,6 +121,8 @@ impl Application for AxumCluster {
                     .nest_service("/public", serve_dir.clone())
                     .route("/sse", routing::get(endpoint::sse_handler))
                     .route("/websocket", routing::get(endpoint::websocket_handler))
+                    .merge(rapidoc)
+                    .merge(redoc)
                     .merge(swagger);
                 for route in &routes {
                     app = app.merge(route.clone());

@@ -33,7 +33,7 @@ pub(super) fn parse_operation(name: &str, path: &str, config: &Table) -> Operati
     let mut operation_builder = OperationBuilder::new()
         .tag(name)
         .response("default", Ref::from_response_name("default"))
-        .response("error", Ref::from_response_name("error"));
+        .response("4XX", Ref::from_response_name("4XX"));
     if let Some(tags) = config.get_str_array("tags") {
         let tags = tags.into_iter().map(|s| s.to_owned()).collect::<Vec<_>>();
         operation_builder = operation_builder.tags(Some(tags));

@@ -1,7 +1,6 @@
 [[endpoints]]
 path = "/user/new"
 method = "POST"
-description = "Creates a new user"
 
 [endpoints.body]
 schema = "newUser"

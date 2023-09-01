@@ -153,7 +153,7 @@ pub(crate) fn default_components() -> Components {
         .insert("errorResponse".to_owned(), error_response_schema.into());
     components
         .responses
-        .insert("error".to_owned(), error_response.into());
+        .insert("4XX".to_owned(), error_response.into());
 
     components
 }
