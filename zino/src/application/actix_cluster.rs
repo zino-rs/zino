@@ -10,8 +10,6 @@ use actix_web::{
 };
 use std::path::PathBuf;
 use utoipa_rapidoc::RapiDoc;
-use utoipa_redoc::{Redoc, Servable};
-use utoipa_swagger_ui::{Config, SwaggerUi};
 use zino_core::{
     application::Application,
     extension::TomlTableExt,
@@ -95,25 +93,12 @@ impl Application for ActixCluster {
                             let res = file.into_response(&req);
                             Ok(ServiceResponse::new(req, res))
                         }));
-                    let rapidoc = RapiDoc::new("/api-docs/openapi.json").path("/rapidoc");
-                    let redoc = Redoc::with_url("/redoc", Self::openapi());
-                    let swagger_config = Config::default()
-                        .query_config_enabled(true)
-                        .display_request_duration(true)
-                        .show_extensions(true)
-                        .show_common_extensions(true)
-                        .request_snippets_enabled(true)
-                        .with_credentials(true)
-                        .persist_authorization(true);
-                    let swagger = SwaggerUi::new("/swagger-ui/{_:.*}")
-                        .url("/api-docs/openapi.json", Self::openapi())
-                        .config(swagger_config);
+                    let rapidoc = RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
+                        .path("/rapidoc");
                     let mut app = App::new()
                         .route("/", index_file_handler)
                         .service(static_files)
                         .service(rapidoc)
-                        .service(redoc)
-                        .service(swagger)
                         .default_service(web::to(|req: Request| async {
                             let res = Response::new(StatusCode::NOT_FOUND);
                             ActixResponse::from(res).respond_to(&req.into())

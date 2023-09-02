@@ -47,7 +47,7 @@ This project is licensed under the [MIT license][license].
 If you have any problems or ideas, please don't hesitate to [open an issue][zino-issue].
 For Chinese rustaceans, you can also follow our WeChat official account to cantact us:
 
-![zino-web](https://foruda.gitee.com/images/1693469268337449782/f4089986_145641.png)
+![zino-web](https://user-images.githubusercontent.com/3446306/265183253-90b4f8bb-33d2-4e14-b6e3-78da313e2e68.png)
 
 [`zino-core`]: https://github.com/photino/zino/tree/main/zino-core
 [`zino-derive`]: https://github.com/photino/zino/tree/main/zino-derive

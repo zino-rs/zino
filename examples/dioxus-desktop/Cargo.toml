@@ -17,14 +17,14 @@ features = ["derive"]
 
 [dependencies.zino]
 path = "../../zino"
-version = "0.11.2"
+version = "0.11.3"
 features = ["dioxus"]
 
 [dependencies.zino-core]
 path = "../../zino-core"
-version = "0.12.2"
+version = "0.12.3"
 features = ["orm-sqlite"]
 
 [dependencies.zino-model]
 path = "../../zino-model"
-version = "0.9.2"
+version = "0.9.3"
