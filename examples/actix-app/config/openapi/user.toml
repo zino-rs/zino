@@ -1,6 +1,9 @@
+name = "Users"
+
 [[endpoints]]
 path = "/user/new"
 method = "POST"
+summary = "Creates a new user"
 
 [endpoints.body]
 schema = "newUser"
@@ -8,10 +11,12 @@ schema = "newUser"
 [[endpoints]]
 path = "/user/{user_id}/delete"
 method = "POST"
+summary = "Deletes a user by ID"
 
 [[endpoints]]
 path = "/user/{user_id}/update"
 method = "POST"
+summary = "Updates a user by ID"
 
 [endpoints.body]
 schema = "userInfo"
@@ -19,10 +24,12 @@ schema = "userInfo"
 [[endpoints]]
 path = "/user/{user_id}/view"
 method = "GET"
+summary = "Gets a user by ID"
 
 [[endpoints]]
 path = "/user/list"
 method = "GET"
+summary = "Finds a list of users"
 
 [endpoints.query]
 roles = { type = "string", description = "User roles" }
@@ -31,6 +38,7 @@ tags = { type = "string", description = "User tags" }
 [[endpoints]]
 path = "/user/import"
 method = "POST"
+summary = "Imports the user data"
 
 [endpoints.body]
 schema = "userData"
@@ -38,6 +46,7 @@ schema = "userData"
 [[endpoints]]
 path = "/user/export"
 method = "GET"
+summary = "Exports the user data"
 
 [endpoints.query]
 format = { type = "string", enum = ["csv", "json", "jsonlines", "msgpack"], default = "json", description = "File format" }
@@ -100,3 +109,4 @@ translations = [
     ["$span:24h", "Updated within 1 day"],
     ["$span:7d", "Updated within 1 week"],
 ]
+

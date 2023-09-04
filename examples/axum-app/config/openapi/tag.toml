@@ -1,6 +1,9 @@
+name = "Tags"
+
 [[endpoints]]
 path = "/tag/new"
 method = "POST"
+summary = "Creates a new tag"
 
 [endpoints.body]
 schema = "newTag"
@@ -8,10 +11,12 @@ schema = "newTag"
 [[endpoints]]
 path = "/tag/{tag_id}/delete"
 method = "POST"
+summary = "Deletes a tag by ID"
 
 [[endpoints]]
 path = "/tag/{tag_id}/update"
 method = "POST"
+summary = "Updates a tag by ID"
 
 [endpoints.body]
 schema = "tagInfo"
@@ -19,10 +24,12 @@ schema = "tagInfo"
 [[endpoints]]
 path = "/tag/{tag_id}/view"
 method = "GET"
+summary = "Gets a tag by ID"
 
 [[endpoints]]
 path = "/tag/list"
 method = "GET"
+summary = "Finds a list of tags"
 
 [endpoints.query]
 category = { type = "string", description = "Tag category" }

@@ -6,7 +6,9 @@ use axum::{
     middleware::from_fn,
     routing, BoxError, Router, Server,
 };
-use std::{convert::Infallible, net::SocketAddr, path::PathBuf, sync::LazyLock, time::Duration};
+use std::{
+    convert::Infallible, fs, net::SocketAddr, path::PathBuf, sync::LazyLock, time::Duration,
+};
 use tokio::runtime::Builder;
 use tower::{
     timeout::{error::Elapsed, TimeoutLayer},
@@ -70,14 +72,14 @@ impl Application for AxumCluster {
         let mut request_timeout = Duration::from_secs(10); // 10 seconds
         let mut public_dir = PathBuf::new();
         let default_public_dir = Self::relative_path("public");
-        if let Some(server) = Self::config().get_table("server") {
-            if let Some(limit) = server.get_usize("body-limit") {
+        if let Some(server_config) = Self::config().get_table("server") {
+            if let Some(limit) = server_config.get_usize("body-limit") {
                 body_limit = limit;
             }
-            if let Some(timeout) = server.get_duration("request-timeout") {
+            if let Some(timeout) = server_config.get_duration("request-timeout") {
                 request_timeout = timeout;
             }
-            if let Some(dir) = server.get_str("public-dir") {
+            if let Some(dir) = server_config.get_str("public-dir") {
                 public_dir.push(dir);
             } else {
                 public_dir = default_public_dir;
@@ -101,16 +103,33 @@ impl Application for AxumCluster {
             let app_env = app_state.env();
             let listeners = app_state.listeners();
             let servers = listeners.iter().map(|listener| {
-                let rapidoc = RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
-                    .path("/rapidoc");
                 let mut app = Router::new()
                     .route_service("/", serve_file.clone())
                     .nest_service("/public", serve_dir.clone())
                     .route("/sse", routing::get(endpoint::sse_handler))
-                    .route("/websocket", routing::get(endpoint::websocket_handler))
-                    .merge(rapidoc);
+                    .route("/websocket", routing::get(endpoint::websocket_handler));
                 for route in &routes {
                     app = app.merge(route.clone());
+                }
+
+                // Render OpenAPI docs.
+                if let Some(openapi_config) = app_state.get_config("openapi") {
+                    if openapi_config.get_bool("show-docs") != Some(false) {
+                        let rapidoc =
+                            RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
+                                .path("/rapidoc");
+                        if let Some(custom_html) = openapi_config.get_str("custom-html") &&
+                            let Ok(html) = fs::read_to_string(Self::relative_path(custom_html))
+                        {
+                            app = app.merge(rapidoc.custom_html(html.as_str()));
+                        } else {
+                            app = app.merge(rapidoc);
+                        }
+                    }
+                } else {
+                    let rapidoc = RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
+                        .path("/rapidoc");
+                    app = app.merge(rapidoc);
                 }
 
                 app = app

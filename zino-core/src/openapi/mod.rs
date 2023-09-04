@@ -12,12 +12,16 @@ use std::{
 use toml::Table;
 use utoipa::openapi::{
     content::ContentBuilder,
+    external_docs::ExternalDocs,
+    info::{Contact, Info, License},
     path::{PathItem, Paths, PathsBuilder},
     response::ResponseBuilder,
     schema::{
         Components, ComponentsBuilder, KnownFormat, Object, ObjectBuilder, Ref, SchemaFormat,
         SchemaType,
     },
+    security::SecurityRequirement,
+    server::Server,
     tag::Tag,
 };
 
@@ -27,6 +31,49 @@ mod webhook;
 
 pub(crate) use model::translate_model_entry;
 pub(crate) use webhook::get_webhook;
+
+/// Constructs the OpenAPI `Info` object.
+pub(crate) fn openapi_info(title: &str, version: &str) -> Info {
+    let mut info = Info::new(title, version);
+    if let Some(config) = OPENAPI_INFO.get() {
+        if let Some(title) = config.get_str("title") {
+            info.title = title.to_owned();
+        }
+        if let Some(description) = config.get_str("description") {
+            info.description = Some(description.to_owned());
+        }
+        if let Some(terms_of_service) = config.get_str("terms_of_service") {
+            info.terms_of_service = Some(terms_of_service.to_owned());
+        }
+        if let Some(contact_config) = config.get_table("contact") {
+            let mut contact = Contact::new();
+            if let Some(contact_name) = contact_config.get_str("name") {
+                contact.name = Some(contact_name.to_owned());
+            }
+            if let Some(contact_url) = contact_config.get_str("url") {
+                contact.url = Some(contact_url.to_owned());
+            }
+            if let Some(contact_email) = contact_config.get_str("email") {
+                contact.email = Some(contact_email.to_owned());
+            }
+            info.contact = Some(contact);
+        }
+        if let Some(license) = config.get_str("license") {
+            info.license = Some(License::new(license));
+        } else if let Some(license_config) = config.get_table("license") {
+            let license_name = license_config.get_str("name").unwrap_or_default();
+            let mut license = License::new(license_name);
+            if let Some(license_url) = license_config.get_str("url") {
+                license.url = Some(license_url.to_owned());
+            }
+            info.license = Some(license);
+        }
+        if let Some(version) = config.get_str("version") {
+            info.version = version.to_owned();
+        }
+    }
+    info
+}
 
 /// Returns the default OpenAPI paths.
 pub(crate) fn default_paths() -> Paths {
@@ -163,6 +210,23 @@ pub(crate) fn default_tags() -> Vec<Tag> {
     OPENAPI_TAGS.get_or_init(Vec::new).clone()
 }
 
+/// Returns the default OpenAPI servers.
+pub(crate) fn default_servers() -> Vec<Server> {
+    OPENAPI_SERVERS
+        .get_or_init(|| vec![Server::new("/")])
+        .clone()
+}
+
+/// Returns the default OpenAPI security requirements.
+pub(crate) fn default_securities() -> Vec<SecurityRequirement> {
+    OPENAPI_SECURITIES.get_or_init(Vec::new).clone()
+}
+
+/// Returns the default OpenAPI external docs.
+pub(crate) fn default_external_docs() -> Option<ExternalDocs> {
+    OPENAPI_EXTERNAL_DOCS.get().cloned()
+}
+
 /// OpenAPI paths.
 static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
     let mut paths: BTreeMap<String, PathItem> = BTreeMap::new();
@@ -183,6 +247,50 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
                     })
                     .parse::<Table>()
                     .expect("fail to parse the OpenAPI file as a TOML table");
+                if file.file_name() == "OPENAPI.toml" {
+                    if let Some(info_config) = openapi_config.get_table("info") &&
+                        OPENAPI_INFO.set(info_config.clone()).is_err()
+                    {
+                        panic!("fail to set OpenAPI info");
+                    }
+                    if let Some(servers) = openapi_config.get_array("servers") {
+                        let servers = servers
+                            .iter()
+                            .filter_map(|v| v.as_table())
+                            .map(parser::parse_server)
+                            .collect::<Vec<_>>();
+                        if OPENAPI_SERVERS.set(servers).is_err() {
+                            panic!("fail to set OpenAPI servers");
+                        }
+                    }
+                    if let Some(security_schemes) = openapi_config.get_table("security_schemes") {
+                        for (name, scheme) in security_schemes {
+                            if let Some(scheme_config) = scheme.as_table() {
+                                let scheme = parser::parse_security_scheme(scheme_config);
+                                components_builder =
+                                    components_builder.security_scheme(name, scheme);
+                            }
+                        }
+                    }
+                    if let Some(securities) = openapi_config.get_array("securities") {
+                        let security_requirements = securities
+                            .iter()
+                            .filter_map(|v| v.as_table())
+                            .map(parser::parse_security_requirement)
+                            .collect::<Vec<_>>();
+                        if OPENAPI_SECURITIES.set(security_requirements).is_err() {
+                            panic!("fail to set OpenAPI security requirements");
+                        }
+                    }
+                    if let Some(external_docs) = openapi_config.get_table("external_docs") {
+                        let external_docs = parser::parse_external_docs(external_docs);
+                        if OPENAPI_EXTERNAL_DOCS.set(external_docs).is_err() {
+                            panic!("fail to set OpenAPI external docs");
+                        }
+                    }
+                    continue;
+                }
+
                 let name = openapi_config
                     .get_str("name")
                     .map(|s| s.to_owned())
@@ -260,11 +368,23 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
     paths
 });
 
+/// OpenAPI info.
+static OPENAPI_INFO: OnceLock<Table> = OnceLock::new();
+
 /// OpenAPI components.
 static OPENAPI_COMPONENTS: OnceLock<Components> = OnceLock::new();
 
 /// OpenAPI tags.
 static OPENAPI_TAGS: OnceLock<Vec<Tag>> = OnceLock::new();
+
+/// OpenAPI servers.
+static OPENAPI_SERVERS: OnceLock<Vec<Server>> = OnceLock::new();
+
+/// OpenAPI securities.
+static OPENAPI_SECURITIES: OnceLock<Vec<SecurityRequirement>> = OnceLock::new();
+
+/// OpenAPI external docs.
+static OPENAPI_EXTERNAL_DOCS: OnceLock<ExternalDocs> = OnceLock::new();
 
 /// Model definitions.
 static MODEL_DEFINITIONS: OnceLock<HashMap<&str, Table>> = OnceLock::new();

@@ -19,7 +19,7 @@ pub async fn init_user_session(mut req: Request, next: Next<Body>) -> Result<Res
             }
             Err(err) => reject!(req, unauthorized, err),
         }
-    } else if req.request_method() == "POST" {
+    } else {
         reject!(req, unauthorized, "login is required");
     }
     Ok(next.run(req.into()).await)

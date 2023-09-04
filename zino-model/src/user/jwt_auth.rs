@@ -216,13 +216,15 @@ where
         })?;
         let data = claims.data();
         if let Some(role_field) = Self::ROLE_FIELD &&
-            data.get("roles") != user.get(role_field)
+            let Some(roles) = data.get("roles") &&
+            user.get(role_field) != Some(roles)
         {
             let message = format!("403 Forbidden: invalid for the `{role_field}` field");
             return Err(Error::new(message));
         }
         if let Some(tenant_id_field) = Self::TENANT_ID_FIELD &&
-            data.get("tenant_id") != user.get(tenant_id_field)
+            let Some(tenant_id) = data.get("tenant_id") &&
+            user.get(tenant_id_field) != Some(tenant_id)
         {
             let message = format!("403 Forbidden: invalid for the `{tenant_id_field}` field");
             return Err(Error::new(message));

@@ -68,3 +68,6 @@ span = { "http.method" = "string", "http.target" = "string", "http.status_code" 
 
 [connector.variables]
 app-name = "data-cube"
+
+[openapi]
+show-docs = false

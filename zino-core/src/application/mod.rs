@@ -19,7 +19,7 @@ use std::{
     thread,
 };
 use toml::value::Table;
-use utoipa::openapi::{Info, OpenApi, OpenApiBuilder};
+use utoipa::openapi::{OpenApi, OpenApiBuilder};
 
 mod metrics_exporter;
 mod secret_key;
@@ -101,10 +101,13 @@ pub trait Application {
     #[inline]
     fn openapi() -> OpenApi {
         OpenApiBuilder::new()
-            .info(Info::new(Self::name(), Self::version()))
-            .paths(openapi::default_paths())
+            .paths(openapi::default_paths()) // should come first to load OpenAPI files
             .components(Some(openapi::default_components()))
             .tags(Some(openapi::default_tags()))
+            .servers(Some(openapi::default_servers()))
+            .security(Some(openapi::default_securities()))
+            .external_docs(openapi::default_external_docs())
+            .info(openapi::openapi_info(Self::name(), Self::version()))
             .build()
     }
 

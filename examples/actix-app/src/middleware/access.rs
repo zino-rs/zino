@@ -51,6 +51,13 @@ where
                 user_session.set_session_id(session_id);
             }
             req.set_data(user_session);
+        } else {
+            return Box::pin(async move {
+                let message = "401 Unauthorized: login is required";
+                let rejection = Rejection::with_message(message).context(&req).into();
+                let result: zino::Result<Self::Response> = Err(rejection);
+                return result.map_err(|err| err.into());
+            });
         }
 
         let req = ServiceRequest::from(req);

@@ -8,7 +8,7 @@ use actix_web::{
     web::{self, FormConfig, JsonConfig, PayloadConfig},
     App, HttpServer, Responder,
 };
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 use utoipa_rapidoc::RapiDoc;
 use zino_core::{
     application::Application,
@@ -51,11 +51,11 @@ impl Application for ActixCluster {
         let mut body_limit = 100 * 1024 * 1024; // 100MB
         let mut public_dir = PathBuf::new();
         let default_public_dir = Self::relative_path("public");
-        if let Some(server) = Self::config().get_table("server") {
-            if let Some(limit) = server.get_usize("body-limit") {
+        if let Some(server_config) = Self::config().get_table("server") {
+            if let Some(limit) = server_config.get_usize("body-limit") {
                 body_limit = limit;
             }
-            if let Some(dir) = server.get_str("public-dir") {
+            if let Some(dir) = server_config.get_str("public-dir") {
                 public_dir.push(dir);
             } else {
                 public_dir = default_public_dir;
@@ -93,12 +93,9 @@ impl Application for ActixCluster {
                             let res = file.into_response(&req);
                             Ok(ServiceResponse::new(req, res))
                         }));
-                    let rapidoc = RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
-                        .path("/rapidoc");
                     let mut app = App::new()
                         .route("/", index_file_handler)
                         .service(static_files)
-                        .service(rapidoc)
                         .default_service(web::to(|req: Request| async {
                             let res = Response::new(StatusCode::NOT_FOUND);
                             ActixResponse::from(res).respond_to(&req.into())
@@ -106,6 +103,27 @@ impl Application for ActixCluster {
                     for route in &routes {
                         app = app.configure(route);
                     }
+
+                    // Render OpenAPI docs.
+                    if let Some(openapi_config) = app_state.get_config("openapi") {
+                        if openapi_config.get_bool("show-docs") != Some(false) {
+                            let mut rapidoc =
+                                RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
+                                    .path("/rapidoc");
+                            if let Some(custom_html) = openapi_config.get_str("custom-html") &&
+                                let Ok(html) = fs::read_to_string(Self::relative_path(custom_html))
+                            {
+                                rapidoc = rapidoc.custom_html(html.leak());
+                            }
+                            app = app.service(rapidoc);
+                        }
+                    } else {
+                        let rapidoc =
+                            RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
+                                .path("/rapidoc");
+                        app = app.service(rapidoc);
+                    }
+
                     app.app_data(FormConfig::default().limit(body_limit))
                         .app_data(JsonConfig::default().limit(body_limit))
                         .app_data(PayloadConfig::default().limit(body_limit))

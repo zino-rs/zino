@@ -1,0 +1,17 @@
+[info]
+title = "DataCube API"
+description = """
+An example for [axum] integration.
+
+[axum]: https://crates.io/crates/axum
+"""
+contact = { url = "https://github.com/photino/zino" }
+license = "MIT"
+
+[security_schemes.jwt_auth]
+type = "http"
+scheme = "bearer"
+bearer_format = "JWT"
+
+[[securities]]
+name = "jwt_auth"

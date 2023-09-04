@@ -3,15 +3,19 @@ use crate::{
     TomlValue,
 };
 use convert_case::{Case, Casing};
+use std::collections::BTreeMap;
 use toml::Table;
 use utoipa::openapi::{
     content::Content,
+    external_docs::ExternalDocs,
     path::{Operation, OperationBuilder, Parameter, ParameterBuilder, ParameterIn, PathItemType},
     request_body::{RequestBody, RequestBodyBuilder},
     schema::{
         Array, ArrayBuilder, KnownFormat, Object, ObjectBuilder, Ref, Schema, SchemaFormat,
         SchemaType,
     },
+    security::{HttpAuthScheme, HttpBuilder, SecurityRequirement, SecurityScheme},
+    server::{Server, ServerVariableBuilder},
     tag::{Tag, TagBuilder},
     Deprecated, RefOr, Required,
 };
@@ -24,6 +28,10 @@ pub(super) fn parse_tag(name: &str, config: &Table) -> Tag {
     }
     if let Some(description) = config.get_str("description") {
         tag_builder = tag_builder.description(Some(description));
+    }
+    if let Some(external_docs) = config.get_table("external_docs") {
+        let external_docs = parse_external_docs(external_docs);
+        tag_builder = tag_builder.external_docs(Some(external_docs));
     }
     tag_builder.build()
 }
@@ -40,6 +48,29 @@ pub(super) fn parse_operation(name: &str, path: &str, config: &Table) -> Operati
     }
     if let Some(tag) = config.get_str("tag") {
         operation_builder = operation_builder.tag(tag);
+    }
+    if let Some(servers) = config.get_array("servers") {
+        let servers = servers
+            .iter()
+            .filter_map(|v| v.as_table())
+            .map(parse_server)
+            .collect::<Vec<_>>();
+        operation_builder = operation_builder.servers(Some(servers));
+    }
+    if let Some(server) = config.get_table("server") {
+        operation_builder = operation_builder.server(parse_server(server));
+    }
+    if let Some(securities) = config.get_array("securities") {
+        let security_requirements = securities
+            .iter()
+            .filter_map(|v| v.as_table())
+            .map(parse_security_requirement)
+            .collect::<Vec<_>>();
+        operation_builder = operation_builder.securities(Some(security_requirements));
+    }
+    if let Some(security) = config.get_table("security") {
+        let security_requirement = parse_security_requirement(security);
+        operation_builder = operation_builder.security(security_requirement);
     }
     if let Some(summary) = config.get_str("summary") {
         operation_builder = operation_builder.summary(Some(summary));
@@ -429,4 +460,104 @@ fn parse_request_body(config: &Table) -> RequestBody {
         .required(Some(Required::True))
         .content("application/json", Content::new(schema))
         .build()
+}
+
+/// Parses the security scheme.
+pub(super) fn parse_security_scheme(config: &Table) -> SecurityScheme {
+    let schema_type = config.get_str("type").unwrap_or("unkown");
+    match schema_type {
+        "http" => {
+            let mut http_builder = HttpBuilder::new();
+            if let Some(scheme) = config.get_str("scheme") {
+                let http_auth_scheme = match scheme {
+                    "bearer" => HttpAuthScheme::Bearer,
+                    "digest" => HttpAuthScheme::Digest,
+                    "hoba" => HttpAuthScheme::Hoba,
+                    "mutual" => HttpAuthScheme::Mutual,
+                    "negotiate" => HttpAuthScheme::Negotiate,
+                    "oauth" => HttpAuthScheme::OAuth,
+                    "scram-sha1" => HttpAuthScheme::ScramSha1,
+                    "scram-sha256" => HttpAuthScheme::ScramSha256,
+                    "vapid" => HttpAuthScheme::Vapid,
+                    _ => HttpAuthScheme::Basic,
+                };
+                http_builder = http_builder.scheme(http_auth_scheme);
+            }
+            if let Some(bearer_format) = config.get_str("bearer_format") {
+                http_builder = http_builder.bearer_format(bearer_format);
+            }
+            if let Some(description) = config.get_str("description") {
+                http_builder = http_builder.description(Some(description.to_owned()));
+            }
+            SecurityScheme::Http(http_builder.build())
+        }
+        _ => SecurityScheme::MutualTls {
+            description: config.get_str("description").map(|s| s.to_owned()),
+        },
+    }
+}
+
+/// Parses the security requirement.
+pub(super) fn parse_security_requirement(config: &Table) -> SecurityRequirement {
+    if let Some(name) = config.get_str("name") {
+        let scopes = config.get_str_array("scopes").unwrap_or_default();
+        SecurityRequirement::new(name, scopes)
+    } else {
+        SecurityRequirement::default()
+    }
+}
+
+/// Parses the server.
+pub(super) fn parse_server(config: &Table) -> Server {
+    if let Some(url) = config.get_str("url") {
+        let mut server = Server::new(url);
+        if let Some(description) = config.get_str("description") {
+            server.description = Some(description.to_owned());
+        }
+        if let Some(variables) = config.get_table("variables") {
+            let mut server_variables = BTreeMap::new();
+            for (name, value) in variables {
+                let mut variable_builder = ServerVariableBuilder::new();
+                match value {
+                    TomlValue::String(s) => {
+                        variable_builder = variable_builder.default_value(s);
+                    }
+                    TomlValue::Array(vec) => {
+                        let enum_values = vec.iter().filter_map(|v| v.as_str());
+                        variable_builder = variable_builder.enum_values(Some(enum_values));
+                    }
+                    TomlValue::Table(table) => {
+                        if let Some(value) = table.get_str("default") {
+                            variable_builder = variable_builder.default_value(value);
+                        }
+                        if let Some(description) = table.get_str("description") {
+                            variable_builder = variable_builder.description(Some(description));
+                        }
+                        if let Some(values) = table.get_str_array("enum") {
+                            variable_builder = variable_builder.enum_values(Some(values));
+                        }
+                    }
+                    _ => (),
+                }
+                server_variables.insert(name.to_owned(), variable_builder.build());
+            }
+            server.variables = Some(server_variables);
+        }
+        server
+    } else {
+        Server::default()
+    }
+}
+
+/// Parses the external docs.
+pub(super) fn parse_external_docs(config: &Table) -> ExternalDocs {
+    if let Some(url) = config.get_str("url") {
+        let mut external_docs = ExternalDocs::new(url);
+        if let Some(description) = config.get_str("description") {
+            external_docs.description = Some(description.to_owned());
+        }
+        external_docs
+    } else {
+        ExternalDocs::default()
+    }
 }
