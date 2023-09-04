@@ -85,10 +85,10 @@ where
     async fn generate_token(body: Map) -> Result<(K, Map), Error> {
         let account = body
             .get_str("account")
-            .ok_or_else(|| Error::new("403 Forbidden: the user `account` shoud be specified"))?;
-        let passowrd = body
-            .get_str("password")
-            .ok_or_else(|| Error::new("403 Forbidden: the user `password` shoud be specified"))?;
+            .ok_or_else(|| Error::new("401 Unauthorized: the user `account` shoud be specified"))?;
+        let passowrd = body.get_str("password").ok_or_else(|| {
+            Error::new("401 Unauthorized: the user `password` shoud be specified")
+        })?;
         let mut query = Query::default();
         let mut fields = vec![Self::PRIMARY_KEY_NAME, Self::PASSWORD_FIELD];
         if let Some(role_field) = Self::ROLE_FIELD {
@@ -144,11 +144,15 @@ where
     /// Refreshes the access token.
     async fn refresh_token(claims: &JwtClaims) -> Result<Map, Error> {
         if !claims.data().is_empty() {
-            return Err(Error::new("the JWT token is not a refresh token"));
+            return Err(Error::new(
+                "401 Unauthorized: the JWT token is not a refresh token",
+            ));
         }
 
         let Some(user_id) = claims.subject() else {
-            return Err(Error::new("the JWT token does not have a subject"));
+            return Err(Error::new(
+                "401 Unauthorized: the JWT token does not have a subject",
+            ));
         };
 
         let mut query = Query::default();
@@ -167,7 +171,7 @@ where
         );
 
         let mut user: Map = Self::find_one(&query).await?.ok_or_else(|| {
-            let message = format!("403 Forbidden: cannot get the user `{user_id}`");
+            let message = format!("404 Not Found: cannot get the user `{user_id}`");
             Error::new(message)
         })?;
         let mut claims = JwtClaims::new(user_id);
@@ -189,7 +193,9 @@ where
     /// Verfifies the JWT claims.
     async fn verify_jwt_claims(claims: &JwtClaims) -> Result<bool, Error> {
         let Some(user_id) = claims.subject() else {
-            return Err(Error::new("the JWT token does not have a subject"));
+            return Err(Error::new(
+                "401 Unauthorized: the JWT token does not have a subject",
+            ));
         };
 
         let mut query = Query::default();
@@ -211,7 +217,7 @@ where
         );
 
         let user: Map = Self::find_one(&query).await?.ok_or_else(|| {
-            let message = format!("403 Forbidden: cannot get the user `{user_id}`");
+            let message = format!("404 Not Found: cannot get the user `{user_id}`");
             Error::new(message)
         })?;
         let data = claims.data();
@@ -219,14 +225,14 @@ where
             let Some(roles) = data.get("roles") &&
             user.get(role_field) != Some(roles)
         {
-            let message = format!("403 Forbidden: invalid for the `{role_field}` field");
+            let message = format!("401 Unauthorized: invalid for the `{role_field}` field");
             return Err(Error::new(message));
         }
         if let Some(tenant_id_field) = Self::TENANT_ID_FIELD &&
             let Some(tenant_id) = data.get("tenant_id") &&
             user.get(tenant_id_field) != Some(tenant_id)
         {
-            let message = format!("403 Forbidden: invalid for the `{tenant_id_field}` field");
+            let message = format!("401 Unauthorized: invalid for the `{tenant_id_field}` field");
             return Err(Error::new(message));
         }
         if let Some(login_at_field) = Self::LOGIN_AT_FIELD &&
@@ -234,7 +240,7 @@ where
             let Ok(login_at) = login_at_str.parse::<DateTime>() &&
             claims.issued_at().timestamp() < login_at.timestamp()
         {
-            let message = format!("403 Forbidden: invalid before the `{login_at_field}` time");
+            let message = format!("401 Unauthorized: invalid before the `{login_at_field}` time");
             return Err(Error::new(message));
         }
         Ok(true)
@@ -261,7 +267,7 @@ where
         query.add_filter("status", Map::from_entry("$nin", vec!["Locked", "Deleted"]));
 
         let user: Map = Self::find_one(&query).await?.ok_or_else(|| {
-            let message = format!("403 Forbidden: cannot get the user `{user_id}`");
+            let message = format!("404 Not Found: cannot get the user `{user_id}`");
             Error::new(message)
         })?;
 

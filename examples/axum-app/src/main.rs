@@ -1,6 +1,5 @@
 #![feature(async_fn_in_trait)]
 #![feature(lazy_cell)]
-#![feature(let_chains)]
 
 mod controller;
 mod domain;

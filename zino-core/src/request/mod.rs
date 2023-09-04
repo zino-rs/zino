@@ -535,7 +535,6 @@ pub trait RequestContext {
         T: Default + Serialize + DeserializeOwned,
         K: MACLike,
     {
-        let mut validation = Validation::new();
         let (param, mut token) = match self.get_query("access_token") {
             Some(access_token) => ("access_token", access_token),
             None => ("authorization", ""),
@@ -544,6 +543,11 @@ pub trait RequestContext {
             token = authorization
                 .strip_prefix("Bearer ")
                 .unwrap_or(authorization);
+        }
+        if token.is_empty() {
+            let mut validation = Validation::new();
+            validation.record(param, "the JWT token is absent");
+            return Err(Rejection::bad_request(validation).context(self));
         }
 
         let mut options = auth::default_verification_options();
@@ -554,12 +558,12 @@ pub trait RequestContext {
         options.required_nonce = self.get_query("nonce").map(|s| s.to_owned());
 
         match key.verify_token(token, Some(options)) {
-            Ok(claims) => return Ok(JwtClaims(claims)),
+            Ok(claims) => Ok(JwtClaims(claims)),
             Err(err) => {
-                validation.record(param, err.to_string());
+                let message = format!("401 Unauthorized: {err}");
+                Err(Rejection::with_message(message).context(self))
             }
         }
-        Err(Rejection::bad_request(validation).context(self))
     }
 
     /// Returns a `Response` or `Rejection` from an SQL query validation.

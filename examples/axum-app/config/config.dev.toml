@@ -74,4 +74,4 @@ span = { "http.method" = "string", "http.target" = "string", "http.status_code" 
 app-name = "data-cube"
 
 [openapi]
-custom-html = "assets/docs/rapidoc.html"
+custom-html = "local/docs/rapidoc.html"
