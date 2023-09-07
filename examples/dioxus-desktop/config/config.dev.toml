@@ -3,6 +3,9 @@
 name = "data-cube"
 version = "0.1.0"
 
+[dirs]
+uploads = "local/uploads"
+
 [window]
 title = "DataCube"
 theme = "Light"

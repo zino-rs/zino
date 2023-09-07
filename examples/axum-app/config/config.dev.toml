@@ -3,6 +3,9 @@
 name = "data-cube"
 version = "0.6.1"
 
+[dirs]
+uploads = "local/uploads"
+
 [main]
 host = "127.0.0.1"
 port = 6080

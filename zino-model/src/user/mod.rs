@@ -210,6 +210,9 @@ impl User {
             } else if !USER_ROLE_PATTERN.is_match(role) {
                 let message = format!("the role `{role}` is invalid");
                 return Err(Error::new(message));
+            } else if role.is_empty() {
+                let message = format!("the `roles` can not contain empty values");
+                return Err(Error::new(message));
             }
         }
         self.roles = roles.into_iter().map(|s| s.to_owned()).collect();

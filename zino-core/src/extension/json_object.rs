@@ -487,6 +487,25 @@ mod tests {
     };
 
     #[test]
+    fn it_parses_str_array() {
+        let mut map = Map::new();
+        map.upsert("roles", vec!["admin", "", "worker"]);
+
+        assert_eq!(
+            map.get_str_array("roles"),
+            Some(vec!["admin", "", "worker"])
+        );
+        assert_eq!(
+            map.parse_str_array("roles"),
+            Some(vec!["admin", "", "worker"])
+        );
+        assert_eq!(
+            map.parse_array::<String>("roles"),
+            Some(vec!["admin".to_owned(), "worker".to_owned()])
+        );
+    }
+
+    #[test]
     fn it_lookups_json_value() {
         let mut map = Map::new();
         map.upsert("entries", vec![Map::from_entry("name", "alice")]);

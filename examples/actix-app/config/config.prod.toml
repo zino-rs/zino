@@ -3,6 +3,9 @@
 name = "data-cube"
 version = "0.6.1"
 
+[dirs]
+uploads = "local/uploads"
+
 [main]
 host = "127.0.0.1"
 port = 6080
@@ -70,4 +73,4 @@ span = { "http.method" = "string", "http.target" = "string", "http.status_code" 
 app-name = "data-cube"
 
 [openapi]
-show-docs = false
+show-docs = true

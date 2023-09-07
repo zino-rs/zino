@@ -14,7 +14,7 @@ mod service;
 use zino::prelude::*;
 
 fn main() {
-    zino::Cluster::init_dirs(&["local/uploads"])
+    zino::Cluster::boot()
         .register(router::routes())
         .spawn(schedule::jobs())
         .run(schedule::async_jobs())

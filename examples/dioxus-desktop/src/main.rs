@@ -8,7 +8,7 @@ mod service;
 use zino::prelude::*;
 
 fn main() {
-    zino::Desktop::init_dirs(&["local/uploads"])
+    zino::Desktop::boot()
         .register(router::Route::default())
         .spawn(schedule::jobs())
         .run(schedule::async_jobs())

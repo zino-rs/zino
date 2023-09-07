@@ -12,12 +12,7 @@ use crate::{
 };
 use reqwest::Response;
 use serde::de::DeserializeOwned;
-use std::{
-    env, fs,
-    path::{Path, PathBuf},
-    sync::LazyLock,
-    thread,
-};
+use std::{env, fs, path::PathBuf, sync::LazyLock, thread};
 use toml::value::Table;
 use utoipa::openapi::{OpenApi, OpenApiBuilder};
 
@@ -41,12 +36,28 @@ pub trait Application {
     /// Runs the application.
     fn run(self, async_jobs: Vec<(&'static str, AsyncCronJob)>);
 
-    /// Boots the application. It also setups the default secret key,
-    /// the tracing subscriber, the metrics exporter and a global HTTP client.
+    /// Boots the application. It also initializes the required directories
+    /// and setups the default secret key, the tracing subscriber,
+    /// the metrics exporter and a global HTTP client.
     fn boot() -> Self
     where
         Self: Default,
     {
+        if let Some(dirs) = SHARED_APP_STATE.get_config("dirs") {
+            let project_dir = Self::project_dir();
+            for dir in dirs.values().filter_map(|v| v.as_str()) {
+                let path = if dir.starts_with('/') {
+                    PathBuf::from(dir)
+                } else {
+                    project_dir.join(dir)
+                };
+                if !path.exists() && let Err(err) = fs::create_dir_all(&path) {
+                    let path = path.to_string_lossy();
+                    tracing::error!("fail to create the directory {path}: {err}");
+                }
+            }
+        }
+
         secret_key::init::<Self>();
         tracing_subscriber::init::<Self>();
         metrics_exporter::init::<Self>();
@@ -67,27 +78,6 @@ pub trait Application {
         F: FnOnce(&'static State<Map>),
     {
         init(Self::shared_state());
-        Self::boot()
-    }
-
-    /// Initializes the directories to ensure that they are ready for use,
-    /// then boots the application.
-    fn init_dirs(dirs: &[&'static str]) -> Self
-    where
-        Self: Default,
-    {
-        let project_dir = Self::project_dir();
-        for dir in dirs {
-            let path = if dir.starts_with('/') {
-                PathBuf::from(dir)
-            } else {
-                project_dir.join(dir)
-            };
-            if !path.exists() && let Err(err) = fs::create_dir_all(&path) {
-                let path = path.to_string_lossy();
-                tracing::error!("fail to create the directory {}: {}", path, err);
-            }
-        }
         Self::boot()
     }
 
@@ -159,12 +149,6 @@ pub trait Application {
         LazyLock::force(&PROJECT_DIR)
     }
 
-    /// Returns the path relative to the project directory.
-    #[inline]
-    fn relative_path<P: AsRef<Path>>(path: P) -> PathBuf {
-        PROJECT_DIR.join(path)
-    }
-
     /// Returns the secret key for the application.
     /// It should have at least 64 bytes.
     ///
@@ -174,6 +158,20 @@ pub trait Application {
     #[inline]
     fn secret_key() -> &'static [u8] {
         SECRET_KEY.get().expect("fail to get the secret key")
+    }
+
+    /// Returns the shared directory with the specific name,
+    /// which is defined in the `dirs` table.
+    #[inline]
+    fn shared_dir(name: &str) -> PathBuf {
+        let path = if let Some(dirs) = SHARED_APP_STATE.get_config("dirs") &&
+            let Some(path) = dirs.get_str(name)
+        {
+            path
+        } else {
+            name
+        };
+        Self::project_dir().join(path)
     }
 
     /// Spawns a new thread to run cron jobs.

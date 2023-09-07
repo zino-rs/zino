@@ -48,9 +48,10 @@ impl Application for ActixCluster {
         });
 
         // Server config
+        let project_dir = Self::project_dir();
         let mut body_limit = 100 * 1024 * 1024; // 100MB
         let mut public_dir = PathBuf::new();
-        let default_public_dir = Self::relative_path("public");
+        let default_public_dir = project_dir.join("public");
         if let Some(server_config) = Self::config().get_table("server") {
             if let Some(limit) = server_config.get_usize("body-limit") {
                 body_limit = limit;
@@ -111,7 +112,7 @@ impl Application for ActixCluster {
                                 RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
                                     .path("/rapidoc");
                             if let Some(custom_html) = openapi_config.get_str("custom-html") &&
-                                let Ok(html) = fs::read_to_string(Self::relative_path(custom_html))
+                                let Ok(html) = fs::read_to_string(project_dir.join(custom_html))
                             {
                                 rapidoc = rapidoc.custom_html(html.leak());
                             }
