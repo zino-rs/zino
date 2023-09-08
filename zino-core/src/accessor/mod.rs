@@ -6,22 +6,33 @@
 //! |---------------|------------------------------------------|-----------------------|
 //! | `azblob`      | Azure Storage Blob services.             | `accessor`            |
 //! | `azdfs`       | Azure Data Lake Storage Gen2 services.   | `accessor`            |
+//! | `cacache`     | Cacache services.                        | `accessor-cacache`    |
+//! | `cos`         | Tencent-Cloud COS services.              | `accessor`            |
 //! | `dashmap`     | Dashmap backend.                         | `accessor-dashmap`    |
+//! | `dropbox`     | Dropbox backend.                         | `accessor-dropbox`    |
 //! | `fs`          | POSIX alike file system.                 | `accessor`            |
 //! | `ftp`         | FTP and FTPS.                            | `accessor-ftp`        |
 //! | `gcs`         | Google Cloud Storage services.           | `accessor`            |
+//! | `gdrive`      | GoogleDrive backend.                     | `accessor-gdrive`     |
 //! | `ghac`        | Github Action Cache services.            | `accessor`            |
+//! | `http`        | HTTP Read-only services.                 | `accessor`            |
 //! | `ipfs`        | InterPlanetary File System HTTP gateway. | `accessor-ipfs`       |
 //! | `ipmfs`       | InterPlanetary File System MFS API.      | `accessor`            |
 //! | `memcached`   | Memcached services.                      | `accessor-memcached`  |
 //! | `memory`      | In memory backend.                       | `accessor`            |
 //! | `minio`       | MinIO services.                          | `accessor`            |
+//! | `minimoka`    | MiniMoka backend.                        | `accessor-mini-moka`  |
 //! | `moka`        | Moka backend.                            | `accessor-moka`       |
 //! | `obs`         | Huawei Cloud Object Storage services.    | `accessor`            |
+//! | `onedrive`    | OneDrive backend.                        | `accessor-onedrive`   |
 //! | `oss`         | Aliyun Object Storage Service.           | `accessor`            |
+//! | `persy`       | Persy services.                          | `accessor-persy`      |
+//! | `redb`        | Redb services.                           | `accessor-redb`       |
 //! | `redis`       | Redis services.                          | `accessor-redis`      |
 //! | `s3`          | AWS S3 alike services.                   | `accessor`            |
 //! | `sled`        | Sled services.                           | `accessor-sled`       |
+//! | `supabase`    | Supabase services.                       | `accessor-supabase`   |
+//! | `wasabi`      | Wasabi services.                         | `accessor-wasabi`     |
 //! | `webdav`      | WebDAV services.                         | `accessor`            |
 //! | `webhdfs`     | WebHDFS services.                        | `accessor`            |
 //!
@@ -29,7 +40,9 @@
 use crate::{extension::TomlTableExt, state::State};
 use opendal::{
     layers::{MetricsLayer, RetryLayer, TracingLayer},
-    services::{Azblob, Azdfs, Fs, Gcs, Ghac, Ipmfs, Memory, Obs, Oss, Webdav, Webhdfs, S3},
+    services::{
+        Azblob, Azdfs, Cos, Fs, Gcs, Ghac, Http, Ipmfs, Memory, Obs, Oss, Webdav, Webhdfs, S3,
+    },
     Error,
     ErrorKind::Unsupported,
     Operator,
@@ -37,20 +50,38 @@ use opendal::{
 use std::sync::LazyLock;
 use toml::Table;
 
+#[cfg(feature = "accessor-cacache")]
+use opendal::services::Cacache;
 #[cfg(feature = "accessor-dashmap")]
 use opendal::services::Dashmap;
+#[cfg(feature = "accessor-dropbox")]
+use opendal::services::Dropbox;
 #[cfg(feature = "accessor-ftp")]
 use opendal::services::Ftp;
+#[cfg(feature = "accessor-gdrive")]
+use opendal::services::Gdrive;
 #[cfg(feature = "accessor-ipfs")]
 use opendal::services::Ipfs;
 #[cfg(feature = "accessor-memcached")]
 use opendal::services::Memcached;
+#[cfg(feature = "accessor-mini-moka")]
+use opendal::services::MiniMoka;
 #[cfg(feature = "accessor-moka")]
 use opendal::services::Moka;
+#[cfg(feature = "accessor-onedrive")]
+use opendal::services::Onedrive;
+#[cfg(feature = "accessor-persy")]
+use opendal::services::Persy;
+#[cfg(feature = "accessor-redb")]
+use opendal::services::Redb;
 #[cfg(feature = "accessor-redis")]
 use opendal::services::Redis;
 #[cfg(feature = "accessor-sled")]
 use opendal::services::Sled;
+#[cfg(feature = "accessor-supabase")]
+use opendal::services::Supabase;
+#[cfg(feature = "accessor-wasabi")]
+use opendal::services::Wasabi;
 
 /// Global storage accessor built on the top of [`opendal`](https://crates.io/crates/opendal).
 #[derive(Debug, Clone, Copy, Default)]
@@ -78,8 +109,20 @@ impl GlobalAccessor {
                 if let Some(account_key) = config.get_str("account-key") {
                     builder.account_key(account_key);
                 }
+                if let Some(encryption_key) = config.get_str("encryption-key") {
+                    builder.encryption_key(encryption_key);
+                }
+                if let Some(encryption_key_sha256) = config.get_str("encryption-key-sha256") {
+                    builder.encryption_key_sha256(encryption_key_sha256);
+                }
+                if let Some(encryption_algorithm) = config.get_str("encryption-algorithm") {
+                    builder.encryption_algorithm(encryption_algorithm);
+                }
                 if let Some(sas_token) = config.get_str("sas-token") {
                     builder.sas_token(sas_token);
+                }
+                if let Some(batch_max_operations) = config.get_usize("batch-max-operations") {
+                    builder.batch_max_operations(batch_max_operations);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -102,9 +145,62 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-cacache")]
+            "cacache" => {
+                let mut builder = Cacache::default();
+                if let Some(dir) = config.get_str("data-dir") {
+                    builder.datadir(dir);
+                }
+                Ok(Operator::new(builder)?.finish())
+            }
+            "cos" => {
+                let mut builder = Cos::default();
+                if let Some(root) = config.get_str("root") {
+                    builder.root(root);
+                }
+                if let Some(bucket) = config.get_str("bucket") {
+                    builder.bucket(bucket);
+                }
+                if let Some(endpoint) = config.get_str("endpoint") {
+                    builder.endpoint(endpoint);
+                }
+                if let Some(secret_id) = config.get_str("secret-id") {
+                    builder.secret_id(secret_id);
+                }
+                if let Some(secret_key) = config.get_str("secret-key") {
+                    builder.secret_key(secret_key);
+                }
+                if let Some(write_min_size) = config.get_usize("write-min-size") {
+                    builder.write_min_size(write_min_size);
+                }
+                Ok(Operator::new(builder)?.finish())
+            }
             #[cfg(feature = "accessor-dashmap")]
             "dashmap" => {
-                let builder = Dashmap::default();
+                let mut builder = Dashmap::default();
+                if let Some(root) = config.get_str("root") {
+                    builder.root(root);
+                }
+                Ok(Operator::new(builder)?.finish())
+            }
+            #[cfg(feature = "accessor-dropbox")]
+            "dropbox" => {
+                let mut builder = Dropbox::default();
+                if let Some(root) = config.get_str("root") {
+                    builder.root(root);
+                }
+                if let Some(access_token) = config.get_str("access-token") {
+                    builder.access_token(access_token);
+                }
+                if let Some(refresh_token) = config.get_str("refresh-token") {
+                    builder.refresh_token(refresh_token);
+                }
+                if let Some(client_id) = config.get_str("client-id") {
+                    builder.client_id(client_id);
+                }
+                if let Some(client_secret) = config.get_str("client-secret") {
+                    builder.client_secret(client_secret);
+                }
                 Ok(Operator::new(builder)?.finish())
             }
             "fs" => {
@@ -156,6 +252,17 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-gdrive")]
+            "gdrive" => {
+                let mut builder = Gdrive::default();
+                if let Some(root) = config.get_str("root") {
+                    builder.root(root);
+                }
+                if let Some(access_token) = config.get_str("access-token") {
+                    builder.access_token(access_token);
+                }
+                Ok(Operator::new(builder)?.finish())
+            }
             "ghac" => {
                 let mut builder = Ghac::default();
                 if let Some(root) = config.get_str("root") {
@@ -163,6 +270,25 @@ impl GlobalAccessor {
                 }
                 if let Some(version) = config.get_str("version") {
                     builder.version(version);
+                }
+                Ok(Operator::new(builder)?.finish())
+            }
+            "http" => {
+                let mut builder = Http::default();
+                if let Some(root) = config.get_str("root") {
+                    builder.root(root);
+                }
+                if let Some(endpoint) = config.get_str("endpoint") {
+                    builder.endpoint(endpoint);
+                }
+                if let Some(username) = config.get_str("username") {
+                    builder.username(username);
+                }
+                if let Some(password) = config.get_str("password") {
+                    builder.password(password);
+                }
+                if let Some(token) = config.get_str("token") {
+                    builder.token(token);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -205,6 +331,20 @@ impl GlobalAccessor {
                 let builder = Memory::default();
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-mini-moka")]
+            "minimoka" => {
+                let mut builder = MiniMoka::default();
+                if let Some(max_capacity) = config.get_u64("max-capacity") {
+                    builder.max_capacity(max_capacity);
+                }
+                if let Some(time_to_live) = config.get_duration("time-to-live") {
+                    builder.time_to_live(time_to_live);
+                }
+                if let Some(time_to_idle) = config.get_duration("time-to-idle") {
+                    builder.time_to_idle(time_to_idle);
+                }
+                Ok(Operator::new(builder)?.finish())
+            }
             #[cfg(feature = "accessor-moka")]
             "moka" => {
                 let mut builder = Moka::default();
@@ -245,6 +385,20 @@ impl GlobalAccessor {
                 if let Some(secret_access_key) = config.get_str("secret_access_key") {
                     builder.secret_access_key(secret_access_key);
                 }
+                if let Some(write_min_size) = config.get_usize("write-min-size") {
+                    builder.write_min_size(write_min_size);
+                }
+                Ok(Operator::new(builder)?.finish())
+            }
+            #[cfg(feature = "accessor-onedrive")]
+            "onedrive" => {
+                let mut builder = Onedrive::default();
+                if let Some(root) = config.get_str("root") {
+                    builder.root(root);
+                }
+                if let Some(access_token) = config.get_str("access-token") {
+                    builder.access_token(access_token);
+                }
                 Ok(Operator::new(builder)?.finish())
             }
             "oss" => {
@@ -266,6 +420,32 @@ impl GlobalAccessor {
                 }
                 if let Some(access_key_secret) = config.get_str("access-key-secret") {
                     builder.access_key_secret(access_key_secret);
+                }
+                if let Some(server_side_encryption) = config.get_str("server-side-encryption") {
+                    builder.server_side_encryption(server_side_encryption);
+                }
+                if let Some(encryption_key_id) = config.get_str("server-side-encryption-key-id") {
+                    builder.server_side_encryption_key_id(encryption_key_id);
+                }
+                if let Some(write_min_size) = config.get_usize("write-min-size") {
+                    builder.write_min_size(write_min_size);
+                }
+                if let Some(batch_max_operations) = config.get_usize("batch-max-operations") {
+                    builder.batch_max_operations(batch_max_operations);
+                }
+                Ok(Operator::new(builder)?.finish())
+            }
+            #[cfg(feature = "accessor-persy")]
+            "persy" => {
+                let mut builder = Persy::default();
+                if let Some(data_file) = config.get_str("data-file") {
+                    builder.datafile(data_file);
+                }
+                if let Some(segment) = config.get_str("segment") {
+                    builder.segment(segment);
+                }
+                if let Some(index) = config.get_str("index") {
+                    builder.index(index);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -289,6 +469,20 @@ impl GlobalAccessor {
                 }
                 if let Some(default_ttl) = config.get_duration("default-ttl") {
                     builder.default_ttl(default_ttl);
+                }
+                Ok(Operator::new(builder)?.finish())
+            }
+            #[cfg(feature = "accessor-redb")]
+            "redb" => {
+                let mut builder = Redb::default();
+                if let Some(root) = config.get_str("root") {
+                    builder.root(root);
+                }
+                if let Some(data_dir) = config.get_str("data-dir") {
+                    builder.datadir(data_dir);
+                }
+                if let Some(table) = config.get_str("table") {
+                    builder.table(table);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -318,13 +512,74 @@ impl GlobalAccessor {
                 if let Some(external_id) = config.get_str("external-id") {
                     builder.external_id(external_id);
                 }
+                if let Some(write_min_size) = config.get_usize("write-min-size") {
+                    builder.write_min_size(write_min_size);
+                }
+                if let Some(batch_max_operations) = config.get_usize("batch-max-operations") {
+                    builder.batch_max_operations(batch_max_operations);
+                }
                 Ok(Operator::new(builder)?.finish())
             }
             #[cfg(feature = "accessor-sled")]
             "sled" => {
                 let mut builder = Sled::default();
+                if let Some(root) = config.get_str("root") {
+                    builder.root(root);
+                }
                 if let Some(dir) = config.get_str("data-dir") {
                     builder.datadir(dir);
+                }
+                if let Some(tree) = config.get_str("tree") {
+                    builder.tree(tree);
+                }
+                Ok(Operator::new(builder)?.finish())
+            }
+            #[cfg(feature = "accessor-supabase")]
+            "supabase" => {
+                let mut builder = Supabase::default();
+                if let Some(root) = config.get_str("root") {
+                    builder.root(root);
+                }
+                if let Some(bucket) = config.get_str("bucket") {
+                    builder.bucket(bucket);
+                }
+                if let Some(endpoint) = config.get_str("endpoint") {
+                    builder.endpoint(endpoint);
+                }
+                if let Some(key) = config.get_str("key") {
+                    builder.key(key);
+                }
+                Ok(Operator::new(builder)?.finish())
+            }
+            #[cfg(feature = "accessor-wasabi")]
+            "wasabi" => {
+                let mut builder = Wasabi::default();
+                if let Some(root) = config.get_str("root") {
+                    builder.root(root);
+                }
+                if let Some(bucket) = config.get_str("bucket") {
+                    builder.bucket(bucket);
+                }
+                if let Some(endpoint) = config.get_str("endpoint") {
+                    builder.endpoint(endpoint);
+                }
+                if let Some(region) = config.get_str("region") {
+                    builder.region(region);
+                }
+                if let Some(access_key_id) = config.get_str("access-key-id") {
+                    builder.access_key_id(access_key_id);
+                }
+                if let Some(secret_access_key) = config.get_str("secret-access-key") {
+                    builder.secret_access_key(secret_access_key);
+                }
+                if let Some(role_arn) = config.get_str("role-arn") {
+                    builder.role_arn(role_arn);
+                }
+                if let Some(external_id) = config.get_str("external-id") {
+                    builder.external_id(external_id);
+                }
+                if let Some(default_storage_class) = config.get_str("default-storage-class") {
+                    builder.default_storage_class(default_storage_class);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -341,6 +596,9 @@ impl GlobalAccessor {
                 }
                 if let Some(password) = State::decrypt_password(config) {
                     builder.password(password.as_ref());
+                }
+                if let Some(token) = config.get_str("token") {
+                    builder.token(token);
                 }
                 Ok(Operator::new(builder)?.finish())
             }

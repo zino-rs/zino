@@ -247,8 +247,7 @@ impl DateTime {
     /// Returns `true` if the current year is a leap year.
     #[inline]
     pub fn is_leap_year(&self) -> bool {
-        let year = self.year();
-        year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
+        self.0.date_naive().leap_year()
     }
 
     /// Returns the number of days in the current year.

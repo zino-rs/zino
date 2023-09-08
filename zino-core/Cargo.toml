@@ -17,22 +17,40 @@ features = ["full", "runtime-tokio"]
 
 [features]
 accessor = ["opendal"]
+accessor-cacache = ["accessor", "opendal/services-cacache"]
 accessor-dashmap = ["accessor", "opendal/services-dashmap"]
+accessor-dropbox = ["accessor", "opendal/services-dropbox"]
 accessor-ftp = ["accessor", "opendal/services-ftp"]
+accessor-gdrive = ["accessor", "opendal/services-gdrive"]
 accessor-ipfs = ["accessor", "opendal/services-ipfs"]
 accessor-memcached = ["accessor", "opendal/services-memcached"]
+accessor-mini-moka = ["accessor", "opendal/services-mini-moka"]
 accessor-moka = ["accessor", "opendal/services-moka"]
+accessor-onedrive = ["accessor", "opendal/services-onedrive"]
+accessor-persy = ["accessor", "opendal/services-persy"]
 accessor-redis = ["accessor", "opendal/services-redis"]
+accessor-redb = ["accessor", "opendal/services-redb"]
 accessor-sled = ["accessor", "opendal/services-sled"]
+accessor-supabase = ["accessor", "opendal/services-supabase"]
+accessor-wasabi = ["accessor", "opendal/services-wasabi"]
 all-accessors = [
     "accessor",
+    "accessor-cacache",
     "accessor-dashmap",
+    "accessor-dropbox",
     "accessor-ftp",
+    "accessor-gdrive",
     "accessor-ipfs",
     "accessor-memcached",
+    "accessor-mini-moka",
     "accessor-moka",
+    "accessor-onedrive",
+    "accessor-persy",
     "accessor-redis",
+    "accessor-redb",
     "accessor-sled",
+    "accessor-supabase",
+    "accessor-wasabi",
 ]
 all-connectors = [
     "connector",
@@ -88,7 +106,7 @@ convert_case = "0.6.0"
 cookie = "0.16.2"
 cron = "0.12.0"
 csv = "1.2.2"
-faster-hex = "0.8.0"
+faster-hex = "0.8.1"
 fluent = "0.16.0"
 futures = "0.3.28"
 hkdf = "0.12.3"
@@ -111,7 +129,7 @@ reqwest-tracing = "0.4.6"
 rmp-serde = "1.1.2"
 serde_qs = "0.12.0"
 sha2 = "0.10.7"
-sysinfo = "0.29.9"
+sysinfo = "0.29.10"
 task-local-extensions = "0.1.4"
 toml = "0.7.6"
 tracing = "0.1.37"
@@ -119,7 +137,7 @@ tracing-appender = "0.2.2"
 url = "2.4.1"
 
 [dependencies.argon2]
-version = "0.5.1"
+version = "0.5.2"
 features = ["std"]
 
 [dependencies.async-openai]
@@ -127,7 +145,7 @@ version = "0.14.0"
 optional = true
 
 [dependencies.chrono]
-version = "0.4.28"
+version = "0.4.30"
 features = ["serde"]
 
 [dependencies.datafusion]
@@ -135,7 +153,7 @@ version = "30.0.0"
 optional = true
 
 [dependencies.lru]
-version = "0.11.0"
+version = "0.11.1"
 optional = true
 
 [dependencies.minijinja]
