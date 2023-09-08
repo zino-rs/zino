@@ -40,32 +40,75 @@ pub(crate) static TRACING_MIDDLEWARE: LazyLock<CustomTraceLayer> = LazyLock::new
 });
 
 fn custom_make_span(request: &Request<Body>) -> Span {
+    let name = crate::Cluster::name();
+    let method = request.method();
+
+    // URI
     let uri = request.uri();
+    let scheme = uri.scheme_str();
+    let host = uri.host();
+    let port = uri.port_u16();
+    let path = uri.path();
+    let query = uri.query();
+
+    // Headers
     let headers = request.headers();
-    tracing::info_span!(
-        "HTTP request",
-        "otel.kind" = "server",
-        "otel.name" = crate::Cluster::name(),
-        "otel.status_code" = Empty,
-        "http.scheme" = uri.scheme_str(),
-        "http.method" = request.method().as_str(),
-        "http.target" = uri.path_and_query().map(|p| p.as_str()),
-        "http.client_ip" = headers.get_client_ip().map(|ip| ip.to_string()),
-        "http.user_agent" = headers.get_str("user-agent"),
-        "http.request.header.traceparent" = Empty,
-        "http.request.header.tracestate" = Empty,
-        "http.response.header.traceparent" = Empty,
-        "http.response.header.tracestate" = Empty,
-        "http.status_code" = Empty,
-        "http.server.duration" = Empty,
-        "net.host.name" = uri.host(),
-        "net.host.port" = uri.port_u16(),
-        "context.session_id" = Empty,
-        "context.trace_id" = Empty,
-        "context.request_id" = Empty,
-        "context.span_id" = Empty,
-        "context.parent_id" = Empty,
-    )
+    let client_ip = headers.get_client_ip().map(|ip| ip.to_string());
+    let user_agent = headers.get_str("user-agent");
+
+    if method.is_safe() {
+        tracing::info_span!(
+            "HTTP request",
+            "otel.kind" = "server",
+            "otel.name" = name,
+            "otel.status_code" = Empty,
+            "url.scheme" = scheme,
+            "url.path" = path,
+            "url.query" = query,
+            "http.request.method" = method.as_str(),
+            "http.request.header.traceparent" = Empty,
+            "http.request.header.tracestate" = Empty,
+            "http.response.header.traceparent" = Empty,
+            "http.response.header.tracestate" = Empty,
+            "http.response.header.server_timing" = Empty,
+            "http.response.status_code" = Empty,
+            "client.address" = client_ip,
+            "server.address" = host,
+            "server.port" = port,
+            "user_agent.original" = user_agent,
+            "context.session_id" = Empty,
+            "context.trace_id" = Empty,
+            "context.request_id" = Empty,
+            "context.span_id" = Empty,
+            "context.parent_id" = Empty,
+        )
+    } else {
+        tracing::warn_span!(
+            "HTTP request",
+            "otel.kind" = "server",
+            "otel.name" = name,
+            "otel.status_code" = Empty,
+            "url.scheme" = scheme,
+            "url.path" = path,
+            "url.query" = query,
+            "http.request.method" = method.as_str(),
+            "http.request.header.traceparent" = Empty,
+            "http.request.header.tracestate" = Empty,
+            "http.response.header.traceparent" = Empty,
+            "http.response.header.tracestate" = Empty,
+            "http.response.header.server_timing" = Empty,
+            "http.response.status_code" = Empty,
+            "client.address" = client_ip,
+            "server.address" = host,
+            "server.port" = port,
+            "user_agent.original" = user_agent,
+            "context.session_id" = Empty,
+            "context.trace_id" = Empty,
+            "context.request_id" = Empty,
+            "context.span_id" = Empty,
+            "context.parent_id" = Empty,
+        )
+    }
 }
 
 fn custom_on_request(request: &Request<Body>, span: &Span) {
@@ -100,13 +143,17 @@ fn custom_on_response(response: &Response<BoxBody>, latency: Duration, span: &Sp
         headers.get_str("tracestate"),
     );
     span.record(
+        "http.response.header.server_timing",
+        headers.get_str("server-timing"),
+    );
+    span.record(
         "context.trace_id",
         traceparent
             .and_then(TraceContext::from_traceparent)
             .map(|ctx| Uuid::from_u128(ctx.trace_id()).to_string()),
     );
     span.record("context.request_id", headers.get_str("x-request-id"));
-    span.record("http.status_code", response.status().as_u16());
+    span.record("http.response.status_code", response.status().as_u16());
     span.record(
         "http.server.duration",
         u64::try_from(latency.as_millis()).ok(),
@@ -128,13 +175,9 @@ fn custom_on_eos(_trailers: Option<&HeaderMap>, stream_duration: Duration, span:
 }
 
 fn custom_on_failure(error: StatusInRangeFailureClass, latency: Duration, span: &Span) {
-    span.record(
-        "http.server.duration",
-        u64::try_from(latency.as_millis()).ok(),
-    );
     match error {
         StatusInRangeFailureClass::StatusCode(status_code) => {
-            span.record("http.status_code", status_code.as_u16());
+            span.record("http.response.status_code", status_code.as_u16());
             if status_code.is_client_error() {
                 span.record("otel.status_code", "OK");
                 tracing::warn!("response failed");

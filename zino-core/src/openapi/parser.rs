@@ -89,26 +89,26 @@ pub(super) fn parse_operation(name: &str, path: &str, config: &Table) -> Operati
         };
         operation_builder = operation_builder.deprecated(Some(deprecated));
     }
-    for parameter in self::parse_path_parameters(path).into_iter() {
+    for parameter in parse_path_parameters(path).into_iter() {
         operation_builder = operation_builder.parameter(parameter);
     }
     if let Some(query) = config.get_table("query") {
-        for parameter in self::parse_query_parameters(query).into_iter() {
+        for parameter in parse_query_parameters(query).into_iter() {
             operation_builder = operation_builder.parameter(parameter);
         }
     }
     if let Some(headers) = config.get_table("headers") {
-        for parameter in self::parse_header_parameters(headers).into_iter() {
+        for parameter in parse_header_parameters(headers).into_iter() {
             operation_builder = operation_builder.parameter(parameter);
         }
     }
     if let Some(cookies) = config.get_table("cookies") {
-        for parameter in self::parse_cookie_parameters(cookies).into_iter() {
+        for parameter in parse_cookie_parameters(cookies).into_iter() {
             operation_builder = operation_builder.parameter(parameter);
         }
     }
     if let Some(body) = config.get_table("body") {
-        let request_body = self::parse_request_body(body);
+        let request_body = parse_request_body(body);
         operation_builder = operation_builder.request_body(Some(request_body));
     }
     operation_builder.build()
@@ -456,9 +456,16 @@ fn parse_request_body(config: &Table) -> RequestBody {
     } else {
         parse_schema(config).into()
     };
+    let required = if config.get_bool("required") == Some(false) {
+        Required::False
+    } else {
+        Required::True
+    };
+    let content_type = config.get_str("content_type").unwrap_or("application/json");
     RequestBodyBuilder::new()
-        .required(Some(Required::True))
-        .content("application/json", Content::new(schema))
+        .description(config.get_str("description"))
+        .required(Some(required))
+        .content(content_type, Content::new(schema))
         .build()
 }
 

@@ -18,39 +18,88 @@ pub(crate) struct CustomRootSpanBuilder;
 
 impl RootSpanBuilder for CustomRootSpanBuilder {
     fn on_request_start(request: &ServiceRequest) -> Span {
+        let name = crate::Cluster::name();
+        let method = request.method();
+        let route = request.match_pattern();
+
+        // Client IP
+        let connection_info = request.connection_info();
+        let client_ip = connection_info.realip_remote_addr();
+
+        // URI
         let uri = request.uri();
+        let scheme = uri.scheme_str();
+        let host = uri.host();
+        let port = uri.port_u16();
+        let path = uri.path();
+        let query = uri.query();
+
+        // Headers
         let headers = request.headers();
+        let user_agent = headers.get("user-agent").and_then(|v| v.to_str().ok());
         let traceparent = headers.get("traceparent").and_then(|v| v.to_str().ok());
         let tracestate = headers.get("tracestate").and_then(|v| v.to_str().ok());
         let trace_context = traceparent.and_then(TraceContext::from_traceparent);
         let parent_id = trace_context
             .and_then(|ctx| ctx.parent_id())
             .map(|parent_id| format!("{parent_id:x}"));
-        tracing::info_span!(
-            "HTTP request",
-            "otel.kind" = "server",
-            "otel.name" = crate::Cluster::name(),
-            "otel.status_code" = Empty,
-            "http.scheme" = uri.scheme_str(),
-            "http.method" = request.method().as_str(),
-            "http.route" = request.match_pattern(),
-            "http.target" = uri.path_and_query().map(|p| p.as_str()),
-            "http.client_ip" = request.connection_info().realip_remote_addr(),
-            "http.user_agent" = headers.get("user-agent").and_then(|v| v.to_str().ok()),
-            "http.request.header.traceparent" = traceparent,
-            "http.request.header.tracestate" = tracestate,
-            "http.response.header.traceparent" = Empty,
-            "http.response.header.tracestate" = Empty,
-            "http.status_code" = Empty,
-            "http.server.duration" = Empty,
-            "net.host.name" = uri.host(),
-            "net.host.port" = uri.port_u16(),
-            "context.session_id" = headers.get("session-id").and_then(|v| v.to_str().ok()),
-            "context.trace_id" = Empty,
-            "context.request_id" = Empty,
-            "context.span_id" = Empty,
-            "context.parent_id" = parent_id,
-        )
+        let session_id = headers.get("session-id").and_then(|v| v.to_str().ok());
+
+        if method.is_safe() {
+            tracing::info_span!(
+                "HTTP request",
+                "otel.kind" = "server",
+                "otel.name" = name,
+                "otel.status_code" = Empty,
+                "url.scheme" = scheme,
+                "url.path" = path,
+                "url.query" = query,
+                "http.route" = route,
+                "http.request.method" = method.as_str(),
+                "http.request.header.traceparent" = traceparent,
+                "http.request.header.tracestate" = tracestate,
+                "http.response.header.traceparent" = Empty,
+                "http.response.header.tracestate" = Empty,
+                "http.response.header.server_timing" = Empty,
+                "http.response.status_code" = Empty,
+                "client.address" = client_ip,
+                "server.address" = host,
+                "server.port" = port,
+                "user_agent.original" = user_agent,
+                "context.session_id" = session_id,
+                "context.trace_id" = Empty,
+                "context.request_id" = Empty,
+                "context.span_id" = Empty,
+                "context.parent_id" = parent_id,
+            )
+        } else {
+            tracing::warn_span!(
+                "HTTP request",
+                "otel.kind" = "server",
+                "otel.name" = name,
+                "otel.status_code" = Empty,
+                "url.scheme" = scheme,
+                "url.path" = path,
+                "url.query" = query,
+                "http.route" = route,
+                "http.request.method" = method.as_str(),
+                "http.request.header.traceparent" = traceparent,
+                "http.request.header.tracestate" = tracestate,
+                "http.response.header.traceparent" = Empty,
+                "http.response.header.tracestate" = Empty,
+                "http.response.header.server_timing" = Empty,
+                "http.response.status_code" = Empty,
+                "client.address" = client_ip,
+                "server.address" = host,
+                "server.port" = port,
+                "user_agent.original" = user_agent,
+                "context.session_id" = session_id,
+                "context.trace_id" = Empty,
+                "context.request_id" = Empty,
+                "context.span_id" = Empty,
+                "context.parent_id" = parent_id,
+            )
+        }
     }
 
     fn on_request_end<B: MessageBody>(span: Span, outcome: &Result<ServiceResponse<B>, Error>) {
@@ -63,6 +112,10 @@ impl RootSpanBuilder for CustomRootSpanBuilder {
                 span.record(
                     "http.response.header.tracestate",
                     headers.get("tracestate").and_then(|v| v.to_str().ok()),
+                );
+                span.record(
+                    "http.response.header.server_timing",
+                    headers.get("server-timing").and_then(|v| v.to_str().ok()),
                 );
                 span.record(
                     "context.trace_id",
@@ -79,12 +132,12 @@ impl RootSpanBuilder for CustomRootSpanBuilder {
                     span.id().map(|id| format!("{:x}", id.into_u64())),
                 );
                 if res.error().is_none() {
-                    span.record("http.status_code", res.status().as_u16());
+                    span.record("http.response.status_code", res.status().as_u16());
                     span.record("otel.status_code", "OK");
                     tracing::info!("finished processing request");
                 } else {
                     let status_code = response.status();
-                    span.record("http.status_code", status_code.as_u16());
+                    span.record("http.response.status_code", status_code.as_u16());
                     if status_code.is_client_error() {
                         span.record("otel.status_code", "OK");
                     } else {
