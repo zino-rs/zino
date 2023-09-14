@@ -1,7 +1,12 @@
 //! Utilities for DataFusion.
 
 use super::{Connector, DataSource, DataSourceConnector::Arrow};
-use crate::{application::http_client, error::Error, extension::TomlTableExt, helper, Map, Record};
+use crate::{
+    application::{http_client, PROJECT_DIR},
+    error::Error,
+    extension::TomlTableExt,
+    helper, Map, Record,
+};
 use datafusion::{
     arrow::{datatypes::Schema, record_batch::RecordBatch},
     common::FileCompressionType,
@@ -57,7 +62,7 @@ impl ArrowConnector {
     pub fn new() -> Self {
         Self {
             context: OnceLock::new(),
-            root: PathBuf::from("./data/"),
+            root: PROJECT_DIR.join("local/data/"),
             tables: None,
             system_variables: ScalarValueProvider::default(),
             user_defined_variables: ScalarValueProvider::default(),
@@ -66,14 +71,14 @@ impl ArrowConnector {
 
     /// Creates a new instance with the configuration.
     pub fn with_config(config: &Table) -> Self {
-        let root = config.get_str("root").unwrap_or("./data/");
+        let root = config.get_str("root").unwrap_or("local/data/");
         let mut system_variables = ScalarValueProvider::default();
         if let Some(variables) = config.get_table("variables") {
             system_variables.read_toml_table(variables);
         }
         Self {
             context: OnceLock::new(),
-            root: PathBuf::from(root),
+            root: PROJECT_DIR.join(root),
             tables: config.get_array("tables").cloned(),
             system_variables,
             user_defined_variables: ScalarValueProvider::default(),

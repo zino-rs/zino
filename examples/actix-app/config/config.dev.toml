@@ -1,7 +1,7 @@
 # --env=dev
 
 name = "data-cube"
-version = "0.6.1"
+version = "0.6.2"
 
 [dirs]
 uploads = "local/uploads"
@@ -27,14 +27,14 @@ host = "127.0.0.1"
 port = 3306
 database = "data_cube"
 username = "root"
-password = "ojOAhiNzR6evuSA7tEB0yQ+XZFAGsRZwxnRnaBWr+o0"
+password = "Lv2OvgIj2FvuDPa9gTwBwUrVQhL/GG+mHC6SFqm8ZFo"
 
 [[postgres]]
 host = "127.0.0.1"
 port = 5432
 database = "data_cube"
 username = "postgres"
-password = "iPC3bcPjfD8t+4l4d5KVl9JL4TEte4WS4TQkvhZPmRE1IuRU"
+password = "Wp6igv6c/+W0x7TCz2d7X3UPv0cYSCiXGM4fIxwbeNpNB8cA"
 
 [[sqlite]]
 database = "local/data/main.db"

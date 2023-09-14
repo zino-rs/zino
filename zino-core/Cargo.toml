@@ -99,8 +99,8 @@ view-minijinja = ["view", "dep:minijinja"]
 aes-gcm-siv = "0.11.1"
 apache-avro = "0.15.0"
 async-trait = "0.1.73"
-base64 = "0.21.2"
-bytes = "1.4.0"
+base64 = "0.21.4"
+bytes = "1.5.0"
 cfg-if = "1.0"
 convert_case = "0.6.0"
 cookie = "0.16.2"
@@ -124,14 +124,14 @@ parking_lot = "0.12.1"
 rand = "0.8.5"
 regex = "1.9.5"
 reqwest-middleware = "0.2.3"
-reqwest-retry = "0.2.3"
+reqwest-retry = "0.3.0"
 reqwest-tracing = "0.4.6"
 rmp-serde = "1.1.2"
 serde_qs = "0.12.0"
 sha2 = "0.10.7"
 sysinfo = "0.29.10"
 task-local-extensions = "0.1.4"
-toml = "0.7.6"
+toml = "0.8.0"
 tracing = "0.1.37"
 tracing-appender = "0.2.2"
 url = "2.4.1"
@@ -141,7 +141,7 @@ version = "0.5.2"
 features = ["std"]
 
 [dependencies.async-openai]
-version = "0.14.0"
+version = "0.14.1"
 optional = true
 
 [dependencies.chrono]
@@ -149,7 +149,7 @@ version = "0.4.30"
 features = ["serde"]
 
 [dependencies.datafusion]
-version = "30.0.0"
+version = "31.0.0"
 optional = true
 
 [dependencies.lru]
@@ -182,11 +182,11 @@ features = [
 ]
 
 [dependencies.serde]
-version = "1.0.186"
+version = "1.0.188"
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1.0.105"
+version = "1.0.106"
 features = ["raw_value"]
 
 [dependencies.sqlx]

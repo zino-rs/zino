@@ -116,6 +116,8 @@ pub(super) fn parse_operation(name: &str, path: &str, config: &Table) -> Operati
 
 /// Parses the schema.
 pub(super) fn parse_schema(config: &Table) -> Schema {
+    const SPECIAL_KEYS: [&'static str; 3] = ["type", "items", "content_type"];
+
     let schema_type_name = config.get_str("type").unwrap_or("object");
     let mut is_array_object = false;
     if schema_type_name == "array" {
@@ -154,7 +156,7 @@ pub(super) fn parse_schema(config: &Table) -> Schema {
                         object_builder = object_builder.pattern(Some(value));
                     }
                     _ => {
-                        if !(key == "type" || key == "items") {
+                        if !SPECIAL_KEYS.contains(&key.as_str()) {
                             let object = Object::with_type(parse_schema_type(value));
                             object_builder = object_builder.property(key, object);
                         }

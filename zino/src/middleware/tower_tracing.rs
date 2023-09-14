@@ -174,7 +174,7 @@ fn custom_on_eos(_trailers: Option<&HeaderMap>, stream_duration: Duration, span:
     );
 }
 
-fn custom_on_failure(error: StatusInRangeFailureClass, latency: Duration, span: &Span) {
+fn custom_on_failure(error: StatusInRangeFailureClass, _latency: Duration, span: &Span) {
     match error {
         StatusInRangeFailureClass::StatusCode(status_code) => {
             span.record("http.response.status_code", status_code.as_u16());
