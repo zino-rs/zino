@@ -13,6 +13,11 @@ pub fn routes() -> Vec<RouterConfigure> {
         user_router as RouterConfigure,
         tag_router as RouterConfigure,
         task_router as RouterConfigure,
+    ]
+}
+
+pub fn debug_routes() -> Vec<RouterConfigure> {
+    vec![
         stats_router as RouterConfigure,
     ]
 }

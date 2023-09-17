@@ -34,8 +34,9 @@ impl Responder for ActixResponse<StatusCode> {
 
         let mut res = build_http_response(&response);
         for (key, value) in response.finalize() {
-            if let Ok(header_value) = HeaderValue::try_from(value) {
-                let header_name = HeaderName::from_static(key);
+            if let Ok(header_name) = HeaderName::try_from(key.as_ref()) &&
+                let Ok(header_value) = HeaderValue::try_from(value)
+            {
                 res.headers_mut().insert(header_name, header_value);
             }
         }
@@ -107,8 +108,9 @@ impl ResponseError for ActixRejection {
         }
 
         for (key, value) in response.headers() {
-            if let Ok(header_value) = HeaderValue::try_from(value) {
-                let header_name = HeaderName::from_static(key);
+            if let Ok(header_name) = HeaderName::try_from(key.as_ref()) &&
+                let Ok(header_value) = HeaderValue::try_from(value)
+            {
                 res.headers_mut().insert(header_name, header_value);
             }
         }

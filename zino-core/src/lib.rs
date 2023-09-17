@@ -20,11 +20,11 @@
 #![feature(async_fn_in_trait)]
 #![feature(decl_macro)]
 #![feature(doc_auto_cfg)]
-#![feature(slice_first_last_chunk)]
 #![feature(iter_intersperse)]
 #![feature(lazy_cell)]
 #![feature(let_chains)]
 #![feature(result_option_inspect)]
+#![feature(slice_first_last_chunk)]
 #![forbid(unsafe_code)]
 
 mod crypto;

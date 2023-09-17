@@ -30,7 +30,7 @@ pub trait Application {
     /// Routes.
     type Routes;
 
-    /// Registers routes.
+    /// Registers default routes.
     fn register(self, routes: Self::Routes) -> Self;
 
     /// Runs the application.
@@ -79,6 +79,24 @@ pub trait Application {
     {
         init(Self::shared_state());
         Self::boot()
+    }
+
+    /// Registers routes for debugger.
+    #[inline]
+    fn register_debug(self, routes: Self::Routes) -> Self
+    where
+        Self: Sized,
+    {
+        self.register_with("debug", routes)
+    }
+
+    /// Registers routes with a custom server type.
+    #[inline]
+    fn register_with(self, _server_type: &'static str, _routes: Self::Routes) -> Self
+    where
+        Self: Sized,
+    {
+        self
     }
 
     /// Gets the system’s information.

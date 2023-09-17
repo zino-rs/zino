@@ -55,6 +55,12 @@ pub fn routes() -> Vec<Router> {
     let router = Router::new().route("/task/execute", post(task::execute));
     routes.push(router);
 
+    routes
+}
+
+pub fn debug_routes() -> Vec<Router> {
+    let mut routes = Vec::new();
+
     // Stats controller.
     let router = Router::new().route("/stats", get(stats::index));
     routes.push(router);
