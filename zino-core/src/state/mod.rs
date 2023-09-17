@@ -4,7 +4,7 @@ use crate::{application, crypto, encoding::base64, extension::TomlTableExt, help
 use std::{
     borrow::Cow,
     env, fs,
-    net::{IpAddr, SocketAddr},
+    net::{IpAddr, Ipv4Addr, SocketAddr},
     sync::LazyLock,
 };
 use toml::value::Table;
@@ -105,11 +105,11 @@ impl<T> State<T> {
             let host = main
                 .get_str("host")
                 .and_then(|s| s.parse::<IpAddr>().ok())
-                .unwrap_or(IpAddr::from([127, 0, 0, 1]));
+                .unwrap_or(Ipv4Addr::UNSPECIFIED.into());
             let port = main.get_u16("port").unwrap_or(6080);
             (host, port)
         } else {
-            (IpAddr::from([127, 0, 0, 1]), 6080)
+            (Ipv4Addr::UNSPECIFIED.into(), 6080)
         };
         listeners.push((main_host, main_port).into());
 
@@ -145,8 +145,8 @@ impl State {
     pub fn encrypt_password(config: &Table) -> Option<Cow<'_, str>> {
         let password = config.get_str("password")?;
         application::SECRET_KEY.get().and_then(|key| {
-            if let Ok(data) = base64::decode(password)
-                && crypto::decrypt(&data, key).is_ok()
+            if let Ok(data) = base64::decode(password) &&
+                crypto::decrypt(&data, key).is_ok()
             {
                 Some(password.into())
             } else {
@@ -161,8 +161,8 @@ impl State {
     pub fn decrypt_password(config: &Table) -> Option<Cow<'_, str>> {
         let password = config.get_str("password")?;
         if let Ok(data) = base64::decode(password) {
-            if let Some(key) = application::SECRET_KEY.get()
-                && let Ok(plaintext) = crypto::decrypt(&data, key)
+            if let Some(key) = application::SECRET_KEY.get() &&
+                let Ok(plaintext) = crypto::decrypt(&data, key)
             {
                 return Some(String::from_utf8_lossy(&plaintext).into_owned().into());
             }

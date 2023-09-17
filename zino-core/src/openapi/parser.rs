@@ -116,7 +116,7 @@ pub(super) fn parse_operation(name: &str, path: &str, config: &Table) -> Operati
 
 /// Parses the schema.
 pub(super) fn parse_schema(config: &Table) -> Schema {
-    const SPECIAL_KEYS: [&'static str; 3] = ["type", "items", "content_type"];
+    const SPECIAL_KEYS: [&str; 3] = ["type", "items", "content_type"];
 
     let schema_type_name = config.get_str("type").unwrap_or("object");
     let mut is_array_object = false;

@@ -65,8 +65,10 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
         .expect("the `database` field should be a table");
     let checksum: [u8; 32] = config
         .get_str("checksum")
-        .and_then(|checksum| checksum.as_bytes().try_into().ok())
+        .and_then(|checksum| checksum.as_bytes().first_chunk().copied())
         .unwrap_or_else(|| {
+            tracing::warn!("the `checksum` is not set properly for deriving a secret key");
+
             let driver_name = format!("{}_{}", *super::NAMESPACE_PREFIX, super::DRIVER_NAME);
             crypto::sha256(driver_name.as_bytes())
         });
