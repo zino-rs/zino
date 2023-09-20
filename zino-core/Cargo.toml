@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.13.0"
+version = "0.13.1"
 rust-version = "1.72"
 edition = "2021"
 license = "MIT"
@@ -157,7 +157,7 @@ version = "0.11.1"
 optional = true
 
 [dependencies.minijinja]
-version = "1.0.7"
+version = "1.0.8"
 optional = true
 features = ["debug", "loader"]
 

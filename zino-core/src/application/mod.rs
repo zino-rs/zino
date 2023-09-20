@@ -33,6 +33,9 @@ pub trait Application {
     /// Registers default routes.
     fn register(self, routes: Self::Routes) -> Self;
 
+    /// Registers routes with a custom server name.
+    fn register_with(self, server_name: &'static str, routes: Self::Routes) -> Self;
+
     /// Runs the application.
     fn run(self, async_jobs: Vec<(&'static str, AsyncCronJob)>);
 
@@ -88,15 +91,6 @@ pub trait Application {
         Self: Sized,
     {
         self.register_with("debug", routes)
-    }
-
-    /// Registers routes with a custom server type.
-    #[inline]
-    fn register_with(self, _server_type: &'static str, _routes: Self::Routes) -> Self
-    where
-        Self: Sized,
-    {
-        self
     }
 
     /// Gets the system’s information.

@@ -48,8 +48,8 @@ impl Application for AxumCluster {
         self
     }
 
-    fn register_with(mut self, name: &'static str, routes: Self::Routes) -> Self {
-        self.named_routes.push((name, routes));
+    fn register_with(mut self, server_name: &'static str, routes: Self::Routes) -> Self {
+        self.named_routes.push((server_name, routes));
         self
     }
 
@@ -113,13 +113,13 @@ impl Application for AxumCluster {
             let listeners = app_state.listeners();
             let has_debug_server = listeners.iter().any(|listener| listener.0 == "debug");
             let servers = listeners.into_iter().map(|listener| {
-                let server_type = listener.0.as_ref();
+                let server_name = listener.0.as_ref();
                 let addr = listener.1;
                 tracing::warn!(
-                    server_type,
-                    env = app_env,
-                    name = app_name,
-                    version = app_version,
+                    server_name,
+                    app_env,
+                    app_name,
+                    app_version,
                     "listen on {addr}",
                 );
 
@@ -132,7 +132,7 @@ impl Application for AxumCluster {
                     app = app.merge(route.clone());
                 }
                 for (name, routes) in &named_routes {
-                    if name == &server_type {
+                    if name == &server_name || server_name == "debug" {
                         for route in routes {
                             app = app.merge(route.clone());
                         }
@@ -140,8 +140,8 @@ impl Application for AxumCluster {
                 }
 
                 // Render OpenAPI docs.
-                let docs_server_type = if has_debug_server { "debug" } else { "main" };
-                if docs_server_type == server_type {
+                let docs_server_name = if has_debug_server { "debug" } else { "main" };
+                if docs_server_name == server_name {
                     if let Some(openapi_config) = app_state.get_config("openapi") {
                         if openapi_config.get_bool("show-docs") != Some(false) {
                             let rapidoc =

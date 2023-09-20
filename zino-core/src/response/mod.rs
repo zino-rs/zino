@@ -419,7 +419,7 @@ impl<S: ResponseCode> Response<S> {
     pub fn get_header(&self, name: &str) -> Option<&str> {
         self.headers
             .iter()
-            .find_map(|(key, value)| (key == &name).then_some(value.as_str()))
+            .find_map(|(key, value)| (key == name).then_some(value.as_str()))
     }
 
     /// Returns the status code as `u16`.

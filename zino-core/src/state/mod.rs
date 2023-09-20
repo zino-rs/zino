@@ -100,7 +100,7 @@ impl<T> State<T> {
         let config = self.config();
         let mut listeners = Vec::new();
 
-        // Optional debug server
+        // Debug server
         if let Some(debug_server) = config.get_table("debug") {
             let debug_host = debug_server
                 .get_str("host")
@@ -113,26 +113,25 @@ impl<T> State<T> {
         }
 
         // Main server
-        let (main_host, main_port) = if let Some(main_server) = config.get_table("main") {
-            let host = main_server
+        if let Some(main_server) = config.get_table("main") {
+            let main_host = main_server
                 .get_str("host")
                 .and_then(|s| s.parse::<IpAddr>().ok())
-                .unwrap_or(Ipv4Addr::UNSPECIFIED.into());
-            let port = main_server.get_u16("port").unwrap_or(6080);
-            (host, port)
-        } else {
-            (Ipv4Addr::UNSPECIFIED.into(), 6080)
-        };
-        listeners.push(("main".into(), (main_host, main_port).into()));
+                .expect("the `main.host` field should be a str");
+            let main_port = main_server
+                .get_u16("port")
+                .expect("the `main.port` field should be an integer");
+            listeners.push(("main".into(), (main_host, main_port).into()));
+        }
 
-        // Optional standbys
+        // Standbys
         if config.contains_key("standby") {
             let standbys = config
                 .get_array("standby")
                 .expect("the `standby` field should be an array of tables");
             for standby in standbys.iter().filter_map(|v| v.as_table()) {
-                let server_type = standby
-                    .get_str("type")
+                let server_name = standby
+                    .get_str("name")
                     .map(|s| s.to_owned().into())
                     .unwrap_or("standby".into());
                 let standby_host = standby
@@ -142,8 +141,13 @@ impl<T> State<T> {
                 let standby_port = standby
                     .get_u16("port")
                     .expect("the `standby.port` field should be an integer");
-                listeners.push((server_type, (standby_host, standby_port).into()));
+                listeners.push((server_name, (standby_host, standby_port).into()));
             }
+        }
+
+        // Ensure that there is at least one listener
+        if listeners.is_empty() {
+            listeners.push(("main".into(), (Ipv4Addr::LOCALHOST, 6080).into()));
         }
 
         listeners

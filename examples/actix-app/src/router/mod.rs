@@ -17,9 +17,7 @@ pub fn routes() -> Vec<RouterConfigure> {
 }
 
 pub fn debug_routes() -> Vec<RouterConfigure> {
-    vec![
-        stats_router as RouterConfigure,
-    ]
+    vec![stats_router as RouterConfigure]
 }
 
 fn auth_router(cfg: &mut ServiceConfig) {

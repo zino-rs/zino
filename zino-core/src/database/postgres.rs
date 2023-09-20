@@ -270,6 +270,20 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         format!(r#"({field} = '') IS NOT FALSE"#)
                     } else if value == "notnull" {
                         format!(r#"({field} = '') IS FALSE"#)
+                    } else if self.index_type() == Some("text") {
+                        if value.contains(',') {
+                            value
+                                .split(',')
+                                .map(|s| {
+                                    let value = Query::escape_string(s);
+                                    format!(r#"{field} ~* {value}"#)
+                                })
+                                .collect::<Vec<_>>()
+                                .join(" OR ")
+                        } else {
+                            let value = Query::escape_string(value);
+                            format!(r#"{field} ~* {value}"#)
+                        }
                     } else if value.contains(',') {
                         let value = value
                             .split(',')
@@ -284,13 +298,8 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                             let value = Query::escape_string(value);
                             format!(r#"{field} {operator} {value}"#)
                         } else {
-                            let operator = if self.index_type() == Some("text") {
-                                "~*"
-                            } else {
-                                "="
-                            };
                             let value = Query::escape_string(value);
-                            format!(r#"{field} {operator} {value}"#)
+                            format!(r#"{field} = {value}"#)
                         }
                     }
                 } else {
