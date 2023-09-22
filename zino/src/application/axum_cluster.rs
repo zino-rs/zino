@@ -74,35 +74,6 @@ impl Application for AxumCluster {
             }
         });
 
-        // Server config
-        let project_dir = Self::project_dir();
-        let default_public_dir = project_dir.join("public");
-        let mut public_dir = PathBuf::new();
-        let mut body_limit = 100 * 1024 * 1024; // 100MB
-        let mut request_timeout = Duration::from_secs(10); // 10 seconds
-        if let Some(server_config) = Self::config().get_table("server") {
-            if let Some(limit) = server_config.get_usize("body-limit") {
-                body_limit = limit;
-            }
-            if let Some(timeout) = server_config.get_duration("request-timeout") {
-                request_timeout = timeout;
-            }
-            if let Some(dir) = server_config.get_str("public-dir") {
-                public_dir.push(dir);
-            } else {
-                public_dir = default_public_dir;
-            }
-        } else {
-            public_dir = default_public_dir;
-        }
-        let index_file = public_dir.join("index.html");
-        let not_found_file = public_dir.join("404.html");
-        let serve_file = ServeFile::new(index_file);
-        let serve_dir = ServeDir::new(public_dir)
-            .precompressed_gzip()
-            .precompressed_br()
-            .not_found_service(ServeFile::new(not_found_file));
-
         runtime.block_on(async {
             let default_routes = self.default_routes;
             let named_routes = self.named_routes;
@@ -123,9 +94,42 @@ impl Application for AxumCluster {
                     "listen on {addr}",
                 );
 
+                // Server config
+                let project_dir = Self::project_dir();
+                let default_public_dir = project_dir.join("public");
+                let mut public_route_name = "/public";
+                let mut public_dir = PathBuf::new();
+                let mut body_limit = 100 * 1024 * 1024; // 100MB
+                let mut request_timeout = Duration::from_secs(10); // 10 seconds
+                if let Some(server_config) = Self::config().get_table("server") {
+                    if let Some(limit) = server_config.get_usize("body-limit") {
+                        body_limit = limit;
+                    }
+                    if let Some(timeout) = server_config.get_duration("request-timeout") {
+                        request_timeout = timeout;
+                    }
+                    if let Some(dir) = server_config.get_str("page-dir") {
+                        public_route_name = "/page";
+                        public_dir.push(dir);
+                    } else if let Some(dir) = server_config.get_str("public-dir") {
+                        public_dir.push(dir);
+                    } else {
+                        public_dir = default_public_dir;
+                    }
+                } else {
+                    public_dir = default_public_dir;
+                }
+
+                let index_file = public_dir.join("index.html");
+                let not_found_file = public_dir.join("404.html");
+                let serve_file = ServeFile::new(index_file);
+                let serve_dir = ServeDir::new(public_dir)
+                    .precompressed_gzip()
+                    .precompressed_br()
+                    .not_found_service(ServeFile::new(not_found_file));
                 let mut app = Router::new()
-                    .route_service("/", serve_file.clone())
-                    .nest_service("/public", serve_dir.clone())
+                    .route_service("/", serve_file)
+                    .nest_service(public_route_name, serve_dir)
                     .route("/sse", routing::get(endpoint::sse_handler))
                     .route("/websocket", routing::get(endpoint::websocket_handler));
                 for route in &default_routes {

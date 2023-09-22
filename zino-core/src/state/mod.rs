@@ -45,7 +45,7 @@ impl<T> State<T> {
                 value.parse().unwrap_or_default()
             }
             Err(err) => {
-                let config_file = config_file.to_string_lossy();
+                let config_file = config_file.display();
                 tracing::error!("fail to read the config file `{config_file}`: {err}");
                 Table::new()
             }

@@ -223,4 +223,24 @@ impl<U, T> UserSession<U, String, T> {
         }
         false
     }
+
+    /// Returns `true` if the user has any of the specific `roles`.
+    pub fn has_any_roles(&self, roles: &[&str]) -> bool {
+        for role in roles {
+            if self.has_role(role) {
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Returns `true` if the user has all of the specific `roles`.
+    pub fn has_all_roles(&self, roles: &[&str]) -> bool {
+        for role in roles {
+            if !self.has_role(role) {
+                return false;
+            }
+        }
+        true
+    }
 }
