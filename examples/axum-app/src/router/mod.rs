@@ -47,8 +47,7 @@ pub fn routes() -> Vec<Router> {
         .route("/tag/:id/delete", post(Tag::delete))
         .route("/tag/:id/update", post(Tag::update))
         .route("/tag/:id/view", get(Tag::view))
-        .route("/tag/list", get(Tag::list))
-        .layer(from_fn(middleware::init_user_session));
+        .route("/tag/list", get(Tag::list));
     routes.push(router);
 
     // Task controller.

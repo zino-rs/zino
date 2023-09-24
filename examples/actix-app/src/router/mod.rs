@@ -60,8 +60,7 @@ fn tag_router(cfg: &mut ServiceConfig) {
             .route("/{id}/delete", post().to(Tag::delete))
             .route("/{id}/update", post().to(Tag::update))
             .route("/{id}/view", get().to(Tag::view))
-            .route("/list", get().to(Tag::list))
-            .wrap(middleware::UserSessionInitializer),
+            .route("/list", get().to(Tag::list)),
     );
 }
 

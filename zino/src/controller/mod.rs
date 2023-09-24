@@ -48,8 +48,9 @@ use zino_core::{
 #[cfg(feature = "orm")]
 impl<K, U, M: ModelAccessor<K, U>> DefaultController<K, U> for M
 where
-    K: Default + std::fmt::Display + PartialEq + serde::de::DeserializeOwned,
+    K: Default + std::fmt::Display + PartialEq + std::str::FromStr,
     U: Default + std::fmt::Display + PartialEq,
+    <K as std::str::FromStr>::Err: std::error::Error,
 {
     type Request = crate::Request;
     type Result = crate::Result;

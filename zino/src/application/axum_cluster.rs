@@ -101,17 +101,17 @@ impl Application for AxumCluster {
                 let mut public_dir = PathBuf::new();
                 let mut body_limit = 100 * 1024 * 1024; // 100MB
                 let mut request_timeout = Duration::from_secs(10); // 10 seconds
-                if let Some(server_config) = Self::config().get_table("server") {
-                    if let Some(limit) = server_config.get_usize("body-limit") {
+                if let Some(config) = app_state.get_config("server") {
+                    if let Some(limit) = config.get_usize("body-limit") {
                         body_limit = limit;
                     }
-                    if let Some(timeout) = server_config.get_duration("request-timeout") {
+                    if let Some(timeout) = config.get_duration("request-timeout") {
                         request_timeout = timeout;
                     }
-                    if let Some(dir) = server_config.get_str("page-dir") {
+                    if let Some(dir) = config.get_str("page-dir") {
                         public_route_name = "/page";
                         public_dir.push(dir);
-                    } else if let Some(dir) = server_config.get_str("public-dir") {
+                    } else if let Some(dir) = config.get_str("public-dir") {
                         public_dir.push(dir);
                     } else {
                         public_dir = default_public_dir;
@@ -120,6 +120,7 @@ impl Application for AxumCluster {
                     public_dir = default_public_dir;
                 }
 
+                // Static pages
                 let index_file = public_dir.join("index.html");
                 let not_found_file = public_dir.join("404.html");
                 let serve_file = ServeFile::new(index_file);
@@ -127,6 +128,7 @@ impl Application for AxumCluster {
                     .precompressed_gzip()
                     .precompressed_br()
                     .not_found_service(ServeFile::new(not_found_file));
+
                 let mut app = Router::new()
                     .route_service("/", serve_file)
                     .nest_service(public_route_name, serve_dir)
@@ -146,12 +148,21 @@ impl Application for AxumCluster {
                 // Render OpenAPI docs.
                 let docs_server_name = if has_debug_server { "debug" } else { "main" };
                 if docs_server_name == server_name {
-                    if let Some(openapi_config) = app_state.get_config("openapi") {
-                        if openapi_config.get_bool("show-docs") != Some(false) {
-                            let rapidoc =
+                    if let Some(config) = app_state.get_config("openapi") {
+                        if config.get_bool("show-docs") != Some(false) {
+                            // If the `spec-url` has been configured, the user should
+                            // provide the generated OpenAPI object with a derivation.
+                            let mut rapidoc = if let Some(url) = config.get_str("spec-url") {
+                                RapiDoc::new(url)
+                            } else {
                                 RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
-                                    .path("/rapidoc");
-                            if let Some(custom_html) = openapi_config.get_str("custom-html") &&
+                            };
+                            if let Some(route) = config.get_str("rapidoc-route") {
+                                rapidoc = rapidoc.path(route);
+                            } else {
+                                rapidoc = rapidoc.path("/rapidoc");
+                            }
+                            if let Some(custom_html) = config.get_str("custom-html") &&
                                 let Ok(html) = fs::read_to_string(project_dir.join(custom_html))
                             {
                                 app = app.merge(rapidoc.custom_html(html.as_str()));
@@ -187,6 +198,7 @@ impl Application for AxumCluster {
                             .layer(LazyLock::force(&middleware::TRACING_MIDDLEWARE))
                             .layer(LazyLock::force(&middleware::CORS_MIDDLEWARE))
                             .layer(from_fn(middleware::request_context))
+                            .layer(from_fn(middleware::etag_middleware))
                             .layer(HandleErrorLayer::new(|err: BoxError| async move {
                                 let status_code = if err.is::<Elapsed>() {
                                     StatusCode::REQUEST_TIMEOUT

@@ -21,6 +21,7 @@ actix = [
     "dep:actix-files",
     "dep:actix-web",
     "dep:tracing-actix-web",
+    "utoipa/actix_extras",
     "utoipa-rapidoc/actix-web",
     "zino-core/runtime-tokio",
 ]
@@ -30,6 +31,7 @@ axum = [
     "dep:tokio-stream",
     "dep:tower",
     "dep:tower-http",
+    "utoipa/axum_extras",
     "utoipa-rapidoc/axum",
     "zino-core/runtime-tokio",
 ]
@@ -136,6 +138,10 @@ features = [
 version = "0.7.6"
 optional = true
 features = ["opentelemetry_0_20"]
+
+[dependencies.utoipa]
+version = "3.5.0"
+optional = true
 
 [dependencies.utoipa-rapidoc]
 version = "0.1.0"

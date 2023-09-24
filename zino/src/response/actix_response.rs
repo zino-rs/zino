@@ -32,7 +32,7 @@ impl Responder for ActixResponse<StatusCode> {
             response = response.context(&req);
         }
 
-        let mut res = build_http_response(&response);
+        let mut res = build_http_response(&mut response);
         for (key, value) in response.finalize() {
             if let Ok(header_name) = HeaderName::try_from(key.as_ref()) &&
                 let Ok(header_value) = HeaderValue::try_from(value)
@@ -78,10 +78,8 @@ impl ResponseError for ActixRejection {
     }
 
     fn error_response(&self) -> HttpResponse<BoxBody> {
-        let response = &self.0;
-
-        let mut res = build_http_response(&response);
-
+        let mut response = self.0.clone();
+        let mut res = build_http_response(&mut response);
         let request_id = response.request_id();
         if !request_id.is_nil() {
             if let Ok(header_value) = HeaderValue::try_from(request_id.to_string()) {
@@ -120,7 +118,7 @@ impl ResponseError for ActixRejection {
 }
 
 /// Build http response from `zino_core::response::Response`.
-fn build_http_response(response: &Response<StatusCode>) -> HttpResponse<BoxBody> {
+fn build_http_response(response: &mut Response<StatusCode>) -> HttpResponse<BoxBody> {
     match response.read_bytes() {
         Ok(data) => {
             let status_code = response

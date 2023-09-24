@@ -80,14 +80,14 @@ impl Application for ActixCluster {
                 let mut public_route_name = "/public";
                 let mut public_dir = PathBuf::new();
                 let mut body_limit = 100 * 1024 * 1024; // 100MB
-                if let Some(server_config) = Self::config().get_table("server") {
-                    if let Some(limit) = server_config.get_usize("body-limit") {
+                if let Some(config) = app_state.get_config("server") {
+                    if let Some(limit) = config.get_usize("body-limit") {
                         body_limit = limit;
                     }
-                    if let Some(dir) = server_config.get_str("page-dir") {
+                    if let Some(dir) = config.get_str("page-dir") {
                         public_route_name = "/page";
                         public_dir.push(dir);
-                    } else if let Some(dir) = server_config.get_str("public-dir") {
+                    } else if let Some(dir) = config.get_str("public-dir") {
                         public_dir.push(dir);
                     } else {
                         public_dir = default_public_dir;
@@ -101,8 +101,8 @@ impl Application for ActixCluster {
                         .to(move || async { NamedFile::open_async("./public/index.html").await });
                     let static_files = Files::new(public_route_name, public_dir.clone())
                         .show_files_listing()
-                        .prefer_utf8(true)
                         .index_file("index.html")
+                        .prefer_utf8(true)
                         .default_handler(fn_service(|req: ServiceRequest| async {
                             let (req, _) = req.into_parts();
                             let file = NamedFile::open_async("./public/404.html").await?;
@@ -130,14 +130,21 @@ impl Application for ActixCluster {
                     // Render OpenAPI docs.
                     let docs_server_name = if has_debug_server { "debug" } else { "main" };
                     if docs_server_name == server_name {
-                        if let Some(openapi_config) = app_state.get_config("openapi") {
-                            if openapi_config.get_bool("show-docs") != Some(false) {
-                                let mut rapidoc = RapiDoc::with_openapi(
-                                    "/api-docs/openapi.json",
-                                    Self::openapi(),
-                                )
-                                .path("/rapidoc");
-                                if let Some(custom_html) = openapi_config.get_str("custom-html") &&
+                        if let Some(config) = app_state.get_config("openapi") {
+                            if config.get_bool("show-docs") != Some(false) {
+                                // If the `spec-url` has been configured, the user should
+                                // provide the generated OpenAPI object with a derivation.
+                                let mut rapidoc = if let Some(url) = config.get_str("spec-url") {
+                                    RapiDoc::new(url)
+                                } else {
+                                    RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
+                                };
+                                if let Some(route) = config.get_str("rapidoc-route") {
+                                    rapidoc = rapidoc.path(route);
+                                } else {
+                                    rapidoc = rapidoc.path("/rapidoc");
+                                }
+                                if let Some(custom_html) = config.get_str("custom-html") &&
                                     let Ok(html) = fs::read_to_string(project_dir.join(custom_html))
                                 {
                                     rapidoc = rapidoc.custom_html(html.leak());
@@ -159,6 +166,7 @@ impl Application for ActixCluster {
                         .wrap(middleware::RequestContextInitializer::default())
                         .wrap(middleware::tracing_middleware())
                         .wrap(middleware::cors_middleware())
+                        .wrap(middleware::ETagFinalizer::default())
                 })
                 .bind(addr)
                 .unwrap_or_else(|err| panic!("fail to create an HTTP server: {err}"))
