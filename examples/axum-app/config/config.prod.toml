@@ -24,6 +24,9 @@ name = "admin"
 host = "127.0.0.1"
 port = 6082
 
+[server]
+page-dir = "public"
+
 [database]
 type = "mysql"
 namespace = "dc"

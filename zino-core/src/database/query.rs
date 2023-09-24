@@ -273,7 +273,7 @@ pub(super) trait QueryExt<DB> {
     /// Formats the query pagination to generate SQL `LIMIT` expression.
     fn format_pagination(&self) -> String {
         let limit = self.query_limit();
-        if limit == usize::MAX {
+        if limit == 0 || limit == usize::MAX {
             return String::new();
         }
 
