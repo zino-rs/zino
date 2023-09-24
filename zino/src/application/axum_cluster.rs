@@ -2,12 +2,14 @@ use crate::{endpoint, middleware, AxumExtractor};
 use axum::{
     error_handling::HandleErrorLayer,
     extract::{rejection::LengthLimitError, DefaultBodyLimit},
-    http::StatusCode,
-    middleware::from_fn,
+    http::{StatusCode, Uri, uri::PathAndQuery},
+    body::Body,
+    response::Response as AxumResponse,
+    middleware::{from_fn, Next},
     routing, BoxError, Router, Server,
 };
 use std::{
-    convert::Infallible, fs, net::SocketAddr, path::PathBuf, sync::LazyLock, time::Duration,
+    convert::Infallible, fs, net::SocketAddr, path::PathBuf, sync::LazyLock, time::Duration, str::FromStr,
 };
 use tokio::runtime::Builder;
 use tower::{
@@ -30,6 +32,7 @@ use zino_core::{
     response::{FullResponse, Response},
     schedule::{AsyncCronJob, Job, JobScheduler},
 };
+use crate::{Request, Result};
 
 /// An HTTP server cluster for `axum`.
 #[derive(Default)]
@@ -124,15 +127,41 @@ impl Application for AxumCluster {
                 let index_file = public_dir.join("index.html");
                 let not_found_file = public_dir.join("404.html");
                 let serve_file = ServeFile::new(index_file);
-                let serve_dir = ServeDir::new(public_dir)
-                    .precompressed_gzip()
-                    .precompressed_br()
-                    .append_index_html_on_directories(true)
-                    .not_found_service(ServeFile::new(not_found_file));
+                let mut serve_dir = Router::new()
+                    .nest_service(public_route_name, ServeDir::new(public_dir)
+                        .precompressed_gzip()
+                        .precompressed_br()
+                        .append_index_html_on_directories(true)
+                        .not_found_service(ServeFile::new(not_found_file)));
+                if public_route_name == "/page" {
+                    serve_dir = serve_dir.layer(from_fn(
+                        // Correct the uri path to achieve the following goals:
+                        //   /page -> page-dir/index.html
+                        //   /page/login -> page-dir/login.html
+                        async move |req: Request, next: Next<Body>| -> Result<AxumResponse> {
+                            let (mut head, body) = axum::http::Request::<Body>::from(req).into_parts();
+                            let uri_path = head.uri.path();
+                            if uri_path == "/page" {
+                                let path_query = format!("/page/index.html?{}", head.uri.query().unwrap_or_default());
+                                let mut parts = head.uri.into_parts();
+                                parts.path_and_query = PathAndQuery::from_str(path_query.as_str()).ok();
+                                head.uri = Uri::from_parts(parts).unwrap();
+                            } else if let Some((p, name)) = uri_path.rsplit_once("/") {
+                                if name.len() > 0 && !name.contains(".") {
+                                    let path_query = format!("{p}/{name}.html?{}", head.uri.query().unwrap_or_default());
+                                    let mut parts = head.uri.into_parts();
+                                    parts.path_and_query = PathAndQuery::from_str(path_query.as_str()).ok();
+                                    head.uri = Uri::from_parts(parts).unwrap();
+                                }
+                            }
+                            Ok(next.run(axum::http::request::Request::from_parts(head, body)).await)
+                        },
+                    ))
+                }
 
                 let mut app = Router::new()
                     .route_service("/", serve_file)
-                    .nest_service(public_route_name, serve_dir)
+                    .merge(serve_dir)
                     .route("/sse", routing::get(endpoint::sse_handler))
                     .route("/websocket", routing::get(endpoint::websocket_handler));
                 for route in &default_routes {
