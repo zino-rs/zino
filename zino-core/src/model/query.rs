@@ -28,7 +28,7 @@ impl Query {
             filters: filters.into().into_map_opt().unwrap_or_default(),
             sort_order: Vec::new(),
             offset: 0,
-            limit: 10,
+            limit: 0,
         }
     }
 

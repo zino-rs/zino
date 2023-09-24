@@ -24,6 +24,9 @@ name = "admin"
 host = "127.0.0.1"
 port = 6082
 
+[server]
+page-dir = "public"
+
 [database]
 namespace = "dc"
 max-rows = 10000
@@ -83,4 +86,6 @@ span = { "http.method" = "string", "http.target" = "string", "http.status_code" 
 app-name = "data-cube"
 
 [openapi]
+show-docs = true
+rapidoc-route = "/rapidoc"
 custom-html = "local/docs/rapidoc.html"

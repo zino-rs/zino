@@ -625,7 +625,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Ok(rows_affected)
     }
 
-    /// Finds models selected by the query in the table,
+    /// Finds a list of models selected by the query in the table,
     /// and decodes it as `Vec<T>`.
     async fn find<T: DecodeRow<DatabaseRow, Error = Error>>(
         query: &Query,
@@ -655,7 +655,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Ok(data)
     }
 
-    /// Finds models selected by the query in the table,
+    /// Finds a list of models selected by the query in the table,
     /// and parses it as `Vec<T>`.
     async fn find_as<T: DeserializeOwned>(query: &Query) -> Result<Vec<T>, Error> {
         let mut data = Self::find::<Map>(query).await?;
@@ -920,7 +920,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Ok(())
     }
 
-    /// Performs a left outer join to another table to filter rows in the "joined" table,
+    /// Performs a left outer join to another table to filter rows in the joined table,
     /// and decodes it as `Vec<T>`.
     async fn lookup<M: Schema, T: DecodeRow<DatabaseRow, Error = Error>>(
         query: &Query,
