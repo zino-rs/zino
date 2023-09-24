@@ -127,6 +127,7 @@ impl Application for AxumCluster {
                 let serve_dir = ServeDir::new(public_dir)
                     .precompressed_gzip()
                     .precompressed_br()
+                    .append_index_html_on_directories(true)
                     .not_found_service(ServeFile::new(not_found_file));
 
                 let mut app = Router::new()
