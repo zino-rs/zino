@@ -6,10 +6,14 @@ use std::{env, sync::OnceLock};
 pub(super) fn init<APP: Application + ?Sized>() {
     let checksum: [u8; 32] = APP::config()
         .get_str("checksum")
-        .and_then(|checksum| checksum.as_bytes().try_into().ok())
+        .and_then(|checksum| checksum.as_bytes().first_chunk().copied())
         .unwrap_or_else(|| {
-            let pkg_name = env::var("CARGO_PKG_NAME").expect("fail to get crate name");
-            let pkg_version = env::var("CARGO_PKG_VERSION").expect("fail to get crate version");
+            tracing::warn!("the `checksum` is not set properly for deriving a secret key");
+
+            let pkg_name = env::var("CARGO_PKG_NAME")
+                .expect("fail to get the environment variable `CARGO_PKG_NAME`");
+            let pkg_version = env::var("CARGO_PKG_VERSION")
+                .expect("fail to get the environment variable `CARGO_PKG_VERSION`");
             let pkg_key = format!("{pkg_name}@{pkg_version}");
             crypto::sha256(pkg_key.as_bytes())
         });

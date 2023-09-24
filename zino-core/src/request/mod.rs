@@ -27,6 +27,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use std::{
     borrow::Cow,
     net::IpAddr,
+    str::FromStr,
     time::{Duration, Instant},
 };
 use unic_langid::LanguageIdentifier;
@@ -82,17 +83,6 @@ pub trait RequestContext {
     #[inline]
     fn request_path(&self) -> &str {
         self.original_uri().path()
-    }
-
-    /// Gets the query value of the URI for the given name.
-    fn get_query(&self, name: &str) -> Option<&str> {
-        self.original_uri().query()?.split('&').find_map(|param| {
-            if let Some((key, value)) = param.split_once('=') && key == name {
-                Some(value)
-            } else {
-                None
-            }
-        })
     }
 
     /// Creates a new request context.
@@ -242,35 +232,50 @@ pub trait RequestContext {
             .map(helper::get_data_type)
     }
 
+    /// Gets the route parameter by name.
+    /// The name should not include `:`, `*`, `{` or `}`.
+    fn get_param(&self, name: &str) -> Option<&str> {
+        const CAPTURES: [char; 4] = [':', '*', '{', '}'];
+        if let Some(index) = self
+            .matched_route()
+            .split('/')
+            .position(|segment| segment.trim_matches(CAPTURES.as_slice()) == name)
+        {
+            self.request_path().splitn(index + 2, '/').nth(index)
+        } else {
+            None
+        }
+    }
+
     /// Parses the route parameter by name as an instance of type `T`.
     /// The name should not include `:`, `*`, `{` or `}`.
-    fn parse_param<T: DeserializeOwned>(&self, name: &str) -> Result<T, Rejection> {
-        const CAPTURES: [char; 4] = [':', '*', '{', '}'];
-        let route = self.matched_route();
-        if route.contains(CAPTURES) {
-            let segments = route.split('/').collect::<Vec<_>>();
-            if let Some(index) = segments
-                .iter()
-                .position(|segment| segment.trim_matches(CAPTURES.as_slice()) == name)
-            {
-                let path = self.request_path();
-                if let Some(&param) = path
-                    .splitn(segments.len(), '/')
-                    .collect::<Vec<_>>()
-                    .get(index)
-                {
-                    return serde_json::from_value::<T>(param.into()).map_err(|err| {
-                        Rejection::from_validation_entry(name.to_owned(), err).context(self)
-                    });
-                }
-            }
+    fn parse_param<T>(&self, name: &str) -> Result<T, Rejection>
+    where
+        T: FromStr,
+        <T as FromStr>::Err: std::error::Error,
+    {
+        if let Some(param) = self.get_param(name) {
+            param
+                .parse::<T>()
+                .map_err(|err| Rejection::from_validation_entry(name.to_owned(), err).context(self))
+        } else {
+            Err(Rejection::from_validation_entry(
+                name.to_owned(),
+                Error::new(format!("the param `{name}` does not exist")),
+            )
+            .context(self))
         }
+    }
 
-        Err(Rejection::from_validation_entry(
-            name.to_owned(),
-            Error::new(format!("the param `{name}` does not exist")),
-        )
-        .context(self))
+    /// Gets the query value of the URI by name.
+    fn get_query(&self, name: &str) -> Option<&str> {
+        self.original_uri().query()?.split('&').find_map(|param| {
+            if let Some((key, value)) = param.split_once('=') && key == name {
+                Some(value)
+            } else {
+                None
+            }
+        })
     }
 
     /// Parses the query as an instance of type `T`.
@@ -566,7 +571,7 @@ pub trait RequestContext {
         }
     }
 
-    /// Returns a `Response` or `Rejection` from an SQL query validation.
+    /// Returns a `Response` or `Rejection` from a model query validation.
     /// The data is extracted from [`parse_query()`](RequestContext::parse_query).
     fn query_validation<S>(&self, query: &mut Query) -> Result<Response<S>, Rejection>
     where

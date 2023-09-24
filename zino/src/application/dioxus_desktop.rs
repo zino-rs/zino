@@ -39,6 +39,10 @@ where
         self
     }
 
+    fn register_with(self, _server_name: &'static str, _routes: Self::Routes) -> Self {
+        self
+    }
+
     fn run(self, async_jobs: Vec<(&'static str, AsyncCronJob)>) {
         let runtime = Builder::new_multi_thread()
             .thread_keep_alive(Duration::from_secs(10))

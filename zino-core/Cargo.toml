@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.13.0"
+version = "0.13.2"
 rust-version = "1.72"
 edition = "2021"
 license = "MIT"
@@ -106,6 +106,7 @@ convert_case = "0.6.0"
 cookie = "0.16.2"
 cron = "0.12.0"
 csv = "1.2.2"
+etag = "4.0.0"
 faster-hex = "0.8.1"
 fluent = "0.16.0"
 futures = "0.3.28"
@@ -114,7 +115,7 @@ hmac = "0.12.1"
 http = "0.2.9"
 http-body = "0.4.5"
 intl-memoizer = "0.5.1"
-jwt-simple = "0.11.6"
+jwt-simple = "0.11.7"
 metrics = "0.21.0"
 metrics-exporter-prometheus = "0.12.1"
 mime = "0.3.17"
@@ -145,7 +146,7 @@ version = "0.14.1"
 optional = true
 
 [dependencies.chrono]
-version = "0.4.30"
+version = "0.4.31"
 features = ["serde"]
 
 [dependencies.datafusion]
@@ -157,17 +158,17 @@ version = "0.11.1"
 optional = true
 
 [dependencies.minijinja]
-version = "1.0.7"
+version = "1.0.8"
 optional = true
 features = ["debug", "loader"]
 
 [dependencies.opendal]
-version = "0.39.0"
+version = "0.40.0"
 optional = true
 features = ["layers-all"]
 
 [dependencies.printpdf]
-version = "0.5.3"
+version = "0.6.0"
 optional = true
 
 [dependencies.reqwest]
@@ -186,7 +187,7 @@ version = "1.0.188"
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1.0.106"
+version = "1.0.107"
 features = ["raw_value"]
 
 [dependencies.sqlx]
@@ -217,7 +218,12 @@ features = ["macros"]
 
 [dependencies.utoipa]
 version = "3.5.0"
-features = ["non_strict_integers", "uuid"]
+features = [
+    "non_strict_integers",
+    "preserve_order",
+    "preserve_path_order",
+    "uuid",
+]
 
 [dependencies.uuid]
 version = "1.4.1"

@@ -24,6 +24,7 @@
 #![feature(lazy_cell)]
 #![feature(let_chains)]
 #![feature(result_option_inspect)]
+#![feature(slice_first_last_chunk)]
 #![forbid(unsafe_code)]
 
 mod crypto;

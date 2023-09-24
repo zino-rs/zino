@@ -10,7 +10,8 @@ use crate::{
     JsonValue, SharedString, Uuid,
 };
 use bytes::Bytes;
-use http::header::{self, HeaderValue};
+use etag::EntityTag;
+use http::header::{self, HeaderName, HeaderValue};
 use http_body::Full;
 use serde::Serialize;
 use serde_json::value::RawValue;
@@ -37,7 +38,7 @@ pub type FullResponse = http::Response<Full<Bytes>>;
 pub type DataTransformer = fn(data: &JsonValue) -> Result<Bytes, Error>;
 
 /// An HTTP response.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub struct Response<S = StatusCode> {
     /// A URI reference that identifies the problem type.
@@ -95,7 +96,7 @@ pub struct Response<S = StatusCode> {
     server_timing: ServerTiming,
     /// Custom headers.
     #[serde(skip)]
-    headers: Vec<(&'static str, String)>,
+    headers: Vec<(SharedString, String)>,
     /// Phantom type of response code.
     #[serde(skip)]
     phantom: PhantomData<S>,
@@ -410,8 +411,8 @@ impl<S: ResponseCode> Response<S> {
 
     /// Inserts a custom header.
     #[inline]
-    pub fn insert_header(&mut self, name: &'static str, value: impl ToString) {
-        self.headers.push((name, value.to_string()));
+    pub fn insert_header(&mut self, name: impl Into<SharedString>, value: impl ToString) {
+        self.headers.push((name.into(), value.to_string()));
     }
 
     /// Gets a custome header with the given name.
@@ -419,7 +420,7 @@ impl<S: ResponseCode> Response<S> {
     pub fn get_header(&self, name: &str) -> Option<&str> {
         self.headers
             .iter()
-            .find_map(|(key, value)| (key == &name).then_some(value.as_str()))
+            .find_map(|(key, value)| (key == name).then_some(value.as_str()))
     }
 
     /// Returns the status code as `u16`.
@@ -481,7 +482,7 @@ impl<S: ResponseCode> Response<S> {
 
     /// Returns the custom headers.
     #[inline]
-    pub fn headers(&self) -> &[(&'static str, String)] {
+    pub fn headers(&self) -> &[(SharedString, String)] {
         &self.headers
     }
 
@@ -506,33 +507,45 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Reads the response into a byte buffer.
-    pub fn read_bytes(&self) -> Result<Bytes, Error> {
-        if !self.bytes_data.is_empty() {
-            return Ok(self.bytes_data.clone());
-        }
-        if let Some(transformer) = self.data_transformer.as_ref() {
+    pub fn read_bytes(&mut self) -> Result<Bytes, Error> {
+        let bytes_opt = if !self.bytes_data.is_empty() {
+            Some(self.bytes_data.clone())
+        } else if let Some(transformer) = self.data_transformer.as_ref() {
             if !self.json_data.is_null() {
-                return transformer(&self.json_data);
+                Some(transformer(&self.json_data)?)
             } else {
                 let data = serde_json::to_value(&self.data)?;
-                return transformer(&data);
+                Some(transformer(&data)?)
             }
+        } else {
+            None
+        };
+        if let Some(bytes) = bytes_opt {
+            let etag = EntityTag::from_data(&bytes);
+            self.insert_header("x-etag", etag);
+            return Ok(bytes);
         }
 
         let content_type = self.content_type();
-        let bytes = if crate::helper::check_json_content_type(content_type) {
-            let capacity = if let Some(data) = &self.data {
-                data.get().len() + 128
+        let (bytes, etag_opt) = if crate::helper::check_json_content_type(content_type) {
+            let (capacity, etag_opt) = if !self.json_data.is_null() {
+                let data = serde_json::to_vec(&self.json_data)?;
+                let etag = EntityTag::from_data(&data);
+                (data.len() + 128, Some(etag))
+            } else if let Some(data) = &self.data {
+                let data = data.get().as_bytes();
+                let etag = EntityTag::from_data(data);
+                (data.len() + 128, Some(etag))
             } else {
-                128
+                (128, None)
             };
             let mut bytes = Vec::with_capacity(capacity);
             serde_json::to_writer(&mut bytes, &self)?;
-            bytes
+            (bytes, etag_opt)
         } else if let Some(data) = &self.data {
             let capacity = data.get().len();
             let value = serde_json::to_value(data)?;
-            if content_type.starts_with("text/csv") {
+            let bytes = if content_type.starts_with("text/csv") {
                 value.to_csv(Vec::with_capacity(capacity))?
             } else if content_type.starts_with("application/jsonlines") {
                 value.to_jsonlines(Vec::with_capacity(capacity))?
@@ -542,10 +555,11 @@ impl<S: ResponseCode> Response<S> {
                 s.into_bytes()
             } else {
                 data.to_string().into_bytes()
-            }
+            };
+            (bytes, None)
         } else if !self.json_data.is_null() {
             let value = &self.json_data;
-            if content_type.starts_with("text/csv") {
+            let bytes = if content_type.starts_with("text/csv") {
                 value.to_csv(Vec::new())?
             } else if content_type.starts_with("application/jsonlines") {
                 value.to_jsonlines(Vec::new())?
@@ -555,10 +569,13 @@ impl<S: ResponseCode> Response<S> {
                 s.clone().into_bytes()
             } else {
                 value.to_string().into_bytes()
-            }
+            };
+            (bytes, None)
         } else {
-            Vec::new()
+            (Vec::new(), None)
         };
+        let etag = etag_opt.unwrap_or_else(|| EntityTag::from_data(&bytes));
+        self.insert_header("x-etag", etag);
         Ok(bytes.into())
     }
 
@@ -597,7 +614,7 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Consumes `self` and returns the custom headers.
-    pub fn finalize(mut self) -> impl Iterator<Item = (&'static str, String)> {
+    pub fn finalize(mut self) -> Vec<(SharedString, String)> {
         let request_id = self.request_id();
         if !request_id.is_nil() {
             self.insert_header("x-request-id", request_id.to_string());
@@ -611,7 +628,7 @@ impl<S: ResponseCode> Response<S> {
         self.record_server_timing("total", None, Some(duration));
         self.insert_header("server-timing", self.server_timing());
 
-        self.headers.into_iter()
+        self.headers
     }
 }
 
@@ -635,7 +652,7 @@ impl<S: ResponseCode> From<Validation> for Response<S> {
 }
 
 impl<S: ResponseCode> From<Response<S>> for FullResponse {
-    fn from(response: Response<S>) -> Self {
+    fn from(mut response: Response<S>) -> Self {
         let mut res = match response.read_bytes() {
             Ok(data) => http::Response::builder()
                 .status(response.status_code())
@@ -650,8 +667,10 @@ impl<S: ResponseCode> From<Response<S>> for FullResponse {
         };
 
         for (key, value) in response.finalize() {
-            if let Ok(header_value) = HeaderValue::try_from(value) {
-                res.headers_mut().insert(key, header_value);
+            if let Ok(header_name) = HeaderName::try_from(key.as_ref()) &&
+                let Ok(header_value) = HeaderValue::try_from(value)
+            {
+                res.headers_mut().insert(header_name, header_value);
             }
         }
 

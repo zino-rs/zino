@@ -71,7 +71,7 @@ static LOCALIZATION: LazyLock<Vec<(LanguageIdentifier, Translation)>> = LazyLock
             for file in files {
                 let locale_file = file.path();
                 let ftl_string = fs::read_to_string(&locale_file).unwrap_or_else(|err| {
-                    let locale_file = locale_file.to_string_lossy();
+                    let locale_file = locale_file.display();
                     panic!("fail to read `{locale_file}`: {err}");
                 });
                 let resource =

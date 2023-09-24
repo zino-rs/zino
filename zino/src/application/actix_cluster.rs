@@ -20,15 +20,22 @@ use zino_core::{
 /// An HTTP server cluster for `actix-web`.
 #[derive(Default)]
 pub struct ActixCluster {
-    /// Routes.
-    routes: Vec<RouterConfigure>,
+    /// Default routes.
+    default_routes: Vec<RouterConfigure>,
+    /// Named routes.
+    named_routes: Vec<(&'static str, Vec<RouterConfigure>)>,
 }
 
 impl Application for ActixCluster {
     type Routes = Vec<RouterConfigure>;
 
     fn register(mut self, routes: Self::Routes) -> Self {
-        self.routes = routes;
+        self.default_routes = routes;
+        self
+    }
+
+    fn register_with(mut self, server_name: &'static str, routes: Self::Routes) -> Self {
+        self.named_routes.push((server_name, routes));
         self
     }
 
@@ -47,47 +54,55 @@ impl Application for ActixCluster {
             }
         });
 
-        // Server config
-        let project_dir = Self::project_dir();
-        let mut body_limit = 100 * 1024 * 1024; // 100MB
-        let mut public_dir = PathBuf::new();
-        let default_public_dir = project_dir.join("public");
-        if let Some(server_config) = Self::config().get_table("server") {
-            if let Some(limit) = server_config.get_usize("body-limit") {
-                body_limit = limit;
-            }
-            if let Some(dir) = server_config.get_str("public-dir") {
-                public_dir.push(dir);
-            } else {
-                public_dir = default_public_dir;
-            }
-        } else {
-            public_dir = default_public_dir;
-        }
+        runtime.block_on(async {
+            let default_routes = self.default_routes.leak() as &'static [_];
+            let named_routes = self.named_routes.leak() as &'static [_];
+            let app_state = Self::shared_state();
+            let app_name = Self::name();
+            let app_version = Self::version();
+            let app_env = app_state.env();
+            let listeners = app_state.listeners();
+            let has_debug_server = listeners.iter().any(|listener| listener.0 == "debug");
+            let servers = listeners.into_iter().map(|listener| {
+                let server_name = listener.0;
+                let addr = listener.1;
+                tracing::warn!(
+                    server_name = server_name.as_ref(),
+                    app_env,
+                    app_name,
+                    app_version,
+                    "listen on {addr}",
+                );
 
-        runtime
-            .block_on({
-                let routes = self.routes;
-                let app_state = Self::shared_state();
-                let app_name = Self::name();
-                let app_version = Self::version();
-                let app_env = app_state.env();
-                let listeners = app_state.listeners();
-                listeners.iter().for_each(|listener| {
-                    tracing::warn!(
-                        env = app_env,
-                        name = app_name,
-                        version = app_version,
-                        "listen on {listener}",
-                    );
-                });
+                // Server config
+                let project_dir = Self::project_dir();
+                let default_public_dir = project_dir.join("public");
+                let mut public_route_name = "/public";
+                let mut public_dir = PathBuf::new();
+                let mut body_limit = 100 * 1024 * 1024; // 100MB
+                if let Some(config) = app_state.get_config("server") {
+                    if let Some(limit) = config.get_usize("body-limit") {
+                        body_limit = limit;
+                    }
+                    if let Some(dir) = config.get_str("page-dir") {
+                        public_route_name = "/page";
+                        public_dir.push(dir);
+                    } else if let Some(dir) = config.get_str("public-dir") {
+                        public_dir.push(dir);
+                    } else {
+                        public_dir = default_public_dir;
+                    }
+                } else {
+                    public_dir = default_public_dir;
+                }
+
                 HttpServer::new(move || {
                     let index_file_handler = web::get()
                         .to(move || async { NamedFile::open_async("./public/index.html").await });
-                    let static_files = Files::new("/public", public_dir.clone())
+                    let static_files = Files::new(public_route_name, public_dir.clone())
                         .show_files_listing()
-                        .prefer_utf8(true)
                         .index_file("index.html")
+                        .prefer_utf8(true)
                         .default_handler(fn_service(|req: ServiceRequest| async {
                             let (req, _) = req.into_parts();
                             let file = NamedFile::open_async("./public/404.html").await?;
@@ -101,28 +116,47 @@ impl Application for ActixCluster {
                             let res = Response::new(StatusCode::NOT_FOUND);
                             ActixResponse::from(res).respond_to(&req.into())
                         }));
-                    for route in &routes {
+                    for route in default_routes {
                         app = app.configure(route);
+                    }
+                    for (name, routes) in named_routes {
+                        if name == &server_name || server_name == "debug" {
+                            for route in routes {
+                                app = app.configure(route);
+                            }
+                        }
                     }
 
                     // Render OpenAPI docs.
-                    if let Some(openapi_config) = app_state.get_config("openapi") {
-                        if openapi_config.get_bool("show-docs") != Some(false) {
-                            let mut rapidoc =
+                    let docs_server_name = if has_debug_server { "debug" } else { "main" };
+                    if docs_server_name == server_name {
+                        if let Some(config) = app_state.get_config("openapi") {
+                            if config.get_bool("show-docs") != Some(false) {
+                                // If the `spec-url` has been configured, the user should
+                                // provide the generated OpenAPI object with a derivation.
+                                let mut rapidoc = if let Some(url) = config.get_str("spec-url") {
+                                    RapiDoc::new(url)
+                                } else {
+                                    RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
+                                };
+                                if let Some(route) = config.get_str("rapidoc-route") {
+                                    rapidoc = rapidoc.path(route);
+                                } else {
+                                    rapidoc = rapidoc.path("/rapidoc");
+                                }
+                                if let Some(custom_html) = config.get_str("custom-html") &&
+                                    let Ok(html) = fs::read_to_string(project_dir.join(custom_html))
+                                {
+                                    rapidoc = rapidoc.custom_html(html.leak());
+                                }
+                                app = app.service(rapidoc);
+                            }
+                        } else {
+                            let rapidoc =
                                 RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
                                     .path("/rapidoc");
-                            if let Some(custom_html) = openapi_config.get_str("custom-html") &&
-                                let Ok(html) = fs::read_to_string(project_dir.join(custom_html))
-                            {
-                                rapidoc = rapidoc.custom_html(html.leak());
-                            }
                             app = app.service(rapidoc);
                         }
-                    } else {
-                        let rapidoc =
-                            RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
-                                .path("/rapidoc");
-                        app = app.service(rapidoc);
                     }
 
                     app.app_data(FormConfig::default().limit(body_limit))
@@ -132,11 +166,17 @@ impl Application for ActixCluster {
                         .wrap(middleware::RequestContextInitializer::default())
                         .wrap(middleware::tracing_middleware())
                         .wrap(middleware::cors_middleware())
+                        .wrap(middleware::ETagFinalizer::default())
                 })
-                .bind(listeners.as_slice())
+                .bind(addr)
                 .unwrap_or_else(|err| panic!("fail to create an HTTP server: {err}"))
                 .run()
-            })
-            .unwrap_or_else(|err| panic!("fail to build Actix runtime: {err}"))
+            });
+            for result in futures::future::join_all(servers).await {
+                if let Err(err) = result {
+                    tracing::error!("server error: {err}");
+                }
+            }
+        });
     }
 }

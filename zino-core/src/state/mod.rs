@@ -1,10 +1,10 @@
 //! Application scoped state.
 
-use crate::{application, crypto, encoding::base64, extension::TomlTableExt, helper};
+use crate::{application, crypto, encoding::base64, extension::TomlTableExt, helper, SharedString};
 use std::{
     borrow::Cow,
     env, fs,
-    net::{IpAddr, SocketAddr},
+    net::{IpAddr, Ipv4Addr, SocketAddr},
     sync::LazyLock,
 };
 use toml::value::Table;
@@ -45,7 +45,7 @@ impl<T> State<T> {
                 value.parse().unwrap_or_default()
             }
             Err(err) => {
-                let config_file = config_file.to_string_lossy();
+                let config_file = config_file.display();
                 tracing::error!("fail to read the config file `{config_file}`: {err}");
                 Table::new()
             }
@@ -95,30 +95,45 @@ impl<T> State<T> {
         &mut self.data
     }
 
-    /// Returns a list of listeners as `Vec<SocketAddr>`.
-    pub fn listeners(&self) -> Vec<SocketAddr> {
+    /// Returns a list of listeners.
+    pub fn listeners(&self) -> Vec<(SharedString, SocketAddr)> {
         let config = self.config();
         let mut listeners = Vec::new();
 
-        // Main server
-        let (main_host, main_port) = if let Some(main) = config.get_table("main") {
-            let host = main
+        // Debug server
+        if let Some(debug_server) = config.get_table("debug") {
+            let debug_host = debug_server
                 .get_str("host")
                 .and_then(|s| s.parse::<IpAddr>().ok())
-                .unwrap_or(IpAddr::from([127, 0, 0, 1]));
-            let port = main.get_u16("port").unwrap_or(6080);
-            (host, port)
-        } else {
-            (IpAddr::from([127, 0, 0, 1]), 6080)
-        };
-        listeners.push((main_host, main_port).into());
+                .expect("the `debug.host` field should be a str");
+            let debug_port = debug_server
+                .get_u16("port")
+                .expect("the `debug.port` field should be an integer");
+            listeners.push(("debug".into(), (debug_host, debug_port).into()));
+        }
 
-        // Optional standbys
+        // Main server
+        if let Some(main_server) = config.get_table("main") {
+            let main_host = main_server
+                .get_str("host")
+                .and_then(|s| s.parse::<IpAddr>().ok())
+                .expect("the `main.host` field should be a str");
+            let main_port = main_server
+                .get_u16("port")
+                .expect("the `main.port` field should be an integer");
+            listeners.push(("main".into(), (main_host, main_port).into()));
+        }
+
+        // Standbys
         if config.contains_key("standby") {
             let standbys = config
                 .get_array("standby")
                 .expect("the `standby` field should be an array of tables");
             for standby in standbys.iter().filter_map(|v| v.as_table()) {
+                let server_name = standby
+                    .get_str("name")
+                    .map(|s| s.to_owned().into())
+                    .unwrap_or("standby".into());
                 let standby_host = standby
                     .get_str("host")
                     .and_then(|s| s.parse::<IpAddr>().ok())
@@ -126,8 +141,13 @@ impl<T> State<T> {
                 let standby_port = standby
                     .get_u16("port")
                     .expect("the `standby.port` field should be an integer");
-                listeners.push((standby_host, standby_port).into());
+                listeners.push((server_name, (standby_host, standby_port).into()));
             }
+        }
+
+        // Ensure that there is at least one listener
+        if listeners.is_empty() {
+            listeners.push(("main".into(), (Ipv4Addr::LOCALHOST, 6080).into()));
         }
 
         listeners
@@ -145,8 +165,8 @@ impl State {
     pub fn encrypt_password(config: &Table) -> Option<Cow<'_, str>> {
         let password = config.get_str("password")?;
         application::SECRET_KEY.get().and_then(|key| {
-            if let Ok(data) = base64::decode(password)
-                && crypto::decrypt(&data, key).is_ok()
+            if let Ok(data) = base64::decode(password) &&
+                crypto::decrypt(&data, key).is_ok()
             {
                 Some(password.into())
             } else {
@@ -161,8 +181,8 @@ impl State {
     pub fn decrypt_password(config: &Table) -> Option<Cow<'_, str>> {
         let password = config.get_str("password")?;
         if let Ok(data) = base64::decode(password) {
-            if let Some(key) = application::SECRET_KEY.get()
-                && let Ok(plaintext) = crypto::decrypt(&data, key)
+            if let Some(key) = application::SECRET_KEY.get() &&
+                let Ok(plaintext) = crypto::decrypt(&data, key)
             {
                 return Some(String::from_utf8_lossy(&plaintext).into_owned().into());
             }

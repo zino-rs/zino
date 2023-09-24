@@ -6,15 +6,21 @@ version = "0.6.2"
 [dirs]
 uploads = "local/uploads"
 
+[debug]
+host = "127.0.0.1"
+port = 6070
+
 [main]
 host = "127.0.0.1"
 port = 6080
 
 [[standby]]
+name = "portal"
 host = "127.0.0.1"
 port = 6081
 
 [[standby]]
+name = "admin"
 host = "127.0.0.1"
 port = 6082
 

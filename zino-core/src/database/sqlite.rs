@@ -241,6 +241,20 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         format!(r#"({field} = '') IS NOT FALSE"#)
                     } else if value == "notnull" {
                         format!(r#"({field} = '') IS FALSE"#)
+                    } else if self.index_type() == Some("text") {
+                        if value.contains(',') {
+                            value
+                                .split(',')
+                                .map(|s| {
+                                    let value = Query::escape_string(format!("%{s}%"));
+                                    format!(r#"{field} LIKE {value}"#)
+                                })
+                                .collect::<Vec<_>>()
+                                .join(" OR ")
+                        } else {
+                            let value = Query::escape_string(format!("%{value}%"));
+                            format!(r#"{field} LIKE {value}"#)
+                        }
                     } else if value.contains(',') {
                         let value = value
                             .split(',')
@@ -249,20 +263,8 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                             .join(",");
                         format!(r#"{field} IN ({value})"#)
                     } else {
-                        let index = value.find(|ch| !"!~*".contains(ch)).unwrap_or(0);
-                        if index > 0 {
-                            let (operator, value) = value.split_at(index);
-                            let value = Query::escape_string(value);
-                            format!(r#"{field} {operator} {value}"#)
-                        } else {
-                            let operator = if self.index_type() == Some("text") {
-                                "RLIKE"
-                            } else {
-                                "="
-                            };
-                            let value = Query::escape_string(value);
-                            format!(r#"{field} {operator} {value}"#)
-                        }
+                        let value = Query::escape_string(value);
+                        format!(r#"{field} = {value}"#)
                     }
                 } else {
                     let value = self.encode_value(Some(value));

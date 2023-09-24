@@ -7,7 +7,7 @@ pub(crate) fn displayed_inline(content_type: &Mime) -> bool {
         true
     } else if mime_type == APPLICATION {
         let mime_subtype = content_type.subtype();
-        matches!(mime_subtype, JSON | JAVASCRIPT | PDF)
+        matches!(mime_subtype, JSON | JAVASCRIPT | PDF) || mime_subtype == "wasm"
     } else {
         false
     }

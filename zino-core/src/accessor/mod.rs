@@ -5,7 +5,7 @@
 //! | Scheme        | Description                              | Feature flag          |
 //! |---------------|------------------------------------------|-----------------------|
 //! | `azblob`      | Azure Storage Blob services.             | `accessor`            |
-//! | `azdfs`       | Azure Data Lake Storage Gen2 services.   | `accessor`            |
+//! | `azdls`       | Azure Data Lake Storage Gen2 services.   | `accessor`            |
 //! | `cacache`     | Cacache services.                        | `accessor-cacache`    |
 //! | `cos`         | Tencent-Cloud COS services.              | `accessor`            |
 //! | `dashmap`     | Dashmap backend.                         | `accessor-dashmap`    |
@@ -41,7 +41,7 @@ use crate::{extension::TomlTableExt, state::State};
 use opendal::{
     layers::{MetricsLayer, RetryLayer, TracingLayer},
     services::{
-        Azblob, Azdfs, Cos, Fs, Gcs, Ghac, Http, Ipmfs, Memory, Obs, Oss, Webdav, Webhdfs, S3,
+        Azblob, Azdls, Cos, Fs, Gcs, Ghac, Http, Ipmfs, Memory, Obs, Oss, Webdav, Webhdfs, S3,
     },
     Error,
     ErrorKind::Unsupported,
@@ -126,8 +126,8 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
-            "azdfs" => {
-                let mut builder = Azdfs::default();
+            "azdls" => {
+                let mut builder = Azdls::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -169,9 +169,6 @@ impl GlobalAccessor {
                 }
                 if let Some(secret_key) = config.get_str("secret-key") {
                     builder.secret_key(secret_key);
-                }
-                if let Some(write_min_size) = config.get_usize("write-min-size") {
-                    builder.write_min_size(write_min_size);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -385,9 +382,6 @@ impl GlobalAccessor {
                 if let Some(secret_access_key) = config.get_str("secret_access_key") {
                     builder.secret_access_key(secret_access_key);
                 }
-                if let Some(write_min_size) = config.get_usize("write-min-size") {
-                    builder.write_min_size(write_min_size);
-                }
                 Ok(Operator::new(builder)?.finish())
             }
             #[cfg(feature = "accessor-onedrive")]
@@ -511,9 +505,6 @@ impl GlobalAccessor {
                 }
                 if let Some(external_id) = config.get_str("external-id") {
                     builder.external_id(external_id);
-                }
-                if let Some(write_min_size) = config.get_usize("write-min-size") {
-                    builder.write_min_size(write_min_size);
                 }
                 if let Some(batch_max_operations) = config.get_usize("batch-max-operations") {
                     builder.batch_max_operations(batch_max_operations);

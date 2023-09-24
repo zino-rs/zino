@@ -113,8 +113,10 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
     let checksum: [u8; 32] = config
         .get_table("access-key")
         .and_then(|t| t.get_str("checksum"))
-        .and_then(|checksum| checksum.as_bytes().try_into().ok())
+        .and_then(|checksum| checksum.as_bytes().first_chunk().copied())
         .unwrap_or_else(|| {
+            tracing::warn!("the `checksum` is not set properly for deriving a secret key");
+
             let app_name = config
                 .get_str("name")
                 .map(|s| s.to_owned())

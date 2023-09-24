@@ -9,19 +9,19 @@ pub struct PdfDocument {
     /// Font.
     font: IndirectFontRef,
     /// Font size.
-    font_size: f64,
+    font_size: f32,
     /// Page width.
-    page_width: f64,
+    page_width: f32,
     /// Page height.
-    page_height: f64,
+    page_height: f32,
     /// Left margin.
-    margin_left: f64,
+    margin_left: f32,
     /// Right margin.
-    margin_right: f64,
+    margin_right: f32,
     /// Top margin.
-    margin_top: f64,
+    margin_top: f32,
     /// Bottom margin.
-    margin_bottom: f64,
+    margin_bottom: f32,
     /// A wrapper for a document.
     document: PdfDocumentReference,
     /// Current page.
@@ -29,7 +29,7 @@ pub struct PdfDocument {
     /// Current layer.
     current_layer: PdfLayerReference,
     /// Current cursor position.
-    current_position: (f64, f64),
+    current_position: (f32, f32),
     /// Page count.
     page_count: usize,
     /// Layer count.
@@ -41,7 +41,7 @@ impl PdfDocument {
     #[inline]
     pub fn try_new(
         document_title: impl Into<String>,
-        page_size: Option<(f64, f64)>,
+        page_size: Option<(f32, f32)>,
     ) -> Result<Self, Error> {
         let layer_name = "Page 1, Layer 1";
         let (page_width, page_height) = page_size.unwrap_or((210.0, 297.0));
@@ -71,7 +71,7 @@ impl PdfDocument {
 
     /// Sets the page size.
     #[inline]
-    pub fn set_page_size(&mut self, page_width: f64, page_height: f64) {
+    pub fn set_page_size(&mut self, page_width: f32, page_height: f32) {
         self.page_width = page_width;
         self.page_height = page_height;
     }
@@ -80,10 +80,10 @@ impl PdfDocument {
     #[inline]
     pub fn set_margin(
         &mut self,
-        margin_left: f64,
-        margin_right: f64,
-        margin_top: f64,
-        margin_bottom: f64,
+        margin_left: f32,
+        margin_right: f32,
+        margin_top: f32,
+        margin_bottom: f32,
     ) {
         self.margin_left = margin_left;
         self.margin_right = margin_right;
@@ -93,7 +93,7 @@ impl PdfDocument {
 
     /// Sets the font size.
     #[inline]
-    pub fn set_font_size(&mut self, font_size: f64) {
+    pub fn set_font_size(&mut self, font_size: f32) {
         self.font_size = font_size;
     }
 
@@ -125,7 +125,7 @@ impl PdfDocument {
 
     /// Adds text to the current layer at the position `(x, y)`.
     /// The origin is at the top-left cornner.
-    pub fn add_text(&mut self, text: impl ToString, position: (f64, f64)) {
+    pub fn add_text(&mut self, text: impl ToString, position: (f32, f32)) {
         let font = &self.font;
         let font_size = self.font_size;
         let x = position.0;
@@ -139,7 +139,7 @@ impl PdfDocument {
     pub fn add_data_table<const N: usize>(&mut self, data: Vec<&Map>, columns: [&str; N]) {
         let line_height = self.font_size;
         let content_width = self.page_width - self.margin_left - self.margin_right;
-        let span_width = content_width / (columns.len() + 1) as f64;
+        let span_width = content_width / (columns.len() + 1) as f32;
         let (x, mut y) = self.current_position;
         for (index, entry) in data.into_iter().enumerate() {
             let number = index + 1;

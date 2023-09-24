@@ -30,8 +30,11 @@ pub trait Application {
     /// Routes.
     type Routes;
 
-    /// Registers routes.
+    /// Registers default routes.
     fn register(self, routes: Self::Routes) -> Self;
+
+    /// Registers routes with a custom server name.
+    fn register_with(self, server_name: &'static str, routes: Self::Routes) -> Self;
 
     /// Runs the application.
     fn run(self, async_jobs: Vec<(&'static str, AsyncCronJob)>);
@@ -52,7 +55,7 @@ pub trait Application {
                     project_dir.join(dir)
                 };
                 if !path.exists() && let Err(err) = fs::create_dir_all(&path) {
-                    let path = path.to_string_lossy();
+                    let path = path.display();
                     tracing::error!("fail to create the directory {path}: {err}");
                 }
             }
@@ -79,6 +82,15 @@ pub trait Application {
     {
         init(Self::shared_state());
         Self::boot()
+    }
+
+    /// Registers routes for debugger.
+    #[inline]
+    fn register_debug(self, routes: Self::Routes) -> Self
+    where
+        Self: Sized,
+    {
+        self.register_with("debug", routes)
     }
 
     /// Gets the system’s information.
@@ -257,8 +269,14 @@ pub(crate) static APP_DOMAIN: LazyLock<&'static str> = LazyLock::new(|| {
 /// Project directory.
 pub(crate) static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     env::var("CARGO_MANIFEST_DIR")
-        .expect("fail to get the environment variable `CARGO_MANIFEST_DIR`")
-        .into()
+        .map(PathBuf::from)
+        .inspect_err(|err| {
+            tracing::warn!("fail to get the environment variable `CARGO_MANIFEST_DIR`: {err}");
+        })
+        .unwrap_or_else(|_| {
+            env::current_dir()
+                .expect("the project directory does not exist or permissions are insufficient")
+        })
 });
 
 /// Shared app state.

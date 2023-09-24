@@ -242,7 +242,7 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
                 let openapi_file = file.path();
                 let openapi_config = fs::read_to_string(&openapi_file)
                     .unwrap_or_else(|err| {
-                        let openapi_file = openapi_file.to_string_lossy();
+                        let openapi_file = openapi_file.display();
                         panic!("fail to read the OpenAPI file `{openapi_file}`: {err}");
                     })
                     .parse::<Table>()

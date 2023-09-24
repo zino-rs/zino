@@ -57,7 +57,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
         let log_dir = project_dir.join("logs");
         if !log_dir.exists() {
             fs::create_dir(log_dir.as_path()).unwrap_or_else(|err| {
-                let log_dir = log_dir.to_string_lossy();
+                let log_dir = log_dir.display();
                 panic!("fail to create the log directory `{log_dir}`: {err}");
             });
         }
