@@ -2,7 +2,7 @@ use super::{query::QueryExt, DatabaseDriver, DatabaseRow, Schema};
 use crate::{
     datetime::DateTime,
     error::Error,
-    extension::{AvroRecordExt, JsonObjectExt, JsonValueExt},
+    extension::{JsonObjectExt, JsonValueExt},
     model::{Column, DecodeRow, EncodeColumn, Query},
     AvroValue, JsonValue, Map, Record, SharedString, Uuid,
 };
@@ -184,14 +184,19 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         _ => name,
                     };
                     if operator == "IN" || operator == "NOT IN" {
-                        if let Some(values) = value.as_array() && !values.is_empty() {
-                            let value = values
-                                .iter()
-                                .map(|v| self.encode_value(Some(v)))
-                                .collect::<Vec<_>>()
-                                .join(",");
-                            let condition = format!(r#"{field} {operator} ({value})"#);
-                            conditions.push(condition);
+                        if let Some(values) = value.as_array() {
+                            if values.is_empty() {
+                                let condition = if operator == "IN" { "FALSE" } else { "TRUE" };
+                                conditions.push(condition.to_owned());
+                            } else {
+                                let value = values
+                                    .iter()
+                                    .map(|v| self.encode_value(Some(v)))
+                                    .collect::<Vec<_>>()
+                                    .join(",");
+                                let condition = format!(r#"{field} {operator} ({value})"#);
+                                conditions.push(condition);
+                            }
                         }
                     } else if operator == "BETWEEN" {
                         if let Some(values) = value.as_array() &&
@@ -422,11 +427,6 @@ impl DecodeRow<DatabaseRow> for Map {
         }
         Ok(map)
     }
-
-    #[inline]
-    fn update(&mut self, field: &str, value: JsonValue) {
-        self.upsert(field, value);
-    }
 }
 
 impl DecodeRow<DatabaseRow> for Record {
@@ -496,11 +496,6 @@ impl DecodeRow<DatabaseRow> for Record {
             record.push((field.to_owned(), value));
         }
         Ok(record)
-    }
-
-    #[inline]
-    fn update(&mut self, field: &str, value: JsonValue) {
-        self.upsert(field, value);
     }
 }
 

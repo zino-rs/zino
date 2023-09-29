@@ -30,7 +30,7 @@ pub async fn new(mut req: Request) -> Result {
 }
 
 pub async fn view(req: Request) -> Result {
-    let user_id = req.parse_param::<Uuid>("id")?;
+    let user_id = req.parse_param("id")?;
 
     let db_query_start_time = Instant::now();
     let user = User::fetch_by_id(&user_id).await.extract(&req)?;

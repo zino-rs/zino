@@ -2,14 +2,12 @@ use crate::{endpoint, middleware, AxumExtractor};
 use axum::{
     error_handling::HandleErrorLayer,
     extract::{rejection::LengthLimitError, DefaultBodyLimit},
-    http::{StatusCode, Uri, uri::PathAndQuery},
-    body::Body,
-    response::Response as AxumResponse,
-    middleware::{from_fn, Next},
+    http::StatusCode,
+    middleware::from_fn,
     routing, BoxError, Router, Server,
 };
 use std::{
-    convert::Infallible, fs, net::SocketAddr, path::PathBuf, sync::LazyLock, time::Duration, str::FromStr,
+    convert::Infallible, fs, net::SocketAddr, path::PathBuf, sync::LazyLock, time::Duration,
 };
 use tokio::runtime::Builder;
 use tower::{
@@ -32,7 +30,6 @@ use zino_core::{
     response::{FullResponse, Response},
     schedule::{AsyncCronJob, Job, JobScheduler},
 };
-use crate::{Request, Result};
 
 /// An HTTP server cluster for `axum`.
 #[derive(Default)]
@@ -100,7 +97,7 @@ impl Application for AxumCluster {
                 // Server config
                 let project_dir = Self::project_dir();
                 let default_public_dir = project_dir.join("public");
-                let mut public_route_name = "/public";
+                let mut public_route_prefix = "/public";
                 let mut public_dir = PathBuf::new();
                 let mut body_limit = 100 * 1024 * 1024; // 100MB
                 let mut request_timeout = Duration::from_secs(10); // 10 seconds
@@ -112,12 +109,15 @@ impl Application for AxumCluster {
                         request_timeout = timeout;
                     }
                     if let Some(dir) = config.get_str("page-dir") {
-                        public_route_name = "/page";
+                        public_route_prefix = "/page";
                         public_dir.push(dir);
                     } else if let Some(dir) = config.get_str("public-dir") {
                         public_dir.push(dir);
                     } else {
                         public_dir = default_public_dir;
+                    }
+                    if let Some(route_prefix) = config.get_str("public-route-prefix") {
+                        public_route_prefix = route_prefix;
                     }
                 } else {
                     public_dir = default_public_dir;
@@ -127,41 +127,21 @@ impl Application for AxumCluster {
                 let index_file = public_dir.join("index.html");
                 let not_found_file = public_dir.join("404.html");
                 let serve_file = ServeFile::new(index_file);
-                let mut serve_dir = Router::new()
-                    .nest_service(public_route_name, ServeDir::new(public_dir)
-                        .precompressed_gzip()
-                        .precompressed_br()
-                        .append_index_html_on_directories(true)
-                        .not_found_service(ServeFile::new(not_found_file)));
-                if public_route_name == "/page" {
-                    serve_dir = serve_dir.layer(from_fn(
-                        // Correct the uri path to achieve the following goals:
-                        //   /page -> page-dir/index.html
-                        //   /page/login -> page-dir/login.html
-                        async move |req: Request, next: Next<Body>| -> Result<AxumResponse> {
-                            let (mut head, body) = axum::http::Request::<Body>::from(req).into_parts();
-                            let uri_path = head.uri.path();
-                            if uri_path == "/page" {
-                                let path_query = format!("/page/index.html?{}", head.uri.query().unwrap_or_default());
-                                let mut parts = head.uri.into_parts();
-                                parts.path_and_query = PathAndQuery::from_str(path_query.as_str()).ok();
-                                head.uri = Uri::from_parts(parts).unwrap();
-                            } else if let Some((p, name)) = uri_path.rsplit_once("/") {
-                                if name.len() > 0 && !name.contains(".") {
-                                    let path_query = format!("{p}/{name}.html?{}", head.uri.query().unwrap_or_default());
-                                    let mut parts = head.uri.into_parts();
-                                    parts.path_and_query = PathAndQuery::from_str(path_query.as_str()).ok();
-                                    head.uri = Uri::from_parts(parts).unwrap();
-                                }
-                            }
-                            Ok(next.run(axum::http::request::Request::from_parts(head, body)).await)
-                        },
-                    ))
+                let serve_dir = ServeDir::new(public_dir)
+                    .precompressed_gzip()
+                    .precompressed_br()
+                    .append_index_html_on_directories(true)
+                    .not_found_service(ServeFile::new(not_found_file));
+                let mut serve_dir_route =
+                    Router::new().nest_service(public_route_prefix, serve_dir);
+                if public_route_prefix.ends_with("/page") {
+                    serve_dir_route =
+                        serve_dir_route.layer(from_fn(middleware::serve_static_pages));
                 }
 
                 let mut app = Router::new()
                     .route_service("/", serve_file)
-                    .merge(serve_dir)
+                    .merge(serve_dir_route)
                     .route("/sse", routing::get(endpoint::sse_handler))
                     .route("/websocket", routing::get(endpoint::websocket_handler));
                 for route in &default_routes {
@@ -228,7 +208,7 @@ impl Application for AxumCluster {
                             .layer(LazyLock::force(&middleware::TRACING_MIDDLEWARE))
                             .layer(LazyLock::force(&middleware::CORS_MIDDLEWARE))
                             .layer(from_fn(middleware::request_context))
-                            .layer(from_fn(middleware::etag_middleware))
+                            .layer(from_fn(middleware::extract_etag))
                             .layer(HandleErrorLayer::new(|err: BoxError| async move {
                                 let status_code = if err.is::<Elapsed>() {
                                     StatusCode::REQUEST_TIMEOUT

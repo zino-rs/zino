@@ -46,6 +46,21 @@ pub trait Application {
     where
         Self: Default,
     {
+        // Loads the `.env` file from the current directory or parents.
+        dotenvy::dotenv().ok();
+
+        // Application setups.
+        secret_key::init::<Self>();
+        tracing_subscriber::init::<Self>();
+        metrics_exporter::init::<Self>();
+        http_client::init::<Self>();
+
+        #[cfg(feature = "view")]
+        {
+            crate::view::init::<Self>();
+        }
+
+        // Initializes the directories to ensure that they are ready for use.
         if let Some(dirs) = SHARED_APP_STATE.get_config("dirs") {
             let project_dir = Self::project_dir();
             for dir in dirs.values().filter_map(|v| v.as_str()) {
@@ -61,16 +76,6 @@ pub trait Application {
             }
         }
 
-        secret_key::init::<Self>();
-        tracing_subscriber::init::<Self>();
-        metrics_exporter::init::<Self>();
-        http_client::init::<Self>();
-
-        #[cfg(feature = "view")]
-        {
-            crate::view::init::<Self>();
-        }
-
         Self::default()
     }
 
@@ -80,8 +85,9 @@ pub trait Application {
         Self: Default,
         F: FnOnce(&'static State<Map>),
     {
+        let app = Self::boot();
         init(Self::shared_state());
-        Self::boot()
+        app
     }
 
     /// Registers routes for debugger.

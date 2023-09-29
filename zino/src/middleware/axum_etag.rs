@@ -8,7 +8,7 @@ use axum::{
     response::Response,
 };
 
-pub(crate) async fn etag_middleware(req: Request<Body>, next: Next<Body>) -> Response {
+pub(crate) async fn extract_etag(req: Request<Body>, next: Next<Body>) -> Response {
     if req.method().is_idempotent() {
         let req_etag = req.headers().get(IF_NONE_MATCH).cloned();
         let mut res = next.run(req).await;

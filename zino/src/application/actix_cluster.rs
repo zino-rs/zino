@@ -77,7 +77,7 @@ impl Application for ActixCluster {
                 // Server config
                 let project_dir = Self::project_dir();
                 let default_public_dir = project_dir.join("public");
-                let mut public_route_name = "/public";
+                let mut public_route_prefix = "/public";
                 let mut public_dir = PathBuf::new();
                 let mut body_limit = 100 * 1024 * 1024; // 100MB
                 if let Some(config) = app_state.get_config("server") {
@@ -85,12 +85,15 @@ impl Application for ActixCluster {
                         body_limit = limit;
                     }
                     if let Some(dir) = config.get_str("page-dir") {
-                        public_route_name = "/page";
+                        public_route_prefix = "/page";
                         public_dir.push(dir);
                     } else if let Some(dir) = config.get_str("public-dir") {
                         public_dir.push(dir);
                     } else {
                         public_dir = default_public_dir;
+                    }
+                    if let Some(route_prefix) = config.get_str("public-route-prefix") {
+                        public_route_prefix = route_prefix;
                     }
                 } else {
                     public_dir = default_public_dir;
@@ -98,8 +101,8 @@ impl Application for ActixCluster {
 
                 HttpServer::new(move || {
                     let index_file_handler = web::get()
-                        .to(move || async { NamedFile::open_async("./public/index.html").await });
-                    let static_files = Files::new(public_route_name, public_dir.clone())
+                        .to(|| async { NamedFile::open_async("./public/index.html").await });
+                    let static_files = Files::new(public_route_prefix, public_dir.clone())
                         .show_files_listing()
                         .index_file("index.html")
                         .prefer_utf8(true)

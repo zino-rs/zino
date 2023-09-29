@@ -251,34 +251,34 @@ impl User {
         claims.upsert("sub", self.id.to_string());
         claims.upsert("updated_at", self.updated_at.timestamp());
         if !claims.get_str("name").is_some_and(|s| !s.is_empty()) {
-            claims.upsert("name", self.name.clone());
+            claims.upsert("name", self.name.as_str());
         }
         if !claims.get_str("nickname").is_some_and(|s| !s.is_empty()) {
-            claims.upsert("nickname", self.nickname.clone());
+            claims.upsert("nickname", self.nickname.as_str());
         }
         if !claims.get_str("picture").is_some_and(|s| !s.is_empty()) {
-            claims.upsert("picture", self.avatar.clone());
+            claims.upsert("picture", self.avatar.as_str());
         }
         if !claims.get_str("website").is_some_and(|s| !s.is_empty()) {
-            claims.upsert("website", self.website.clone());
+            claims.upsert("website", self.website.as_str());
         }
         if !claims.get_str("email").is_some_and(|s| !s.is_empty()) {
-            claims.upsert("email", self.email.clone());
+            claims.upsert("email", self.email.as_str());
         }
         if !claims.get_object("address").is_some_and(|o| !o.is_empty()) {
             claims.upsert(
                 "address",
-                Map::from_entry("locality", self.location.clone()),
+                Map::from_entry("locality", self.location.as_str()),
             );
         }
         if !claims.get_str("locale").is_some_and(|s| !s.is_empty()) {
-            claims.upsert("locale", self.locale.clone());
+            claims.upsert("locale", self.locale.as_str());
         }
         if !claims
             .get_str("phone_number")
             .is_some_and(|s| !s.is_empty())
         {
-            claims.upsert("phone_number", self.mobile.clone());
+            claims.upsert("phone_number", self.mobile.as_str());
         }
         claims
     }

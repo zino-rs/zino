@@ -284,7 +284,7 @@ where
     }
 }
 
-impl JwtAuthService for super::User {
+impl JwtAuthService<Uuid> for super::User {
     const LOGIN_AT_FIELD: Option<&'static str> = Some("current_login_at");
     const LOGIN_IP_FIELD: Option<&'static str> = Some("current_login_ip");
 }

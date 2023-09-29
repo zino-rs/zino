@@ -56,7 +56,6 @@
     html_logo_url = "https://user-images.githubusercontent.com/3446306/267670333-ac29d670-4c81-47ca-bc8c-94ec11aa28f6.svg"
 )]
 #![feature(async_fn_in_trait)]
-#![feature(async_closure)]
 #![feature(doc_auto_cfg)]
 #![feature(lazy_cell)]
 #![feature(let_chains)]
