@@ -71,7 +71,7 @@ connector-http = ["connector"]
 connector-mysql = ["connector", "sqlx", "sqlx/mysql"]
 connector-postgres = ["connector", "sqlx", "sqlx/postgres"]
 connector-sqlite = ["connector", "sqlx", "sqlx/sqlite"]
-crypto-sm = ["dep:libsm", "dep:sm3"]
+crypto-sm = ["dep:cfb-mode", "dep:sm3", "dep:sm4"]
 default = ["runtime-tokio", "tls-rustls"]
 format = []
 format-pdf = ["format", "dep:printpdf"]
@@ -147,16 +147,16 @@ features = ["std"]
 version = "0.14.3"
 optional = true
 
+[dependencies.cfb-mode]
+version = "0.8.2"
+optional = true
+
 [dependencies.chrono]
 version = "0.4.31"
 features = ["serde"]
 
 [dependencies.datafusion]
 version = "31.0.0"
-optional = true
-
-[dependencies.libsm]
-version = "0.5.1"
 optional = true
 
 [dependencies.lru]
@@ -198,6 +198,10 @@ features = ["raw_value"]
 
 [dependencies.sm3]
 version = "0.4.2"
+optional = true
+
+[dependencies.sm4]
+version = "0.5.1"
 optional = true
 
 [dependencies.sqlx]

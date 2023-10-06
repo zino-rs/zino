@@ -1,5 +1,4 @@
 use hkdf::Hkdf;
-use hmac::{Hmac, Mac};
 use sha2::{Digest, Sha256};
 
 /// Key derivation with HKFD-HMAC-SHA256
@@ -18,11 +17,4 @@ pub(crate) fn digest(data: &[u8]) -> [u8; 32] {
     let mut hasher = Sha256::new();
     hasher.update(data);
     hasher.finalize().into()
-}
-
-/// Signs the data with HMAC-SHA256
-pub(crate) fn sign(data: &[u8], key: &[u8]) -> [u8; 32] {
-    let mut mac = Hmac::<Sha256>::new_from_slice(key).expect("HMAC can take key of any size");
-    mac.update(data);
-    mac.finalize().into_bytes().into()
 }

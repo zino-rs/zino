@@ -1,6 +1,10 @@
 use crate::error::Error;
-use libsm::sm4::{Cipher, Mode};
+use cfb_mode::{Decryptor, Encryptor};
 use rand::Rng;
+use sm4::{
+    cipher::{generic_array::GenericArray, AsyncStreamCipher, KeyIvInit},
+    Sm4,
+};
 
 /// Size of the `Key`.
 const KEY_SIZE: usize = 16;
@@ -10,14 +14,15 @@ const NONCE_SIZE: usize = 16;
 
 /// Encrypts the plaintext using `SM4`.
 pub(crate) fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
-    let cipher = Cipher::new(&padded_key(key), Mode::Cfb)?;
     let mut rng = rand::thread_rng();
     let mut nonce = [0u8; NONCE_SIZE];
     rng.fill(&mut nonce);
 
-    let mut ciphertext = cipher.encrypt(plaintext, &nonce)?;
-    ciphertext.extend_from_slice(&nonce);
-    Ok(ciphertext)
+    let mut buf = plaintext.to_vec();
+    let key = padded_key(key).into();
+    Encryptor::<Sm4>::new(&key, &nonce.into()).encrypt(&mut buf);
+    buf.extend_from_slice(&nonce);
+    Ok(buf)
 }
 
 /// Decrypts the data as bytes using `SM4`.
@@ -26,12 +31,13 @@ pub(crate) fn decrypt(data: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
         return Err(Error::new("invalid data length"));
     }
 
-    let cipher = Cipher::new(&padded_key(key), Mode::Cfb)?;
-    let (ciphertext, nonce) = data.split_at(data.len() - NONCE_SIZE);
-    cipher.decrypt(ciphertext, nonce).map_err(|err| {
-        let message = format!("fail to decrypt the ciphertext: {err}");
-        Error::new(message)
-    })
+    let (ciphertext, bytes) = data.split_at(data.len() - NONCE_SIZE);
+    let nonce = GenericArray::from_slice(bytes);
+
+    let mut buf = ciphertext.to_vec();
+    let key = padded_key(key).into();
+    Decryptor::<Sm4>::new(&key, &nonce).decrypt(&mut buf);
+    Ok(buf)
 }
 
 /// Gets the padded key.
