@@ -271,8 +271,12 @@ impl Default for Query {
 pub struct QueryBuilder {
     // Projection fields.
     fields: Vec<String>,
-    // Filters.
-    filters: Map,
+    // Filters with the `AND` logic.
+    logical_and_filters: Map,
+    // Filters with the `OR` logic.
+    logical_or_filters: Vec<Map>,
+    // Aggregations.
+    aggregations: Map,
     // Sort order.
     sort_order: Vec<(SharedString, bool)>,
     // Offset.
@@ -287,7 +291,9 @@ impl QueryBuilder {
     pub fn new() -> Self {
         Self {
             fields: Vec::new(),
-            filters: Map::new(),
+            logical_and_filters: Map::new(),
+            logical_or_filters: Vec::new(),
+            aggregations: Map::new(),
             sort_order: Vec::new(),
             offset: 0,
             limit: usize::MAX,
@@ -304,135 +310,253 @@ impl QueryBuilder {
         self
     }
 
-    /// Adds a filter with the condition for equal parts.
+    /// Adds a logical `AND` filter with the condition for equal parts.
     #[inline]
     pub fn and_eq<S, T>(mut self, field: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
     {
-        self.filters.upsert(field.into(), value);
+        self.logical_and_filters.upsert(field.into(), value);
         self
     }
 
-    /// Adds a filter with the condition for non-equal parts.
+    /// Adds a logical `AND` filter with the condition for non-equal parts.
     #[inline]
     pub fn and_ne<S, T>(mut self, field: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
     {
-        self.filters
+        self.logical_and_filters
             .upsert(field.into(), Map::from_entry("$ne", value));
         self
     }
 
-    /// Adds a filter with the condition for a field less than the value.
+    /// Adds a logical `AND` filter with the condition for a field less than the value.
     #[inline]
     pub fn and_lt<S, T>(mut self, field: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
     {
-        self.filters
+        self.logical_and_filters
             .upsert(field.into(), Map::from_entry("$lt", value));
         self
     }
 
-    /// Adds a filter with the condition for a field not greater than the value.
+    /// Adds a logical `AND` filter with the condition for a field not greater than the value.
     #[inline]
     pub fn and_le<S, T>(mut self, field: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
     {
-        self.filters
+        self.logical_and_filters
             .upsert(field.into(), Map::from_entry("$le", value));
         self
     }
 
-    /// Adds a filter with the condition for a field greater than the value.
+    /// Adds a logical `AND` filter with the condition for a field greater than the value.
     #[inline]
     pub fn and_gt<S, T>(mut self, field: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
     {
-        self.filters
-            .upsert(field.into(), Map::from_entry("$lt", value));
+        self.logical_and_filters
+            .upsert(field.into(), Map::from_entry("$gt", value));
         self
     }
 
-    /// Adds a filter with the condition for a field not less than the value.
+    /// Adds a logical `AND` filter with the condition for a field not less than the value.
     #[inline]
     pub fn and_ge<S, T>(mut self, field: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
     {
-        self.filters
+        self.logical_and_filters
             .upsert(field.into(), Map::from_entry("$ge", value));
         self
     }
 
-    /// Adds a filter with the condition for a field whose value is in the list.
+    /// Adds a logical `AND` filter with the condition for a field whose value is in the list.
     #[inline]
     pub fn and_in<S, T>(mut self, field: S, list: &[T]) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue> + Clone,
     {
-        self.filters
+        self.logical_and_filters
             .upsert(field.into(), Map::from_entry("$in", list));
         self
     }
 
-    /// Adds a filter with the condition for a field whose value is not in the list.
+    /// Adds a logical `AND` filter with the condition for a field whose value is not in the list.
     #[inline]
     pub fn and_not_in<S, T>(mut self, field: S, list: &[T]) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue> + Clone,
     {
-        self.filters
+        self.logical_and_filters
             .upsert(field.into(), Map::from_entry("$nin", list));
         self
     }
 
-    /// Adds a filter with the condition for a field whose value is within a given range.
+    /// Adds a logical `AND` filter with the condition for a field whose value is within a given range.
     pub fn and_between<S, T>(mut self, field: S, min: T, max: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
     {
         let values = vec![min.into(), max.into()];
-        self.filters
+        self.logical_and_filters
             .upsert(field.into(), Map::from_entry("$between", values));
         self
     }
 
-    /// Adds a filter with the condition to search for a specified pattern in a column.
+    /// Adds a logical `AND` filter with the condition to search for a specified pattern in a column.
     pub fn and_like<S, T>(mut self, field: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<JsonValue>,
     {
-        self.filters
+        self.logical_and_filters
             .upsert(field.into(), Map::from_entry("$like", value));
         self
     }
 
-    /// Adds a filter which groups rows that have the same values into summary rows.
+    /// Adds a logical `OR` filter with the condition for equal parts.
     #[inline]
-    pub fn group_by<T: Into<JsonValue>>(mut self, fields: T) -> Self {
-        self.filters.upsert("$group", fields);
+    pub fn or_eq<S, T>(mut self, field: S, value: T) -> Self
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.logical_or_filters.push(Map::from_entry(field, value));
         self
     }
 
-    /// Adds a filter which can be used with aggregate functions.
+    /// Adds a logical `OR` filter with the condition for non-equal parts.
+    #[inline]
+    pub fn or_ne<S, T>(mut self, field: S, value: T) -> Self
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.logical_or_filters
+            .push(Map::from_entry(field, Map::from_entry("$ne", value)));
+        self
+    }
+
+    /// Adds a logical `OR` filter with the condition for a field less than the value.
+    #[inline]
+    pub fn or_lt<S, T>(mut self, field: S, value: T) -> Self
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.logical_or_filters
+            .push(Map::from_entry(field, Map::from_entry("$lt", value)));
+        self
+    }
+
+    /// Adds a logical `OR` filter with the condition for a field not greater than the value.
+    #[inline]
+    pub fn or_le<S, T>(mut self, field: S, value: T) -> Self
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.logical_or_filters
+            .push(Map::from_entry(field, Map::from_entry("$le", value)));
+        self
+    }
+
+    /// Adds a logical `OR` filter with the condition for a field greater than the value.
+    #[inline]
+    pub fn or_gt<S, T>(mut self, field: S, value: T) -> Self
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.logical_or_filters
+            .push(Map::from_entry(field, Map::from_entry("$gt", value)));
+        self
+    }
+
+    /// Adds a logical `OR` filter with the condition for a field not less than the value.
+    #[inline]
+    pub fn or_ge<S, T>(mut self, field: S, value: T) -> Self
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.logical_or_filters
+            .push(Map::from_entry(field, Map::from_entry("$ge", value)));
+        self
+    }
+
+    /// Adds a logical `OR` filter with the condition for a field whose value is in the list.
+    #[inline]
+    pub fn or_in<S, T>(mut self, field: S, list: &[T]) -> Self
+    where
+        S: Into<String>,
+        T: Into<JsonValue> + Clone,
+    {
+        self.logical_or_filters
+            .push(Map::from_entry(field, Map::from_entry("$in", list)));
+        self
+    }
+
+    /// Adds a logical `OR` filter with the condition for a field whose value is not in the list.
+    #[inline]
+    pub fn or_not_in<S, T>(mut self, field: S, list: &[T]) -> Self
+    where
+        S: Into<String>,
+        T: Into<JsonValue> + Clone,
+    {
+        self.logical_or_filters
+            .push(Map::from_entry(field, Map::from_entry("$nin", list)));
+        self
+    }
+
+    /// Adds a logical `OR` filter with the condition for a field whose value is within a given range.
+    pub fn or_between<S, T>(mut self, field: S, min: T, max: T) -> Self
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        let values = vec![min.into(), max.into()];
+        self.logical_or_filters
+            .push(Map::from_entry(field, Map::from_entry("$between", values)));
+        self
+    }
+
+    /// Adds a logical `OR` filter with the condition to search for a specified pattern in a column.
+    pub fn or_like<S, T>(mut self, field: S, value: T) -> Self
+    where
+        S: Into<String>,
+        T: Into<JsonValue>,
+    {
+        self.logical_or_filters
+            .push(Map::from_entry(field, Map::from_entry("$like", value)));
+        self
+    }
+
+    /// Adds an aggregation filter which groups rows that have the same values into summary rows.
+    #[inline]
+    pub fn group_by<T: Into<JsonValue>>(mut self, fields: T) -> Self {
+        self.aggregations.upsert("$group", fields);
+        self
+    }
+
+    /// Adds an aggregation filter which can be used with aggregate functions.
     #[inline]
     pub fn having<T: Into<JsonValue>>(mut self, selection: T) -> Self {
-        self.filters.upsert("$having", selection);
+        self.aggregations.upsert("$having", selection);
         self
     }
 
@@ -473,10 +597,16 @@ impl QueryBuilder {
 
     /// Constructs an instance of `Query`.
     #[inline]
-    pub fn build(self) -> Query {
+    pub fn build(mut self) -> Query {
+        let mut filters = self.logical_and_filters;
+        let logical_or_filters = self.logical_or_filters;
+        if !logical_or_filters.is_empty() {
+            filters.upsert("$or", logical_or_filters);
+        }
+        filters.append(&mut self.aggregations);
         Query {
             fields: self.fields,
-            filters: self.filters,
+            filters,
             sort_order: self.sort_order,
             offset: self.offset,
             limit: self.limit,

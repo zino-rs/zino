@@ -54,7 +54,7 @@ hyper = "0.14.27"
 parking_lot = "0.12.1"
 serde = "1.0.188"
 serde_json = "1.0.107"
-toml = "0.8.0"
+toml = "0.8.2"
 tracing = "0.1.37"
 
 [dependencies.actix-cors]
@@ -135,7 +135,7 @@ features = [
 ]
 
 [dependencies.tracing-actix-web]
-version = "0.7.6"
+version = "0.7.7"
 optional = true
 features = ["opentelemetry_0_20"]
 

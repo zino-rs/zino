@@ -71,6 +71,8 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         }
                     } else if value == "null" {
                         "NULL".into()
+                    } else if value == "not_null" {
+                        "NOT NULL".into()
                     } else {
                         self.format_value(value)
                     }
@@ -254,7 +256,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 if let Some(value) = value.as_str() {
                     if value == "null" {
                         format!(r#"{field} IS NULL"#)
-                    } else if value == "notnull" {
+                    } else if value == "not_null" {
                         format!(r#"{field} IS NOT NULL"#)
                     } else if value.contains(',') {
                         let value = value.split(',').collect::<Vec<_>>().join(",");
@@ -273,7 +275,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     if value == "null" {
                         // either NULL or empty
                         format!(r#"({field} = '') IS NOT FALSE"#)
-                    } else if value == "notnull" {
+                    } else if value == "not_null" {
                         format!(r#"({field} = '') IS FALSE"#)
                     } else if self.index_type() == Some("text") {
                         if value.contains(',') {
@@ -331,7 +333,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 if let Some(value) = value.as_str() {
                     if value == "null" {
                         format!(r#"{field} IS NULL"#)
-                    } else if value == "notnull" {
+                    } else if value == "not_null" {
                         format!(r#"{field} IS NOT NULL"#)
                     } else if value.contains(',') {
                         let value = value
