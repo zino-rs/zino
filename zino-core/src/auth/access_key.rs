@@ -1,10 +1,9 @@
 use crate::{crypto, encoding::base64, extension::TomlTableExt, state::State};
 use hmac::{
     digest::{FixedOutput, KeyInit, MacMarker, Update},
-    Hmac, Mac,
+    Mac,
 };
 use rand::{distributions::Alphanumeric, Rng};
-use sha2::Sha256;
 use std::{borrow::Cow, env, fmt, iter, sync::LazyLock};
 
 /// Access key ID.
@@ -73,7 +72,8 @@ impl SecretAccessKey {
     /// Creates a new instance for the Access key ID.
     #[inline]
     pub fn new(access_key_id: &AccessKeyId) -> Self {
-        Self::with_key::<Hmac<Sha256>>(access_key_id, SECRET_KEY.as_ref())
+        let bytes = crypto::sign(access_key_id.as_ref(), SECRET_KEY.as_ref());
+        Self(base64::encode(bytes))
     }
 
     /// Creates a new instance with the specific key.

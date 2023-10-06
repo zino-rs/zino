@@ -1,6 +1,5 @@
 use super::{AccessKeyId, JwtClaims, SessionId};
-use crate::{application::APP_DOMAIN, error::Error, extension::JsonObjectExt};
-use sha2::Sha256;
+use crate::{application::APP_DOMAIN, crypto::Hash, error::Error, extension::JsonObjectExt};
 use std::str::FromStr;
 
 /// Role-based user sessions.
@@ -41,7 +40,7 @@ impl<U, R, T> UserSession<U, R, T> {
     #[inline]
     pub fn set_access_key_id(&mut self, access_key_id: AccessKeyId) {
         if self.session_id.is_none() {
-            let session_id = SessionId::new::<Sha256>(*APP_DOMAIN, access_key_id.as_ref());
+            let session_id = SessionId::new::<Hash>(*APP_DOMAIN, access_key_id.as_ref());
             self.session_id = Some(session_id);
         }
         self.access_key_id = Some(access_key_id);

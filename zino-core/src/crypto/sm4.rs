@@ -10,9 +10,7 @@ const NONCE_SIZE: usize = 16;
 
 /// Encrypts the plaintext using `SM4`.
 pub(crate) fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
-    let key_padding = [key, &[0u8; KEY_SIZE]].concat();
-    let cipher = Cipher::new(&key_padding[0..KEY_SIZE], Mode::Cfb)?;
-
+    let cipher = Cipher::new(&padded_key(key), Mode::Cfb)?;
     let mut rng = rand::thread_rng();
     let mut nonce = [0u8; NONCE_SIZE];
     rng.fill(&mut nonce);
@@ -28,12 +26,22 @@ pub(crate) fn decrypt(data: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
         return Err(Error::new("invalid data length"));
     }
 
-    let key_padding = [key, &[0u8; KEY_SIZE]].concat();
-    let cipher = Cipher::new(&key_padding[0..KEY_SIZE], Mode::Cfb)?;
-
+    let cipher = Cipher::new(&padded_key(key), Mode::Cfb)?;
     let (ciphertext, nonce) = data.split_at(data.len() - NONCE_SIZE);
     cipher.decrypt(ciphertext, nonce).map_err(|err| {
         let message = format!("fail to decrypt the ciphertext: {err}");
         Error::new(message)
     })
+}
+
+/// Gets the padded key.
+fn padded_key(key: &[u8]) -> [u8; KEY_SIZE] {
+    let mut padded_key = [0_u8; KEY_SIZE];
+    let key_len = key.len();
+    if key_len > KEY_SIZE {
+        padded_key.copy_from_slice(&key[0..KEY_SIZE]);
+    } else {
+        padded_key[0..key_len].copy_from_slice(key);
+    }
+    padded_key
 }

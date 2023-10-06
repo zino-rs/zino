@@ -11,13 +11,19 @@ cfg_if::cfg_if! {
         mod sm3;
         mod sm4;
 
-        pub(crate) use sm3::{digest, derive_key};
-        pub(crate) use sm4::{encrypt, decrypt};
+        pub(crate) use sm3::{derive_key, digest, sign};
+        pub(crate) use sm4::{decrypt, encrypt};
+
+        /// Digest type.
+        pub(crate) type Hash = ::sm3::Sm3;
     } else {
         mod aes256;
         mod sha256;
 
-        pub(crate) use aes256::{encrypt, decrypt};
-        pub(crate) use sha256::{digest, derive_key};
+        pub(crate) use aes256::{decrypt, encrypt};
+        pub(crate) use sha256::{derive_key, digest, sign};
+
+        /// Digest type.
+        pub(crate) type Hash = ::sha2::Sha256;
     }
 }

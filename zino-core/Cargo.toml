@@ -71,7 +71,7 @@ connector-http = ["connector"]
 connector-mysql = ["connector", "sqlx", "sqlx/mysql"]
 connector-postgres = ["connector", "sqlx", "sqlx/postgres"]
 connector-sqlite = ["connector", "sqlx", "sqlx/sqlite"]
-crypto-sm = ["dep:libsm"]
+crypto-sm = ["dep:libsm", "dep:sm3"]
 default = ["runtime-tokio", "tls-rustls"]
 format = []
 format-pdf = ["format", "dep:printpdf"]
@@ -195,6 +195,10 @@ features = ["derive"]
 [dependencies.serde_json]
 version = "1.0.107"
 features = ["raw_value"]
+
+[dependencies.sm3]
+version = "0.4.2"
+optional = true
 
 [dependencies.sqlx]
 version = "0.7.2"

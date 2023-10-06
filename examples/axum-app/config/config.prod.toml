@@ -36,7 +36,7 @@ host = "127.0.0.1"
 port = 3306
 database = "data_cube"
 username = "root"
-password = "3OueQ326BaOz9Y73Z4I+CzVmP5I"
+password = "7xOJ/qj49ql4ENeTLUTM+josr6s"
 
 [[sqlite]]
 database = "local/data/main.db"
