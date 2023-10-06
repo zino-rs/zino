@@ -10,12 +10,8 @@
 //!
 //! [`zino`]: https://github.com/photino/zino
 
-#![doc(
-    html_favicon_url = "https://user-images.githubusercontent.com/3446306/267664890-e85a1cf8-5260-4bac-b395-2341e3129e40.png"
-)]
-#![doc(
-    html_logo_url = "https://user-images.githubusercontent.com/3446306/267670333-ac29d670-4c81-47ca-bc8c-94ec11aa28f6.svg"
-)]
+#![doc(html_favicon_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.png")]
+#![doc(html_logo_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.svg")]
 #![feature(async_fn_in_trait)]
 #![feature(doc_auto_cfg)]
 #![feature(lazy_cell)]

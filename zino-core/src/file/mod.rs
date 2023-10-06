@@ -85,7 +85,7 @@ impl NamedFile {
     /// Returns the checksum for the file.
     #[inline]
     pub fn checksum(&self) -> Bytes {
-        let checksum = crypto::sha256(self.as_ref());
+        let checksum = crypto::digest(self.as_ref());
         Vec::from(checksum).into()
     }
 

@@ -3,9 +3,8 @@ use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
-use hmac::digest::{Digest, FixedOutput, HashMarker, Update};
 
-/// Encrypts the hashed password using `Argon2id` and `AES-GCM-SIV`.
+/// Encrypts the hashed password using `Argon2id`.
 pub(crate) fn encrypt_hashed_password(hashed_password: &[u8], key: &[u8]) -> Result<String, Error> {
     let salt = SaltString::generate(&mut OsRng);
     let password_hash = Argon2::default()
@@ -15,19 +14,13 @@ pub(crate) fn encrypt_hashed_password(hashed_password: &[u8], key: &[u8]) -> Res
     Ok(base64::encode(ciphertext))
 }
 
-/// Encrypts the raw password using `Argon2id` and `AES-GCM-SIV`.
-pub(crate) fn encrypt_raw_password<D>(raw_password: &[u8], key: &[u8]) -> Result<String, Error>
-where
-    D: Default + FixedOutput + HashMarker + Update,
-{
-    let mut hasher = D::new();
-    hasher.update(raw_password);
-
-    let hashed_password = base64::encode(hasher.finalize().as_slice());
+/// Encrypts the raw password using `Argon2id`.
+pub(crate) fn encrypt_raw_password(raw_password: &[u8], key: &[u8]) -> Result<String, Error> {
+    let hashed_password = base64::encode(super::digest(raw_password));
     encrypt_hashed_password(hashed_password.as_bytes(), key)
 }
 
-/// Verifies the hashed password using `Argon2id` and `AES-GCM-SIV`.
+/// Verifies the hashed password using `Argon2id`.
 pub(crate) fn verify_hashed_password(
     hashed_password: &[u8],
     encrypted_password: &[u8],
@@ -41,18 +34,12 @@ pub(crate) fn verify_hashed_password(
     Ok(true)
 }
 
-/// Verifies the raw password using `Argon2id` and `AES-GCM-SIV`.
-pub(crate) fn verify_raw_password<D>(
+/// Verifies the raw password using `Argon2id`.
+pub(crate) fn verify_raw_password(
     raw_password: &[u8],
     encrypted_password: &[u8],
     key: &[u8],
-) -> Result<bool, Error>
-where
-    D: Default + FixedOutput + HashMarker + Update,
-{
-    let mut hasher = D::new();
-    hasher.update(raw_password);
-
-    let hashed_password = base64::encode(hasher.finalize().as_slice());
+) -> Result<bool, Error> {
+    let hashed_password = base64::encode(super::digest(raw_password));
     verify_hashed_password(hashed_password.as_bytes(), encrypted_password, key)
 }

@@ -71,6 +71,7 @@ connector-http = ["connector"]
 connector-mysql = ["connector", "sqlx", "sqlx/mysql"]
 connector-postgres = ["connector", "sqlx", "sqlx/postgres"]
 connector-sqlite = ["connector", "sqlx", "sqlx/sqlite"]
+crypto-sm = ["dep:libsm"]
 default = ["runtime-tokio", "tls-rustls"]
 format = []
 format-pdf = ["format", "dep:printpdf"]
@@ -152,6 +153,10 @@ features = ["serde"]
 
 [dependencies.datafusion]
 version = "31.0.0"
+optional = true
+
+[dependencies.libsm]
+version = "0.5.1"
 optional = true
 
 [dependencies.lru]

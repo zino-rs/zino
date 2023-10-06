@@ -207,8 +207,8 @@ static SECRET_KEY: LazyLock<HS256Key> = LazyLock::new(|| {
                     env::var("CARGO_PKG_NAME")
                         .expect("fail to get the environment variable `CARGO_PKG_NAME`")
                 });
-            crypto::sha256(app_name.as_bytes())
+            crypto::digest(app_name.as_bytes())
         });
-    let secret_key = crypto::hkdf_sha256(b"ZINO:JWT;CHECKSUM:SHA256;HKDF:HMAC-SHA256", &checksum);
+    let secret_key = crypto::derive_key("ZINO:JWT", &checksum);
     HS256Key::from_bytes(&secret_key)
 });

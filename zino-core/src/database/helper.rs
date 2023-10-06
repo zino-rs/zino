@@ -2,7 +2,6 @@ use super::Schema;
 use crate::{
     crypto, encoding::base64, error::Error, extension::TomlTableExt, openapi, state::State, Map,
 };
-use sha2::Sha256;
 use std::{fmt::Display, sync::LazyLock};
 
 /// Helper utilities for models.
@@ -28,7 +27,7 @@ where
         if let Ok(bytes) = base64::decode(passowrd) && bytes.len() == 256 {
             crypto::encrypt_hashed_password(passowrd, key)
         } else {
-            crypto::encrypt_raw_password::<Sha256>(passowrd, key)
+            crypto::encrypt_raw_password(passowrd, key)
         }
     }
 
@@ -40,7 +39,7 @@ where
         if let Ok(bytes) = base64::decode(passowrd) && bytes.len() == 256 {
             crypto::verify_hashed_password(passowrd, encrypted_password, key)
         } else {
-            crypto::verify_raw_password::<Sha256>(passowrd, encrypted_password, key)
+            crypto::verify_raw_password(passowrd, encrypted_password, key)
         }
     }
 
@@ -70,7 +69,7 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
             tracing::warn!("the `checksum` is not set properly for deriving a secret key");
 
             let driver_name = format!("{}_{}", *super::NAMESPACE_PREFIX, super::DRIVER_NAME);
-            crypto::sha256(driver_name.as_bytes())
+            crypto::digest(driver_name.as_bytes())
         });
-    crypto::hkdf_sha256(b"ZINO:ORM;CHECKSUM:SHA256;HKDF:HMAC-SHA256", &checksum)
+    crypto::derive_key("ZINO:ORM", &checksum)
 });

@@ -124,10 +124,7 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
                     env::var("CARGO_PKG_NAME")
                         .expect("fail to get the environment variable `CARGO_PKG_NAME`")
                 });
-            crypto::sha256(app_name.as_bytes())
+            crypto::digest(app_name.as_bytes())
         });
-    crypto::hkdf_sha256(
-        b"ZINO:ACCESS-KEY;CHECKSUM:SHA256;HKDF:HMAC-SHA256",
-        &checksum,
-    )
+    crypto::derive_key("ZINO:ACCESS-KEY", &checksum)
 });

@@ -67,11 +67,7 @@ impl RequestContext for ActixExtractor<HttpRequest> {
 
     #[inline]
     fn get_header(&self, name: &str) -> Option<&str> {
-        self.headers()
-            .get(name)?
-            .to_str()
-            .inspect_err(|err| tracing::error!("{err}"))
-            .ok()
+        self.headers().get(name)?.to_str().ok()
     }
 
     #[inline]

@@ -278,8 +278,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 let text = text_search_columns
                     .iter()
                     .filter_map(|col| (col.0 == language).then_some(col.1.as_str()))
-                    .intersperse(" || ' ' || ")
-                    .collect::<String>();
+                    .collect::<Vec<_>>()
+                    .join(" || ' ' || ");
                 let text_search = format!("to_tsvector('{language}', {text})");
                 let sql = format!(
                     "CREATE INDEX IF NOT EXISTS {table_name}_text_search_{language}_index \

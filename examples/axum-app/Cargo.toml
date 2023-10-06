@@ -27,6 +27,7 @@ version = "0.13.3"
 features = [
     "connector",
     "connector-arrow",
+    "crypto-sm",
     "orm-mysql",
     "view-tera",
 ]

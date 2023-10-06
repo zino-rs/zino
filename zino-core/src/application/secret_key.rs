@@ -15,13 +15,12 @@ pub(super) fn init<APP: Application + ?Sized>() {
             let pkg_version = env::var("CARGO_PKG_VERSION")
                 .expect("fail to get the environment variable `CARGO_PKG_VERSION`");
             let pkg_key = format!("{pkg_name}@{pkg_version}");
-            crypto::sha256(pkg_key.as_bytes())
+            crypto::digest(pkg_key.as_bytes())
         });
+
+    let secret_key = crypto::derive_key("ZINO:APPLICATION", &checksum);
     SECRET_KEY
-        .set(crypto::hkdf_sha256(
-            b"ZINO:APPLICATION;CHECKSUM:SHA256;HKDF:HMAC-SHA256",
-            &checksum,
-        ))
+        .set(secret_key)
         .expect("fail to set the secret key");
 }
 
