@@ -1,7 +1,7 @@
 # --env=dev
 
 name = "data-cube"
-version = "0.1.1"
+version = "0.1.2"
 
 [dirs]
 uploads = "local/uploads"
@@ -33,12 +33,12 @@ refresh-interval = "7d"
 [[connector]]
 type = "arrow"
 name = "mock"
-root = "./local/data/mock/"
+root = "local/data/mock/"
 
 [[connector.tables]]
 type = "csv"
 name = "users"
-path = "./users.csv"
+path = "users.csv"
 
 [[connector.tables]]
 type = "ndjson"

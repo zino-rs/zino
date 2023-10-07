@@ -1,7 +1,7 @@
 # --env=dev
 
 name = "data-cube"
-version = "0.6.2"
+version = "0.6.3"
 
 [dirs]
 uploads = "local/uploads"
@@ -36,7 +36,7 @@ host = "127.0.0.1"
 port = 3306
 database = "data_cube"
 username = "root"
-password = "hWSkJHvQkgnvIYylDSigujOgkyU"
+password = "Wuf4gbfL1R0DRyUbXsMUDm3lwaA"
 
 [[sqlite]]
 database = "local/data/main.db"
@@ -56,12 +56,12 @@ refresh-interval = "7d"
 [[connector]]
 type = "arrow"
 name = "mock"
-root = "./local/data/mock/"
+root = "local/data/mock/"
 
 [[connector.tables]]
 type = "csv"
 name = "users"
-path = "./users.csv"
+path = "users.csv"
 
 [[connector.tables]]
 type = "ndjson"
