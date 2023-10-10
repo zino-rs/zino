@@ -28,8 +28,8 @@ accessor-mini-moka = ["accessor", "opendal/services-mini-moka"]
 accessor-moka = ["accessor", "opendal/services-moka"]
 accessor-onedrive = ["accessor", "opendal/services-onedrive"]
 accessor-persy = ["accessor", "opendal/services-persy"]
-accessor-redis = ["accessor", "opendal/services-redis"]
 accessor-redb = ["accessor", "opendal/services-redb"]
+accessor-redis = ["accessor", "opendal/services-redis"]
 accessor-sled = ["accessor", "opendal/services-sled"]
 accessor-supabase = ["accessor", "opendal/services-supabase"]
 accessor-wasabi = ["accessor", "opendal/services-wasabi"]
@@ -46,12 +46,13 @@ all-accessors = [
     "accessor-moka",
     "accessor-onedrive",
     "accessor-persy",
-    "accessor-redis",
     "accessor-redb",
+    "accessor-redis",
     "accessor-sled",
     "accessor-supabase",
     "accessor-wasabi",
 ]
+all-chatbots = ["chatbot", "chatbot-openai"]
 all-connectors = [
     "connector",
     "connector-arrow",
@@ -60,8 +61,8 @@ all-connectors = [
     "connector-postgres",
     "connector-sqlite",
 ]
-all-chatbots = ["chatbot", "chatbot-openai"]
 all-formats = ["format", "format-pdf"]
+auth-totp = ["dep:totp-rs"]
 cache = ["dep:lru"]
 chatbot = []
 chatbot-openai = ["dep:async-openai", "chatbot"]
@@ -71,7 +72,7 @@ connector-http = ["connector"]
 connector-mysql = ["connector", "sqlx", "sqlx/mysql"]
 connector-postgres = ["connector", "sqlx", "sqlx/postgres"]
 connector-sqlite = ["connector", "sqlx", "sqlx/sqlite"]
-crypto-sm = ["dep:cfb-mode", "dep:sm3", "dep:sm4"]
+crypto-sm = ["dep:ctr", "dep:sm3", "dep:sm4"]
 default = ["runtime-tokio", "tls-rustls"]
 format = []
 format-pdf = ["format", "dep:printpdf"]
@@ -80,6 +81,7 @@ full = [
     "all-chatbots",
     "all-connectors",
     "all-formats",
+    "auth-totp",
     "cache",
     "orm",
     "view",
@@ -147,8 +149,8 @@ features = ["std"]
 version = "0.14.3"
 optional = true
 
-[dependencies.cfb-mode]
-version = "0.8.2"
+[dependencies.ctr]
+version = "0.9.2"
 optional = true
 
 [dependencies.chrono]
@@ -216,6 +218,11 @@ features = [
 [dependencies.tera]
 version = "1.19.1"
 optional = true
+
+[dependencies.totp-rs]
+version = "5.4.0"
+optional = true
+features = ["otpauth", "qr"]
 
 [dependencies.tracing-subscriber]
 version = "0.3.17"

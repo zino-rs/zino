@@ -25,8 +25,7 @@ pub fn routes() -> Vec<Router> {
     // File controller.
     let router = Router::new()
         .route("/file/upload", post(file::upload))
-        .route("/file/decrypt", get(file::decrypt))
-        .layer(from_fn(middleware::init_user_session));
+        .route("/file/decrypt", get(file::decrypt));
     routes.push(router);
 
     // User controller.
@@ -47,7 +46,8 @@ pub fn routes() -> Vec<Router> {
         .route("/tag/:id/delete", post(Tag::delete))
         .route("/tag/:id/update", post(Tag::update))
         .route("/tag/:id/view", get(Tag::view))
-        .route("/tag/list", get(Tag::list));
+        .route("/tag/list", get(Tag::list))
+        .route("/tag/schema", get(Tag::schema));
     routes.push(router);
 
     // Task controller.

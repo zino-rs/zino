@@ -11,6 +11,9 @@ use hmac::{
 use rand::{distributions::Alphanumeric, Rng};
 use std::{borrow::Cow, env, fmt, iter, sync::LazyLock};
 
+#[cfg(feature = "auth-totp")]
+use totp_rs::{Algorithm, TOTP};
+
 /// Access key ID.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct AccessKeyId(String);
@@ -71,7 +74,7 @@ impl<'a> From<Cow<'a, str>> for AccessKeyId {
 
 /// Secrect access key.
 #[derive(Debug, Clone)]
-pub struct SecretAccessKey(String);
+pub struct SecretAccessKey(Vec<u8>);
 
 impl SecretAccessKey {
     /// Creates a new instance for the Access key ID.
@@ -87,20 +90,28 @@ impl SecretAccessKey {
     {
         let mut mac = H::new_from_slice(key.as_ref()).expect("HMAC can take key of any size");
         mac.update(access_key_id.as_ref());
-        Self(base64::encode(mac.finalize().into_bytes()))
+        Self(mac.finalize().into_bytes().to_vec())
     }
 
-    /// Returns a string slice.
+    /// Returns a byte slice.
     #[inline]
-    pub fn as_str(&self) -> &str {
-        self.0.as_str()
+    pub fn as_bytes(&self) -> &[u8] {
+        self.0.as_slice()
+    }
+
+    /// Consumes `self` and generates a TOTP used for 2FA authentification.
+    #[cfg(feature = "auth-totp")]
+    pub fn generate_totp(self, issuer: Option<String>, account_name: String) -> TOTP {
+        let mut secret = self.0;
+        secret.truncate(20);
+        TOTP::new_unchecked(Algorithm::SHA1, 6, 1, 30, secret, issuer, account_name)
     }
 }
 
 impl fmt::Display for SecretAccessKey {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{}", base64::encode(self.as_bytes()))
     }
 }
 

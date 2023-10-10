@@ -19,7 +19,7 @@ features = ["derive"]
 [dependencies.zino]
 path = "../../zino"
 version = "0.13.0"
-features = ["actix", "export-pdf"]
+features = ["actix"]
 
 [dependencies.zino-core]
 path = "../../zino-core"

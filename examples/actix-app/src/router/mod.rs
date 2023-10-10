@@ -34,8 +34,7 @@ fn file_router(cfg: &mut ServiceConfig) {
     cfg.service(
         scope("/file")
             .route("/upload", post().to(file::upload))
-            .route("/decrypt", get().to(file::decrypt))
-            .wrap(middleware::UserSessionInitializer),
+            .route("/decrypt", get().to(file::decrypt)),
     );
 }
 
@@ -60,7 +59,8 @@ fn tag_router(cfg: &mut ServiceConfig) {
             .route("/{id}/delete", post().to(Tag::delete))
             .route("/{id}/update", post().to(Tag::update))
             .route("/{id}/view", get().to(Tag::view))
-            .route("/list", get().to(Tag::list)),
+            .route("/list", get().to(Tag::list))
+            .route("/schema", get().to(Tag::schema)),
     );
 }
 

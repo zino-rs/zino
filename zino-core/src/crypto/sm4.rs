@@ -1,8 +1,8 @@
 use crate::error::Error;
-use cfb_mode::{Decryptor, Encryptor};
+use ctr::Ctr64LE;
 use rand::Rng;
 use sm4::{
-    cipher::{generic_array::GenericArray, AsyncStreamCipher, KeyIvInit},
+    cipher::{KeyIvInit, StreamCipher},
     Sm4,
 };
 
@@ -20,7 +20,8 @@ pub(crate) fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
 
     let mut buf = plaintext.to_vec();
     let key = padded_key(key).into();
-    Encryptor::<Sm4>::new(&key, &nonce.into()).encrypt(&mut buf);
+    let iv = nonce.into();
+    Ctr64LE::<Sm4>::new(&key, &iv).apply_keystream(&mut buf);
     buf.extend_from_slice(&nonce);
     Ok(buf)
 }
@@ -32,11 +33,12 @@ pub(crate) fn decrypt(data: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
     }
 
     let (ciphertext, bytes) = data.split_at(data.len() - NONCE_SIZE);
-    let nonce = GenericArray::from_slice(bytes);
+    let nonce: [u8; NONCE_SIZE] = bytes.try_into()?;
 
     let mut buf = ciphertext.to_vec();
     let key = padded_key(key).into();
-    Decryptor::<Sm4>::new(&key, &nonce).decrypt(&mut buf);
+    let iv = nonce.into();
+    Ctr64LE::<Sm4>::new(&key, &iv).apply_keystream(&mut buf);
     Ok(buf)
 }
 

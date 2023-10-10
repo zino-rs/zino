@@ -31,13 +31,16 @@ pub trait DefaultController<K, U = K> {
 
     /// Exports model data.
     async fn export(req: Self::Request) -> Self::Result;
+
+    /// Gets the model schema.
+    async fn schema(req: Self::Request) -> Self::Result;
 }
 
 #[cfg(any(feature = "actix", feature = "axum"))]
 #[cfg(feature = "orm")]
 use zino_core::{
     database::{ModelAccessor, ModelHelper},
-    extension::{JsonObjectExt, JsonValueExt},
+    extension::JsonObjectExt,
     model::{ModelHooks, Query},
     request::RequestContext,
     response::{ExtractRejection, Rejection, StatusCode},
@@ -285,6 +288,8 @@ where
             "msgpack" => res.set_msgpack_response(models),
             #[cfg(feature = "export-pdf")]
             "pdf" => {
+                use zino_core::extension::JsonValueExt;
+
                 res.set_json_data(models);
                 res.set_content_type("application/pdf");
                 res.set_data_transformer(|data| {
@@ -300,6 +305,30 @@ where
             }
             _ => res.set_json_response(models),
         }
+        Ok(res.into())
+    }
+
+    async fn schema(req: Self::Request) -> Self::Result {
+        let reader_available = Self::acquire_reader()
+            .await
+            .is_ok_and(|cp| cp.is_available());
+        let writer_available = Self::acquire_writer()
+            .await
+            .is_ok_and(|cp| cp.is_available());
+        let data = serde_json::json!({
+            "model_name": Self::model_name(),
+            "model_namespace": Self::model_namespace(),
+            "table_name": Self::table_name(),
+            "columns": Self::columns(),
+            "readonly_fields": Self::readonly_fields(),
+            "writeonly_fields": Self::writeonly_fields(),
+            "primary_key_name": Self::PRIMARY_KEY_NAME,
+            "reader_available": reader_available,
+            "writer_available": writer_available,
+        });
+
+        let mut res = crate::Response::default().context(&req);
+        res.set_json_data(data);
         Ok(res.into())
     }
 }
