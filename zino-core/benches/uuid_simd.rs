@@ -2,7 +2,7 @@ use uuid::Uuid;
 use uuid_simd::UuidExt;
 
 pub fn bench(c: &mut criterion::Criterion) {
-    c.bench_function("formt_uuid", |b| {
+    c.bench_function("format_uuid", |b| {
         b.iter(|| {
             let value = Uuid::new_v4();
             value.to_string()

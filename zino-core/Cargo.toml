@@ -238,7 +238,7 @@ version = "0.9.1"
 features = ["macros"]
 
 [dependencies.utoipa]
-version = "3.5.0"
+version = "4.0.0"
 features = [
     "non_strict_integers",
     "preserve_order",
@@ -259,7 +259,10 @@ features = [
 anyhow = "1.0.75"
 base64-simd = "0.8.0"
 criterion = "0.5.1"
+data-encoding = "2.4.0"
+libsm = "0.5.1"
 ryu = "1.0.15"
+sm3 = "0.4.2"
 tinyvec = { version = "1.6.0", features = ["alloc"] }
 uuid-simd = "0.8.0"
 

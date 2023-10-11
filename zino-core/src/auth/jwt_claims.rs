@@ -7,7 +7,7 @@ use crate::{
     JsonValue, Map,
 };
 use jwt_simple::{
-    algorithms::{HS256Key, MACLike},
+    algorithms::MACLike,
     claims::{self, Claims, JWTClaims},
     common::VerificationOptions,
 };
@@ -130,9 +130,9 @@ impl JwtClaims<Map> {
 }
 
 impl JwtClaims<()> {
-    /// Returns the shared secret access key for the `HS256` JWT algorithm.
+    /// Returns the shared secret access key for the HMAC algorithm.
     #[inline]
-    pub fn shared_key() -> &'static HS256Key {
+    pub fn shared_key() -> &'static JwtHmacKey {
         LazyLock::force(&SECRET_KEY)
     }
 }
@@ -190,8 +190,8 @@ static DEFAULT_REFRESH_INTERVAL: LazyLock<Duration> = LazyLock::new(|| {
         .unwrap_or_else(|| Duration::from_secs(60 * 60 * 24 * 30))
 });
 
-/// Shared secret access key for the `HS256` JWT algorithm.
-static SECRET_KEY: LazyLock<HS256Key> = LazyLock::new(|| {
+/// Shared secret access key for the HMAC algorithm.
+static SECRET_KEY: LazyLock<JwtHmacKey> = LazyLock::new(|| {
     let config = State::shared().config();
     let checksum: [u8; 32] = config
         .get_table("jwt")
@@ -210,5 +210,90 @@ static SECRET_KEY: LazyLock<HS256Key> = LazyLock::new(|| {
             crypto::digest(app_name.as_bytes())
         });
     let secret_key = crypto::derive_key("ZINO:JWT", &checksum);
-    HS256Key::from_bytes(&secret_key)
+    JwtHmacKey::from_bytes(&secret_key)
 });
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "crypto-sm")] {
+        use hmac::{Hmac, Mac};
+        use jwt_simple::{algorithms::HMACKey, common::KeyMetadata};
+        use sm3::Sm3;
+
+        /// HMAC-SM3 key type.
+        #[derive(Debug, Clone)]
+        pub struct HSm3Key {
+            /// key.
+            key: HMACKey,
+            /// Key ID.
+            key_id: Option<String>,
+        }
+
+        impl HSm3Key {
+            /// Creates a new instance from bytes.
+            pub fn from_bytes(raw_key: &[u8]) -> Self {
+                Self {
+                    key: HMACKey::from_bytes(raw_key),
+                    key_id: None,
+                }
+            }
+
+            /// Returns the bytes.
+            pub fn to_bytes(&self) -> Vec<u8> {
+                self.key.to_bytes()
+            }
+
+            /// Generates a new instance with random bytes.
+            pub fn generate() -> Self {
+                Self {
+                    key: HMACKey::generate(),
+                    key_id: None,
+                }
+            }
+
+            /// Set the key ID.
+            pub fn with_key_id(mut self, key_id: &str) -> Self {
+                self.key_id = Some(key_id.to_owned());
+                self
+            }
+        }
+
+        impl MACLike for HSm3Key {
+            fn jwt_alg_name() -> &'static str {
+                "HSM3"
+            }
+
+            fn key(&self) -> &HMACKey {
+                &self.key
+            }
+
+            fn key_id(&self) -> &Option<String> {
+                &self.key_id
+            }
+
+            fn set_key_id(&mut self, key_id: String) {
+                self.key_id = Some(key_id);
+            }
+
+            fn metadata(&self) -> &Option<KeyMetadata> {
+                &None
+            }
+
+            fn attach_metadata(&mut self, _metadata: KeyMetadata) -> Result<(), jwt_simple::Error> {
+                Ok(())
+            }
+
+            fn authentication_tag(&self, authenticated: &str) -> Vec<u8> {
+                let mut mac = Hmac::<Sm3>::new_from_slice(self.key().as_ref())
+                    .expect("HMAC can take key of any size");
+                mac.update(authenticated.as_bytes());
+                mac.finalize().into_bytes().to_vec()
+            }
+        }
+
+        /// HMAC key type for JWT.
+        pub type JwtHmacKey = HSm3Key;
+    } else {
+        /// HMAC key type for JWT.
+        pub type JwtHmacKey = jwt_simple::algorithms::HS256Key;
+    }
+}

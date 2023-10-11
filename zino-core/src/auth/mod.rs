@@ -16,7 +16,7 @@ pub use access_key::{AccessKeyId, SecretAccessKey};
 pub use authentication::Authentication;
 pub use authorization_provider::AuthorizationProvider;
 pub use client_credentials::ClientCredentials;
-pub use jwt_claims::JwtClaims;
+pub use jwt_claims::{JwtClaims, JwtHmacKey};
 pub use security_token::SecurityToken;
 pub use session_id::SessionId;
 pub use user_session::UserSession;
