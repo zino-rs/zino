@@ -250,7 +250,7 @@ cfg_if::cfg_if! {
                 }
             }
 
-            /// Set the key ID.
+            /// Sets the key ID.
             pub fn with_key_id(mut self, key_id: &str) -> Self {
                 self.key_id = Some(key_id.to_owned());
                 self

@@ -81,9 +81,6 @@ impl Application for ActixCluster {
                 let mut public_dir = PathBuf::new();
                 let mut body_limit = 100 * 1024 * 1024; // 100MB
                 if let Some(config) = app_state.get_config("server") {
-                    if let Some(limit) = config.get_usize("body-limit") {
-                        body_limit = limit;
-                    }
                     if let Some(dir) = config.get_str("page-dir") {
                         public_route_prefix = "/page";
                         public_dir.push(dir);
@@ -94,6 +91,9 @@ impl Application for ActixCluster {
                     }
                     if let Some(route_prefix) = config.get_str("public-route-prefix") {
                         public_route_prefix = route_prefix;
+                    }
+                    if let Some(limit) = config.get_usize("body-limit") {
+                        body_limit = limit;
                     }
                 } else {
                     public_dir = default_public_dir;
@@ -142,8 +142,8 @@ impl Application for ActixCluster {
                                 } else {
                                     RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
                                 };
-                                if let Some(route) = config.get_str("rapidoc-route") {
-                                    rapidoc = rapidoc.path(route);
+                                if let Some(path) = config.get_str("rapidoc-route") {
+                                    rapidoc = rapidoc.path(path);
                                 } else {
                                     rapidoc = rapidoc.path("/rapidoc");
                                 }

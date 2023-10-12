@@ -26,6 +26,8 @@ port = 6082
 
 [server]
 page-dir = "public"
+sse-route = "/sse"
+websocket-route = "/websocket"
 
 [database]
 namespace = "dc"

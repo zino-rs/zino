@@ -99,15 +99,11 @@ impl Application for AxumCluster {
                 let default_public_dir = project_dir.join("public");
                 let mut public_route_prefix = "/public";
                 let mut public_dir = PathBuf::new();
+                let mut sse_route = None;
+                let mut websocket_route = None;
                 let mut body_limit = 100 * 1024 * 1024; // 100MB
                 let mut request_timeout = Duration::from_secs(10); // 10 seconds
                 if let Some(config) = app_state.get_config("server") {
-                    if let Some(limit) = config.get_usize("body-limit") {
-                        body_limit = limit;
-                    }
-                    if let Some(timeout) = config.get_duration("request-timeout") {
-                        request_timeout = timeout;
-                    }
                     if let Some(dir) = config.get_str("page-dir") {
                         public_route_prefix = "/page";
                         public_dir.push(dir);
@@ -118,6 +114,18 @@ impl Application for AxumCluster {
                     }
                     if let Some(route_prefix) = config.get_str("public-route-prefix") {
                         public_route_prefix = route_prefix;
+                    }
+                    if let Some(path) = config.get_str("sse-route") {
+                        sse_route = Some(path);
+                    }
+                    if let Some(path) = config.get_str("websocket-route") {
+                        websocket_route = Some(path);
+                    }
+                    if let Some(limit) = config.get_usize("body-limit") {
+                        body_limit = limit;
+                    }
+                    if let Some(timeout) = config.get_duration("request-timeout") {
+                        request_timeout = timeout;
                     }
                 } else {
                     public_dir = default_public_dir;
@@ -141,9 +149,13 @@ impl Application for AxumCluster {
 
                 let mut app = Router::new()
                     .route_service("/", serve_file)
-                    .merge(serve_dir_route)
-                    .route("/sse", routing::get(endpoint::sse_handler))
-                    .route("/websocket", routing::get(endpoint::websocket_handler));
+                    .merge(serve_dir_route);
+                if let Some(path) = sse_route {
+                    app = app.route(path, routing::get(endpoint::sse_handler));
+                }
+                if let Some(path) = websocket_route {
+                    app = app.route(path, routing::get(endpoint::websocket_handler));
+                }
                 for route in &default_routes {
                     app = app.merge(route.clone());
                 }
@@ -167,8 +179,8 @@ impl Application for AxumCluster {
                             } else {
                                 RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
                             };
-                            if let Some(route) = config.get_str("rapidoc-route") {
-                                rapidoc = rapidoc.path(route);
+                            if let Some(path) = config.get_str("rapidoc-route") {
+                                rapidoc = rapidoc.path(path);
                             } else {
                                 rapidoc = rapidoc.path("/rapidoc");
                             }

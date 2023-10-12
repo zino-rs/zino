@@ -41,7 +41,6 @@ impl<S: ?Sized> ClientCredentials<S> {
     }
 
     /// Attempts to create a new instance with the configuration.
-    #[inline]
     pub fn try_from_config(config: &'static Table) -> Result<Self, Error> {
         let client_id = config
             .get_str("client-id")

@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.14.0"
+version = "0.14.1"
 rust-version = "1.72"
 edition = "2021"
 license = "MIT"
@@ -14,6 +14,7 @@ readme = "README.md"
 
 [package.metadata.docs.rs]
 features = ["full", "runtime-tokio"]
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [features]
 accessor = ["opendal"]
@@ -62,6 +63,9 @@ all-connectors = [
     "connector-sqlite",
 ]
 all-formats = ["format", "format-pdf"]
+all-auth = ["auth-oauth2", "auth-oidc", "auth-totp"]
+auth-oauth2 = ["dep:oauth2"]
+auth-oidc = ["dep:openidconnect"]
 auth-totp = ["dep:totp-rs"]
 cache = ["dep:lru"]
 chatbot = []
@@ -81,7 +85,7 @@ full = [
     "all-chatbots",
     "all-connectors",
     "all-formats",
-    "auth-totp",
+    "all-auth",
     "cache",
     "orm",
     "view",
@@ -170,10 +174,18 @@ version = "1.0.8"
 optional = true
 features = ["debug", "loader"]
 
+[dependencies.oauth2]
+version = "4.4.2"
+optional = true
+
 [dependencies.opendal]
 version = "0.40.0"
 optional = true
 features = ["layers-all"]
+
+[dependencies.openidconnect]
+version = "3.3.1"
+optional = true
 
 [dependencies.printpdf]
 version = "0.6.0"

@@ -1,7 +1,7 @@
 use self::ParseSecurityTokenError::*;
 use super::AccessKeyId;
 use crate::{crypto, datetime::DateTime, encoding::base64, error::Error};
-use std::{error, fmt, time::Duration};
+use std::{fmt, time::Duration};
 
 /// Security token.
 #[derive(Debug, Clone)]
@@ -126,4 +126,4 @@ impl fmt::Display for ParseSecurityTokenError {
     }
 }
 
-impl error::Error for ParseSecurityTokenError {}
+impl std::error::Error for ParseSecurityTokenError {}
