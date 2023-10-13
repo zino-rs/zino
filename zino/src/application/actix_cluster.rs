@@ -147,8 +147,8 @@ impl Application for ActixCluster {
                                 } else {
                                     rapidoc = rapidoc.path("/rapidoc");
                                 }
-                                if let Some(custom_html) = config.get_str("custom-html") &&
-                                    let Ok(html) = fs::read_to_string(project_dir.join(custom_html))
+                                if let Some(custom_html) = config.get_str("custom-html")
+                                    && let Ok(html) = fs::read_to_string(project_dir.join(custom_html))
                                 {
                                     rapidoc = rapidoc.custom_html(html.leak());
                                 }

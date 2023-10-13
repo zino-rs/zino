@@ -248,8 +248,8 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
                     .parse::<Table>()
                     .expect("fail to parse the OpenAPI file as a TOML table");
                 if file.file_name() == "OPENAPI.toml" {
-                    if let Some(info_config) = openapi_config.get_table("info") &&
-                        OPENAPI_INFO.set(info_config.clone()).is_err()
+                    if let Some(info_config) = openapi_config.get_table("info")
+                        && OPENAPI_INFO.set(info_config.clone()).is_err()
                     {
                         panic!("fail to set OpenAPI info");
                     }

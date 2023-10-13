@@ -184,8 +184,8 @@ impl Application for AxumCluster {
                             } else {
                                 rapidoc = rapidoc.path("/rapidoc");
                             }
-                            if let Some(custom_html) = config.get_str("custom-html") &&
-                                let Ok(html) = fs::read_to_string(project_dir.join(custom_html))
+                            if let Some(custom_html) = config.get_str("custom-html")
+                                && let Ok(html) = fs::read_to_string(project_dir.join(custom_html))
                             {
                                 app = app.merge(rapidoc.custom_html(html.as_str()));
                             } else {

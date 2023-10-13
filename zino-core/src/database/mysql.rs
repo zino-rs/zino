@@ -201,8 +201,8 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                             }
                         }
                     } else if operator == "BETWEEN" {
-                        if let Some(values) = value.as_array() &&
-                            let [min_value, max_value, ..] = values.as_slice()
+                        if let Some(values) = value.as_array()
+                            && let [min_value, max_value, ..] = values.as_slice()
                         {
                             let condition = format!(r#"{field} BETWEEN {min_value} AND {max_value}"#);
                             conditions.push(condition);
@@ -394,9 +394,6 @@ impl DecodeRow<DatabaseRow> for Map {
                         let value = decode_column::<Decimal>(field, raw_value)?;
                         serde_json::to_value(value)?
                     }
-                    "TEXT" | "VARCHAR" | "CHAR" => {
-                        decode_column::<String>(field, raw_value)?.into()
-                    }
                     "TIMESTAMP" => decode_column::<DateTime>(field, raw_value)?.into(),
                     "DATETIME" => decode_column::<NaiveDateTime>(field, raw_value)?
                         .to_string()
@@ -420,7 +417,7 @@ impl DecodeRow<DatabaseRow> for Map {
                         }
                     }
                     "JSON" => decode_column::<JsonValue>(field, raw_value)?,
-                    _ => JsonValue::Null,
+                    _ => decode_column::<String>(field, raw_value)?.into(),
                 }
             };
             if !value.is_ignorable() {
@@ -466,9 +463,6 @@ impl DecodeRow<DatabaseRow> for Record {
                     "NUMERIC" => decode_column::<Decimal>(field, raw_value)?
                         .to_string()
                         .into(),
-                    "TEXT" | "VARCHAR" | "CHAR" => {
-                        decode_column::<String>(field, raw_value)?.into()
-                    }
                     "TIMESTAMP" => decode_column::<DateTime>(field, raw_value)?.into(),
                     "DATETIME" => decode_column::<NaiveDateTime>(field, raw_value)?
                         .to_string()
@@ -492,7 +486,7 @@ impl DecodeRow<DatabaseRow> for Record {
                         }
                     }
                     "JSON" => decode_column::<JsonValue>(field, raw_value)?.into(),
-                    _ => AvroValue::Null,
+                    _ => decode_column::<String>(field, raw_value)?.into(),
                 }
             };
             record.push((field.to_owned(), value));

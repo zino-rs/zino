@@ -311,6 +311,11 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                         connection_pool.store_availability(false);
                         return Err(err.context(message));
                     }
+                    if let Err(err) = Self::synchronize_schema().await {
+                        let message = format!("503 Service Unavailable: fail to acquire reader for the model `{model_name}`");
+                        connection_pool.store_availability(false);
+                        return Err(err.context(message));
+                    }
                     if let Err(err) = Self::create_indexes().await {
                         let message = format!("503 Service Unavailable: fail to acquire reader for the model `{model_name}`");
                         connection_pool.store_availability(false);
@@ -331,6 +336,11 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
                     let connection_pool = Self::init_writer()?;
                     if let Err(err) = Self::create_table().await {
                         let message = format!("503 Service Unavailable: fail to acquire writer for the model `{model_name}`");
+                        connection_pool.store_availability(false);
+                        return Err(err.context(message));
+                    }
+                    if let Err(err) = Self::synchronize_schema().await {
+                        let message = format!("503 Service Unavailable: fail to acquire reader for the model `{model_name}`");
                         connection_pool.store_availability(false);
                         return Err(err.context(message));
                     }

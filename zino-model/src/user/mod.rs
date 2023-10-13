@@ -68,6 +68,7 @@ pub struct User {
     avatar: String,
     website: String,
     email: String,
+    gender: String,
     location: String,
     locale: String,
     mobile: String,

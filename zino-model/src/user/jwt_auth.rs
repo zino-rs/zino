@@ -119,8 +119,8 @@ where
             if let Some(role_field) = Self::ROLE_FIELD && user.contains_key(role_field) {
                 claims.add_data_entry("roles", user.parse_str_array(role_field));
             }
-            if let Some(tenant_id_field) = Self::TENANT_ID_FIELD &&
-                let Some(tenant_id) = user.remove(tenant_id_field)
+            if let Some(tenant_id_field) = Self::TENANT_ID_FIELD
+                && let Some(tenant_id) = user.remove(tenant_id_field)
             {
                 claims.add_data_entry("tenant_id", tenant_id);
             }
@@ -144,15 +144,13 @@ where
     /// Refreshes the access token.
     async fn refresh_token(claims: &JwtClaims) -> Result<Map, Error> {
         if !claims.data().is_empty() {
-            return Err(Error::new(
-                "401 Unauthorized: the JWT token is not a refresh token",
-            ));
+            let message = "401 Unauthorized: the JWT token is not a refresh token";
+            return Err(Error::new(message));
         }
 
         let Some(user_id) = claims.subject() else {
-            return Err(Error::new(
-                "401 Unauthorized: the JWT token does not have a subject",
-            ));
+            let message = "401 Unauthorized: the JWT token does not have a subject";
+            return Err(Error::new(message));
         };
 
         let mut query = Query::default();
@@ -178,8 +176,8 @@ where
         if let Some(role_field) = Self::ROLE_FIELD && user.contains_key(role_field) {
             claims.add_data_entry("roles", user.parse_str_array(role_field));
         }
-        if let Some(tenant_id_field) = Self::TENANT_ID_FIELD &&
-            let Some(tenant_id) = user.remove(tenant_id_field)
+        if let Some(tenant_id_field) = Self::TENANT_ID_FIELD
+            && let Some(tenant_id) = user.remove(tenant_id_field)
         {
             claims.add_data_entry("tenant_id", tenant_id);
         }
@@ -193,9 +191,8 @@ where
     /// Verfifies the JWT claims.
     async fn verify_jwt_claims(claims: &JwtClaims) -> Result<bool, Error> {
         let Some(user_id) = claims.subject() else {
-            return Err(Error::new(
-                "401 Unauthorized: the JWT token does not have a subject",
-            ));
+            let message = "401 Unauthorized: the JWT token does not have a subject";
+            return Err(Error::new(message));
         };
 
         let mut query = Query::default();
@@ -221,24 +218,24 @@ where
             Error::new(message)
         })?;
         let data = claims.data();
-        if let Some(role_field) = Self::ROLE_FIELD &&
-            let Some(roles) = data.get("roles") &&
-            user.get(role_field) != Some(roles)
+        if let Some(role_field) = Self::ROLE_FIELD
+            && let Some(roles) = data.get("roles")
+            && user.get(role_field) != Some(roles)
         {
             let message = format!("401 Unauthorized: invalid for the `{role_field}` field");
             return Err(Error::new(message));
         }
-        if let Some(tenant_id_field) = Self::TENANT_ID_FIELD &&
-            let Some(tenant_id) = data.get("tenant_id") &&
-            user.get(tenant_id_field) != Some(tenant_id)
+        if let Some(tenant_id_field) = Self::TENANT_ID_FIELD
+            && let Some(tenant_id) = data.get("tenant_id")
+            && user.get(tenant_id_field) != Some(tenant_id)
         {
             let message = format!("401 Unauthorized: invalid for the `{tenant_id_field}` field");
             return Err(Error::new(message));
         }
-        if let Some(login_at_field) = Self::LOGIN_AT_FIELD &&
-            let Some(login_at_str) = user.get_str(login_at_field) &&
-            let Ok(login_at) = login_at_str.parse::<DateTime>() &&
-            claims.issued_at().timestamp() < login_at.timestamp()
+        if let Some(login_at_field) = Self::LOGIN_AT_FIELD
+            && let Some(login_at_str) = user.get_str(login_at_field)
+            && let Ok(login_at) = login_at_str.parse::<DateTime>()
+            && claims.issued_at().timestamp() < login_at.timestamp()
         {
             let message = format!("401 Unauthorized: invalid before the `{login_at_field}` time");
             return Err(Error::new(message));

@@ -26,6 +26,7 @@ use std::{
 use toml::value::Table;
 
 mod accessor;
+mod column;
 mod decode;
 mod helper;
 mod mutation;

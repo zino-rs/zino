@@ -185,8 +185,8 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                             }
                         }
                     } else if operator == "BETWEEN" {
-                        if let Some(values) = value.as_array() &&
-                            let [min_value, max_value, ..] = values.as_slice()
+                        if let Some(values) = value.as_array()
+                            && let [min_value, max_value, ..] = values.as_slice()
                         {
                             let condition = format!(r#"{field} BETWEEN {min_value} AND {max_value}"#);
                             conditions.push(condition);
@@ -394,7 +394,7 @@ impl DecodeRow<DatabaseRow> for Map {
                             bytes.into()
                         }
                     }
-                    _ => JsonValue::Null,
+                    _ => decode_column::<String>(field, raw_value)?.into(),
                 }
             };
             if !value.is_ignorable() {
@@ -454,7 +454,7 @@ impl DecodeRow<DatabaseRow> for Record {
                             bytes.into()
                         }
                     }
-                    _ => AvroValue::Null,
+                    _ => decode_column::<String>(field, raw_value)?.into(),
                 }
             };
             record.push((field.to_owned(), value));

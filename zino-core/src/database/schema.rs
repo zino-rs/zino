@@ -1,6 +1,6 @@
 use super::{
-    mutation::MutationExt, query::QueryExt, ConnectionPool, DatabaseDriver, DatabaseRow,
-    ModelHelper,
+    column::column_def, mutation::MutationExt, query::QueryExt, ConnectionPool, DatabaseDriver,
+    DatabaseRow, ModelHelper,
 };
 use crate::{
     error::Error,
@@ -139,7 +139,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             .ok_or_else(|| Error::new("connection to the database is unavailable"))
     }
 
-    /// Creates table for the model.
+    /// Creates a database table for the model.
     async fn create_table() -> Result<(), Error> {
         let pool = Self::init_writer()?.pool();
         Self::before_create_table().await?;
@@ -148,37 +148,92 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let table_name = Self::table_name();
         let columns = Self::columns()
             .iter()
-            .map(|col| {
-                let column_name = col.name();
-                let column_type = col.column_type();
-                let mut column = format!("{column_name} {column_type}");
-                if column_name == primary_key_name {
-                    column += " PRIMARY KEY";
-                } else if let Some(value) = col.default_value() {
-                    if col.auto_increment() {
-                        column += if cfg!(feature = "orm-mysql") {
-                            " AUTO_INCREMENT"
-                        } else {
-                            " AUTOINCREMENT"
-                        };
-                    } else {
-                        let value = col.format_value(value);
-                        if cfg!(feature = "orm-sqlite") && value.contains('(') {
-                            column = format!("{column} DEFAULT ({value})");
-                        } else {
-                            column = format!("{column} DEFAULT {value}");
-                        }
-                    }
-                } else if col.is_not_null() {
-                    column += " NOT NULL";
-                }
-                column
-            })
+            .map(|col| column_def(col, primary_key_name))
             .collect::<Vec<_>>()
             .join(",\n  ");
         let sql = format!("CREATE TABLE IF NOT EXISTS {table_name} (\n  {columns}\n);");
         sqlx::query(&sql).execute(pool).await?;
         Self::after_create_table().await?;
+        Ok(())
+    }
+
+    /// Synchronizes the table schema for the model.
+    async fn synchronize_schema() -> Result<(), Error> {
+        let connection_pool = Self::init_writer()?;
+        let pool = connection_pool.pool();
+
+        let table_name = Self::table_name();
+        let sql = if cfg!(feature = "orm-mysql") {
+            let table_schema = connection_pool.database();
+            format!(
+                "SELECT column_name, data_type, column_default, is_nullable \
+                    FROM information_schema.columns \
+                        WHERE table_schema = '{table_schema}' AND table_name = '{table_name}';"
+            )
+        } else if cfg!(feature = "orm-postgres") {
+            format!(
+                "SELECT column_name, data_type, column_default, is_nullable \
+                    FROM information_schema.columns \
+                        WHERE table_schema = 'public' AND table_name = '{table_name}';"
+            )
+        } else {
+            format!(
+                "SELECT p.name AS column_name, p.type AS data_type, \
+                        p.dflt_value AS column_default, p.[notnull] AS is_not_null \
+                    FROM sqlite_master m LEFT OUTER JOIN pragma_table_info((m.name)) p
+                        ON m.name <> p.name WHERE m.name = '{table_name}';"
+            )
+        };
+        let mut rows = sqlx::query(&sql).fetch(pool);
+        let mut data = Vec::new();
+        while let Some(row) = rows.try_next().await? {
+            data.push(Map::decode_row(&row)?);
+        }
+
+        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        for col in Self::columns() {
+            let column_name = col.name();
+            let column_opt = data.iter().find(|d| {
+                d.get_str("column_name")
+                    .or_else(|| d.get_str("COLUMN_NAME"))
+                    == Some(column_name)
+            });
+            if let Some(d) = column_opt
+                && let Some(data_type) = d.get_str("data_type").or_else(|| d.get_str("DATA_TYPE"))
+            {
+                let column_default = d.get_str("column_default")
+                    .or_else(|| d.get_str("COLUMN_DEFAULT"));
+                let is_not_null = if cfg!(any(feature = "orm-mysql", feature = "orm-postgres")) {
+                    d.get_str("is_nullable")
+                        .or_else(|| d.get_str("IS_NULLABLE"))
+                        .unwrap_or("YES")
+                        .eq_ignore_ascii_case("NO")
+                } else {
+                    d.get_str("is_not_null") == Some("1")
+                };
+                if col.is_not_null() != is_not_null {
+                    tracing::warn!(
+                        model_name = Self::model_name(),
+                        table_name,
+                        column_name,
+                        data_type,
+                        column_default,
+                        is_not_null,
+                        "the `NOT NULL` constraint of the column `{column_name}` should be updated",
+                    );
+                }
+            } else {
+                let column_definition = column_def(col, primary_key_name);
+                let sql = format!("ALTER TABLE {table_name} ADD COLUMN {column_definition};");
+                sqlx::query(&sql).execute(pool).await?;
+                tracing::warn!(
+                    model_name = Self::model_name(),
+                    table_name,
+                    column_name,
+                    "a new column `{column_name}` has been added",
+                );
+            }
+        }
         Ok(())
     }
 

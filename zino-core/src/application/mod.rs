@@ -181,8 +181,8 @@ pub trait Application {
     /// Returns the shared directory with the specific name,
     /// which is defined in the `dirs` table.
     fn shared_dir(name: &str) -> PathBuf {
-        let path = if let Some(dirs) = SHARED_APP_STATE.get_config("dirs") &&
-            let Some(path) = dirs.get_str(name)
+        let path = if let Some(dirs) = SHARED_APP_STATE.get_config("dirs")
+            && let Some(path) = dirs.get_str(name)
         {
             path
         } else {
