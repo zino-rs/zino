@@ -73,7 +73,7 @@ impl VarProvider for ScalarValueProvider {
     fn get_type(&self, var_names: &[String]) -> Option<DataType> {
         var_names.iter().find_map(|name| {
             self.get(name.trim_start_matches('@'))
-                .map(|value| value.get_datatype())
+                .map(|value| value.data_type())
         })
     }
 }

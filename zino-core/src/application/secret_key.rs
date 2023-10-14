@@ -1,6 +1,6 @@
 use super::Application;
 use crate::{crypto, extension::TomlTableExt};
-use std::{sync::OnceLock};
+use std::sync::OnceLock;
 
 /// Initializes the secret key.
 pub(super) fn init<APP: Application + ?Sized>() {

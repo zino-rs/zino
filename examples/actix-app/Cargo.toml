@@ -10,10 +10,10 @@ publish = false
 actix-web = "4.4.0"
 fluent = "0.16.0"
 serde_json = "1.0.107"
-tracing = "0.1.37"
+tracing = "0.1.39"
 
 [dependencies.serde]
-version = "1.0.188"
+version = "1.0.189"
 features = ["derive"]
 
 [dependencies.zino]

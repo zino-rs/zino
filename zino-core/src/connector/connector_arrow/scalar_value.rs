@@ -28,7 +28,7 @@ impl ScalarValueExt for ScalarValue {
                     .map(|value| {
                         let scalar = Self::from_toml_value(value);
                         if data_type == DataType::Null {
-                            data_type = scalar.get_datatype();
+                            data_type = scalar.data_type();
                         }
                         scalar
                     })
@@ -41,7 +41,7 @@ impl ScalarValueExt for ScalarValue {
                     .into_iter()
                     .map(|(key, value)| {
                         let scalar = Self::from_toml_value(value);
-                        let field = Field::new(key, scalar.get_datatype(), true);
+                        let field = Field::new(key, scalar.data_type(), true);
                         fields.push(field);
                         scalar
                     })
@@ -75,7 +75,7 @@ impl ScalarValueExt for ScalarValue {
                     .map(|value| {
                         let scalar = Self::from_json_value(value);
                         if data_type == DataType::Null {
-                            data_type = scalar.get_datatype();
+                            data_type = scalar.data_type();
                         }
                         scalar
                     })
@@ -88,7 +88,7 @@ impl ScalarValueExt for ScalarValue {
                     .into_iter()
                     .map(|(key, value)| {
                         let scalar = Self::from_json_value(value);
-                        let field = Field::new(key, scalar.get_datatype(), true);
+                        let field = Field::new(key, scalar.data_type(), true);
                         fields.push(field);
                         scalar
                     })

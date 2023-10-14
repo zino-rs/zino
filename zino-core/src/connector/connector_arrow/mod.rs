@@ -9,8 +9,8 @@ use crate::{
 };
 use datafusion::{
     arrow::{datatypes::Schema, record_batch::RecordBatch},
-    common::FileCompressionType,
     dataframe::DataFrame,
+    datasource::file_format::file_compression_type::FileCompressionType,
     execution::{
         context::{SessionConfig, SessionContext, SessionState},
         options::{AvroReadOptions, CsvReadOptions, NdJsonReadOptions, ParquetReadOptions},
@@ -110,7 +110,7 @@ impl ArrowConnector {
             return Ok(ctx);
         };
 
-        let ctx = SessionContext::with_state(SHARED_SESSION_STATE.clone());
+        let ctx = SessionContext::new_with_state(SHARED_SESSION_STATE.clone());
         if let Some(tables) = self.tables.as_deref() {
             let root = &self.root;
             for table in tables.iter().filter_map(|v| v.as_table()) {
@@ -297,5 +297,5 @@ impl Connector for ArrowConnector {
 static SHARED_SESSION_STATE: LazyLock<SessionState> = LazyLock::new(|| {
     let config = SessionConfig::new();
     let runtime = Arc::new(RuntimeEnv::default());
-    SessionState::with_config_rt(config, runtime)
+    SessionState::new_with_config_rt(config, runtime)
 });

@@ -4,6 +4,7 @@ mod controller;
 mod router;
 mod schedule;
 mod service;
+mod view;
 
 use zino::prelude::*;
 

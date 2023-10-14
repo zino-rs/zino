@@ -198,7 +198,7 @@ impl ConnectionPool {
 
         // Pool options.
         let max_connections = config.get_u32("max-connections").unwrap_or(16);
-        let min_connections = config.get_u32("min-connections").unwrap_or(2);
+        let min_connections = config.get_u32("min-connections").unwrap_or(1);
         let max_lifetime = config
             .get_duration("max-lifetime")
             .unwrap_or_else(|| Duration::from_secs(60 * 60));

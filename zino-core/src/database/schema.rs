@@ -211,7 +211,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 } else {
                     d.get_str("is_not_null") == Some("1")
                 };
-                if col.is_not_null() != is_not_null {
+                if col.is_not_null() != is_not_null && column_name != primary_key_name {
                     tracing::warn!(
                         model_name = Self::model_name(),
                         table_name,
