@@ -1,7 +1,7 @@
 # --env=prod
 
 name = "data-cube"
-version = "0.1.2"
+version = "0.1.3"
 
 [dirs]
 uploads = "local/uploads"
@@ -19,33 +19,3 @@ database = "local/data/main.db"
 
 [tracing]
 filter = "warn"
-
-[metrics]
-exporter = "prometheus"
-host = "127.0.0.1"
-port = 9000
-
-[[connector]]
-type = "arrow"
-name = "mock"
-root = "local/data/mock/"
-
-[[connector.tables]]
-type = "csv"
-name = "users"
-path = "users.csv"
-
-[[connector.tables]]
-type = "ndjson"
-name = "logs"
-url = "http://localhost:6080/public/data/logs.ndjson"
-
-[connector.tables.schema]
-timestamp = "string"
-level = "string"
-fields = { message = "string" }
-target = "string"
-span = { "http.method" = "string", "http.target" = "string", "http.status_code" = "int" }
-
-[connector.variables]
-app-name = "data-cube"

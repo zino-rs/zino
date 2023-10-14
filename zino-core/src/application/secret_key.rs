@@ -1,6 +1,6 @@
 use super::Application;
 use crate::{crypto, extension::TomlTableExt};
-use std::{env, sync::OnceLock};
+use std::{sync::OnceLock};
 
 /// Initializes the secret key.
 pub(super) fn init<APP: Application + ?Sized>() {
@@ -10,12 +10,10 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .unwrap_or_else(|| {
             tracing::warn!("the `checksum` is not set properly for deriving a secret key");
 
-            let pkg_name = env::var("CARGO_PKG_NAME")
-                .expect("fail to get the environment variable `CARGO_PKG_NAME`");
-            let pkg_version = env::var("CARGO_PKG_VERSION")
-                .expect("fail to get the environment variable `CARGO_PKG_VERSION`");
-            let pkg_key = format!("{pkg_name}@{pkg_version}");
-            crypto::digest(pkg_key.as_bytes())
+            let app_name = APP::name();
+            let app_version = APP::version();
+            let app_key = format!("{app_name}@{app_version}");
+            crypto::digest(app_key.as_bytes())
         });
 
     let secret_key = crypto::derive_key("ZINO:APPLICATION", &checksum);

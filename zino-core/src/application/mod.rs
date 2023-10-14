@@ -277,7 +277,10 @@ pub(crate) static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     env::var("CARGO_MANIFEST_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|err| {
-            tracing::warn!("fail to get the environment variable `CARGO_MANIFEST_DIR`: {err}");
+            tracing::warn!(
+                "fail to get the environment variable `CARGO_MANIFEST_DIR`: {err}; \
+                    the current directory will be used as the project directory"
+            );
             env::current_dir()
                 .expect("the project directory does not exist or permissions are insufficient")
         })

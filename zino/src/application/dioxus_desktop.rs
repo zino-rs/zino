@@ -64,13 +64,18 @@ where
             }
         });
 
+        let app_env = Self::env();
+        let app_name = Self::name();
+        let app_version = Self::version();
+        let mut window_title = app_name;
         let mut app_window = WindowBuilder::new()
-            .with_title(Self::name())
+            .with_title(app_name)
             .with_maximized(true)
             .with_decorations(true);
         if let Some(config) = Self::shared_state().get_config("window") {
             if let Some(title) = config.get_str("title") {
                 app_window = app_window.with_title(title);
+                window_title = title;
             }
             if let Some(maximizable) = config.get_bool("maximizable") {
                 app_window = app_window.with_maximizable(maximizable);
@@ -90,6 +95,12 @@ where
                 app_window = app_window.with_transparent(transparent);
             }
         }
+        tracing::warn!(
+            app_env,
+            app_name,
+            app_version,
+            "launch a window named `{window_title}`",
+        );
 
         let app_config = Config::new().with_window(app_window);
         dioxus_desktop::launch_with_props(Self::app_root, Self::state_data(), app_config);
