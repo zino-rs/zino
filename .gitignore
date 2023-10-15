@@ -16,5 +16,8 @@ Cargo.lock
 # Uploads
 **/uploads/*
 
+# Builds
+**/dist/*
+
 # SQLite data
 **/*.db

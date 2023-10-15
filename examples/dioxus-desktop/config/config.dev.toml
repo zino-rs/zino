@@ -8,8 +8,15 @@ uploads = "local/uploads"
 
 [window]
 title = "DataCube"
-theme = "Light"
+theme = "Dark"
 transparent = false
+
+[desktop]
+icon = "public/favicon.ico"
+stylesheets = [
+    "public/css/bulma.min.css",
+    "public/css/custom.css",
+]
 
 [database]
 namespace = "dc"

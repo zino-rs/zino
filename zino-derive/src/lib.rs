@@ -22,9 +22,9 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields};
 
 mod parser;
 
-/// Derive the `Schema` trait.
+/// Derives the [`Schema`](zino_core::database::Schema) trait.
 #[proc_macro_derive(Schema, attributes(schema))]
-pub fn schema_macro(item: TokenStream) -> TokenStream {
+pub fn derive_schema(item: TokenStream) -> TokenStream {
     /// Integer types
     const INTEGER_TYPES: [&str; 10] = [
         "u64", "i64", "u32", "i32", "u16", "i16", "u8", "i8", "usize", "isize",
@@ -370,101 +370,9 @@ pub fn schema_macro(item: TokenStream) -> TokenStream {
     TokenStream::from(output)
 }
 
-/// Derive the `DecodeRow` trait.
-#[proc_macro_derive(DecodeRow, attributes(schema))]
-pub fn decode_row_macro(item: TokenStream) -> TokenStream {
-    /// Integer types
-    const UNSIGNED_INTEGER_TYPES: [&str; 5] = ["u64", "u32", "u16", "u8", "usize"];
-
-    // Input
-    let input = parse_macro_input!(item as DeriveInput);
-
-    // Parsing field attrs
-    let name = input.ident;
-    let mut decode_model_fields = Vec::new();
-    let mut mysql_decode_model_fields = Vec::new();
-    let mut postgres_decode_model_fields = Vec::new();
-    if let Data::Struct(data) = input.data && let Fields::Named(fields) = data.fields {
-        for field in fields.named.into_iter() {
-            let type_name = parser::get_type_name(&field.ty);
-            if let Some(ident) = field.ident && !type_name.is_empty() {
-                let mut ignore = false;
-                'inner: for attr in field.attrs.iter() {
-                    let arguments = parser::parse_schema_attr(attr);
-                    for (key, _value) in arguments.iter() {
-                        if key == "ignore" || key == "writeonly" {
-                            ignore = true;
-                            break 'inner;
-                        }
-                    }
-                }
-                if ignore {
-                    continue;
-                }
-                if type_name == "Map" {
-                    decode_model_fields.push(quote! {
-                        if let JsonValue::Object(map) = database::decode(row, #name)? {
-                            model.#ident = map;
-                        }
-                    });
-                } else if parser::check_vec_type(&type_name) {
-                    mysql_decode_model_fields.push(quote! {
-                        let value = database::decode::<JsonValue>(row, #name)?;
-                        if let Some(vec) = value.parse_array() {
-                            model.#ident = vec;
-                        }
-                    });
-                    postgres_decode_model_fields.push(quote! {
-                        model.#ident = database::decode(row, #name)?;
-                    });
-                } else if UNSIGNED_INTEGER_TYPES.contains(&type_name.as_str()) {
-                    let integer_type_ident = format_ident!("{}", type_name.replace('u', "i"));
-                    postgres_decode_model_fields.push(quote! {
-                        let value = database::decode::<#integer_type_ident>(row, #name)?;
-                        model.#ident = value.try_into()?;
-                    });
-                    mysql_decode_model_fields.push(quote! {
-                        model.#ident = database::decode(row, #name)?;
-                    });
-                } else {
-                    decode_model_fields.push(quote! {
-                        model.#ident = database::decode(row, #name)?;
-                    });
-                }
-            }
-        }
-    }
-
-    // Output
-    let output = quote! {
-        use zino_core::{
-            database::DatabaseRow,
-            model::DecodeRow,
-        };
-
-        impl DecodeRow<DatabaseRow> for #name {
-            type Error = zino_core::error::Error;
-
-            fn decode_row(row: &DatabaseRow) -> Result<Self, Self::Error> {
-                use zino_core::{extension::JsonValueExt, JsonValue};
-                let mut model = <#name>::default();
-                #(#decode_model_fields)*
-                if cfg!(feature = "orm-mysql") {
-                    #(#mysql_decode_model_fields)*
-                } else {
-                    #(#postgres_decode_model_fields)*
-                }
-                Ok(model)
-            }
-        }
-    };
-
-    TokenStream::from(output)
-}
-
-/// Derive the `ModelAccessor` trait.
+/// Derives the [`ModelAccessor`](zino_core::database::ModelAccessor) trait.
 #[proc_macro_derive(ModelAccessor, attributes(schema))]
-pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
+pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
     // Input
     let input = parse_macro_input!(item as DeriveInput);
 
@@ -1002,6 +910,120 @@ pub fn model_accessor_macro(item: TokenStream) -> TokenStream {
             async fn fetch_by_id(id: &#model_primary_key_type) -> Result<ZinoMap, ZinoError> {
                 #(#populated_one_queries)*
             }
+        }
+    };
+
+    TokenStream::from(output)
+}
+
+/// Derives the [`DecodeRow`](zino_core::model::DecodeRow) trait.
+#[proc_macro_derive(DecodeRow, attributes(schema))]
+pub fn derive_decode_row(item: TokenStream) -> TokenStream {
+    /// Integer types
+    const UNSIGNED_INTEGER_TYPES: [&str; 5] = ["u64", "u32", "u16", "u8", "usize"];
+
+    // Input
+    let input = parse_macro_input!(item as DeriveInput);
+
+    // Parsing field attrs
+    let name = input.ident;
+    let mut decode_model_fields = Vec::new();
+    let mut mysql_decode_model_fields = Vec::new();
+    let mut postgres_decode_model_fields = Vec::new();
+    if let Data::Struct(data) = input.data && let Fields::Named(fields) = data.fields {
+        for field in fields.named.into_iter() {
+            let type_name = parser::get_type_name(&field.ty);
+            if let Some(ident) = field.ident && !type_name.is_empty() {
+                let mut ignore = false;
+                'inner: for attr in field.attrs.iter() {
+                    let arguments = parser::parse_schema_attr(attr);
+                    for (key, _value) in arguments.iter() {
+                        if key == "ignore" || key == "writeonly" {
+                            ignore = true;
+                            break 'inner;
+                        }
+                    }
+                }
+                if ignore {
+                    continue;
+                }
+                if type_name == "Map" {
+                    decode_model_fields.push(quote! {
+                        if let JsonValue::Object(map) = database::decode(row, #name)? {
+                            model.#ident = map;
+                        }
+                    });
+                } else if parser::check_vec_type(&type_name) {
+                    mysql_decode_model_fields.push(quote! {
+                        let value = database::decode::<JsonValue>(row, #name)?;
+                        if let Some(vec) = value.parse_array() {
+                            model.#ident = vec;
+                        }
+                    });
+                    postgres_decode_model_fields.push(quote! {
+                        model.#ident = database::decode(row, #name)?;
+                    });
+                } else if UNSIGNED_INTEGER_TYPES.contains(&type_name.as_str()) {
+                    let integer_type_ident = format_ident!("{}", type_name.replace('u', "i"));
+                    postgres_decode_model_fields.push(quote! {
+                        let value = database::decode::<#integer_type_ident>(row, #name)?;
+                        model.#ident = value.try_into()?;
+                    });
+                    mysql_decode_model_fields.push(quote! {
+                        model.#ident = database::decode(row, #name)?;
+                    });
+                } else {
+                    decode_model_fields.push(quote! {
+                        model.#ident = database::decode(row, #name)?;
+                    });
+                }
+            }
+        }
+    }
+
+    // Output
+    let output = quote! {
+        use zino_core::{
+            database::DatabaseRow,
+            model::DecodeRow,
+        };
+
+        impl DecodeRow<DatabaseRow> for #name {
+            type Error = zino_core::error::Error;
+
+            fn decode_row(row: &DatabaseRow) -> Result<Self, Self::Error> {
+                use zino_core::{extension::JsonValueExt, JsonValue};
+                let mut model = <#name>::default();
+                #(#decode_model_fields)*
+                if cfg!(feature = "orm-mysql") {
+                    #(#mysql_decode_model_fields)*
+                } else {
+                    #(#postgres_decode_model_fields)*
+                }
+                Ok(model)
+            }
+        }
+    };
+
+    TokenStream::from(output)
+}
+
+/// Derives the [`ModelHooks`](zino_core::model::ModelHooks) trait.
+#[proc_macro_derive(ModelHooks)]
+pub fn derive_model_hooks(item: TokenStream) -> TokenStream {
+    // Input
+    let input = parse_macro_input!(item as DeriveInput);
+
+    // Parsing field attrs
+    let name = input.ident;
+
+    // Output
+    let output = quote! {
+        use zino_core::model::ModelHooks;
+
+        impl ModelHooks for #name {
+            type Data = ();
+            type Extension = ();
         }
     };
 

@@ -6,7 +6,7 @@ pub fn bench(c: &mut criterion::Criterion) {
             let data = b"Hellow, world!";
             let mut hasher = Sha256::new();
             hasher.update(data);
-            hasher.finalize()
+            <[u8; 32]>::from(hasher.finalize())
         })
     });
     c.bench_function("sm3_digest", |b| {
@@ -16,7 +16,7 @@ pub fn bench(c: &mut criterion::Criterion) {
             let data = b"Hellow, world!";
             let mut hasher = Sm3::new();
             hasher.update(data);
-            hasher.finalize()
+            <[u8; 32]>::from(hasher.finalize())
         })
     });
     c.bench_function("libsm_digest", |b| {

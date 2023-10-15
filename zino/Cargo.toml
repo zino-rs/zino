@@ -40,6 +40,7 @@ dioxus = [
     "dep:dioxus",
     "dep:dioxus-desktop",
     "dep:dioxus-router",
+    "dep:image",
     "dep:tokio",
 ]
 default = ["orm", "view"]
@@ -100,6 +101,10 @@ optional = true
 
 [dependencies.dioxus-router]
 version = "0.4.1"
+optional = true
+
+[dependencies.image]
+version = "0.24.7"
 optional = true
 
 [dependencies.tokio]

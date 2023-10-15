@@ -18,6 +18,50 @@ use std::{env, sync::LazyLock, time::Duration};
 #[derive(Debug, Clone)]
 pub struct JwtClaims<T = Map>(pub(crate) JWTClaims<T>);
 
+impl<T: Default + Serialize + DeserializeOwned> JwtClaims<T> {
+    /// Creates a new instance.
+    pub fn new(subject: impl ToString) -> Self {
+        let mut claims = Claims::with_custom_claims(T::default(), (*DEFAULT_MAX_AGE).into());
+        claims.invalid_before = None;
+        claims.subject = Some(subject.to_string());
+        Self(claims)
+    }
+
+    /// Creates a new instance, expiring in `max-age`.
+    pub fn with_max_age(subject: impl ToString, max_age: Duration) -> Self {
+        let mut claims = Claims::with_custom_claims(T::default(), max_age.into());
+        claims.invalid_before = None;
+        claims.subject = Some(subject.to_string());
+        Self(claims)
+    }
+
+    /// Generates an access token signed with the shared secret access key.
+    pub fn refresh_token(&self) -> Result<String, Error> {
+        let mut claims = Claims::create((*DEFAULT_REFRESH_INTERVAL).into());
+        claims.invalid_before = self
+            .0
+            .expires_at
+            .map(|max_age| max_age - (*DEFAULT_TIME_TOLERANCE).into());
+        claims.subject = self.0.subject.as_ref().cloned();
+        JwtClaims::shared_key()
+            .authenticate(claims)
+            .map_err(|err| Error::new(err.to_string()))
+    }
+
+    /// Generates an access token signed with the shared secret access key.
+    #[inline]
+    pub fn access_token(self) -> Result<String, Error> {
+        self.sign_with(JwtClaims::shared_key())
+    }
+
+    /// Generates a signature with the secret access key.
+    #[inline]
+    pub fn sign_with<K: MACLike>(self, key: &K) -> Result<String, Error> {
+        key.authenticate(self.0)
+            .map_err(|err| Error::new(err.to_string()))
+    }
+}
+
 impl<T> JwtClaims<T> {
     /// Sets the nonce.
     #[inline]
@@ -74,50 +118,6 @@ impl<T> JwtClaims<T> {
     #[inline]
     pub fn data(&self) -> &T {
         &self.0.custom
-    }
-}
-
-impl<T: Default + Serialize + DeserializeOwned> JwtClaims<T> {
-    /// Creates a new instance.
-    pub fn new(subject: impl ToString) -> Self {
-        let mut claims = Claims::with_custom_claims(T::default(), (*DEFAULT_MAX_AGE).into());
-        claims.invalid_before = None;
-        claims.subject = Some(subject.to_string());
-        Self(claims)
-    }
-
-    /// Creates a new instance, expiring in `max-age`.
-    pub fn with_max_age(subject: impl ToString, max_age: Duration) -> Self {
-        let mut claims = Claims::with_custom_claims(T::default(), max_age.into());
-        claims.invalid_before = None;
-        claims.subject = Some(subject.to_string());
-        Self(claims)
-    }
-
-    /// Generates an access token signed with the shared secret access key.
-    pub fn refresh_token(&self) -> Result<String, Error> {
-        let mut claims = Claims::create((*DEFAULT_REFRESH_INTERVAL).into());
-        claims.invalid_before = self
-            .0
-            .expires_at
-            .map(|max_age| max_age - (*DEFAULT_TIME_TOLERANCE).into());
-        claims.subject = self.0.subject.as_ref().cloned();
-        JwtClaims::shared_key()
-            .authenticate(claims)
-            .map_err(|err| Error::new(err.to_string()))
-    }
-
-    /// Generates an access token signed with the shared secret access key.
-    #[inline]
-    pub fn access_token(self) -> Result<String, Error> {
-        self.sign_with(JwtClaims::shared_key())
-    }
-
-    /// Generates a signature with the secret access key.
-    #[inline]
-    pub fn sign_with<K: MACLike>(self, key: &K) -> Result<String, Error> {
-        key.authenticate(self.0)
-            .map_err(|err| Error::new(err.to_string()))
     }
 }
 

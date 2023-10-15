@@ -1,0 +1,24 @@
+[application]
+name = "DataCube"
+default_platform = "desktop"
+out_dir = "dist"
+asset_dir = "public"
+
+[web.app]
+title = "DataCube"
+
+[web.watcher]
+reload_html = true
+watch_path = ["src", "public"]
+index_on_404 = true
+
+[web.resource]
+style = [
+    "./css/bulma.min.css",
+    "./css/custom.css",
+]
+script = []
+
+[web.resource.dev]
+style = []
+script = []
