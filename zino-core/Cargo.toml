@@ -18,40 +18,74 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [features]
 accessor = ["opendal"]
+accessor-azblob = ["accessor", "opendal/services-azblob"]
+accessor-azdls = ["accessor", "opendal/services-azdls"]
 accessor-cacache = ["accessor", "opendal/services-cacache"]
+accessor-cos = ["accessor", "opendal/services-cos"]
 accessor-dashmap = ["accessor", "opendal/services-dashmap"]
 accessor-dropbox = ["accessor", "opendal/services-dropbox"]
 accessor-ftp = ["accessor", "opendal/services-ftp"]
+accessor-fs = ["accessor", "opendal/services-fs"]
+accessor-gcs = ["accessor", "opendal/services-gcs"]
 accessor-gdrive = ["accessor", "opendal/services-gdrive"]
+accessor-ghac = ["accessor", "opendal/services-ghac"]
+accessor-http = ["accessor", "opendal/services-http"]
 accessor-ipfs = ["accessor", "opendal/services-ipfs"]
+accessor-ipmfs = ["accessor", "opendal/services-ipmfs"]
 accessor-memcached = ["accessor", "opendal/services-memcached"]
+accessor-memory = ["accessor", "opendal/services-memory"]
 accessor-mini-moka = ["accessor", "opendal/services-mini-moka"]
 accessor-moka = ["accessor", "opendal/services-moka"]
+accessor-mysql = ["accessor", "opendal/services-mysql"]
+accessor-obs = ["accessor", "opendal/services-obs"]
 accessor-onedrive = ["accessor", "opendal/services-onedrive"]
+accessor-oss = ["accessor", "opendal/services-oss"]
 accessor-persy = ["accessor", "opendal/services-persy"]
+accessor-postgresql = ["accessor", "opendal/services-postgresql"]
 accessor-redb = ["accessor", "opendal/services-redb"]
 accessor-redis = ["accessor", "opendal/services-redis"]
+accessor-s3 = ["accessor", "opendal/services-s3"]
 accessor-sled = ["accessor", "opendal/services-sled"]
+accessor-sqlite = ["accessor", "opendal/services-sqlite"]
 accessor-supabase = ["accessor", "opendal/services-supabase"]
 accessor-wasabi = ["accessor", "opendal/services-wasabi"]
+accessor-webdav = ["accessor", "opendal/services-webdav"]
+accessor-webhdfs = ["accessor", "opendal/services-webhdfs"]
 all-accessors = [
     "accessor",
+    "accessor-azblob",
+    "accessor-azdls",
     "accessor-cacache",
+    "accessor-cos",
     "accessor-dashmap",
     "accessor-dropbox",
     "accessor-ftp",
+    "accessor-fs",
+    "accessor-gcs",
     "accessor-gdrive",
+    "accessor-ghac",
+    "accessor-http",
     "accessor-ipfs",
+    "accessor-ipmfs",
     "accessor-memcached",
+    "accessor-memory",
     "accessor-mini-moka",
     "accessor-moka",
+    "accessor-mysql",
+    "accessor-obs",
     "accessor-onedrive",
+    "accessor-oss",
     "accessor-persy",
+    "accessor-postgresql",
     "accessor-redb",
     "accessor-redis",
+    "accessor-s3",
     "accessor-sled",
+    "accessor-sqlite",
     "accessor-supabase",
     "accessor-wasabi",
+    "accessor-webdav",
+    "accessor-webhdfs",
 ]
 all-chatbots = ["chatbot", "chatbot-openai"]
 all-connectors = [
@@ -179,8 +213,9 @@ version = "4.4.2"
 optional = true
 
 [dependencies.opendal]
-version = "0.40.0"
+version = "0.41.0"
 optional = true
+default-features = false
 features = ["layers-all"]
 
 [dependencies.openidconnect]

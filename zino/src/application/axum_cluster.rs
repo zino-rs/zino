@@ -131,25 +131,31 @@ impl Application for AxumCluster {
                     public_dir = default_public_dir;
                 }
 
-                // Static pages
-                let index_file = public_dir.join("index.html");
-                let not_found_file = public_dir.join("404.html");
-                let serve_file = ServeFile::new(index_file);
-                let serve_dir = ServeDir::new(public_dir)
-                    .precompressed_gzip()
-                    .precompressed_br()
-                    .append_index_html_on_directories(true)
-                    .not_found_service(ServeFile::new(not_found_file));
-                let mut serve_dir_route =
-                    Router::new().nest_service(public_route_prefix, serve_dir);
-                if public_route_prefix.ends_with("/page") {
-                    serve_dir_route =
-                        serve_dir_route.layer(from_fn(middleware::serve_static_pages));
-                }
+                let mut app = Router::new();
+                if public_dir.exists() {
+                    let index_file = public_dir.join("index.html");
+                    let favicon_file = public_dir.join("favicon.ico");
+                    if index_file.exists() {
+                        app = app.route_service("/", ServeFile::new(index_file));
+                    }
+                    if favicon_file.exists() {
+                        app = app.route_service("/favicon.ico", ServeFile::new(favicon_file));
+                    }
 
-                let mut app = Router::new()
-                    .route_service("/", serve_file)
-                    .merge(serve_dir_route);
+                    let not_found_file = public_dir.join("404.html");
+                    let serve_dir = ServeDir::new(public_dir)
+                        .precompressed_gzip()
+                        .precompressed_br()
+                        .append_index_html_on_directories(true)
+                        .not_found_service(ServeFile::new(not_found_file));
+                    let mut serve_dir_route =
+                        Router::new().nest_service(public_route_prefix, serve_dir);
+                    if public_route_prefix.ends_with("/page") {
+                        serve_dir_route =
+                            serve_dir_route.layer(from_fn(middleware::serve_static_pages));
+                    }
+                    app = app.merge(serve_dir_route);
+                }
                 if let Some(path) = sse_route {
                     app = app.route(path, routing::get(endpoint::sse_handler));
                 }

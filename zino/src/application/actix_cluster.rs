@@ -102,6 +102,8 @@ impl Application for ActixCluster {
                 HttpServer::new(move || {
                     let index_file_handler = web::get()
                         .to(|| async { NamedFile::open_async("./public/index.html").await });
+                    let favicon_file_handler = web::get()
+                        .to(|| async { NamedFile::open_async("./public/favicon.ico").await });
                     let static_files = Files::new(public_route_prefix, public_dir.clone())
                         .show_files_listing()
                         .index_file("index.html")
@@ -114,6 +116,7 @@ impl Application for ActixCluster {
                         }));
                     let mut app = App::new()
                         .route("/", index_file_handler)
+                        .route("/favicon.ico", favicon_file_handler)
                         .service(static_files)
                         .default_service(web::to(|req: Request| async {
                             let res = Response::new(StatusCode::NOT_FOUND);

@@ -154,6 +154,12 @@ where
             if !custom_heads.is_empty() {
                 desktop_config = desktop_config.with_custom_head(custom_heads.join("\n"));
             }
+            if let Some(dir) = config.get_str("resource-dir") {
+                desktop_config = desktop_config.with_resource_directory(project_dir.join(dir));
+            }
+            if let Some(dir) = config.get_str("data-dir") {
+                desktop_config = desktop_config.with_data_directory(project_dir.join(dir));
+            }
             if let Some(custom_index) = config.get_str("custom-index") {
                 let index_file = project_dir.join(custom_index);
                 match fs::read_to_string(&index_file) {

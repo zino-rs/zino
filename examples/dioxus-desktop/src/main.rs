@@ -6,11 +6,14 @@ mod schedule;
 mod service;
 mod view;
 
-use zino::prelude::*;
+use router::Route;
+use zino::{prelude::*, Desktop};
+
+type App = Desktop<Route>;
 
 fn main() {
-    zino::Desktop::boot()
-        .register(router::Route::default())
+    App::boot()
+        .register(Route::default())
         .spawn(schedule::jobs())
         .run(schedule::async_jobs())
 }

@@ -4,84 +4,51 @@
 //!
 //! | Scheme        | Description                              | Feature flag          |
 //! |---------------|------------------------------------------|-----------------------|
-//! | `azblob`      | Azure Storage Blob services.             | `accessor`            |
-//! | `azdls`       | Azure Data Lake Storage Gen2 services.   | `accessor`            |
+//! | `azblob`      | Azure Storage Blob services.             | `accessor-azblob`     |
+//! | `azdls`       | Azure Data Lake Storage Gen2 services.   | `accessor-azdls`      |
 //! | `cacache`     | Cacache services.                        | `accessor-cacache`    |
-//! | `cos`         | Tencent-Cloud COS services.              | `accessor`            |
+//! | `cos`         | Tencent-Cloud COS services.              | `accessor-cos`        |
 //! | `dashmap`     | Dashmap backend.                         | `accessor-dashmap`    |
 //! | `dropbox`     | Dropbox backend.                         | `accessor-dropbox`    |
-//! | `fs`          | POSIX alike file system.                 | `accessor`            |
+//! | `fs`          | POSIX alike file system.                 | `accessor-fs`         |
 //! | `ftp`         | FTP and FTPS.                            | `accessor-ftp`        |
-//! | `gcs`         | Google Cloud Storage services.           | `accessor`            |
+//! | `gcs`         | Google Cloud Storage services.           | `accessor-gcs`        |
 //! | `gdrive`      | GoogleDrive backend.                     | `accessor-gdrive`     |
-//! | `ghac`        | Github Action Cache services.            | `accessor`            |
-//! | `http`        | HTTP Read-only services.                 | `accessor`            |
+//! | `ghac`        | Github Action Cache services.            | `accessor-ghac`       |
+//! | `http`        | HTTP Read-only services.                 | `accessor-http`       |
 //! | `ipfs`        | InterPlanetary File System HTTP gateway. | `accessor-ipfs`       |
-//! | `ipmfs`       | InterPlanetary File System MFS API.      | `accessor`            |
+//! | `ipmfs`       | InterPlanetary File System MFS API.      | `accessor-ipmfs`      |
 //! | `memcached`   | Memcached services.                      | `accessor-memcached`  |
-//! | `memory`      | In memory backend.                       | `accessor`            |
-//! | `minio`       | MinIO services.                          | `accessor`            |
+//! | `memory`      | In memory backend.                       | `accessor-memory`     |
+//! | `minio`       | MinIO services.                          | `accessor-s3`         |
 //! | `minimoka`    | MiniMoka backend.                        | `accessor-mini-moka`  |
 //! | `moka`        | Moka backend.                            | `accessor-moka`       |
-//! | `obs`         | Huawei Cloud Object Storage services.    | `accessor`            |
+//! | `mysql`       | MySQL services.                          | `accessor-mysql`      |
+//! | `obs`         | Huawei Cloud Object Storage services.    | `accessor-obs`        |
 //! | `onedrive`    | OneDrive backend.                        | `accessor-onedrive`   |
-//! | `oss`         | Aliyun Object Storage Service.           | `accessor`            |
+//! | `oss`         | Aliyun Object Storage Service.           | `accessor-oss`        |
 //! | `persy`       | Persy services.                          | `accessor-persy`      |
+//! | `postgresql`  | PostgreSQL services.                     | `accessor-postgresql` |
 //! | `redb`        | Redb services.                           | `accessor-redb`       |
 //! | `redis`       | Redis services.                          | `accessor-redis`      |
-//! | `s3`          | AWS S3 alike services.                   | `accessor`            |
+//! | `s3`          | AWS S3 alike services.                   | `accessor-s3`         |
 //! | `sled`        | Sled services.                           | `accessor-sled`       |
+//! | `sqlite`      | SQLite services.                         | `accessor-sqlite`     |
 //! | `supabase`    | Supabase services.                       | `accessor-supabase`   |
 //! | `wasabi`      | Wasabi services.                         | `accessor-wasabi`     |
-//! | `webdav`      | WebDAV services.                         | `accessor`            |
-//! | `webhdfs`     | WebHDFS services.                        | `accessor`            |
+//! | `webdav`      | WebDAV services.                         | `accessor-webdav`     |
+//! | `webhdfs`     | WebHDFS services.                        | `accessor-webhdfs`    |
 //!
 
 use crate::{extension::TomlTableExt, state::State};
 use opendal::{
     layers::{MetricsLayer, RetryLayer, TracingLayer},
-    services::{
-        Azblob, Azdls, Cos, Fs, Gcs, Ghac, Http, Ipmfs, Memory, Obs, Oss, Webdav, Webhdfs, S3,
-    },
-    Error,
+    services, Error,
     ErrorKind::Unsupported,
     Operator,
 };
 use std::sync::LazyLock;
 use toml::Table;
-
-#[cfg(feature = "accessor-cacache")]
-use opendal::services::Cacache;
-#[cfg(feature = "accessor-dashmap")]
-use opendal::services::Dashmap;
-#[cfg(feature = "accessor-dropbox")]
-use opendal::services::Dropbox;
-#[cfg(feature = "accessor-ftp")]
-use opendal::services::Ftp;
-#[cfg(feature = "accessor-gdrive")]
-use opendal::services::Gdrive;
-#[cfg(feature = "accessor-ipfs")]
-use opendal::services::Ipfs;
-#[cfg(feature = "accessor-memcached")]
-use opendal::services::Memcached;
-#[cfg(feature = "accessor-mini-moka")]
-use opendal::services::MiniMoka;
-#[cfg(feature = "accessor-moka")]
-use opendal::services::Moka;
-#[cfg(feature = "accessor-onedrive")]
-use opendal::services::Onedrive;
-#[cfg(feature = "accessor-persy")]
-use opendal::services::Persy;
-#[cfg(feature = "accessor-redb")]
-use opendal::services::Redb;
-#[cfg(feature = "accessor-redis")]
-use opendal::services::Redis;
-#[cfg(feature = "accessor-sled")]
-use opendal::services::Sled;
-#[cfg(feature = "accessor-supabase")]
-use opendal::services::Supabase;
-#[cfg(feature = "accessor-wasabi")]
-use opendal::services::Wasabi;
 
 /// Global storage accessor built on the top of [`opendal`](https://crates.io/crates/opendal).
 #[derive(Debug, Clone, Copy, Default)]
@@ -92,8 +59,9 @@ impl GlobalAccessor {
     /// returning an error if it fails.
     pub fn try_new_operator(scheme: &'static str, config: &Table) -> Result<Operator, Error> {
         let operator = match scheme {
+            #[cfg(feature = "accessor-azblob")]
             "azblob" => {
-                let mut builder = Azblob::default();
+                let mut builder = services::Azblob::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -126,8 +94,9 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-azdls")]
             "azdls" => {
-                let mut builder = Azdls::default();
+                let mut builder = services::Azdls::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -147,14 +116,15 @@ impl GlobalAccessor {
             }
             #[cfg(feature = "accessor-cacache")]
             "cacache" => {
-                let mut builder = Cacache::default();
+                let mut builder = services::Cacache::default();
                 if let Some(dir) = config.get_str("data-dir") {
                     builder.datadir(dir);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-cos")]
             "cos" => {
-                let mut builder = Cos::default();
+                let mut builder = services::Cos::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -174,7 +144,7 @@ impl GlobalAccessor {
             }
             #[cfg(feature = "accessor-dashmap")]
             "dashmap" => {
-                let mut builder = Dashmap::default();
+                let mut builder = services::Dashmap::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -182,7 +152,7 @@ impl GlobalAccessor {
             }
             #[cfg(feature = "accessor-dropbox")]
             "dropbox" => {
-                let mut builder = Dropbox::default();
+                let mut builder = services::Dropbox::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -200,8 +170,9 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-fs")]
             "fs" => {
-                let mut builder = Fs::default();
+                let mut builder = services::Fs::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -212,7 +183,7 @@ impl GlobalAccessor {
             }
             #[cfg(feature = "accessor-ftp")]
             "ftp" => {
-                let mut builder = Ftp::default();
+                let mut builder = services::Ftp::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -227,8 +198,9 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-gcs")]
             "gcs" => {
-                let mut builder = Gcs::default();
+                let mut builder = services::Gcs::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -251,7 +223,7 @@ impl GlobalAccessor {
             }
             #[cfg(feature = "accessor-gdrive")]
             "gdrive" => {
-                let mut builder = Gdrive::default();
+                let mut builder = services::Gdrive::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -260,8 +232,9 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-ghac")]
             "ghac" => {
-                let mut builder = Ghac::default();
+                let mut builder = services::Ghac::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -270,8 +243,9 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-http")]
             "http" => {
-                let mut builder = Http::default();
+                let mut builder = services::Http::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -291,7 +265,7 @@ impl GlobalAccessor {
             }
             #[cfg(feature = "accessor-ipfs")]
             "ipfs" => {
-                let mut builder = Ipfs::default();
+                let mut builder = services::Ipfs::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -300,8 +274,9 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-ipmfs")]
             "ipmfs" => {
-                let mut builder = Ipmfs::default();
+                let mut builder = services::Ipmfs::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -312,7 +287,7 @@ impl GlobalAccessor {
             }
             #[cfg(feature = "accessor-memcached")]
             "memcached" => {
-                let mut builder = Memcached::default();
+                let mut builder = services::Memcached::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -324,13 +299,14 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-memory")]
             "memory" => {
-                let builder = Memory::default();
+                let builder = services::Memory::default();
                 Ok(Operator::new(builder)?.finish())
             }
             #[cfg(feature = "accessor-mini-moka")]
             "minimoka" => {
-                let mut builder = MiniMoka::default();
+                let mut builder = services::MiniMoka::default();
                 if let Some(max_capacity) = config.get_u64("max-capacity") {
                     builder.max_capacity(max_capacity);
                 }
@@ -344,7 +320,7 @@ impl GlobalAccessor {
             }
             #[cfg(feature = "accessor-moka")]
             "moka" => {
-                let mut builder = Moka::default();
+                let mut builder = services::Moka::default();
                 if let Some(name) = config.get_str("name") {
                     builder.name(name);
                 }
@@ -365,8 +341,31 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-mysql")]
+            "mysql" => {
+                let mut builder = services::Mysql::default();
+                if let Some(database) = config.get_str("database") {
+                    let authority = State::format_authority(config, Some(3306));
+                    let dsn = format!("mysql://{authority}/{database}");
+                    builder.connection_string(dsn.as_str());
+                }
+                if let Some(root) = config.get_str("root") {
+                    builder.root(root);
+                }
+                if let Some(table) = config.get_str("table") {
+                    builder.table(table);
+                }
+                if let Some(key_field) = config.get_str("key-field") {
+                    builder.key_field(key_field);
+                }
+                if let Some(value_field) = config.get_str("value-field") {
+                    builder.value_field(value_field);
+                }
+                Ok(Operator::new(builder)?.finish())
+            }
+            #[cfg(feature = "accessor-obs")]
             "obs" => {
-                let mut builder = Obs::default();
+                let mut builder = services::Obs::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -386,7 +385,7 @@ impl GlobalAccessor {
             }
             #[cfg(feature = "accessor-onedrive")]
             "onedrive" => {
-                let mut builder = Onedrive::default();
+                let mut builder = services::Onedrive::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -395,8 +394,9 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-oss")]
             "oss" => {
-                let mut builder = Oss::default();
+                let mut builder = services::Oss::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -431,7 +431,7 @@ impl GlobalAccessor {
             }
             #[cfg(feature = "accessor-persy")]
             "persy" => {
-                let mut builder = Persy::default();
+                let mut builder = services::Persy::default();
                 if let Some(data_file) = config.get_str("data-file") {
                     builder.datafile(data_file);
                 }
@@ -443,9 +443,31 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-postgresql")]
+            "postgresql" => {
+                let mut builder = services::Postgresql::default();
+                if let Some(database) = config.get_str("database") {
+                    let authority = State::format_authority(config, Some(5432));
+                    let dsn = format!("postgres://{authority}/{database}");
+                    builder.connection_string(dsn.as_str());
+                }
+                if let Some(root) = config.get_str("root") {
+                    builder.root(root);
+                }
+                if let Some(table) = config.get_str("table") {
+                    builder.table(table);
+                }
+                if let Some(key_field) = config.get_str("key-field") {
+                    builder.key_field(key_field);
+                }
+                if let Some(value_field) = config.get_str("value-field") {
+                    builder.value_field(value_field);
+                }
+                Ok(Operator::new(builder)?.finish())
+            }
             #[cfg(feature = "accessor-redis")]
             "redis" => {
-                let mut builder = Redis::default();
+                let mut builder = services::Redis::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -468,7 +490,7 @@ impl GlobalAccessor {
             }
             #[cfg(feature = "accessor-redb")]
             "redb" => {
-                let mut builder = Redb::default();
+                let mut builder = services::Redb::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -480,8 +502,9 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-s3")]
             "s3" | "minio" => {
-                let mut builder = S3::default();
+                let mut builder = services::S3::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -513,7 +536,7 @@ impl GlobalAccessor {
             }
             #[cfg(feature = "accessor-sled")]
             "sled" => {
-                let mut builder = Sled::default();
+                let mut builder = services::Sled::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -525,9 +548,30 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-sqlite")]
+            "sqlite" => {
+                let mut builder = services::Sqlite::default();
+                if let Some(database) = config.get_str("database") {
+                    let dsn = format!("file://{database}.db");
+                    builder.connection_string(dsn.as_str());
+                }
+                if let Some(root) = config.get_str("root") {
+                    builder.root(root);
+                }
+                if let Some(table) = config.get_str("table") {
+                    builder.table(table);
+                }
+                if let Some(key_field) = config.get_str("key-field") {
+                    builder.key_field(key_field);
+                }
+                if let Some(value_field) = config.get_str("value-field") {
+                    builder.value_field(value_field);
+                }
+                Ok(Operator::new(builder)?.finish())
+            }
             #[cfg(feature = "accessor-supabase")]
             "supabase" => {
-                let mut builder = Supabase::default();
+                let mut builder = services::Supabase::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -544,7 +588,7 @@ impl GlobalAccessor {
             }
             #[cfg(feature = "accessor-wasabi")]
             "wasabi" => {
-                let mut builder = Wasabi::default();
+                let mut builder = services::Wasabi::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -574,8 +618,9 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-webdav")]
             "webdav" => {
-                let mut builder = Webdav::default();
+                let mut builder = services::Webdav::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -593,8 +638,9 @@ impl GlobalAccessor {
                 }
                 Ok(Operator::new(builder)?.finish())
             }
+            #[cfg(feature = "accessor-webhdfs")]
             "webhdfs" => {
-                let mut builder = Webhdfs::default();
+                let mut builder = services::Webhdfs::default();
                 if let Some(root) = config.get_str("root") {
                     builder.root(root);
                 }
@@ -627,14 +673,6 @@ impl GlobalAccessor {
 /// Global storage accessor.
 static GLOBAL_ACCESSOR: LazyLock<Vec<(&'static str, Operator)>> = LazyLock::new(|| {
     let mut operators = Vec::new();
-    let memory_operator = Operator::new(Memory::default())
-        .expect("fail to create an operator for the memory accessor")
-        .layer(TracingLayer)
-        .layer(MetricsLayer)
-        .layer(RetryLayer::new())
-        .finish();
-    operators.push(("memory", memory_operator));
-
     if let Some(accessors) = State::shared().config().get_array("accessor") {
         for accessor in accessors.iter().filter_map(|v| v.as_table()) {
             let scheme = accessor.get_str("scheme").unwrap_or("unkown");

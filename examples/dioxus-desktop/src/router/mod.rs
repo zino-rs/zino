@@ -2,6 +2,7 @@ use crate::view::{
     dataset::{Dataset, DatasetList, DatasetView},
     home::Home,
     layout::Wrapper,
+    stargazer::StargazerList,
 };
 use dioxus::prelude::*;
 use dioxus_router::prelude::*;
@@ -21,6 +22,8 @@ pub enum Route {
                 DatasetView { id: Uuid },
             #[end_layout]
         #[end_nest]
+        #[route("/stargazers")]
+        StargazerList {},
     #[end_layout]
     #[route("/:..segments")]
     PageNotFound { segments: Vec<String> },

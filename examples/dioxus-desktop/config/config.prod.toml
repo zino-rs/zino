@@ -12,6 +12,7 @@ theme = "Dark"
 transparent = false
 
 [desktop]
+resource_dir = "public"
 icon = "public/favicon.ico"
 stylesheets = [
     "public/css/bulma.min.css",
