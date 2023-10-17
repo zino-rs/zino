@@ -1,27 +1,17 @@
 use crate::view::{
-    dataset::{Dataset, DatasetList, DatasetView},
-    home::Home,
     layout::Wrapper,
+    overview::Overview,
     stargazer::StargazerList,
 };
 use dioxus::prelude::*;
 use dioxus_router::prelude::*;
-use zino::prelude::*;
 
 #[derive(Clone, PartialEq, Eq, Routable)]
 #[rustfmt::skip]
 pub enum Route {
     #[layout(Wrapper)]
         #[route("/")]
-        Home {},
-        #[nest("/dataset")]
-            #[layout(Dataset)]
-                #[route("/list")]
-                DatasetList {},
-                #[route("/:id/view")]
-                DatasetView { id: Uuid },
-            #[end_layout]
-        #[end_nest]
+        Overview {},
         #[route("/stargazers")]
         StargazerList {},
     #[end_layout]
@@ -31,7 +21,7 @@ pub enum Route {
 
 impl Default for Route {
     fn default() -> Self {
-        Self::Home {}
+        Self::Overview {}
     }
 }
 
@@ -39,7 +29,10 @@ impl Default for Route {
 fn PageNotFound(cx: Scope, segments: Vec<String>) -> Element {
     let path = segments.join("/");
     render! {
-        h1 { "Page not found" }
-        p { "The page `{path}` you requested doesn't exist." }
+        div {
+            class: "notification is-danger is-light",
+            h3 { "Page not found" }
+            p { "The page `{path}` you requested doesn't exist." }
+        }
     }
 }

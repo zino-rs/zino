@@ -1,20 +1,24 @@
 use crate::service;
 use dioxus::prelude::*;
+use dioxus_free_icons::{icons::bs_icons::*, Icon};
 use zino::prelude::*;
 
 pub fn StargazerList(cx: Scope) -> Element {
-    let stargazers = use_future(cx, (), |_| service::stargazer::list_stargazers(10, 1));
+    let mut page = use_state(cx, || 1);
+    let stargazers = use_future(cx, (page,), |(page,)| service::stargazer::list_stargazers(10, *page));
     match stargazers.value() {
         Some(Ok(items)) => {
+            let prev_invisible = if **page == 1 { "is-invisible" } else { "" };
+            let next_invisible = if items.len() < 10 { "is-invisible" } else { "" };
             render! {
                 div {
-                    class: "columns",
+                    class: "columns is-6",
                     div {
                         class: "column",
                         img {
                             width: 800,
                             height: 533,
-                            src: "https://api.star-history.com/svg?repos=photino/zino&type=Timeline"
+                            src: "https://api.star-history.com/svg?repos=photino/zino&type=Timeline",
                         }
                     }
                     div {
@@ -26,26 +30,49 @@ pub fn StargazerList(cx: Scope) -> Element {
                                     th {}
                                     th { "Account" }
                                     th { "Avatar" }
+                                    th { "Starred at" }
                                 }
                             }
                             tbody {
                                 for (index, item) in items.iter().enumerate() {
                                     StargazerListing {
-                                        index: index + 1,
-                                        stargazer: item.clone(),
+                                        index: (**page - 1) * 10 + index + 1,
+                                        stargazer: item,
                                     }
                                 }
                             }
                         }
                         nav {
-                            class: "pagination is-centered",
+                            class: "pagination",
                             a {
-                                class: "pagination-previous",
-                                "Previous"
+                                class: "pagination-previous {prev_invisible}",
+                                onclick: move |_| {
+                                    page -= 1;
+                                },
+                                Icon {
+                                    width: 16,
+                                    height: 16,
+                                    icon: BsArrowLeftCircleFill,
+                                }
+                                span {
+                                    class: "ml-1",
+                                    "Previous"
+                                }
                             }
                             a {
-                                class: "pagination-next",
-                                "Next"
+                                class: "pagination-next {next_invisible}",
+                                onclick: move |_| {
+                                    page += 1;
+                                },
+                                span {
+                                    class: "mr-1",
+                                    "Next"
+                                }
+                                Icon {
+                                    width: 16,
+                                    height: 16,
+                                    icon: BsArrowRightCircleFill,
+                                }
                             }
                         }
                     }
@@ -53,7 +80,12 @@ pub fn StargazerList(cx: Scope) -> Element {
             }
         }
         Some(Err(err)) => {
-            render! { "An error occurred while fetching stargazers: {err}" }
+            render! {
+                div {
+                    class: "notification is-danger is-light",
+                    "An error occurred while fetching stargazers: {err}"
+                }
+            }
         }
         None => {
             render! {
@@ -67,20 +99,27 @@ pub fn StargazerList(cx: Scope) -> Element {
 }
 
 #[inline_props]
-fn StargazerListing(cx: Scope, index: usize, stargazer: Map) -> Element {
-    let name = stargazer.get_str("login").unwrap_or("N/A");
-    let avatar_url = stargazer.get_str("avatar_url").unwrap();
+fn StargazerListing<'a>(cx: Scope<'a>, index: usize, stargazer: &'a Map) -> Element {
+    let name = stargazer.get_str("login").unwrap_or_default();
+    let avatar_url = stargazer.get_str("avatar_url").unwrap_or_default();
+    let starred_at = stargazer.get_str("starred_at").unwrap_or_default();
     render! {
         tr {
             th { "{index}" }
             td {
-                span { "{name}" }
+                a {
+                    href: "https://github.com/{name}",
+                    "{name}"
+                }
             }
             td {
                 figure {
                    class: "image is-24x24",
-                   img { src: avatar_url }
+                   img { src: avatar_url },
                 }
+            }
+            td {
+                span { "{starred_at}" }
             }
         }
     }

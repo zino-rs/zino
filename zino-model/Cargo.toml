@@ -29,8 +29,8 @@ maintainer-id = []
 edition = []
 
 [dependencies]
-regex = "1.10.1"
-strum_macros = "0.25.2"
+regex = "1.10.2"
+strum_macros = "0.25.3"
 
 [dependencies.serde]
 version = "1.0.189"

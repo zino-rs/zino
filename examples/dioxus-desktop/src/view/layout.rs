@@ -7,24 +7,36 @@ use dioxus_free_icons::{
 use dioxus_router::prelude::*;
 
 pub fn Wrapper(cx: Scope) -> Element {
+    let nav_item_classes = use_state(cx, || ["is-active", ""]);
     render! {
         nav {
             class: "navbar is-link",
-            div {
-                class: "navbar-brand",
-                Link {
-                    class: "navbar-item",
-                    to: Route::Home {},
-                    "DataCube"
-                }
-            }
             div {
                 class: "navbar-menu is-active",
                 div {
                     class: "navbar-start",
                     Link {
-                        class: "navbar-item",
+                        class: "navbar-item {nav_item_classes[0]}",
+                        to: Route::Overview {},
+                        onclick: move |_| {
+                            nav_item_classes.set(["is-active", ""]);
+                        },
+                        Icon {
+                            width: 16,
+                            height: 16,
+                            icon: BsDiagram3Fill,
+                        }
+                        span {
+                            class: "ml-1",
+                            "Overview"
+                        }
+                    }
+                    Link {
+                        class: "navbar-item {nav_item_classes[1]}",
                         to: Route::StargazerList {},
+                        onclick: move |_| {
+                            nav_item_classes.set(["", "is-active"]);
+                        },
                         Icon {
                             width: 16,
                             height: 16,
@@ -33,19 +45,6 @@ pub fn Wrapper(cx: Scope) -> Element {
                         span {
                             class: "ml-1",
                             "Stargazers"
-                        }
-                    }
-                    Link {
-                        class: "navbar-item",
-                        to: Route::DatasetList {},
-                        Icon {
-                            width: 16,
-                            height: 16,
-                            icon: BsTable,
-                        }
-                        span {
-                            class: "ml-1",
-                            "Datasets"
                         }
                     }
                 }
@@ -73,7 +72,7 @@ pub fn Wrapper(cx: Scope) -> Element {
                             icon: FaRust,
                         }
                         span {
-                            margin_left: "0.25em",
+                            class: "ml-1",
                             "crates.io"
                         }
                     }
