@@ -1,7 +1,7 @@
 # --env=prod
 
 name = "data-cube"
-version = "0.1.3"
+version = "0.2.0"
 
 [dirs]
 uploads = "local/uploads"

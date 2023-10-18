@@ -243,7 +243,11 @@ static DEFAULT_ENV: LazyLock<&'static str> = LazyLock::new(|| {
     if let Ok(value) = env::var("ZINO_APP_ENV") {
         return value.to_owned().leak();
     }
-    "dev"
+    if cfg!(debug_assertions) {
+        "dev"
+    } else {
+        "prod"
+    }
 });
 
 /// Shared application state.

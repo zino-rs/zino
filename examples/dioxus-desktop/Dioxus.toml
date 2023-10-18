@@ -22,3 +22,7 @@ script = []
 [web.resource.dev]
 style = []
 script = []
+
+[bundle]
+icon = ["public/favicon.ico"]
+resources = ["config", "public"]

@@ -1,4 +1,5 @@
 #![allow(non_snake_case)]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 #![feature(let_chains)]
 
 mod controller;
