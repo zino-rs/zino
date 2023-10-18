@@ -1,8 +1,4 @@
-use crate::view::{
-    layout::Wrapper,
-    overview::Overview,
-    stargazer::StargazerList,
-};
+use crate::view::{layout::Wrapper, overview::Overview, stargazer::StargazerList};
 use dioxus::prelude::*;
 use dioxus_router::prelude::*;
 

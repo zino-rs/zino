@@ -24,7 +24,7 @@ pub fn Wrapper(cx: Scope) -> Element {
                         Icon {
                             width: 16,
                             height: 16,
-                            icon: BsDiagram3Fill,
+                            icon: BsSpeedometer2,
                         }
                         span {
                             class: "ml-1",
@@ -50,9 +50,9 @@ pub fn Wrapper(cx: Scope) -> Element {
                 }
                 div {
                     class: "navbar-end",
-                    Link {
+                    a {
                         class: "navbar-item",
-                        to: "https://github.com/photino/zino",
+                        href: "https://github.com/photino/zino",
                         Icon {
                             width: 16,
                             height: 16,
@@ -63,9 +63,9 @@ pub fn Wrapper(cx: Scope) -> Element {
                             "github"
                         }
                     }
-                    Link {
+                    a {
                         class: "navbar-item",
-                        to: "https://crates.io/crates/zino",
+                        href: "https://crates.io/crates/zino",
                         Icon {
                             width: 16,
                             height: 16,
@@ -76,9 +76,9 @@ pub fn Wrapper(cx: Scope) -> Element {
                             "crates.io"
                         }
                     }
-                    Link {
+                    a {
                         class: "navbar-item",
-                        to: "https://docs.rs/zino",
+                        href: "https://docs.rs/zino",
                         Icon {
                             width: 16,
                             height: 16,

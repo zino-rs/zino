@@ -24,5 +24,22 @@ style = []
 script = []
 
 [bundle]
-icon = ["public/favicon.ico"]
+icon = [
+    "public/icons/32x32.png",
+    "public/icons/128x128.png",
+    "public/icons/128x128@2x.png",
+    "public/icons/icon.ico",
+]
 resources = ["config", "public"]
+
+[bundle.windows]
+tsp = true
+icon_path = "public/icons/icon.ico"
+webview_install_mode = "Skip"
+allow_downgrades = true
+
+[bundle.windows.nsis]
+installer_icon = "public/icons/icon.ico"
+install_mode = "CurrentUser"
+languages = ["SimpChinese", "TradChinese", "English"]
+display_language_selector = true

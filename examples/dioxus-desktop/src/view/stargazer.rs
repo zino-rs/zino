@@ -4,21 +4,39 @@ use dioxus_free_icons::{icons::bs_icons::*, Icon};
 use zino::prelude::*;
 
 pub fn StargazerList(cx: Scope) -> Element {
+    let chart_type = use_state(cx, || "Date");
     let mut page = use_state(cx, || 1);
-    let stargazers = use_future(cx, (page,), |(page,)| service::stargazer::list_stargazers(10, *page));
+    let stargazers = use_future(cx, (page,), |(page,)| {
+        service::stargazer::list_stargazers(10, *page)
+    });
     match stargazers.value() {
         Some(Ok(items)) => {
             let prev_invisible = if **page == 1 { "is-invisible" } else { "" };
             let next_invisible = if items.len() < 10 { "is-invisible" } else { "" };
             render! {
                 div {
-                    class: "columns is-6",
+                    class: "columns is-desktop is-6",
                     div {
                         class: "column",
+                        label {
+                            class: "checkbox is-pulled-right",
+                            input {
+                                r#type: "checkbox",
+                                onchange: |event| {
+                                    let value = if event.value == "true" { "Timeline" } else { "Date" };
+                                    chart_type.set(value);
+                                },
+                            }
+                            span {
+                                class: "ml-1",
+                                "Align timeline"
+                            }
+                        }
                         img {
+                            margin_top: "-30px",
                             width: 800,
                             height: 533,
-                            src: "https://api.star-history.com/svg?repos=photino/zino&type=Timeline",
+                            src: "https://api.star-history.com/svg?repos=photino/zino&type={chart_type}",
                         }
                     }
                     div {
@@ -28,7 +46,7 @@ pub fn StargazerList(cx: Scope) -> Element {
                             thead {
                                 tr {
                                     th {}
-                                    th { "Account" }
+                                    th { "Username" }
                                     th { "Avatar" }
                                     th { "Starred at" }
                                 }

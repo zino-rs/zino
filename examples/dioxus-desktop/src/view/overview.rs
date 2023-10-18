@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use dioxus_free_icons::{icons::go_icons::*, Icon};
 
 pub fn Overview(cx: Scope) -> Element {
     let data = [
@@ -18,26 +19,34 @@ pub fn Overview(cx: Scope) -> Element {
                         class: "card-header",
                         div {
                             class: "card-header-title",
-                            "GitHub issues"
+                            Icon {
+                                width: 14,
+                                height: 14,
+                                icon: GoIssueOpened,
+                            }
+                            span {
+                                class: "ml-1",
+                                "GitHub issues"
+                            }
                         }
                     }
                     div {
                         class: "card-content",
-                        img {
+                        a {
                             class: "mr-2",
-                            src: "https://img.shields.io/github/issues/photino/zino",
+                            href: "https://github.com/photino/zino/issues",
+                            img {
+                                src: "https://img.shields.io/github/issues/photino/zino",
+                            }
                         }
-                        img {
-                            class: "mr-2",
-                            src: "https://img.shields.io/github/issues/photino/zino/bug",
-                        }
-                        img {
-                            class: "mr-2",
-                            src: "https://img.shields.io/github/issues/photino/zino/enhancement",
-                        }
-                        img {
-                            class: "mr-2",
-                            src: "https://img.shields.io/github/issues/photino/zino/dependencies",
+                        for label in ["bug", "enhancement", "dependencies"] {
+                            a {
+                                href: "https://github.com/photino/zino/labels/{label}",
+                                img {
+                                    class: "mr-2",
+                                    src: "https://img.shields.io/github/issues/photino/zino/{label}",
+                                }
+                            }
                         }
                     }
                 }
@@ -50,7 +59,15 @@ pub fn Overview(cx: Scope) -> Element {
                         class: "card-header",
                         div {
                             class: "card-header-title",
-                            "GitHub commits"
+                            Icon {
+                                width: 14,
+                                height: 14,
+                                icon: GoHistory,
+                            }
+                            span {
+                                class: "ml-1",
+                                "GitHub commits"
+                            }
                         }
                     }
                     div {
@@ -95,13 +112,19 @@ pub fn Overview(cx: Scope) -> Element {
                         }
                         div {
                             class: "card-content",
-                            img {
+                            a {
                                 class: "mr-2",
-                                src: "https://img.shields.io/crates/v/{d.0}",
+                                href: "https://crates.io/crates/{d.0}",
+                                img {
+                                    src: "https://img.shields.io/crates/v/{d.0}",
+                                }
                             }
-                            img {
+                            a {
                                 class: "mr-2",
-                                src: "https://shields.io/docsrs/{d.0}",
+                                href: "https://docs.rs/{d.0}",
+                                img {
+                                    src: "https://shields.io/docsrs/{d.0}",
+                                }
                             }
                             img {
                                 class: "mr-2",
