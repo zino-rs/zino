@@ -9,8 +9,7 @@ publish = false
 [dependencies]
 actix-web = "4.4.0"
 fluent = "0.16.0"
-serde_json = "1.0.107"
-tracing = "0.1.39"
+tracing = "0.1.40"
 
 [dependencies.serde]
 version = "1.0.189"

@@ -1,4 +1,3 @@
-use serde_json::json;
 use zino::{prelude::*, Request, Response, Result};
 use zino_model::user::{JwtAuthService, User};
 

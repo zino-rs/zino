@@ -86,6 +86,9 @@ pub trait JsonValueExt {
     /// If the vec is empty, it also returns `None`.
     fn parse_str_array(&self) -> Option<Vec<&str>>;
 
+    /// Returns a pretty-printed String of JSON.
+    fn to_string_pretty(&self) -> String;
+
     /// Attempts to convert the JSON value to the CSV bytes.
     fn to_csv(&self, buffer: Vec<u8>) -> Result<Vec<u8>, csv::Error>;
 
@@ -253,6 +256,11 @@ impl JsonValueExt for JsonValue {
         };
         let vec = values?.iter().map(|s| s.trim()).collect::<Vec<_>>();
         (!vec.is_empty()).then_some(vec)
+    }
+
+    #[inline]
+    fn to_string_pretty(&self) -> String {
+        format!("{self:#}")
     }
 
     fn to_csv(&self, buffer: Vec<u8>) -> Result<Vec<u8>, csv::Error> {

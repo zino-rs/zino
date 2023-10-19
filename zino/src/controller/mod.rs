@@ -39,9 +39,9 @@ pub trait DefaultController<K, U = K> {
 #[cfg(any(feature = "actix", feature = "axum"))]
 #[cfg(feature = "orm")]
 use zino_core::{
-    database::{ModelAccessor, ModelHelper},
     extension::JsonObjectExt,
     model::{ModelHooks, Query},
+    orm::{ModelAccessor, ModelHelper},
     request::RequestContext,
     response::{ExtractRejection, Rejection, StatusCode},
     JsonValue, Map,

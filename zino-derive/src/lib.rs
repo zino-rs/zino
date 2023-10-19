@@ -22,7 +22,7 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields};
 
 mod parser;
 
-/// Derives the [`Schema`](zino_core::database::Schema) trait.
+/// Derives the [`Schema`](zino_core::orm::Schema) trait.
 #[proc_macro_derive(Schema, attributes(schema))]
 pub fn derive_schema(item: TokenStream) -> TokenStream {
     /// Integer types
@@ -224,9 +224,9 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
     };
     let output = quote! {
         use zino_core::{
-            database::{self, ConnectionPool, Schema},
             error::Error as ZinoError,
             model::{schema, Column},
+            orm::{self, ConnectionPool, Schema},
         };
 
         static #avro_schema: std::sync::LazyLock<schema::Schema> = std::sync::LazyLock::new(|| {
@@ -370,7 +370,7 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
     TokenStream::from(output)
 }
 
-/// Derives the [`ModelAccessor`](zino_core::database::ModelAccessor) trait.
+/// Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
 #[proc_macro_derive(ModelAccessor, attributes(schema))]
 pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
     // Input
@@ -861,8 +861,8 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
     let model_user_id_type = format_ident!("{}", user_id_type);
     let output = quote! {
         use zino_core::{
-            database::{ModelAccessor, ModelHelper as _},
             model::Query,
+            orm::{ModelAccessor, ModelHelper as _},
             request::Validation as ZinoValidation,
             Map as ZinoMap,
         };
@@ -949,32 +949,32 @@ pub fn derive_decode_row(item: TokenStream) -> TokenStream {
                 }
                 if type_name == "Map" {
                     decode_model_fields.push(quote! {
-                        if let JsonValue::Object(map) = database::decode(row, #name)? {
+                        if let JsonValue::Object(map) = orm::decode(row, #name)? {
                             model.#ident = map;
                         }
                     });
                 } else if parser::check_vec_type(&type_name) {
                     mysql_decode_model_fields.push(quote! {
-                        let value = database::decode::<JsonValue>(row, #name)?;
+                        let value = orm::decode::<JsonValue>(row, #name)?;
                         if let Some(vec) = value.parse_array() {
                             model.#ident = vec;
                         }
                     });
                     postgres_decode_model_fields.push(quote! {
-                        model.#ident = database::decode(row, #name)?;
+                        model.#ident = orm::decode(row, #name)?;
                     });
                 } else if UNSIGNED_INTEGER_TYPES.contains(&type_name.as_str()) {
                     let integer_type_ident = format_ident!("{}", type_name.replace('u', "i"));
                     postgres_decode_model_fields.push(quote! {
-                        let value = database::decode::<#integer_type_ident>(row, #name)?;
+                        let value = orm::decode::<#integer_type_ident>(row, #name)?;
                         model.#ident = value.try_into()?;
                     });
                     mysql_decode_model_fields.push(quote! {
-                        model.#ident = database::decode(row, #name)?;
+                        model.#ident = orm::decode(row, #name)?;
                     });
                 } else {
                     decode_model_fields.push(quote! {
-                        model.#ident = database::decode(row, #name)?;
+                        model.#ident = orm::decode(row, #name)?;
                     });
                 }
             }
@@ -983,10 +983,7 @@ pub fn derive_decode_row(item: TokenStream) -> TokenStream {
 
     // Output
     let output = quote! {
-        use zino_core::{
-            database::DatabaseRow,
-            model::DecodeRow,
-        };
+        use zino_core::{model::DecodeRow, orm::DatabaseRow};
 
         impl DecodeRow<DatabaseRow> for #name {
             type Error = zino_core::error::Error;

@@ -1,11 +1,11 @@
 use std::{fmt::Display, str::FromStr};
 use zino_core::{
     auth::JwtClaims,
-    database::{ModelAccessor, ModelHelper},
     datetime::DateTime,
     error::Error,
     extension::JsonObjectExt,
     model::Query,
+    orm::{ModelAccessor, ModelHelper},
     Map, Uuid,
 };
 

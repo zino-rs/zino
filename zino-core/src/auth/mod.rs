@@ -1,4 +1,18 @@
 //! Authentication and authorization.
+//!
+//! ## Feature flags
+//!
+//! The following optional features are available:
+//!
+//! | Name          | Description                                          | Default? |
+//! |---------------|------------------------------------------------------|----------|
+//! | `auth-oauth2` | Enables the integration with [`oauth2`].             | No       |
+//! | `auth-oidc`   | Enables the integration with [`openidconnect`].      | No       |
+//! | `auth-totp`   | Enables the integration with [`totp-rs`].            | No       |
+//!
+//! [`oauth2`]: https://crates.io/crates/oauth2
+//! [`openidconnect`]: https://crates.io/crates/openidconnect
+//! [`totp-rs`]: https://crates.io/crates/totp-rs
 
 mod access_key;
 mod authentication;

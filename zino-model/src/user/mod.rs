@@ -5,11 +5,11 @@ use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
 use zino_core::{
     auth::{AccessKeyId, UserSession},
-    database::ModelHelper,
     datetime::DateTime,
     error::Error,
     extension::JsonObjectExt,
     model::{Model, ModelHooks},
+    orm::ModelHelper,
     request::Validation,
     Map, Uuid,
 };

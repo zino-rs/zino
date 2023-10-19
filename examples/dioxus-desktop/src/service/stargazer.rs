@@ -1,5 +1,4 @@
 use crate::App;
-use serde_json::json;
 use zino::prelude::*;
 
 pub async fn list_stargazers(per_page: u8, page: usize) -> Result<Vec<Map>, Error> {

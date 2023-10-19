@@ -9,6 +9,15 @@
 //! | `orm-mysql`    | Enables the MySQL database driver.                   | No       |
 //! | `orm-postgres` | Enables the PostgreSQL database driver.              | No       |
 //! | `orm-sqlite`   | Enables the SQLite database driver.                  | No       |
+//!
+//! # Design references
+//!
+//! The design of our ORM is inspired by [`Mongoose`], [`Prisma`], [`TypeORM`] and [`PostgREST`].
+//!
+//! [`Mongoose`]: https://mongoosejs.com/
+//! [`Prisma`]: https://www.prisma.io/
+//! [`TypeORM`]: https://typeorm.io/
+//! [`PostgREST`]: https://postgrest.org/
 
 use crate::{extension::TomlTableExt, state::State};
 use convert_case::{Case, Casing};

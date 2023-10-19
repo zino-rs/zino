@@ -11,6 +11,7 @@
 //! [`zino`]: https://github.com/photino/zino
 
 #![allow(async_fn_in_trait)]
+#![allow(stable_features)]
 #![doc(html_favicon_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.png")]
 #![doc(html_logo_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.svg")]
 #![feature(async_fn_in_trait)]

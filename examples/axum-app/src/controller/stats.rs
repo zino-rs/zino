@@ -1,4 +1,3 @@
-use serde_json::json;
 use zino::{prelude::*, Cluster, Request, Response, Result};
 
 pub async fn index(req: Request) -> Result {
@@ -11,7 +10,7 @@ pub async fn index(req: Request) -> Result {
     });
     let data = json!({
         "title": "Stats",
-        "output": serde_json::to_string_pretty(&stats).unwrap_or_default(),
+        "output": stats.to_string_pretty(),
     });
     Ok(res.render("output.html", data).into())
 }

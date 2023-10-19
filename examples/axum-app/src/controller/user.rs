@@ -1,5 +1,4 @@
 use fluent::fluent_args;
-use serde_json::json;
 use std::time::Instant;
 use zino::{prelude::*, Request, Response, Result};
 use zino_model::user::User;

@@ -12,7 +12,8 @@ pub use zino_core::{
     error::Error,
     extension::{JsonObjectExt, JsonValueExt, TomlTableExt},
     file::NamedFile,
-    model::{Model, ModelHooks, Mutation, MutationBuilder, Query, QueryBuilder, QueryContext},
+    json,
+    model::{Model, ModelHooks, Mutation, Query, QueryContext},
     reject,
     request::{RequestContext, Validation},
     response::{ExtractRejection, Rejection, StatusCode, WebHook},
@@ -23,4 +24,4 @@ pub use zino_core::{
 
 #[cfg(feature = "orm")]
 #[doc(no_inline)]
-pub use zino_core::database::{ModelAccessor, ModelHelper, Schema};
+pub use zino_core::orm::{ModelAccessor, ModelHelper, Schema};

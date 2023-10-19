@@ -1,4 +1,13 @@
 //! Building HTML views using templates.
+//!
+//! # Supported template engines
+//!
+//! The following optional features are available:
+//!
+//! | Feature flag     | Description                                          | Default? |
+//! |------------------|------------------------------------------------------|----------|
+//! | `view-minijinja` | Enables the `minijinja` template engine.             | No       |
+//! | `view-tera`      | Enables the `tera` template engine.                  | No       |
 
 use crate::{application::Application, extension::TomlTableExt};
 use std::path::Path;
