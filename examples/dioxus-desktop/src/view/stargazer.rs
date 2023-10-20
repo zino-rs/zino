@@ -48,6 +48,7 @@ pub fn StargazerList(cx: Scope) -> Element {
                                     th {}
                                     th { "Username" }
                                     th { "Avatar" }
+                                    th { "Followers" }
                                     th { "Starred at" }
                                 }
                             }
@@ -134,6 +135,14 @@ fn StargazerListing<'a>(cx: Scope<'a>, index: usize, stargazer: &'a Map) -> Elem
                 figure {
                    class: "image is-24x24",
                    img { src: avatar_url },
+                }
+            }
+            th {
+                a {
+                    href: "https://github.com/{name}?tab=followers",
+                    img {
+                        src: "https://img.shields.io/github/followers/{name}?label=&style=social"
+                    }
                 }
             }
             td {
