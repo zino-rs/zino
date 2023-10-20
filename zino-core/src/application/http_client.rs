@@ -178,36 +178,84 @@ struct RequestTiming;
 
 impl ReqwestOtelSpanBackend for RequestTiming {
     fn on_request_start(request: &Request, extensions: &mut Extensions) -> Span {
+        let method = request.method();
+
+        // URL
         let url = request.url();
+        let scheme = url.scheme();
+        let host = url.host_str();
+        let port = url.port();
+        let path = url.path();
+        let query = url.query();
+        let full_url = remove_credentials(&url);
+
+        // Headers
         let headers = request.headers();
         let traceparent = headers.get_str("traceparent");
+        let tracestate = headers.get_str("tracestate");
         let trace_context = traceparent.and_then(TraceContext::from_traceparent);
+        let session_id = headers.get_str("session-id");
+        let trace_id = trace_context
+            .as_ref()
+            .map(|ctx| Uuid::from_u128(ctx.trace_id()).to_string());
+        let parent_id = trace_context
+            .and_then(|ctx| ctx.parent_id())
+            .map(|parent_id| format!("{parent_id:x}"));
+
         extensions.insert(Instant::now());
-        tracing::info_span!(
-            "HTTP request",
-            "otel.kind" = "client",
-            "otel.name" = "zino-bot",
-            "http.scheme" = url.scheme(),
-            "http.method" = request.method().as_str(),
-            "http.url" = remove_credentials(url).as_ref(),
-            "http.request.header.traceparent" = traceparent,
-            "http.request.header.tracestate" = headers.get_str("tracestate"),
-            "http.response.header.traceparent" = Empty,
-            "http.response.header.tracestate" = Empty,
-            "http.status_code" = Empty,
-            "http.client.duration" = Empty,
-            "net.peer.name" = url.domain(),
-            "net.peer.port" = url.port(),
-            "context.request_id" = Empty,
-            "context.session_id" = headers.get_str("session-id"),
-            "context.span_id" = Empty,
-            "context.trace_id" = trace_context
-                .as_ref()
-                .map(|ctx| Uuid::from_u128(ctx.trace_id()).to_string()),
-            "context.parent_id" = trace_context
-                .and_then(|ctx| ctx.parent_id())
-                .map(|parent_id| format!("{parent_id:x}")),
-        )
+        if method.is_safe() {
+            tracing::info_span!(
+                "HTTP request",
+                "otel.kind" = "client",
+                "otel.name" = "zino-bot",
+                "otel.status_code" = Empty,
+                "url.scheme" = scheme,
+                "url.path" = path,
+                "url.query" = query,
+                "url.full" = full_url.as_ref(),
+                "http.request.method" = method.as_str(),
+                "http.request.header.traceparent" = traceparent,
+                "http.request.header.tracestate" = tracestate,
+                "http.response.header.traceparent" = Empty,
+                "http.response.header.tracestate" = Empty,
+                "http.response.header.server_timing" = Empty,
+                "http.response.status_code" = Empty,
+                "http.client.duration" = Empty,
+                "server.address" = host,
+                "server.port" = port,
+                "context.session_id" = session_id,
+                "context.trace_id" = trace_id,
+                "context.request_id" = Empty,
+                "context.span_id" = Empty,
+                "context.parent_id" = parent_id,
+            )
+        } else {
+            tracing::warn_span!(
+                "HTTP request",
+                "otel.kind" = "client",
+                "otel.name" = "zino-bot",
+                "otel.status_code" = Empty,
+                "url.scheme" = scheme,
+                "url.path" = path,
+                "url.query" = query,
+                "url.full" = full_url.as_ref(),
+                "http.request.method" = method.as_str(),
+                "http.request.header.traceparent" = traceparent,
+                "http.request.header.tracestate" = tracestate,
+                "http.response.header.traceparent" = Empty,
+                "http.response.header.tracestate" = Empty,
+                "http.response.header.server_timing" = Empty,
+                "http.response.status_code" = Empty,
+                "http.client.duration" = Empty,
+                "server.address" = host,
+                "server.port" = port,
+                "context.session_id" = session_id,
+                "context.trace_id" = trace_id,
+                "context.request_id" = Empty,
+                "context.span_id" = Empty,
+                "context.parent_id" = parent_id,
+            )
+        }
     }
 
     fn on_request_end(
@@ -234,15 +282,29 @@ impl ReqwestOtelSpanBackend for RequestTiming {
                     "http.response.header.tracestate",
                     headers.get_str("tracestate"),
                 );
+                span.record(
+                    "http.response.header.server_timing",
+                    headers.get_str("server-timing"),
+                );
                 span.record("context.request_id", headers.get_str("x-request-id"));
-                span.record("http.status_code", response.status().as_u16());
+                span.record("http.response.status_code", response.status().as_u16());
+                span.record("otel.status_code", "OK");
                 tracing::info!("finished HTTP request");
             }
             Err(err) => {
                 if let reqwest_middleware::Error::Reqwest(err) = err {
                     if let Some(status_code) = err.status() {
-                        span.record("http.status_code", status_code.as_u16());
+                        span.record("http.response.status_code", status_code.as_u16());
+                        if status_code.is_server_error() {
+                            span.record("otel.status_code", "OK");
+                        } else {
+                            span.record("otel.status_code", "ERROR");
+                        }
+                    } else {
+                        span.record("otel.status_code", "ERROR");
                     }
+                } else {
+                    span.record("otel.status_code", "ERROR");
                 }
                 tracing::error!("{err}");
             }

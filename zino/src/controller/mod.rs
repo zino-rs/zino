@@ -187,7 +187,7 @@ where
         }
         if !validations.is_empty() {
             let mut res = crate::Response::new(StatusCode::BAD_REQUEST);
-            res.set_data(&validations);
+            res.set_json_data(validations);
             Ok(res.into())
         } else {
             let rows_affected = Self::insert_many(models).await.extract(&req)?;

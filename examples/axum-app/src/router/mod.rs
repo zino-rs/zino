@@ -1,5 +1,6 @@
 use crate::{
     controller::{auth, file, stats, task, user},
+    model::Tag,
     middleware,
 };
 use axum::{
@@ -8,7 +9,7 @@ use axum::{
     Router,
 };
 use zino::DefaultController;
-use zino_model::{Tag, User};
+use zino_model::User;
 
 pub fn routes() -> Vec<Router> {
     let mut routes = Vec::new();

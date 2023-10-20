@@ -1,10 +1,11 @@
 use crate::{
     controller::{auth, file, stats, task, user},
     middleware,
+    model::Tag,
 };
 use actix_web::web::{get, post, scope, ServiceConfig};
 use zino::{DefaultController, RouterConfigure};
-use zino_model::{Tag, User};
+use zino_model::User;
 
 pub fn routes() -> Vec<RouterConfigure> {
     vec![

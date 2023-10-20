@@ -14,7 +14,6 @@ use etag::EntityTag;
 use http::header::{self, HeaderName, HeaderValue};
 use http_body::Full;
 use serde::Serialize;
-use serde_json::value::RawValue;
 use std::{
     marker::PhantomData,
     time::{Duration, Instant},
@@ -72,9 +71,6 @@ pub struct Response<S = StatusCode> {
     /// Request ID.
     #[serde(skip_serializing_if = "Uuid::is_nil")]
     request_id: Uuid,
-    /// Response data.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    data: Option<Box<RawValue>>,
     /// JSON data.
     #[serde(rename = "data")]
     #[serde(skip_serializing_if = "JsonValue::is_null")]
@@ -118,7 +114,6 @@ impl<S: ResponseCode> Response<S> {
             message: None,
             start_time: Instant::now(),
             request_id: Uuid::nil(),
-            data: None,
             json_data: JsonValue::Null,
             bytes_data: Bytes::new(),
             data_transformer: None,
@@ -151,7 +146,6 @@ impl<S: ResponseCode> Response<S> {
             message: None,
             start_time: ctx.start_time(),
             request_id: ctx.request_id(),
-            data: None,
             json_data: JsonValue::Null,
             bytes_data: Bytes::new(),
             data_transformer: None,
@@ -188,17 +182,14 @@ impl<S: ResponseCode> Response<S> {
                 if let Some(data) = value.as_object_mut() {
                     let mut map = crate::Map::new();
                     map.append(data);
-                    crate::view::render(template_name, map).and_then(|data| {
-                        serde_json::value::to_raw_value(&data).map_err(|err| err.into())
-                    })
+                    crate::view::render(template_name, map)
                 } else {
                     Err(Error::new("invalid template data"))
                 }
             });
         match result {
-            Ok(raw_value) => {
-                self.data = Some(raw_value);
-                self.json_data = JsonValue::Null;
+            Ok(content) => {
+                self.json_data = content.into();
                 self.bytes_data = Bytes::new();
                 self.content_type = Some("text/html; charset=utf-8".into());
             }
@@ -211,7 +202,6 @@ impl<S: ResponseCode> Response<S> {
                 self.success = false;
                 self.detail = Some(err.to_string().into());
                 self.message = None;
-                self.data = None;
                 self.json_data = JsonValue::Null;
                 self.bytes_data = Bytes::new();
             }
@@ -270,11 +260,10 @@ impl<S: ResponseCode> Response<S> {
 
     /// Sets the response data.
     #[inline]
-    pub fn set_data<T: ?Sized + Serialize>(&mut self, data: &T) {
-        match serde_json::value::to_raw_value(data) {
-            Ok(raw_value) => {
-                self.data = Some(raw_value);
-                self.json_data = JsonValue::Null;
+    pub fn set_data<T: Serialize>(&mut self, data: &T) {
+        match serde_json::to_value(data) {
+            Ok(value) => {
+                self.json_data = value;
                 self.bytes_data = Bytes::new();
             }
             Err(err) => self.set_error_message(err),
@@ -284,30 +273,22 @@ impl<S: ResponseCode> Response<S> {
     /// Sets the JSON data.
     #[inline]
     pub fn set_json_data(&mut self, data: impl Into<JsonValue>) {
-        self.data = None;
         self.json_data = data.into();
         self.bytes_data = Bytes::new();
     }
 
     /// Sets the bytes data.
     #[inline]
-    pub fn set_bytes_data(&mut self, bytes: impl Into<Bytes>) {
-        self.data = None;
+    pub fn set_bytes_data(&mut self, data: impl Into<Bytes>) {
         self.json_data = JsonValue::Null;
-        self.bytes_data = bytes.into();
+        self.bytes_data = data.into();
     }
 
     /// Sets the response data for the validation.
     #[inline]
     pub fn set_validation_data(&mut self, validation: Validation) {
-        match serde_json::value::to_raw_value(&validation.into_map()) {
-            Ok(raw_value) => {
-                self.data = Some(raw_value);
-                self.json_data = JsonValue::Null;
-                self.bytes_data = Bytes::new();
-            }
-            Err(err) => self.set_error_message(err),
-        }
+        self.json_data = validation.into_map().into();
+        self.bytes_data = Bytes::new();
     }
 
     /// Sets a transformer for the response data.
@@ -336,7 +317,7 @@ impl<S: ResponseCode> Response<S> {
         self.content_type = Some(content_type.into());
     }
 
-    /// Sets the response body as the form data.
+    /// Sets the form data as the response body.
     #[inline]
     pub fn set_form_response(&mut self, data: impl Into<JsonValue>) {
         self.set_json_data(data);
@@ -348,14 +329,14 @@ impl<S: ResponseCode> Response<S> {
         });
     }
 
-    /// Sets the response body as the JSON data.
+    /// Sets the JSON data as the response body.
     #[inline]
     pub fn set_json_response(&mut self, data: impl Into<JsonValue>) {
         self.set_json_data(data);
         self.set_data_transformer(|data| Ok(serde_json::to_vec(&data)?.into()));
     }
 
-    /// Sets the response body as the JSON Lines data.
+    /// Sets the JSON Lines data as the response body.
     #[inline]
     pub fn set_jsonlines_response(&mut self, data: impl Into<JsonValue>) {
         self.set_json_data(data);
@@ -363,7 +344,7 @@ impl<S: ResponseCode> Response<S> {
         self.set_data_transformer(|data| Ok(data.to_jsonlines(Vec::new())?.into()));
     }
 
-    /// Sets the response body as the MsgPack data.
+    /// Sets the MsgPack data as the response body.
     #[inline]
     pub fn set_msgpack_response(&mut self, data: impl Into<JsonValue>) {
         self.set_json_data(data);
@@ -371,12 +352,26 @@ impl<S: ResponseCode> Response<S> {
         self.set_data_transformer(|data| Ok(data.to_msgpack(Vec::new())?.into()));
     }
 
-    /// Sets the response body as the CSV data.
+    /// Sets the CSV data as the response body.
     #[inline]
     pub fn set_csv_response(&mut self, data: impl Into<JsonValue>) {
         self.set_json_data(data);
         self.set_content_type("text/csv; charset=utf-8");
         self.set_data_transformer(|data| Ok(data.to_csv(Vec::new())?.into()));
+    }
+
+    /// Sets the plain text as the response body.
+    #[inline]
+    pub fn set_text_response<T: ?Sized + Serialize>(&mut self, data: impl Into<String>) {
+        self.set_json_data(data.into());
+        self.set_content_type("text/plain; charset=utf-8");
+    }
+
+    /// Sets the bytes data as the response body.
+    #[inline]
+    pub fn set_bytes_response(&mut self, data: impl Into<Bytes>) {
+        self.set_bytes_data(data);
+        self.set_content_type("application/octet-stream");
     }
 
     /// Sets the request ID.
@@ -508,15 +503,12 @@ impl<S: ResponseCode> Response<S> {
 
     /// Reads the response into a byte buffer.
     pub fn read_bytes(&mut self) -> Result<Bytes, Error> {
-        let bytes_opt = if !self.bytes_data.is_empty() {
+        let has_bytes_data = !self.bytes_data.is_empty();
+        let has_json_data = !self.json_data.is_null();
+        let bytes_opt = if has_bytes_data {
             Some(self.bytes_data.clone())
-        } else if let Some(transformer) = self.data_transformer.as_ref() {
-            if !self.json_data.is_null() {
-                Some(transformer(&self.json_data)?)
-            } else {
-                let data = serde_json::to_value(&self.data)?;
-                Some(transformer(&data)?)
-            }
+        } else if let Some(transformer) = self.data_transformer.as_ref() && has_json_data {
+            Some(transformer(&self.json_data)?)
         } else {
             None
         };
@@ -528,13 +520,9 @@ impl<S: ResponseCode> Response<S> {
 
         let content_type = self.content_type();
         let (bytes, etag_opt) = if crate::helper::check_json_content_type(content_type) {
-            let (capacity, etag_opt) = if !self.json_data.is_null() {
+            let (capacity, etag_opt) = if has_json_data {
                 let data = serde_json::to_vec(&self.json_data)?;
                 let etag = EntityTag::from_data(&data);
-                (data.len() + 128, Some(etag))
-            } else if let Some(data) = &self.data {
-                let data = data.get().as_bytes();
-                let etag = EntityTag::from_data(data);
                 (data.len() + 128, Some(etag))
             } else {
                 (128, None)
@@ -542,22 +530,7 @@ impl<S: ResponseCode> Response<S> {
             let mut bytes = Vec::with_capacity(capacity);
             serde_json::to_writer(&mut bytes, &self)?;
             (bytes, etag_opt)
-        } else if let Some(data) = &self.data {
-            let capacity = data.get().len();
-            let value = serde_json::to_value(data)?;
-            let bytes = if content_type.starts_with("text/csv") {
-                value.to_csv(Vec::with_capacity(capacity))?
-            } else if content_type.starts_with("application/jsonlines") {
-                value.to_jsonlines(Vec::with_capacity(capacity))?
-            } else if content_type.starts_with("application/msgpack") {
-                value.to_msgpack(Vec::with_capacity(capacity))?
-            } else if let JsonValue::String(s) = value {
-                s.into_bytes()
-            } else {
-                data.to_string().into_bytes()
-            };
-            (bytes, None)
-        } else if !self.json_data.is_null() {
+        } else if has_json_data {
             let value = &self.json_data;
             let bytes = if content_type.starts_with("text/csv") {
                 value.to_csv(Vec::new())?
@@ -566,7 +539,7 @@ impl<S: ResponseCode> Response<S> {
             } else if content_type.starts_with("application/msgpack") {
                 value.to_msgpack(Vec::new())?
             } else if let JsonValue::String(s) = value {
-                s.clone().into_bytes()
+                s.as_bytes().to_vec()
             } else {
                 value.to_string().into_bytes()
             };
@@ -667,8 +640,8 @@ impl<S: ResponseCode> From<Response<S>> for FullResponse {
         };
 
         for (key, value) in response.finalize() {
-            if let Ok(header_name) = HeaderName::try_from(key.as_ref()) &&
-                let Ok(header_value) = HeaderValue::try_from(value)
+            if let Ok(header_name) = HeaderName::try_from(key.as_ref())
+                && let Ok(header_value) = HeaderValue::try_from(value)
             {
                 res.headers_mut().insert(header_name, header_value);
             }
