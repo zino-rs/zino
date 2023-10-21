@@ -7,7 +7,7 @@ use dioxus_free_icons::{
 use dioxus_router::prelude::*;
 
 pub fn Wrapper(cx: Scope) -> Element {
-    let nav_item_classes = use_state(cx, || ["is-active", ""]);
+    let nav_item_classes = use_state(cx, || ["is-active", "", ""]);
     render! {
         nav {
             class: "navbar is-link",
@@ -19,7 +19,7 @@ pub fn Wrapper(cx: Scope) -> Element {
                         class: "navbar-item {nav_item_classes[0]}",
                         to: Route::Overview {},
                         onclick: move |_| {
-                            nav_item_classes.set(["is-active", ""]);
+                            nav_item_classes.set(["is-active", "", ""]);
                         },
                         Icon {
                             width: 16,
@@ -35,7 +35,7 @@ pub fn Wrapper(cx: Scope) -> Element {
                         class: "navbar-item {nav_item_classes[1]}",
                         to: Route::StargazerList {},
                         onclick: move |_| {
-                            nav_item_classes.set(["", "is-active"]);
+                            nav_item_classes.set(["", "is-active", ""]);
                         },
                         Icon {
                             width: 16,
@@ -45,6 +45,22 @@ pub fn Wrapper(cx: Scope) -> Element {
                         span {
                             class: "ml-1",
                             "Stargazers"
+                        }
+                    }
+                    Link {
+                        class: "navbar-item {nav_item_classes[2]}",
+                        to: Route::DependencyList {},
+                        onclick: move |_| {
+                            nav_item_classes.set(["", "", "is-active"]);
+                        },
+                        Icon {
+                            width: 16,
+                            height: 16,
+                            icon: BsBricks,
+                        }
+                        span {
+                            class: "ml-1",
+                            "Dependencies"
                         }
                     }
                 }

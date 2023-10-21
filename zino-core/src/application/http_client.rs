@@ -187,7 +187,7 @@ impl ReqwestOtelSpanBackend for RequestTiming {
         let port = url.port();
         let path = url.path();
         let query = url.query();
-        let full_url = remove_credentials(&url);
+        let full_url = remove_credentials(url);
 
         // Headers
         let headers = request.headers();

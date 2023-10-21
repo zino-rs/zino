@@ -113,7 +113,7 @@ cfg_if::cfg_if! {
 
         /// A specialized `Result` type for `axum`.
         pub type Result<T = AxumResponse<StatusCode>> = std::result::Result<T, AxumRejection>;
-    } else if #[cfg(feature = "dioxus")] {
+    } else if #[cfg(feature = "dioxus-desktop")] {
         use application::dioxus_desktop::DioxusDesktop;
 
         /// Desktop applications for `dioxus`.

@@ -2,7 +2,7 @@
 name = "zino-core"
 description = "Core types and traits for zino."
 version = "0.14.2"
-rust-version = "1.72"
+rust-version = "1.73"
 edition = "2021"
 license = "MIT"
 categories = ["asynchronous", "network-programming", "web-programming::http-server"]
@@ -170,7 +170,6 @@ reqwest-middleware = "0.2.3"
 reqwest-retry = "0.3.0"
 reqwest-tracing = "0.4.6"
 rmp-serde = "1.1.2"
-serde_json = "1.0.107"
 serde_qs = "0.12.0"
 sha2 = "0.10.8"
 sysinfo = "0.29.10"
@@ -241,6 +240,10 @@ features = [
 [dependencies.serde]
 version = "1.0.189"
 features = ["derive"]
+
+[dependencies.serde_json]
+version = "1.0.107"
+features = ["raw_value"]
 
 [dependencies.sm3]
 version = "0.4.2"

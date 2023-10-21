@@ -2,7 +2,7 @@
 name = "dioxus-desktop"
 description = "An example for Dioxus desktop integration."
 version = "0.1.1"
-rust-version = "1.72"
+rust-version = "1.73"
 edition = "2021"
 publish = false
 
@@ -27,7 +27,7 @@ features = ["derive"]
 [dependencies.zino]
 path = "../../zino"
 version = "0.13.2"
-features = ["dioxus"]
+features = ["dioxus-desktop"]
 
 [dependencies.zino-core]
 path = "../../zino-core"

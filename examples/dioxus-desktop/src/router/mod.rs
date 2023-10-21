@@ -1,4 +1,6 @@
-use crate::view::{layout::Wrapper, overview::Overview, stargazer::StargazerList};
+use crate::view::{
+    dependency::DependencyList, layout::Wrapper, overview::Overview, stargazer::StargazerList,
+};
 use dioxus::prelude::*;
 use dioxus_router::prelude::*;
 
@@ -10,6 +12,8 @@ pub enum Route {
         Overview {},
         #[route("/stargazers")]
         StargazerList {},
+        #[route("/dependencies")]
+        DependencyList {},
     #[end_layout]
     #[route("/:..segments")]
     PageNotFound { segments: Vec<String> },
