@@ -488,7 +488,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     (SELECT * from (SELECT {primary_key_name} FROM {table_name} {filters}) AS t);"
             )
         } else {
-            // Both PostgreQL and SQLite support a `LIMIT` in subquery..
+            // Both PostgreQL and SQLite support a `LIMIT` in subquery
             let sort = query.format_sort();
             format!(
                 "UPDATE {table_name} SET {updates} WHERE {primary_key_name} IN \

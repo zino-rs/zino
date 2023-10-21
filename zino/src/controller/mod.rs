@@ -26,6 +26,9 @@ pub trait DefaultController<K, U = K> {
     /// Batch deletes multiple models.
     async fn batch_delete(req: Self::Request) -> Self::Result;
 
+    /// Batch updates multiple models.
+    async fn batch_update(req: Self::Request) -> Self::Result;
+
     /// Imports model data.
     async fn import(req: Self::Request) -> Self::Result;
 
@@ -40,7 +43,7 @@ pub trait DefaultController<K, U = K> {
 #[cfg(feature = "orm")]
 use zino_core::{
     extension::JsonObjectExt,
-    model::{ModelHooks, Query},
+    model::{ModelHooks, Mutation, Query},
     orm::{ModelAccessor, ModelHelper},
     request::RequestContext,
     response::{ExtractRejection, Rejection, StatusCode},
@@ -212,6 +215,28 @@ where
         let data = Map::from_entry("rows_affected", rows_affected);
         let mut res = crate::Response::default().context(&req);
         res.set_json_data(data);
+        Ok(res.into())
+    }
+
+    async fn batch_update(mut req: Self::Request) -> Self::Result {
+        let data = req.parse_body::<Vec<Map>>().await?;
+
+        // Should use `Self::transaction` when the `Send` bound is resolved
+        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let mut rows_affected = 0;
+        for mut map in data.into_iter() {
+            if let Some(id) = map.remove(primary_key_name) {
+                let query = Query::new(Map::from_entry(primary_key_name, id));
+                let mut mutation = Mutation::new(map);
+                let ctx = Self::update_one(&query, &mut mutation)
+                    .await
+                    .extract(&req)?;
+                rows_affected += ctx.rows_affected().unwrap_or_default();
+            }
+        }
+
+        let mut res = crate::Response::default().context(&req);
+        res.set_json_data(Map::from_entry("rows_affected", rows_affected));
         Ok(res.into())
     }
 

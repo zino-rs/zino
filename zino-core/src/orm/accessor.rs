@@ -390,10 +390,7 @@ where
 
         let query = model.current_version_query();
         let mut mutation = model.soft_delete_mutation();
-        Self::before_mutation(&query, &mut mutation).await?;
-
         let ctx = Self::update_one(&query, &mut mutation).await?;
-        Self::after_mutation(&ctx).await?;
         Self::after_soft_delete(&ctx, model_data).await?;
         Ok(())
     }
@@ -405,10 +402,7 @@ where
 
         let query = model.current_version_query();
         let mut mutation = model.lock_mutation();
-        Self::before_mutation(&query, &mut mutation).await?;
-
         let ctx = Self::update_one(&query, &mut mutation).await?;
-        Self::after_mutation(&ctx).await?;
         Self::after_lock(&ctx, model_data).await?;
         Ok(())
     }
@@ -448,11 +442,9 @@ where
 
         let query = model.current_version_query();
         let mut mutation = model.next_version_mutation(data);
-        Self::before_mutation(&query, &mut mutation).await?;
 
         let model_data = model.before_update().await?;
         let ctx = Self::update_one(&query, &mut mutation).await?;
-        Self::after_mutation(&ctx).await?;
         Self::after_update(&ctx, model_data).await?;
         Ok((validation, model))
     }
