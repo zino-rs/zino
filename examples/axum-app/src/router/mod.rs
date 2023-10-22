@@ -1,7 +1,7 @@
 use crate::{
-    controller::{auth, file, stats, task, user},
-    model::Tag,
+    controller::{auth, file, stats, user},
     middleware,
+    model::{Tag, User},
 };
 use axum::{
     middleware::from_fn,
@@ -9,7 +9,6 @@ use axum::{
     Router,
 };
 use zino::DefaultController;
-use zino_model::User;
 
 pub fn routes() -> Vec<Router> {
     let mut routes = Vec::new();
@@ -37,8 +36,7 @@ pub fn routes() -> Vec<Router> {
         .route("/user/:id/view", get(user::view))
         .route("/user/list", get(User::list))
         .route("/user/import", post(User::import))
-        .route("/user/export", get(User::export))
-        .layer(from_fn(middleware::init_user_session));
+        .route("/user/export", get(User::export));
     routes.push(router);
 
     // Tag controller.
@@ -49,10 +47,6 @@ pub fn routes() -> Vec<Router> {
         .route("/tag/:id/view", get(Tag::view))
         .route("/tag/list", get(Tag::list))
         .route("/tag/schema", get(Tag::schema));
-    routes.push(router);
-
-    // Task controller.
-    let router = Router::new().route("/task/execute", post(task::execute));
     routes.push(router);
 
     routes

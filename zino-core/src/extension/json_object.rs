@@ -56,6 +56,15 @@ pub trait JsonObjectExt {
     /// Extracts the array value corresponding to the key.
     fn get_array(&self, key: &str) -> Option<&Vec<JsonValue>>;
 
+    /// Extracts the array value corresponding to the key and parses it as `Vec<u64>`.
+    fn get_u64_array(&self, key: &str) -> Option<Vec<u64>>;
+
+    /// Extracts the array value corresponding to the key and parses it as `Vec<i64>`.
+    fn get_i64_array(&self, key: &str) -> Option<Vec<i64>>;
+
+    /// Extracts the array value corresponding to the key and parses it as `Vec<f64>`.
+    fn get_f64_array(&self, key: &str) -> Option<Vec<f64>>;
+
     /// Extracts the array value corresponding to the key and parses it as `Vec<&str>`.
     fn get_str_array(&self, key: &str) -> Option<Vec<&str>>;
 
@@ -236,9 +245,27 @@ impl JsonObjectExt for Map {
     }
 
     #[inline]
+    fn get_u64_array(&self, key: &str) -> Option<Vec<u64>> {
+        self.get_array(key)
+            .map(|values| values.iter().filter_map(|v| v.as_u64()).collect())
+    }
+
+    #[inline]
+    fn get_i64_array(&self, key: &str) -> Option<Vec<i64>> {
+        self.get_array(key)
+            .map(|values| values.iter().filter_map(|v| v.as_i64()).collect())
+    }
+
+    #[inline]
+    fn get_f64_array(&self, key: &str) -> Option<Vec<f64>> {
+        self.get_array(key)
+            .map(|values| values.iter().filter_map(|v| v.as_f64()).collect())
+    }
+
+    #[inline]
     fn get_str_array(&self, key: &str) -> Option<Vec<&str>> {
         self.get_array(key)
-            .map(|values| values.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>())
+            .map(|values| values.iter().filter_map(|v| v.as_str()).collect())
     }
 
     #[inline]

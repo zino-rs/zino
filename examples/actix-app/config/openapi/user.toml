@@ -71,8 +71,8 @@ tags = { type = "array", items = { type = "string", format = "uuid" }, descripti
 type = "object"
 name = { type = "string", description = "User name" }
 status = { type = "string", enum = ["Active", "Inactive", "Locked", "Deleted"], description = "User status" }
-roles = { type = "string", description = "User roles" }
-tags = { type = "string", description = "User tags" }
+roles = { type = "string", items = "string", description = "User roles" }
+tags = { type = "string", items = { type = "string", format = "uuid" }, description = "User tags" }
 
 [schemas.userData]
 type = "array"

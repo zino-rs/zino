@@ -73,7 +73,13 @@ where
         Self::after_decode(&mut model_snapshot)
             .await
             .extract(&req)?;
-        model.insert().await.extract(&req)?;
+
+        let ctx = model.insert().await.extract(&req)?;
+        if let Some(last_insert_id) = ctx.last_insert_id()
+            && model_snapshot.get_i64("id") == Some(0)
+        {
+            model_snapshot.upsert("id", last_insert_id);
+        }
 
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
         Self::translate_model(&mut model_snapshot);
@@ -193,8 +199,8 @@ where
             res.set_json_data(validations);
             Ok(res.into())
         } else {
-            let rows_affected = Self::insert_many(models).await.extract(&req)?;
-            let data = Map::from_entry("rows_affected", rows_affected);
+            let ctx = Self::insert_many(models).await.extract(&req)?;
+            let data = Map::from_entry("rows_affected", ctx.rows_affected());
             let mut res = crate::Response::default().context(&req);
             res.set_code(StatusCode::CREATED);
             res.set_json_data(data);
@@ -211,8 +217,8 @@ where
             Map::from_entry(Self::PRIMARY_KEY_NAME, primary_key_values)
         };
         let query = Query::new(filters);
-        let rows_affected = Self::delete_many(&query).await.extract(&req)?;
-        let data = Map::from_entry("rows_affected", rows_affected);
+        let ctx = Self::delete_many(&query).await.extract(&req)?;
+        let data = Map::from_entry("rows_affected", ctx.rows_affected());
         let mut res = crate::Response::default().context(&req);
         res.set_json_data(data);
         Ok(res.into())

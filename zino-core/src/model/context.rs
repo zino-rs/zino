@@ -12,6 +12,8 @@ pub struct QueryContext {
     query: String,
     /// Arguments.
     arguments: Vec<String>,
+    /// Last insert ID.
+    last_insert_id: Option<i64>,
     /// Number of rows affected.
     rows_affected: Option<u64>,
     /// Indicates the query execution is successful or not.
@@ -27,6 +29,7 @@ impl QueryContext {
             query_id: Uuid::new_v4(),
             query: String::new(),
             arguments: Vec::new(),
+            last_insert_id: None,
             rows_affected: None,
             success: false,
         }
@@ -48,6 +51,12 @@ impl QueryContext {
     #[inline]
     pub fn append_arguments(&mut self, arguments: &mut Vec<String>) {
         self.arguments.append(arguments);
+    }
+
+    /// Sets the last insert ID.
+    #[inline]
+    pub fn set_last_insert_id(&mut self, last_insert_id: i64) {
+        self.last_insert_id = Some(last_insert_id);
     }
 
     /// Sets the query result.
@@ -79,6 +88,12 @@ impl QueryContext {
     #[inline]
     pub fn arguments(&self) -> &[String] {
         &self.arguments
+    }
+
+    /// Returns the last insert ID.
+    #[inline]
+    pub fn last_insert_id(&self) -> Option<i64> {
+        self.last_insert_id
     }
 
     /// Returns the number of rows affected.

@@ -54,8 +54,7 @@ roles = { type = "string", description = "User roles" }
 tags = { type = "string", description = "User tags" }
 
 [schemas.userId]
-type = "string"
-format = "uuid"
+type = "integer"
 description = "User ID"
 
 [schemas.newUser]
@@ -65,14 +64,14 @@ name = { type = "string", description = "User name" }
 roles = { type = "array", items = "string", example = ["admin"], description = "User roles" }
 account = { type = "string", description = "User account" }
 password = { type = "string", format = "password", description = "User password" }
-tags = { type = "array", items = { type = "string", format = "uuid" }, description = "User tags" }
+tags = { type = "array", items = "integer", description = "User tags" }
 
 [schemas.userInfo]
 type = "object"
 name = { type = "string", description = "User name" }
 status = { type = "string", enum = ["Active", "Inactive", "Locked", "Deleted"], description = "User status" }
-roles = { type = "string", description = "User roles" }
-tags = { type = "string", description = "User tags" }
+roles = { type = "string", items = "string", description = "User roles" }
+tags = { type = "array", items = "integer", description = "User tags" }
 
 [schemas.userData]
 type = "array"
@@ -82,15 +81,7 @@ name = { type = "string", description = "User name" }
 roles = { type = "array", items = "string", example = ["admin"], description = "User roles" }
 account = { type = "string", description = "User account" }
 password = { type = "string", format = "password", description = "User password" }
-tags = { type = "array", items = { type = "string", format = "uuid" }, description = "User tags" }
-
-[models.user.visibility]
-translations = [
-    ["Public", "🌐"],
-    ["Internal", "🔵"],
-    ["Proteched", "⛔"],
-    ["Private", "🔴"],
-]
+tags = { type = "array", items = "integer", description = "User tags" }
 
 [models.user.status]
 translations = [

@@ -464,6 +464,15 @@ impl DecodeRow<DatabaseRow> for Record {
 }
 
 impl QueryExt<DatabaseDriver> for Query {
+    type QueryResult = sqlx::sqlite::SqliteQueryResult;
+
+    #[inline]
+    fn parse_query_result(query_result: Self::QueryResult) -> (Option<i64>, u64) {
+        let last_insert_id = query_result.last_insert_rowid();
+        let rows_affected = query_result.rows_affected();
+        (Some(last_insert_id), rows_affected)
+    }
+
     #[inline]
     fn query_fields(&self) -> &[String] {
         self.fields()

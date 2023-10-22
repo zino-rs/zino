@@ -29,7 +29,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Optional custom table name.
     const TABLE_NAME: Option<&'static str> = None;
 
-    /// Returns the primary key value.
+    /// Returns the primary key.
     fn primary_key(&self) -> &Self::PrimaryKey;
 
     /// Returns a reference to the [Avro schema](apache_avro::schema::Schema).
@@ -77,22 +77,17 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         })
     }
 
-    /// Constructs a default `Query` for the model.
+    /// Returns the primary key as a JSON value.
     #[inline]
-    fn default_query() -> Query {
-        let mut query = Query::default();
-        query.allow_fields(Self::fields());
-        query.deny_fields(Self::writeonly_fields());
-        query
+    fn primary_key_value(&self) -> JsonValue {
+        self.primary_key().to_string().into()
     }
 
-    /// Constructs a default `Mutation` for the model.
+    /// Returns the primary key column.
     #[inline]
-    fn default_mutation() -> Mutation {
-        let mut mutation = Mutation::default();
-        mutation.allow_fields(Self::fields());
-        mutation.deny_fields(Self::readonly_fields());
-        mutation
+    fn primary_key_column() -> &'static Column<'static> {
+        Self::get_column(Self::PRIMARY_KEY_NAME)
+            .expect("the primary key column should always exist")
     }
 
     /// Gets a column for the field.
@@ -121,6 +116,24 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             key
         };
         Self::columns().iter().any(|col| col.name() == key)
+    }
+
+    /// Constructs a default `Query` for the model.
+    #[inline]
+    fn default_query() -> Query {
+        let mut query = Query::default();
+        query.allow_fields(Self::fields());
+        query.deny_fields(Self::writeonly_fields());
+        query
+    }
+
+    /// Constructs a default `Mutation` for the model.
+    #[inline]
+    fn default_mutation() -> Mutation {
+        let mut mutation = Mutation::default();
+        mutation.allow_fields(Self::fields());
+        mutation.deny_fields(Self::readonly_fields());
+        mutation
     }
 
     /// Initializes the model reader.
@@ -383,8 +396,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let mut ctx = Self::before_scan(&sql).await?;
         let query_result = sqlx::query(&sql).execute(pool).await?;
-        let rows_affected = query_result.rows_affected();
+        let (last_insert_id, rows_affected) = Query::parse_query_result(query_result);
         let success = rows_affected == 1;
+        if let Some(last_insert_id) = last_insert_id {
+            ctx.set_last_insert_id(last_insert_id);
+        }
         ctx.set_query(sql);
         ctx.set_query_result(Some(rows_affected), success);
         Self::after_scan(&ctx).await?;
@@ -399,7 +415,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Inserts many models into the table.
-    async fn insert_many(models: Vec<Self>) -> Result<u64, Error> {
+    async fn insert_many(models: Vec<Self>) -> Result<QueryContext, Error> {
         let pool = Self::acquire_writer().await?.pool();
         let columns = Self::columns();
         let mut values = Vec::with_capacity(models.len());
@@ -425,7 +441,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query(sql);
         ctx.set_query_result(Some(rows_affected), true);
         Self::after_scan(&ctx).await?;
-        Ok(rows_affected)
+        Ok(ctx)
     }
 
     /// Updates the model in the table.
@@ -514,7 +530,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Updates many models selected by the query in the table.
-    async fn update_many(query: &Query, mutation: &mut Mutation) -> Result<u64, Error> {
+    async fn update_many(query: &Query, mutation: &mut Mutation) -> Result<QueryContext, Error> {
         let pool = Self::acquire_writer().await?.pool();
         Self::before_mutation(query, mutation).await?;
 
@@ -530,7 +546,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query_result(Some(rows_affected), true);
         Self::after_scan(&ctx).await?;
         Self::after_mutation(&ctx).await?;
-        Ok(rows_affected)
+        Ok(ctx)
     }
 
     /// Updates or inserts the model into the table.
@@ -576,8 +592,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let mut ctx = Self::before_scan(&sql).await?;
         let query_result = sqlx::query(&sql).execute(pool).await?;
-        let rows_affected = query_result.rows_affected();
+        let (last_insert_id, rows_affected) = Query::parse_query_result(query_result);
         let success = rows_affected == 1;
+        if let Some(last_insert_id) = last_insert_id {
+            ctx.set_last_insert_id(last_insert_id);
+        }
         ctx.set_query(sql);
         ctx.set_query_result(Some(rows_affected), success);
         Self::after_scan(&ctx).await?;
@@ -599,25 +618,24 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let table_name = Self::table_name();
         let primary_key = self.primary_key();
+        let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
-            let primary_key = Query::escape_string(primary_key);
-            format!("DELETE FROM {table_name} WHERE {primary_key_name} = {primary_key};")
+            let column_type = Self::primary_key_column().column_type();
+            format!(
+                "DELETE FROM {table_name} \
+                    WHERE {primary_key_name} = ({placeholder})::{column_type};"
+            )
         } else {
-            let placeholder = Query::placeholder(1);
             format!("DELETE FROM {table_name} WHERE {primary_key_name} = {placeholder};")
         };
 
         let mut ctx = Self::before_scan(&sql).await?;
-        let query = if cfg!(feature = "orm-postgres") {
-            sqlx::query(&sql)
-        } else {
-            ctx.add_argument(primary_key.to_string());
-            sqlx::query(&sql).bind(primary_key.to_string())
-        };
+        let query = sqlx::query(&sql).bind(primary_key.to_string());
         let query_result = query.execute(pool).await?;
         let rows_affected = query_result.rows_affected();
         let success = rows_affected == 1;
         ctx.set_query(sql);
+        ctx.add_argument(primary_key);
         ctx.set_query_result(Some(rows_affected), success);
         Self::after_scan(&ctx).await?;
         self.after_delete(&ctx, model_data).await?;
@@ -662,7 +680,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Deletes many models selected by the query in the table.
-    async fn delete_many(query: &Query) -> Result<u64, Error> {
+    async fn delete_many(query: &Query) -> Result<QueryContext, Error> {
         let pool = Self::acquire_writer().await?.pool();
         Self::before_query(query).await?;
 
@@ -677,7 +695,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query_result(Some(rows_affected), true);
         Self::after_scan(&ctx).await?;
         Self::after_query(&ctx).await?;
-        Ok(rows_affected)
+        Ok(ctx)
     }
 
     /// Finds a list of models selected by the query in the table,
@@ -833,8 +851,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut values = Vec::new();
         for row in data.iter() {
             for col in columns {
-                if let Some(mut vec) = row.parse_str_array(col) {
-                    values.append(&mut vec);
+                if let Some(value) = row.get(col).cloned() {
+                    if let JsonValue::Array(mut vec) = value {
+                        values.append(&mut vec);
+                    } else {
+                        values.push(value);
+                    }
                 }
             }
         }
@@ -865,8 +887,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 associations.push((key, map));
             }
         }
+
+        let associations_len = u64::try_from(associations.len())?;
         ctx.set_query(&sql);
-        ctx.set_query_result(Some(u64::try_from(associations.len())?), true);
+        ctx.set_query_result(Some(associations_len), true);
         Self::after_scan(&ctx).await?;
         Self::after_query(&ctx).await?;
 
@@ -896,7 +920,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 }
             }
         }
-        u64::try_from(associations.len()).map_err(Error::from)
+        Ok(associations_len)
     }
 
     /// Populates the related data in the corresponding `columns` for `Map` using
@@ -912,8 +936,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
         for col in columns {
-            if let Some(mut vec) = data.parse_str_array(col) {
-                values.append(&mut vec);
+            if let Some(value) = data.get(col).cloned() {
+                if let JsonValue::Array(mut vec) = value {
+                    values.append(&mut vec);
+                } else {
+                    values.push(value);
+                }
             }
         }
 
@@ -1109,7 +1137,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Executes the query in the table, and returns the total number of rows affected.
-    async fn execute(query: &str, params: Option<&Map>) -> Result<u64, Error> {
+    async fn execute(query: &str, params: Option<&Map>) -> Result<QueryContext, Error> {
         let pool = Self::acquire_reader().await?.pool();
         let (sql, values) = Query::prepare_query(query, params);
         let mut query = sqlx::query(&sql);
@@ -1126,7 +1154,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.append_arguments(&mut arguments);
         ctx.set_query_result(Some(rows_affected), true);
         Self::after_scan(&ctx).await?;
-        Ok(rows_affected)
+        Ok(ctx)
     }
 
     /// Executes the query in the table, and decodes it as `Vec<T>`.
@@ -1288,31 +1316,28 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let table_name = Self::table_name();
         let query = Self::default_query();
         let projection = query.format_projection();
+        let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
-            let primary_key = Query::escape_string(primary_key);
+            let column_type = Self::primary_key_column().column_type();
             format!(
-                "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {primary_key};"
+                "SELECT {projection} FROM {table_name} \
+                    WHERE {primary_key_name} = ({placeholder})::{column_type};"
             )
         } else {
-            let placeholder = Query::placeholder(1);
             format!(
                 "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {placeholder};"
             )
         };
 
         let mut ctx = Self::before_scan(&sql).await?;
-        let query = if cfg!(feature = "orm-postgres") {
-            sqlx::query(&sql)
-        } else {
-            ctx.add_argument(primary_key.to_string());
-            sqlx::query(&sql).bind(primary_key.to_string())
-        };
+        let query = sqlx::query(&sql).bind(primary_key.to_string());
         let (num_rows, data) = if let Some(row) = query.fetch_optional(pool).await? {
             (1, Some(T::decode_row(&row)?))
         } else {
             (0, None)
         };
         ctx.set_query(sql);
+        ctx.add_argument(primary_key);
         ctx.set_query_result(Some(num_rows), true);
         Self::after_scan(&ctx).await?;
         Self::after_query(&ctx).await?;
@@ -1327,25 +1352,22 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let table_name = Self::table_name();
         let query = Self::default_query();
         let projection = query.format_projection();
+        let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
-            let primary_key = Query::escape_string(primary_key);
+            let column_type = Self::primary_key_column().column_type();
             format!(
-                "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {primary_key};"
+                "SELECT {projection} FROM {table_name} \
+                    WHERE {primary_key_name} = ({placeholder})::{column_type};"
             )
         } else {
-            let placeholder = Query::placeholder(1);
             format!(
                 "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {placeholder};"
             )
         };
 
         let mut ctx = Self::before_scan(&sql).await?;
-        let query = if cfg!(feature = "orm-postgres") {
-            sqlx::query(&sql)
-        } else {
-            ctx.add_argument(primary_key.to_string());
-            sqlx::query(&sql).bind(primary_key.to_string())
-        };
+        let query = sqlx::query(&sql).bind(primary_key.to_string());
+        ctx.add_argument(primary_key);
         if let Some(row) = query.fetch_optional(pool).await? {
             ctx.set_query(sql);
             ctx.set_query_result(Some(1), true);
@@ -1408,8 +1430,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         match data.len() {
             0 => Ok(true),
             1 => {
-                if let Some(value) = data.first().and_then(|m| m.get_str(primary_key_name)) {
-                    Ok(self.primary_key().to_string() == value)
+                if let Some(value) = data.first().and_then(|m| m.get(primary_key_name)) {
+                    Ok(&self.primary_key_value() == value)
                 } else {
                     Ok(true)
                 }

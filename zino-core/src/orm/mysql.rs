@@ -39,9 +39,8 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             "NaiveTime" | "Time" => "TIME",
             "Uuid" | "Option<Uuid>" => "VARCHAR(36)",
             "Vec<u8>" => "BLOB",
-            "Vec<String>" => "JSON",
-            "Vec<Uuid>" => "JSON",
-            "Map" => "JSON",
+            "Vec<String>" | "Vec<Uuid>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>"
+            | "Map" => "JSON",
             _ => type_name,
         }
     }
@@ -496,6 +495,15 @@ impl DecodeRow<DatabaseRow> for Record {
 }
 
 impl QueryExt<DatabaseDriver> for Query {
+    type QueryResult = sqlx::mysql::MySqlQueryResult;
+
+    #[inline]
+    fn parse_query_result(query_result: Self::QueryResult) -> (Option<i64>, u64) {
+        let last_insert_id = query_result.last_insert_id();
+        let rows_affected = query_result.rows_affected();
+        (last_insert_id.try_into().ok(), rows_affected)
+    }
+
     #[inline]
     fn query_fields(&self) -> &[String] {
         self.fields()

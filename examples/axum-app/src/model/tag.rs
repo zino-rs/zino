@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
-use zino_core::{
-    datetime::DateTime, extension::JsonObjectExt, model::Model, request::Validation, Map, Uuid,
-};
+use zino::prelude::*;
 use zino_derive::{ModelAccessor, ModelHooks, Schema};
 
 /// The `tag` model.
@@ -10,8 +8,8 @@ use zino_derive::{ModelAccessor, ModelHooks, Schema};
 #[serde(default)]
 pub struct Tag {
     // Basic fields.
-    #[schema(readonly)]
-    id: Uuid,
+    #[schema(auto_increment, readonly)]
+    id: i64,
     #[schema(not_null, index_type = "text")]
     name: String,
     #[cfg(feature = "namespace")]
@@ -26,7 +24,7 @@ pub struct Tag {
     #[schema(not_null)]
     category: String,
     #[schema(reference = "Tag")]
-    parent_id: Option<Uuid>, // tag.id, tag.namespace = {tag.namespace}, tag.category = {tag.category}
+    parent_id: Option<i64>, // tag.id, tag.namespace = {tag.namespace}, tag.category = {tag.category}
 
     // Extensions.
     content: Map,
@@ -43,15 +41,12 @@ pub struct Tag {
 impl Model for Tag {
     #[inline]
     fn new() -> Self {
-        Self {
-            id: Uuid::new_v4(),
-            ..Self::default()
-        }
+        Self::default()
     }
 
     fn read_map(&mut self, data: &Map) -> Validation {
         let mut validation = Validation::new();
-        if let Some(result) = data.parse_uuid("id") {
+        if let Some(result) = data.parse_i64("id") {
             match result {
                 Ok(id) => self.id = id,
                 Err(err) => validation.record_fail("id", err),
@@ -66,7 +61,7 @@ impl Model for Tag {
         if let Some(category) = data.parse_string("category") {
             self.category = category.into_owned();
         }
-        if let Some(result) = data.parse_uuid("parent_id") {
+        if let Some(result) = data.parse_i64("parent_id") {
             match result {
                 Ok(parent_id) => self.parent_id = Some(parent_id),
                 Err(err) => validation.record_fail("parent_id", err),

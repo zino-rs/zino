@@ -1,7 +1,7 @@
+use crate::model::User;
 use fluent::fluent_args;
 use std::time::Instant;
 use zino::{prelude::*, Request, Response, Result};
-use zino_model::user::User;
 
 pub async fn new(mut req: Request) -> Result {
     let mut user = User::new();

@@ -36,8 +36,7 @@ category = { type = "string", description = "Tag category" }
 parent_id = { schema = "tagId" }
 
 [schemas.tagId]
-type = "string"
-format = "uuid"
+type = "integer"
 description = "Tag ID"
 
 [schemas.newTag]
@@ -45,21 +44,13 @@ type = "object"
 required = ["name", "category"]
 name = { type = "string", description = "Tag name" }
 category = { type = "string", description = "Tag category" }
-parent_id = { type = "string", format = "uuid", description = "Optional parent tag" }
+parent_id = { type = "integer", description = "Optional parent tag" }
 
 [schemas.tagInfo]
 type = "object"
 name = { type = "string", description = "Tag name" }
 category = { type = "string", description = "Tag category" }
-parent_id = { type = "string", format = "uuid", description = "Optional parent tag" }
-
-[models.tag.visibility]
-translations = [
-    ["Public", "🌐"],
-    ["Internal", "🔵"],
-    ["Proteched", "⛔"],
-    ["Private", "🔴"],
-]
+parent_id = { type = "integer", description = "Optional parent tag" }
 
 [models.tag.status]
 translations = [

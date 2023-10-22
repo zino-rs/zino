@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
-use zino_core::{
-    datetime::DateTime, extension::JsonObjectExt, model::Model, request::Validation, Map, Uuid,
-};
+use zino::prelude::*;
 use zino_derive::{ModelAccessor, ModelHooks, Schema};
 
 /// The `tag` model.

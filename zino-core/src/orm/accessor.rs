@@ -99,7 +99,7 @@ where
     /// Returns a snapshot of the model.
     fn snapshot(&self) -> Map {
         let mut snapshot = Map::with_capacity(5);
-        snapshot.upsert(Self::PRIMARY_KEY_NAME, self.id().to_string());
+        snapshot.upsert(Self::PRIMARY_KEY_NAME, self.primary_key_value());
         snapshot.upsert("name", self.name());
         snapshot.upsert("status", self.status());
         snapshot.upsert("updated_at", self.updated_at());

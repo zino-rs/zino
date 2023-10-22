@@ -8,6 +8,12 @@ use std::{borrow::Cow, fmt::Display};
 
 /// Extension trait for [`Query`](crate::model::Query).
 pub(super) trait QueryExt<DB> {
+    /// Query result type.
+    type QueryResult;
+
+    /// Parses the query result to get `last_insert_id` and `rows_affected`.
+    fn parse_query_result(query_result: Self::QueryResult) -> (Option<i64>, u64);
+
     /// Returns a reference to the projection fields.
     fn query_fields(&self) -> &[String];
 

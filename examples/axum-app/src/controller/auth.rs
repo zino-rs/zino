@@ -1,5 +1,6 @@
+use crate::model::User;
 use zino::{prelude::*, Request, Response, Result};
-use zino_model::user::{JwtAuthService, User};
+use zino_model::user::JwtAuthService;
 
 pub async fn login(mut req: Request) -> Result {
     let current_time = DateTime::now();

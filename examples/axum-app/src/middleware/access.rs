@@ -1,6 +1,7 @@
+use crate::model::User;
 use axum::{body::Body, middleware::Next, response::Response};
 use zino::{prelude::*, Request, Result};
-use zino_model::user::{JwtAuthService, User};
+use zino_model::user::JwtAuthService;
 
 pub async fn init_user_session(mut req: Request, next: Next<Body>) -> Result<Response> {
     let claims = req
@@ -10,7 +11,7 @@ pub async fn init_user_session(mut req: Request, next: Next<Body>) -> Result<Res
         Ok(verified) => {
             if verified {
                 let mut user_session =
-                    UserSession::<Uuid>::try_from_jwt_claims(claims).extract(&req)?;
+                    UserSession::<i64>::try_from_jwt_claims(claims).extract(&req)?;
                 if let Ok(session_id) = req.parse_session_id() {
                     user_session.set_session_id(session_id);
                 }

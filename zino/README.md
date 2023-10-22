@@ -28,6 +28,7 @@ The following optional features are available:
 |--------------|------------------------------------------------------|----------|
 | `actix`      | Enables the integration with [`actix-web`].          | No       |
 | `axum`       | Enables the integration with [`axum`].               | No       |
+| `dioxus`     | Enables the integration with [`dioxus`].             | No       |
 | `orm`        | Enables the ORM for MySQL, PostgreSQL or **SQLite**. | Yes      |
 | `view`       | Enables the HTML template rendering.                 | Yes      |
 

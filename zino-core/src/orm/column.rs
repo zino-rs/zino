@@ -7,7 +7,8 @@ pub(super) fn column_def(col: &Column, primary_key_name: &str) -> String {
     let mut definition = format!("{column_name} {column_type}");
     if column_name == primary_key_name {
         definition += " PRIMARY KEY";
-    } else if let Some(value) = col.default_value() {
+    }
+    if let Some(value) = col.default_value() {
         if col.auto_increment() {
             definition += if cfg!(feature = "orm-mysql") {
                 " AUTO_INCREMENT"

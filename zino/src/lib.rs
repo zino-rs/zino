@@ -30,14 +30,13 @@
 //!
 //! The following optional features are available:
 //!
-//! | Name               | Description                                          | Default? |
-//! |--------------------|------------------------------------------------------|----------|
-//! | `actix`            | Enables the integration with [`actix-web`].          | No       |
-//! | `axum`             | Enables the integration with [`axum`].               | No       |
-//! | `dioxus`           | Enables the integration with [`dioxus`].             | No       |
-//! | `dioxus-desktop`   | Enables the integration with [`dioxus-desktop`].     | No       |
-//! | `orm`              | Enables the ORM for MySQL, PostgreSQL or **SQLite**. | Yes      |
-//! | `view`             | Enables the HTML template rendering.                 | Yes      |
+//! | Name         | Description                                          | Default? |
+//! |--------------|------------------------------------------------------|----------|
+//! | `actix`      | Enables the integration with [`actix-web`].          | No       |
+//! | `axum`       | Enables the integration with [`axum`].               | No       |
+//! | `dioxus`     | Enables the integration with [`dioxus`].             | No       |
+//! | `orm`        | Enables the ORM for MySQL, PostgreSQL or **SQLite**. | Yes      |
+//! | `view`       | Enables the HTML template rendering.                 | Yes      |
 //!
 //! [`zino`]: https://github.com/photino/zino
 //! [`sqlx`]: https://crates.io/crates/sqlx
@@ -46,7 +45,6 @@
 //! [`actix-web`]: https://crates.io/crates/actix-web
 //! [`axum`]: https://crates.io/crates/axum
 //! [`dioxus`]: https://crates.io/crates/dioxus
-//! [`dioxus-desktop`]: https://crates.io/crates/dioxus-desktop
 //! [`actix-app`]: https://github.com/photino/zino/tree/main/examples/actix-app
 //! [`axum-app`]: https://github.com/photino/zino/tree/main/examples/axum-app
 //! [`dioxus-desktop`]: https://github.com/photino/zino/tree/main/examples/dioxus-desktop

@@ -519,6 +519,14 @@ impl DecodeRow<DatabaseRow> for Record {
 }
 
 impl QueryExt<DatabaseDriver> for Query {
+    type QueryResult = sqlx::postgres::PgQueryResult;
+
+    #[inline]
+    fn parse_query_result(query_result: Self::QueryResult) -> (Option<i64>, u64) {
+        let rows_affected = query_result.rows_affected();
+        (None, rows_affected)
+    }
+
     #[inline]
     fn query_fields(&self) -> &[String] {
         self.fields()

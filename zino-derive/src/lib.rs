@@ -70,6 +70,8 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
     // Parsing field attrs
     let mut primary_key_type = String::from("Uuid");
     let mut primary_key_name = String::from("id");
+    let mut primary_key_value = None;
+    let mut primary_key_column = None;
     let mut columns = Vec::new();
     let mut column_fields = Vec::new();
     let mut readonly_fields = Vec::new();
@@ -117,6 +119,9 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                             }
                             "default_value" => {
                                 default_value = value;
+                            }
+                            "auto_increment" => {
+                                default_value = Some("auto_increment".to_owned());
                             }
                             "index_type" => {
                                 index_type = value;
@@ -191,6 +196,15 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                     }
                     column
                 }};
+                if primary_key_name == name {
+                    let primary_key = if primary_key_type == "Uuid" {
+                        quote! { self.primary_key().to_string() }
+                    } else {
+                        quote! { self.primary_key().clone() }
+                    };
+                    primary_key_value = Some(primary_key);
+                    primary_key_column = Some(column.clone());
+                }
                 columns.push(column);
                 column_fields.push(quote! { #name });
             }
@@ -202,6 +216,7 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
     let model_name_upper_snake = model_name.to_case(Case::UpperSnake);
     let schema_primary_key_type = format_ident!("{}", primary_key_type);
     let schema_primary_key = format_ident!("{}", primary_key_name);
+    let schema_primary_key_column = format_ident!("{}_PRIMARY_KEY_COLUMN", model_name_upper_snake);
     let schema_columns = format_ident!("{}_COLUMNS", model_name_upper_snake);
     let schema_fields = format_ident!("{}_FIELDS", model_name_upper_snake);
     let schema_readonly_fields = format_ident!("{}_READONLY_FIELDS", model_name_upper_snake);
@@ -250,6 +265,8 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
             };
             schema::Schema::Record(record_schema)
         });
+        static #schema_primary_key_column: std::sync::LazyLock<Column> =
+            std::sync::LazyLock::new(|| #primary_key_column);
         static #schema_columns: std::sync::LazyLock<[Column; #num_columns]> =
             std::sync::LazyLock::new(|| [#(#columns),*]);
         static #schema_fields: std::sync::LazyLock<[&str; #num_columns]> =
@@ -273,6 +290,16 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
             #[inline]
             fn primary_key(&self) -> &Self::PrimaryKey {
                 &self.#schema_primary_key
+            }
+
+            #[inline]
+            fn primary_key_value(&self) -> zino_core::JsonValue {
+                #primary_key_value.into()
+            }
+
+            #[inline]
+            fn primary_key_column() -> &'static Column<'static> {
+                std::sync::LazyLock::force(&#schema_primary_key_column)
             }
 
             #[inline]
@@ -416,7 +443,7 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
     let mut populated_one_queries = Vec::new();
     let mut primary_key_type = String::from("Uuid");
     let mut primary_key_name = String::from("id");
-    let mut user_id_type = String::from("Uuid");
+    let mut user_id_type = String::new();
     if let Data::Struct(data) = input.data && let Fields::Named(fields) = data.fields {
         let mut model_references: Vec<(String, Vec<String>)> = Vec::new();
         for field in fields.named.into_iter() {
@@ -504,17 +531,13 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                                                 }
                                             }
                                         });
-                                    } else if parser::check_vec_type(&type_name) {
+                                    } else if parser::check_option_type(&type_name) {
                                         field_constraints.push(quote! {
-                                            let values = self.#ident
-                                                .iter()
-                                                .map(|v| v.to_string())
-                                                .collect::<Vec<_>>();
-                                            let length = values.len();
-                                            if length > 0 {
+                                            if let Some(value) = self.#ident {
+                                                let values = vec![value.clone()];
                                                 let data = <#model_ident>::filter(values).await?;
-                                                if data.len() != length {
-                                                    validation.record(#name, "there are nonexistent values");
+                                                if data.len() != 1 {
+                                                    validation.record(#name, "it is a nonexistent value");
                                                 }
                                             }
                                         });
@@ -613,8 +636,8 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                                 }
                             }
                             "not_empty" if is_readable => {
-                                if parser::check_vec_type(&type_name) ||
-                                    matches!(type_name.as_str(), "String" | "Map")
+                                if parser::check_vec_type(&type_name)
+                                    || matches!(type_name.as_str(), "String" | "Map")
                                 {
                                     field_constraints.push(quote! {
                                         if self.#ident.is_empty() {
@@ -854,6 +877,9 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
         populated_queries.push(quote! { Ok(models) });
         populated_one_queries.push(quote! { Ok(model) });
     }
+    if user_id_type.is_empty() {
+        user_id_type = primary_key_type.clone();
+    }
 
     // Output
     let model_primary_key_type = format_ident!("{}", primary_key_type);
@@ -877,7 +903,7 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
 
             fn snapshot(&self) -> Map {
                 let mut snapshot = Map::new();
-                snapshot.upsert(Self::PRIMARY_KEY_NAME, self.id().to_string());
+                snapshot.upsert(Self::PRIMARY_KEY_NAME, self.primary_key_value());
                 #(#snapshot_entries)*
                 snapshot
             }
@@ -894,7 +920,9 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
 
             async fn check_constraints(&self) -> Result<ZinoValidation, ZinoError> {
                 let mut validation = ZinoValidation::new();
-                if self.id() == &<#model_primary_key_type>::default() {
+                if self.id() == &<#model_primary_key_type>::default()
+                    && !Self::primary_key_column().auto_increment()
+                {
                     validation.record(Self::PRIMARY_KEY_NAME, "should not be a default value");
                 }
                 #(#compound_constraints)*
