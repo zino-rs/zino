@@ -26,11 +26,20 @@ pub use translation::Translation;
 /// General data model.
 pub trait Model: Default + Serialize + DeserializeOwned {
     /// Creates a new instance.
-    fn new() -> Self;
+    #[inline]
+    fn new() -> Self {
+        Self::default()
+    }
 
     /// Updates the model using the json object and returns the validation result.
     #[must_use]
-    fn read_map(&mut self, data: &Map) -> Validation;
+    fn read_map(&mut self, data: &Map) -> Validation {
+        let mut validation = Validation::new();
+        if data.is_empty() {
+            validation.record("data", "should be nonempty");
+        }
+        validation
+    }
 
     /// Attempts to construct a model from a json object.
     #[inline]

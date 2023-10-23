@@ -8,13 +8,10 @@ use zino_derive::{ModelAccessor, ModelHooks, Schema};
 #[serde(default)]
 pub struct Tag {
     // Basic fields.
-    #[schema(auto_increment, readonly)]
+    #[schema(primary_key, auto_increment, readonly)]
     id: i64,
     #[schema(not_null, index_type = "text")]
     name: String,
-    #[cfg(feature = "namespace")]
-    #[schema(default_value = "Tag::model_namespace", index_type = "hash")]
-    namespace: String,
     #[schema(default_value = "Active", index_type = "hash")]
     status: String,
     #[schema(index_type = "text")]
@@ -24,7 +21,7 @@ pub struct Tag {
     #[schema(not_null)]
     category: String,
     #[schema(reference = "Tag")]
-    parent_id: Option<i64>, // tag.id, tag.namespace = {tag.namespace}, tag.category = {tag.category}
+    parent_id: Option<i64>,
 
     // Extensions.
     content: Map,
@@ -39,11 +36,6 @@ pub struct Tag {
 }
 
 impl Model for Tag {
-    #[inline]
-    fn new() -> Self {
-        Self::default()
-    }
-
     fn read_map(&mut self, data: &Map) -> Validation {
         let mut validation = Validation::new();
         if let Some(result) = data.parse_i64("id") {

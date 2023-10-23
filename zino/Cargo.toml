@@ -27,7 +27,10 @@ actix = [
     "zino-core/runtime-tokio",
 ]
 axum = [
+    "dep:async-trait",
     "dep:axum",
+    "dep:hyper",
+    "dep:parking_lot",
     "dep:tokio",
     "dep:tokio-stream",
     "dep:tower",
@@ -57,14 +60,9 @@ view = ["zino-core/view"]
 export-pdf = ["zino-core/format-pdf"]
 
 [dependencies]
-async-trait = "0.1.74"
 cfg-if = "1.0"
 futures = "0.3.28"
-hyper = "0.14.27"
-parking_lot = "0.12.1"
-serde = "1.0.189"
 serde_json = "1.0.107"
-toml = "0.8.2"
 tracing = "0.1.40"
 
 [dependencies.actix-cors]
@@ -85,6 +83,10 @@ features = [
     "cookies",
     "secure-cookies",
 ]
+
+[dependencies.async-trait]
+version = "0.1.74"
+optional = true
 
 [dependencies.axum]
 version = "0.6.20"
@@ -115,8 +117,16 @@ optional = true
 version = "0.4.0"
 optional = true
 
+[dependencies.hyper]
+version = "0.14.27"
+optional = true
+
 [dependencies.image]
 version = "0.24.7"
+optional = true
+
+[dependencies.parking_lot]
+version = "0.12.1"
 optional = true
 
 [dependencies.tokio]
@@ -134,10 +144,6 @@ version = "0.4.13"
 optional = true
 features = ["timeout"]
 
-[dependencies.tower-cookies]
-version = "0.8.0"
-features= ["signed"]
-
 [dependencies.tower-http]
 version = "0.4.4"
 optional = true
@@ -153,7 +159,7 @@ features = [
 ]
 
 [dependencies.tracing-actix-web]
-version = "0.7.7"
+version = "0.7.8"
 optional = true
 features = ["opentelemetry_0_20"]
 

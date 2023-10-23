@@ -9,11 +9,8 @@ use std::{
     convert::Infallible,
     net::{IpAddr, SocketAddr},
     ops::{Deref, DerefMut},
-    sync::LazyLock,
 };
-use tower_cookies::{Cookie, Cookies, Key};
 use zino_core::{
-    application::Application,
     error::Error,
     extension::HeaderMapExt,
     request::{Context, RequestContext},
@@ -98,14 +95,6 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
-    fn get_cookie(&self, name: &str) -> Option<Cookie<'static>> {
-        let cookies = self.extensions().get::<Cookies>()?;
-        let key = LazyLock::force(&COOKIE_PRIVATE_KEY);
-        let signed_cookies = cookies.signed(key);
-        signed_cookies.get(name)
-    }
-
-    #[inline]
     fn get_data<T: Clone + Send + Sync + 'static>(&self) -> Option<T> {
         self.extensions().get::<Data<T>>().map(|data| data.get())
     }
@@ -142,9 +131,3 @@ impl FromRequest<(), Body> for AxumExtractor<Request<Body>> {
         Ok(AxumExtractor(req))
     }
 }
-
-/// Private key for cookie signing.
-static COOKIE_PRIVATE_KEY: LazyLock<Key> = LazyLock::new(|| {
-    let secret_key = crate::Cluster::secret_key();
-    Key::try_from(secret_key).unwrap_or_else(|_| Key::generate())
-});

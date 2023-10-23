@@ -1,5 +1,4 @@
 use actix_web::{
-    cookie::Cookie,
     dev::{Payload, ServiceRequest},
     http::{header::HeaderMap, Method, Uri},
     web::Bytes,
@@ -74,11 +73,6 @@ impl RequestContext for ActixExtractor<HttpRequest> {
     fn get_context(&self) -> Option<Context> {
         let extensions = self.extensions();
         extensions.get::<Context>().cloned()
-    }
-
-    #[inline]
-    fn get_cookie(&self, name: &str) -> Option<Cookie<'static>> {
-        self.cookie(name)
     }
 
     #[inline]

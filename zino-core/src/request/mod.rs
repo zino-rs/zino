@@ -63,9 +63,6 @@ pub trait RequestContext {
     /// Gets the request context.
     fn get_context(&self) -> Option<Context>;
 
-    /// Gets a cookie with the given name.
-    fn get_cookie(&self, name: &str) -> Option<Cookie<'static>>;
-
     /// Gets the request scoped data.
     fn get_data<T: Clone + Send + Sync + 'static>(&self) -> Option<T>;
 
@@ -115,16 +112,12 @@ pub trait RequestContext {
         ctx.set_session_id(session_id);
 
         // Set locale.
-        if let Some(cookie) = self.get_cookie("locale") {
-            ctx.set_locale(cookie.value());
-        } else {
-            let supported_locales = i18n::SUPPORTED_LOCALES.as_slice();
-            let locale = self
-                .get_header("accept-language")
-                .and_then(|languages| i18n::select_language(languages, supported_locales))
-                .unwrap_or(&i18n::DEFAULT_LOCALE);
-            ctx.set_locale(locale);
-        }
+        let supported_locales = i18n::SUPPORTED_LOCALES.as_slice();
+        let locale = self
+            .get_header("accept-language")
+            .and_then(|languages| i18n::select_language(languages, supported_locales))
+            .unwrap_or(&i18n::DEFAULT_LOCALE);
+        ctx.set_locale(locale);
         ctx
     }
 
@@ -163,7 +156,7 @@ pub trait RequestContext {
         value: SharedString,
         max_age: Option<Duration>,
     ) -> Cookie<'static> {
-        let mut cookie_builder = Cookie::build(name, value)
+        let mut cookie_builder = Cookie::build((name, value))
             .http_only(true)
             .secure(true)
             .same_site(SameSite::Lax)
@@ -171,7 +164,7 @@ pub trait RequestContext {
         if let Some(max_age) = max_age.and_then(|d| d.try_into().ok()) {
             cookie_builder = cookie_builder.max_age(max_age);
         }
-        cookie_builder.finish()
+        cookie_builder.build()
     }
 
     /// Returns the start time.

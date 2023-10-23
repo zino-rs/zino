@@ -1044,12 +1044,27 @@ pub fn derive_model_hooks(item: TokenStream) -> TokenStream {
 
     // Output
     let output = quote! {
-        use zino_core::model::ModelHooks;
-
-        impl ModelHooks for #name {
+        impl zino_core::model::ModelHooks for #name {
             type Data = ();
             type Extension = ();
         }
+    };
+
+    TokenStream::from(output)
+}
+
+/// Derives the [`Model`](zino_core::model::Model) trait.
+#[proc_macro_derive(Model)]
+pub fn derive_model(item: TokenStream) -> TokenStream {
+    // Input
+    let input = parse_macro_input!(item as DeriveInput);
+
+    // Parsing field attrs
+    let name = input.ident;
+
+    // Output
+    let output = quote! {
+        impl zino_core::model::Model for #name {}
     };
 
     TokenStream::from(output)

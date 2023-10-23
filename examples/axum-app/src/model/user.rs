@@ -10,7 +10,7 @@ use zino_model::user::JwtAuthService;
 #[serde(default)]
 pub struct User {
     // Basic fields.
-    #[schema(auto_increment, readonly)]
+    #[schema(primary_key, auto_increment, readonly)]
     id: i64,
     #[schema(not_null, index_type = "text")]
     name: String,
@@ -32,7 +32,7 @@ pub struct User {
     #[schema(snapshot)]
     roles: Vec<String>,
     #[schema(reference = "Tag")]
-    tags: Vec<i64>, // tag.id, tag.namespace = "*:user"
+    tags: Vec<i64>,
 
     // Security.
     last_login_at: DateTime,
