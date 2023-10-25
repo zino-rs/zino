@@ -3,7 +3,7 @@ use dioxus_free_icons::{icons::go_icons::*, Icon};
 
 pub fn Overview(cx: Scope) -> Element {
     let data = [
-        ("zino", "Application integrations."),
+        ("zino", "Framework integrations."),
         ("zino-core", "Core types and traits."),
         ("zino-derive", "Derived traits."),
         ("zino-model", "Domain models."),

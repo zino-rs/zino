@@ -1,0 +1,18 @@
+[package]
+name = "zino-cli"
+description = "CLI tool for zino."
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+categories = ["command-line-utilities", "network-programming", "web-programming"]
+keywords = ["cli", "gui", "zino", "dioxus"]
+homepage = "https://github.com/photino/zino"
+repository = "https://github.com/photino/zino"
+documentation = "https://docs.rs/zino-cli"
+readme = "README.md"
+
+[[bin]]
+name = "zn"
+path = "src/main.rs"
+
+[dependencies]

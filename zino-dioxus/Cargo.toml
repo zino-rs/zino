@@ -1,0 +1,14 @@
+[package]
+name = "zino-dioxus"
+description = "Dioxus components for zino."
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+categories = ["gui", "network-programming", "web-programming"]
+keywords = ["zino", "dioxus", "components"]
+homepage = "https://github.com/photino/zino"
+repository = "https://github.com/photino/zino"
+documentation = "https://docs.rs/zino-dioxus"
+readme = "README.md"
+
+[dependencies]
