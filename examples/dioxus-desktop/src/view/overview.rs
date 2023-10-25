@@ -2,11 +2,16 @@ use dioxus::prelude::*;
 use dioxus_free_icons::{icons::go_icons::*, Icon};
 
 pub fn Overview(cx: Scope) -> Element {
-    let data = [
+    let core_crates = [
         ("zino", "Framework integrations."),
         ("zino-core", "Core types and traits."),
         ("zino-derive", "Derived traits."),
         ("zino-model", "Domain models."),
+    ];
+    let extra_crates = [
+        ("zino-extra", "Extra utilities."),
+        ("zino-dioxus", "Dioxus components."),
+        ("zino-cli", "CLI tools."),
     ];
     render! {
         div {
@@ -195,51 +200,70 @@ pub fn Overview(cx: Scope) -> Element {
         }
         div {
             class: "columns is-6",
-            for d in data {
-                div {
-                    class: "column",
+            for d in core_crates {
+                CrateListing {
+                    name: d.0,
+                    description: d.1,
+                }
+            }
+        }
+        div {
+            class: "columns is-6",
+            for d in extra_crates {
+                CrateListing {
+                    name: d.0,
+                    description: d.1,
+                }
+            }
+        }
+    }
+}
+
+#[inline_props]
+fn CrateListing<'a>(cx: Scope<'a>, name: &'a str, description: &'a str) -> Element {
+    render! {
+        div {
+            class: "column is-one-quarter",
+            div {
+                class: "card",
+                header {
+                    class: "card-header",
                     div {
-                        class: "card",
-                        header {
-                            class: "card-header",
-                            div {
-                                class: "card-header-title",
-                                span {
-                                    class: "tag is-warning is-light mr-1",
-                                    "{d.0}"
-                                }
-                                span { "{d.1}" }
-                            }
+                        class: "card-header-title",
+                        span {
+                            class: "tag is-warning is-light mr-1",
+                            "{name}"
                         }
-                        div {
-                            class: "card-content",
-                            a {
-                                class: "mr-2",
-                                href: "https://crates.io/crates/{d.0}",
-                                img {
-                                    src: "https://img.shields.io/crates/v/{d.0}",
-                                }
-                            }
-                            a {
-                                class: "mr-2",
-                                href: "https://docs.rs/{d.0}",
-                                img {
-                                    src: "https://shields.io/docsrs/{d.0}",
-                                }
-                            }
-                            img {
-                                class: "mr-2",
-                                src: "https://img.shields.io/crates/l/{d.0}",
-                            }
-                            img {
-                                class: "mr-2",
-                                src: "https://img.shields.io/crates/d/{d.0}"
-                            }
-                            img {
-                                class: "mr-2",
-                                src: "https://img.shields.io/crates/dr/{d.0}"
-                            }
+                        span { "{description}" }
+                    }
+                }
+                div {
+                    class: "card-content",
+                    a {
+                        class: "mr-2",
+                        href: "https://crates.io/crates/{name}",
+                        img {
+                            src: "https://img.shields.io/crates/v/{name}",
                         }
+                    }
+                    a {
+                        class: "mr-2",
+                        href: "https://docs.rs/{name}",
+                        img {
+                            src: "https://shields.io/docsrs/{name}",
+                        }
+                    }
+                    img {
+                        class: "mr-2",
+                        src: "https://img.shields.io/crates/l/{name}",
+                    }
+                    img {
+                        class: "mr-2",
+                        src: "https://img.shields.io/crates/d/{name}"
+                    }
+                    img {
+                        class: "mr-2",
+                        src: "https://img.shields.io/crates/dr/{name}"
                     }
                 }
             }

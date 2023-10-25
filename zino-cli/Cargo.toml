@@ -1,6 +1,6 @@
 [package]
 name = "zino-cli"
-description = "CLI tool for zino."
+description = "CLI tools for zino."
 version = "0.0.1"
 edition = "2021"
 license = "MIT"

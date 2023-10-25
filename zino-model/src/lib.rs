@@ -1,24 +1,15 @@
-//! [![github]](https://github.com/photino/zino)
-//! [![crates-io]](https://crates.io/crates/zino-model)
-//! [![docs-rs]](https://docs.rs/zino-model)
-//!
-//! [github]: https://img.shields.io/badge/github-8da0cb?labelColor=555555&logo=github
-//! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?labelColor=555555&logo=rust
-//! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?labelColor=555555&logo=docs.rs
-//!
-//! Domain models for [`zino`].
-//!
-//! [`zino`]: https://github.com/photino/zino
+#![doc = include_str!("../README.md")]
+#![doc(html_favicon_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.png")]
+#![doc(html_logo_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.svg")]
 
 #![allow(async_fn_in_trait)]
 #![allow(stable_features)]
-#![doc(html_favicon_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.png")]
-#![doc(html_logo_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.svg")]
+#![forbid(unsafe_code)]
+
 #![feature(async_fn_in_trait)]
 #![feature(doc_auto_cfg)]
 #![feature(lazy_cell)]
 #![feature(let_chains)]
-#![forbid(unsafe_code)]
 
 pub mod group;
 pub mod policy;

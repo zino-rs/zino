@@ -1,6 +1,12 @@
-# zino
+[![github]](https://github.com/photino/zino)
+[![crates-io]](https://crates.io/crates/zino)
+[![docs-rs]](https://docs.rs/zino)
 
-`zino` is a **next-generation** framework for **composable** applications in Rust
+[github]: https://img.shields.io/badge/github-8da0cb?labelColor=555555&logo=github
+[crates-io]: https://img.shields.io/badge/crates.io-fc8d62?labelColor=555555&logo=rust
+[docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?labelColor=555555&logo=docs.rs
+
+[`zino`] is a **next-generation** framework for **composable** applications in Rust
 which emphasizes **simplicity**, **extensibility** and **productivity**.
 
 ## Highlights
@@ -32,6 +38,7 @@ The following optional features are available:
 | `orm`        | Enables the ORM for MySQL, PostgreSQL or **SQLite**. | Yes      |
 | `view`       | Enables the HTML template rendering.                 | Yes      |
 
+[`zino`]: https://github.com/photino/zino
 [`sqlx`]: https://crates.io/crates/sqlx
 [`tracing`]: https://crates.io/crates/tracing
 [`metrics`]: https://crates.io/crates/metrics

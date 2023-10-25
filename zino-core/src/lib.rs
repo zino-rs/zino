@@ -1,43 +1,11 @@
-//! [![github]](https://github.com/photino/zino)
-//! [![crates-io]](https://crates.io/crates/zino-core)
-//! [![docs-rs]](https://docs.rs/zino-core)
-//!
-//! [github]: https://img.shields.io/badge/github-8da0cb?labelColor=555555&logo=github
-//! [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?labelColor=555555&logo=rust
-//! [docs-rs]: https://img.shields.io/badge/docs.rs-66c2a5?labelColor=555555&logo=docs.rs
-//!
-//! Core types and traits for [`zino`].
-//!
-//! ## Feature flags
-//!
-//! The following optional features are available:
-//!
-//! | Name                | Description                                            | Default? |
-//! |---------------------|--------------------------------------------------------|----------|
-//! | `accessor`          | Enables the data access layer built with [`opendal`].  | No       |
-//! | `cache`             | Enables the cache services.                            | No       |
-//! | `chatbot`           | Enables the chatbot services.                          | No       |
-//! | `connector`         | Enables the data source connectors.                    | No       |
-//! | `crypto-sm`         | Enables China's Standards of Encryption Algorithms.    | No       |
-//! | `format`            | Enables the support for common file formats.           | No       |
-//! | `orm`               | Enables the ORM for MySQL, PostgreSQL or **SQLite**.   | No       |
-//! | `runtime-async-std` | Enables the [`async-std`] runtime.                     | No       |
-//! | `runtime-tokio`     | Enables the [`tokio`] runtime.                         | Yes      |
-//! | `tls-native`        | Enables the [`native-tls`] TLS backend.                | No       |
-//! | `tls-rustls`        | Enables the [`rustls`] TLS backend.                    | Yes      |
-//! | `view`              | Enables the HTML template rendering.                   | No       |
-//!
-//! [`zino`]: https://github.com/photino/zino
-//! [`opendal`]: https://crates.io/crates/opendal
-//! [`async-std`]: https://crates.io/crates/async-std
-//! [`tokio`]: https://crates.io/crates/tokio
-//! [`native-tls`]: https://crates.io/crates/native-tls
-//! [`rustls`]: https://crates.io/crates/rustls
+#![doc = include_str!("../README.md")]
+#![doc(html_favicon_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.png")]
+#![doc(html_logo_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.svg")]
 
 #![allow(async_fn_in_trait)]
 #![allow(stable_features)]
-#![doc(html_favicon_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.png")]
-#![doc(html_logo_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.svg")]
+#![forbid(unsafe_code)]
+
 #![feature(associated_type_defaults)]
 #![feature(async_fn_in_trait)]
 #![feature(decl_macro)]
@@ -45,7 +13,6 @@
 #![feature(lazy_cell)]
 #![feature(let_chains)]
 #![feature(slice_first_last_chunk)]
-#![forbid(unsafe_code)]
 
 mod crypto;
 mod encoding;

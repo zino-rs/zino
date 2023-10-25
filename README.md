@@ -37,6 +37,9 @@ cargo run -- --env=dev
 | [`zino-core`]   | Core types and traits. | [![Crates.io](https://img.shields.io/crates/v/zino-core)][zino-core] | [![Documentation](https://shields.io/docsrs/zino-core)][zino-core-docs] |
 | [`zino-derive`] | Derived traits.        | [![Crates.io](https://img.shields.io/crates/v/zino-derive)][zino-derive] | [![Documentation](https://shields.io/docsrs/zino-derive)][zino-derive-docs] |
 | [`zino-model`]  | Domain models.         | [![Crates.io](https://img.shields.io/crates/v/zino-model)][zino-model] | [![Documentation](https://shields.io/docsrs/zino-model)][zino-model-docs] |
+| [`zino-extra`]  | Extra utilities.       | [![Crates.io](https://img.shields.io/crates/v/zino-extra)][zino-extra] | [![Documentation](https://shields.io/docsrs/zino-extra)][zino-extra-docs] |
+| [`zino-dioxus`] | Dioxus components.     | [![Crates.io](https://img.shields.io/crates/v/zino-dioxus)][zino-dioxus] | [![Documentation](https://shields.io/docsrs/zino-dioxus)][zino-dioxus-docs] |
+| [`zino-cli`]    | CLI tool.              | [![Crates.io](https://img.shields.io/crates/v/zino-cli)][zino-cli] | [![Documentation](https://shields.io/docsrs/zino-cli)][zino-cli-docs] |
 
 ## License
 
@@ -52,6 +55,9 @@ For Chinese rustaceans, you can also follow our WeChat official account to canta
 [`zino-core`]: https://github.com/photino/zino/tree/main/zino-core
 [`zino-derive`]: https://github.com/photino/zino/tree/main/zino-derive
 [`zino-model`]: https://github.com/photino/zino/tree/main/zino-model
+[`zino-extra`]: https://github.com/photino/zino/tree/main/zino-extra
+[`zino-dioxus`]: https://github.com/photino/zino/tree/main/zino-dioxus
+[`zino-cli`]: https://github.com/photino/zino/tree/main/zino-cli
 [zino]: https://crates.io/crates/zino
 [zino-docs]: https://docs.rs/zino
 [zino-core]: https://crates.io/crates/zino-core
@@ -60,6 +66,12 @@ For Chinese rustaceans, you can also follow our WeChat official account to canta
 [zino-derive-docs]: https://docs.rs/zino-derive
 [zino-model]: https://crates.io/crates/zino-model
 [zino-model-docs]: https://docs.rs/zino-model
+[zino-extra]: https://crates.io/crates/zino-extra
+[zino-extra-docs]: https://docs.rs/zino-extra
+[zino-dioxus]: https://crates.io/crates/zino-dioxus
+[zino-dioxus-docs]: https://docs.rs/zino-dioxus
+[zino-cli]: https://crates.io/crates/zino-cli
+[zino-cli-docs]: https://docs.rs/zino-cli
 [`sqlx`]: https://crates.io/crates/sqlx
 [`tracing`]: https://crates.io/crates/tracing
 [`metrics`]: https://crates.io/crates/metrics
