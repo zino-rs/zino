@@ -10,6 +10,7 @@ use crate::{
     JsonValue, SharedString, Uuid,
 };
 use bytes::Bytes;
+use cookie::Cookie;
 use etag::EntityTag;
 use http::header::{self, HeaderName, HeaderValue};
 use http_body::Full;
@@ -392,6 +393,12 @@ impl<S: ResponseCode> Response<S> {
         self.start_time = start_time;
     }
 
+    /// Sends a cookie to the user agent.
+    #[inline]
+    pub fn set_cookie(&mut self, cookie: &Cookie<'_>) {
+        self.insert_header("set-cookie", cookie.to_string());
+    }
+
     /// Records a server timing metric entry.
     #[inline]
     pub fn record_server_timing(
@@ -507,7 +514,9 @@ impl<S: ResponseCode> Response<S> {
         let has_json_data = !self.json_data.is_null();
         let bytes_opt = if has_bytes_data {
             Some(self.bytes_data.clone())
-        } else if let Some(transformer) = self.data_transformer.as_ref() && has_json_data {
+        } else if let Some(transformer) = self.data_transformer.as_ref()
+            && has_json_data
+        {
             Some(transformer(&self.json_data)?)
         } else {
             None
@@ -577,7 +586,9 @@ impl<S: ResponseCode> Response<S> {
             displayed_inline = helper::displayed_inline(content_type);
             self.set_content_type(content_type.to_string());
         }
-        if let Some(file_name) = file.file_name() && !displayed_inline {
+        if let Some(file_name) = file.file_name()
+            && !displayed_inline
+        {
             self.insert_header(
                 "content-disposition",
                 format!(r#"attachment; filename="{file_name}""#),

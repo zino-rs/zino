@@ -317,23 +317,6 @@ where
             "csv" => res.set_csv_response(models),
             "jsonlines" => res.set_jsonlines_response(models),
             "msgpack" => res.set_msgpack_response(models),
-            #[cfg(feature = "export-pdf")]
-            "pdf" => {
-                use zino_core::extension::JsonValueExt;
-
-                res.set_json_data(models);
-                res.set_content_type("application/pdf");
-                res.set_data_transformer(|data| {
-                    let model_name = M::model_name();
-                    let bytes = zino_core::format::PdfDocument::try_new(model_name, None)
-                        .and_then(|mut doc| {
-                            let data = data.as_map_array().unwrap_or_default();
-                            doc.add_data_table(data, ["name", "visibility", "status", "version"]);
-                            doc.save_to_bytes()
-                        })?;
-                    Ok(bytes.into())
-                });
-            }
             _ => res.set_json_response(models),
         }
         Ok(res.into())

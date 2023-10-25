@@ -23,6 +23,8 @@ pub async fn new(mut req: Request) -> Result {
         "path": req.request_path(),
         "user_intro": user_intro,
     });
+    let locale = req.new_cookie("locale".into(), "en-US".into(), None);
+    res.set_cookie(&locale);
     res.set_code(StatusCode::CREATED);
     res.set_json_data(data);
     Ok(res.into())

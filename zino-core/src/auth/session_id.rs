@@ -81,7 +81,9 @@ impl SessionId {
             } else {
                 domain.strip_suffix(realm)
             };
-            if let Some(s) = remainder && s.ends_with('.') {
+            if let Some(s) = remainder
+                && s.ends_with('.')
+            {
                 true
             } else {
                 false

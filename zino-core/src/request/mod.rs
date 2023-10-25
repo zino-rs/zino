@@ -112,12 +112,16 @@ pub trait RequestContext {
         ctx.set_session_id(session_id);
 
         // Set locale.
-        let supported_locales = i18n::SUPPORTED_LOCALES.as_slice();
-        let locale = self
-            .get_header("accept-language")
-            .and_then(|languages| i18n::select_language(languages, supported_locales))
-            .unwrap_or(&i18n::DEFAULT_LOCALE);
-        ctx.set_locale(locale);
+        if let Some(cookie) = self.get_cookie("locale") {
+            ctx.set_locale(cookie.value());
+        } else {
+            let supported_locales = i18n::SUPPORTED_LOCALES.as_slice();
+            let locale = self
+                .get_header("accept-language")
+                .and_then(|languages| i18n::select_language(languages, supported_locales))
+                .unwrap_or(&i18n::DEFAULT_LOCALE);
+            ctx.set_locale(locale);
+        }
         ctx
     }
 
@@ -165,6 +169,19 @@ pub trait RequestContext {
             cookie_builder = cookie_builder.max_age(max_age);
         }
         cookie_builder.build()
+    }
+
+    /// Gets a cookie with the given name.
+    fn get_cookie(&self, name: &str) -> Option<Cookie<'_>> {
+        self.get_header("cookie")?.split(';').find_map(|cookie| {
+            if let Some((key, value)) = cookie.split_once('=')
+                && key == name
+            {
+                Some(Cookie::new(key, value))
+            } else {
+                None
+            }
+        })
     }
 
     /// Returns the start time.
@@ -263,7 +280,9 @@ pub trait RequestContext {
     /// Gets the query value of the URI by name.
     fn get_query(&self, name: &str) -> Option<&str> {
         self.original_uri().query()?.split('&').find_map(|param| {
-            if let Some((key, value)) = param.split_once('=') && key == name {
+            if let Some((key, value)) = param.split_once('=')
+                && key == name
+            {
                 Some(value)
             } else {
                 None
@@ -731,7 +750,9 @@ pub trait RequestContext {
     /// Creates a new subscription instance.
     fn subscription(&self) -> Subscription {
         let mut subscription = self.parse_query::<Subscription>().unwrap_or_default();
-        if subscription.session_id().is_none() && let Some(session_id) = self.session_id() {
+        if subscription.session_id().is_none()
+            && let Some(session_id) = self.session_id()
+        {
             subscription.set_session_id(Some(session_id));
         }
         subscription

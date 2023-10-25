@@ -116,7 +116,9 @@ where
             let mut claims = JwtClaims::new(user_id);
 
             let user_id = user_id.parse()?;
-            if let Some(role_field) = Self::ROLE_FIELD && user.contains_key(role_field) {
+            if let Some(role_field) = Self::ROLE_FIELD
+                && user.contains_key(role_field)
+            {
                 claims.add_data_entry("roles", user.parse_str_array(role_field));
             }
             if let Some(tenant_id_field) = Self::TENANT_ID_FIELD
@@ -173,7 +175,9 @@ where
             Error::new(message)
         })?;
         let mut claims = JwtClaims::new(user_id);
-        if let Some(role_field) = Self::ROLE_FIELD && user.contains_key(role_field) {
+        if let Some(role_field) = Self::ROLE_FIELD
+            && user.contains_key(role_field)
+        {
             claims.add_data_entry("roles", user.parse_str_array(role_field));
         }
         if let Some(tenant_id_field) = Self::TENANT_ID_FIELD

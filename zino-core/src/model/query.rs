@@ -97,13 +97,15 @@ impl Query {
                 }
                 "timestamp" | "nonce" | "signature" => (),
                 _ => {
-                    if let Some(value) = value.as_str() && value != "all" {
-                        if key.starts_with('$') &&
-                            let Some(expr) = value.strip_prefix('(')
+                    if let Some(value) = value.as_str()
+                        && value != "all"
+                    {
+                        if key.starts_with('$')
+                            && let Some(expr) = value.strip_prefix('(')
                         {
                             filters.upsert(key, Self::parse_logical_query(expr));
-                        } else if value.starts_with('$') &&
-                            let Some((operator, value)) = value.split_once('.')
+                        } else if value.starts_with('$')
+                            && let Some((operator, value)) = value.split_once('.')
                         {
                             filters.upsert(key, Map::from_entry(operator, value));
                         } else {

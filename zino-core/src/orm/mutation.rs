@@ -55,7 +55,7 @@ impl MutationExt<DatabaseDriver> for Mutation {
                             let mutation = format!(r#"{key} = GREATEST({key}, {value})"#);
                             mutations.push(mutation);
                         }
-                        _ => ()
+                        _ => (),
                     }
                     if operator.starts_with('$') {
                         set_json_object = false;

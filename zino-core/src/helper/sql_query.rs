@@ -13,7 +13,9 @@ pub(crate) fn prepare_sql_query<'a>(
     placeholder: char,
 ) -> (Cow<'a, str>, Vec<&'a JsonValue>) {
     let sql = super::format_query(query, params);
-    if let Some(params) = params && sql.contains('#') {
+    if let Some(params) = params
+        && sql.contains('#')
+    {
         let mut values = Vec::new();
         let sql = STATEMENT_PATTERN.replace_all(&sql, |captures: &Captures| {
             let key = &captures[1];

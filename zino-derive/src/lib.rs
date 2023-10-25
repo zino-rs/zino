@@ -76,10 +76,14 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
     let mut column_fields = Vec::new();
     let mut readonly_fields = Vec::new();
     let mut writeonly_fields = Vec::new();
-    if let Data::Struct(data) = input.data && let Fields::Named(fields) = data.fields {
+    if let Data::Struct(data) = input.data
+        && let Fields::Named(fields) = data.fields
+    {
         for field in fields.named.into_iter() {
             let mut type_name = parser::get_type_name(&field.ty);
-            if let Some(ident) = field.ident && !type_name.is_empty() {
+            if let Some(ident) = field.ident
+                && !type_name.is_empty()
+            {
                 let mut ignore = false;
                 let mut name = ident.to_string();
                 let mut not_null = false;
@@ -133,10 +137,10 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                                 primary_key_name = name.clone();
                             }
                             "readonly" => {
-                                readonly_fields.push(quote!{ #name });
+                                readonly_fields.push(quote! { #name });
                             }
                             "writeonly" => {
-                                writeonly_fields.push(quote!{ #name });
+                                writeonly_fields.push(quote! { #name });
                             }
                             _ => (),
                         }
@@ -407,7 +411,9 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
     let mut compound_constraints = Vec::new();
     for attr in input.attrs.iter() {
         for (key, value) in parser::parse_schema_attr(attr).into_iter() {
-            if let Some(value) = value && key == "unique_on" {
+            if let Some(value) = value
+                && key == "unique_on"
+            {
                 let mut fields = Vec::new();
                 let column_values = value
                     .trim_start_matches('(')
@@ -444,11 +450,15 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
     let mut primary_key_type = String::from("Uuid");
     let mut primary_key_name = String::from("id");
     let mut user_id_type = String::new();
-    if let Data::Struct(data) = input.data && let Fields::Named(fields) = data.fields {
+    if let Data::Struct(data) = input.data
+        && let Fields::Named(fields) = data.fields
+    {
         let mut model_references: Vec<(String, Vec<String>)> = Vec::new();
         for field in fields.named.into_iter() {
             let type_name = parser::get_type_name(&field.ty);
-            if let Some(ident) = field.ident && !type_name.is_empty() {
+            if let Some(ident) = field.ident
+                && !type_name.is_empty()
+            {
                 let name = ident.to_string();
                 for attr in field.attrs.iter() {
                     let arguments = parser::parse_schema_attr(attr);
@@ -496,7 +506,9 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                                                 validation.record(#name, "it is a nonexistent value");
                                             }
                                         });
-                                    } else if type_name == "Option<Uuid>" || type_name == "Option<String>" {
+                                    } else if type_name == "Option<Uuid>"
+                                        || type_name == "Option<String>"
+                                    {
                                         field_constraints.push(quote! {
                                             if let Some(value) = self.#ident {
                                                 let values = vec![value.to_string()];
@@ -506,7 +518,8 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                                                 }
                                             }
                                         });
-                                    } else if type_name == "Vec<Uuid>" || type_name == "Vec<String>" {
+                                    } else if type_name == "Vec<Uuid>" || type_name == "Vec<String>"
+                                    {
                                         field_constraints.push(quote! {
                                             let values = self.#ident
                                                 .iter()
@@ -647,9 +660,8 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                                 }
                             }
                             "length" => {
-                                let length: usize = value
-                                    .and_then(|s| s.parse().ok())
-                                    .unwrap_or_default();
+                                let length: usize =
+                                    value.and_then(|s| s.parse().ok()).unwrap_or_default();
                                 if type_name == "String" || parser::check_vec_type(&type_name) {
                                     field_constraints.push(quote! {
                                         let length = #length;
@@ -669,9 +681,8 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                                 }
                             }
                             "max_length" => {
-                                let length: usize = value
-                                    .and_then(|s| s.parse().ok())
-                                    .unwrap_or_default();
+                                let length: usize =
+                                    value.and_then(|s| s.parse().ok()).unwrap_or_default();
                                 if type_name == "String" || parser::check_vec_type(&type_name) {
                                     field_constraints.push(quote! {
                                         let length = #length;
@@ -691,9 +702,8 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                                 }
                             }
                             "min_length" => {
-                                let length: usize = value
-                                    .and_then(|s| s.parse().ok())
-                                    .unwrap_or_default();
+                                let length: usize =
+                                    value.and_then(|s| s.parse().ok()).unwrap_or_default();
                                 if type_name == "String" || parser::check_vec_type(&type_name) {
                                     field_constraints.push(quote! {
                                         let length = #length;
@@ -958,10 +968,14 @@ pub fn derive_decode_row(item: TokenStream) -> TokenStream {
     let mut decode_model_fields = Vec::new();
     let mut mysql_decode_model_fields = Vec::new();
     let mut postgres_decode_model_fields = Vec::new();
-    if let Data::Struct(data) = input.data && let Fields::Named(fields) = data.fields {
+    if let Data::Struct(data) = input.data
+        && let Fields::Named(fields) = data.fields
+    {
         for field in fields.named.into_iter() {
             let type_name = parser::get_type_name(&field.ty);
-            if let Some(ident) = field.ident && !type_name.is_empty() {
+            if let Some(ident) = field.ident
+                && !type_name.is_empty()
+            {
                 let mut ignore = false;
                 'inner: for attr in field.attrs.iter() {
                     let arguments = parser::parse_schema_attr(attr);

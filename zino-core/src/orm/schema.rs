@@ -214,7 +214,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             if let Some(d) = column_opt
                 && let Some(data_type) = d.get_str("data_type").or_else(|| d.get_str("DATA_TYPE"))
             {
-                let column_default = d.get_str("column_default")
+                let column_default = d
+                    .get_str("column_default")
                     .or_else(|| d.get_str("COLUMN_DEFAULT"));
                 let is_not_null = if cfg!(any(feature = "orm-mysql", feature = "orm-postgres")) {
                     d.get_str("is_nullable")
@@ -717,7 +718,9 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        while let Some(row) = rows.try_next().await? && max_rows > 0 {
+        while let Some(row) = rows.try_next().await?
+            && max_rows > 0
+        {
             data.push(T::decode_row(&row)?);
             max_rows -= 1;
         }
@@ -826,7 +829,9 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        while let Some(row) = rows.try_next().await? && max_rows > 0 {
+        while let Some(row) = rows.try_next().await?
+            && max_rows > 0
+        {
             data.push(row.try_get_unchecked(0)?);
             max_rows -= 1;
         }
@@ -896,18 +901,23 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         for row in data {
             for col in columns {
-                if let Some(vec) = row.get_array(col) && !vec.is_empty() {
+                if let Some(vec) = row.get_array(col)
+                    && !vec.is_empty()
+                {
                     let populated_field = [col, "populated"].join("_");
-                    let populated_values = vec.iter().map(|key| {
-                        let populated_value = associations
-                            .iter()
-                            .find_map(|(k, v)| (key == k).then_some(v));
-                        if let Some(value) = populated_value {
-                            value.clone().into()
-                        } else {
-                            key.clone()
-                        }
-                    }).collect::<Vec<_>>();
+                    let populated_values = vec
+                        .iter()
+                        .map(|key| {
+                            let populated_value = associations
+                                .iter()
+                                .find_map(|(k, v)| (key == k).then_some(v));
+                            if let Some(value) = populated_value {
+                                value.clone().into()
+                            } else {
+                                key.clone()
+                            }
+                        })
+                        .collect::<Vec<_>>();
                     row.upsert(populated_field, populated_values);
                 } else if let Some(key) = row.get(col) {
                     let populated_value = associations
@@ -977,18 +987,23 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::after_query(&ctx).await?;
 
         for col in columns {
-            if let Some(vec) = data.get_array(col) && !vec.is_empty() {
+            if let Some(vec) = data.get_array(col)
+                && !vec.is_empty()
+            {
                 let populated_field = [col, "populated"].join("_");
-                let populated_values = vec.iter().map(|key| {
-                    let populated_value = associations
-                        .iter()
-                        .find_map(|(k, v)| (key == k).then_some(v));
-                    if let Some(value) = populated_value {
-                        value.clone().into()
-                    } else {
-                        key.clone()
-                    }
-                }).collect::<Vec<_>>();
+                let populated_values = vec
+                    .iter()
+                    .map(|key| {
+                        let populated_value = associations
+                            .iter()
+                            .find_map(|(k, v)| (key == k).then_some(v));
+                        if let Some(value) = populated_value {
+                            value.clone().into()
+                        } else {
+                            key.clone()
+                        }
+                    })
+                    .collect::<Vec<_>>();
                 data.upsert(populated_field, populated_values);
             } else if let Some(key) = data.get(col) {
                 let populated_value = associations
@@ -1043,7 +1058,9 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        while let Some(row) = rows.try_next().await? && max_rows > 0 {
+        while let Some(row) = rows.try_next().await?
+            && max_rows > 0
+        {
             data.push(T::decode_row(&row)?);
             max_rows -= 1;
         }
@@ -1175,7 +1192,9 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut rows = query.fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        while let Some(row) = rows.try_next().await? && max_rows > 0 {
+        while let Some(row) = rows.try_next().await?
+            && max_rows > 0
+        {
             data.push(T::decode_row(&row)?);
             max_rows -= 1;
         }
@@ -1280,7 +1299,9 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut rows = query.fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        while let Some(row) = rows.try_next().await? && max_rows > 0 {
+        while let Some(row) = rows.try_next().await?
+            && max_rows > 0
+        {
             data.push(row.try_get_unchecked(0)?);
             max_rows -= 1;
         }

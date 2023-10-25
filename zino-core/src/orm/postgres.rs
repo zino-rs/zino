@@ -217,7 +217,8 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         if let Some(values) = value.as_array()
                             && let [min_value, max_value, ..] = values.as_slice()
                         {
-                            let condition = format!(r#"{field} BETWEEN {min_value} AND {max_value}"#);
+                            let condition =
+                                format!(r#"{field} BETWEEN {min_value} AND {max_value}"#);
                             conditions.push(condition);
                         }
                     } else if operator == "array_length" {
@@ -236,7 +237,9 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     return conditions.join(" AND ");
                 }
             }
-        } else if let Some(range) = value.as_array() && range.len() == 2 {
+        } else if let Some(range) = value.as_array()
+            && range.len() == 2
+        {
             let min_value = self.encode_value(range.first());
             let max_value = self.encode_value(range.last());
             return format!(r#"{field} >= {min_value} AND {field} < {max_value}"#);

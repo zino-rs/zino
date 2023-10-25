@@ -24,7 +24,9 @@ where
     fn encrypt_password(passowrd: &str) -> Result<String, Error> {
         let key = Self::secret_key();
         let passowrd = passowrd.as_bytes();
-        if let Ok(bytes) = base64::decode(passowrd) && bytes.len() == 256 {
+        if let Ok(bytes) = base64::decode(passowrd)
+            && bytes.len() == 256
+        {
             crypto::encrypt_hashed_password(passowrd, key)
         } else {
             crypto::encrypt_raw_password(passowrd, key)
@@ -36,7 +38,9 @@ where
         let key = Self::secret_key();
         let passowrd = passowrd.as_bytes();
         let encrypted_password = encrypted_password.as_bytes();
-        if let Ok(bytes) = base64::decode(passowrd) && bytes.len() == 256 {
+        if let Ok(bytes) = base64::decode(passowrd)
+            && bytes.len() == 256
+        {
             crypto::verify_hashed_password(passowrd, encrypted_password, key)
         } else {
             crypto::verify_raw_password(passowrd, encrypted_password, key)

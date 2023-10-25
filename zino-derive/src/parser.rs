@@ -20,7 +20,9 @@ pub(super) fn check_option_type(type_name: &str) -> bool {
 
 /// Returns the type name as a str.
 pub(super) fn get_type_name(ty: &Type) -> String {
-    if let Type::Path(ty) = ty && let Some(segment) = ty.path.segments.last() {
+    if let Type::Path(ty) = ty
+        && let Some(segment) = ty.path.segments.last()
+    {
         let type_name = segment.ident.to_string();
         if let PathArguments::AngleBracketed(ref generics) = segment.arguments {
             if let Some(GenericArgument::Type(ref ty)) = generics.args.first() {

@@ -7,7 +7,9 @@ use std::{borrow::Cow, sync::LazyLock};
 /// The interpolation parameter is represented as `${param}`,
 /// in which `param` can only contain restricted chracters `[a-zA-Z]+[\w\.]*`.
 pub(crate) fn format_query<'a>(query: &'a str, params: Option<&'a Map>) -> Cow<'a, str> {
-    if let Some(params) = params && query.contains('$') {
+    if let Some(params) = params
+        && query.contains('$')
+    {
         INTERPOLATION_PATTERN.replace_all(query, |captures: &Captures| {
             let key = &captures[1];
             params

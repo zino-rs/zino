@@ -262,7 +262,9 @@ impl Authentication {
         let signature = self.signature();
         if signature.is_empty() {
             validation.record("signature", "should be nonempty");
-        } else if let Ok(token) = self.sign_with::<H>(secret_access_key) && token != signature {
+        } else if let Ok(token) = self.sign_with::<H>(secret_access_key)
+            && token != signature
+        {
             validation.record("signature", "invalid signature");
         }
         validation

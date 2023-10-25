@@ -416,8 +416,12 @@ where
         Self::before_extract().await?;
 
         let mut model = Self::try_get_model(id).await?;
-        if let Some(version) = data.get_u64("version") && model.version() != version {
-            return Err(Error::new("409 Conflict: there is a version control conflict"));
+        if let Some(version) = data.get_u64("version")
+            && model.version() != version
+        {
+            return Err(Error::new(
+                "409 Conflict: there is a version control conflict",
+            ));
         }
         Self::before_validation(data, extension.as_ref()).await?;
 

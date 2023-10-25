@@ -69,7 +69,9 @@ pub trait Application {
                 } else {
                     project_dir.join(dir)
                 };
-                if !path.exists() && let Err(err) = fs::create_dir_all(&path) {
+                if !path.exists()
+                    && let Err(err) = fs::create_dir_all(&path)
+                {
                     let path = path.display();
                     tracing::error!("fail to create the directory {path}: {err}");
                 }

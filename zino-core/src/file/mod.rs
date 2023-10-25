@@ -143,7 +143,9 @@ impl NamedFile {
     pub fn encrypt_with(&mut self, key: impl AsRef<[u8]>) -> Result<(), Error> {
         let suffix = ".encrypted";
         let bytes = crypto::encrypt(self.as_ref(), key.as_ref())?;
-        if let Some(ref mut file_name) = self.file_name && !file_name.ends_with(suffix) {
+        if let Some(ref mut file_name) = self.file_name
+            && !file_name.ends_with(suffix)
+        {
             file_name.push_str(suffix);
         }
         self.bytes = bytes.into();
@@ -155,7 +157,9 @@ impl NamedFile {
     pub fn decrypt_with(&mut self, key: impl AsRef<[u8]>) -> Result<(), Error> {
         let suffix = ".encrypted";
         let bytes = crypto::decrypt(self.as_ref(), key.as_ref())?;
-        if let Some(ref mut file_name) = self.file_name && file_name.ends_with(suffix) {
+        if let Some(ref mut file_name) = self.file_name
+            && file_name.ends_with(suffix)
+        {
             file_name.truncate(file_name.len() - suffix.len());
         }
         self.bytes = bytes.into();
