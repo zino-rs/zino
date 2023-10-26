@@ -1,8 +1,8 @@
-use crate::{extension::JsonObjectExt, Map};
 use printpdf::{
     BuiltinFont, Error, IndirectFontRef, Mm, PdfDocumentReference, PdfLayerReference,
     PdfPageReference,
 };
+use zino_core::{extension::JsonObjectExt, Map};
 
 /// PDF document.
 pub struct PdfDocument {

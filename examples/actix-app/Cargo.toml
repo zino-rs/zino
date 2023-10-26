@@ -12,7 +12,7 @@ fluent = "0.16.0"
 tracing = "0.1.40"
 
 [dependencies.serde]
-version = "1.0.189"
+version = "1.0.190"
 features = ["derive"]
 
 [dependencies.zino]

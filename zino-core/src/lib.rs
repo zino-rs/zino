@@ -1,11 +1,9 @@
 #![doc = include_str!("../README.md")]
 #![doc(html_favicon_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.png")]
 #![doc(html_logo_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.svg")]
-
 #![allow(async_fn_in_trait)]
 #![allow(stable_features)]
 #![forbid(unsafe_code)]
-
 #![feature(associated_type_defaults)]
 #![feature(async_fn_in_trait)]
 #![feature(decl_macro)]
@@ -21,14 +19,10 @@ mod openapi;
 
 #[cfg(feature = "accessor")]
 pub mod accessor;
-#[cfg(feature = "cache")]
-pub mod cache;
 #[cfg(feature = "chatbot")]
 pub mod chatbot;
 #[cfg(feature = "connector")]
 pub mod connector;
-#[cfg(feature = "format")]
-pub mod format;
 #[cfg(feature = "orm")]
 pub mod orm;
 #[cfg(feature = "view")]

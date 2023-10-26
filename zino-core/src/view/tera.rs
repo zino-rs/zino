@@ -19,7 +19,7 @@ pub(crate) fn load_templates(app_state: &'static State<Map>, template_dir: Strin
     let mut view_engine =
         Tera::new(template_dir_glob.as_str()).expect("fail to parse html templates");
     view_engine.autoescape_on(vec![".html", ".html.tera", ".tera"]);
-    if app_state.env() == "dev" {
+    if app_state.env().is_dev() {
         view_engine
             .full_reload()
             .expect("fail to reload html templates");

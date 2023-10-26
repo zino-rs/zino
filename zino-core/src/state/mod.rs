@@ -1,23 +1,30 @@
 //! Application scoped state.
 
-use crate::{application, crypto, encoding::base64, extension::TomlTableExt, helper, SharedString};
+use crate::{
+    application::{self, ServerTag},
+    crypto,
+    encoding::base64,
+    extension::TomlTableExt,
+    helper,
+};
 use std::{
     borrow::Cow,
-    env, fs,
     net::{IpAddr, Ipv4Addr, SocketAddr},
     sync::LazyLock,
 };
 use toml::value::Table;
 
 mod data;
+mod env;
 
 pub use data::{Data, SharedData};
+pub use env::Env;
 
 /// A state is a record of the env, config and associated data.
 #[derive(Debug, Clone)]
 pub struct State<T = ()> {
     /// Environment.
-    env: &'static str,
+    env: Env,
     /// Configuration.
     config: Table,
     /// Associated data.
@@ -27,7 +34,7 @@ pub struct State<T = ()> {
 impl<T> State<T> {
     /// Creates a new instance.
     #[inline]
-    pub fn new(env: &'static str, data: T) -> Self {
+    pub fn new(env: Env, data: T) -> Self {
         Self {
             env,
             config: Table::new(),
@@ -37,9 +44,9 @@ impl<T> State<T> {
 
     /// Loads the config file according to the specific env.
     pub fn load_config(&mut self) {
-        let env = self.env;
+        let env = self.env.as_str();
         let config_file = application::PROJECT_DIR.join(format!("./config/config.{env}.toml"));
-        let config = match fs::read_to_string(&config_file) {
+        let config = match std::fs::read_to_string(&config_file) {
             Ok(value) => {
                 tracing::warn!(env, "`config.{env}.toml` loaded");
                 value.parse().unwrap_or_default()
@@ -59,10 +66,10 @@ impl<T> State<T> {
         self.data = data;
     }
 
-    /// Returns the env as `&str`.
+    /// Returns the env.
     #[inline]
-    pub fn env(&self) -> &'static str {
-        self.env
+    pub fn env(&self) -> &Env {
+        &self.env
     }
 
     /// Returns a reference to the config.
@@ -96,7 +103,7 @@ impl<T> State<T> {
     }
 
     /// Returns a list of listeners.
-    pub fn listeners(&self) -> Vec<(SharedString, SocketAddr)> {
+    pub fn listeners(&self) -> Vec<(ServerTag, SocketAddr)> {
         let config = self.config();
         let mut listeners = Vec::new();
 
@@ -109,7 +116,7 @@ impl<T> State<T> {
             let debug_port = debug_server
                 .get_u16("port")
                 .expect("the `debug.port` field should be an integer");
-            listeners.push(("debug".into(), (debug_host, debug_port).into()));
+            listeners.push((ServerTag::Debug, (debug_host, debug_port).into()));
         }
 
         // Main server
@@ -121,7 +128,7 @@ impl<T> State<T> {
             let main_port = main_server
                 .get_u16("port")
                 .expect("the `main.port` field should be an integer");
-            listeners.push(("main".into(), (main_host, main_port).into()));
+            listeners.push((ServerTag::Main, (main_host, main_port).into()));
         }
 
         // Standbys
@@ -130,10 +137,7 @@ impl<T> State<T> {
                 .get_array("standby")
                 .expect("the `standby` field should be an array of tables");
             for standby in standbys.iter().filter_map(|v| v.as_table()) {
-                let server_name = standby
-                    .get_str("name")
-                    .map(|s| s.to_owned().into())
-                    .unwrap_or("standby".into());
+                let server_tag = standby.get_str("tag").unwrap_or("standby");
                 let standby_host = standby
                     .get_str("host")
                     .and_then(|s| s.parse::<IpAddr>().ok())
@@ -141,13 +145,13 @@ impl<T> State<T> {
                 let standby_port = standby
                     .get_u16("port")
                     .expect("the `standby.port` field should be an integer");
-                listeners.push((server_name, (standby_host, standby_port).into()));
+                listeners.push((server_tag.into(), (standby_host, standby_port).into()));
             }
         }
 
         // Ensure that there is at least one listener
         if listeners.is_empty() {
-            listeners.push(("main".into(), (Ipv4Addr::LOCALHOST, 6080).into()));
+            listeners.push((ServerTag::Main, (Ipv4Addr::LOCALHOST, 6080).into()));
         }
 
         listeners
@@ -229,24 +233,26 @@ impl State {
 impl<T: Default> Default for State<T> {
     #[inline]
     fn default() -> Self {
-        State::new(&DEFAULT_ENV, T::default())
+        State::new(*DEFAULT_ENV, T::default())
     }
 }
 
 /// Default env.
-static DEFAULT_ENV: LazyLock<&'static str> = LazyLock::new(|| {
-    for arg in env::args().skip(1) {
+static DEFAULT_ENV: LazyLock<Env> = LazyLock::new(|| {
+    for arg in std::env::args().skip(1) {
         if let Some(value) = arg.strip_prefix("--env=") {
-            return value.to_owned().leak();
+            let env: &'static str = value.to_owned().leak();
+            return env.into();
         }
     }
-    if let Ok(value) = env::var("ZINO_APP_ENV") {
-        return value.to_owned().leak();
+    if let Ok(value) = std::env::var("ZINO_APP_ENV") {
+        let env: &'static str = value.to_owned().leak();
+        return env.into();
     }
     if cfg!(debug_assertions) {
-        "dev"
+        Env::Dev
     } else {
-        "prod"
+        Env::Prod
     }
 });
 

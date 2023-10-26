@@ -87,7 +87,7 @@ all-accessors = [
     "accessor-webdav",
     "accessor-webhdfs",
 ]
-all-chatbots = ["chatbot", "chatbot-openai"]
+all-auth = ["auth-oauth2", "auth-oidc", "auth-totp"]
 all-connectors = [
     "connector",
     "connector-arrow",
@@ -96,12 +96,10 @@ all-connectors = [
     "connector-postgres",
     "connector-sqlite",
 ]
-all-formats = ["format", "format-pdf"]
-all-auth = ["auth-oauth2", "auth-oidc", "auth-totp"]
+all-chatbots = ["chatbot", "chatbot-openai"]
 auth-oauth2 = ["dep:oauth2"]
 auth-oidc = ["dep:openidconnect"]
 auth-totp = ["dep:totp-rs"]
-cache = ["dep:lru"]
 chatbot = []
 chatbot-openai = ["dep:async-openai", "chatbot"]
 connector = ["connector-http"]
@@ -112,15 +110,11 @@ connector-postgres = ["connector", "sqlx", "sqlx/postgres"]
 connector-sqlite = ["connector", "sqlx", "sqlx/sqlite"]
 crypto-sm = ["dep:ctr", "dep:sm3", "dep:sm4"]
 default = ["runtime-tokio", "tls-rustls"]
-format = []
-format-pdf = ["format", "dep:printpdf"]
 full = [
     "all-accessors",
     "all-chatbots",
     "all-connectors",
-    "all-formats",
     "all-auth",
-    "cache",
     "orm",
     "view",
 ]
@@ -199,10 +193,6 @@ features = ["serde"]
 version = "32.0.0"
 optional = true
 
-[dependencies.lru]
-version = "0.12.0"
-optional = true
-
 [dependencies.minijinja]
 version = "1.0.9"
 optional = true
@@ -222,10 +212,6 @@ features = ["layers-all"]
 version = "3.4.0"
 optional = true
 
-[dependencies.printpdf]
-version = "0.6.0"
-optional = true
-
 [dependencies.reqwest]
 version = "0.11.22"
 default-features = false
@@ -238,7 +224,7 @@ features = [
 ]
 
 [dependencies.serde]
-version = "1.0.189"
+version = "1.0.190"
 features = ["derive"]
 
 [dependencies.serde_json]

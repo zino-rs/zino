@@ -20,7 +20,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let local_offset_time = OffsetTime::local_rfc_3339().expect("could not get local offset");
 
     let app_env = APP::env();
-    let in_dev_mode = app_env == "dev";
+    let in_dev_mode = app_env.is_dev();
     let mut env_filter = if in_dev_mode {
         "info,zino=trace,zino_core=trace"
     } else {

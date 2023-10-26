@@ -15,14 +15,14 @@ host = "127.0.0.1"
 port = 6080
 
 [[standby]]
-name = "portal"
 host = "127.0.0.1"
 port = 6081
+tag = "portal"
 
 [[standby]]
-name = "admin"
 host = "127.0.0.1"
 port = 6082
+tag = "admin"
 
 [database]
 type = "postgres"

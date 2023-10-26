@@ -1,7 +1,7 @@
 [package]
 name = "zino-dioxus"
 description = "Dioxus components for zino."
-version = "0.0.1"
+version = "0.1.0"
 edition = "2021"
 license = "MIT"
 categories = ["gui", "network-programming", "web-programming"]
@@ -12,3 +12,4 @@ documentation = "https://docs.rs/zino-dioxus"
 readme = "README.md"
 
 [dependencies]
+dioxus = "0.4.0"

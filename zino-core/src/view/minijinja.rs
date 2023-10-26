@@ -16,9 +16,9 @@ pub fn render(template_name: &str, data: Map) -> Result<String, Error> {
 pub(crate) fn load_templates(app_state: &'static State<Map>, template_dir: String) {
     let mut view_engine = Environment::new();
     let app_env = app_state.env();
-    view_engine.set_debug(app_env == "dev");
+    view_engine.set_debug(app_env.is_dev());
     view_engine.set_loader(minijinja::path_loader(template_dir));
-    view_engine.add_global("APP_ENV", app_env);
+    view_engine.add_global("APP_ENV", app_env.as_str());
     for (key, value) in app_state.data() {
         if let Some(value) = value.as_str() {
             let key = key.replace('.', "_").to_case(Case::UpperSnake);

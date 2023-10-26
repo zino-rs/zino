@@ -39,7 +39,7 @@ cargo run -- --env=dev
 | [`zino-model`]  | Domain models.         | [![Crates.io](https://img.shields.io/crates/v/zino-model)][zino-model] | [![Documentation](https://shields.io/docsrs/zino-model)][zino-model-docs] |
 | [`zino-extra`]  | Extra utilities.       | [![Crates.io](https://img.shields.io/crates/v/zino-extra)][zino-extra] | [![Documentation](https://shields.io/docsrs/zino-extra)][zino-extra-docs] |
 | [`zino-dioxus`] | Dioxus components.     | [![Crates.io](https://img.shields.io/crates/v/zino-dioxus)][zino-dioxus] | [![Documentation](https://shields.io/docsrs/zino-dioxus)][zino-dioxus-docs] |
-| [`zino-cli`]    | CLI tool.              | [![Crates.io](https://img.shields.io/crates/v/zino-cli)][zino-cli] | [![Documentation](https://shields.io/docsrs/zino-cli)][zino-cli-docs] |
+| [`zino-cli`]    | CLI tools.             | [![Crates.io](https://img.shields.io/crates/v/zino-cli)][zino-cli] | [![Documentation](https://shields.io/docsrs/zino-cli)][zino-cli-docs] |
 
 ## License
 

@@ -8,7 +8,7 @@ use image::{error::ImageError, io::Reader};
 use std::{fmt::Display, fs, marker::PhantomData, str::FromStr, time::Duration};
 use tokio::runtime::Builder;
 use zino_core::{
-    application::Application,
+    application::{Application, ServerTag},
     extension::TomlTableExt,
     schedule::{AsyncCronJob, Job, JobScheduler},
     Map,
@@ -43,7 +43,7 @@ where
         self
     }
 
-    fn register_with(self, _server_name: &'static str, _routes: Self::Routes) -> Self {
+    fn register_with(self, _server_tag: ServerTag, _routes: Self::Routes) -> Self {
         self
     }
 
@@ -73,7 +73,7 @@ where
         let app_version = Self::version();
         let app_state = Self::shared_state();
         let project_dir = Self::project_dir();
-        let in_prod_mode = app_env == "prod";
+        let in_prod_mode = app_env.is_prod();
 
         // Window configuration
         let mut window_title = app_name;
@@ -181,7 +181,7 @@ where
         }
 
         tracing::warn!(
-            app_env,
+            app_env = app_env.as_str(),
             app_name,
             app_version,
             "launch a window named `{window_title}`",

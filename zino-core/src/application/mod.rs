@@ -6,7 +6,7 @@ use crate::{
     extension::{HeaderMapExt, JsonObjectExt, TomlTableExt},
     openapi,
     schedule::{AsyncCronJob, CronJob, Job, JobScheduler},
-    state::State,
+    state::{Env, State},
     trace::TraceContext,
     Map,
 };
@@ -18,8 +18,11 @@ use utoipa::openapi::{OpenApi, OpenApiBuilder};
 
 mod metrics_exporter;
 mod secret_key;
+mod server_tag;
 mod system_monitor;
 mod tracing_subscriber;
+
+pub use server_tag::ServerTag;
 
 pub(crate) mod http_client;
 
@@ -33,8 +36,8 @@ pub trait Application {
     /// Registers default routes.
     fn register(self, routes: Self::Routes) -> Self;
 
-    /// Registers routes with a custom server name.
-    fn register_with(self, server_name: &'static str, routes: Self::Routes) -> Self;
+    /// Registers routes with a server tag.
+    fn register_with(self, server_tag: ServerTag, routes: Self::Routes) -> Self;
 
     /// Runs the application.
     fn run(self, async_jobs: Vec<(&'static str, AsyncCronJob)>);
@@ -98,7 +101,7 @@ pub trait Application {
     where
         Self: Sized,
     {
-        self.register_with("debug", routes)
+        self.register_with(ServerTag::Debug, routes)
     }
 
     /// Gets the system’s information.
@@ -129,7 +132,7 @@ pub trait Application {
 
     /// Returns the application env.
     #[inline]
-    fn env() -> &'static str {
+    fn env() -> &'static Env {
         SHARED_APP_STATE.env()
     }
 

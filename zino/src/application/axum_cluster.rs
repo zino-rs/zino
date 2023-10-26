@@ -24,7 +24,10 @@ use tower_http::{
 };
 use utoipa_rapidoc::RapiDoc;
 use zino_core::{
-    application::Application,
+    application::{
+        Application,
+        ServerTag,
+    },
     extension::TomlTableExt,
     response::{FullResponse, Response},
     schedule::{AsyncCronJob, Job, JobScheduler},
@@ -35,8 +38,8 @@ use zino_core::{
 pub struct AxumCluster {
     /// Default routes.
     default_routes: Vec<Router>,
-    /// Named routes.
-    named_routes: Vec<(&'static str, Vec<Router>)>,
+    /// Tagged routes.
+    tagged_routes: Vec<(ServerTag, Vec<Router>)>,
 }
 
 impl Application for AxumCluster {
@@ -47,8 +50,8 @@ impl Application for AxumCluster {
         self
     }
 
-    fn register_with(mut self, server_name: &'static str, routes: Self::Routes) -> Self {
-        self.named_routes.push((server_name, routes));
+    fn register_with(mut self, server_tag: ServerTag, routes: Self::Routes) -> Self {
+        self.tagged_routes.push((server_tag, routes));
         self
     }
 
@@ -75,19 +78,19 @@ impl Application for AxumCluster {
 
         runtime.block_on(async {
             let default_routes = self.default_routes;
-            let named_routes = self.named_routes;
+            let tagged_routes = self.tagged_routes;
             let app_state = Self::shared_state();
             let app_name = Self::name();
             let app_version = Self::version();
             let app_env = app_state.env();
             let listeners = app_state.listeners();
-            let has_debug_server = listeners.iter().any(|listener| listener.0 == "debug");
+            let has_debug_server = listeners.iter().any(|listener| listener.0.is_debug());
             let servers = listeners.into_iter().map(|listener| {
-                let server_name = listener.0.as_ref();
+                let server_tag = listener.0;
                 let addr = listener.1;
                 tracing::warn!(
-                    server_name,
-                    app_env,
+                    server_tag = server_tag.as_str(),
+                    app_env = app_env.as_str(),
                     app_name,
                     app_version,
                     "listen on {addr}",
@@ -164,8 +167,8 @@ impl Application for AxumCluster {
                 for route in &default_routes {
                     app = app.merge(route.clone());
                 }
-                for (name, routes) in &named_routes {
-                    if name == &server_name || server_name == "debug" {
+                for (tag, routes) in &tagged_routes {
+                    if tag == &server_tag || server_tag.is_debug() {
                         for route in routes {
                             app = app.merge(route.clone());
                         }
@@ -173,8 +176,12 @@ impl Application for AxumCluster {
                 }
 
                 // Render OpenAPI docs.
-                let docs_server_name = if has_debug_server { "debug" } else { "main" };
-                if docs_server_name == server_name {
+                let is_docs_server = if has_debug_server {
+                    server_tag.is_debug()
+                } else {
+                    server_tag.is_main()
+                };
+                if is_docs_server {
                     if let Some(config) = app_state.get_config("openapi") {
                         if config.get_bool("show-docs") != Some(false) {
                             // If the `spec-url` has been configured, the user should

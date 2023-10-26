@@ -15,11 +15,9 @@ The following optional features are available:
 | Name                | Description                                            | Default? |
 |---------------------|--------------------------------------------------------|----------|
 | `accessor`          | Enables the data access layer built with [`opendal`].  | No       |
-| `cache`             | Enables the cache services.                            | No       |
 | `chatbot`           | Enables the chatbot services.                          | No       |
 | `connector`         | Enables the data source connectors.                    | No       |
 | `crypto-sm`         | Enables China's Standards of Encryption Algorithms.    | No       |
-| `format`            | Enables the support for common file formats.           | No       |
 | `orm`               | Enables the ORM for MySQL, PostgreSQL or **SQLite**.   | No       |
 | `runtime-async-std` | Enables the [`async-std`] runtime.                     | No       |
 | `runtime-tokio`     | Enables the [`tokio`] runtime.                         | Yes      |

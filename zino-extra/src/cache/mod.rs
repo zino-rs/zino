@@ -1,9 +1,9 @@
 //! Global cache for the application.
 
-use crate::{state::State, JsonValue};
 use lru::LruCache;
 use parking_lot::RwLock;
 use std::{num::NonZeroUsize, sync::LazyLock};
+use zino_core::{state::State, JsonValue};
 
 /// Global cache built on the top of [`LruCache`].
 #[derive(Debug, Clone, Copy, Default)]
