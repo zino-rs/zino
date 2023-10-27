@@ -20,7 +20,6 @@ stylesheets = [
 ]
 
 [database]
-type = "sqlite"
 namespace = "dc"
 
 [[sqlite]]

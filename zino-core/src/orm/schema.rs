@@ -387,12 +387,23 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let map = self.into_map();
         let table_name = Self::table_name();
-        let fields = Self::fields().join(", ");
-        let values = Self::columns()
+        let columns = Self::columns();
+
+        let mut fields = Vec::with_capacity(columns.len());
+        let values = columns
             .iter()
-            .map(|col| col.encode_value(map.get(col.name())))
+            .filter_map(|col| {
+                if col.auto_increment() {
+                    None
+                } else {
+                    let name = col.name();
+                    fields.push(name);
+                    Some(col.encode_value(map.get(name)))
+                }
+            })
             .collect::<Vec<_>>()
             .join(", ");
+        let fields = fields.join(", ");
         let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({values});");
 
         let mut ctx = Self::before_scan(&sql).await?;

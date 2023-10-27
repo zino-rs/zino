@@ -1,14 +1,17 @@
 use async_trait::async_trait;
 use axum::{
-    body::{Body, Bytes},
+    body::{Body, HttpBody},
     extract::{ConnectInfo, FromRequest, MatchedPath, OriginalUri},
     http::{HeaderMap, Method, Request, Uri},
 };
+use bytes::{Buf, BufMut, Bytes};
 use std::{
     borrow::Cow,
     convert::Infallible,
+    marker::Unpin,
     net::{IpAddr, SocketAddr},
     ops::{Deref, DerefMut},
+    pin::Pin,
 };
 use zino_core::{
     error::Error,
@@ -117,7 +120,7 @@ impl RequestContext for AxumExtractor<Request<Body>> {
 
     #[inline]
     async fn read_body_bytes(&mut self) -> Result<Bytes, Error> {
-        let bytes = hyper::body::to_bytes(self.body_mut()).await?;
+        let bytes = to_bytes(self.body_mut()).await?;
         Ok(bytes)
     }
 }
@@ -130,4 +133,42 @@ impl FromRequest<(), Body> for AxumExtractor<Request<Body>> {
     async fn from_request(req: Request<Body>, _state: &()) -> Result<Self, Self::Rejection> {
         Ok(AxumExtractor(req))
     }
+}
+
+/// Concatenates the buffers from a body into a single `Bytes` asynchronously.
+///
+/// Copy from https://docs.rs/hyper/0.14.27/hyper/body/fn.to_bytes.html
+async fn to_bytes<T: HttpBody + Unpin>(mut body: T) -> Result<Bytes, T::Error> {
+    let _ = Pin::new(&mut body);
+
+    // If there's only 1 chunk, we can just return Buf::to_bytes()
+    let mut first = if let Some(buf) = body.data().await {
+        buf?
+    } else {
+        return Ok(Bytes::new());
+    };
+
+    let second = if let Some(buf) = body.data().await {
+        buf?
+    } else {
+        return Ok(first.copy_to_bytes(first.remaining()));
+    };
+
+    // Don't pre-emptively reserve *too* much.
+    let rest = (body.size_hint().lower() as usize).min(1024 * 16);
+    let cap = first
+        .remaining()
+        .saturating_add(second.remaining())
+        .saturating_add(rest);
+
+    // With more than 1 buf, we gotta flatten into a Vec first.
+    let mut vec = Vec::with_capacity(cap);
+    vec.put(first);
+    vec.put(second);
+
+    while let Some(buf) = body.data().await {
+        vec.put(buf?);
+    }
+
+    Ok(vec.into())
 }

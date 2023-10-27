@@ -43,6 +43,7 @@ pub trait DefaultController<K, U = K> {
 #[cfg(feature = "orm")]
 use zino_core::{
     extension::JsonObjectExt,
+    json,
     model::{ModelHooks, Mutation, Query},
     orm::{ModelAccessor, ModelHelper},
     request::RequestContext,
@@ -329,7 +330,7 @@ where
         let writer_available = Self::acquire_writer()
             .await
             .is_ok_and(|cp| cp.is_available());
-        let data = serde_json::json!({
+        let data = json!({
             "model_name": Self::model_name(),
             "model_namespace": Self::model_namespace(),
             "table_name": Self::table_name(),

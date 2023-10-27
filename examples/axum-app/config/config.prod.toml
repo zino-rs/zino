@@ -30,7 +30,6 @@ sse-route = "/sse"
 websocket-route = "/websocket"
 
 [database]
-type = "mysql"
 namespace = "dc"
 
 [[mysql]]

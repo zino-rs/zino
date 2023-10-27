@@ -24,10 +24,7 @@ use tower_http::{
 };
 use utoipa_rapidoc::RapiDoc;
 use zino_core::{
-    application::{
-        Application,
-        ServerTag,
-    },
+    application::{Application, ServerTag},
     extension::TomlTableExt,
     response::{FullResponse, Response},
     schedule::{AsyncCronJob, Job, JobScheduler},
@@ -104,7 +101,7 @@ impl Application for AxumCluster {
                 let mut sse_route = None;
                 let mut websocket_route = None;
                 let mut body_limit = 100 * 1024 * 1024; // 100MB
-                let mut request_timeout = Duration::from_secs(10); // 10 seconds
+                let mut request_timeout = Duration::from_secs(30); // 30 seconds
                 if let Some(config) = app_state.get_config("server") {
                     if let Some(dir) = config.get_str("page-dir") {
                         public_route_prefix = "/page";

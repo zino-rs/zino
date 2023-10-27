@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.14.4"
+version = "0.14.5"
 rust-version = "1.73"
 edition = "2021"
 license = "MIT"
@@ -24,8 +24,8 @@ accessor-cacache = ["accessor", "opendal/services-cacache"]
 accessor-cos = ["accessor", "opendal/services-cos"]
 accessor-dashmap = ["accessor", "opendal/services-dashmap"]
 accessor-dropbox = ["accessor", "opendal/services-dropbox"]
-accessor-ftp = ["accessor", "opendal/services-ftp"]
 accessor-fs = ["accessor", "opendal/services-fs"]
+accessor-ftp = ["accessor", "opendal/services-ftp"]
 accessor-gcs = ["accessor", "opendal/services-gcs"]
 accessor-gdrive = ["accessor", "opendal/services-gdrive"]
 accessor-ghac = ["accessor", "opendal/services-ghac"]
@@ -59,8 +59,8 @@ all-accessors = [
     "accessor-cos",
     "accessor-dashmap",
     "accessor-dropbox",
-    "accessor-ftp",
     "accessor-fs",
+    "accessor-ftp",
     "accessor-gcs",
     "accessor-gdrive",
     "accessor-ghac",
@@ -88,6 +88,7 @@ all-accessors = [
     "accessor-webhdfs",
 ]
 all-auth = ["auth-oauth2", "auth-oidc", "auth-totp"]
+all-chatbots = ["chatbot", "chatbot-openai"]
 all-connectors = [
     "connector",
     "connector-arrow",
@@ -96,7 +97,6 @@ all-connectors = [
     "connector-postgres",
     "connector-sqlite",
 ]
-all-chatbots = ["chatbot", "chatbot-openai"]
 auth-oauth2 = ["dep:oauth2"]
 auth-oidc = ["dep:openidconnect"]
 auth-totp = ["dep:totp-rs"]
@@ -112,9 +112,9 @@ crypto-sm = ["dep:ctr", "dep:sm3", "dep:sm4"]
 default = ["runtime-tokio", "tls-rustls"]
 full = [
     "all-accessors",
+    "all-auth",
     "all-chatbots",
     "all-connectors",
-    "all-auth",
     "orm",
     "view",
 ]
@@ -127,8 +127,8 @@ runtime-tokio = ["sqlx?/runtime-tokio"]
 tls-native = ["opendal?/native-tls", "reqwest/native-tls", "sqlx?/tls-native-tls"]
 tls-rustls = ["opendal?/rustls", "reqwest/rustls-tls", "sqlx?/tls-rustls"]
 view = ["dep:minijinja"]
-view-tera = ["view", "dep:tera"]
 view-minijinja = ["view", "dep:minijinja"]
+view-tera = ["view", "dep:tera"]
 
 [dependencies]
 aes-gcm-siv = "0.11.1"
@@ -168,7 +168,7 @@ serde_qs = "0.12.0"
 sha2 = "0.10.8"
 sysinfo = "0.29.10"
 task-local-extensions = "0.1.4"
-toml = "0.8.4"
+toml = "0.8.5"
 tracing = "0.1.40"
 tracing-appender = "0.2.2"
 url = "2.4.1"
@@ -181,13 +181,13 @@ features = ["std"]
 version = "0.14.3"
 optional = true
 
-[dependencies.ctr]
-version = "0.9.2"
-optional = true
-
 [dependencies.chrono]
 version = "0.4.31"
 features = ["serde"]
+
+[dependencies.ctr]
+version = "0.9.2"
+optional = true
 
 [dependencies.datafusion]
 version = "32.0.0"

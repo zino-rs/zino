@@ -48,6 +48,8 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             "Vec<u8>" => "BYTEA",
             "Vec<String>" => "TEXT[]",
             "Vec<Uuid>" => "UUID[]",
+            "Vec<u64>" | "Vec<i64>" => "BIGINT[]",
+            "Vec<u32>" | "Vec<i32>" => "INT[]",
             "Map" => "JSONB",
             _ => type_name,
         }

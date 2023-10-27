@@ -1,7 +1,7 @@
 [package]
 name = "zino"
 description = "Next-generation framework for composable applications in Rust."
-version = "0.13.4"
+version = "0.13.5"
 rust-version = "1.73"
 edition = "2021"
 license = "MIT"
@@ -21,6 +21,7 @@ actix = [
     "dep:actix-cors",
     "dep:actix-files",
     "dep:actix-web",
+    "dep:futures",
     "dep:tracing-actix-web",
     "utoipa/actix_extras",
     "utoipa-rapidoc/actix-web",
@@ -29,8 +30,10 @@ actix = [
 axum = [
     "dep:async-trait",
     "dep:axum",
-    "dep:hyper",
+    "dep:bytes",
+    "dep:futures",
     "dep:parking_lot",
+    "dep:serde_json",
     "dep:tokio",
     "dep:tokio-stream",
     "dep:tower",
@@ -49,19 +52,12 @@ dioxus-desktop = [
     "dep:image",
     "dioxus",
 ]
-dioxus-web = [
-    "dep:dioxus-web",
-    "dioxus",
-    "dioxus-router/web",
-]
 default = ["orm", "view"]
 orm = ["zino-core/orm"]
 view = ["zino-core/view"]
 
 [dependencies]
 cfg-if = "1.0"
-futures = "0.3.28"
-serde_json = "1.0.107"
 tracing = "0.1.40"
 
 [dependencies.actix-cors]
@@ -100,6 +96,10 @@ features = [
     "ws",
 ]
 
+[dependencies.bytes]
+version = "1.5.0"
+optional = true
+
 [dependencies.dioxus]
 version = "0.4.0"
 optional = true
@@ -112,12 +112,8 @@ optional = true
 version = "0.4.1"
 optional = true
 
-[dependencies.dioxus-web]
-version = "0.4.0"
-optional = true
-
-[dependencies.hyper]
-version = "0.14.27"
+[dependencies.futures]
+version = "0.3.29"
 optional = true
 
 [dependencies.image]
@@ -126,6 +122,10 @@ optional = true
 
 [dependencies.parking_lot]
 version = "0.12.1"
+optional = true
+
+[dependencies.serde_json]
+version = "1.0.107"
 optional = true
 
 [dependencies.tokio]
@@ -172,4 +172,4 @@ optional = true
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.14.4"
+version = "0.14.5"

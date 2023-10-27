@@ -25,7 +25,6 @@ port = 6082
 tag = "admin"
 
 [database]
-type = "postgres"
 namespace = "dc"
 
 [[postgres]]

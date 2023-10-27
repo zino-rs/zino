@@ -13,7 +13,8 @@ pub(super) fn column_def(col: &Column, primary_key_name: &str) -> String {
             definition += if cfg!(feature = "orm-mysql") {
                 " AUTO_INCREMENT"
             } else {
-                " AUTOINCREMENT"
+                // PostgreSQL does not support `AUTO INCREMENT` and SQLite does not need it.
+                ""
             };
         } else {
             let value = col.format_value(value);
