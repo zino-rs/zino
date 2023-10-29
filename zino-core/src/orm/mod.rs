@@ -21,6 +21,7 @@
 
 use crate::{extension::TomlTableExt, state::State};
 use convert_case::{Case, Casing};
+use smallvec::SmallVec;
 use sqlx::{
     pool::{Pool, PoolOptions},
     Connection,
@@ -253,7 +254,7 @@ impl ConnectionPool {
 
 /// A list of database connection pools.
 #[derive(Debug)]
-struct ConnectionPools(Vec<ConnectionPool>);
+struct ConnectionPools(SmallVec<[ConnectionPool; 3]>);
 
 impl ConnectionPools {
     /// Returns a connection pool with the specific name.
@@ -274,7 +275,7 @@ impl ConnectionPools {
 static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
     let config = State::shared().config();
     let Some(database_config) = config.get_table("database") else {
-        return ConnectionPools(Vec::new());
+        return ConnectionPools(SmallVec::new());
     };
 
     // Database connection pools.

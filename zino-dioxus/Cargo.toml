@@ -13,3 +13,10 @@ readme = "README.md"
 
 [dependencies]
 dioxus = "0.4.0"
+dioxus-router = "0.4.1"
+dioxus-free-icons = "0.7.0"
+smallvec = "1.11.1"
+
+[dependencies.zino-core]
+path = "../zino-core"
+version = "0.14.5"

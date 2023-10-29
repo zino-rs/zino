@@ -2,116 +2,75 @@ use crate::router::Route;
 use dioxus::prelude::*;
 use dioxus_free_icons::{
     icons::{bs_icons::*, fa_brands_icons::FaRust, fa_solid_icons::FaCubes},
-    Icon,
+    Icon as SvgIcon,
 };
 use dioxus_router::prelude::*;
+use zino_dioxus::prelude::*;
 
 pub fn Wrapper(cx: Scope) -> Element {
-    let nav_item_classes = use_state(cx, || ["is-active", "", ""]);
     render! {
-        nav {
-            class: "navbar is-link",
-            div {
-                class: "navbar-menu is-active",
-                div {
-                    class: "navbar-start",
-                    Link {
-                        class: "navbar-item {nav_item_classes[0]}",
-                        to: Route::Overview {},
-                        onclick: move |_| {
-                            nav_item_classes.set(["is-active", "", ""]);
-                        },
+        Navbar {
+            NavbarStart {
+                NavbarLink {
+                    to: Route::Overview {},
+                    IconText {
                         Icon {
-                            width: 16,
-                            height: 16,
-                            icon: BsSpeedometer2,
+                            SvgIcon { icon: BsSpeedometer2 }
                         }
-                        span {
-                            class: "ml-1",
-                            "Overview"
-                        }
-                    }
-                    Link {
-                        class: "navbar-item {nav_item_classes[1]}",
-                        to: Route::StargazerList {},
-                        onclick: move |_| {
-                            nav_item_classes.set(["", "is-active", ""]);
-                        },
-                        Icon {
-                            width: 16,
-                            height: 16,
-                            icon: BsStars,
-                        }
-                        span {
-                            class: "ml-1",
-                            "Stargazers"
-                        }
-                    }
-                    Link {
-                        class: "navbar-item {nav_item_classes[2]}",
-                        to: Route::DependencyList {},
-                        onclick: move |_| {
-                            nav_item_classes.set(["", "", "is-active"]);
-                        },
-                        Icon {
-                            width: 16,
-                            height: 16,
-                            icon: BsBricks,
-                        }
-                        span {
-                            class: "ml-1",
-                            "Dependencies"
-                        }
+                        span { "Overview" }
                     }
                 }
-                div {
-                    class: "navbar-end",
-                    a {
-                        class: "navbar-item",
-                        href: "https://github.com/photino/zino",
+                NavbarLink {
+                    to: Route::StargazerList {},
+                    IconText {
                         Icon {
-                            width: 16,
-                            height: 16,
-                            icon: BsGithub,
+                            SvgIcon { icon: BsStars }
                         }
-                        span {
-                            class: "ml-1",
-                            "github"
-                        }
+                        span { "Stargazers" }
                     }
-                    a {
-                        class: "navbar-item",
-                        href: "https://crates.io/crates/zino",
+                }
+                NavbarLink {
+                    to: Route::DependencyList {},
+                    IconText {
                         Icon {
-                            width: 16,
-                            height: 16,
-                            icon: FaRust,
+                            SvgIcon { icon: BsBricks }
                         }
-                        span {
-                            class: "ml-1",
-                            "crates.io"
-                        }
+                        span { "Dependencies" }
                     }
-                    a {
-                        class: "navbar-item",
-                        href: "https://docs.rs/zino",
+                }
+            }
+            NavbarEnd {
+                NavbarLink {
+                    to: "https://github.com/photino/zino",
+                    IconText {
                         Icon {
-                            width: 16,
-                            height: 16,
-                            icon: FaCubes,
+                            SvgIcon { icon: BsGithub }
                         }
-                        span {
-                            class: "ml-1",
-                            "docs.rs"
+                        span { "github" }
+                    }
+                }
+                NavbarLink {
+                    to: "https://crates.io/crates/zino",
+                    IconText {
+                        Icon {
+                            SvgIcon { icon: FaRust }
                         }
+                        span { "crates.io" }
+                    }
+                }
+                NavbarLink {
+                    to: "https://docs.rs/zino",
+                    IconText {
+                        Icon {
+                            SvgIcon { icon: FaCubes }
+                        }
+                        span { "docs.rs" }
                     }
                 }
             }
         }
-        main {
-            class: "my-4 px-4",
+        MainContainer {
             Outlet::<Route> {}
         }
-        footer {}
     }
 }

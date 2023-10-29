@@ -49,12 +49,6 @@ pub fn Overview(cx: Scope) -> Element {
                             class: "mr-2",
                             src: "https://img.shields.io/github/languages/code-size/photino/zino",
                         }
-                        img {
-                            class: "mr-2",
-                            width: 123,
-                            height: 20,
-                            src: "https://tokei.rs/b1/github/photino/zino",
-                        }
                         a {
                             class: "mr-2",
                             href: "https://github.com/photino/zino/stargazers",

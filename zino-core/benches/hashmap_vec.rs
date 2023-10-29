@@ -23,7 +23,18 @@ pub fn bench(c: &mut criterion::Criterion) {
     });
     c.bench_function("arrayvec_lookup", |b| {
         b.iter(|| {
-            let mut vec = tinyvec::ArrayVec::<[_; 3]>::new();
+            let mut vec = arrayvec::ArrayVec::<_, 3>::new();
+            vec.push(("en-US", "Welcome!"));
+            vec.push(("zh-CN", "欢迎！"));
+            vec.push(("zh-HK", "歡迎！"));
+            vec.iter()
+                .find_map(|(lang, text)| (lang == &"zh-CN").then_some(text))
+                .is_some()
+        })
+    });
+    c.bench_function("smallvec_lookup", |b| {
+        b.iter(|| {
+            let mut vec = smallvec::SmallVec::<[_; 3]>::new();
             vec.push(("en-US", "Welcome!"));
             vec.push(("zh-CN", "欢迎！"));
             vec.push(("zh-HK", "歡迎！"));

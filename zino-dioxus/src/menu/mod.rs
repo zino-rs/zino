@@ -4,6 +4,9 @@ mod dropdown;
 mod navbar;
 mod sidebar;
 
-pub use dropdown::{DropdownMenu, DropdownMenuProps};
-pub use navbar::{NavbarMenu, NavbarMenuProps};
-pub use sidebar::{SidebarMenu, SidebarMenuProps};
+pub use dropdown::{Dropdown, DropdownProps};
+pub use navbar::{
+    Navbar, NavbarCenter, NavbarCenterProps, NavbarEnd, NavbarEndProps, NavbarLink,
+    NavbarLinkProps, NavbarProps, NavbarStart, NavbarStartProps,
+};
+pub use sidebar::{Sidebar, SidebarProps};

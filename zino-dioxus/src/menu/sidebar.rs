@@ -2,15 +2,15 @@ use crate::theme::Theme;
 use dioxus::prelude::*;
 
 /// A vertical menu used in the navigation aside.
-pub fn SidebarMenu<'a>(cx: Scope<'a, SidebarMenuProps<'a>>) -> Element {
+pub fn Sidebar<'a>(cx: Scope<'a, SidebarProps<'a>>) -> Element {
     render! {
         div {}
     }
 }
 
-/// The [`SidebarMenu`] properties struct for the configuration of the menu.
+/// The [`Sidebar`] properties struct for the configuration of the component.
 #[derive(Debug, PartialEq, Props)]
-pub struct SidebarMenuProps<'a> {
+pub struct SidebarProps<'a> {
     /// Theme.
     theme: &'a Theme,
 }

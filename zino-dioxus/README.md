@@ -11,11 +11,12 @@ Dioxus components for [`zino`].
 # Design references
 
 The design of our components is inspired by [`Ant Design`], [`Bootstrap`], [`Bulma`],
-and [`Element Plus`].
+[`daisyUI`] and [`Element Plus`].
 
 [`zino`]: https://github.com/photino/zino
 [`Ant Design`]: https://ant.design/
 [`Bootstrap`]: https://getbootstrap.com/
 [`Bulma`]: https://bulma.io/
+[`daisyUI`]: https://daisyui.com/
 [`Element Plus`]: https://element-plus.org/
 

@@ -15,6 +15,7 @@ use etag::EntityTag;
 use http::header::{self, HeaderName, HeaderValue};
 use http_body::Full;
 use serde::Serialize;
+use smallvec::SmallVec;
 use std::{
     marker::PhantomData,
     time::{Duration, Instant},
@@ -93,7 +94,7 @@ pub struct Response<S = StatusCode> {
     server_timing: ServerTiming,
     /// Custom headers.
     #[serde(skip)]
-    headers: Vec<(SharedString, String)>,
+    headers: SmallVec<[(SharedString, String); 5]>,
     /// Phantom type of response code.
     #[serde(skip)]
     phantom: PhantomData<S>,
@@ -121,7 +122,7 @@ impl<S: ResponseCode> Response<S> {
             content_type: None,
             trace_context: None,
             server_timing: ServerTiming::new(),
-            headers: Vec::new(),
+            headers: SmallVec::new(),
             phantom: PhantomData,
         };
         if success {
@@ -153,7 +154,7 @@ impl<S: ResponseCode> Response<S> {
             content_type: None,
             trace_context: None,
             server_timing: ServerTiming::new(),
-            headers: Vec::new(),
+            headers: SmallVec::new(),
             phantom: PhantomData,
         };
         if success {
@@ -598,7 +599,7 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Consumes `self` and returns the custom headers.
-    pub fn finalize(mut self) -> Vec<(SharedString, String)> {
+    pub fn finalize(mut self) -> impl Iterator<Item = (SharedString, String)> {
         let request_id = self.request_id();
         if !request_id.is_nil() {
             self.insert_header("x-request-id", request_id.to_string());
@@ -612,7 +613,7 @@ impl<S: ResponseCode> Response<S> {
         self.record_server_timing("total", None, Some(duration));
         self.insert_header("server-timing", self.server_timing());
 
-        self.headers
+        self.headers.into_iter()
     }
 }
 
