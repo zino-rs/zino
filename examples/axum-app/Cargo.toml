@@ -8,7 +8,6 @@ publish = false
 
 [dependencies]
 axum = "0.6.20"
-fluent = "0.16.0"
 tracing = "0.1.40"
 
 [dependencies.serde]

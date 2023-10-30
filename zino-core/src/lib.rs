@@ -44,6 +44,9 @@ pub mod state;
 pub mod trace;
 
 #[doc(no_inline)]
+pub use fluent::fluent_args;
+
+#[doc(no_inline)]
 pub use serde_json::json;
 
 /// A JSON value.

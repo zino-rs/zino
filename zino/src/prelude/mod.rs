@@ -12,7 +12,7 @@ pub use zino_core::{
     error::Error,
     extension::{JsonObjectExt, JsonValueExt, TomlTableExt},
     file::NamedFile,
-    json,
+    fluent_args, json,
     model::{Model, ModelHooks, Mutation, Query, QueryContext},
     reject,
     request::{RequestContext, Validation},

@@ -61,6 +61,7 @@ fn tag_router(cfg: &mut ServiceConfig) {
             .route("/{id}/update", post().to(Tag::update))
             .route("/{id}/view", get().to(Tag::view))
             .route("/list", get().to(Tag::list))
+            .route("/tree", get().to(Tag::tree))
             .route("/schema", get().to(Tag::schema)),
     );
 }

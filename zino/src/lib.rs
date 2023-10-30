@@ -6,6 +6,7 @@
 #![forbid(unsafe_code)]
 #![feature(async_fn_in_trait)]
 #![feature(doc_auto_cfg)]
+#![feature(extract_if)]
 #![feature(lazy_cell)]
 #![feature(let_chains)]
 

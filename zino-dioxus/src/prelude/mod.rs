@@ -1,4 +1,4 @@
-//! Re-exports of dioxus components and common types.
+//! Re-exports of components and common types.
 
 pub use crate::{
     class::Class,

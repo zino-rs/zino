@@ -35,6 +35,9 @@ pub trait DefaultController<K, U = K> {
     /// Exports model data.
     async fn export(req: Self::Request) -> Self::Result;
 
+    /// Gets the tree hierarchy data.
+    async fn tree(req: Self::Request) -> Self::Result;
+
     /// Gets the model schema.
     async fn schema(req: Self::Request) -> Self::Result;
 }
@@ -323,6 +326,57 @@ where
         Ok(res.into())
     }
 
+    async fn tree(req: Self::Request) -> Self::Result {
+        let mut query = Self::default_list_query();
+        let extension = req.get_data::<<Self as ModelHooks>::Extension>();
+        Self::before_list(&mut query, extension.as_ref())
+            .await
+            .extract(&req)?;
+
+        let mut res = req.query_validation(&mut query)?;
+        let parent_id = req.get_query("parent_id").unwrap_or("null");
+        query.add_filter("parent_id", parent_id);
+
+        let mut models = if query.populate_enabled() {
+            Self::fetch(&query).await.extract(&req)?
+        } else {
+            let mut models = Self::find(&query).await.extract(&req)?;
+            let translate_enabled = query.translate_enabled();
+            for model in models.iter_mut() {
+                Self::after_decode(model).await.extract(&req)?;
+                translate_enabled.then(|| Self::translate_model(model));
+            }
+            models
+        };
+
+        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let values = models
+            .iter()
+            .filter_map(|model| model.get(primary_key_name).cloned())
+            .collect::<Vec<_>>();
+        let mut query = Self::default_snapshot_query();
+        query.allow_fields(&["parent_id"]);
+        query.add_filter("parent_id", Map::from_entry("$in", values));
+        query.add_filter("status", Map::from_entry("$ne", "Deleted"));
+        query.set_sort_order("created_at", true);
+        query.set_limit(0);
+
+        let mut children = Self::find::<Map>(&query).await.extract(&req)?;
+        let total_rows = children.len();
+        for model in models.iter_mut() {
+            let model_id = model.get(primary_key_name);
+            let model_children = children
+                .extract_if(|child| child.get("parent_id") == model_id)
+                .collect::<Vec<_>>();
+            model.upsert("children", model_children);
+        }
+
+        let mut data = Map::data_entries(models);
+        data.upsert("total_rows", total_rows);
+        res.set_json_data(data);
+        Ok(res.into())
+    }
+
     async fn schema(req: Self::Request) -> Self::Result {
         let reader_available = Self::acquire_reader()
             .await
@@ -331,6 +385,7 @@ where
             .await
             .is_ok_and(|cp| cp.is_available());
         let data = json!({
+            "avro_schema": Self::schema(),
             "model_name": Self::model_name(),
             "model_namespace": Self::model_namespace(),
             "table_name": Self::table_name(),

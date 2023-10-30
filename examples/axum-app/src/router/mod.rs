@@ -46,6 +46,7 @@ pub fn routes() -> Vec<Router> {
         .route("/tag/:id/update", post(Tag::update))
         .route("/tag/:id/view", get(Tag::view))
         .route("/tag/list", get(Tag::list))
+        .route("/tag/tree", get(Tag::tree))
         .route("/tag/schema", get(Tag::schema));
     routes.push(router);
 
