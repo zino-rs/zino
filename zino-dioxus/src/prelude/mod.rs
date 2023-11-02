@@ -4,6 +4,9 @@ pub use crate::{
     class::Class,
     icon::{Icon, IconText},
     layout::{Container, FluidContainer, MainContainer},
-    menu::{Dropdown, Navbar, NavbarCenter, NavbarEnd, NavbarLink, NavbarStart, Sidebar},
+    menu::{
+        Dropdown, Navbar, NavbarBrand, NavbarCenter, NavbarEnd, NavbarLink, NavbarMenu,
+        NavbarStart, Sidebar,
+    },
     theme::Theme,
 };

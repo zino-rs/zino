@@ -6,7 +6,8 @@ mod sidebar;
 
 pub use dropdown::{Dropdown, DropdownProps};
 pub use navbar::{
-    Navbar, NavbarCenter, NavbarCenterProps, NavbarEnd, NavbarEndProps, NavbarLink,
-    NavbarLinkProps, NavbarProps, NavbarStart, NavbarStartProps,
+    Navbar, NavbarBrand, NavbarBrandProps, NavbarCenter, NavbarCenterProps, NavbarEnd,
+    NavbarEndProps, NavbarLink, NavbarLinkProps, NavbarMenu, NavbarMenuProps, NavbarProps,
+    NavbarStart, NavbarStartProps,
 };
 pub use sidebar::{Sidebar, SidebarProps};

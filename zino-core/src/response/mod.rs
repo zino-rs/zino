@@ -15,7 +15,6 @@ use etag::EntityTag;
 use http::header::{self, HeaderName, HeaderValue};
 use http_body::Full;
 use serde::Serialize;
-use smallvec::SmallVec;
 use std::{
     marker::PhantomData,
     time::{Duration, Instant},
@@ -94,7 +93,7 @@ pub struct Response<S = StatusCode> {
     server_timing: ServerTiming,
     /// Custom headers.
     #[serde(skip)]
-    headers: SmallVec<[(SharedString, String); 5]>,
+    headers: Vec<(SharedString, String)>,
     /// Phantom type of response code.
     #[serde(skip)]
     phantom: PhantomData<S>,
@@ -122,7 +121,7 @@ impl<S: ResponseCode> Response<S> {
             content_type: None,
             trace_context: None,
             server_timing: ServerTiming::new(),
-            headers: SmallVec::new(),
+            headers: Vec::new(),
             phantom: PhantomData,
         };
         if success {
@@ -154,7 +153,7 @@ impl<S: ResponseCode> Response<S> {
             content_type: None,
             trace_context: None,
             server_timing: ServerTiming::new(),
-            headers: SmallVec::new(),
+            headers: Vec::new(),
             phantom: PhantomData,
         };
         if success {

@@ -6,6 +6,7 @@
 #![feature(let_chains)]
 
 pub mod class;
+pub mod extension;
 pub mod icon;
 pub mod layout;
 pub mod menu;

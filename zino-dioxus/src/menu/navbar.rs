@@ -1,16 +1,25 @@
-use crate::{class::Class, format_class};
+use crate::{class::Class, extension::VNodeExt, format_class};
 use dioxus::prelude::*;
 use dioxus_router::components::{IntoRoutable, Link};
 
-/// A horizontal menu used in the navigation header.
+/// A responsive navigation header.
 pub fn Navbar<'a>(cx: Scope<'a, NavbarProps<'a>>) -> Element {
+    let children = cx.props.children.as_ref()?;
     let class = format_class!(cx, "navbar is-link");
-    render! {
-        nav {
-            class: "{class}",
-            div {
-                class: "navbar-menu is-active",
-                &cx.props.children
+    if children.has_component("NavbarBrand") {
+        render! {
+            nav {
+                class: "{class}",
+                children
+            }
+        }
+    } else {
+        render! {
+            nav {
+                class: "{class}",
+                NavbarMenu {
+                    children
+                }
             }
         }
     }
@@ -19,6 +28,48 @@ pub fn Navbar<'a>(cx: Scope<'a, NavbarProps<'a>>) -> Element {
 /// The [`Navbar`] properties struct for the configuration of the component.
 #[derive(Props)]
 pub struct NavbarProps<'a> {
+    /// The class attribute for the component.
+    #[props(into)]
+    pub class: Option<Class<'a>>,
+    /// The children to render within the component.
+    children: Element<'a>,
+}
+
+/// A container for the logo and optionally some links or icons.
+pub fn NavbarBrand<'a>(cx: Scope<'a, NavbarBrandProps<'a>>) -> Element {
+    let class = format_class!(cx, "navbar-brand");
+    render! {
+        div {
+            class: "{class}",
+            &cx.props.children
+        }
+    }
+}
+
+/// The [`NavbarBrand`] properties struct for the configuration of the component.
+#[derive(Props)]
+pub struct NavbarBrandProps<'a> {
+    /// The class attribute for the component.
+    #[props(into)]
+    pub class: Option<Class<'a>>,
+    /// The children to render within the component.
+    children: Element<'a>,
+}
+
+/// A horizontal menu used in the navigation header.
+pub fn NavbarMenu<'a>(cx: Scope<'a, NavbarMenuProps<'a>>) -> Element {
+    let class = format_class!(cx, "navbar-menu is-active");
+    render! {
+        div {
+            class: "{class}",
+            &cx.props.children
+        }
+    }
+}
+
+/// The [`NavbarMenu`] properties struct for the configuration of the component.
+#[derive(Props)]
+pub struct NavbarMenuProps<'a> {
     /// The class attribute for the component.
     #[props(into)]
     pub class: Option<Class<'a>>,

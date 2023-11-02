@@ -13,6 +13,7 @@ readme = "README.md"
 
 [dependencies]
 dioxus = "0.4.0"
+dioxus-core = "0.4.2"
 dioxus-router = "0.4.1"
 dioxus-free-icons = "0.7.0"
 smallvec = "1.11.1"

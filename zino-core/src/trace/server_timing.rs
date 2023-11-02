@@ -1,5 +1,4 @@
 use crate::trace::TimingMetric;
-use smallvec::SmallVec;
 use std::fmt;
 
 /// Performance metrics for the request-response cycle.
@@ -7,7 +6,7 @@ use std::fmt;
 #[derive(Debug, Clone)]
 pub struct ServerTiming {
     /// Server timing metrics.
-    metrics: SmallVec<[TimingMetric; 3]>,
+    metrics: Vec<TimingMetric>,
 }
 
 impl ServerTiming {
@@ -15,7 +14,7 @@ impl ServerTiming {
     #[inline]
     pub fn new() -> Self {
         Self {
-            metrics: SmallVec::new(),
+            metrics: Vec::new(),
         }
     }
 
