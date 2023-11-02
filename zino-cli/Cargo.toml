@@ -1,7 +1,8 @@
 [package]
 name = "zino-cli"
 description = "CLI tools for zino."
-version = "0.0.2"
+version = "0.1.0"
+rust-version = "1.73"
 edition = "2021"
 license = "MIT"
 categories = ["command-line-utilities", "network-programming", "web-programming"]
@@ -16,3 +17,12 @@ name = "zn"
 path = "src/main.rs"
 
 [dependencies]
+log = "0.4.20"
+
+[dependencies.clap]
+version = "4.4.7"
+features = ["derive"]
+
+[dependencies.zino-core]
+path = "../zino-core"
+version = "0.15.0"

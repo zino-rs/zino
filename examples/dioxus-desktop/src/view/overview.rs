@@ -41,6 +41,13 @@ pub fn Overview(cx: Scope) -> Element {
                             class: "mr-2",
                             src: "https://img.shields.io/github/languages/top/photino/zino",
                         }
+                        a {
+                            class: "mr-2",
+                            href: "https://github.com/photino/zino/tags",
+                            img {
+                                src: "https://img.shields.io/github/v/tag/photino/zino",
+                            }
+                        }
                         img {
                             class: "mr-2",
                             src: "https://img.shields.io/github/repo-size/photino/zino",
@@ -72,9 +79,9 @@ pub fn Overview(cx: Scope) -> Element {
                         }
                         a {
                             class: "mr-2",
-                            href: "https://github.com/photino/zino/tags",
+                            href: "https://github.com/photino/zino/graphs/contributors",
                             img {
-                                src: "https://img.shields.io/github/v/tag/photino/zino",
+                                src: "https://img.shields.io/github/contributors/photino/zino",
                             }
                         }
                         a {

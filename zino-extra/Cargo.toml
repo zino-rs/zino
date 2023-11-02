@@ -1,7 +1,7 @@
 [package]
 name = "zino-extra"
 description = "Extra utilities for zino."
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 categories = ["asynchronous", "network-programming", "web-programming"]
@@ -40,4 +40,4 @@ optional = true
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.14.5"
+version = "0.15.0"
