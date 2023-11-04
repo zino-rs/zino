@@ -6,7 +6,7 @@ method = "POST"
 summary = "Creates a new tag"
 
 [endpoints.body]
-schema = "newTag"
+schema = "/tag/definition"
 
 [[endpoints]]
 path = "/tag/{tag_id}/delete"

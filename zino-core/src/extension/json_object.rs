@@ -16,35 +16,35 @@ pub trait JsonObjectExt {
     /// Extracts the boolean value corresponding to the key.
     fn get_bool(&self, key: &str) -> Option<bool>;
 
-    /// Extracts the integer value corresponding to the key and
-    /// represents it as `u8` if possible.
+    /// Extracts the integer value corresponding to the key
+    /// and represents it as `u8` if possible.
     fn get_u8(&self, key: &str) -> Option<u8>;
 
-    /// Extracts the integer value corresponding to the key and
-    /// represents it as `u16` if possible.
+    /// Extracts the integer value corresponding to the key
+    /// and represents it as `u16` if possible.
     fn get_u16(&self, key: &str) -> Option<u16>;
 
-    /// Extracts the integer value corresponding to the key and
-    /// represents it as `u32` if possible.
+    /// Extracts the integer value corresponding to the key
+    /// and represents it as `u32` if possible.
     fn get_u32(&self, key: &str) -> Option<u32>;
 
-    /// Extracts the integer value corresponding to the key and
-    /// represents it as `u64` if possible.
+    /// Extracts the integer value corresponding to the key
+    /// and represents it as `u64` if possible.
     fn get_u64(&self, key: &str) -> Option<u64>;
 
-    /// Extracts the integer value corresponding to the key and
-    /// represents it as `usize` if possible.
+    /// Extracts the integer value corresponding to the key
+    /// and represents it as `usize` if possible.
     fn get_usize(&self, key: &str) -> Option<usize>;
 
-    /// Extracts the integer value corresponding to the key and
-    /// represents it as `i32` if possible.
+    /// Extracts the integer value corresponding to the key
+    /// and represents it as `i32` if possible.
     fn get_i32(&self, key: &str) -> Option<i32>;
 
     /// Extracts the integer value corresponding to the key.
     fn get_i64(&self, key: &str) -> Option<i64>;
 
-    /// Extracts the float value corresponding to the key and
-    /// represents it as `f32` if possible.
+    /// Extracts the float value corresponding to the key
+    /// and represents it as `f32` if possible.
     fn get_f32(&self, key: &str) -> Option<f32>;
 
     /// Extracts the float value corresponding to the key.
@@ -52,6 +52,18 @@ pub trait JsonObjectExt {
 
     /// Extracts the string corresponding to the key.
     fn get_str(&self, key: &str) -> Option<&str>;
+
+    /// Extracts the string corresponding to the key
+    /// and represents it as `Uuid` if possible.
+    fn get_uuid(&self, key: &str) -> Option<Uuid>;
+
+    /// Extracts the string corresponding to the key
+    /// and represents it as `DateTime` if possible.
+    fn get_datetime(&self, key: &str) -> Option<DateTime>;
+
+    /// Extracts the string corresponding to the key
+    /// and represents it as `Duration` if possible.
+    fn get_duration(&self, key: &str) -> Option<Duration>;
 
     /// Extracts the array value corresponding to the key.
     fn get_array(&self, key: &str) -> Option<&Vec<JsonValue>>;
@@ -115,6 +127,11 @@ pub trait JsonObjectExt {
     /// Extracts the array value corresponding to the key and parses it as `Vec<&str>`.
     /// If the vec is empty, it also returns `None`.
     fn parse_str_array(&self, key: &str) -> Option<Vec<&str>>;
+
+    /// Extracts the enum values corresponding to the key
+    /// and parses it as `Vec<i64>` or `Vec<String>`.
+    /// If the vec is empty, it also returns `None`.
+    fn parse_enum_values(&self, key: &str) -> Option<Vec<JsonValue>>;
 
     /// Extracts the object value corresponding to the key and parses it as `Map`.
     /// If the map is empty, it also returns `None`.
@@ -237,6 +254,22 @@ impl JsonObjectExt for Map {
     #[inline]
     fn get_str(&self, key: &str) -> Option<&str> {
         self.get(key).and_then(|v| v.as_str())
+    }
+
+    #[inline]
+    fn get_uuid(&self, key: &str) -> Option<Uuid> {
+        self.get_str(key).and_then(|s| s.parse().ok())
+    }
+
+    #[inline]
+    fn get_datetime(&self, key: &str) -> Option<DateTime> {
+        self.get_str(key).and_then(|s| s.parse().ok())
+    }
+
+    #[inline]
+    fn get_duration(&self, key: &str) -> Option<Duration> {
+        self.get_str(key)
+            .and_then(|s| datetime::parse_duration(s).ok())
     }
 
     #[inline]
@@ -382,7 +415,7 @@ impl JsonObjectExt for Map {
         self.get(key)
             .and_then(|v| match v {
                 JsonValue::String(s) => Some(helper::parse_str_array(s)),
-                JsonValue::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
+                JsonValue::Array(vec) => Some(vec.iter().filter_map(|v| v.as_str()).collect()),
                 _ => None,
             })
             .and_then(|values| {
@@ -405,6 +438,30 @@ impl JsonObjectExt for Map {
                 let vec = values.iter().map(|s| s.trim()).collect::<Vec<_>>();
                 (!vec.is_empty()).then_some(vec)
             })
+    }
+
+    fn parse_enum_values(&self, key: &str) -> Option<Vec<JsonValue>> {
+        self.get(key)
+            .and_then(|v| match v {
+                JsonValue::String(s) => {
+                    let values = helper::parse_str_array(s);
+                    let vec = values
+                        .iter()
+                        .map(|s| {
+                            let s = s.trim();
+                            if let Ok(integer) = s.parse::<i64>() {
+                                JsonValue::Number(integer.into())
+                            } else {
+                                JsonValue::String(s.to_owned())
+                            }
+                        })
+                        .collect::<Vec<_>>();
+                    Some(vec)
+                }
+                JsonValue::Array(vec) => Some(vec.clone()),
+                _ => None,
+            })
+            .filter(|vec| !vec.is_empty())
     }
 
     #[inline]

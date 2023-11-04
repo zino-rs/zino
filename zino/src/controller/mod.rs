@@ -38,15 +38,17 @@ pub trait DefaultController<K, U = K> {
     /// Gets the tree hierarchy data.
     async fn tree(req: Self::Request) -> Self::Result;
 
-    /// Gets the model schema.
+    /// Gets the Avro schema for the model.
     async fn schema(req: Self::Request) -> Self::Result;
+
+    /// Gets the model definition.
+    async fn definition(req: Self::Request) -> Self::Result;
 }
 
 #[cfg(any(feature = "actix", feature = "axum"))]
 #[cfg(feature = "orm")]
 use zino_core::{
     extension::JsonObjectExt,
-    json,
     model::{ModelHooks, Mutation, Query},
     orm::{ModelAccessor, ModelHelper},
     request::RequestContext,
@@ -379,27 +381,33 @@ where
     }
 
     async fn schema(req: Self::Request) -> Self::Result {
-        let reader_available = Self::acquire_reader()
-            .await
-            .is_ok_and(|cp| cp.is_available());
-        let writer_available = Self::acquire_writer()
-            .await
-            .is_ok_and(|cp| cp.is_available());
-        let data = json!({
-            "avro_schema": Self::schema(),
-            "model_name": Self::model_name(),
-            "model_namespace": Self::model_namespace(),
-            "table_name": Self::table_name(),
-            "columns": Self::columns(),
-            "readonly_fields": Self::readonly_fields(),
-            "writeonly_fields": Self::writeonly_fields(),
-            "primary_key_name": Self::PRIMARY_KEY_NAME,
-            "reader_available": reader_available,
-            "writer_available": writer_available,
-        });
+        let schema = serde_json::to_value(Self::schema()).extract(&req)?;
+        let mut res = crate::Response::default().context(&req);
+        res.set_json_response(schema);
+        Ok(res.into())
+    }
+
+    async fn definition(req: Self::Request) -> Self::Result {
+        let columns = Self::columns();
+        let mut definition = Map::new();
+        let required_fields = columns
+            .iter()
+            .filter_map(|col| col.is_not_null().then(|| col.name()))
+            .collect::<Vec<_>>();
+        definition.upsert("type", "object");
+        definition.upsert("required", required_fields);
+
+        let exclusive_attributes = ["readonly", "generated", "reserved"];
+        let mut properties = Map::new();
+        for col in columns {
+            if !col.has_any_attributes(&exclusive_attributes) && col.comment().is_some() {
+                properties.upsert(col.name(), col.definition());
+            }
+        }
+        definition.upsert("properties", properties);
 
         let mut res = crate::Response::default().context(&req);
-        res.set_json_data(data);
+        res.set_json_response(definition);
         Ok(res.into())
     }
 }

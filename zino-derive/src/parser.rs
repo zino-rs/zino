@@ -3,7 +3,6 @@ use syn::{
 };
 
 /// Parses the `Option<T>` type.
-#[inline]
 pub(super) fn parse_option_type(type_name: &str) -> Option<&str> {
     type_name
         .split_once('<')
@@ -12,7 +11,6 @@ pub(super) fn parse_option_type(type_name: &str) -> Option<&str> {
 }
 
 /// Returns `true` if the type is `Vec<T>`.
-#[inline]
 pub(super) fn check_vec_type(type_name: &str) -> bool {
     type_name
         .split_once('<')
@@ -20,7 +18,6 @@ pub(super) fn check_vec_type(type_name: &str) -> bool {
 }
 
 /// Returns `true` if the type is `Option<T>`.
-#[inline]
 pub(super) fn check_option_type(type_name: &str) -> bool {
     type_name
         .split_once('<')
@@ -58,7 +55,7 @@ pub(super) fn parse_schema_attr(attr: &Attribute) -> Vec<(String, Option<String>
                         match expr_lit.lit {
                             Lit::Str(ref lit_str) => Some(lit_str.value()),
                             Lit::Bool(ref lit_bool) => Some(lit_bool.value.to_string()),
-                            Lit::Int(ref lit_int) => Some(lit_int.base10_digits().to_string()),
+                            Lit::Int(ref lit_int) => Some(lit_int.base10_digits().to_owned()),
                             _ => None,
                         }
                     } else {

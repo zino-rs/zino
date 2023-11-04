@@ -33,7 +33,6 @@ axum = [
     "dep:bytes",
     "dep:futures",
     "dep:parking_lot",
-    "dep:serde_json",
     "dep:tokio",
     "dep:tokio-stream",
     "dep:tower",
@@ -58,6 +57,7 @@ view = ["zino-core/view"]
 
 [dependencies]
 cfg-if = "1.0"
+serde_json = "1.0.108"
 tracing = "0.1.40"
 
 [dependencies.actix-cors]
@@ -122,10 +122,6 @@ optional = true
 
 [dependencies.parking_lot]
 version = "0.12.1"
-optional = true
-
-[dependencies.serde_json]
-version = "1.0.108"
 optional = true
 
 [dependencies.tokio]

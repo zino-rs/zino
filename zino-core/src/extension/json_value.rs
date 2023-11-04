@@ -1,10 +1,15 @@
-use crate::{extension::JsonObjectExt, helper, JsonValue, Map};
+use crate::{
+    datetime::{self, DateTime},
+    extension::JsonObjectExt,
+    helper, JsonValue, Map, Uuid,
+};
 use csv::{ByteRecord, Writer};
 use std::{
     borrow::Cow,
     io::{self, ErrorKind},
     num::{ParseFloatError, ParseIntError},
     str::{FromStr, ParseBoolError},
+    time::Duration,
 };
 
 /// Extension trait for [`serde_json::Value`].
@@ -43,6 +48,18 @@ pub trait JsonValueExt {
     /// If the `Value` is an array of maps, returns the associated vector.
     /// Returns `None` otherwise.
     fn as_map_array(&self) -> Option<Vec<&Map>>;
+
+    /// If the `Value` is a String, represent it as `Uuid` if possible.
+    /// Returns `None` otherwise.
+    fn as_uuid(&self) -> Option<Uuid>;
+
+    /// If the `Value` is a String, represent it as `DateTime` if possible.
+    /// Returns `None` otherwise.
+    fn as_datetime(&self) -> Option<DateTime>;
+
+    /// If the `Value` is a String, represent it as `Duration` if possible.
+    /// Returns `None` otherwise.
+    fn as_duration(&self) -> Option<Duration>;
 
     /// Parses the JSON value as `bool`.
     fn parse_bool(&self) -> Option<Result<bool, ParseBoolError>>;
@@ -85,6 +102,16 @@ pub trait JsonValueExt {
     /// Parses the JSON value as `Vec<&str>`.
     /// If the vec is empty, it also returns `None`.
     fn parse_str_array(&self) -> Option<Vec<&str>>;
+
+    /// Parses the JSON value as `Uuid`.
+    /// If the `Uuid` is `nil`, it also returns `None`.
+    fn parse_uuid(&self) -> Option<Result<Uuid, uuid::Error>>;
+
+    /// Parses the JSON value as `DateTime`.
+    fn parse_datetime(&self) -> Option<Result<DateTime, chrono::format::ParseError>>;
+
+    /// Parses the JSON value as `Duration`.
+    fn parse_duration(&self) -> Option<Result<Duration, datetime::ParseDurationError>>;
 
     /// Returns a pretty-printed String of JSON.
     fn to_string_pretty(&self) -> String;
@@ -161,6 +188,21 @@ impl JsonValueExt for JsonValue {
                 .filter_map(|v| v.as_object())
                 .collect::<Vec<_>>()
         })
+    }
+
+    #[inline]
+    fn as_uuid(&self) -> Option<Uuid> {
+        self.as_str().and_then(|s| s.parse().ok())
+    }
+
+    #[inline]
+    fn as_datetime(&self) -> Option<DateTime> {
+        self.as_str().and_then(|s| s.parse().ok())
+    }
+
+    #[inline]
+    fn as_duration(&self) -> Option<Duration> {
+        self.as_str().and_then(|s| datetime::parse_duration(s).ok())
     }
 
     fn parse_bool(&self) -> Option<Result<bool, ParseBoolError>> {
@@ -256,6 +298,23 @@ impl JsonValueExt for JsonValue {
         };
         let vec = values?.iter().map(|s| s.trim()).collect::<Vec<_>>();
         (!vec.is_empty()).then_some(vec)
+    }
+
+    fn parse_uuid(&self) -> Option<Result<Uuid, uuid::Error>> {
+        self.as_str()
+            .map(|s| s.trim_start_matches("urn:uuid:"))
+            .filter(|s| !s.chars().all(|c| c == '0' || c == '-'))
+            .map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_datetime(&self) -> Option<Result<DateTime, chrono::format::ParseError>> {
+        self.as_str().map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_duration(&self) -> Option<Result<Duration, datetime::ParseDurationError>> {
+        self.as_str().map(datetime::parse_duration)
     }
 
     #[inline]

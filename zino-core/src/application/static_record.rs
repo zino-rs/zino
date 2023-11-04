@@ -31,6 +31,7 @@ impl<T> IntoIterator for StaticRecord<T> {
     type Item = (&'static str, T);
     type IntoIter = std::vec::IntoIter<Self::Item>;
 
+    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.inner.into_iter()
     }

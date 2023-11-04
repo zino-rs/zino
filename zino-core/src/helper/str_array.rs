@@ -23,7 +23,7 @@ pub(crate) fn parse_str_array(s: &str) -> Vec<&str> {
                     return str_array;
                 }
             }
-            ',' => {
+            ',' | '|' => {
                 if chars_stack.is_empty() {
                     str_array.push(&s[last_index..i]);
                     last_index = i + 1;

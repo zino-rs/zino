@@ -1,6 +1,6 @@
 use super::Reference;
-use crate::JsonValue;
-use apache_avro::schema::{Name, RecordField, RecordFieldOrder, Schema};
+use crate::{extension::JsonObjectExt, JsonValue, Map};
+use apache_avro::schema::{Name, RecordField, RecordFieldOrder, Schema, UnionSchema};
 use serde::Serialize;
 use std::{borrow::Cow, collections::BTreeMap};
 
@@ -25,6 +25,8 @@ pub struct Column<'a> {
     /// Comment.
     #[serde(skip_serializing_if = "Option::is_none")]
     comment: Option<&'a str>,
+    /// Extra attributes.
+    extra: Map,
 }
 
 impl<'a> Column<'a> {
@@ -38,6 +40,7 @@ impl<'a> Column<'a> {
             index_type: None,
             reference: None,
             comment: None,
+            extra: Map::new(),
         }
     }
 
@@ -63,6 +66,12 @@ impl<'a> Column<'a> {
     #[inline]
     pub fn set_comment(&mut self, comment: &'a str) {
         self.comment = (!comment.is_empty()).then_some(comment);
+    }
+
+    /// Sets the extra attribute.
+    #[inline]
+    pub fn set_extra_attribute(&mut self, key: &str, value: impl Into<JsonValue>) {
+        self.extra.upsert(key, value);
     }
 
     /// Returns the name.
@@ -114,24 +123,87 @@ impl<'a> Column<'a> {
         self.comment
     }
 
+    /// Returns a reference to the extra attributes.
+    #[inline]
+    pub fn extra(&self) -> &Map {
+        &self.extra
+    }
+
+    /// Returns `true` if the column has the specific attribute.
+    #[inline]
+    pub fn has_attribute(&self, attribute: &str) -> bool {
+        self.extra.contains_key(attribute)
+    }
+
+    /// Returns `true` if the user has any of the specific attributes.
+    pub fn has_any_attributes(&self, attributes: &[&str]) -> bool {
+        for attribute in attributes {
+            if self.has_attribute(attribute) {
+                return true;
+            }
+        }
+        false
+    }
+
+    /// Returns `true` if the user has all of the specific attributes.
+    pub fn has_all_attributes(&self, attributes: &[&str]) -> bool {
+        for attribute in attributes {
+            if !self.has_attribute(attribute) {
+                return false;
+            }
+        }
+        true
+    }
+
     /// Returns the Avro schema.
     pub fn schema(&self) -> Schema {
-        let type_name = self.type_name;
+        let type_name = self.type_name();
         match type_name {
             "bool" => Schema::Boolean,
             "i32" | "u32" | "i16" | "u16" | "i8" | "u8" => Schema::Int,
             "i64" | "u64" | "isize" | "usize" => Schema::Long,
             "f32" => Schema::Float,
             "f64" => Schema::Double,
-            "String" | "Option<String>" => Schema::String,
+            "String" => Schema::String,
+            "Date" => Schema::Date,
             "DateTime" => Schema::TimestampMicros,
-            "Uuid" | "Option<Uuid>" => Schema::Uuid,
+            "Uuid" => Schema::Uuid,
             "Vec<u8>" => Schema::Bytes,
             "Vec<String>" => Schema::Array(Box::new(Schema::String)),
             "Vec<Uuid>" => Schema::Array(Box::new(Schema::Uuid)),
+            "Vec<i64>" | "Vec<u64>" => Schema::Array(Box::new(Schema::Long)),
+            "Vec<i32>" | "Vec<u32>" => Schema::Array(Box::new(Schema::Int)),
+            "Option<String>" => {
+                if let Ok(union_schema) = UnionSchema::new(vec![Schema::Null, Schema::String]) {
+                    Schema::Union(union_schema)
+                } else {
+                    Schema::String
+                }
+            }
+            "Option<Uuid>" => {
+                if let Ok(union_schema) = UnionSchema::new(vec![Schema::Null, Schema::Uuid]) {
+                    Schema::Union(union_schema)
+                } else {
+                    Schema::Uuid
+                }
+            }
+            "Option<i64>" | "Option<u64>" => {
+                if let Ok(union_schema) = UnionSchema::new(vec![Schema::Null, Schema::Long]) {
+                    Schema::Union(union_schema)
+                } else {
+                    Schema::Long
+                }
+            }
+            "Option<i32>" | "Option<u32>" => {
+                if let Ok(union_schema) = UnionSchema::new(vec![Schema::Null, Schema::Int]) {
+                    Schema::Union(union_schema)
+                } else {
+                    Schema::Int
+                }
+            }
             "Map" => Schema::Map(Box::new(Schema::Ref {
                 name: Name {
-                    name: "json".to_owned(),
+                    name: "Json".to_owned(),
                     namespace: None,
                 },
             })),
@@ -165,6 +237,208 @@ impl<'a> Column<'a> {
             position: 0,
             custom_attributes: BTreeMap::new(),
         }
+    }
+
+    /// Returns the definition to be used in the OpenAPI schema object.
+    pub fn definition(&self) -> Map {
+        let mut definition = Map::new();
+        let name = self.name();
+        let type_name = self.type_name();
+        let extra = self.extra();
+        match type_name {
+            "bool" => {
+                definition.upsert("type", "boolean");
+            }
+            "i8" => {
+                definition.upsert("type", "integer");
+                definition.upsert("format", "int8");
+            }
+            "i16" => {
+                definition.upsert("type", "integer");
+                definition.upsert("format", "int16");
+            }
+            "i32" | "Option<i32>" => {
+                definition.upsert("type", "integer");
+                definition.upsert("format", "int32");
+            }
+            "i64" | "Option<i64>" | "isize" => {
+                definition.upsert("type", "integer");
+                definition.upsert("format", "int64");
+            }
+            "u8" => {
+                definition.upsert("type", "integer");
+                definition.upsert("format", "uint8");
+            }
+            "u16" => {
+                definition.upsert("type", "integer");
+                definition.upsert("format", "uint16");
+            }
+            "u32" | "Option<u32>" => {
+                definition.upsert("type", "integer");
+                definition.upsert("format", "uint32");
+            }
+            "u64" | "Option<u64>" | "usize" => {
+                definition.upsert("type", "integer");
+                definition.upsert("format", "uint64");
+            }
+            "f32" => {
+                definition.upsert("type", "number");
+                definition.upsert("format", "float");
+            }
+            "f64" => {
+                definition.upsert("type", "number");
+                definition.upsert("format", "double");
+            }
+            "String" | "Option<String>" => {
+                definition.upsert("type", "string");
+                if name == "password" {
+                    definition.upsert("format", "password");
+                }
+            }
+            "Date" => {
+                definition.upsert("type", "string");
+                definition.upsert("format", "date");
+            }
+            "DateTime" => {
+                definition.upsert("type", "string");
+                definition.upsert("format", "date-time");
+            }
+            "Uuid" | "Option<Uuid>" => {
+                definition.upsert("type", "string");
+                definition.upsert("format", "uuid");
+            }
+            "Vec<u8>" => {
+                definition.upsert("type", "string");
+                definition.upsert("format", "binary");
+            }
+            "Vec<String>" => {
+                let items = Map::from_entry("type", "string");
+                definition.upsert("type", "array");
+                definition.upsert("items", items);
+            }
+            "Vec<Uuid>" => {
+                let mut items = Map::with_capacity(2);
+                items.upsert("type", "string");
+                items.upsert("format", "uuid");
+                definition.upsert("type", "array");
+                definition.upsert("items", items);
+            }
+            "Vec<i64>" => {
+                let mut items = Map::with_capacity(2);
+                items.upsert("type", "integer");
+                items.upsert("format", "int64");
+                definition.upsert("type", "array");
+                definition.upsert("items", items);
+            }
+            "Vec<u64>" => {
+                let mut items = Map::with_capacity(2);
+                items.upsert("type", "integer");
+                items.upsert("format", "uint64");
+                definition.upsert("type", "array");
+                definition.upsert("items", items);
+            }
+            "Vec<i32>" => {
+                let mut items = Map::with_capacity(2);
+                items.upsert("type", "integer");
+                items.upsert("format", "int32");
+                definition.upsert("type", "array");
+                definition.upsert("items", items);
+            }
+            "Vec<u32>" => {
+                let mut items = Map::with_capacity(2);
+                items.upsert("type", "integer");
+                items.upsert("format", "uint32");
+                definition.upsert("type", "array");
+                definition.upsert("items", items);
+            }
+            "Map" => {
+                definition.upsert("type", "object");
+            }
+            _ => {
+                definition.upsert("type", type_name);
+            }
+        };
+        if let Some(comment) = self.comment() {
+            definition.upsert("description", comment);
+        }
+        if self.has_attribute("readonly") {
+            definition.upsert("readOnly", true);
+        }
+        if self.has_attribute("writeonly") {
+            definition.upsert("writeOnly", true);
+        }
+        if self.has_attribute("deprecated") {
+            definition.upsert("deprecated", true);
+        }
+        if self.has_attribute("unique_items") {
+            definition.upsert("uniqueItems", true);
+        }
+        if self.has_attribute("nonempty") {
+            let key = match definition.get_str("type") {
+                Some("array") => "minItems",
+                Some("object") => "minProperties",
+                _ => "minLength",
+            };
+            definition.upsert(key, 1);
+        }
+        if let Some(value) = extra.get_str("title") {
+            definition.upsert("title", value);
+        }
+        if let Some(value) = extra.get_str("description") {
+            definition.upsert("description", value);
+        }
+        if let Some(value) = extra.get_str("format") {
+            definition.upsert("format", value);
+        }
+        if let Some(value) = extra.get_str("pattern") {
+            definition.upsert("pattern", value);
+        }
+        if let Some(value) = extra.get("default") {
+            definition.upsert("default", value.clone());
+        }
+        if let Some(value) = extra.get("example") {
+            definition.upsert("example", value.clone());
+        }
+        if let Some(values) = extra.parse_enum_values("examples") {
+            definition.upsert("examples", values);
+        }
+        if let Some(values) = extra.parse_enum_values("enum_values") {
+            definition.upsert("enum", values);
+        }
+        if let Some(Ok(value)) = extra.parse_usize("max_length") {
+            definition.upsert("maxLength", value);
+        }
+        if let Some(Ok(value)) = extra.parse_usize("min_length") {
+            definition.upsert("minLength", value);
+        }
+        if let Some(Ok(value)) = extra.parse_usize("max_properties") {
+            definition.upsert("maxProperties", value);
+        }
+        if let Some(Ok(value)) = extra.parse_usize("min_properties") {
+            definition.upsert("minProperties", value);
+        }
+        if let Some(Ok(value)) = extra.parse_usize("max_items") {
+            definition.upsert("maxItems", value);
+        }
+        if let Some(Ok(value)) = extra.parse_usize("min_items") {
+            definition.upsert("minItems", value);
+        }
+        if let Some(Ok(value)) = extra.parse_i64("multiple_of") {
+            definition.upsert("multipleOf", value);
+        }
+        if let Some(Ok(value)) = extra.parse_i64("minimum") {
+            definition.upsert("minimum", value);
+        }
+        if let Some(Ok(value)) = extra.parse_i64("maximum") {
+            definition.upsert("maximum", value);
+        }
+        if let Some(Ok(value)) = extra.parse_i64("exclusive_minimum") {
+            definition.upsert("exclusiveMinimum", value);
+        }
+        if let Some(Ok(value)) = extra.parse_i64("exclusive_maximum") {
+            definition.upsert("exclusiveMaximum", value);
+        }
+        definition
     }
 }
 

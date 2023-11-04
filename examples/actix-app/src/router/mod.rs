@@ -18,7 +18,10 @@ pub fn routes() -> Vec<RouterConfigure> {
 }
 
 pub fn debug_routes() -> Vec<RouterConfigure> {
-    vec![stats_router as RouterConfigure]
+    vec![
+        stats_router as RouterConfigure,
+        tag_schema_router as RouterConfigure,
+    ]
 }
 
 fn auth_router(cfg: &mut ServiceConfig) {
@@ -32,38 +35,27 @@ fn auth_router(cfg: &mut ServiceConfig) {
 }
 
 fn file_router(cfg: &mut ServiceConfig) {
-    cfg.service(
-        scope("/file")
-            .route("/upload", post().to(file::upload))
-            .route("/decrypt", get().to(file::decrypt)),
-    );
+    cfg.route("/file/upload", post().to(file::upload))
+        .route("/file/decrypt", get().to(file::decrypt));
 }
 
 fn user_router(cfg: &mut ServiceConfig) {
-    cfg.service(
-        scope("/user")
-            .route("/new", post().to(user::new))
-            .route("/{id}/delete", post().to(User::delete))
-            .route("/{id}/update", post().to(User::update))
-            .route("/{id}/view", get().to(user::view))
-            .route("/list", get().to(User::list))
-            .route("/import", post().to(User::import))
-            .route("/export", get().to(User::export))
-            .wrap(middleware::UserSessionInitializer),
-    );
+    cfg.route("/user/new", post().to(user::new))
+        .route("/user/{id}/delete", post().to(User::delete))
+        .route("/user/{id}/update", post().to(User::update))
+        .route("/user/{id}/view", get().to(user::view))
+        .route("/user/list", get().to(User::list))
+        .route("/user/import", post().to(User::import))
+        .route("/user/export", get().to(User::export));
 }
 
 fn tag_router(cfg: &mut ServiceConfig) {
-    cfg.service(
-        scope("/tag")
-            .route("/new", post().to(Tag::new))
-            .route("/{id}/delete", post().to(Tag::delete))
-            .route("/{id}/update", post().to(Tag::update))
-            .route("/{id}/view", get().to(Tag::view))
-            .route("/list", get().to(Tag::list))
-            .route("/tree", get().to(Tag::tree))
-            .route("/schema", get().to(Tag::schema)),
-    );
+    cfg.route("/tag/new", post().to(Tag::new))
+        .route("/tag/{id}/delete", post().to(Tag::delete))
+        .route("/tag/{id}/update", post().to(Tag::update))
+        .route("/tag/{id}/view", get().to(Tag::view))
+        .route("/tag/list", get().to(Tag::list))
+        .route("/tag/tree", get().to(Tag::tree));
 }
 
 fn task_router(cfg: &mut ServiceConfig) {
@@ -72,4 +64,9 @@ fn task_router(cfg: &mut ServiceConfig) {
 
 fn stats_router(cfg: &mut ServiceConfig) {
     cfg.route("/stats", get().to(stats::index));
+}
+
+fn tag_schema_router(cfg: &mut ServiceConfig) {
+    cfg.route("/tag/schema", get().to(Tag::schema))
+        .route("/tag/definition", get().to(Tag::definition));
 }

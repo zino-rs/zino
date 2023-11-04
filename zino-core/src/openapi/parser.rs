@@ -456,7 +456,12 @@ fn parse_cookie_parameters(cookies: &Table) -> Vec<Parameter> {
 /// Parses the request body.
 fn parse_request_body(config: &Table) -> RequestBody {
     let schema = if let Some(schema) = config.get_str("schema") {
-        RefOr::Ref(Ref::from_schema_name(schema))
+        let schema_ref = if schema.starts_with('/') || schema.contains(':') {
+            Ref::new(schema)
+        } else {
+            Ref::from_schema_name(schema)
+        };
+        RefOr::Ref(schema_ref)
     } else {
         parse_schema(config).into()
     };

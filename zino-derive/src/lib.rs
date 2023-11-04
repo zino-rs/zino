@@ -14,10 +14,24 @@ mod parser;
 /// Derives the [`Schema`](zino_core::orm::Schema) trait.
 #[proc_macro_derive(Schema, attributes(schema))]
 pub fn derive_schema(item: TokenStream) -> TokenStream {
-    /// Integer types
+    // Integer types
     const INTEGER_TYPES: [&str; 10] = [
         "u64", "i64", "u32", "i32", "u16", "i16", "u8", "i8", "usize", "isize",
     ];
+
+    // Special attributes
+    const SPECIAL_ATTRIBUTES: [&str; 7] = [
+        "ignore",
+        "not_null",
+        "default_value",
+        "index_type",
+        "reference",
+        "comment",
+        "constructor",
+    ];
+
+    // Reserved fields
+    const RESERVED_FIELDS: [&str; 4] = ["created_at", "updated_at", "version", "edition"];
 
     // Input
     let input = parse_macro_input!(item as DeriveInput);
@@ -80,10 +94,29 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                 let mut index_type = None;
                 let mut reference = None;
                 let mut comment = None;
+                let mut extra_attributes = Vec::new();
                 'inner: for attr in field.attrs.iter() {
                     let arguments = parser::parse_schema_attr(attr);
                     for (key, value) in arguments.into_iter() {
-                        match key.as_str() {
+                        let key = key.as_str();
+                        if !SPECIAL_ATTRIBUTES.contains(&key) {
+                            let attribute_setter = if let Some(value) = value.as_ref() {
+                                if let Ok(value) = value.parse::<i64>() {
+                                    quote! { column.set_extra_attribute(#key, #value); }
+                                } else {
+                                    quote! { column.set_extra_attribute(#key, #value); }
+                                }
+                            } else {
+                                quote! { column.set_extra_attribute(#key, true); }
+                            };
+                            extra_attributes.push(attribute_setter);
+                        }
+                        if RESERVED_FIELDS.contains(&name.as_str()) {
+                            extra_attributes.push(quote! {
+                                column.set_extra_attribute("reserved", true);
+                            });
+                        }
+                        match key {
                             "ignore" => {
                                 ignore = true;
                                 break 'inner;
@@ -160,6 +193,9 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                             quote! { Some(#value) }
                         }
                     } else {
+                        extra_attributes.push(quote! {
+                            column.set_extra_attribute("default", #value);
+                        });
                         quote! { Some(#value) }
                     }
                 } else {
@@ -199,6 +235,7 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                     if let Some(comment) = #quote_comment {
                         column.set_comment(comment);
                     }
+                    #(#extra_attributes)*
                     column
                 }};
                 if primary_key_name == name {
@@ -661,9 +698,10 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                                 }
                             }
                             "length" => {
-                                let length: usize =
-                                    value.and_then(|s| s.parse().ok()).unwrap_or_default();
-                                if type_name == "String" || parser::check_vec_type(&type_name) {
+                                let length = value
+                                    .and_then(|s| s.parse::<usize>().ok())
+                                    .unwrap_or_default();
+                                if type_name == "String" {
                                     field_constraints.push(quote! {
                                         let length = #length;
                                         if self.#ident.len() != length {
@@ -682,9 +720,10 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                                 }
                             }
                             "max_length" => {
-                                let length: usize =
-                                    value.and_then(|s| s.parse().ok()).unwrap_or_default();
-                                if type_name == "String" || parser::check_vec_type(&type_name) {
+                                let length = value
+                                    .and_then(|s| s.parse::<usize>().ok())
+                                    .unwrap_or_default();
+                                if type_name == "String" {
                                     field_constraints.push(quote! {
                                         let length = #length;
                                         if self.#ident.len() > length {
@@ -703,9 +742,10 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                                 }
                             }
                             "min_length" => {
-                                let length: usize =
-                                    value.and_then(|s| s.parse().ok()).unwrap_or_default();
-                                if type_name == "String" || parser::check_vec_type(&type_name) {
+                                let length = value
+                                    .and_then(|s| s.parse::<usize>().ok())
+                                    .unwrap_or_default();
+                                if type_name == "String" {
                                     field_constraints.push(quote! {
                                         let length = #length;
                                         if self.#ident.len() < length {
@@ -717,6 +757,32 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                                     field_constraints.push(quote! {
                                         let length = #length;
                                         if let Some(ref s) = self.#ident && s.len() < length {
+                                            let message = format!("the length should be at least {length}");
+                                            validation.record(#name, message);
+                                        }
+                                    });
+                                }
+                            }
+                            "max_items" => {
+                                if let Some(length) = value.and_then(|s| s.parse::<usize>().ok())
+                                    && parser::check_vec_type(&type_name)
+                                {
+                                    field_constraints.push(quote! {
+                                        let length = #length;
+                                        if self.#ident.len() > length {
+                                            let message = format!("the length should be at most {length}");
+                                            validation.record(#name, message);
+                                        }
+                                    });
+                                }
+                            }
+                            "min_items" => {
+                                if let Some(length) = value.and_then(|s| s.parse::<usize>().ok())
+                                    && parser::check_vec_type(&type_name)
+                                {
+                                    field_constraints.push(quote! {
+                                        let length = #length;
+                                        if self.#ident.len() < length {
                                             let message = format!("the length should be at least {length}");
                                             validation.record(#name, message);
                                         }
@@ -1125,7 +1191,7 @@ pub fn derive_model(item: TokenStream) -> TokenStream {
                                     field_constructors.push(constructor);
                                 }
                             }
-                            "readonly" => {
+                            "readonly" | "generated" | "reserved" => {
                                 enable_setter = false;
                             }
                             _ => (),

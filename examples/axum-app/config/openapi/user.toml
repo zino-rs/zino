@@ -6,7 +6,7 @@ method = "POST"
 summary = "Creates a new user"
 
 [endpoints.body]
-schema = "newUser"
+schema = "/user/definition"
 
 [[endpoints]]
 path = "/user/{user_id}/delete"
