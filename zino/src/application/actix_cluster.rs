@@ -11,7 +11,7 @@ use actix_web::{
 use std::{fs, path::PathBuf};
 use utoipa_rapidoc::RapiDoc;
 use zino_core::{
-    application::{Application, ServerTag},
+    application::{Application, ServerTag, StaticRecord},
     extension::TomlTableExt,
     response::Response,
     schedule::{AsyncCronJob, Job, JobScheduler},
@@ -39,7 +39,7 @@ impl Application for ActixCluster {
         self
     }
 
-    fn run(self, async_jobs: Vec<(&'static str, AsyncCronJob)>) {
+    fn run(self, async_jobs: StaticRecord<AsyncCronJob>) {
         let runtime = Runtime::new().expect("fail to build Tokio runtime for `ActixCluster`");
         let mut scheduler = JobScheduler::new();
         for (cron_expr, exec) in async_jobs {

@@ -2,13 +2,15 @@ use zino::prelude::*;
 
 mod job;
 
-pub fn jobs() -> Vec<(&'static str, CronJob)> {
-    vec![
-        ("0/15 * * * * *", job::every_15s as CronJob),
-        ("0/20 * * * * *", job::every_20s as CronJob),
-    ]
+pub fn jobs() -> StaticRecord<CronJob> {
+    let mut record = StaticRecord::new();
+    record.push_entry("0/15 * * * * *", job::every_15s as CronJob);
+    record.push_entry("0/20 * * * * *", job::every_20s as CronJob);
+    record
 }
 
-pub fn async_jobs() -> Vec<(&'static str, AsyncCronJob)> {
-    vec![("0 15 * * * *", job::every_hour as AsyncCronJob)]
+pub fn async_jobs() -> StaticRecord<AsyncCronJob> {
+    let mut record = StaticRecord::new();
+    record.push_entry("0 0 * * * *", job::every_hour as AsyncCronJob);
+    record
 }

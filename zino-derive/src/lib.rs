@@ -30,7 +30,7 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
     let mut reader_name = String::from("main");
     let mut writer_name = String::from("main");
     let mut table_name = None;
-    let mut documentation = None;
+    let mut model_comment = None;
     for attr in input.attrs.iter() {
         for (key, value) in parser::parse_schema_attr(attr).into_iter() {
             if let Some(value) = value {
@@ -47,8 +47,8 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                     "table_name" => {
                         table_name = Some(value);
                     }
-                    "doc" => {
-                        documentation = Some(value);
+                    "comment" => {
+                        model_comment = Some(value);
                     }
                     _ => (),
                 }
@@ -79,6 +79,7 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                 let mut default_value = None;
                 let mut index_type = None;
                 let mut reference = None;
+                let mut comment = None;
                 'inner: for attr in field.attrs.iter() {
                     let arguments = parser::parse_schema_attr(attr);
                     for (key, value) in arguments.into_iter() {
@@ -121,6 +122,9 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                             }
                             "reference" => {
                                 reference = value;
+                            }
+                            "comment" => {
+                                comment = value;
                             }
                             "primary_key" => {
                                 primary_key_name = name.clone();
@@ -176,6 +180,11 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                 } else {
                     quote! { None }
                 };
+                let quote_comment = if let Some(comment) = comment {
+                    quote! { Some(#comment) }
+                } else {
+                    quote! { None }
+                };
                 let column = quote! {{
                     let mut column = zino_core::model::Column::new(#name, #type_name, #not_null);
                     if let Some(default_value) = #quote_value {
@@ -186,6 +195,9 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                     }
                     if let Some(reference) = #quote_reference {
                         column.set_reference(reference);
+                    }
+                    if let Some(comment) = #quote_comment {
+                        column.set_comment(comment);
                     }
                     column
                 }};
@@ -225,8 +237,8 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
     } else {
         quote! { None }
     };
-    let quote_documentation = if let Some(doc) = documentation {
-        quote! { Some(#doc) }
+    let quote_model_comment = if let Some(comment) = model_comment {
+        quote! { Some(#comment) }
     } else {
         quote! { None }
     };
@@ -251,7 +263,7 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                     namespace: Some(<#name>::model_namespace().to_owned()),
                 },
                 aliases: None,
-                doc: #quote_documentation,
+                doc: #quote_model_comment,
                 fields,
                 lookup: std::collections::BTreeMap::new(),
                 attributes: std::collections::BTreeMap::new(),
@@ -637,7 +649,7 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                                     });
                                 }
                             }
-                            "not_empty" if is_readable => {
+                            "nonempty" if is_readable => {
                                 if parser::check_vec_type(&type_name)
                                     || matches!(type_name.as_str(), "String" | "Map")
                                 {
@@ -1059,15 +1071,181 @@ pub fn derive_model_hooks(item: TokenStream) -> TokenStream {
 /// Derives the [`Model`](zino_core::model::Model) trait.
 #[proc_macro_derive(Model)]
 pub fn derive_model(item: TokenStream) -> TokenStream {
+    // Reserved fields
+    const RESERVED_FIELDS: [&str; 4] = ["created_at", "updated_at", "version", "edition"];
+
     // Input
     let input = parse_macro_input!(item as DeriveInput);
 
-    // Parsing field attrs
+    // Model name
     let name = input.ident;
 
+    // Parsing field attrs
+    let mut field_constructors = Vec::new();
+    let mut field_setters = Vec::new();
+    if let Data::Struct(data) = input.data
+        && let Fields::Named(fields) = data.fields
+    {
+        for field in fields.named.into_iter() {
+            let mut type_name = parser::get_type_name(&field.ty);
+            if let Some(ident) = field.ident
+                && !type_name.is_empty()
+            {
+                let mut name = ident.to_string();
+                let mut enable_setter = true;
+                for attr in field.attrs.iter() {
+                    let arguments = parser::parse_schema_attr(attr);
+                    for (key, value) in arguments.into_iter() {
+                        match key.as_str() {
+                            "column_name" => {
+                                if let Some(value) = value {
+                                    name = value;
+                                }
+                            }
+                            "column_type" => {
+                                if let Some(value) = value {
+                                    type_name = value;
+                                }
+                            }
+                            "constructor" => {
+                                if let Some(value) = value
+                                    && let Some((cons_name, cons_fn)) = value.split_once("::")
+                                {
+                                    let cons_name_ident = format_ident!("{}", cons_name);
+                                    let cons_fn_ident = format_ident!("{}", cons_fn);
+                                    let constructor = if type_name == "String" {
+                                        quote! {
+                                            model.#ident = <#cons_name_ident>::#cons_fn_ident().to_string();
+                                        }
+                                    } else {
+                                        quote! {
+                                            model.#ident = <#cons_name_ident>::#cons_fn_ident().into();
+                                        }
+                                    };
+                                    field_constructors.push(constructor);
+                                }
+                            }
+                            "readonly" => {
+                                enable_setter = false;
+                            }
+                            _ => (),
+                        }
+                    }
+                }
+                if enable_setter && !RESERVED_FIELDS.contains(&name.as_str()) {
+                    let setter = if type_name == "String" {
+                        if name == "password" {
+                            quote! {
+                                if let Some(password) = data.parse_string("password") {
+                                    use zino_core::orm::ModelHelper;
+                                    match Self::encrypt_password(&password) {
+                                        Ok(password) => self.password = password,
+                                        Err(err) => validation.record_fail("password", err),
+                                    }
+                                }
+                            }
+                        } else {
+                            quote! {
+                                if let Some(value) = data.parse_string(#name) {
+                                    self.#ident = value.into_owned();
+                                }
+                            }
+                        }
+                    } else if type_name == "Vec<String>" {
+                        quote! {
+                            if let Some(values) = data.parse_str_array(#name) {
+                                self.#ident = values.into_iter().map(|s| s.to_owned()).collect();
+                            }
+                        }
+                    } else if type_name == "Option<String>" {
+                        quote! {
+                            if let Some(value) = data.parse_string(#name) {
+                                self.#ident = Some(value.into_owned());
+                            }
+                        }
+                    } else if type_name == "Map" {
+                        quote! {
+                            if let Some(values) = data.parse_object(#name) {
+                                self.#ident = values.clone();
+                            }
+                        }
+                    } else if parser::check_vec_type(&type_name) {
+                        quote! {
+                            if let Some(values) = data.parse_array(#name) {
+                                self.#ident = values;
+                            }
+                        }
+                    } else if let Some(type_generics) = parser::parse_option_type(&type_name) {
+                        let parser_ident = format_ident!("parse_{}", type_generics.to_lowercase());
+                        quote! {
+                            if let Some(result) = data.#parser_ident(#name) {
+                                match result {
+                                    Ok(value) => self.#ident = Some(value),
+                                    Err(err) => {
+                                        let raw_value = data.parse_string(#name);
+                                        let raw_value_str = raw_value
+                                            .as_deref()
+                                            .unwrap_or_default();
+                                        let message = format!("{err}: `{raw_value_str}`");
+                                        validation.record(#name, message);
+                                    },
+                                }
+                            }
+                        }
+                    } else {
+                        let parser_ident = format_ident!("parse_{}", type_name.to_lowercase());
+                        quote! {
+                            if let Some(result) = data.#parser_ident(#name) {
+                                match result {
+                                    Ok(value) => self.#ident = value,
+                                    Err(err) => {
+                                        let raw_value = data.parse_string(#name);
+                                        let raw_value_str = raw_value
+                                            .as_deref()
+                                            .unwrap_or_default();
+                                        let message = format!("{err}: `{raw_value_str}`");
+                                        validation.record(#name, message);
+                                    },
+                                }
+                            }
+                        }
+                    };
+                    field_setters.push(setter);
+                }
+            }
+        }
+    }
+
     // Output
+    let model_constructor = if field_constructors.is_empty() {
+        quote! { Self::default() }
+    } else {
+        quote! {
+            let mut model = Self::default();
+            #(#field_constructors)*
+            model
+        }
+    };
     let output = quote! {
-        impl zino_core::model::Model for #name {}
+        use zino_core::request::Validation;
+
+        impl zino_core::model::Model for #name {
+            #[inline]
+            fn new() -> Self {
+                #model_constructor
+            }
+
+            #[must_use]
+            fn read_map(&mut self, data: &Map) -> Validation {
+                let mut validation = Validation::new();
+                if data.is_empty() {
+                    validation.record("data", "should be nonempty");
+                } else {
+                    #(#field_setters)*
+                }
+                validation
+            }
+        }
     };
 
     TokenStream::from(output)

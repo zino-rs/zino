@@ -358,6 +358,7 @@ where
         query.allow_fields(&["parent_id"]);
         query.add_filter("parent_id", Map::from_entry("$in", values));
         query.add_filter("status", Map::from_entry("$ne", "Deleted"));
+        query.set_sort_order("parent_id", true);
         query.set_sort_order("created_at", true);
         query.set_limit(0);
 

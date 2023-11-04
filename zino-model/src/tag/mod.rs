@@ -41,7 +41,7 @@ pub struct Tag {
     // Info fields.
     #[schema(not_null)]
     category: String,
-    #[schema(reference = "Tag")]
+    #[schema(snapshot, reference = "Tag")]
     parent_id: Option<Uuid>, // tag.id, tag.namespace = {tag.namespace}, tag.category = {tag.category}
 
     // Extensions.

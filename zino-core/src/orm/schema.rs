@@ -32,7 +32,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Returns the primary key.
     fn primary_key(&self) -> &Self::PrimaryKey;
 
-    /// Returns a reference to the [Avro schema](apache_avro::schema::Schema).
+    /// Returns a reference to the Avro schema.
     fn schema() -> &'static apache_avro::Schema;
 
     /// Returns a reference to the columns.

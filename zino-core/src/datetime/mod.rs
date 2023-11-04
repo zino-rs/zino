@@ -487,8 +487,14 @@ impl FromStr for DateTime {
             let dt = s.parse::<NaiveDateTime>()?;
             let offset = Local.offset_from_utc_datetime(&dt);
             Ok(LocalDateTime::from_naive_utc_and_offset(dt, offset).into())
-        } else {
+        } else if s.contains('+') || s.contains(" -") {
             LocalDateTime::from_str(s).map(Self)
+        } else if s.ends_with('Z') {
+            let dt = s.parse::<chrono::DateTime<Utc>>()?;
+            Ok(dt.with_timezone(&Local).into())
+        } else {
+            let dt = [s, "Z"].join("").parse::<chrono::DateTime<Utc>>()?;
+            Ok(dt.with_timezone(&Local).into())
         }
     }
 }

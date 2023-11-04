@@ -419,9 +419,8 @@ where
         if let Some(version) = data.get_u64("version")
             && model.version() != version
         {
-            return Err(Error::new(
-                "409 Conflict: there is a version control conflict",
-            ));
+            let message = format!("409 Conflict: there is a version conflict for `{version}`");
+            return Err(Error::new(message));
         }
         Self::before_validation(data, extension.as_ref()).await?;
 

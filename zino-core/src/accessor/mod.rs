@@ -40,7 +40,7 @@
 //! | `webhdfs`     | WebHDFS services.                        | `accessor-webhdfs`    |
 //!
 
-use crate::{extension::TomlTableExt, state::State};
+use crate::{application::StaticRecord, extension::TomlTableExt, state::State};
 use opendal::{
     layers::{MetricsLayer, RetryLayer, TracingLayer},
     services, Error,
@@ -663,23 +663,21 @@ impl GlobalAccessor {
 
     /// Gets the operator for the specific storage service.
     #[inline]
-    pub fn get(name: &'static str) -> Option<&'static Operator> {
-        GLOBAL_ACCESSOR
-            .iter()
-            .find_map(|(key, operator)| (key == &name).then_some(operator))
+    pub fn get(name: &str) -> Option<&'static Operator> {
+        GLOBAL_ACCESSOR.find(name)
     }
 }
 
 /// Global storage accessor.
-static GLOBAL_ACCESSOR: LazyLock<Vec<(&'static str, Operator)>> = LazyLock::new(|| {
-    let mut operators = Vec::new();
+static GLOBAL_ACCESSOR: LazyLock<StaticRecord<Operator>> = LazyLock::new(|| {
+    let mut operators = StaticRecord::new();
     if let Some(accessors) = State::shared().config().get_array("accessor") {
         for accessor in accessors.iter().filter_map(|v| v.as_table()) {
             let scheme = accessor.get_str("scheme").unwrap_or("unkown");
             let name = accessor.get_str("name").unwrap_or(scheme);
             let operator = GlobalAccessor::try_new_operator(scheme, accessor)
                 .unwrap_or_else(|err| panic!("fail to build `{scheme}` operator: {err}"));
-            operators.push((name, operator));
+            operators.push_entry(name, operator);
         }
     }
     operators

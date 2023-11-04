@@ -2,6 +2,15 @@ use syn::{
     punctuated::Punctuated, Attribute, Expr, GenericArgument, Lit, Meta, PathArguments, Token, Type,
 };
 
+/// Parses the `Option<T>` type.
+#[inline]
+pub(super) fn parse_option_type(type_name: &str) -> Option<&str> {
+    type_name
+        .split_once('<')
+        .filter(|&(t, s)| t == "Option" && s.ends_with('>'))
+        .map(|(_, s)| s.trim_end_matches('>'))
+}
+
 /// Returns `true` if the type is `Vec<T>`.
 #[inline]
 pub(super) fn check_vec_type(type_name: &str) -> bool {

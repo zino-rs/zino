@@ -1,16 +1,16 @@
 use serde::{Deserialize, Serialize};
 use zino::prelude::*;
-use zino_derive::{ModelAccessor, ModelHooks, Schema};
+use zino_derive::{Model, ModelAccessor, ModelHooks, Schema};
 
 /// The `tag` model.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor, ModelHooks)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor, ModelHooks, Model)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
 pub struct Tag {
     // Basic fields.
-    #[schema(primary_key, auto_increment, readonly)]
+    #[schema(primary_key, auto_increment, readonly, comment = "Tag ID")]
     id: i64,
-    #[schema(not_null, index_type = "text")]
+    #[schema(not_null, index_type = "text", comment = "Tag name")]
     name: String,
     #[schema(default_value = "Active", index_type = "hash")]
     status: String,
@@ -18,9 +18,9 @@ pub struct Tag {
     description: String,
 
     // Info fields.
-    #[schema(not_null)]
+    #[schema(not_null, comment = "Tag category")]
     category: String,
-    #[schema(reference = "Tag")]
+    #[schema(snapshot, reference = "Tag", comment = "Optional parent tag")]
     parent_id: Option<i64>,
 
     // Extensions.
@@ -33,32 +33,4 @@ pub struct Tag {
     #[schema(default_value = "now", index_type = "btree")]
     updated_at: DateTime,
     version: u64,
-}
-
-impl Model for Tag {
-    fn read_map(&mut self, data: &Map) -> Validation {
-        let mut validation = Validation::new();
-        if let Some(result) = data.parse_i64("id") {
-            match result {
-                Ok(id) => self.id = id,
-                Err(err) => validation.record_fail("id", err),
-            }
-        }
-        if let Some(name) = data.parse_string("name") {
-            self.name = name.into_owned();
-        }
-        if let Some(description) = data.parse_string("description") {
-            self.description = description.into_owned();
-        }
-        if let Some(category) = data.parse_string("category") {
-            self.category = category.into_owned();
-        }
-        if let Some(result) = data.parse_i64("parent_id") {
-            match result {
-                Ok(parent_id) => self.parent_id = Some(parent_id),
-                Err(err) => validation.record_fail("parent_id", err),
-            }
-        }
-        validation
-    }
 }

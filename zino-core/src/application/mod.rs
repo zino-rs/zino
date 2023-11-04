@@ -19,10 +19,12 @@ use utoipa::openapi::{OpenApi, OpenApiBuilder};
 mod metrics_exporter;
 mod secret_key;
 mod server_tag;
+mod static_record;
 mod system_monitor;
 mod tracing_subscriber;
 
 pub use server_tag::ServerTag;
+pub use static_record::StaticRecord;
 
 pub(crate) mod http_client;
 
@@ -40,7 +42,7 @@ pub trait Application {
     fn register_with(self, server_tag: ServerTag, routes: Self::Routes) -> Self;
 
     /// Runs the application.
-    fn run(self, async_jobs: Vec<(&'static str, AsyncCronJob)>);
+    fn run(self, async_jobs: StaticRecord<AsyncCronJob>);
 
     /// Boots the application. It also initializes the required directories
     /// and setups the default secret key, the tracing subscriber,
@@ -197,7 +199,7 @@ pub trait Application {
     }
 
     /// Spawns a new thread to run cron jobs.
-    fn spawn(self, jobs: Vec<(&'static str, CronJob)>) -> Self
+    fn spawn(self, jobs: StaticRecord<CronJob>) -> Self
     where
         Self: Sized,
     {

@@ -22,6 +22,9 @@ pub struct Column<'a> {
     /// Reference.
     #[serde(skip_serializing_if = "Option::is_none")]
     reference: Option<Reference<'a>>,
+    /// Comment.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    comment: Option<&'a str>,
 }
 
 impl<'a> Column<'a> {
@@ -34,6 +37,7 @@ impl<'a> Column<'a> {
             default_value: None,
             index_type: None,
             reference: None,
+            comment: None,
         }
     }
 
@@ -53,6 +57,12 @@ impl<'a> Column<'a> {
     #[inline]
     pub fn set_reference(&mut self, reference: Reference<'a>) {
         self.reference = Some(reference);
+    }
+
+    /// Sets the comment.
+    #[inline]
+    pub fn set_comment(&mut self, comment: &'a str) {
+        self.comment = (!comment.is_empty()).then_some(comment);
     }
 
     /// Returns the name.
@@ -98,7 +108,13 @@ impl<'a> Column<'a> {
         self.reference.as_ref()
     }
 
-    /// Returns the [Avro schema](apache_avro::schema::Schema).
+    /// Returns the comment.
+    #[inline]
+    pub fn comment(&self) -> Option<&'a str> {
+        self.comment
+    }
+
+    /// Returns the Avro schema.
     pub fn schema(&self) -> Schema {
         let type_name = self.type_name;
         match type_name {
@@ -141,7 +157,7 @@ impl<'a> Column<'a> {
         });
         RecordField {
             name: self.name().to_owned(),
-            doc: None,
+            doc: self.comment().map(|s| s.to_owned()),
             aliases: None,
             default: default_value,
             schema,

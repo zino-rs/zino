@@ -8,7 +8,7 @@ use image::{error::ImageError, io::Reader};
 use std::{fmt::Display, fs, marker::PhantomData, str::FromStr, time::Duration};
 use tokio::runtime::Builder;
 use zino_core::{
-    application::{Application, ServerTag},
+    application::{Application, ServerTag, StaticRecord},
     extension::TomlTableExt,
     schedule::{AsyncCronJob, Job, JobScheduler},
     Map,
@@ -47,7 +47,7 @@ where
         self
     }
 
-    fn run(self, async_jobs: Vec<(&'static str, AsyncCronJob)>) {
+    fn run(self, async_jobs: StaticRecord<AsyncCronJob>) {
         let runtime = Builder::new_multi_thread()
             .thread_keep_alive(Duration::from_secs(10))
             .thread_stack_size(2 * 1024 * 1024)

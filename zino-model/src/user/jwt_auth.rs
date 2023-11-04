@@ -110,10 +110,15 @@ where
         let mut user: Map = Self::find_one(&query)
             .await?
             .ok_or_else(|| Error::new("404 Not Found: invalid user account or password"))?;
-        let encrypted_password = user.get_str(Self::PASSWORD_FIELD).unwrap_or_default();
+        let encrypted_password = user
+            .get_str(Self::PASSWORD_FIELD)
+            .ok_or_else(|| Error::new("404 Not Found: the user password is absent"))?;
         if Self::verify_password(passowrd, encrypted_password)? {
-            let user_id = user.get_str(Self::PRIMARY_KEY_NAME).unwrap_or_default();
-            let mut claims = JwtClaims::new(user_id);
+            // Cann't use `get_str` because the primary key may be an integer
+            let user_id = user
+                .parse_string(Self::PRIMARY_KEY_NAME)
+                .ok_or_else(|| Error::new("404 Not Found: the user id is absent"))?;
+            let mut claims = JwtClaims::new(user_id.as_ref());
 
             let user_id = user_id.parse()?;
             if let Some(role_field) = Self::ROLE_FIELD

@@ -24,7 +24,7 @@ use tower_http::{
 };
 use utoipa_rapidoc::RapiDoc;
 use zino_core::{
-    application::{Application, ServerTag},
+    application::{Application, ServerTag, StaticRecord},
     extension::TomlTableExt,
     response::{FullResponse, Response},
     schedule::{AsyncCronJob, Job, JobScheduler},
@@ -52,7 +52,7 @@ impl Application for AxumCluster {
         self
     }
 
-    fn run(self, async_jobs: Vec<(&'static str, AsyncCronJob)>) {
+    fn run(self, async_jobs: StaticRecord<AsyncCronJob>) {
         let runtime = Builder::new_multi_thread()
             .thread_keep_alive(Duration::from_secs(10))
             .thread_stack_size(2 * 1024 * 1024)

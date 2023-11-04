@@ -36,7 +36,7 @@ impl<'a> Translation<'a> {
                     None
                 }
             })
-            .collect::<Vec<_>>();
+            .collect();
         Self { mappings }
     }
 
