@@ -188,8 +188,15 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                         if let Some((type_name, type_fn)) = value.split_once("::") {
                             let type_name_ident = format_ident!("{}", type_name);
                             let type_fn_ident = format_ident!("{}", type_fn);
+                            extra_attributes.push(quote! {
+                                let value = <#type_name_ident>::#type_fn_ident();
+                                column.set_extra_attribute("default", value);
+                            });
                             quote! { Some(<#type_name_ident>::#type_fn_ident().into()) }
                         } else {
+                            extra_attributes.push(quote! {
+                                column.set_extra_attribute("default", #value);
+                            });
                             quote! { Some(#value) }
                         }
                     } else {

@@ -32,7 +32,6 @@ pub use visibility::UserVisibility;
 
 /// The `user` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
-#[serde(rename_all = "snake_case")]
 #[serde(default)]
 pub struct User {
     // Basic fields.

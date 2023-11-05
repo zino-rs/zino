@@ -22,7 +22,6 @@ use zino_core::auth::UserSession;
 
 /// The `source` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
-#[serde(rename_all = "snake_case")]
 #[serde(default)]
 pub struct Source {
     // Basic fields.

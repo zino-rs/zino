@@ -9,7 +9,7 @@ use axum::{
 use std::{
     convert::Infallible, fs, net::SocketAddr, path::PathBuf, sync::LazyLock, time::Duration,
 };
-use tokio::runtime::Builder;
+use tokio::{runtime::Builder, signal};
 use tower::{
     timeout::{error::Elapsed, TimeoutLayer},
     ServiceBuilder,
@@ -242,13 +242,38 @@ impl Application for AxumCluster {
                             }))
                             .layer(TimeoutLayer::new(request_timeout)),
                     );
-                Server::bind(&addr).serve(app.into_make_service_with_connect_info::<SocketAddr>())
+                Server::bind(&addr)
+                    .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+                    .with_graceful_shutdown(shutdown_signal())
             });
             for result in futures::future::join_all(servers).await {
                 if let Err(err) = result {
-                    tracing::error!("server error: {err}");
+                    tracing::error!("axum server error: {err}");
                 }
             }
         });
     }
+}
+
+/// Handles the graceful shutdown.
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        if let Err(err) = signal::ctrl_c().await {
+            tracing::error!("fail to install the `Ctrl+C` handler: {err}");
+        }
+    };
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("fail to install the terminate signal handler")
+            .recv()
+            .await;
+    };
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    };
+    tracing::warn!("signal received, starting graceful shutdown");
 }

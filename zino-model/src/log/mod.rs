@@ -19,7 +19,6 @@ use zino_core::auth::UserSession;
 
 /// The `log` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
-#[serde(rename_all = "snake_case")]
 #[serde(default)]
 pub struct Log {
     // Basic fields.

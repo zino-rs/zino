@@ -1,7 +1,7 @@
 [package]
 name = "zino"
 description = "Next-generation framework for composable applications in Rust."
-version = "0.14.0"
+version = "0.14.1"
 rust-version = "1.73"
 edition = "2021"
 license = "MIT"
@@ -76,6 +76,7 @@ features = [
     "compress-brotli",
     "compress-gzip",
     "cookies",
+    "http2",
     "secure-cookies",
 ]
 
@@ -88,6 +89,7 @@ version = "0.6.20"
 optional = true
 default-features = false
 features = [
+    "http2",
     "matched-path",
     "original-uri",
     "query",
@@ -125,9 +127,14 @@ version = "0.12.1"
 optional = true
 
 [dependencies.tokio]
-version = "1.32.0"
+version = "1.33.0"
 optional = true
-features = ["parking_lot", "rt-multi-thread"]
+features = [
+    "macros",
+    "parking_lot",
+    "rt-multi-thread",
+    "signal",
+]
 
 [dependencies.tokio-stream]
 version = "0.1.14"
@@ -168,4 +175,4 @@ optional = true
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.15.0"
+version = "0.15.1"

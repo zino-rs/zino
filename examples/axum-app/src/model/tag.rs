@@ -6,7 +6,6 @@ use zino_derive::{Model, ModelAccessor, ModelHooks, Schema};
 #[derive(
     Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor, ModelHooks, Model,
 )]
-#[serde(rename_all = "snake_case")]
 #[serde(default)]
 pub struct Tag {
     // Basic fields.

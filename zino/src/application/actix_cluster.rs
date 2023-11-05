@@ -8,7 +8,7 @@ use actix_web::{
     web::{self, FormConfig, JsonConfig, PayloadConfig},
     App, HttpServer, Responder,
 };
-use std::{fs, path::PathBuf};
+use std::{fs, path::PathBuf, time::Duration};
 use utoipa_rapidoc::RapiDoc;
 use zino_core::{
     application::{Application, ServerTag, StaticRecord},
@@ -79,7 +79,9 @@ impl Application for ActixCluster {
                 let default_public_dir = project_dir.join("public");
                 let mut public_route_prefix = "/public";
                 let mut public_dir = PathBuf::new();
+                let mut backlog = 2048; // Maximum number of pending connections
                 let mut body_limit = 100 * 1024 * 1024; // 100MB
+                let mut request_timeout = Duration::from_secs(30); // 30 seconds
                 if let Some(config) = app_state.get_config("server") {
                     if let Some(dir) = config.get_str("page-dir") {
                         public_route_prefix = "/page";
@@ -92,8 +94,14 @@ impl Application for ActixCluster {
                     if let Some(route_prefix) = config.get_str("public-route-prefix") {
                         public_route_prefix = route_prefix;
                     }
+                    if let Some(value) = config.get_u32("backlog") {
+                        backlog = value;
+                    }
                     if let Some(limit) = config.get_usize("body-limit") {
                         body_limit = limit;
+                    }
+                    if let Some(timeout) = config.get_duration("request-timeout") {
+                        request_timeout = timeout;
                     }
                 } else {
                     public_dir = default_public_dir;
@@ -179,13 +187,15 @@ impl Application for ActixCluster {
                         .wrap(middleware::cors_middleware())
                         .wrap(middleware::ETagFinalizer::default())
                 })
-                .bind(addr)
+                .backlog(backlog)
+                .client_request_timeout(request_timeout)
+                .bind_auto_h2c(addr)
                 .unwrap_or_else(|err| panic!("fail to create an HTTP server: {err}"))
                 .run()
             });
             for result in futures::future::join_all(servers).await {
                 if let Err(err) = result {
-                    tracing::error!("server error: {err}");
+                    tracing::error!("actix server error: {err}");
                 }
             }
         });

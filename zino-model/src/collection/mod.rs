@@ -23,7 +23,6 @@ use zino_core::auth::UserSession;
 
 /// The `collection` model.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
-#[serde(rename_all = "snake_case")]
 #[serde(default)]
 pub struct Collection {
     // Basic fields.

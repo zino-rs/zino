@@ -8,7 +8,6 @@ use zino_model::user::JwtAuthService;
 #[derive(
     Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor, ModelHooks, Model,
 )]
-#[serde(rename_all = "snake_case")]
 #[serde(default)]
 pub struct User {
     // Basic fields.

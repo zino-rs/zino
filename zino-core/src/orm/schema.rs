@@ -1,5 +1,5 @@
 use super::{
-    column::column_def, mutation::MutationExt, query::QueryExt, ConnectionPool, DatabaseDriver,
+    column::ColumnExt, mutation::MutationExt, query::QueryExt, ConnectionPool, DatabaseDriver,
     DatabaseRow, ModelHelper,
 };
 use crate::{
@@ -161,7 +161,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let table_name = Self::table_name();
         let columns = Self::columns()
             .iter()
-            .map(|col| column_def(col, primary_key_name))
+            .map(|col| col.field_definition(primary_key_name))
             .collect::<Vec<_>>()
             .join(",\n  ");
         let sql = format!("CREATE TABLE IF NOT EXISTS {table_name} (\n  {columns}\n);");
@@ -237,7 +237,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     );
                 }
             } else {
-                let column_definition = column_def(col, primary_key_name);
+                let column_definition = col.field_definition(primary_key_name);
                 let sql = format!("ALTER TABLE {table_name} ADD COLUMN {column_definition};");
                 sqlx::query(&sql).execute(pool).await?;
                 tracing::warn!(
@@ -632,10 +632,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let primary_key = self.primary_key();
         let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
-            let column_type = Self::primary_key_column().column_type();
+            let type_annotation = Self::primary_key_column().type_annotation();
             format!(
                 "DELETE FROM {table_name} \
-                    WHERE {primary_key_name} = ({placeholder})::{column_type};"
+                    WHERE {primary_key_name} = ({placeholder}){type_annotation};"
             )
         } else {
             format!("DELETE FROM {table_name} WHERE {primary_key_name} = {placeholder};")
@@ -1350,10 +1350,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let projection = query.format_projection();
         let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
-            let column_type = Self::primary_key_column().column_type();
+            let type_annotation = Self::primary_key_column().type_annotation();
             format!(
                 "SELECT {projection} FROM {table_name} \
-                    WHERE {primary_key_name} = ({placeholder})::{column_type};"
+                    WHERE {primary_key_name} = ({placeholder}){type_annotation};"
             )
         } else {
             format!(
@@ -1386,10 +1386,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let projection = query.format_projection();
         let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
-            let column_type = Self::primary_key_column().column_type();
+            let type_annotation = Self::primary_key_column().type_annotation();
             format!(
                 "SELECT {projection} FROM {table_name} \
-                    WHERE {primary_key_name} = ({placeholder})::{column_type};"
+                    WHERE {primary_key_name} = ({placeholder}){type_annotation};"
             )
         } else {
             format!(
