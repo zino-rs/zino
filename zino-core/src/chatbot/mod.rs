@@ -56,7 +56,7 @@ static GLOBAL_CHATBOT_SERVICES: LazyLock<StaticRecord<Chatbot>> = LazyLock::new(
             let name = chatbot.get_str("name").unwrap_or(service);
             let chatbot_service = Chatbot::try_new(service, chatbot)
                 .unwrap_or_else(|err| panic!("fail to connect chatbot `{name}`: {err}"));
-            chatbot_services.push_entry(name, chatbot_service);
+            chatbot_services.add(name, chatbot_service);
         }
     }
     chatbot_services

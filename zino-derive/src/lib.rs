@@ -178,6 +178,9 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                 if primary_key_name == name {
                     primary_key_type = type_name.clone();
                     not_null = true;
+                    extra_attributes.push(quote! {
+                        column.set_extra_attribute("primary_key", true);
+                    });
                 } else if parser::check_option_type(&type_name) {
                     not_null = false;
                 } else if INTEGER_TYPES.contains(&type_name.as_str()) {
@@ -1110,7 +1113,7 @@ pub fn derive_decode_row(item: TokenStream) -> TokenStream {
                 #(#decode_model_fields)*
                 if cfg!(feature = "orm-mysql") {
                     #(#mysql_decode_model_fields)*
-                } else {
+                } else if cfg!(feature = "orm-postgres") {
                     #(#postgres_decode_model_fields)*
                 }
                 Ok(model)

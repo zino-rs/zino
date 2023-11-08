@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     error::Error,
-    extension::JsonObjectExt,
+    extension::{JsonObjectExt, JsonValueExt},
     model::{Column, DecodeRow, EncodeColumn, ModelHooks, Mutation, Query, QueryContext},
     BoxFuture, JsonValue, Map, Uuid,
 };
@@ -1171,7 +1171,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut query = sqlx::query(&sql);
         let mut arguments = Vec::with_capacity(values.len());
         for value in values {
-            query = query.bind(value.to_string());
+            query = query.bind(value.to_string_unquoted());
             arguments.push(value.to_string());
         }
 
@@ -1195,7 +1195,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut query = sqlx::query(&sql);
         let mut arguments = Vec::with_capacity(values.len());
         for value in values {
-            query = query.bind(value.to_string());
+            query = query.bind(value.to_string_unquoted());
             arguments.push(value.to_string());
         }
 
@@ -1238,7 +1238,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut query = sqlx::query(&sql);
         let mut arguments = Vec::with_capacity(values.len());
         for value in values {
-            query = query.bind(value.to_string());
+            query = query.bind(value.to_string_unquoted());
             arguments.push(value.to_string());
         }
 
@@ -1279,7 +1279,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut query = sqlx::query_scalar(&sql);
         let mut arguments = Vec::with_capacity(values.len());
         for value in values {
-            query = query.bind(value.to_string());
+            query = query.bind(value.to_string_unquoted());
             arguments.push(value.to_string());
         }
 
@@ -1302,7 +1302,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut query = sqlx::query(&sql);
         let mut arguments = Vec::with_capacity(values.len());
         for value in values {
-            query = query.bind(value.to_string());
+            query = query.bind(value.to_string_unquoted());
             arguments.push(value.to_string());
         }
 

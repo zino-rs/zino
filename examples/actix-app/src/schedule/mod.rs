@@ -4,13 +4,13 @@ mod job;
 
 pub fn jobs() -> StaticRecord<CronJob> {
     let mut record = StaticRecord::new();
-    record.push_entry("0/15 * * * * *", job::every_15s as CronJob);
-    record.push_entry("0/20 * * * * *", job::every_20s as CronJob);
+    record.add("0/15 * * * * *", job::every_15s as CronJob);
+    record.add("0/20 * * * * *", job::every_20s as CronJob);
     record
 }
 
 pub fn async_jobs() -> StaticRecord<AsyncCronJob> {
     let mut record = StaticRecord::new();
-    record.push_entry("0 0 * * * *", job::every_hour as AsyncCronJob);
+    record.add("0 0 * * * *", job::every_hour as AsyncCronJob);
     record
 }

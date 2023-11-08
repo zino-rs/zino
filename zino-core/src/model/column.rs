@@ -86,6 +86,12 @@ impl<'a> Column<'a> {
         self.type_name
     }
 
+    /// Returns `true` if the column is the primary key.
+    #[inline]
+    pub fn is_primary_key(&self) -> bool {
+        self.has_attribute("primary_key")
+    }
+
     /// Returns `true` if the column can not be null.
     #[inline]
     pub fn is_not_null(&self) -> bool {

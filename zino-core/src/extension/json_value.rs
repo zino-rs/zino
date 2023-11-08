@@ -14,7 +14,7 @@ use std::{
 
 /// Extension trait for [`serde_json::Value`].
 pub trait JsonValueExt {
-    /// Returns `true` if the JSON value can be ignorable.
+    /// Returns `true` if the JSON value is ignorable.
     fn is_ignorable(&self) -> bool;
 
     /// If the `Value` is an integer, represent it as `u8` if possible.
@@ -115,6 +115,9 @@ pub trait JsonValueExt {
 
     /// Returns a pretty-printed String of JSON.
     fn to_string_pretty(&self) -> String;
+
+    /// Returns a unquoted String of JSON.
+    fn to_string_unquoted(&self) -> String;
 
     /// Attempts to convert the JSON value to the CSV bytes.
     fn to_csv(&self, buffer: Vec<u8>) -> Result<Vec<u8>, csv::Error>;
@@ -320,6 +323,12 @@ impl JsonValueExt for JsonValue {
     #[inline]
     fn to_string_pretty(&self) -> String {
         format!("{self:#}")
+    }
+
+    #[inline]
+    fn to_string_unquoted(&self) -> String {
+        self.as_str().map(|s| s.to_owned())
+            .unwrap_or_else(|| self.to_string())
     }
 
     fn to_csv(&self, buffer: Vec<u8>) -> Result<Vec<u8>, csv::Error> {

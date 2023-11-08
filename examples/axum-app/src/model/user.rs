@@ -30,7 +30,7 @@ pub struct User {
     mobile: String,
     email: String,
     avatar: String,
-    #[schema(snapshot, nonempty, min_items = 1, comment = "User roles")]
+    #[schema(snapshot, nonempty, comment = "User roles")]
     roles: Vec<String>,
     #[schema(reference = "Tag", comment = "User tags")]
     tags: Vec<i64>,

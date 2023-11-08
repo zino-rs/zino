@@ -677,7 +677,7 @@ static GLOBAL_ACCESSOR: LazyLock<StaticRecord<Operator>> = LazyLock::new(|| {
             let name = accessor.get_str("name").unwrap_or(scheme);
             let operator = GlobalAccessor::try_new_operator(scheme, accessor)
                 .unwrap_or_else(|err| panic!("fail to build `{scheme}` operator: {err}"));
-            operators.push_entry(name, operator);
+            operators.add(name, operator);
         }
     }
     operators

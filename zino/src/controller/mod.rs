@@ -388,11 +388,14 @@ where
     }
 
     async fn definition(req: Self::Request) -> Self::Result {
-        let columns = Self::columns();
         let mut definition = Map::new();
+        let columns = Self::columns();
         let required_fields = columns
             .iter()
-            .filter_map(|col| col.is_not_null().then(|| col.name()))
+            .filter_map(|col| {
+                (col.is_not_null() && !col.is_primary_key() || col.has_attribute("nonempty"))
+                    .then(|| col.name())
+            })
             .collect::<Vec<_>>();
         definition.upsert("type", "object");
         definition.upsert("required", required_fields);

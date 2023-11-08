@@ -14,7 +14,7 @@ impl<T> StaticRecord<T> {
 
     /// Appends an entry to the back of a collection.
     #[inline]
-    pub fn push_entry(&mut self, key: &'static str, value: T) {
+    pub fn add(&mut self, key: &'static str, value: T) {
         self.inner.push((key, value));
     }
 

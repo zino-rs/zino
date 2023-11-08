@@ -124,7 +124,7 @@ static GLOBAL_CONNECTOR: LazyLock<StaticRecord<DataSource>> = LazyLock::new(|| {
             let name = connector.get_str("name").unwrap_or(data_source_type);
             let data_source = DataSource::try_new_data_source(connector)
                 .unwrap_or_else(|err| panic!("fail to connect data source `{name}`: {err}"));
-            data_sources.push_entry(name, data_source);
+            data_sources.add(name, data_source);
         }
     }
     data_sources
