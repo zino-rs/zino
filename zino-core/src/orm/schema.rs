@@ -1172,7 +1172,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut arguments = Vec::with_capacity(values.len());
         for value in values {
             query = query.bind(value.to_string_unquoted());
-            arguments.push(value.to_string());
+            arguments.push(value.to_string_unquoted());
         }
 
         let mut ctx = Self::before_scan(&sql).await?;
@@ -1196,7 +1196,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut arguments = Vec::with_capacity(values.len());
         for value in values {
             query = query.bind(value.to_string_unquoted());
-            arguments.push(value.to_string());
+            arguments.push(value.to_string_unquoted());
         }
 
         let mut ctx = Self::before_scan(&sql).await?;
@@ -1239,7 +1239,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut arguments = Vec::with_capacity(values.len());
         for value in values {
             query = query.bind(value.to_string_unquoted());
-            arguments.push(value.to_string());
+            arguments.push(value.to_string_unquoted());
         }
 
         let mut ctx = Self::before_scan(&sql).await?;
@@ -1280,7 +1280,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut arguments = Vec::with_capacity(values.len());
         for value in values {
             query = query.bind(value.to_string_unquoted());
-            arguments.push(value.to_string());
+            arguments.push(value.to_string_unquoted());
         }
 
         let mut ctx = Self::before_scan(&sql).await?;
@@ -1303,7 +1303,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut arguments = Vec::with_capacity(values.len());
         for value in values {
             query = query.bind(value.to_string_unquoted());
-            arguments.push(value.to_string());
+            arguments.push(value.to_string_unquoted());
         }
 
         let mut ctx = Self::before_scan(&sql).await?;

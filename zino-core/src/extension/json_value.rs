@@ -14,7 +14,7 @@ use std::{
 
 /// Extension trait for [`serde_json::Value`].
 pub trait JsonValueExt {
-    /// Returns `true` if the JSON value is ignorable.
+    /// Returns `true` if the JSON value can be ignored.
     fn is_ignorable(&self) -> bool;
 
     /// If the `Value` is an integer, represent it as `u8` if possible.
@@ -327,7 +327,8 @@ impl JsonValueExt for JsonValue {
 
     #[inline]
     fn to_string_unquoted(&self) -> String {
-        self.as_str().map(|s| s.to_owned())
+        self.as_str()
+            .map(|s| s.to_owned())
             .unwrap_or_else(|| self.to_string())
     }
 

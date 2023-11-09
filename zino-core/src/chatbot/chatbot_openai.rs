@@ -7,7 +7,10 @@ use crate::{
 };
 use async_openai::{
     config::{Config, OpenAIConfig},
-    types::{ChatCompletionRequestMessageArgs, CreateChatCompletionRequestArgs, Role},
+    types::{
+        ChatCompletionRequestMessage, ChatCompletionRequestUserMessageArgs,
+        CreateChatCompletionRequestArgs, Role,
+    },
     Chat, Client,
 };
 use futures::StreamExt;
@@ -72,10 +75,11 @@ impl ChatbotService for OpenAiChatCompletion<OpenAIConfig> {
     }
 
     async fn try_send(&self, message: String, options: Option<Map>) -> Result<Vec<String>, Error> {
-        let request_message = ChatCompletionRequestMessageArgs::default()
+        let request_user_message = ChatCompletionRequestUserMessageArgs::default()
             .content(message)
             .role(Role::User)
             .build()?;
+        let request_message = ChatCompletionRequestMessage::User(request_user_message);
 
         let mut sampling_temperature = 0.5;
         let mut num_choices = 1;
