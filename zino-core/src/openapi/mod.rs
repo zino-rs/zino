@@ -300,6 +300,9 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
                             .trim_end_matches(".toml")
                             .to_owned()
                     });
+                let ignore_securities = openapi_config
+                    .get_array("securities")
+                    .is_some_and(|v| v.is_empty());
                 if let Some(endpoints) = openapi_config.get_array("endpoints") {
                     for endpoint in endpoints.iter().filter_map(|v| v.as_table()) {
                         let path = endpoint.get_str("path").unwrap_or("/");
@@ -308,7 +311,8 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
                             .unwrap_or_default()
                             .to_ascii_uppercase();
                         let path_item_type = parser::parse_path_item_type(&method);
-                        let operation = parser::parse_operation(&name, path, endpoint);
+                        let operation =
+                            parser::parse_operation(&name, path, endpoint, ignore_securities);
                         if let Some(item) = paths.get_mut(path) {
                             item.operations.insert(path_item_type, operation);
                         } else {

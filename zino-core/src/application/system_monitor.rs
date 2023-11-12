@@ -9,7 +9,7 @@ pub(super) fn refresh_and_retrieve() -> Map {
     refresh_system();
 
     // Reads the system.
-    let sys = GLOBAL_MONITOR.read();
+    let sys = SHARED_SYSTEM_MONITOR.read();
     let mut map = SYSTEM_INFO.clone();
 
     // Retrieves OS information.
@@ -94,7 +94,7 @@ pub(super) fn refresh_and_retrieve() -> Map {
 
 /// Refreshes the system.
 fn refresh_system() {
-    let mut sys = GLOBAL_MONITOR.write();
+    let mut sys = SHARED_SYSTEM_MONITOR.write();
     sys.refresh_cpu();
     sys.refresh_memory();
     sys.refresh_disks_list();
@@ -135,5 +135,6 @@ static SYSTEM_INFO: LazyLock<Map> = LazyLock::new(|| {
     map
 });
 
-/// Global system monitor.
-static GLOBAL_MONITOR: LazyLock<RwLock<System>> = LazyLock::new(|| RwLock::new(System::new()));
+/// Shared system monitor.
+static SHARED_SYSTEM_MONITOR: LazyLock<RwLock<System>> =
+    LazyLock::new(|| RwLock::new(System::new()));

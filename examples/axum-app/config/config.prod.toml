@@ -52,3 +52,5 @@ port = 9000
 
 [openapi]
 show-docs = true
+rapidoc-route = "/rapidoc"
+custom-html = "local/docs/rapidoc.html"

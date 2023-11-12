@@ -45,30 +45,7 @@ exporter = "prometheus"
 host = "127.0.0.1"
 port = 9000
 
-[[connector]]
-type = "arrow"
-name = "mock"
-root = "local/data/mock/"
-
-[[connector.tables]]
-type = "csv"
-name = "users"
-path = "users.csv"
-
-[[connector.tables]]
-type = "ndjson"
-name = "logs"
-url = "http://localhost:6080/public/data/logs.ndjson"
-
-[connector.tables.schema]
-timestamp = "string"
-level = "string"
-fields = { message = "string" }
-target = "string"
-span = { "http.method" = "string", "http.target" = "string", "http.status_code" = "int" }
-
-[connector.variables]
-app-name = "data-cube"
-
 [openapi]
 show-docs = true
+rapidoc-route = "/rapidoc"
+custom-html = "local/docs/rapidoc.html"

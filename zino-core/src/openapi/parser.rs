@@ -37,7 +37,12 @@ pub(super) fn parse_tag(name: &str, config: &Table) -> Tag {
 }
 
 /// Parses the operation.
-pub(super) fn parse_operation(name: &str, path: &str, config: &Table) -> Operation {
+pub(super) fn parse_operation(
+    name: &str,
+    path: &str,
+    config: &Table,
+    ignore_securities: bool,
+) -> Operation {
     let mut operation_builder = OperationBuilder::new()
         .tag(name)
         .response("default", Ref::from_response_name("default"))
@@ -67,6 +72,8 @@ pub(super) fn parse_operation(name: &str, path: &str, config: &Table) -> Operati
             .map(parse_security_requirement)
             .collect::<Vec<_>>();
         operation_builder = operation_builder.securities(Some(security_requirements));
+    } else if ignore_securities {
+        operation_builder = operation_builder.securities(Some(Vec::new()));
     }
     if let Some(security) = config.get_table("security") {
         let security_requirement = parse_security_requirement(security);

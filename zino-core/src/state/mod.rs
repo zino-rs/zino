@@ -45,16 +45,33 @@ impl<T> State<T> {
     /// Loads the config file according to the specific env.
     pub fn load_config(&mut self) {
         let env = self.env.as_str();
-        let config_file = application::PROJECT_DIR.join(format!("./config/config.{env}.toml"));
-        let config = match std::fs::read_to_string(&config_file) {
-            Ok(value) => {
-                tracing::warn!(env, "`config.{env}.toml` loaded");
-                value.parse().unwrap_or_default()
+        let config = if let Ok(config_url) = std::env::var("ZINO_APP_CONFIG_URL") {
+            match ureq::get(&config_url)
+                .query("env", env)
+                .call()
+                .and_then(|res| res.into_string().map_err(|err| err.into()))
+            {
+                Ok(toml_str) => {
+                    tracing::warn!(env, "`{config_url}` fetched");
+                    toml_str.parse().unwrap_or_default()
+                }
+                Err(err) => {
+                    tracing::error!("fail to fetch the config url `{config_url}`: {err}");
+                    Table::new()
+                }
             }
-            Err(err) => {
-                let config_file = config_file.display();
-                tracing::error!("fail to read the config file `{config_file}`: {err}");
-                Table::new()
+        } else {
+            let config_file = application::PROJECT_DIR.join(format!("./config/config.{env}.toml"));
+            match std::fs::read_to_string(&config_file) {
+                Ok(toml_str) => {
+                    tracing::warn!(env, "`config.{env}.toml` loaded");
+                    toml_str.parse().unwrap_or_default()
+                }
+                Err(err) => {
+                    let config_file = config_file.display();
+                    tracing::error!("fail to read the config file `{config_file}`: {err}");
+                    Table::new()
+                }
             }
         };
         self.config = config;

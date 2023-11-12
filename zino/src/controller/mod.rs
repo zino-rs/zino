@@ -388,19 +388,27 @@ where
     }
 
     async fn definition(req: Self::Request) -> Self::Result {
+        let action = req.get_query("action").unwrap_or("insert");
+
         let mut definition = Map::new();
         let columns = Self::columns();
-        let required_fields = columns
-            .iter()
-            .filter_map(|col| {
-                (col.is_not_null() && !col.is_primary_key() || col.has_attribute("nonempty"))
-                    .then(|| col.name())
-            })
-            .collect::<Vec<_>>();
         definition.upsert("type", "object");
-        definition.upsert("required", required_fields);
+        if matches!(action, "insert" | "import") {
+            let required_fields = columns
+                .iter()
+                .filter_map(|col| {
+                    (col.is_not_null() && !col.is_primary_key() || col.has_attribute("nonempty"))
+                        .then(|| col.name())
+                })
+                .collect::<Vec<_>>();
+            definition.upsert("required", required_fields);
+        }
 
-        let exclusive_attributes = ["readonly", "generated", "reserved"];
+        let exclusive_attributes = if action == "update" {
+            vec!["readonly", "generated", "reserved"]
+        } else {
+            vec!["readonly", "generated", "reserved", "auto_initialized"]
+        };
         let mut properties = Map::new();
         for col in columns {
             if !col.has_any_attributes(&exclusive_attributes) && col.comment().is_some() {
@@ -409,8 +417,17 @@ where
         }
         definition.upsert("properties", properties);
 
+        let data = if action == "import" {
+            let mut data = Map::new();
+            data.upsert("type", "array");
+            data.upsert("items", definition);
+            data
+        } else {
+            definition
+        };
+
         let mut res = crate::Response::default().context(&req);
-        res.set_json_response(definition);
+        res.set_json_response(data);
         Ok(res.into())
     }
 }

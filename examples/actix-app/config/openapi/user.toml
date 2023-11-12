@@ -1,4 +1,5 @@
 name = "Users"
+securities = []
 
 [[endpoints]]
 path = "/user/new"

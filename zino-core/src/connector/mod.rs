@@ -103,20 +103,20 @@ pub trait Connector {
     }
 }
 
-/// Global connector to data sources.
+/// Global access to the shared data source connectors.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct GlobalConnector;
 
 impl GlobalConnector {
-    /// Gets the data source for the specific database service.
+    /// Gets the data source for the specific service.
     #[inline]
     pub fn get(name: &str) -> Option<&'static DataSource> {
-        GLOBAL_CONNECTOR.find(name)
+        SHARED_DATA_SOURCE_CONNECTORS.find(name)
     }
 }
 
-/// Global connector.
-static GLOBAL_CONNECTOR: LazyLock<StaticRecord<DataSource>> = LazyLock::new(|| {
+/// Shared connectors.
+static SHARED_DATA_SOURCE_CONNECTORS: LazyLock<StaticRecord<DataSource>> = LazyLock::new(|| {
     let mut data_sources = StaticRecord::new();
     if let Some(connectors) = State::shared().config().get_array("connector") {
         for connector in connectors.iter().filter_map(|v| v.as_table()) {

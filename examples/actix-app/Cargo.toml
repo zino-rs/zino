@@ -22,12 +22,7 @@ features = ["actix"]
 [dependencies.zino-core]
 path = "../../zino-core"
 version = "0.15.2"
-features = [
-    "connector",
-    "connector-arrow",
-    "orm-postgres",
-    "view-minijinja",
-]
+features = ["orm-postgres", "view-minijinja"]
 
 [dependencies.zino-derive]
 path = "../../zino-derive"

@@ -1,4 +1,5 @@
 name = "Tags"
+securities = []
 
 [[endpoints]]
 path = "/tag/new"
@@ -19,7 +20,7 @@ method = "POST"
 summary = "Updates a tag by ID"
 
 [endpoints.body]
-schema = "tagInfo"
+schema = "/tag/definition?action=update"
 
 [[endpoints]]
 path = "/tag/{tag_id}/view"
@@ -38,19 +39,6 @@ parent_id = { schema = "tagId" }
 [schemas.tagId]
 type = "integer"
 description = "Tag ID"
-
-[schemas.newTag]
-type = "object"
-required = ["name", "category"]
-name = { type = "string", description = "Tag name" }
-category = { type = "string", description = "Tag category" }
-parent_id = { type = "integer", description = "Optional parent tag" }
-
-[schemas.tagInfo]
-type = "object"
-name = { type = "string", description = "Tag name" }
-category = { type = "string", description = "Tag category" }
-parent_id = { type = "integer", description = "Optional parent tag" }
 
 [models.tag.status]
 translations = [

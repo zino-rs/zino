@@ -254,7 +254,7 @@ impl ConnectionPool {
 
 /// A list of database connection pools.
 #[derive(Debug)]
-struct ConnectionPools(SmallVec<[ConnectionPool; 3]>);
+struct ConnectionPools(SmallVec<[ConnectionPool; 4]>);
 
 impl ConnectionPools {
     /// Returns a connection pool with the specific name.
@@ -268,6 +268,27 @@ impl ConnectionPools {
             }
         }
         pool
+    }
+}
+
+/// Global access to the shared connection pools.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct GlobalConnection;
+
+impl GlobalConnection {
+    /// Gets the connection pool for the specific service.
+    #[inline]
+    pub fn get(name: &str) -> Option<&'static ConnectionPool> {
+        SHARED_CONNECTION_POOLS.get_pool(name)
+    }
+
+    /// Shuts down the shared connection pools to ensure all connections are gracefully closed.
+    pub async fn close_all() {
+        for cp in SHARED_CONNECTION_POOLS.0.iter() {
+            let name = cp.name();
+            tracing::warn!("closing the database connection pool for the `{name}` service");
+            cp.pool().close().await;
+        }
     }
 }
 

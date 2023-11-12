@@ -35,7 +35,7 @@ pub trait ChatbotService {
     async fn try_send(&self, message: String, options: Option<Map>) -> Result<Vec<String>, Error>;
 }
 
-/// Global access to chatbot services.
+/// Global access to the shared chatbot services.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct GlobalChatbot;
 
@@ -43,12 +43,12 @@ impl GlobalChatbot {
     /// Gets the chatbot for the specific service.
     #[inline]
     pub fn get(name: &str) -> Option<&'static Chatbot> {
-        GLOBAL_CHATBOT_SERVICES.find(name)
+        SHARED_CHATBOT_SERVICES.find(name)
     }
 }
 
-/// Global chatbot services.
-static GLOBAL_CHATBOT_SERVICES: LazyLock<StaticRecord<Chatbot>> = LazyLock::new(|| {
+/// Shared chatbot services.
+static SHARED_CHATBOT_SERVICES: LazyLock<StaticRecord<Chatbot>> = LazyLock::new(|| {
     let mut chatbot_services = StaticRecord::new();
     if let Some(chatbots) = State::shared().config().get_array("chatbot") {
         for chatbot in chatbots.iter().filter_map(|v| v.as_table()) {

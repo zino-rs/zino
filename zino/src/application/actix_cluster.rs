@@ -60,6 +60,7 @@ impl Application for ActixCluster {
             let app_state = Self::shared_state();
             let app_name = Self::name();
             let app_version = Self::version();
+            let app_domain = Self::domain();
             let app_env = app_state.env();
             let listeners = app_state.listeners();
             let has_debug_server = listeners.iter().any(|listener| listener.0.is_debug());
@@ -187,6 +188,7 @@ impl Application for ActixCluster {
                         .wrap(middleware::cors_middleware())
                         .wrap(middleware::ETagFinalizer::default())
                 })
+                .server_hostname(app_domain)
                 .backlog(backlog)
                 .client_request_timeout(request_timeout)
                 .bind_auto_h2c(addr)

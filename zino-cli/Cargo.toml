@@ -13,7 +13,7 @@ documentation = "https://docs.rs/zino-cli"
 readme = "README.md"
 
 [[bin]]
-name = "zn"
+name = "zli"
 path = "src/main.rs"
 
 [dependencies]

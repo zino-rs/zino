@@ -1,5 +1,5 @@
 use crate::{
-    controller::{auth, file, stats, task, user},
+    controller::{auth, file, stats, user},
     middleware,
     model::Tag,
 };
@@ -13,7 +13,6 @@ pub fn routes() -> Vec<RouterConfigure> {
         file_router as RouterConfigure,
         user_router as RouterConfigure,
         tag_router as RouterConfigure,
-        task_router as RouterConfigure,
     ]
 }
 
@@ -35,8 +34,12 @@ fn auth_router(cfg: &mut ServiceConfig) {
 }
 
 fn file_router(cfg: &mut ServiceConfig) {
-    cfg.route("/file/upload", post().to(file::upload))
-        .route("/file/decrypt", get().to(file::decrypt));
+    cfg.service(
+        scope("/file")
+            .route("/upload", post().to(file::upload))
+            .route("/decrypt", get().to(file::decrypt))
+            .wrap(middleware::UserSessionInitializer),
+    );
 }
 
 fn user_router(cfg: &mut ServiceConfig) {
@@ -56,10 +59,6 @@ fn tag_router(cfg: &mut ServiceConfig) {
         .route("/tag/{id}/view", get().to(Tag::view))
         .route("/tag/list", get().to(Tag::list))
         .route("/tag/tree", get().to(Tag::tree));
-}
-
-fn task_router(cfg: &mut ServiceConfig) {
-    cfg.route("/task/execute", post().to(task::execute));
 }
 
 fn stats_router(cfg: &mut ServiceConfig) {

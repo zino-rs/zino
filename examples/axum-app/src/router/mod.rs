@@ -25,7 +25,8 @@ pub fn routes() -> Vec<Router> {
     // File controller.
     let router = Router::new()
         .route("/file/upload", post(file::upload))
-        .route("/file/decrypt", get(file::decrypt));
+        .route("/file/decrypt", get(file::decrypt))
+        .layer(from_fn(middleware::init_user_session));
     routes.push(router);
 
     // User controller.

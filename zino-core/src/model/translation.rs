@@ -3,13 +3,14 @@ use crate::{
     extension::TomlTableExt,
     JsonValue,
 };
+use smallvec::SmallVec;
 use toml::Table;
 
 /// Model field translations.
 #[derive(Default, Debug, Clone)]
 pub struct Translation<'a> {
     /// Mappings.
-    mappings: Vec<(&'a str, &'a str)>,
+    mappings: SmallVec<[(&'a str, &'a str); 8]>,
 }
 
 impl<'a> Translation<'a> {
@@ -17,7 +18,7 @@ impl<'a> Translation<'a> {
     #[inline]
     pub fn new() -> Self {
         Self {
-            mappings: Vec::new(),
+            mappings: SmallVec::new(),
         }
     }
 

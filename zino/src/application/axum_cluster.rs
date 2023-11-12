@@ -244,7 +244,7 @@ impl Application for AxumCluster {
                     );
                 Server::bind(&addr)
                     .serve(app.into_make_service_with_connect_info::<SocketAddr>())
-                    .with_graceful_shutdown(shutdown_signal())
+                    .with_graceful_shutdown(Self::shutdown())
             });
             for result in futures::future::join_all(servers).await {
                 if let Err(err) = result {
@@ -253,27 +253,32 @@ impl Application for AxumCluster {
             }
         });
     }
-}
 
-/// Handles the graceful shutdown.
-async fn shutdown_signal() {
-    let ctrl_c = async {
-        if let Err(err) = signal::ctrl_c().await {
-            tracing::error!("fail to install the `Ctrl+C` handler: {err}");
-        }
-    };
-    #[cfg(unix)]
-    let terminate = async {
-        signal::unix::signal(signal::unix::SignalKind::terminate())
-            .expect("fail to install the terminate signal handler")
-            .recv()
-            .await;
-    };
-    #[cfg(not(unix))]
-    let terminate = std::future::pending::<()>();
-    tokio::select! {
-        _ = ctrl_c => {},
-        _ = terminate => {},
-    };
-    tracing::warn!("signal received, starting graceful shutdown");
+    async fn shutdown() {
+        let ctrl_c = async {
+            if let Err(err) = signal::ctrl_c().await {
+                tracing::error!("fail to install the `Ctrl+C` handler: {err}");
+            }
+            if cfg!(feature = "orm") {
+                zino_core::orm::GlobalConnection::close_all().await;
+            }
+        };
+        #[cfg(unix)]
+        let terminate = async {
+            signal::unix::signal(signal::unix::SignalKind::terminate())
+                .expect("fail to install the terminate signal handler")
+                .recv()
+                .await;
+            if cfg!(feature = "orm") {
+                zino_core::orm::GlobalConnection::close_all().await;
+            }
+        };
+        #[cfg(not(unix))]
+        let terminate = std::future::pending::<()>();
+        tokio::select! {
+            _ = ctrl_c => {},
+            _ = terminate => {},
+        };
+        tracing::warn!("signal received, starting graceful shutdown");
+    }
 }

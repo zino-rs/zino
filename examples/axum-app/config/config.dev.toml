@@ -56,6 +56,4 @@ max-age = "20m"
 refresh-interval = "7d"
 
 [openapi]
-show-docs = true
-rapidoc-route = "/rapidoc"
 custom-html = "local/docs/rapidoc.html"

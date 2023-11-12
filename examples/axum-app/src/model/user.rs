@@ -15,7 +15,13 @@ pub struct User {
     id: i64,
     #[schema(not_null, index_type = "text", comment = "User name")]
     name: String,
-    #[schema(default_value = "Inactive", index_type = "hash")]
+    #[schema(
+        auto_initialized,
+        enum_values = "Active,Inactive,Locked,Deleted",
+        default_value = "Inactive",
+        index_type = "hash",
+        comment = "User status"
+    )]
     status: String,
     #[schema(index_type = "text")]
     description: String,

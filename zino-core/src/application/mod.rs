@@ -245,6 +245,14 @@ pub trait Application {
         };
         Ok(data)
     }
+
+    /// Handles the graceful shutdown.
+    async fn shutdown() {
+        #[cfg(feature = "orm")]
+        {
+            crate::orm::GlobalConnection::close_all().await;
+        }
+    }
 }
 
 /// App name.

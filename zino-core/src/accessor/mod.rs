@@ -661,15 +661,15 @@ impl GlobalAccessor {
         })
     }
 
-    /// Gets the operator for the specific storage service.
+    /// Gets the operator for the specific service.
     #[inline]
     pub fn get(name: &str) -> Option<&'static Operator> {
-        GLOBAL_ACCESSOR.find(name)
+        SHARED_STORAGE_ACCESSORS.find(name)
     }
 }
 
-/// Global storage accessor.
-static GLOBAL_ACCESSOR: LazyLock<StaticRecord<Operator>> = LazyLock::new(|| {
+/// Shared storage accessors.
+static SHARED_STORAGE_ACCESSORS: LazyLock<StaticRecord<Operator>> = LazyLock::new(|| {
     let mut operators = StaticRecord::new();
     if let Some(accessors) = State::shared().config().get_array("accessor") {
         for accessor in accessors.iter().filter_map(|v| v.as_table()) {
