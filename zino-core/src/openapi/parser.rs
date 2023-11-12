@@ -314,6 +314,17 @@ fn parse_array_schema(config: &Table) -> Array {
     array_builder.build()
 }
 
+/// Parses the schema reference.
+fn parse_schema_reference(schema: &str) -> RefOr<Schema> {
+    let schema_ref = if schema.starts_with('/') || schema.contains(':') {
+        Ref::new(schema)
+    } else {
+        let schema_name = schema.to_case(Case::Camel);
+        Ref::from_schema_name(schema_name)
+    };
+    RefOr::Ref(schema_ref)
+}
+
 /// Parses the path item type.
 pub(super) fn parse_path_item_type(method: &str) -> PathItemType {
     match method {
@@ -393,14 +404,12 @@ fn parse_query_parameters(query: &Table) -> Vec<Parameter> {
             .name(key.to_case(Case::Snake))
             .parameter_in(ParameterIn::Query);
         if let Some(config) = value.as_table() {
-            if let Some(schema) = config.get_str("schema") {
-                let schema_name = schema.to_case(Case::Camel);
-                let schema_object = Ref::from_schema_name(schema_name);
-                parameter_builder = parameter_builder.schema(Some(schema_object));
+            let schema = if let Some(schema) = config.get_str("schema") {
+                parse_schema_reference(schema)
             } else {
-                let object = parse_schema(config);
-                parameter_builder = parameter_builder.schema(Some(object));
+                parse_schema(config).into()
             };
+            parameter_builder = parameter_builder.schema(Some(schema));
         } else if let Some(basic_type) = value.as_str() {
             let object = Object::with_type(parse_schema_type(basic_type));
             parameter_builder = parameter_builder.schema(Some(object));
@@ -418,14 +427,12 @@ fn parse_header_parameters(headers: &Table) -> Vec<Parameter> {
             .name(key.to_case(Case::Kebab))
             .parameter_in(ParameterIn::Header);
         if let Some(config) = value.as_table() {
-            if let Some(schema) = config.get_str("schema") {
-                let schema_name = schema.to_case(Case::Camel);
-                let schema_object = Ref::from_schema_name(schema_name);
-                parameter_builder = parameter_builder.schema(Some(schema_object));
+            let schema = if let Some(schema) = config.get_str("schema") {
+                parse_schema_reference(schema)
             } else {
-                let object = parse_schema(config);
-                parameter_builder = parameter_builder.schema(Some(object));
+                parse_schema(config).into()
             };
+            parameter_builder = parameter_builder.schema(Some(schema));
         } else if let Some(basic_type) = value.as_str() {
             let object = Object::with_type(parse_schema_type(basic_type));
             parameter_builder = parameter_builder.schema(Some(object));
@@ -443,14 +450,12 @@ fn parse_cookie_parameters(cookies: &Table) -> Vec<Parameter> {
             .name(key)
             .parameter_in(ParameterIn::Cookie);
         if let Some(config) = value.as_table() {
-            if let Some(schema) = config.get_str("schema") {
-                let schema_name = schema.to_case(Case::Camel);
-                let schema_object = Ref::from_schema_name(schema_name);
-                parameter_builder = parameter_builder.schema(Some(schema_object));
+            let schema = if let Some(schema) = config.get_str("schema") {
+                parse_schema_reference(schema)
             } else {
-                let object = parse_schema(config);
-                parameter_builder = parameter_builder.schema(Some(object));
+                parse_schema(config).into()
             };
+            parameter_builder = parameter_builder.schema(Some(schema));
         } else if let Some(basic_type) = value.as_str() {
             let object = Object::with_type(parse_schema_type(basic_type));
             parameter_builder = parameter_builder.schema(Some(object));
@@ -463,12 +468,7 @@ fn parse_cookie_parameters(cookies: &Table) -> Vec<Parameter> {
 /// Parses the request body.
 fn parse_request_body(config: &Table) -> RequestBody {
     let schema = if let Some(schema) = config.get_str("schema") {
-        let schema_ref = if schema.starts_with('/') || schema.contains(':') {
-            Ref::new(schema)
-        } else {
-            Ref::from_schema_name(schema)
-        };
-        RefOr::Ref(schema_ref)
+        parse_schema_reference(schema)
     } else {
         parse_schema(config).into()
     };

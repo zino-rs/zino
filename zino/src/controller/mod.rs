@@ -389,9 +389,8 @@ where
 
     async fn definition(req: Self::Request) -> Self::Result {
         let action = req.get_query("action").unwrap_or("insert");
-
-        let mut definition = Map::new();
         let columns = Self::columns();
+        let mut definition = Map::new();
         definition.upsert("type", "object");
         if matches!(action, "insert" | "import") {
             let required_fields = columns
