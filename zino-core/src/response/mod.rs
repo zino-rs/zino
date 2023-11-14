@@ -186,7 +186,7 @@ impl<S: ResponseCode> Response<S> {
                     map.append(data);
                     crate::view::render(template_name, map)
                 } else {
-                    Err(Error::new("invalid template data"))
+                    Err(crate::warn!("invalid template data"))
                 }
             });
         match result {
@@ -595,6 +595,7 @@ impl<S: ResponseCode> Response<S> {
                 format!(r#"attachment; filename="{file_name}""#),
             );
         }
+        self.insert_header("etag", file.etag());
         self.set_bytes_data(Bytes::from(file));
     }
 

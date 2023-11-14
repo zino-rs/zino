@@ -3,9 +3,10 @@
 use super::{Connector, DataSource, DataSourceConnector::Arrow};
 use crate::{
     application::{http_client, PROJECT_DIR},
+    bail,
     error::Error,
     extension::TomlTableExt,
-    helper, Map, Record,
+    helper, warn, Map, Record,
 };
 use datafusion::{
     arrow::{datatypes::Schema, record_batch::RecordBatch},
@@ -116,10 +117,10 @@ impl ArrowConnector {
             for table in tables.iter().filter_map(|v| v.as_table()) {
                 let data_type = table
                     .get_str("type")
-                    .ok_or_else(|| Error::new("the `type` field should be a str"))?;
+                    .ok_or_else(|| warn!("the `type` field should be a str"))?;
                 let table_name = table
                     .get_str("name")
-                    .ok_or_else(|| Error::new("the `name` field should be a str"))?;
+                    .ok_or_else(|| warn!("the `name` field should be a str"))?;
                 let table_path = if let Some(url) = table.get_str("url") {
                     let table_file_path = root.join(format!("{table_name}.{data_type}"));
                     let mut table_file = File::create(&table_file_path)?;
@@ -132,9 +133,7 @@ impl ArrowConnector {
                     table
                         .get_str("path")
                         .map(|path| root.join(path).to_string_lossy().into_owned())
-                        .ok_or_else(|| {
-                            Error::new(format!("the path for the table `{table_name}` is absent"))
-                        })?
+                        .ok_or_else(|| warn!("the path for the table `{}` is absent", table_name))?
                 };
                 let table_schema = if let Some(schema) = table.get_table("schema") {
                     Some(Schema::try_from_toml_table(schema)?)
@@ -206,8 +205,7 @@ impl ArrowConnector {
                             .await?;
                     }
                     _ => {
-                        let message = format!("data type `{data_type}` is unsupported");
-                        return Err(Error::new(message));
+                        bail!("data type `{}` is unsupported", data_type);
                     }
                 }
             }

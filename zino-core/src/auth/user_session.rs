@@ -1,5 +1,7 @@
 use super::{AccessKeyId, JwtClaims, SessionId};
-use crate::{application::APP_DOMAIN, crypto::Digest, error::Error, extension::JsonObjectExt};
+use crate::{
+    application::APP_DOMAIN, crypto::Digest, error::Error, extension::JsonObjectExt, warn,
+};
 use std::str::FromStr;
 
 /// Role-based user sessions.
@@ -103,7 +105,7 @@ where
             .subject()
             .map(|s| s.into())
             .or_else(|| data.parse_string("uid"))
-            .ok_or_else(|| Error::new("the subject of a JWT token should be specified"))?
+            .ok_or_else(|| warn!("the subject of a JWT token should be specified"))?
             .parse()?;
         let mut user_session = Self::new(user_id, None);
         if let Some(roles) = data

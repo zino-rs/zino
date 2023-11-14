@@ -1,4 +1,4 @@
-use crate::{error::Error, extension::AvroRecordExt, AvroValue, Record};
+use crate::{bail, error::Error, extension::AvroRecordExt, AvroValue, Record};
 use datafusion::arrow::{
     array::{
         self, Array, BinaryArray, BooleanArray, Float32Array, Float64Array, Int32Array, Int64Array,
@@ -28,8 +28,7 @@ impl ArrowFieldExt for Field {
             AvroValue::Bytes(_) => DataType::Binary,
             AvroValue::String(_) | AvroValue::Uuid(_) => DataType::Utf8,
             _ => {
-                let message = format!("fail to construct an Arrow field for the `{field}` field");
-                return Err(Error::new(message));
+                bail!("fail to construct an Arrow field for the `{}` field", field);
             }
         };
         Ok(Field::new(field, data_type, true))

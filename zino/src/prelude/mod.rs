@@ -8,6 +8,7 @@ pub use zino_core::{
     auth::{
         AccessKeyId, AuthorizationProvider, JwtClaims, SecretAccessKey, SecurityToken, UserSession,
     },
+    bail,
     datetime::DateTime,
     error::Error,
     extension::{JsonObjectExt, JsonValueExt, TomlTableExt},
@@ -19,7 +20,7 @@ pub use zino_core::{
     response::{ExtractRejection, Rejection, StatusCode, WebHook},
     schedule::{AsyncCronJob, CronJob},
     state::State,
-    BoxFuture, Map, Record, Uuid,
+    warn, BoxFuture, Map, Record, Uuid,
 };
 
 #[cfg(feature = "orm")]

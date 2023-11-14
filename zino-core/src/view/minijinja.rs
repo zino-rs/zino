@@ -1,4 +1,4 @@
-use crate::{error::Error, state::State, Map};
+use crate::{error::Error, state::State, warn, Map};
 use convert_case::{Case, Casing};
 use minijinja::Environment;
 use std::sync::OnceLock;
@@ -7,7 +7,7 @@ use std::sync::OnceLock;
 pub fn render(template_name: &str, data: Map) -> Result<String, Error> {
     let view_engine = SHARED_VIEW_ENGINE
         .get()
-        .ok_or_else(|| Error::new("fail to get the `jinja` view engine"))?;
+        .ok_or_else(|| warn!("fail to get the `jinja` view engine"))?;
     let template = view_engine.get_template(template_name)?;
     template.render(data).map_err(Error::from)
 }

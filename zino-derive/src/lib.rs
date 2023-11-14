@@ -380,56 +380,77 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
             }
 
             async fn acquire_reader() -> Result<&'static ConnectionPool, ZinoError> {
+                use zino_core::{bail, warn};
                 if let Some(connection_pool) = #schema_reader.get() {
                     Ok(*connection_pool)
                 } else {
                     let model_name = Self::MODEL_NAME;
                     let connection_pool = Self::init_reader()?;
                     if let Err(err) = Self::create_table().await {
-                        let message = format!("503 Service Unavailable: fail to acquire reader for the model `{model_name}`");
                         connection_pool.store_availability(false);
-                        return Err(err.context(message));
+                        bail!(
+                            "503 Service Unavailable: fail to acquire reader for the model `{}`: {}",
+                            model_name,
+                            err,
+                        );
                     }
                     if let Err(err) = Self::synchronize_schema().await {
-                        let message = format!("503 Service Unavailable: fail to acquire reader for the model `{model_name}`");
                         connection_pool.store_availability(false);
-                        return Err(err.context(message));
+                        bail!(
+                            "503 Service Unavailable: fail to acquire reader for the model `{}`: {}",
+                            model_name,
+                            err,
+                        );
                     }
                     if let Err(err) = Self::create_indexes().await {
-                        let message = format!("503 Service Unavailable: fail to acquire reader for the model `{model_name}`");
                         connection_pool.store_availability(false);
-                        return Err(err.context(message));
+                        bail!(
+                            "503 Service Unavailable: fail to acquire reader for the model `{}`: {}",
+                            model_name,
+                            err,
+                        );
                     }
                     #schema_reader.set(connection_pool).map_err(|_| {
-                        ZinoError::new(format!("503 Service Unavailable: fail to acquire reader for the model `{model_name}`"))
+                        warn!("503 Service Unavailable: fail to acquire reader for the model `{}`", model_name)
                     })?;
                     Ok(connection_pool)
                 }
             }
 
             async fn acquire_writer() -> Result<&'static ConnectionPool, ZinoError> {
+                use zino_core::{bail, warn};
                 if let Some(connection_pool) = #schema_writer.get() {
                     Ok(*connection_pool)
                 } else {
                     let model_name = Self::MODEL_NAME;
                     let connection_pool = Self::init_writer()?;
                     if let Err(err) = Self::create_table().await {
-                        let message = format!("503 Service Unavailable: fail to acquire writer for the model `{model_name}`");
                         connection_pool.store_availability(false);
-                        return Err(err.context(message));
+                        bail!(
+                            "503 Service Unavailable: fail to acquire writer for the model `{}`: {}",
+                            model_name,
+                            err,
+                        );
                     }
                     if let Err(err) = Self::synchronize_schema().await {
-                        let message = format!("503 Service Unavailable: fail to acquire reader for the model `{model_name}`");
-                        connection_pool.store_availability(false);
-                        return Err(err.context(message));
+                        bail!(
+                            "503 Service Unavailable: fail to acquire writer for the model `{}`: {}",
+                            model_name,
+                            err,
+                        );
                     }
                     if let Err(err) = Self::create_indexes().await {
-                        let message = format!("503 Service Unavailable: fail to acquire writer for the model `{model_name}`");
-                        connection_pool.store_availability(false);
-                        return Err(err.context(message));
+                        bail!(
+                            "503 Service Unavailable: fail to acquire writer for the model `{}`: {}",
+                            model_name,
+                            err,
+                        );
                     }
                     #schema_writer.set(connection_pool).map_err(|_| {
-                        ZinoError::new(format!("503 Service Unavailable: fail to acquire writer for the model `{model_name}`"))
+                        warn!(
+                            "503 Service Unavailable: fail to acquire writer for the model `{}`",
+                            model_name
+                        )
                     })?;
                     Ok(connection_pool)
                 }
@@ -926,7 +947,7 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
             populated_one_queries.push(quote! {
                 let mut model = Self::find_by_id::<Map>(id)
                     .await?
-                    .ok_or_else(|| ZinoError::new(format!("404 Not Found: cannot find the model `{id}`")))?;
+                    .ok_or_else(|| zino_core::warn!("404 Not Found: cannot find the model `{}`", id))?;
                 Self::after_decode(&mut model).await?;
                 Self::translate_model(&mut model);
             });
@@ -941,7 +962,7 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
             populated_one_queries.push(quote! {
                 let mut model = Self::find_by_id::<Map>(id)
                     .await?
-                    .ok_or_else(|| ZinoError::new(format!("404 Not Found: cannot find the model `{id}`")))?;
+                    .ok_or_else(|| zino_core::warn!("404 Not Found: cannot find the model `{}`", id))?;
                 Self::after_decode(&mut model).await?;
                 Self::translate_model(&mut model);
             });

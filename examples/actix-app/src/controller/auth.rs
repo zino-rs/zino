@@ -40,7 +40,7 @@ pub async fn refresh(req: Request) -> Result {
 pub async fn logout(req: Request) -> Result {
     let user_session = req
         .get_data::<UserSession<_>>()
-        .ok_or_else(|| Error::new("401 Unauthorized: the user session is invalid"))
+        .ok_or_else(|| warn!("401 Unauthorized: the user session is invalid"))
         .extract(&req)?;
 
     let mut mutations = Map::from_entry("status", "SignedOut");

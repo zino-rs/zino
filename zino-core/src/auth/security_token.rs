@@ -1,6 +1,6 @@
 use self::ParseSecurityTokenError::*;
 use super::AccessKeyId;
-use crate::{crypto, datetime::DateTime, encoding::base64, error::Error};
+use crate::{crypto, datetime::DateTime, encoding::base64, error::Error, warn};
 use std::{fmt, time::Duration};
 
 /// Security token.
@@ -66,7 +66,7 @@ impl SecurityToken {
     pub(crate) fn parse_with(token: String, key: &[u8]) -> Result<Self, ParseSecurityTokenError> {
         let authorization = base64::decode(&token).map_err(|err| DecodeError(err.into()))?;
         let signature = crypto::decrypt(&authorization, key)
-            .map_err(|_| DecodeError(Error::new("fail to decrypt authorization")))?;
+            .map_err(|_| DecodeError(warn!("fail to decrypt authorization")))?;
         let signature_str = String::from_utf8_lossy(&signature);
         if let Some((access_key_id, timestamp)) = signature_str.split_once(':') {
             let timestamp = timestamp

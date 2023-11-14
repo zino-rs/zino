@@ -1,5 +1,5 @@
 use super::ArrowFieldExt;
-use crate::{error::Error, Record, TomlValue};
+use crate::{bail, error::Error, Record, TomlValue};
 use datafusion::arrow::{
     array::Array,
     datatypes::{DataType, Field, Schema, UnionFields, UnionMode},
@@ -59,14 +59,14 @@ impl ArrowSchemaExt for Schema {
                         }
                         DataType::Union(UnionFields::new(positions, fields), UnionMode::Dense)
                     } else {
-                        return Err(Error::new(format!("schema for `{key}` should be nonempty")));
+                        bail!("schema for `{}` should be nonempty", key);
                     }
                 }
                 TomlValue::Table(table) => {
                     let schema = Self::try_from_toml_table(table)?;
                     DataType::Struct(schema.fields)
                 }
-                _ => return Err(Error::new(format!("schema for `{key}` is invalid"))),
+                _ => bail!("schema for `{}` is invalid", key),
             };
             fields.push(Field::new(name, data_type, true));
         }
@@ -99,8 +99,7 @@ fn parse_arrow_data_type(value_type: &str) -> Result<DataType, Error> {
         "bytes" => DataType::Binary,
         "string" => DataType::Utf8,
         _ => {
-            let message = format!("parsing `{value_type}` as Arrow data type is unsupported");
-            return Err(Error::new(message));
+            bail!("parsing `{}` as Arrow data type is unsupported", value_type);
         }
     };
     Ok(data_type)

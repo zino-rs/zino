@@ -1,4 +1,4 @@
-use crate::{error::Error, extension::TomlTableExt};
+use crate::{error::Error, extension::TomlTableExt, warn};
 use oauth2::{
     basic::BasicClient, AuthType::RequestBody, AuthUrl, ClientId, ClientSecret,
     DeviceAuthorizationUrl, IntrospectionUrl, RedirectUrl, RevocationUrl, TokenUrl,
@@ -31,13 +31,13 @@ impl OAuth2Client {
         let client_id = config
             .get_str("client-id")
             .map(|s| ClientId::new(s.to_owned()))
-            .ok_or_else(|| Error::new("the `client-id` field should be specified"))?;
+            .ok_or_else(|| warn!("the `client-id` field should be specified"))?;
         let client_secret = config
             .get_str("client-secret")
             .map(|s| ClientSecret::new(s.to_owned()));
         let auth_url = config
             .get_str("auth-url")
-            .ok_or_else(|| Error::new("the `auth-url` field should be specified"))?
+            .ok_or_else(|| warn!("the `auth-url` field should be specified"))?
             .parse()
             .map(AuthUrl::from_url)?;
         let token_url = config

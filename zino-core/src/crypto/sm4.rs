@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::{bail, error::Error};
 use ctr::Ctr64LE;
 use rand::Rng;
 use sm4::{
@@ -29,7 +29,7 @@ pub(crate) fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
 /// Decrypts the data as bytes using `SM4`.
 pub(crate) fn decrypt(data: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
     if data.len() <= NONCE_SIZE {
-        return Err(Error::new("invalid data length"));
+        bail!("invalid data length");
     }
 
     let (ciphertext, bytes) = data.split_at(data.len() - NONCE_SIZE);

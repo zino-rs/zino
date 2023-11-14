@@ -194,7 +194,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                                     .iter()
                                     .map(|v| self.encode_value(Some(v)))
                                     .collect::<Vec<_>>()
-                                    .join(",");
+                                    .join(", ");
                                 let condition = format!(r#"{field} {operator} ({value})"#);
                                 conditions.push(condition);
                             }
@@ -285,7 +285,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                             .split(',')
                             .map(Query::escape_string)
                             .collect::<Vec<_>>()
-                            .join(",");
+                            .join(", ");
                         format!(r#"{field} IN ({value})"#)
                     } else {
                         let value = Query::escape_string(value);
@@ -322,7 +322,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                             .split(',')
                             .map(Query::escape_string)
                             .collect::<Vec<_>>()
-                            .join(",");
+                            .join(", ");
                         format!(r#"{field} IN ({value})"#)
                     } else {
                         let value = Query::escape_string(value);

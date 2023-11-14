@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
 use zino_core::{
     auth::{AccessKeyId, UserSession},
+    bail,
     datetime::DateTime,
     error::Error,
     extension::JsonObjectExt,
@@ -204,13 +205,11 @@ impl User {
         let special_roles = ["superuser", "user", "guest"];
         for role in &roles {
             if special_roles.contains(role) && num_roles != 1 {
-                let message = format!("the special role `{role}` is exclusive");
-                return Err(Error::new(message));
+                bail!("the special role `{}` is exclusive", role);
             } else if !USER_ROLE_PATTERN.is_match(role) {
-                let message = format!("the role `{role}` is invalid");
-                return Err(Error::new(message));
+                bail!("the role `{}` is invalid", role);
             } else if role.is_empty() {
-                return Err(Error::new("the `roles` can not contain empty values"));
+                bail!("the `roles` can not contain empty values");
             }
         }
         self.roles = roles.into_iter().map(|s| s.to_owned()).collect();

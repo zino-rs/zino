@@ -1,13 +1,14 @@
 use super::{Connector, DataSource, DataSourceConnector::Http};
 use crate::{
     application::http_client,
+    bail,
     error::Error,
     extension::{
         AvroRecordExt, HeaderMapExt, JsonObjectExt, JsonValueExt, TomlTableExt, TomlValueExt,
     },
     helper,
     trace::TraceContext,
-    JsonValue, Map, Record,
+    warn, JsonValue, Map, Record,
 };
 use http::{
     header::{HeaderMap, HeaderName},
@@ -51,7 +52,7 @@ impl HttpConnector {
         let method = config.get_str("method").unwrap_or("GET");
         let base_url = config
             .get_str("base-url")
-            .ok_or_else(|| Error::new("the base URL should be specified"))?;
+            .ok_or_else(|| warn!("the base URL should be specified"))?;
 
         let mut connector = HttpConnector::try_new(method, base_url)?;
         let headers = config.get("headers").map(|v| v.to_json_value());
@@ -197,7 +198,7 @@ impl Connector for HttpConnector {
                     vec![map.into_avro_record()]
                 }
             }
-            _ => return Err(Error::new("invalid data format")),
+            _ => bail!("invalid data format"),
         };
         Ok(records)
     }
@@ -230,7 +231,7 @@ impl Connector for HttpConnector {
                     vec![map]
                 }
             }
-            _ => return Err(Error::new("invalid data format")),
+            _ => bail!("invalid data format"),
         };
         serde_json::from_value(data.into()).map_err(Error::from)
     }
@@ -253,7 +254,7 @@ impl Connector for HttpConnector {
                     map.into_avro_record()
                 }
             }
-            _ => return Err(Error::new("invalid data format")),
+            _ => bail!("invalid data format"),
         };
         Ok(Some(record))
     }
@@ -275,7 +276,7 @@ impl Connector for HttpConnector {
                 serde_json::from_value(map.into()).map_err(Error::from)
             }
         } else {
-            Err(Error::new("invalid data format"))
+            Err(warn!("invalid data format"))
         }
     }
 }

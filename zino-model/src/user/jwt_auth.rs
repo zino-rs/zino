@@ -1,12 +1,13 @@
 use std::{fmt::Display, str::FromStr};
 use zino_core::{
     auth::JwtClaims,
+    bail,
     datetime::DateTime,
     error::Error,
     extension::JsonObjectExt,
     model::Query,
     orm::{ModelAccessor, ModelHelper},
-    Map, Uuid,
+    warn, Map, Uuid,
 };
 
 /// JWT authentication service.
@@ -85,10 +86,10 @@ where
     async fn generate_token(body: Map) -> Result<(K, Map), Error> {
         let account = body
             .get_str("account")
-            .ok_or_else(|| Error::new("401 Unauthorized: the user `account` shoud be specified"))?;
-        let passowrd = body.get_str("password").ok_or_else(|| {
-            Error::new("401 Unauthorized: the user `password` shoud be specified")
-        })?;
+            .ok_or_else(|| warn!("401 Unauthorized: the user `account` should be specified"))?;
+        let passowrd = body
+            .get_str("password")
+            .ok_or_else(|| warn!("401 Unauthorized: the user `password` should be specified"))?;
         let mut query = Query::default();
         let mut fields = vec![Self::PRIMARY_KEY_NAME, Self::PASSWORD_FIELD];
         if let Some(role_field) = Self::ROLE_FIELD {
@@ -109,15 +110,15 @@ where
 
         let mut user: Map = Self::find_one(&query)
             .await?
-            .ok_or_else(|| Error::new("404 Not Found: invalid user account or password"))?;
+            .ok_or_else(|| warn!("404 Not Found: invalid user account or password"))?;
         let encrypted_password = user
             .get_str(Self::PASSWORD_FIELD)
-            .ok_or_else(|| Error::new("404 Not Found: the user password is absent"))?;
+            .ok_or_else(|| warn!("404 Not Found: the user password is absent"))?;
         if Self::verify_password(passowrd, encrypted_password)? {
             // Cann't use `get_str` because the primary key may be an integer
             let user_id = user
                 .parse_string(Self::PRIMARY_KEY_NAME)
-                .ok_or_else(|| Error::new("404 Not Found: the user id is absent"))?;
+                .ok_or_else(|| warn!("404 Not Found: the user id is absent"))?;
             let mut claims = JwtClaims::new(user_id.as_ref());
 
             let user_id = user_id.parse()?;
@@ -144,20 +145,18 @@ where
             }
             Ok((user_id, data))
         } else {
-            Err(Error::new("fail to generate access token"))
+            Err(warn!("fail to generate access token"))
         }
     }
 
     /// Refreshes the access token.
     async fn refresh_token(claims: &JwtClaims) -> Result<Map, Error> {
         if !claims.data().is_empty() {
-            let message = "401 Unauthorized: the JWT token is not a refresh token";
-            return Err(Error::new(message));
+            bail!("401 Unauthorized: the JWT token is not a refresh token");
         }
 
         let Some(user_id) = claims.subject() else {
-            let message = "401 Unauthorized: the JWT token does not have a subject";
-            return Err(Error::new(message));
+            bail!("401 Unauthorized: the JWT token does not have a subject");
         };
 
         let mut query = Query::default();
@@ -175,10 +174,9 @@ where
             Map::from_entry("$nin", vec!["SignedOut", "Locked", "Deleted"]),
         );
 
-        let mut user: Map = Self::find_one(&query).await?.ok_or_else(|| {
-            let message = format!("404 Not Found: cannot get the user `{user_id}`");
-            Error::new(message)
-        })?;
+        let mut user: Map = Self::find_one(&query)
+            .await?
+            .ok_or_else(|| warn!("404 Not Found: cannot get the user `{}`", user_id))?;
         let mut claims = JwtClaims::new(user_id);
         if let Some(role_field) = Self::ROLE_FIELD
             && user.contains_key(role_field)
@@ -200,8 +198,7 @@ where
     /// Verfifies the JWT claims.
     async fn verify_jwt_claims(claims: &JwtClaims) -> Result<bool, Error> {
         let Some(user_id) = claims.subject() else {
-            let message = "401 Unauthorized: the JWT token does not have a subject";
-            return Err(Error::new(message));
+            bail!("401 Unauthorized: the JWT token does not have a subject");
         };
 
         let mut query = Query::default();
@@ -222,32 +219,34 @@ where
             Map::from_entry("$nin", vec!["SignedOut", "Locked", "Deleted"]),
         );
 
-        let user: Map = Self::find_one(&query).await?.ok_or_else(|| {
-            let message = format!("404 Not Found: cannot get the user `{user_id}`");
-            Error::new(message)
-        })?;
+        let user: Map = Self::find_one(&query)
+            .await?
+            .ok_or_else(|| warn!("404 Not Found: cannot get the user `{}`", user_id))?;
         let data = claims.data();
         if let Some(role_field) = Self::ROLE_FIELD
             && let Some(roles) = data.get("roles")
             && user.get(role_field) != Some(roles)
         {
-            let message = format!("401 Unauthorized: invalid for the `{role_field}` field");
-            return Err(Error::new(message));
+            bail!("401 Unauthorized: invalid for the `{}` field", role_field);
         }
         if let Some(tenant_id_field) = Self::TENANT_ID_FIELD
             && let Some(tenant_id) = data.get("tenant_id")
             && user.get(tenant_id_field) != Some(tenant_id)
         {
-            let message = format!("401 Unauthorized: invalid for the `{tenant_id_field}` field");
-            return Err(Error::new(message));
+            bail!(
+                "401 Unauthorized: invalid for the `{}` field",
+                tenant_id_field
+            );
         }
         if let Some(login_at_field) = Self::LOGIN_AT_FIELD
             && let Some(login_at_str) = user.get_str(login_at_field)
             && let Ok(login_at) = login_at_str.parse::<DateTime>()
             && claims.issued_at().timestamp() < login_at.timestamp()
         {
-            let message = format!("401 Unauthorized: invalid before the `{login_at_field}` time");
-            return Err(Error::new(message));
+            bail!(
+                "401 Unauthorized: invalid before the `{}` time",
+                login_at_field
+            );
         }
         Ok(true)
     }
@@ -272,10 +271,9 @@ where
         query.add_filter(Self::PRIMARY_KEY_NAME, user_id.to_string());
         query.add_filter("status", Map::from_entry("$nin", vec!["Locked", "Deleted"]));
 
-        let user: Map = Self::find_one(&query).await?.ok_or_else(|| {
-            let message = format!("404 Not Found: cannot get the user `{user_id}`");
-            Error::new(message)
-        })?;
+        let user: Map = Self::find_one(&query)
+            .await?
+            .ok_or_else(|| warn!("404 Not Found: cannot get the user `{}`", user_id))?;
 
         let mut data = Map::new();
         if let Some(user_account) = user.get_str(Self::ACCOUNT_FIELD) {

@@ -1,4 +1,4 @@
-use crate::{error::Error, state::State, Map};
+use crate::{error::Error, state::State, warn, Map};
 use std::sync::OnceLock;
 use tera::{Context, Tera};
 
@@ -6,7 +6,7 @@ use tera::{Context, Tera};
 pub fn render(template_name: &str, data: Map) -> Result<String, Error> {
     let view_engine = SHARED_VIEW_ENGINE
         .get()
-        .ok_or_else(|| Error::new("fail to get the `tera` view engine"))?;
+        .ok_or_else(|| warn!("fail to get the `tera` view engine"))?;
     let context = Context::from_value(data.into())?;
     view_engine
         .render(template_name, &context)

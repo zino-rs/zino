@@ -90,7 +90,7 @@ impl Job {
                 }
                 match self.run {
                     ExecutableJob::Fn(exec) => exec(self.id, &mut self.data, last_tick.into()),
-                    ExecutableJob::AsyncFn(_) => tracing::warn!("job {} is async", self.id),
+                    ExecutableJob::AsyncFn(_) => tracing::warn!("job `{}` is async", self.id),
                 }
             }
         }
@@ -106,7 +106,7 @@ impl Job {
                     break;
                 }
                 match self.run {
-                    ExecutableJob::Fn(_) => tracing::warn!("job {} is not async", self.id),
+                    ExecutableJob::Fn(_) => tracing::warn!("job `{}` is not async", self.id),
                     ExecutableJob::AsyncFn(exec) => {
                         exec(self.id, &mut self.data, last_tick.into()).await
                     }

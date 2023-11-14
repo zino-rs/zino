@@ -15,7 +15,7 @@ use crate::{
     model::{ModelHooks, Query},
     response::{Rejection, Response, ResponseCode},
     trace::{TraceContext, TraceState},
-    JsonValue, Map, SharedString, Uuid,
+    warn, JsonValue, Map, SharedString, Uuid,
 };
 use bytes::Bytes;
 use cookie::{Cookie, SameSite};
@@ -271,7 +271,7 @@ pub trait RequestContext {
         } else {
             Err(Rejection::from_validation_entry(
                 name.to_owned(),
-                Error::new(format!("the param `{name}` does not exist")),
+                warn!("the param `{}` does not exist", name),
             )
             .context(self))
         }
@@ -298,7 +298,7 @@ pub trait RequestContext {
             if let Some(timestamp) = self.get_query("timestamp").and_then(|s| s.parse().ok()) {
                 let duration = DateTime::from_timestamp(timestamp).span_between_now();
                 if duration > auth::default_time_tolerance() {
-                    let err = Error::new(format!("the timestamp `{timestamp}` can not be trusted"));
+                    let err = warn!("the timestamp `{}` can not be trusted", timestamp);
                     let rejection = Rejection::from_validation_entry("timestamp", err);
                     return Err(rejection.context(self));
                 }
@@ -323,9 +323,11 @@ pub trait RequestContext {
     async fn parse_body<T: DeserializeOwned>(&mut self) -> Result<T, Rejection> {
         let data_type = self.data_type().unwrap_or("form");
         if data_type.contains('/') {
-            let message = format!("deserialization of the data type `{data_type}` is unsupported");
-            let rejection =
-                Rejection::from_validation_entry("data_type", Error::new(message)).context(self);
+            let err = warn!(
+                "deserialization of the data type `{}` is unsupported",
+                data_type
+            );
+            let rejection = Rejection::from_validation_entry("data_type", err).context(self);
             return Err(rejection);
         }
 
@@ -352,7 +354,7 @@ pub trait RequestContext {
         let Some(content_type) = self.get_header("content-type") else {
             return Err(Rejection::from_validation_entry(
                 "content_type",
-                Error::new("invalid `content-type` header"),
+                warn!("invalid `content-type` header"),
             )
             .context(self));
         };
@@ -534,7 +536,7 @@ pub trait RequestContext {
         self.get_header("x-session-id")
             .or_else(|| self.get_header("session_id"))
             .ok_or_else(|| {
-                Rejection::from_validation_entry("session-id", Error::new("should be nonempty"))
+                Rejection::from_validation_entry("session-id", warn!("should be nonempty"))
                     .context(self)
             })
             .and_then(|session_id| {
@@ -613,9 +615,11 @@ pub trait RequestContext {
     {
         let data_type = self.data_type().unwrap_or("form");
         if data_type.contains('/') {
-            let message = format!("deserialization of the data type `{data_type}` is unsupported");
-            let rejection =
-                Rejection::from_validation_entry("data_type", Error::new(message)).context(self);
+            let err = warn!(
+                "deserialization of the data type `{}` is unsupported",
+                data_type
+            );
+            let rejection = Rejection::from_validation_entry("data_type", err).context(self);
             return Err(rejection);
         }
         M::before_extract()

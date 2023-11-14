@@ -1,4 +1,4 @@
-use crate::{error::Error, extension::TomlTableExt};
+use crate::{error::Error, extension::TomlTableExt, warn};
 use openidconnect::{
     core::{CoreClient, CoreJsonWebKey, CoreProviderMetadata},
     reqwest::http_client,
@@ -63,13 +63,13 @@ impl OidcClient {
         let client_id = config
             .get_str("client-id")
             .map(|s| ClientId::new(s.to_owned()))
-            .ok_or_else(|| Error::new("the `client-id` field should be specified"))?;
+            .ok_or_else(|| warn!("the `client-id` field should be specified"))?;
         let client_secret = config
             .get_str("client-secret")
             .map(|s| ClientSecret::new(s.to_owned()));
         let issuer_url = config
             .get_str("issuer-url")
-            .ok_or_else(|| Error::new("the `issuer-url` field should be specified"))?
+            .ok_or_else(|| warn!("the `issuer-url` field should be specified"))?
             .parse()
             .map(IssuerUrl::from_url)?;
         let mut client = if let Some(jwks_url) = config.get_str("jwks-url") {
@@ -77,7 +77,7 @@ impl OidcClient {
             let jwks = JsonWebKeySet::fetch(&jwks_url, http_client)?;
             let auth_url = config
                 .get_str("auth-url")
-                .ok_or_else(|| Error::new("the `auth-url` field should be specified"))?
+                .ok_or_else(|| warn!("the `auth-url` field should be specified"))?
                 .parse()
                 .map(AuthUrl::from_url)?;
             let token_url = config

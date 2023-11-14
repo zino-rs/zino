@@ -1,6 +1,6 @@
 //! Internationalization and localization.
 
-use crate::{application, error::Error, extension::TomlTableExt, state::State, SharedString};
+use crate::{application, error::Error, extension::TomlTableExt, state::State, warn, SharedString};
 use fluent::{bundle::FluentBundle, FluentArgs, FluentResource};
 use intl_memoizer::concurrent::IntlLangMemoizer;
 use std::{fs, io::ErrorKind, sync::LazyLock};
@@ -26,17 +26,16 @@ pub fn translate(
                 .find_map(|(lang_id, bundle)| (lang_id.language == lang).then_some(bundle))
         })
         .or(*DEFAULT_BUNDLE)
-        .ok_or_else(|| Error::new("the localization bundle does not exits"))?;
+        .ok_or_else(|| warn!("the localization bundle does not exits"))?;
     let pattern = bundle
         .get_message(message)
-        .ok_or_else(|| {
-            let message = format!("fail to get the localization message for `{message}`");
-            Error::new(message)
-        })?
+        .ok_or_else(|| warn!("fail to get the localization message for `{}`", message))?
         .value()
         .ok_or_else(|| {
-            let message = format!("fail to retrieve an option of the pattern for `{message}`");
-            Error::new(message)
+            warn!(
+                "fail to retrieve an option of the pattern for `{}`",
+                message
+            )
         })?;
 
     let mut errors = vec![];
@@ -46,14 +45,14 @@ pub fn translate(
         if errors.is_empty() {
             Ok(value.into())
         } else {
-            Err(Error::new(format!("{errors:?}")))
+            Err(warn!("{:?}", errors))
         }
     } else {
         let value = bundle.format_pattern(pattern, None, &mut errors);
         if errors.is_empty() {
             Ok(value)
         } else {
-            Err(Error::new(format!("{errors:?}")))
+            Err(warn!("{:?}", errors))
         }
     }
 }

@@ -34,6 +34,7 @@ pub trait HeaderMapExt {
     ///
     /// 1. `Forwarded` header `for` key
     /// 2. The first `X-Forwarded-For` header
+    /// 3. The first `X-Real-Ip` header
     fn get_client_ip(&self) -> Option<IpAddr> {
         self.get_str("forwarded")
             .and_then(|s| {
@@ -46,6 +47,7 @@ pub trait HeaderMapExt {
                 self.get_str("x-forwarded-for")
                     .and_then(|s| s.split(',').next())
             })
+            .or_else(|| self.get_str("x-real-ip"))
             .and_then(|s| s.parse().ok())
     }
 

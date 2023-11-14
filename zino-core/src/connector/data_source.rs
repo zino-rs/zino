@@ -1,6 +1,6 @@
 use self::DataSourceConnector::*;
 use super::Connector;
-use crate::{error::Error, extension::TomlTableExt, Map, Record};
+use crate::{bail, error::Error, extension::TomlTableExt, Map, Record};
 use toml::Table;
 
 #[cfg(feature = "connector-arrow")]
@@ -91,8 +91,7 @@ impl DataSource {
             #[cfg(feature = "connector-sqlite")]
             "sqlite" => SqlitePool::try_new_data_source(config)?,
             _ => {
-                let message = format!("data source protocol `{protocol}` is unsupported");
-                return Err(Error::new(message));
+                bail!("data source protocol `{}` is unsupported", protocol);
             }
         };
         let source_type = config.get_str("type").unwrap_or(protocol);
@@ -163,8 +162,7 @@ impl Connector for DataSource {
                 if let Some(protocol) = config.get_str("protocol") {
                     protocol.to_owned().leak()
                 } else {
-                    let message = format!("data source type `{source_type}` is unsupported");
-                    return Err(Error::new(message));
+                    bail!("data source type `{}` is unsupported", source_type);
                 }
             }
         };

@@ -76,31 +76,13 @@ pub trait ModelHooks: Model {
         };
         let execution_time = ctx.start_time().elapsed();
         let execution_time_millis = execution_time.as_millis();
-        if execution_time_millis > 3000 {
-            tracing::warn!(
-                query_id,
-                query,
-                arguments,
-                execution_time_millis,
-                "{message}"
-            );
-        } else if execution_time_millis > 1000 {
-            tracing::info!(
-                query_id,
-                query,
-                arguments,
-                execution_time_millis,
-                "{message}"
-            );
-        } else {
-            tracing::debug!(
-                query_id,
-                query,
-                arguments,
-                execution_time_micros = execution_time.as_micros(),
-                "{message}"
-            );
-        }
+        tracing::info!(
+            query_id,
+            query,
+            arguments,
+            execution_time_millis,
+            "{message}"
+        );
         Ok(())
     }
 

@@ -4,7 +4,7 @@ use crate::{
     error::Error,
     request::{Context, RequestContext, Validation},
     trace::TraceContext,
-    SharedString,
+    warn, SharedString,
 };
 
 /// A rejection response type.
@@ -249,7 +249,7 @@ pub trait ExtractRejection<T> {
 impl<T> ExtractRejection<T> for Option<T> {
     #[inline]
     fn extract<Ctx: RequestContext>(self, ctx: &Ctx) -> Result<T, Rejection> {
-        self.ok_or_else(|| Rejection::not_found(Error::new("resource does not exist")).context(ctx))
+        self.ok_or_else(|| Rejection::not_found(warn!("resource does not exist")).context(ctx))
     }
 }
 
@@ -271,32 +271,32 @@ impl<T, E: Into<Error>> ExtractRejection<T> for Result<Option<T>, E> {
     #[inline]
     fn extract<Ctx: RequestContext>(self, ctx: &Ctx) -> Result<T, Rejection> {
         self.map_err(|err| Rejection::from_error(err).context(ctx))?
-            .ok_or_else(|| Rejection::not_found(Error::new("resource does not exist")).context(ctx))
+            .ok_or_else(|| Rejection::not_found(warn!("resource does not exist")).context(ctx))
     }
 }
 
-/// Returns early with a rejection.
+/// Returns early with a [`Rejection`].
 #[macro_export]
 macro_rules! reject {
-    ($ctx:ident, $validation:expr $(,)?) => {
+    ($ctx:ident, $validation:expr $(,)?) => {{
         return Err(Rejection::bad_request($validation).context(&$ctx).into());
-    };
-    ($ctx:ident, $key:literal, $message:literal $(,)?) => {
-        let err = Error::new($message);
+    }};
+    ($ctx:ident, $key:literal, $message:literal $(,)?) => {{
+        let err = zino_core::warn!($message);
         return Err(Rejection::from_validation_entry($key, err).context(&$ctx).into());
-    };
-    ($ctx:ident, $key:literal, $err:expr $(,)?) => {
+    }};
+    ($ctx:ident, $key:literal, $err:expr $(,)?) => {{
         return Err(Rejection::from_validation_entry($key, $err).context(&$ctx).into());
-    };
-    ($ctx:ident, $kind:ident, $message:literal $(,)?) => {
-        let err = Error::new($message);
+    }};
+    ($ctx:ident, $kind:ident, $message:literal $(,)?) => {{
+        let err = zino_core::warn!($message);
         return Err(Rejection::$kind(err).context(&$ctx).into());
-    };
-    ($ctx:ident, $kind:ident, $err:expr $(,)?) => {
+    }};
+    ($ctx:ident, $kind:ident, $err:expr $(,)?) => {{
         return Err(Rejection::$kind($err).context(&$ctx).into());
-    };
-    ($ctx:ident, $kind:ident, $fmt:expr, $($arg:tt)+) => {
-        let err = Error::new(format!($fmt, $($arg)+));
+    }};
+    ($ctx:ident, $kind:ident, $fmt:expr, $($arg:tt)+) => {{
+        let err = zino_core::warn!($fmt, $($arg)+);
         return Err(Rejection::$kind(err).context(&$ctx).into());
-    };
+    }};
 }

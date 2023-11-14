@@ -1,11 +1,12 @@
 use super::{ModelHelper, Schema};
 use crate::{
+    bail,
     datetime::DateTime,
     error::Error,
     extension::JsonObjectExt,
     model::{ModelHooks, Mutation, Query},
     request::Validation,
-    JsonValue, Map,
+    warn, JsonValue, Map,
 };
 use std::fmt::Display;
 
@@ -377,7 +378,7 @@ where
     async fn fetch_by_id(id: &K) -> Result<Map, Error> {
         let mut model = Self::find_by_id::<Map>(id)
             .await?
-            .ok_or_else(|| Error::new(format!("404 Not Found: cannot find the model `{id}`")))?;
+            .ok_or_else(|| warn!("404 Not Found: cannot find the model `{}`", id))?;
         Self::after_decode(&mut model).await?;
         Self::translate_model(&mut model);
         Ok(model)
@@ -419,8 +420,10 @@ where
         if let Some(version) = data.get_u64("version")
             && model.version() != version
         {
-            let message = format!("409 Conflict: there is a version conflict for `{version}`");
-            return Err(Error::new(message));
+            bail!(
+                "409 Conflict: there is a version conflict for `{}`",
+                version
+            );
         }
         Self::before_validation(data, extension.as_ref()).await?;
 

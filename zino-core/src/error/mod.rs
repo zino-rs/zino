@@ -97,3 +97,39 @@ impl fmt::Display for Error {
         write!(f, "{message}")
     }
 }
+
+/// Emits a `tracing::Event` at the warn level and returns early with an [`Error`].
+#[macro_export]
+macro_rules! bail {
+    ($message:literal $(,)?) => {{
+        tracing::warn!($message);
+        return Err(Error::new($message));
+    }};
+    ($err:expr $(,)?) => {{
+        tracing::warn!($err);
+        return Err(Error::from($err));
+    }};
+    ($fmt:expr, $($arg:tt)+) => {{
+        let message = format!($fmt, $($arg)+);
+        tracing::warn!(message);
+        return Err(Error::new(message));
+    }};
+}
+
+/// Emits a `tracing::Event` at the warn level and constructs an [`Error`].
+#[macro_export]
+macro_rules! warn {
+    ($message:literal $(,)?) => {{
+        tracing::warn!($message);
+        Error::new($message)
+    }};
+    ($err:expr $(,)?) => {{
+        tracing::warn!($err);
+        Error::from($err)
+    }};
+    ($fmt:expr, $($arg:tt)+) => {{
+        let message = format!($fmt, $($arg)+);
+        tracing::warn!(message);
+        Error::new(message)
+    }};
+}

@@ -1,4 +1,4 @@
-use crate::{encoding::base64, error::Error, AvroValue, JsonValue, Map};
+use crate::{bail, encoding::base64, error::Error, warn, AvroValue, JsonValue, Map};
 use apache_avro::{Days, Duration, Millis, Months};
 use datafusion::arrow::{
     array::{self, Array, ArrayAccessor, FixedSizeBinaryArray, FixedSizeListArray, StringArray},
@@ -219,8 +219,7 @@ impl ArrowArrayExt for dyn Array {
                         hashmap.insert(key, value);
                     } else {
                         let key_type = map_array.key_type();
-                        let message = format!("Avro map does not support `{key_type}` keys ");
-                        return Err(Error::new(message));
+                        bail!("Avro map does not support `{}` keys", key_type);
                     }
                 }
                 AvroValue::Map(hashmap)
@@ -246,10 +245,10 @@ impl ArrowArrayExt for dyn Array {
                     .position(|(ty, _)| type_id == ty)
                     .ok_or_else(|| {
                         let type_names = union_array.type_names();
-                        let message = format!(
-                            "invalid slot `{type_id}` for the union types `{type_names:?}`"
-                        );
-                        Error::new(message)
+                        warn!(
+                            "invalid slot `{}` for the union types `{:?}`",
+                            type_id, type_names
+                        )
                     })?;
                 let value = union_array.value(index).parse_avro_value(0)?;
                 AvroValue::Union(position.try_into()?, Box::new(value))
@@ -261,16 +260,15 @@ impl ArrowArrayExt for dyn Array {
                 let dictionary_array = array::as_dictionary_array::<UInt32Type>(self);
                 let string_array = dictionary_array
                     .downcast_dict::<StringArray>()
-                    .ok_or_else(|| Error::new("fail to downcast the dictionary to string array"))?;
+                    .ok_or_else(|| warn!("fail to downcast the dictionary to string array"))?;
                 let value = string_array.value(index);
-                let position = dictionary_array.lookup_key(value).ok_or_else(|| {
-                    Error::new(format!("value `{value}` is not in the dictionary"))
-                })?;
+                let position = dictionary_array
+                    .lookup_key(value)
+                    .ok_or_else(|| warn!("value `{}` is not in the dictionary", value))?;
                 AvroValue::Enum(position, value.to_owned())
             }
             data_type => {
-                let message = format!("cannot convert the `{data_type}` value to an Avro value");
-                return Err(Error::new(message));
+                bail!("cannot convert the `{}` value to an Avro value", data_type);
             }
         };
         Ok(value)
@@ -384,8 +382,7 @@ impl ArrowArrayExt for dyn Array {
                         map.insert(key, value);
                     } else {
                         let key_type = map_array.key_type();
-                        let message = format!("json object does not support `{key_type}` keys ");
-                        return Err(Error::new(message));
+                        bail!("json object does not support `{}` keys", key_type);
                     }
                 }
                 JsonValue::Object(map)
@@ -410,13 +407,12 @@ impl ArrowArrayExt for dyn Array {
                 let dictionary_array = array::as_dictionary_array::<UInt32Type>(self);
                 let string_array = dictionary_array
                     .downcast_dict::<StringArray>()
-                    .ok_or_else(|| Error::new("fail to downcast the dictionary to string array"))?;
+                    .ok_or_else(|| warn!("fail to downcast the dictionary to string array"))?;
                 let value = string_array.value(index);
                 JsonValue::String(value.to_owned())
             }
             data_type => {
-                let message = format!("cannot convert the `{data_type}` value to a json value");
-                return Err(Error::new(message));
+                bail!("cannot convert the `{}` value to a json value", data_type);
             }
         };
         Ok(value)

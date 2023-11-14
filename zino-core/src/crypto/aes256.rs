@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::{bail, error::Error, warn};
 use aes_gcm_siv::{
     aead::{generic_array::GenericArray, Aead},
     Aes256GcmSiv, KeyInit, Nonce,
@@ -22,7 +22,7 @@ pub(crate) fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
     let nonce = Nonce::from_slice(&bytes);
     let mut ciphertext = cipher
         .encrypt(nonce, plaintext)
-        .map_err(|_| Error::new("fail to encrypt the plaintext"))?;
+        .map_err(|_| warn!("fail to encrypt the plaintext"))?;
     ciphertext.extend_from_slice(&bytes);
     Ok(ciphertext)
 }
@@ -30,7 +30,7 @@ pub(crate) fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
 /// Decrypts the data as bytes using `AES-GCM-SIV`.
 pub(crate) fn decrypt(data: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
     if data.len() <= NONCE_SIZE {
-        return Err(Error::new("invalid data length"));
+        bail!("invalid data length");
     }
 
     let cipher = Aes256GcmSiv::new(GenericArray::from_slice(&padded_key(key)));
@@ -39,7 +39,7 @@ pub(crate) fn decrypt(data: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
     let nonce = GenericArray::from_slice(bytes);
     cipher
         .decrypt(nonce, ciphertext)
-        .map_err(|_| Error::new("fail to decrypt the ciphertext"))
+        .map_err(|_| warn!("fail to decrypt the ciphertext"))
 }
 
 /// Gets the padded key.

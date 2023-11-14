@@ -3,7 +3,7 @@ use crate::{
     error::Error,
     extension::{HeaderMapExt, JsonObjectExt, TomlTableExt},
     trace::TraceContext,
-    JsonValue, Map, Uuid,
+    warn, JsonValue, Map, Uuid,
 };
 use reqwest::{
     header::{self, HeaderMap, HeaderName},
@@ -106,7 +106,7 @@ pub(crate) fn request_builder(
     if options.is_none() || options.is_some_and(|map| map.is_empty()) {
         let request_builder = SHARED_HTTP_CLIENT_WITH_MIDDLEWARE
             .get()
-            .ok_or_else(|| Error::new("fail to get the global http client"))?
+            .ok_or_else(|| warn!("fail to get the global http client"))?
             .request(Method::GET, resource);
         return Ok(request_builder);
     }
@@ -118,7 +118,7 @@ pub(crate) fn request_builder(
         .unwrap_or(Method::GET);
     let mut request_builder = SHARED_HTTP_CLIENT_WITH_MIDDLEWARE
         .get()
-        .ok_or_else(|| Error::new("fail to get the global http client"))?
+        .ok_or_else(|| warn!("fail to get the global http client"))?
         .request(method, resource);
     let mut headers = HeaderMap::new();
     if let Some(query) = options.get("query") {

@@ -1,6 +1,6 @@
 use self::ChatbotClient::*;
 use super::ChatbotService;
-use crate::{error::Error, extension::TomlTableExt, Map};
+use crate::{bail, error::Error, extension::TomlTableExt, Map};
 use toml::Table;
 
 #[cfg(feature = "chatbot-openai")]
@@ -46,8 +46,7 @@ impl Chatbot {
             #[cfg(feature = "chatbot-openai")]
             "openai" => OpenAiChatCompletion::try_new_chatbot(config),
             _ => {
-                let message = format!("chatbot service `{service}` is unsupported");
-                Err(Error::new(message))
+                bail!("chatbot service `{}` is unsupported", service);
             }
         }
     }

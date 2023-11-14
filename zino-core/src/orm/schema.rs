@@ -3,10 +3,11 @@ use super::{
     DatabaseRow, ModelHelper,
 };
 use crate::{
+    bail,
     error::Error,
     extension::{JsonObjectExt, JsonValueExt},
     model::{Column, DecodeRow, EncodeColumn, ModelHooks, Mutation, Query, QueryContext},
-    BoxFuture, JsonValue, Map, Uuid,
+    warn, BoxFuture, JsonValue, Map, Uuid,
 };
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
@@ -141,7 +142,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     fn init_reader() -> Result<&'static ConnectionPool, Error> {
         super::SHARED_CONNECTION_POOLS
             .get_pool(Self::READER_NAME)
-            .ok_or_else(|| Error::new("connection to the database is unavailable"))
+            .ok_or_else(|| warn!("connection to the database is unavailable"))
     }
 
     /// Initializes the model writer.
@@ -149,7 +150,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     fn init_writer() -> Result<&'static ConnectionPool, Error> {
         super::SHARED_CONNECTION_POOLS
             .get_pool(Self::WRITER_NAME)
-            .ok_or_else(|| Error::new("connection to the database is unavailable"))
+            .ok_or_else(|| warn!("connection to the database is unavailable"))
     }
 
     /// Creates a database table for the model.
@@ -420,9 +421,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         if success {
             Ok(ctx)
         } else {
-            Err(Error::new(format!(
-                "{rows_affected} rows are affected while it is expected to affect 1 row"
-            )))
+            bail!(
+                "{} rows are affected while it is expected to affect 1 row",
+                rows_affected
+            );
         }
     }
 
@@ -493,9 +495,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         if success {
             Ok(ctx)
         } else {
-            Err(Error::new(format!(
-                "{rows_affected} rows are affected while it is expected to affect 1 row"
-            )))
+            bail!(
+                "{} rows are affected while it is expected to affect 1 row",
+                rows_affected
+            );
         }
     }
 
@@ -535,9 +538,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         if success {
             Ok(ctx)
         } else {
-            Err(Error::new(format!(
-                "{rows_affected} rows are affected while it is expected to affect at most 1 row"
-            )))
+            bail!(
+                "{} rows are affected while it is expected to affect at most 1 row",
+                rows_affected
+            );
         }
     }
 
@@ -616,9 +620,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         if success {
             Ok(ctx)
         } else {
-            Err(Error::new(format!(
-                "{rows_affected} rows are affected while it is expected to affect 1 row"
-            )))
+            bail!(
+                "{} rows are affected while it is expected to affect 1 row",
+                rows_affected
+            );
         }
     }
 
@@ -654,9 +659,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         if success {
             Ok(ctx)
         } else {
-            Err(Error::new(format!(
-                "{rows_affected} rows are affected while it is expected to affect 1 row"
-            )))
+            bail!(
+                "{} rows are affected while it is expected to affect 1 row",
+                rows_affected
+            );
         }
     }
 
@@ -685,9 +691,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         if success {
             Ok(ctx)
         } else {
-            Err(Error::new(format!(
-                "{rows_affected} rows are affected while it is expected to affect at most 1 row"
-            )))
+            bail!(
+                "{} rows are affected while it is expected to affect at most 1 row",
+                rows_affected
+            );
         }
     }
 
@@ -1414,11 +1421,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             ctx.set_query_result(Some(0), true);
             Self::after_scan(&ctx).await?;
             Self::after_query(&ctx).await?;
-
-            let model_name = Self::MODEL_NAME;
-            Err(Error::new(format!(
-                "404 Not Found: no rows for the model `{model_name}` with the key `{primary_key}`"
-            )))
+            bail!(
+                "404 Not Found: no rows for the model `{}` with the key `{}`",
+                Self::MODEL_NAME,
+                primary_key
+            );
         }
     }
 

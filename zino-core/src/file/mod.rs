@@ -6,6 +6,8 @@ use crate::{
     error::Error,
 };
 use bytes::Bytes;
+use etag::EntityTag;
+use md5::{Digest, Md5};
 use mime::Mime;
 use multer::{Field, Multipart};
 use std::{
@@ -76,6 +78,12 @@ impl NamedFile {
         self.content_type.as_ref()
     }
 
+    /// Returns the file size.
+    #[inline]
+    pub fn file_size(&self) -> usize {
+        self.bytes.len()
+    }
+
     /// Returns the bytes.
     #[inline]
     pub fn bytes(&self) -> Bytes {
@@ -87,6 +95,19 @@ impl NamedFile {
     pub fn checksum(&self) -> Bytes {
         let checksum = crypto::digest(self.as_ref());
         Vec::from(checksum).into()
+    }
+
+    /// Returns the ETag for the file.
+    #[inline]
+    pub fn etag(&self) -> EntityTag {
+        EntityTag::from_data(self.as_ref())
+    }
+
+    /// Returns the content MD5.
+    pub fn content_md5(&self) -> String {
+        let mut hasher = Md5::new();
+        hasher.update(self.as_ref());
+        base64::encode(hasher.finalize())
     }
 
     /// Returns the hex representation of the file bytes.
@@ -125,13 +146,13 @@ impl NamedFile {
         Ok(())
     }
 
-    /// Writes the bytes into path.
+    /// Writes the bytes into a file at the path.
     #[inline]
     pub fn write(&self, path: impl AsRef<Path>) -> Result<(), io::Error> {
         fs::write(path, self.as_ref())
     }
 
-    /// Appends the bytes into path.
+    /// Appends the bytes into a file at the path.
     #[inline]
     pub fn append(&self, path: impl AsRef<Path>) -> Result<(), io::Error> {
         let mut file = OpenOptions::new().write(true).append(true).open(path)?;
