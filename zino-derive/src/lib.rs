@@ -1064,8 +1064,6 @@ pub fn derive_decode_row(item: TokenStream) -> TokenStream {
     // Parsing field attrs
     let name = input.ident;
     let mut decode_model_fields = Vec::new();
-    let mut mysql_decode_model_fields = Vec::new();
-    let mut postgres_decode_model_fields = Vec::new();
     if let Data::Struct(data) = input.data
         && let Fields::Named(fields) = data.fields
     {
@@ -1074,6 +1072,7 @@ pub fn derive_decode_row(item: TokenStream) -> TokenStream {
             if let Some(ident) = field.ident
                 && !type_name.is_empty()
             {
+                let name = ident.to_string();
                 let mut ignore = false;
                 'inner: for attr in field.attrs.iter() {
                     let arguments = parser::parse_schema_attr(attr);
@@ -1094,23 +1093,17 @@ pub fn derive_decode_row(item: TokenStream) -> TokenStream {
                         }
                     });
                 } else if parser::check_vec_type(&type_name) {
-                    mysql_decode_model_fields.push(quote! {
+                    decode_model_fields.push(quote! {
                         let value = orm::decode::<JsonValue>(row, #name)?;
                         if let Some(vec) = value.parse_array() {
                             model.#ident = vec;
                         }
                     });
-                    postgres_decode_model_fields.push(quote! {
-                        model.#ident = orm::decode(row, #name)?;
-                    });
                 } else if UNSIGNED_INTEGER_TYPES.contains(&type_name.as_str()) {
                     let integer_type_ident = format_ident!("{}", type_name.replace('u', "i"));
-                    postgres_decode_model_fields.push(quote! {
+                    decode_model_fields.push(quote! {
                         let value = orm::decode::<#integer_type_ident>(row, #name)?;
                         model.#ident = value.try_into()?;
-                    });
-                    mysql_decode_model_fields.push(quote! {
-                        model.#ident = orm::decode(row, #name)?;
                     });
                 } else {
                     decode_model_fields.push(quote! {
@@ -1123,20 +1116,14 @@ pub fn derive_decode_row(item: TokenStream) -> TokenStream {
 
     // Output
     let output = quote! {
-        use zino_core::{model::DecodeRow, orm::DatabaseRow};
-
-        impl DecodeRow<DatabaseRow> for #name {
+        impl zino_core::model::DecodeRow<zino_core::orm::DatabaseRow> for #name {
             type Error = zino_core::error::Error;
 
-            fn decode_row(row: &DatabaseRow) -> Result<Self, Self::Error> {
-                use zino_core::{extension::JsonValueExt, JsonValue};
-                let mut model = <#name>::default();
+            fn decode_row(row: &zino_core::orm::DatabaseRow) -> Result<Self, Self::Error> {
+                use zino_core::{extension::JsonValueExt, orm, JsonValue};
+
+                let mut model = Self::default();
                 #(#decode_model_fields)*
-                if cfg!(feature = "orm-mysql") {
-                    #(#mysql_decode_model_fields)*
-                } else if cfg!(feature = "orm-postgres") {
-                    #(#postgres_decode_model_fields)*
-                }
                 Ok(model)
             }
         }

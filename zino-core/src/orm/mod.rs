@@ -24,7 +24,7 @@ use convert_case::{Case, Casing};
 use smallvec::SmallVec;
 use sqlx::{
     pool::{Pool, PoolOptions},
-    Connection,
+    Connection, Database,
 };
 use std::{
     sync::{
@@ -284,9 +284,10 @@ impl GlobalConnection {
 
     /// Shuts down the shared connection pools to ensure all connections are gracefully closed.
     pub async fn close_all() {
+        let driver = DatabaseDriver::NAME;
         for cp in SHARED_CONNECTION_POOLS.0.iter() {
             let name = cp.name();
-            tracing::warn!("closing the database connection pool for the `{name}` service");
+            tracing::warn!("closing the {driver} connection pool for the `{name}` service");
             cp.pool().close().await;
         }
     }
@@ -302,16 +303,23 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
     // Database connection pools.
     let driver = DRIVER_NAME;
     let database_type = database_config.get_str("type").unwrap_or(driver);
-    let databases = config
-        .get_array(database_type)
-        .unwrap_or_else(|| panic!("the `{database_type}` field should be an array of tables"));
+    let databases = config.get_array(database_type).unwrap_or_else(|| {
+        panic!(
+            "the `{database_type}` field should be an array of tables; \
+                please use `[[{database_type}]]` to configure a list of database services"
+        )
+    });
     let pools = databases
         .iter()
         .filter_map(|v| v.as_table())
         .map(ConnectionPool::connect_lazy)
         .collect();
     if database_type == driver {
-        tracing::warn!(driver, "connect to the database lazily");
+        tracing::warn!(
+            driver,
+            "connect to the {} database services lazily",
+            DatabaseDriver::NAME
+        );
     } else {
         tracing::error!(
             driver,

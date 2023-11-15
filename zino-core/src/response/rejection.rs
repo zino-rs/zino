@@ -282,21 +282,21 @@ macro_rules! reject {
         return Err(Rejection::bad_request($validation).context(&$ctx).into());
     }};
     ($ctx:ident, $key:literal, $message:literal $(,)?) => {{
-        let err = zino_core::warn!($message);
+        let err = warn!($message);
         return Err(Rejection::from_validation_entry($key, err).context(&$ctx).into());
     }};
     ($ctx:ident, $key:literal, $err:expr $(,)?) => {{
         return Err(Rejection::from_validation_entry($key, $err).context(&$ctx).into());
     }};
     ($ctx:ident, $kind:ident, $message:literal $(,)?) => {{
-        let err = zino_core::warn!($message);
+        let err = warn!($message);
         return Err(Rejection::$kind(err).context(&$ctx).into());
     }};
     ($ctx:ident, $kind:ident, $err:expr $(,)?) => {{
         return Err(Rejection::$kind($err).context(&$ctx).into());
     }};
     ($ctx:ident, $kind:ident, $fmt:expr, $($arg:tt)+) => {{
-        let err = zino_core::warn!($fmt, $($arg)+);
+        let err = warn!($fmt, $($arg)+);
         return Err(Rejection::$kind(err).context(&$ctx).into());
     }};
 }

@@ -54,6 +54,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Retrieves a connection pool for the model writer.
     async fn acquire_writer() -> Result<&'static ConnectionPool, Error>;
 
+    /// Returns the driver name. It takes one of the values `mysql`, `postgres` and `sqlite`.
+    #[inline]
+    fn driver_name() -> &'static str {
+        super::DRIVER_NAME
+    }
+
     /// Returns the model name.
     #[inline]
     fn model_name() -> &'static str {

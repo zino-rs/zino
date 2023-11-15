@@ -1,6 +1,8 @@
 //! Internationalization and localization.
 
-use crate::{application, error::Error, extension::TomlTableExt, state::State, warn, SharedString};
+use crate::{
+    application, bail, error::Error, extension::TomlTableExt, state::State, warn, SharedString,
+};
 use fluent::{bundle::FluentBundle, FluentArgs, FluentResource};
 use intl_memoizer::concurrent::IntlLangMemoizer;
 use std::{fs, io::ErrorKind, sync::LazyLock};
@@ -45,14 +47,14 @@ pub fn translate(
         if errors.is_empty() {
             Ok(value.into())
         } else {
-            Err(warn!("{:?}", errors))
+            bail!("{:?}", errors);
         }
     } else {
         let value = bundle.format_pattern(pattern, None, &mut errors);
         if errors.is_empty() {
             Ok(value)
         } else {
-            Err(warn!("{:?}", errors))
+            bail!("{:?}", errors);
         }
     }
 }

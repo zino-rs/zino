@@ -1,10 +1,19 @@
 use serde::{Deserialize, Serialize};
 use zino::prelude::*;
-use zino_derive::{Model, ModelAccessor, ModelHooks, Schema};
+use zino_derive::{DecodeRow, Model, ModelAccessor, ModelHooks, Schema};
 
 /// The `tag` model.
 #[derive(
-    Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor, ModelHooks, Model,
+    Debug,
+    Clone,
+    Default,
+    Serialize,
+    Deserialize,
+    DecodeRow,
+    Schema,
+    ModelAccessor,
+    ModelHooks,
+    Model,
 )]
 #[serde(default)]
 pub struct Tag {

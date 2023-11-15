@@ -276,7 +276,7 @@ impl Connector for HttpConnector {
                 serde_json::from_value(map.into()).map_err(Error::from)
             }
         } else {
-            Err(warn!("invalid data format"))
+            bail!("invalid data format");
         }
     }
 }
