@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.15.3"
+version = "0.15.4"
 rust-version = "1.73"
 edition = "2021"
 license = "MIT"
@@ -48,7 +48,6 @@ accessor-s3 = ["accessor", "opendal/services-s3"]
 accessor-sled = ["accessor", "opendal/services-sled"]
 accessor-sqlite = ["accessor", "opendal/services-sqlite"]
 accessor-supabase = ["accessor", "opendal/services-supabase"]
-accessor-wasabi = ["accessor", "opendal/services-wasabi"]
 accessor-webdav = ["accessor", "opendal/services-webdav"]
 accessor-webhdfs = ["accessor", "opendal/services-webhdfs"]
 all-accessors = [
@@ -83,7 +82,6 @@ all-accessors = [
     "accessor-sled",
     "accessor-sqlite",
     "accessor-supabase",
-    "accessor-wasabi",
     "accessor-webdav",
     "accessor-webhdfs",
 ]
@@ -214,7 +212,7 @@ version = "4.4.2"
 optional = true
 
 [dependencies.opendal]
-version = "0.41.0"
+version = "0.42.0"
 optional = true
 default-features = false
 features = ["layers-all"]

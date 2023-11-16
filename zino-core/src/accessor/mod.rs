@@ -35,7 +35,6 @@
 //! | `sled`        | Sled services.                           | `accessor-sled`       |
 //! | `sqlite`      | SQLite services.                         | `accessor-sqlite`     |
 //! | `supabase`    | Supabase services.                       | `accessor-supabase`   |
-//! | `wasabi`      | Wasabi services.                         | `accessor-wasabi`     |
 //! | `webdav`      | WebDAV services.                         | `accessor-webdav`     |
 //! | `webhdfs`     | WebHDFS services.                        | `accessor-webhdfs`    |
 //!
@@ -421,9 +420,6 @@ impl GlobalAccessor {
                 if let Some(encryption_key_id) = config.get_str("server-side-encryption-key-id") {
                     builder.server_side_encryption_key_id(encryption_key_id);
                 }
-                if let Some(write_min_size) = config.get_usize("write-min-size") {
-                    builder.write_min_size(write_min_size);
-                }
                 if let Some(batch_max_operations) = config.get_usize("batch-max-operations") {
                     builder.batch_max_operations(batch_max_operations);
                 }
@@ -583,38 +579,6 @@ impl GlobalAccessor {
                 }
                 if let Some(key) = config.get_str("key") {
                     builder.key(key);
-                }
-                Ok(Operator::new(builder)?.finish())
-            }
-            #[cfg(feature = "accessor-wasabi")]
-            "wasabi" => {
-                let mut builder = services::Wasabi::default();
-                if let Some(root) = config.get_str("root") {
-                    builder.root(root);
-                }
-                if let Some(bucket) = config.get_str("bucket") {
-                    builder.bucket(bucket);
-                }
-                if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
-                }
-                if let Some(region) = config.get_str("region") {
-                    builder.region(region);
-                }
-                if let Some(access_key_id) = config.get_str("access-key-id") {
-                    builder.access_key_id(access_key_id);
-                }
-                if let Some(secret_access_key) = config.get_str("secret-access-key") {
-                    builder.secret_access_key(secret_access_key);
-                }
-                if let Some(role_arn) = config.get_str("role-arn") {
-                    builder.role_arn(role_arn);
-                }
-                if let Some(external_id) = config.get_str("external-id") {
-                    builder.external_id(external_id);
-                }
-                if let Some(default_storage_class) = config.get_str("default-storage-class") {
-                    builder.default_storage_class(default_storage_class);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
