@@ -32,7 +32,7 @@ pub fn routes() -> Vec<Router> {
     // User controller.
     let router = Router::new()
         .route("/user/new", post(user::new))
-        .route("/user/:id/delete", post(User::delete))
+        .route("/user/:id/delete", post(User::soft_delete))
         .route("/user/:id/update", post(User::update))
         .route("/user/:id/view", get(user::view))
         .route("/user/list", get(User::list))
@@ -43,7 +43,7 @@ pub fn routes() -> Vec<Router> {
     // Tag controller.
     let router = Router::new()
         .route("/tag/new", post(Tag::new))
-        .route("/tag/:id/delete", post(Tag::delete))
+        .route("/tag/:id/delete", post(Tag::soft_delete))
         .route("/tag/:id/update", post(Tag::update))
         .route("/tag/:id/view", get(Tag::view))
         .route("/tag/list", get(Tag::list))

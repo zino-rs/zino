@@ -81,7 +81,8 @@ impl Application for ActixCluster {
                 let mut public_route_prefix = "/public";
                 let mut public_dir = PathBuf::new();
                 let mut backlog = 2048; // Maximum number of pending connections
-                let mut body_limit = 100 * 1024 * 1024; // 100MB
+                let mut max_connections = 25000; // Maximum number of concurrent connections
+                let mut body_limit = 128 * 1024 * 1024; // 128MB
                 let mut request_timeout = Duration::from_secs(30); // 30 seconds
                 if let Some(config) = app_state.get_config("server") {
                     if let Some(dir) = config.get_str("page-dir") {
@@ -97,6 +98,9 @@ impl Application for ActixCluster {
                     }
                     if let Some(value) = config.get_u32("backlog") {
                         backlog = value;
+                    }
+                    if let Some(value) = config.get_usize("max-connections") {
+                        max_connections = value;
                     }
                     if let Some(limit) = config.get_usize("body-limit") {
                         body_limit = limit;
@@ -190,6 +194,7 @@ impl Application for ActixCluster {
                 })
                 .server_hostname(app_domain)
                 .backlog(backlog)
+                .max_connections(max_connections)
                 .client_request_timeout(request_timeout)
                 .bind_auto_h2c(addr)
                 .unwrap_or_else(|err| panic!("fail to create an HTTP server: {err}"))

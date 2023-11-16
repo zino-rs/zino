@@ -44,7 +44,7 @@ mod query;
 mod schema;
 
 pub use accessor::ModelAccessor;
-pub use decode::decode;
+pub use decode::{decode, decode_array};
 pub use helper::ModelHelper;
 pub use schema::Schema;
 
@@ -317,7 +317,7 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
     if database_type == driver {
         tracing::warn!(
             driver,
-            "connect to the {} database services lazily",
+            "connect to {} database services lazily",
             DatabaseDriver::NAME
         );
     } else {

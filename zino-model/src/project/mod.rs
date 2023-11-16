@@ -10,7 +10,7 @@ use zino_core::{
     request::Validation,
     Map, Uuid,
 };
-use zino_derive::{ModelAccessor, Schema};
+use zino_derive::{DecodeRow, ModelAccessor, Schema};
 
 #[cfg(feature = "tags")]
 use crate::tag::Tag;
@@ -19,7 +19,7 @@ use crate::tag::Tag;
 use zino_core::auth::UserSession;
 
 /// The `project` model.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, DecodeRow, Schema, ModelAccessor)]
 #[serde(default)]
 pub struct Project {
     // Basic fields.

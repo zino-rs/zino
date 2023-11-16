@@ -40,7 +40,7 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
     let name = input.ident;
     let mut model_name = name.to_string();
 
-    // Parsing struct attrs
+    // Parsing struct attributes
     let mut reader_name = String::from("main");
     let mut writer_name = String::from("main");
     let mut table_name = None;
@@ -70,7 +70,7 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
         }
     }
 
-    // Parsing field attrs
+    // Parsing field attributes
     let mut primary_key_type = String::from("Uuid");
     let mut primary_key_name = String::from("id");
     let mut primary_key_value = None;
@@ -391,7 +391,7 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                         bail!(
                             "503 Service Unavailable: fail to acquire reader for the model `{}`: {}",
                             model_name,
-                            err,
+                            err
                         );
                     }
                     if let Err(err) = Self::synchronize_schema().await {
@@ -399,7 +399,7 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                         bail!(
                             "503 Service Unavailable: fail to acquire reader for the model `{}`: {}",
                             model_name,
-                            err,
+                            err
                         );
                     }
                     if let Err(err) = Self::create_indexes().await {
@@ -407,7 +407,7 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                         bail!(
                             "503 Service Unavailable: fail to acquire reader for the model `{}`: {}",
                             model_name,
-                            err,
+                            err
                         );
                     }
                     #schema_reader.set(connection_pool).map_err(|_| {
@@ -429,21 +429,21 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                         bail!(
                             "503 Service Unavailable: fail to acquire writer for the model `{}`: {}",
                             model_name,
-                            err,
+                            err
                         );
                     }
                     if let Err(err) = Self::synchronize_schema().await {
                         bail!(
                             "503 Service Unavailable: fail to acquire writer for the model `{}`: {}",
                             model_name,
-                            err,
+                            err
                         );
                     }
                     if let Err(err) = Self::create_indexes().await {
                         bail!(
                             "503 Service Unavailable: fail to acquire writer for the model `{}`: {}",
                             model_name,
-                            err,
+                            err
                         );
                     }
                     #schema_writer.set(connection_pool).map_err(|_| {
@@ -476,7 +476,7 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
     // Input
     let input = parse_macro_input!(item as DeriveInput);
 
-    // Parsing struct attrs
+    // Parsing struct attributes
     let mut compound_constraints = Vec::new();
     for attr in input.attrs.iter() {
         for (key, value) in parser::parse_schema_attr(attr).into_iter() {
@@ -508,7 +508,7 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
         }
     }
 
-    // Parsing field attrs
+    // Parsing field attributes
     let name = input.ident;
     let mut column_methods = Vec::new();
     let mut snapshot_fields = Vec::new();
@@ -1061,7 +1061,7 @@ pub fn derive_decode_row(item: TokenStream) -> TokenStream {
     // Input
     let input = parse_macro_input!(item as DeriveInput);
 
-    // Parsing field attrs
+    // Parsing field attributes
     let name = input.ident;
     let mut decode_model_fields = Vec::new();
     if let Data::Struct(data) = input.data
@@ -1094,10 +1094,7 @@ pub fn derive_decode_row(item: TokenStream) -> TokenStream {
                     });
                 } else if parser::check_vec_type(&type_name) {
                     decode_model_fields.push(quote! {
-                        let value = orm::decode::<JsonValue>(row, #name)?;
-                        if let Some(vec) = value.parse_array() {
-                            model.#ident = vec;
-                        }
+                        model.#ident = orm::decode_array(row, #name)?;
                     });
                 } else if UNSIGNED_INTEGER_TYPES.contains(&type_name.as_str()) {
                     let integer_type_ident = format_ident!("{}", type_name.replace('u', "i"));
@@ -1138,7 +1135,7 @@ pub fn derive_model_hooks(item: TokenStream) -> TokenStream {
     // Input
     let input = parse_macro_input!(item as DeriveInput);
 
-    // Parsing field attrs
+    // Parsing field attributes
     let name = input.ident;
 
     // Output
@@ -1164,7 +1161,7 @@ pub fn derive_model(item: TokenStream) -> TokenStream {
     // Model name
     let name = input.ident;
 
-    // Parsing field attrs
+    // Parsing field attributes
     let mut field_constructors = Vec::new();
     let mut field_setters = Vec::new();
     if let Data::Struct(data) = input.data

@@ -100,7 +100,7 @@ impl Application for AxumCluster {
                 let mut public_dir = PathBuf::new();
                 let mut sse_route = None;
                 let mut websocket_route = None;
-                let mut body_limit = 100 * 1024 * 1024; // 100MB
+                let mut body_limit = 128 * 1024 * 1024; // 128MB
                 let mut request_timeout = Duration::from_secs(30); // 30 seconds
                 if let Some(config) = app_state.get_config("server") {
                     if let Some(dir) = config.get_str("page-dir") {

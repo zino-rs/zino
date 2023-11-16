@@ -14,7 +14,7 @@ where
     }
 }
 
-/// Decodes a single value for the field in a row.
+/// Decodes a single value as `T` for the field in a row.
 #[inline]
 pub fn decode<'r, T>(row: &'r DatabaseRow, field: &str) -> Result<T, Error>
 where
@@ -23,9 +23,27 @@ where
     row.try_get_unchecked(field).map_err(Error::from)
 }
 
+/// Decodes a single value as `Vec<T>` for the field in a row.
+#[inline]
+pub fn decode_array<'r, T>(row: &'r DatabaseRow, field: &str) -> Result<Vec<T>, Error>
+where
+    T: Decode<'r, DatabaseDriver> + std::str::FromStr,
+{
+    #[cfg(feature = "orm-postgres")]
+    {
+        row.try_get_unchecked(field).map_err(Error::from)
+    }
+    #[cfg(not(feature = "orm-postgres"))]
+    {
+        use crate::{extension::JsonValueExt, JsonValue};
+
+        decode::<JsonValue>(row, field).map(|value| value.parse_array().unwrap_or_default())
+    }
+}
+
 /// Decodes a raw value at the index.
 #[inline]
-pub(super) fn decode_column<'r, T>(
+pub(super) fn decode_raw<'r, T>(
     field: &str,
     value: <DatabaseDriver as HasValueRef<'r>>::ValueRef,
 ) -> Result<T, sqlx::Error>

@@ -44,7 +44,7 @@ fn file_router(cfg: &mut ServiceConfig) {
 
 fn user_router(cfg: &mut ServiceConfig) {
     cfg.route("/user/new", post().to(user::new))
-        .route("/user/{id}/delete", post().to(User::delete))
+        .route("/user/{id}/delete", post().to(User::soft_delete))
         .route("/user/{id}/update", post().to(User::update))
         .route("/user/{id}/view", get().to(user::view))
         .route("/user/list", get().to(User::list))
@@ -54,7 +54,7 @@ fn user_router(cfg: &mut ServiceConfig) {
 
 fn tag_router(cfg: &mut ServiceConfig) {
     cfg.route("/tag/new", post().to(Tag::new))
-        .route("/tag/{id}/delete", post().to(Tag::delete))
+        .route("/tag/{id}/delete", post().to(Tag::soft_delete))
         .route("/tag/{id}/update", post().to(Tag::update))
         .route("/tag/{id}/view", get().to(Tag::view))
         .route("/tag/list", get().to(Tag::list))

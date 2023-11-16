@@ -14,7 +14,7 @@ use zino_core::{
     request::Validation,
     Map, Uuid,
 };
-use zino_derive::{ModelAccessor, Schema};
+use zino_derive::{DecodeRow, ModelAccessor, Schema};
 
 #[cfg(feature = "tags")]
 use crate::tag::Tag;
@@ -32,7 +32,7 @@ mod visibility;
 pub use visibility::UserVisibility;
 
 /// The `user` model.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, DecodeRow, Schema, ModelAccessor)]
 #[serde(default)]
 pub struct User {
     // Basic fields.

@@ -9,7 +9,7 @@ use zino_core::{
     request::Validation,
     Map, Uuid,
 };
-use zino_derive::{ModelAccessor, Schema};
+use zino_derive::{DecodeRow, ModelAccessor, Schema};
 
 #[cfg(any(feature = "owner-id", feature = "maintainer-id"))]
 use crate::user::User;
@@ -18,7 +18,7 @@ use crate::user::User;
 use zino_core::auth::UserSession;
 
 /// The `log` model.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, Schema, ModelAccessor)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, DecodeRow, Schema, ModelAccessor)]
 #[serde(default)]
 pub struct Log {
     // Basic fields.

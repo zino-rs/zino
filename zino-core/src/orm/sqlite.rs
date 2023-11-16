@@ -364,13 +364,13 @@ impl DecodeRow<DatabaseRow> for Map {
             let value = if raw_value.is_null() {
                 JsonValue::Null
             } else {
-                use super::decode::decode_column;
+                use super::decode::decode_raw;
                 match col.type_info().name() {
-                    "BOOLEAN" => decode_column::<bool>(field, raw_value)?.into(),
-                    "INTEGER" | "BIGINT" => decode_column::<i64>(field, raw_value)?.into(),
-                    "REAL" => decode_column::<f64>(field, raw_value)?.into(),
+                    "BOOLEAN" => decode_raw::<bool>(field, raw_value)?.into(),
+                    "INTEGER" | "BIGINT" => decode_raw::<i64>(field, raw_value)?.into(),
+                    "REAL" => decode_raw::<f64>(field, raw_value)?.into(),
                     "TEXT" => {
-                        let value = decode_column::<String>(field, raw_value)?;
+                        let value = decode_raw::<String>(field, raw_value)?;
                         if value.starts_with('[') && value.ends_with(']')
                             || value.starts_with('{') && value.ends_with('}')
                         {
@@ -379,15 +379,15 @@ impl DecodeRow<DatabaseRow> for Map {
                             value.into()
                         }
                     }
-                    "DATETIME" => decode_column::<DateTime>(field, raw_value)?.into(),
-                    "DATE" => decode_column::<NaiveDate>(field, raw_value)?
+                    "DATETIME" => decode_raw::<DateTime>(field, raw_value)?.into(),
+                    "DATE" => decode_raw::<NaiveDate>(field, raw_value)?
                         .to_string()
                         .into(),
-                    "TIME" => decode_column::<NaiveTime>(field, raw_value)?
+                    "TIME" => decode_raw::<NaiveTime>(field, raw_value)?
                         .to_string()
                         .into(),
                     "BLOB" => {
-                        let bytes = decode_column::<Vec<u8>>(field, raw_value)?;
+                        let bytes = decode_raw::<Vec<u8>>(field, raw_value)?;
                         if bytes.len() == 16 {
                             if let Ok(value) = Uuid::from_slice(&bytes) {
                                 value.to_string().into()
@@ -398,7 +398,7 @@ impl DecodeRow<DatabaseRow> for Map {
                             bytes.into()
                         }
                     }
-                    _ => decode_column::<String>(field, raw_value)?.into(),
+                    _ => decode_raw::<String>(field, raw_value)?.into(),
                 }
             };
             if !value.is_ignorable() {
@@ -422,13 +422,13 @@ impl DecodeRow<DatabaseRow> for Record {
             let value = if raw_value.is_null() {
                 AvroValue::Null
             } else {
-                use super::decode::decode_column;
+                use super::decode::decode_raw;
                 match col.type_info().name() {
-                    "BOOLEAN" => decode_column::<bool>(field, raw_value)?.into(),
-                    "INTEGER" | "BIGINT" => decode_column::<i64>(field, raw_value)?.into(),
-                    "REAL" => decode_column::<f64>(field, raw_value)?.into(),
+                    "BOOLEAN" => decode_raw::<bool>(field, raw_value)?.into(),
+                    "INTEGER" | "BIGINT" => decode_raw::<i64>(field, raw_value)?.into(),
+                    "REAL" => decode_raw::<f64>(field, raw_value)?.into(),
                     "TEXT" => {
-                        let value = decode_column::<String>(field, raw_value)?;
+                        let value = decode_raw::<String>(field, raw_value)?;
                         if value.starts_with('[') && value.ends_with(']')
                             || value.starts_with('{') && value.ends_with('}')
                         {
@@ -437,17 +437,15 @@ impl DecodeRow<DatabaseRow> for Record {
                             value.into()
                         }
                     }
-                    "DATETIME" => decode_column::<DateTime>(field, raw_value)?
+                    "DATETIME" => decode_raw::<DateTime>(field, raw_value)?.to_string().into(),
+                    "DATE" => decode_raw::<NaiveDate>(field, raw_value)?
                         .to_string()
                         .into(),
-                    "DATE" => decode_column::<NaiveDate>(field, raw_value)?
-                        .to_string()
-                        .into(),
-                    "TIME" => decode_column::<NaiveTime>(field, raw_value)?
+                    "TIME" => decode_raw::<NaiveTime>(field, raw_value)?
                         .to_string()
                         .into(),
                     "BLOB" => {
-                        let bytes = decode_column::<Vec<u8>>(field, raw_value)?;
+                        let bytes = decode_raw::<Vec<u8>>(field, raw_value)?;
                         if bytes.len() == 16 {
                             if let Ok(value) = Uuid::from_slice(&bytes) {
                                 value.into()
@@ -458,7 +456,7 @@ impl DecodeRow<DatabaseRow> for Record {
                             bytes.into()
                         }
                     }
-                    _ => decode_column::<String>(field, raw_value)?.into(),
+                    _ => decode_raw::<String>(field, raw_value)?.into(),
                 }
             };
             record.push((field.to_owned(), value));

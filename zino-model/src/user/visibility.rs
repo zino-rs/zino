@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
-use strum_macros::{AsRefStr, Display, IntoStaticStr};
-use zino_core::JsonValue;
+use sqlx::{database::HasValueRef, Database, Decode};
+use strum::{AsRefStr, Display, EnumString, IntoStaticStr};
+use zino_core::{BoxError, JsonValue};
 
 /// User visibility.
 #[derive(
@@ -15,6 +16,7 @@ use zino_core::JsonValue;
     Deserialize,
     AsRefStr,
     Display,
+    EnumString,
     IntoStaticStr,
 )]
 #[non_exhaustive]
@@ -35,5 +37,17 @@ impl From<UserVisibility> for JsonValue {
     #[inline]
     fn from(value: UserVisibility) -> Self {
         value.as_ref().into()
+    }
+}
+
+impl<'r, DB> Decode<'r, DB> for UserVisibility
+where
+    DB: Database,
+    &'r str: Decode<'r, DB>,
+{
+    #[inline]
+    fn decode(value: <DB as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxError> {
+        let value = <&'r str as Decode<'r, DB>>::decode(value)?;
+        Ok(value.parse()?)
     }
 }

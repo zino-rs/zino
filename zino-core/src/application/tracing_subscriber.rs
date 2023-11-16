@@ -90,7 +90,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .filename_suffix("log")
         .max_log_files(max_log_files.try_into().unwrap_or(1))
         .build(rolling_file_dir)
-        .expect("initializing rolling file appender failed");
+        .expect("fail to initialize the rolling file appender");
     let (non_blocking_appender, worker_guard) = tracing_appender::non_blocking(file_appender);
     let stdout = if in_dev_mode {
         io::stdout.with_max_level(Level::DEBUG)

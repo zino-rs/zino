@@ -20,6 +20,9 @@ pub trait DefaultController<K, U = K> {
     /// Lists models.
     async fn list(req: Self::Request) -> Self::Result;
 
+    /// Logically deletes a model.
+    async fn soft_delete(req: Self::Request) -> Self::Result;
+
     /// Batch inserts multiple models.
     async fn batch_insert(req: Self::Request) -> Self::Result;
 
@@ -164,6 +167,14 @@ where
             data.upsert("total_rows", total_rows);
         }
         res.set_json_data(data);
+        Ok(res.into())
+    }
+
+    async fn soft_delete(req: Self::Request) -> Self::Result {
+        let id = req.parse_param::<K>("id")?;
+        Self::delete_by_id(&id).await.extract(&req)?;
+
+        let res = crate::Response::default().context(&req);
         Ok(res.into())
     }
 

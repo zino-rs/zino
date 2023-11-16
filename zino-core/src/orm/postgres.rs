@@ -408,43 +408,43 @@ impl DecodeRow<DatabaseRow> for Map {
             let value = if raw_value.is_null() {
                 JsonValue::Null
             } else {
-                use super::decode::decode_column;
+                use super::decode::decode_raw;
                 match col.type_info().name() {
-                    "BOOL" => decode_column::<bool>(field, raw_value)?.into(),
-                    "INT2" => decode_column::<i16>(field, raw_value)?.into(),
-                    "INT4" => decode_column::<i32>(field, raw_value)?.into(),
-                    "INT8" => decode_column::<i64>(field, raw_value)?.into(),
-                    "FLOAT4" => decode_column::<f32>(field, raw_value)?.into(),
-                    "FLOAT8" => decode_column::<f64>(field, raw_value)?.into(),
+                    "BOOL" => decode_raw::<bool>(field, raw_value)?.into(),
+                    "INT2" => decode_raw::<i16>(field, raw_value)?.into(),
+                    "INT4" => decode_raw::<i32>(field, raw_value)?.into(),
+                    "INT8" => decode_raw::<i64>(field, raw_value)?.into(),
+                    "FLOAT4" => decode_raw::<f32>(field, raw_value)?.into(),
+                    "FLOAT8" => decode_raw::<f64>(field, raw_value)?.into(),
                     "NUMERIC" => {
-                        let value = decode_column::<Decimal>(field, raw_value)?;
+                        let value = decode_raw::<Decimal>(field, raw_value)?;
                         serde_json::to_value(value)?
                     }
-                    "TIMESTAMPTZ" => decode_column::<DateTime>(field, raw_value)?.into(),
-                    "TIMESTAMP" => decode_column::<NaiveDateTime>(field, raw_value)?
+                    "TIMESTAMPTZ" => decode_raw::<DateTime>(field, raw_value)?.into(),
+                    "TIMESTAMP" => decode_raw::<NaiveDateTime>(field, raw_value)?
                         .to_string()
                         .into(),
-                    "DATE" => decode_column::<NaiveDate>(field, raw_value)?
+                    "DATE" => decode_raw::<NaiveDate>(field, raw_value)?
                         .to_string()
                         .into(),
-                    "TIME" => decode_column::<NaiveTime>(field, raw_value)?
+                    "TIME" => decode_raw::<NaiveTime>(field, raw_value)?
                         .to_string()
                         .into(),
-                    "UUID" => decode_column::<Uuid>(field, raw_value)?.to_string().into(),
-                    "BYTEA" => decode_column::<Vec<u8>>(field, raw_value)?.into(),
-                    "INT4[]" => decode_column::<Vec<i32>>(field, raw_value)?.into(),
-                    "INT8[]" => decode_column::<Vec<i64>>(field, raw_value)?.into(),
-                    "TEXT[]" => decode_column::<Vec<String>>(field, raw_value)?.into(),
+                    "UUID" => decode_raw::<Uuid>(field, raw_value)?.to_string().into(),
+                    "BYTEA" => decode_raw::<Vec<u8>>(field, raw_value)?.into(),
+                    "INT4[]" => decode_raw::<Vec<i32>>(field, raw_value)?.into(),
+                    "INT8[]" => decode_raw::<Vec<i64>>(field, raw_value)?.into(),
+                    "TEXT[]" => decode_raw::<Vec<String>>(field, raw_value)?.into(),
                     "UUID[]" => {
-                        let values = decode_column::<Vec<Uuid>>(field, raw_value)?;
+                        let values = decode_raw::<Vec<Uuid>>(field, raw_value)?;
                         values
                             .iter()
                             .map(|v| v.to_string())
                             .collect::<Vec<_>>()
                             .into()
                     }
-                    "JSONB" | "JSON" => decode_column::<JsonValue>(field, raw_value)?,
-                    _ => decode_column::<String>(field, raw_value)?.into(),
+                    "JSONB" | "JSON" => decode_raw::<JsonValue>(field, raw_value)?,
+                    _ => decode_raw::<String>(field, raw_value)?.into(),
                 }
             };
             if !value.is_ignorable() {
@@ -468,40 +468,38 @@ impl DecodeRow<DatabaseRow> for Record {
             let value = if raw_value.is_null() {
                 AvroValue::Null
             } else {
-                use super::decode::decode_column;
+                use super::decode::decode_raw;
                 match col.type_info().name() {
-                    "BOOL" => decode_column::<bool>(field, raw_value)?.into(),
-                    "INT4" => decode_column::<i32>(field, raw_value)?.into(),
-                    "INT8" => decode_column::<i64>(field, raw_value)?.into(),
-                    "FLOAT4" => decode_column::<f32>(field, raw_value)?.into(),
-                    "FLOAT8" => decode_column::<f64>(field, raw_value)?.into(),
-                    "NUMERIC" => decode_column::<Decimal>(field, raw_value)?
+                    "BOOL" => decode_raw::<bool>(field, raw_value)?.into(),
+                    "INT4" => decode_raw::<i32>(field, raw_value)?.into(),
+                    "INT8" => decode_raw::<i64>(field, raw_value)?.into(),
+                    "FLOAT4" => decode_raw::<f32>(field, raw_value)?.into(),
+                    "FLOAT8" => decode_raw::<f64>(field, raw_value)?.into(),
+                    "NUMERIC" => decode_raw::<Decimal>(field, raw_value)?.to_string().into(),
+                    "TIMESTAMPTZ" => decode_raw::<DateTime>(field, raw_value)?.into(),
+                    "TIMESTAMP" => decode_raw::<NaiveDateTime>(field, raw_value)?
                         .to_string()
                         .into(),
-                    "TIMESTAMPTZ" => decode_column::<DateTime>(field, raw_value)?.into(),
-                    "TIMESTAMP" => decode_column::<NaiveDateTime>(field, raw_value)?
+                    "DATE" => decode_raw::<NaiveDate>(field, raw_value)?
                         .to_string()
                         .into(),
-                    "DATE" => decode_column::<NaiveDate>(field, raw_value)?
+                    "TIME" => decode_raw::<NaiveTime>(field, raw_value)?
                         .to_string()
                         .into(),
-                    "TIME" => decode_column::<NaiveTime>(field, raw_value)?
-                        .to_string()
-                        .into(),
-                    "UUID" => decode_column::<Uuid>(field, raw_value)?.into(),
-                    "BYTEA" => decode_column::<Vec<u8>>(field, raw_value)?.into(),
+                    "UUID" => decode_raw::<Uuid>(field, raw_value)?.into(),
+                    "BYTEA" => decode_raw::<Vec<u8>>(field, raw_value)?.into(),
                     "INT4[]" => {
-                        let values = decode_column::<Vec<i32>>(field, raw_value)?;
+                        let values = decode_raw::<Vec<i32>>(field, raw_value)?;
                         let vec = values.into_iter().map(AvroValue::Int).collect::<Vec<_>>();
                         AvroValue::Array(vec)
                     }
                     "INT8[]" => {
-                        let values = decode_column::<Vec<i64>>(field, raw_value)?;
+                        let values = decode_raw::<Vec<i64>>(field, raw_value)?;
                         let vec = values.into_iter().map(AvroValue::Long).collect::<Vec<_>>();
                         AvroValue::Array(vec)
                     }
                     "TEXT[]" => {
-                        let values = decode_column::<Vec<String>>(field, raw_value)?;
+                        let values = decode_raw::<Vec<String>>(field, raw_value)?;
                         let vec = values
                             .into_iter()
                             .map(AvroValue::String)
@@ -509,12 +507,12 @@ impl DecodeRow<DatabaseRow> for Record {
                         AvroValue::Array(vec)
                     }
                     "UUID[]" => {
-                        let values = decode_column::<Vec<Uuid>>(field, raw_value)?;
+                        let values = decode_raw::<Vec<Uuid>>(field, raw_value)?;
                         let vec = values.into_iter().map(AvroValue::Uuid).collect::<Vec<_>>();
                         AvroValue::Array(vec)
                     }
-                    "JSONB" | "JSON" => decode_column::<JsonValue>(field, raw_value)?.into(),
-                    _ => decode_column::<String>(field, raw_value)?.into(),
+                    "JSONB" | "JSON" => decode_raw::<JsonValue>(field, raw_value)?.into(),
+                    _ => decode_raw::<String>(field, raw_value)?.into(),
                 }
             };
             record.push((field.to_owned(), value));

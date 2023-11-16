@@ -30,11 +30,15 @@ edition = []
 
 [dependencies]
 regex = "1.10.2"
-strum_macros = "0.25.3"
+sqlx = "0.7.2"
 tracing = "0.1.40"
 
 [dependencies.serde]
 version = "1.0.192"
+features = ["derive"]
+
+[dependencies.strum]
+version = "0.25.0"
 features = ["derive"]
 
 [dependencies.zino-core]

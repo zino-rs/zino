@@ -54,7 +54,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Retrieves a connection pool for the model writer.
     async fn acquire_writer() -> Result<&'static ConnectionPool, Error>;
 
-    /// Returns the driver name. It takes one of the values `mysql`, `postgres` and `sqlite`.
+    /// Returns the driver name.
+    /// It takes one of the values: `mysql`, `postgres` and `sqlite`.
     #[inline]
     fn driver_name() -> &'static str {
         super::DRIVER_NAME
@@ -1350,7 +1351,43 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Ok(data)
     }
 
-    /// Finds one model selected by the primary key in the table,
+    /// Deletes a model selected by the primary key in the table.
+    async fn delete_by_id(primary_key: &Self::PrimaryKey) -> Result<QueryContext, Error> {
+        let pool = Self::acquire_writer().await?.pool();
+
+        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let table_name = Self::table_name();
+        let placeholder = Query::placeholder(1);
+        let sql = if cfg!(feature = "orm-postgres") {
+            let type_annotation = Self::primary_key_column().type_annotation();
+            format!(
+                "DELETE FROM {table_name} \
+                    WHERE {primary_key_name} = ({placeholder}){type_annotation};"
+            )
+        } else {
+            format!("DELETE FROM {table_name} WHERE {primary_key_name} = {placeholder};")
+        };
+
+        let mut ctx = Self::before_scan(&sql).await?;
+        let query = sqlx::query(&sql).bind(primary_key.to_string());
+        let query_result = query.execute(pool).await?;
+        let rows_affected = query_result.rows_affected();
+        let success = rows_affected == 1;
+        ctx.set_query(sql);
+        ctx.add_argument(primary_key);
+        ctx.set_query_result(Some(rows_affected), success);
+        Self::after_scan(&ctx).await?;
+        if success {
+            Ok(ctx)
+        } else {
+            bail!(
+                "{} rows are affected while it is expected to affect 1 row",
+                rows_affected
+            );
+        }
+    }
+
+    /// Finds a model selected by the primary key in the table,
     /// and decodes it as an instance of type `T`.
     async fn find_by_id<T: DecodeRow<DatabaseRow, Error = Error>>(
         primary_key: &Self::PrimaryKey,
@@ -1389,7 +1426,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Ok(data)
     }
 
-    /// Finds one model selected by the primary key in the table, and parses it as `Self`.
+    /// Finds a model selected by the primary key in the table, and parses it as `Self`.
     async fn try_get_model(primary_key: &Self::PrimaryKey) -> Result<Self, Error> {
         let pool = Self::acquire_reader().await?.pool();
 
