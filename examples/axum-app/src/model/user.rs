@@ -20,7 +20,7 @@ use zino_model::user::JwtAuthService;
 #[serde(default)]
 pub struct User {
     // Basic fields.
-    #[schema(primary_key, auto_increment, readonly)]
+    #[schema(primary_key, auto_increment, read_only)]
     id: i64,
     #[schema(not_null, index_type = "text", comment = "User name")]
     name: String,
@@ -36,11 +36,11 @@ pub struct User {
     description: String,
 
     // Info fields.
-    #[schema(not_null, unique, writeonly, constructor = "AccessKeyId::new")]
+    #[schema(not_null, unique, write_only, constructor = "AccessKeyId::new")]
     access_key_id: String,
-    #[schema(not_null, unique, writeonly, comment = "User account")]
+    #[schema(not_null, unique, write_only, comment = "User account")]
     account: String,
-    #[schema(not_null, writeonly, comment = "User password")]
+    #[schema(not_null, write_only, comment = "User password")]
     password: String,
     mobile: String,
     email: String,
@@ -69,7 +69,7 @@ pub struct User {
     extra: Map,
 
     // Revisions.
-    #[schema(readonly, default_value = "now", index_type = "btree")]
+    #[schema(read_only, default_value = "now", index_type = "btree")]
     created_at: DateTime,
     #[schema(default_value = "now", index_type = "btree")]
     updated_at: DateTime,

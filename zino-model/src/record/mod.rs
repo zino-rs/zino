@@ -22,7 +22,7 @@ use zino_core::auth::UserSession;
 #[serde(default)]
 pub struct Record {
     // Basic fields.
-    #[schema(readonly)]
+    #[schema(read_only)]
     id: Uuid,
     #[schema(not_null, index_type = "text")]
     name: String,
@@ -38,15 +38,15 @@ pub struct Record {
     description: String,
 
     // Info fields.
-    #[schema(readonly)]
+    #[schema(read_only)]
     integrity: String,
-    #[schema(readonly)]
+    #[schema(read_only)]
     signature: String,
-    #[schema(readonly, index_type = "btree")]
+    #[schema(read_only, index_type = "btree")]
     recorded_at: DateTime,
 
     // Extensions.
-    #[schema(readonly)]
+    #[schema(read_only)]
     content: Map,
     extra: Map,
 
@@ -57,7 +57,7 @@ pub struct Record {
     #[cfg(feature = "maintainer-id")]
     #[schema(reference = "User")]
     maintainer_id: Option<Uuid>, // user.id
-    #[schema(readonly, default_value = "now", index_type = "btree")]
+    #[schema(read_only, default_value = "now", index_type = "btree")]
     created_at: DateTime,
     #[schema(default_value = "now", index_type = "btree")]
     updated_at: DateTime,

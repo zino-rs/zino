@@ -23,7 +23,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
                 let host_addr = host
                     .parse::<IpAddr>()
                     .unwrap_or_else(|err| panic!("invalid host address `{host}`: {err}"));
-                tracing::warn!(exporter, "listen on {host_addr}:{port}");
+                tracing::warn!(exporter, "listen on `{host_addr}:{port}`");
                 PrometheusBuilder::new().with_http_listener((host_addr, port))
             };
             if let Some(quantiles) = metrics.get_array("quantiles") {

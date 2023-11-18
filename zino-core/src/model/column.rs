@@ -86,12 +86,6 @@ impl<'a> Column<'a> {
         self.type_name
     }
 
-    /// Returns `true` if the column is the primary key.
-    #[inline]
-    pub fn is_primary_key(&self) -> bool {
-        self.has_attribute("primary_key")
-    }
-
     /// Returns `true` if the column can not be null.
     #[inline]
     pub fn is_not_null(&self) -> bool {
@@ -159,6 +153,24 @@ impl<'a> Column<'a> {
             }
         }
         true
+    }
+
+    /// Returns `true` if the column is the primary key.
+    #[inline]
+    pub fn is_primary_key(&self) -> bool {
+        self.has_attribute("primary_key")
+    }
+
+    /// Returns `true` if the column is read-only.
+    #[inline]
+    pub fn is_read_only(&self) -> bool {
+        self.has_attribute("read_only")
+    }
+
+    /// Returns `true` if the column is write-only.
+    #[inline]
+    pub fn is_write_only(&self) -> bool {
+        self.has_attribute("write_only")
     }
 
     /// Returns the Avro schema.
@@ -367,10 +379,10 @@ impl<'a> Column<'a> {
         if let Some(comment) = self.comment() {
             definition.upsert("description", comment);
         }
-        if self.has_attribute("readonly") {
+        if self.is_read_only() {
             definition.upsert("readOnly", true);
         }
-        if self.has_attribute("writeonly") {
+        if self.is_write_only() {
             definition.upsert("writeOnly", true);
         }
         if self.has_attribute("deprecated") {

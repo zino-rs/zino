@@ -415,9 +415,9 @@ where
         }
 
         let exclusive_attributes = if action == "update" {
-            vec!["readonly", "generated", "reserved"]
+            vec!["read_only", "generated", "reserved"]
         } else {
-            vec!["readonly", "generated", "reserved", "auto_initialized"]
+            vec!["read_only", "generated", "reserved", "auto_initialized"]
         };
         let mut properties = Map::new();
         for col in columns {

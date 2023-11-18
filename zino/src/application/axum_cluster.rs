@@ -90,7 +90,7 @@ impl Application for AxumCluster {
                     app_env = app_env.as_str(),
                     app_name,
                     app_version,
-                    "listen on {addr}",
+                    "listen on `{addr}`",
                 );
 
                 // Server config
@@ -183,29 +183,27 @@ impl Application for AxumCluster {
                         if config.get_bool("show-docs") != Some(false) {
                             // If the `spec-url` has been configured, the user should
                             // provide the generated OpenAPI object with a derivation.
-                            let mut rapidoc = if let Some(url) = config.get_str("spec-url") {
+                            let path = config.get_str("rapidoc-route").unwrap_or("/rapidoc");
+                            let rapidoc = if let Some(url) = config.get_str("spec-url") {
                                 RapiDoc::new(url)
                             } else {
                                 RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
                             };
-                            if let Some(path) = config.get_str("rapidoc-route") {
-                                rapidoc = rapidoc.path(path);
-                            } else {
-                                rapidoc = rapidoc.path("/rapidoc");
-                            }
                             if let Some(custom_html) = config.get_str("custom-html")
                                 && let Ok(html) = fs::read_to_string(project_dir.join(custom_html))
                             {
-                                app = app.merge(rapidoc.custom_html(html.as_str()));
+                                app = app.merge(rapidoc.custom_html(html.as_str()).path(path));
                             } else {
-                                app = app.merge(rapidoc);
+                                app = app.merge(rapidoc.path(path));
                             }
+                            tracing::warn!("RapiDoc router `{path}` is registered for `{addr}`");
                         }
                     } else {
                         let rapidoc =
                             RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
                                 .path("/rapidoc");
                         app = app.merge(rapidoc);
+                        tracing::warn!("RapiDoc router `/rapidoc` is registered for `{addr}`");
                     }
                 }
 

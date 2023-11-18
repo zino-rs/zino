@@ -42,11 +42,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Returns a reference to the column fields.
     fn fields() -> &'static [&'static str];
 
-    /// Returns a reference to the readonly column fields.
-    fn readonly_fields() -> &'static [&'static str];
+    /// Returns a reference to the read-only column fields.
+    fn read_only_fields() -> &'static [&'static str];
 
-    /// Returns a reference to the writeonly column fields.
-    fn writeonly_fields() -> &'static [&'static str];
+    /// Returns a reference to the write-only column fields.
+    fn write_only_fields() -> &'static [&'static str];
 
     /// Retrieves a connection pool for the model reader.
     async fn acquire_reader() -> Result<&'static ConnectionPool, Error>;
@@ -131,7 +131,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     fn default_query() -> Query {
         let mut query = Query::default();
         query.allow_fields(Self::fields());
-        query.deny_fields(Self::writeonly_fields());
+        query.deny_fields(Self::write_only_fields());
         query
     }
 
@@ -140,7 +140,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     fn default_mutation() -> Mutation {
         let mut mutation = Mutation::default();
         mutation.allow_fields(Self::fields());
-        mutation.deny_fields(Self::readonly_fields());
+        mutation.deny_fields(Self::read_only_fields());
         mutation
     }
 
@@ -474,12 +474,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let table_name = Self::table_name();
         let primary_key = Query::escape_string(self.primary_key());
         let map = self.into_map();
-        let readonly_fields = Self::readonly_fields();
-        let num_writable_fields = Self::fields().len() - readonly_fields.len();
+        let read_only_fields = Self::read_only_fields();
+        let num_writable_fields = Self::fields().len() - read_only_fields.len();
         let mut mutations = Vec::with_capacity(num_writable_fields);
         for col in Self::columns() {
             let field = col.name();
-            if !readonly_fields.contains(&field) {
+            if !read_only_fields.contains(&field) {
                 let value = col.encode_value(map.get(field));
                 let field = Query::format_field(field);
                 mutations.push(format!("{field} = {value}"));
@@ -581,14 +581,14 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let table_name = Self::table_name();
         let fields = Self::fields();
         let num_fields = fields.len();
-        let readonly_fields = Self::readonly_fields();
-        let num_writable_fields = num_fields - readonly_fields.len();
+        let read_only_fields = Self::read_only_fields();
+        let num_writable_fields = num_fields - read_only_fields.len();
         let mut values = Vec::with_capacity(num_fields);
         let mut mutations = Vec::with_capacity(num_writable_fields);
         for col in Self::columns() {
             let field = col.name();
             let value = col.encode_value(map.get(field));
-            if !readonly_fields.contains(&field) {
+            if !read_only_fields.contains(&field) {
                 let field = Query::format_field(field);
                 mutations.push(format!("{field} = {value}"));
             }

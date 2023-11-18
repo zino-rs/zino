@@ -77,8 +77,8 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
     let mut primary_key_column = None;
     let mut columns = Vec::new();
     let mut column_fields = Vec::new();
-    let mut readonly_fields = Vec::new();
-    let mut writeonly_fields = Vec::new();
+    let mut read_only_fields = Vec::new();
+    let mut write_only_fields = Vec::new();
     if let Data::Struct(data) = input.data
         && let Fields::Named(fields) = data.fields
     {
@@ -102,6 +102,8 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                         if !SPECIAL_ATTRIBUTES.contains(&key) {
                             let attribute_setter = if let Some(value) = value.as_ref() {
                                 if let Ok(value) = value.parse::<i64>() {
+                                    quote! { column.set_extra_attribute(#key, #value); }
+                                } else if let Ok(value) = value.parse::<bool>() {
                                     quote! { column.set_extra_attribute(#key, #value); }
                                 } else {
                                     quote! { column.set_extra_attribute(#key, #value); }
@@ -162,11 +164,11 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                             "primary_key" => {
                                 primary_key_name = name.clone();
                             }
-                            "readonly" => {
-                                readonly_fields.push(quote! { #name });
+                            "read_only" => {
+                                read_only_fields.push(quote! { #name });
                             }
-                            "writeonly" => {
-                                writeonly_fields.push(quote! { #name });
+                            "write_only" => {
+                                write_only_fields.push(quote! { #name });
                             }
                             _ => (),
                         }
@@ -271,14 +273,14 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
     let schema_primary_key_column = format_ident!("{}_PRIMARY_KEY_COLUMN", model_name_upper_snake);
     let schema_columns = format_ident!("{}_COLUMNS", model_name_upper_snake);
     let schema_fields = format_ident!("{}_FIELDS", model_name_upper_snake);
-    let schema_readonly_fields = format_ident!("{}_READONLY_FIELDS", model_name_upper_snake);
-    let schema_writeonly_fields = format_ident!("{}_WRITEONLY_FIELDS", model_name_upper_snake);
+    let schema_read_only_fields = format_ident!("{}_READ_ONLY_FIELDS", model_name_upper_snake);
+    let schema_write_only_fields = format_ident!("{}_WRITE_ONLY_FIELDS", model_name_upper_snake);
     let schema_reader = format_ident!("{}_READER", model_name_upper_snake);
     let schema_writer = format_ident!("{}_WRITER", model_name_upper_snake);
     let avro_schema = format_ident!("{}_AVRO_SCHEMA", model_name_upper_snake);
     let num_columns = columns.len();
-    let num_readonly_fields = readonly_fields.len();
-    let num_writeonly_fields = writeonly_fields.len();
+    let num_read_only_fields = read_only_fields.len();
+    let num_write_only_fields = write_only_fields.len();
     let quote_table_name = if let Some(table_name) = table_name {
         quote! { Some(#table_name) }
     } else {
@@ -323,10 +325,10 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
             std::sync::LazyLock::new(|| [#(#columns),*]);
         static #schema_fields: std::sync::LazyLock<[&str; #num_columns]> =
             std::sync::LazyLock::new(|| [#(#column_fields),*]);
-        static #schema_readonly_fields: std::sync::LazyLock<[&str; #num_readonly_fields]> =
-            std::sync::LazyLock::new(|| [#(#readonly_fields),*]);
-        static #schema_writeonly_fields: std::sync::LazyLock<[&str; #num_writeonly_fields]> =
-            std::sync::LazyLock::new(|| [#(#writeonly_fields),*]);
+        static #schema_read_only_fields: std::sync::LazyLock<[&str; #num_read_only_fields]> =
+            std::sync::LazyLock::new(|| [#(#read_only_fields),*]);
+        static #schema_write_only_fields: std::sync::LazyLock<[&str; #num_write_only_fields]> =
+            std::sync::LazyLock::new(|| [#(#write_only_fields),*]);
         static #schema_reader: std::sync::OnceLock<&ConnectionPool> = std::sync::OnceLock::new();
         static #schema_writer: std::sync::OnceLock<&ConnectionPool> = std::sync::OnceLock::new();
 
@@ -370,13 +372,13 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
             }
 
             #[inline]
-            fn readonly_fields() -> &'static [&'static str] {
-                #schema_readonly_fields.as_slice()
+            fn read_only_fields() -> &'static [&'static str] {
+                #schema_read_only_fields.as_slice()
             }
 
             #[inline]
-            fn writeonly_fields() -> &'static [&'static str] {
-                #schema_writeonly_fields.as_slice()
+            fn write_only_fields() -> &'static [&'static str] {
+                #schema_write_only_fields.as_slice()
             }
 
             async fn acquire_reader() -> Result<&'static ConnectionPool, ZinoError> {
@@ -411,7 +413,10 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                         );
                     }
                     #schema_reader.set(connection_pool).map_err(|_| {
-                        warn!("503 Service Unavailable: fail to acquire reader for the model `{}`", model_name)
+                        warn!(
+                            "503 Service Unavailable: fail to acquire reader for the model `{}`",
+                            model_name
+                        )
                     })?;
                     Ok(connection_pool)
                 }
@@ -529,11 +534,15 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                 && !type_name.is_empty()
             {
                 let name = ident.to_string();
+                let mut field_alias = None;
                 for attr in field.attrs.iter() {
                     let arguments = parser::parse_schema_attr(attr);
-                    let is_readable = arguments.iter().all(|arg| arg.0 != "writeonly");
+                    let is_readable = arguments.iter().all(|arg| arg.0 != "write_only");
                     for (key, value) in arguments.into_iter() {
                         match key.as_str() {
+                            "alias" => {
+                                field_alias = value;
+                            }
                             "primary_key" => {
                                 primary_key_name = name.clone();
                             }
@@ -829,7 +838,7 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                 } else {
                     let name_ident = format_ident!("{}", name);
                     let mut snapshot_field = None;
-                    match name.as_str() {
+                    match field_alias.as_deref().unwrap_or(name.as_str()) {
                         "name" | "status" => {
                             let method = quote! {
                                 #[inline]
@@ -1077,7 +1086,7 @@ pub fn derive_decode_row(item: TokenStream) -> TokenStream {
                 'inner: for attr in field.attrs.iter() {
                     let arguments = parser::parse_schema_attr(attr);
                     for (key, _value) in arguments.iter() {
-                        if key == "ignore" || key == "writeonly" {
+                        if key == "ignore" || key == "write_only" {
                             ignore = true;
                             break 'inner;
                         }
@@ -1206,7 +1215,7 @@ pub fn derive_model(item: TokenStream) -> TokenStream {
                                     field_constructors.push(constructor);
                                 }
                             }
-                            "readonly" | "generated" | "reserved" => {
+                            "read_only" | "generated" | "reserved" => {
                                 enable_setter = false;
                             }
                             _ => (),

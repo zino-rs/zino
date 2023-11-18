@@ -199,7 +199,7 @@ version = "0.9.2"
 optional = true
 
 [dependencies.datafusion]
-version = "32.0.0"
+version = "33.0.0"
 optional = true
 
 [dependencies.minijinja]

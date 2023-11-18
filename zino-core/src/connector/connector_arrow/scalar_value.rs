@@ -33,7 +33,7 @@ impl ScalarValueExt for ScalarValue {
                         scalar
                     })
                     .collect::<Vec<_>>();
-                Self::new_list(Some(scalars), data_type)
+                Self::List(Self::new_list(&scalars, &data_type))
             }
             TomlValue::Table(table) => {
                 let mut fields = Vec::with_capacity(table.len());
@@ -80,7 +80,7 @@ impl ScalarValueExt for ScalarValue {
                         scalar
                     })
                     .collect::<Vec<_>>();
-                Self::new_list(Some(scalars), data_type)
+                Self::List(Self::new_list(&scalars, &data_type))
             }
             JsonValue::Object(map) => {
                 let mut fields = Vec::with_capacity(map.len());

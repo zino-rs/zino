@@ -22,7 +22,7 @@ use zino_core::auth::UserSession;
 #[serde(default)]
 pub struct Log {
     // Basic fields.
-    #[schema(readonly)]
+    #[schema(read_only)]
     id: Uuid,
     #[schema(not_null, index_type = "text")]
     name: String,
@@ -38,24 +38,24 @@ pub struct Log {
     description: String,
 
     // Info fields.
-    #[schema(not_null, readonly)]
+    #[schema(not_null, read_only)]
     service: String,
-    #[schema(readonly)]
+    #[schema(read_only)]
     server_host: String,
-    #[schema(readonly)]
+    #[schema(read_only)]
     client_ip: String,
     topic: String,
-    #[schema(readonly)]
+    #[schema(read_only)]
     level: String,
-    #[schema(readonly, index_type = "text")]
+    #[schema(read_only, index_type = "text")]
     message: String,
-    #[schema(readonly)]
+    #[schema(read_only)]
     source: String,
-    #[schema(readonly, index_type = "btree")]
+    #[schema(read_only, index_type = "btree")]
     recorded_at: DateTime,
 
     // Extensions.
-    #[schema(readonly)]
+    #[schema(read_only)]
     content: Map,
     extra: Map,
 
@@ -66,7 +66,7 @@ pub struct Log {
     #[cfg(feature = "maintainer-id")]
     #[schema(reference = "User")]
     maintainer_id: Option<Uuid>, // user.id
-    #[schema(readonly, default_value = "now", index_type = "btree")]
+    #[schema(read_only, default_value = "now", index_type = "btree")]
     created_at: DateTime,
     #[schema(default_value = "now", index_type = "btree")]
     updated_at: DateTime,

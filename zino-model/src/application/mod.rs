@@ -24,7 +24,7 @@ use zino_core::auth::UserSession;
 #[serde(default)]
 pub struct Application {
     // Basic fields.
-    #[schema(readonly)]
+    #[schema(read_only)]
     id: Uuid,
     #[schema(not_null, index_type = "text")]
     name: String,
@@ -42,7 +42,7 @@ pub struct Application {
     // Info fields.
     #[schema(reference = "User")]
     manager_id: Uuid, // user.id
-    #[schema(not_null, unique, writeonly)]
+    #[schema(not_null, unique, write_only)]
     access_key_id: String,
     #[cfg(feature = "tags")]
     #[schema(reference = "Tag", index_type = "gin")]
@@ -59,7 +59,7 @@ pub struct Application {
     #[cfg(feature = "maintainer-id")]
     #[schema(reference = "User")]
     maintainer_id: Option<Uuid>, // user.id
-    #[schema(readonly, default_value = "now", index_type = "btree")]
+    #[schema(read_only, default_value = "now", index_type = "btree")]
     created_at: DateTime,
     #[schema(default_value = "now", index_type = "btree")]
     updated_at: DateTime,

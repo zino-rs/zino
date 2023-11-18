@@ -13,7 +13,7 @@ pub async fn login(mut req: Request) -> Result {
         "last_login_ip": data.remove("current_login_ip"),
         "current_login_at": current_time,
         "current_login_ip": req.client_ip(),
-        "login_count": { "$inc": 1 },
+        "$inc": { "login_count": 1 },
     });
 
     let mut user_mutations = user_updates.into_map_opt().unwrap_or_default();

@@ -18,7 +18,7 @@ use zino_derive::{DecodeRow, Model, ModelAccessor, ModelHooks, Schema};
 #[serde(default)]
 pub struct Tag {
     // Basic fields.
-    #[schema(primary_key, auto_increment, readonly)]
+    #[schema(primary_key, auto_increment, read_only)]
     id: i64,
     #[schema(not_null, index_type = "text", comment = "Tag name")]
     name: String,
@@ -40,7 +40,7 @@ pub struct Tag {
     extra: Map,
 
     // Revisions.
-    #[schema(readonly, default_value = "now", index_type = "btree")]
+    #[schema(read_only, default_value = "now", index_type = "btree")]
     created_at: DateTime,
     #[schema(default_value = "now", index_type = "btree")]
     updated_at: DateTime,
