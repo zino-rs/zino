@@ -89,13 +89,13 @@ pub trait ModelHooks: Model {
     /// A hook running before inserting a model into the table.
     #[inline]
     async fn before_insert(&mut self) -> Result<Self::Data, Error> {
-        self.before_upsert().await
+        self.before_save().await
     }
 
     /// A hook running after inserting a model into the table.
     #[inline]
     async fn after_insert(ctx: &QueryContext, data: Self::Data) -> Result<(), Error> {
-        Self::after_upsert(ctx, data).await?;
+        Self::after_save(ctx, data).await?;
         ctx.emit_metrics("insert");
         Ok(())
     }
@@ -103,13 +103,13 @@ pub trait ModelHooks: Model {
     /// A hook running before logically deleting a model from the table.
     #[inline]
     async fn before_soft_delete(&mut self) -> Result<Self::Data, Error> {
-        self.before_upsert().await
+        self.before_save().await
     }
 
     /// A hook running after logically deleting a model from the table.
     #[inline]
     async fn after_soft_delete(ctx: &QueryContext, data: Self::Data) -> Result<(), Error> {
-        Self::after_upsert(ctx, data).await?;
+        Self::after_save(ctx, data).await?;
         ctx.emit_metrics("soft_delete");
         Ok(())
     }
@@ -117,13 +117,13 @@ pub trait ModelHooks: Model {
     /// A hook running before locking a model in the table.
     #[inline]
     async fn before_lock(&mut self) -> Result<Self::Data, Error> {
-        self.before_upsert().await
+        self.before_save().await
     }
 
     /// A hook running after locking a model in the table.
     #[inline]
     async fn after_lock(ctx: &QueryContext, data: Self::Data) -> Result<(), Error> {
-        Self::after_upsert(ctx, data).await?;
+        Self::after_save(ctx, data).await?;
         ctx.emit_metrics("lock");
         Ok(())
     }
@@ -131,13 +131,13 @@ pub trait ModelHooks: Model {
     /// A hook running before updating a model in the table.
     #[inline]
     async fn before_update(&mut self) -> Result<Self::Data, Error> {
-        self.before_upsert().await
+        self.before_save().await
     }
 
     /// A hook running after updating a model in the table.
     #[inline]
     async fn after_update(ctx: &QueryContext, data: Self::Data) -> Result<(), Error> {
-        Self::after_upsert(ctx, data).await?;
+        Self::after_save(ctx, data).await?;
         ctx.emit_metrics("update");
         Ok(())
     }
@@ -145,14 +145,28 @@ pub trait ModelHooks: Model {
     /// A hook running before updating or inserting a model into the table.
     #[inline]
     async fn before_upsert(&mut self) -> Result<Self::Data, Error> {
-        Ok(Self::Data::default())
+        self.before_save().await
     }
 
     /// A hook running after updating or inserting a model into the table.
     #[inline]
-    async fn after_upsert(ctx: &QueryContext, _data: Self::Data) -> Result<(), Error> {
+    async fn after_upsert(ctx: &QueryContext, data: Self::Data) -> Result<(), Error> {
+        Self::after_save(ctx, data).await?;
+        ctx.emit_metrics("upsert");
+        Ok(())
+    }
+
+    /// A hook running before saving a model into the table.
+    #[inline]
+    async fn before_save(&mut self) -> Result<Self::Data, Error> {
+        Ok(Self::Data::default())
+    }
+
+    /// A hook running after saving a model into the table.
+    #[inline]
+    async fn after_save(ctx: &QueryContext, _data: Self::Data) -> Result<(), Error> {
         if !ctx.is_success() {
-            ctx.record_error("fail to upsert a model into the table");
+            ctx.record_error("fail to save a model into the table");
         }
         Ok(())
     }

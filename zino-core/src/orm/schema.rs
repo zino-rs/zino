@@ -184,7 +184,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = connection_pool.pool();
 
         let table_name = Self::table_name();
-        let sql = if cfg!(feature = "orm-mysql") {
+        let sql = if cfg!(any(
+            feature = "orm-mariadb",
+            feature = "orm-mysql",
+            feature = "orm-tidb"
+        )) {
             let table_schema = connection_pool.database();
             format!(
                 "SELECT column_name, data_type, column_default, is_nullable \
@@ -266,7 +270,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let table_name = Self::table_name();
         let columns = Self::columns();
         let mut rows = 0;
-        if cfg!(feature = "orm-mysql") {
+        if cfg!(any(
+            feature = "orm-mariadb",
+            feature = "orm-mysql",
+            feature = "orm-tidb"
+        )) {
             let sql = format!("SHOW INDEXES FROM {table_name}");
             let indexes = sqlx::query(&sql).fetch_all(pool).await?;
             if indexes.len() > 1 {
@@ -518,7 +526,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let table_name = query.format_table_name::<Self>();
         let filters = query.format_filters::<Self>();
         let updates = mutation.format_updates::<Self>();
-        let sql = if cfg!(feature = "orm-mysql") {
+        let sql = if cfg!(any(
+            feature = "orm-mariadb",
+            feature = "orm-mysql",
+            feature = "orm-tidb"
+        )) {
             // MySQL doesn't yet support 'LIMIT & IN/ALL/ANY/SOME subquery'
             // and self-referencing in UPDATE/DELETE
             format!(
@@ -598,7 +610,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let fields = fields.join(", ");
         let values = values.join(", ");
         let mutations = mutations.join(", ");
-        let sql = if cfg!(feature = "orm-mysql") {
+        let sql = if cfg!(any(
+            feature = "orm-mariadb",
+            feature = "orm-mysql",
+            feature = "orm-tidb"
+        )) {
             format!(
                 "INSERT INTO {table_name} ({fields}) VALUES ({values}) \
                     ON DUPLICATE KEY UPDATE {mutations};"

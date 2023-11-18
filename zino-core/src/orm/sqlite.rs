@@ -12,6 +12,10 @@ use std::borrow::Cow;
 
 impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
     fn column_type(&self) -> &str {
+        if let Some(column_type) = self.extra().get_str("column_type") {
+            return column_type;
+        }
+
         let type_name = self.type_name();
         match type_name {
             "bool" => "BOOLEAN",
@@ -168,7 +172,12 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         "$rlike" => "REGEXP",
                         "$is" => "IS",
                         "$size" => "json_array_length",
-                        _ => name,
+                        _ => {
+                            if cfg!(debug_assertions) && name.starts_with('$') {
+                                tracing::warn!("unsupported operator `{name}` for SQLite");
+                            }
+                            name
+                        }
                     };
                     if operator == "IN" || operator == "NOT IN" {
                         if let Some(values) = value.as_array() {

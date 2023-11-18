@@ -83,13 +83,14 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
         && let Fields::Named(fields) = data.fields
     {
         for field in fields.named.into_iter() {
-            let mut type_name = parser::get_type_name(&field.ty);
+            let type_name = parser::get_type_name(&field.ty);
             if let Some(ident) = field.ident
                 && !type_name.is_empty()
             {
+                let name = ident.to_string();
                 let mut ignore = false;
-                let mut name = ident.to_string();
                 let mut not_null = false;
+                let mut column_type = None;
                 let mut default_value = None;
                 let mut index_type = None;
                 let mut reference = None;
@@ -123,24 +124,17 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                                 ignore = true;
                                 break 'inner;
                             }
-                            "column_name" => {
-                                if let Some(value) = value {
-                                    name = value;
-                                }
-                            }
                             "column_type" => {
-                                if let Some(value) = value {
-                                    type_name = value;
-                                }
+                                column_type = value;
                             }
                             "length" if type_name == "String" => {
                                 if let Some(value) = value {
-                                    type_name = format!("CHAR({value})");
+                                    column_type = Some(format!("CHAR({value})"));
                                 }
                             }
                             "max_length" if type_name == "String" => {
                                 if let Some(value) = value {
-                                    type_name = format!("VARCHAR({value})");
+                                    column_type = Some(format!("VARCHAR({value})"));
                                 }
                             }
                             "not_null" => {
@@ -151,6 +145,9 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                             }
                             "auto_increment" => {
                                 default_value = Some("auto_increment".to_owned());
+                            }
+                            "auto_random" => {
+                                default_value = Some("auto_random".to_owned());
                             }
                             "index_type" => {
                                 index_type = value;
@@ -187,6 +184,10 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                     not_null = false;
                 } else if INTEGER_TYPES.contains(&type_name.as_str()) {
                     default_value = default_value.or_else(|| Some("0".to_owned()));
+                } else if let Some(value) = column_type {
+                    extra_attributes.push(quote! {
+                        column.set_extra_attribute("column_type", #value);
+                    });
                 }
                 let quote_value = if let Some(value) = default_value {
                     if value.contains("::") {

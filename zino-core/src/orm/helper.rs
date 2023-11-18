@@ -1,6 +1,7 @@
 use super::Schema;
 use crate::{
-    crypto, encoding::base64, error::Error, extension::TomlTableExt, openapi, state::State, Map,
+    crypto, encoding::base64, error::Error, extension::TomlTableExt, openapi, state::State, warn,
+    Map,
 };
 use std::{fmt::Display, sync::LazyLock};
 
@@ -28,8 +29,10 @@ where
             && bytes.len() == 256
         {
             crypto::encrypt_hashed_password(passowrd, key)
+                .map_err(|err| warn!("fail to encrypt hashed password: {}", err.message()))
         } else {
             crypto::encrypt_raw_password(passowrd, key)
+                .map_err(|err| warn!("fail to encrypt raw password: {}", err.message()))
         }
     }
 
@@ -42,8 +45,10 @@ where
             && bytes.len() == 256
         {
             crypto::verify_hashed_password(passowrd, encrypted_password, key)
+                .map_err(|err| warn!("fail to verify hashed password: {}", err.message()))
         } else {
             crypto::verify_raw_password(passowrd, encrypted_password, key)
+                .map_err(|err| warn!("fail to verify raw password: {}", err.message()))
         }
     }
 

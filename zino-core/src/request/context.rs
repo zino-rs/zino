@@ -55,7 +55,7 @@ impl Context {
     pub fn set_locale(&mut self, locale: &str) {
         match locale.parse() {
             Ok(locale) => self.locale = Some(locale),
-            Err(err) => tracing::error!("{err}: {locale}"),
+            Err(err) => tracing::error!("{err}: `{locale}`"),
         }
     }
 

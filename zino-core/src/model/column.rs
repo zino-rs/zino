@@ -99,6 +99,13 @@ impl<'a> Column<'a> {
             .is_some_and(|value| value == "auto_increment")
     }
 
+    /// Returns `true` if the column has an `auto_random` default.
+    #[inline]
+    pub fn auto_random(&self) -> bool {
+        self.default_value
+            .is_some_and(|value| value == "auto_random")
+    }
+
     /// Returns the default value.
     #[inline]
     pub fn default_value(&self) -> Option<&'a str> {

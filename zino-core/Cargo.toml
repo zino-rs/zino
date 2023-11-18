@@ -117,9 +117,11 @@ full = [
     "view",
 ]
 orm = ["sqlx", "sqlx/sqlite"]
+orm-mariadb = ["orm", "sqlx/mysql"]
 orm-mysql = ["orm", "sqlx/mysql"]
 orm-postgres = ["orm", "sqlx/postgres"]
 orm-sqlite = ["orm", "sqlx/sqlite"]
+orm-tidb = ["orm", "sqlx/mysql"]
 runtime-async-std = ["sqlx?/runtime-async-std"]
 runtime-tokio = ["sqlx?/runtime-tokio"]
 tls-native = [

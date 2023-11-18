@@ -12,6 +12,10 @@ use std::borrow::Cow;
 
 impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
     fn column_type(&self) -> &str {
+        if let Some(column_type) = self.extra().get_str("column_type") {
+            return column_type;
+        }
+
         let type_name = self.type_name();
         match type_name {
             "bool" => "BOOLEAN",
@@ -182,7 +186,12 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         "$rlike" => "RLIKE",
                         "$is" => "IS",
                         "$size" => "json_length",
-                        _ => name,
+                        _ => {
+                            if cfg!(debug_assertions) && name.starts_with('$') {
+                                tracing::warn!("unsupported operator `{name}` for MySQL");
+                            }
+                            name
+                        }
                     };
                     if operator == "IN" || operator == "NOT IN" {
                         if let Some(values) = value.as_array() {
@@ -419,6 +428,17 @@ impl DecodeRow<DatabaseRow> for Map {
                         }
                     }
                     "JSON" => decode_raw::<JsonValue>(field, raw_value)?,
+                    #[cfg(feature = "orm-mariadb")]
+                    "TEXT" => {
+                        let value = decode_raw::<String>(field, raw_value)?;
+                        if value.starts_with('[') && value.ends_with(']')
+                            || value.starts_with('{') && value.ends_with('}')
+                        {
+                            serde_json::from_str(&value)?
+                        } else {
+                            value.into()
+                        }
+                    }
                     _ => decode_raw::<String>(field, raw_value)?.into(),
                 }
             };
@@ -482,6 +502,17 @@ impl DecodeRow<DatabaseRow> for Record {
                         }
                     }
                     "JSON" => decode_raw::<JsonValue>(field, raw_value)?.into(),
+                    #[cfg(feature = "orm-mariadb")]
+                    "TEXT" => {
+                        let value = decode_raw::<String>(field, raw_value)?;
+                        if value.starts_with('[') && value.ends_with(']')
+                            || value.starts_with('{') && value.ends_with('}')
+                        {
+                            serde_json::from_str::<JsonValue>(&value)?.into()
+                        } else {
+                            value.into()
+                        }
+                    }
                     _ => decode_raw::<String>(field, raw_value)?.into(),
                 }
             };

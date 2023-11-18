@@ -6,13 +6,45 @@
 //!
 //! | Feature flag   | Description                                          | Default? |
 //! |----------------|------------------------------------------------------|----------|
+//! | `orm-mariadb`  | Enables the MariaDB database driver.                 | No       |
 //! | `orm-mysql`    | Enables the MySQL database driver.                   | No       |
 //! | `orm-postgres` | Enables the PostgreSQL database driver.              | No       |
 //! | `orm-sqlite`   | Enables the SQLite database driver.                  | No       |
+//! | `orm-tidb`     | Enables the TiDB database driver.                    | No       |
 //!
 //! # Design references
 //!
 //! The design of our ORM is inspired by [`Mongoose`], [`Prisma`], [`TypeORM`] and [`PostgREST`].
+//!
+//! ```rust,ignore
+//! use zino_core::{model::{Mutation, Query}, orm::Schema};
+//!
+//! // Constructs a model `Query` with JSON expressions.
+//! let query = Query::new(json!({
+//!     "$or": [
+//!         {
+//!             "roles": "worker",
+//!             "visibility": "Public",
+//!         },
+//!         {
+//!             "roles": { "$in": ["admin", "auditor"] },
+//!             "visibility": { "$ne": "Public" },
+//!         },
+//!     ],
+//!     "status": { "$nin": ["Deleted", "Locked"] },
+//! }));
+//!
+//! // Constructs a model `Mutation` with JSON expressions.
+//! let mut mutation = Mutation::new(json!({
+//!     "status": "Active",
+//!     "refreshed_at": DateTime::now(),
+//!     "$inc": { "refresh_count": 1 },
+//! }));
+//!
+//! // Updates the models using `update_many` provided by the `Schema` trait.
+//! let ctx = User::update_many(&query, &mut mutation).await?;
+//! ctx.emit_metrics("user_refresh");
+//! ```
 //!
 //! [`Mongoose`]: https://mongoosejs.com/
 //! [`Prisma`]: https://www.prisma.io/
@@ -24,7 +56,7 @@ use convert_case::{Case, Casing};
 use smallvec::SmallVec;
 use sqlx::{
     pool::{Pool, PoolOptions},
-    Connection, Database,
+    Connection,
 };
 use std::{
     sync::{
@@ -49,13 +81,19 @@ pub use helper::ModelHelper;
 pub use schema::Schema;
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "orm-mysql")] {
+    if #[cfg(any(feature = "orm-mariadb", feature = "orm-mysql", feature = "orm-tidb"))] {
         use sqlx::mysql::{MySql, MySqlConnectOptions, MySqlRow};
 
         mod mysql;
 
         /// Driver name.
-        static DRIVER_NAME: &str = "mysql";
+        static DRIVER_NAME: &str = if cfg!(feature = "orm-mariadb") {
+            "mariadb"
+        } else if cfg!(feature = "orm-tidb") {
+            "tidb"
+        } else {
+            "mysql"
+        };
 
         /// MySQL database driver.
         pub type DatabaseDriver = MySql;
@@ -284,10 +322,9 @@ impl GlobalConnection {
 
     /// Shuts down the shared connection pools to ensure all connections are gracefully closed.
     pub async fn close_all() {
-        let driver = DatabaseDriver::NAME;
         for cp in SHARED_CONNECTION_POOLS.0.iter() {
             let name = cp.name();
-            tracing::warn!("closing the {driver} connection pool for the `{name}` service");
+            tracing::warn!("closing the connection pool for the `{name}` service");
             cp.pool().close().await;
         }
     }
@@ -315,11 +352,7 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
         .map(ConnectionPool::connect_lazy)
         .collect();
     if database_type == driver {
-        tracing::warn!(
-            driver,
-            "connect to {} database services lazily",
-            DatabaseDriver::NAME
-        );
+        tracing::warn!(driver, "connect to database services lazily");
     } else {
         tracing::error!(
             driver,

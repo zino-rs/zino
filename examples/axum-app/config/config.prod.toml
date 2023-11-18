@@ -32,6 +32,13 @@ websocket-route = "/websocket"
 [database]
 namespace = "dc"
 
+[[mariadb]]
+host = "127.0.0.1"
+port = 4306
+database = "data_cube"
+username = "root"
+password = "DI9IDtF0Le2ppYzflOaPpL4DvWo"
+
 [[mysql]]
 host = "127.0.0.1"
 port = 3306

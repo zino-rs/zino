@@ -115,7 +115,11 @@ pub(super) trait QueryExt<DB> {
                 }
                 "$rand" => {
                     if let Some(Ok(value)) = value.parse_f64() {
-                        let condition = if cfg!(feature = "orm-mysql") {
+                        let condition = if cfg!(any(
+                            feature = "orm-mariadb",
+                            feature = "orm-mysql",
+                            feature = "orm-tidb"
+                        )) {
                             format!("rand() < {value}")
                         } else if cfg!(feature = "orm-postgres") {
                             format!("random() < {value}")
