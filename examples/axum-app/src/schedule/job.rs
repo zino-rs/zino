@@ -1,5 +1,5 @@
+use crate::model::User;
 use zino::prelude::*;
-use zino_model::User;
 
 pub fn every_15s(job_id: Uuid, job_data: &mut Map, _last_tick: DateTime) {
     let counter = job_data

@@ -2,8 +2,9 @@ use self::RejectionKind::*;
 use super::{FullResponse, Response, StatusCode};
 use crate::{
     error::Error,
-    request::{Context, RequestContext, Validation},
+    request::{Context, RequestContext},
     trace::TraceContext,
+    validation::Validation,
     warn, SharedString,
 };
 

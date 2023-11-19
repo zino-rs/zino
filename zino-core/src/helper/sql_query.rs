@@ -33,8 +33,10 @@ pub(crate) fn prepare_sql_query<'a>(
     }
 }
 
+/// Regex for the prepared statement.
 static STATEMENT_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"\#\{\s*([a-zA-Z]+[\w\.]*)\s*\}").expect("fail to create the query pattern")
+    Regex::new(r"\#\{\s*([a-zA-Z]+[\w\.]*)\s*\}")
+        .expect("fail to create a regex for the prepared statement")
 });
 
 #[cfg(test)]

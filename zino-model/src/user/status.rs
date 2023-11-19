@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{database::HasValueRef, Database, Decode};
+use sqlx::{database::HasValueRef, Database, Decode, Type};
 use strum::{AsRefStr, Display, EnumString, IntoStaticStr};
 use zino_core::{BoxError, JsonValue};
 
@@ -39,6 +39,17 @@ impl From<UserStatus> for JsonValue {
     #[inline]
     fn from(value: UserStatus) -> Self {
         value.as_ref().into()
+    }
+}
+
+impl<DB> Type<DB> for UserStatus
+where
+    DB: Database,
+    String: Type<DB>,
+{
+    #[inline]
+    fn type_info() -> <DB as Database>::TypeInfo {
+        <String as Type<DB>>::type_info()
     }
 }
 

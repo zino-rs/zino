@@ -1,7 +1,18 @@
 use super::{DatabaseDriver, DatabaseRow};
 use crate::{error::Error, BoxError};
 use chrono::{DateTime, Local};
-use sqlx::{database::HasValueRef, Database, Decode, Row};
+use sqlx::{database::HasValueRef, Database, Decode, Row, Type};
+
+impl<DB> Type<DB> for crate::datetime::DateTime
+where
+    DB: Database,
+    DateTime<Local>: Type<DB>,
+{
+    #[inline]
+    fn type_info() -> <DB as Database>::TypeInfo {
+        <DateTime<Local> as Type<DB>>::type_info()
+    }
+}
 
 impl<'r, DB> Decode<'r, DB> for crate::datetime::DateTime
 where
@@ -34,7 +45,22 @@ where
 }
 
 /// Decodes a single value as `Vec<T>` for the field in a row.
-#[cfg(not(feature = "orm-postgres"))]
+#[cfg(feature = "orm-mariadb")]
+#[inline]
+pub fn decode_array<'r, T>(row: &'r DatabaseRow, field: &str) -> Result<Vec<T>, Error>
+where
+    T: Decode<'r, DatabaseDriver> + serde::de::DeserializeOwned,
+{
+    let value = decode::<String>(row, field)?;
+    if value.starts_with('[') && value.ends_with(']') {
+        serde_json::from_str(&value).map_err(Error::from)
+    } else {
+        crate::bail!("invalid array data for the `{}` field", field);
+    }
+}
+
+/// Decodes a single value as `Vec<T>` for the field in a row.
+#[cfg(not(any(feature = "orm-mariadb", feature = "orm-postgres")))]
 #[inline]
 pub fn decode_array<'r, T>(row: &'r DatabaseRow, field: &str) -> Result<Vec<T>, Error>
 where

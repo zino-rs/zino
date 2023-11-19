@@ -25,9 +25,10 @@ pub(crate) fn format_query<'a>(query: &'a str, params: Option<&'a Map>) -> Cow<'
     }
 }
 
-/// Interpolation pattern.
+/// Regex for the interpolation parameter.
 static INTERPOLATION_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"\$\{\s*([a-zA-Z]+[\w\.]*)\s*\}").expect("fail to create the interpolation pattern")
+    Regex::new(r"\$\{\s*([a-zA-Z]+[\w\.]*)\s*\}")
+        .expect("fail to create a regex for the interpolation parameter")
 });
 
 #[cfg(test)]

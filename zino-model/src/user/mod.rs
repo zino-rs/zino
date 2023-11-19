@@ -11,7 +11,7 @@ use zino_core::{
     extension::JsonObjectExt,
     model::{Model, ModelHooks},
     orm::ModelHelper,
-    request::Validation,
+    validation::Validation,
     Map, Uuid,
 };
 use zino_derive::{DecodeRow, ModelAccessor, Schema};
@@ -65,16 +65,19 @@ pub struct User {
     #[schema(not_null, write_only)]
     password: String,
     nickname: String,
+    #[schema(format = "uri")]
     avatar: String,
+    #[schema(format = "uri")]
     website: String,
+    #[schema(format = "email")]
     email: String,
     location: String,
     locale: String,
     mobile: String,
-    #[schema(snapshot, index_type = "gin")]
+    #[schema(snapshot, nonempty, unique_items, index_type = "gin")]
     roles: Vec<String>,
     #[cfg(feature = "tags")]
-    #[schema(reference = "Tag", index_type = "gin")]
+    #[schema(unique_items, reference = "Tag", index_type = "gin")]
     tags: Vec<Uuid>, // tag.id, tag.namespace = "*:user"
 
     // Security.
@@ -282,9 +285,9 @@ impl User {
     }
 }
 
-/// User role pattern.
+/// Regex for the user role.
 static USER_ROLE_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^[a-z]+[a-z:]+[a-z]+$").expect("fail to create the user role pattern")
+    Regex::new(r"^[a-z]+[a-z:]+[a-z]+$").expect("fail to create a regex for the user role")
 });
 
 #[cfg(test)]

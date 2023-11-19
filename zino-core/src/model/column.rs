@@ -320,11 +320,15 @@ impl<'a> Column<'a> {
                     definition.upsert("format", "password");
                 }
             }
-            "Date" => {
+            "Date" | "NaiveDate" => {
                 definition.upsert("type", "string");
                 definition.upsert("format", "date");
             }
-            "DateTime" => {
+            "Time" | "NaiveTime" => {
+                definition.upsert("type", "string");
+                definition.upsert("format", "time");
+            }
+            "DateTime" | "NaiveDateTime" => {
                 definition.upsert("type", "string");
                 definition.upsert("format", "date-time");
             }

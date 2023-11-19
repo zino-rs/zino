@@ -1,4 +1,4 @@
-use crate::{encoding::base64, error::Error, request::Validation, SharedString};
+use crate::{encoding::base64, error::Error, validation::Validation, SharedString};
 use hmac::digest::{Digest, FixedOutput, HashMarker, Update};
 use std::{error, fmt};
 

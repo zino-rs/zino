@@ -5,12 +5,14 @@ use crate::{
     error::Error,
     extension::JsonObjectExt,
     model::{ModelHooks, Mutation, Query},
-    request::Validation,
+    validation::Validation,
     warn, JsonValue, Map,
 };
 use std::fmt::Display;
 
 /// Access model fields.
+///
+/// This trait can be derived by `zino_derive::ModelAccessor`.
 pub trait ModelAccessor<K, U = K>: Schema<PrimaryKey = K>
 where
     K: Default + Display + PartialEq,

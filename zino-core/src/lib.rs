@@ -42,6 +42,7 @@ pub mod response;
 pub mod schedule;
 pub mod state;
 pub mod trace;
+pub mod validation;
 
 #[doc(no_inline)]
 pub use fluent::fluent_args;

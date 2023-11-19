@@ -429,7 +429,8 @@ impl DecodeRow<DatabaseRow> for Map {
                     }
                     "JSON" => decode_raw::<JsonValue>(field, raw_value)?,
                     #[cfg(feature = "orm-mariadb")]
-                    "TEXT" => {
+                    "TEXT" | "LONGTEXT" => {
+                        // In MariaDB, JSON is just an alias for LONGTEXT.
                         let value = decode_raw::<String>(field, raw_value)?;
                         if value.starts_with('[') && value.ends_with(']')
                             || value.starts_with('{') && value.ends_with('}')
@@ -503,7 +504,7 @@ impl DecodeRow<DatabaseRow> for Record {
                     }
                     "JSON" => decode_raw::<JsonValue>(field, raw_value)?.into(),
                     #[cfg(feature = "orm-mariadb")]
-                    "TEXT" => {
+                    "TEXT" | "LONGTEXT" => {
                         let value = decode_raw::<String>(field, raw_value)?;
                         if value.starts_with('[') && value.ends_with(']')
                             || value.starts_with('{') && value.ends_with('}')

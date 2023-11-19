@@ -11,7 +11,7 @@ use syn::{parse_macro_input, Data, DeriveInput, Fields};
 
 mod parser;
 
-/// Derives the [`Schema`](zino_core::orm::Schema) trait.
+#[doc = include_str!("../docs/schema.md")]
 #[proc_macro_derive(Schema, attributes(schema))]
 pub fn derive_schema(item: TokenStream) -> TokenStream {
     // Integer types
@@ -476,14 +476,14 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
     TokenStream::from(output)
 }
 
-/// Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
+#[doc = include_str!("../docs/model_accessor.md")]
 #[proc_macro_derive(ModelAccessor, attributes(schema))]
 pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
     // Input
     let input = parse_macro_input!(item as DeriveInput);
 
     // Parsing struct attributes
-    let mut compound_constraints = Vec::new();
+    let mut composite_constraints = Vec::new();
     for attr in input.attrs.iter() {
         for (key, value) in parser::parse_schema_attr(attr).into_iter() {
             if let Some(value) = value
@@ -503,11 +503,11 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                         }
                     })
                     .collect::<Vec<_>>();
-                let compound_field = fields.join("_");
-                compound_constraints.push(quote! {
+                let composite_field = fields.join("_");
+                composite_constraints.push(quote! {
                     let columns = [#(#column_values),*];
                     if !self.is_unique_on(columns).await? {
-                        validation.record(#compound_field, "the compound field values should be unique");
+                        validation.record(#composite_field, "the composite values should be unique");
                     }
                 });
             }
@@ -738,6 +738,13 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                                     });
                                 }
                             }
+                            "format" if type_name == "String" => {
+                                field_constraints.push(quote! {
+                                    if !self.#ident.is_empty() {
+                                        validation.validate_format(#name, self.#ident.as_str(), #value);
+                                    }
+                                });
+                            }
                             "length" => {
                                 let length = value
                                     .and_then(|s| s.parse::<usize>().ok())
@@ -826,6 +833,20 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                                         if self.#ident.len() < length {
                                             let message = format!("the length should be at least {length}");
                                             validation.record(#name, message);
+                                        }
+                                    });
+                                }
+                            }
+                            "unique_items" => {
+                                if parser::check_vec_type(&type_name) {
+                                    field_constraints.push(quote! {
+                                        let slice = self.#ident.as_slice();
+                                        for index in 1..slice.len() {
+                                            if slice[index..].contains(&slice[index - 1]) {
+                                                let message = format!("array items should be unique");
+                                                validation.record(#name, message);
+                                                break;
+                                            }
                                         }
                                     });
                                 }
@@ -1007,7 +1028,7 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
         use zino_core::{
             model::Query,
             orm::{ModelAccessor, ModelHelper as _},
-            request::Validation as ZinoValidation,
+            validation::Validation as ZinoValidation,
             Map as ZinoMap,
         };
 
@@ -1043,7 +1064,7 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
                 {
                     validation.record(Self::PRIMARY_KEY_NAME, "should not be a default value");
                 }
-                #(#compound_constraints)*
+                #(#composite_constraints)*
                 #(#field_constraints)*
                 Ok(validation)
             }
@@ -1062,7 +1083,7 @@ pub fn derive_model_accessor(item: TokenStream) -> TokenStream {
     TokenStream::from(output)
 }
 
-/// Derives the [`DecodeRow`](zino_core::model::DecodeRow) trait.
+#[doc = include_str!("../docs/decode_row.md")]
 #[proc_macro_derive(DecodeRow, attributes(schema))]
 pub fn derive_decode_row(item: TokenStream) -> TokenStream {
     /// Integer types
@@ -1139,7 +1160,7 @@ pub fn derive_decode_row(item: TokenStream) -> TokenStream {
     TokenStream::from(output)
 }
 
-/// Derives the [`ModelHooks`](zino_core::model::ModelHooks) trait.
+#[doc = include_str!("../docs/model_hooks.md")]
 #[proc_macro_derive(ModelHooks)]
 pub fn derive_model_hooks(item: TokenStream) -> TokenStream {
     // Input
@@ -1159,7 +1180,7 @@ pub fn derive_model_hooks(item: TokenStream) -> TokenStream {
     TokenStream::from(output)
 }
 
-/// Derives the [`Model`](zino_core::model::Model) trait.
+#[doc = include_str!("../docs/model.md")]
 #[proc_macro_derive(Model)]
 pub fn derive_model(item: TokenStream) -> TokenStream {
     // Reserved fields
@@ -1178,26 +1199,16 @@ pub fn derive_model(item: TokenStream) -> TokenStream {
         && let Fields::Named(fields) = data.fields
     {
         for field in fields.named.into_iter() {
-            let mut type_name = parser::get_type_name(&field.ty);
+            let type_name = parser::get_type_name(&field.ty);
             if let Some(ident) = field.ident
                 && !type_name.is_empty()
             {
-                let mut name = ident.to_string();
+                let name = ident.to_string();
                 let mut enable_setter = true;
                 for attr in field.attrs.iter() {
                     let arguments = parser::parse_schema_attr(attr);
                     for (key, value) in arguments.into_iter() {
                         match key.as_str() {
-                            "column_name" => {
-                                if let Some(value) = value {
-                                    name = value;
-                                }
-                            }
-                            "column_type" => {
-                                if let Some(value) = value {
-                                    type_name = value;
-                                }
-                            }
                             "constructor" => {
                                 if let Some(value) = value
                                     && let Some((cons_name, cons_fn)) = value.split_once("::")
@@ -1318,7 +1329,7 @@ pub fn derive_model(item: TokenStream) -> TokenStream {
         }
     };
     let output = quote! {
-        use zino_core::request::Validation;
+        use zino_core::validation::Validation;
 
         impl zino_core::model::Model for #name {
             #[inline]

@@ -7,6 +7,8 @@ use crate::{
 use std::borrow::Cow;
 
 /// Hooks for the model.
+///
+/// This trait can be derived by `zino_derive::ModelHooks`.
 pub trait ModelHooks: Model {
     /// Model data.
     type Data: Default = ();

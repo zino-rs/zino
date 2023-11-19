@@ -16,10 +16,11 @@ pub use zino_core::{
     fluent_args, json,
     model::{Model, ModelHooks, Mutation, Query, QueryContext},
     reject,
-    request::{RequestContext, Validation},
+    request::RequestContext,
     response::{ExtractRejection, Rejection, StatusCode, WebHook},
     schedule::{AsyncCronJob, CronJob},
     state::State,
+    validation::Validation,
     warn, BoxFuture, Map, Record, Uuid,
 };
 

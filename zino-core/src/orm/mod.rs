@@ -44,6 +44,18 @@
 //! // Updates the models using `update_many` provided by the `Schema` trait.
 //! let ctx = User::update_many(&query, &mut mutation).await?;
 //! ctx.emit_metrics("user_refresh");
+//!
+//! // Executes the raw SQL with interpolations `${param}` and argument bindings `#{param}`.
+//! let sql =
+//!     "SELECT u.id, u.name, u.tags, t.id, t.name \
+//!         FROM ${user_table} u INNER JOIN ${tag_table} t \
+//!             ON t.id = ANY(u.tags) AND t.category = #{category};";
+//! let params = json!({
+//!     "user_table": User::table_name(),
+//!     "tag_table": Tag::table_name(),
+//!     "category": "Rustacean",
+//! });
+//! let records = User::query::<Record>(sql, params.as_object()).await?;
 //! ```
 //!
 //! [`Mongoose`]: https://mongoosejs.com/

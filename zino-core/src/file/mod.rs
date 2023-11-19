@@ -91,6 +91,11 @@ impl NamedFile {
     }
 
     /// Returns the checksum for the file.
+    ///
+    /// # Note
+    ///
+    /// If you would like to obtain a hex-formated string,
+    /// you can use the `LowerHex` or `UpperHex` implementations for `Bytes`.
     #[inline]
     pub fn checksum(&self) -> Bytes {
         let checksum = crypto::digest(self.as_ref());

@@ -1,5 +1,5 @@
 //! Domain specific models.
-use crate::{request::Validation, AvroValue, JsonValue, Map, Record};
+use crate::{validation::Validation, AvroValue, JsonValue, Map, Record};
 use serde::{de::DeserializeOwned, Serialize};
 
 mod column;
@@ -24,6 +24,8 @@ pub use row::DecodeRow;
 pub use translation::Translation;
 
 /// General data model.
+///
+/// This trait can be derived by `zino_derive::Model`.
 pub trait Model: Default + Serialize + DeserializeOwned {
     /// Creates a new instance.
     #[inline]

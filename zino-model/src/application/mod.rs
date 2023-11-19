@@ -8,7 +8,7 @@ use zino_core::{
     error::Error,
     extension::JsonObjectExt,
     model::{Model, ModelHooks},
-    request::Validation,
+    validation::Validation,
     Map, Uuid,
 };
 use zino_derive::{DecodeRow, ModelAccessor, Schema};

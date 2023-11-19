@@ -1,5 +1,5 @@
 use super::{AccessKeyId, SecretAccessKey};
-use crate::{datetime::DateTime, encoding::base64, error::Error, request::Validation, Map};
+use crate::{datetime::DateTime, encoding::base64, error::Error, validation::Validation, Map};
 use hmac::{
     digest::{FixedOutput, KeyInit, MacMarker, Update},
     Mac,

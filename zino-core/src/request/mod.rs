@@ -15,6 +15,7 @@ use crate::{
     model::{ModelHooks, Query},
     response::{Rejection, Response, ResponseCode},
     trace::{TraceContext, TraceState},
+    validation::Validation,
     warn, JsonValue, Map, SharedString, Uuid,
 };
 use bytes::Bytes;
@@ -33,10 +34,8 @@ use std::{
 use unic_langid::LanguageIdentifier;
 
 mod context;
-mod validation;
 
 pub use context::Context;
-pub use validation::Validation;
 
 /// Request context.
 pub trait RequestContext {

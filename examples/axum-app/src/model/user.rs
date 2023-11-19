@@ -43,11 +43,13 @@ pub struct User {
     #[schema(not_null, write_only, comment = "User password")]
     password: String,
     mobile: String,
+    #[schema(format = "email")]
     email: String,
+    #[schema(format = "uri")]
     avatar: String,
-    #[schema(snapshot, nonempty, comment = "User roles")]
+    #[schema(snapshot, nonempty, unique_items, comment = "User roles")]
     roles: Vec<String>,
-    #[schema(reference = "Tag", comment = "User tags")]
+    #[schema(unique_items, reference = "Tag", comment = "User tags")]
     tags: Vec<i64>,
 
     // Security.

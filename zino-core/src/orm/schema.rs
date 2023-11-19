@@ -15,6 +15,8 @@ use sqlx::{Decode, Row, Transaction, Type};
 use std::{fmt::Display, sync::atomic::Ordering::Relaxed};
 
 /// Database schema.
+///
+/// This trait can be derived by `zino_derive::Schema`.
 pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Primary key.
     type PrimaryKey: Default + Display + PartialEq = Uuid;

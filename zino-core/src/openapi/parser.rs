@@ -369,7 +369,7 @@ fn parse_schema_format(format: &str) -> SchemaFormat {
         "byte" => SchemaFormat::KnownFormat(KnownFormat::Byte),
         "binary" => SchemaFormat::KnownFormat(KnownFormat::Binary),
         "date" => SchemaFormat::KnownFormat(KnownFormat::Date),
-        "datetime" => SchemaFormat::KnownFormat(KnownFormat::DateTime),
+        "date-time" => SchemaFormat::KnownFormat(KnownFormat::DateTime),
         "password" => SchemaFormat::KnownFormat(KnownFormat::Password),
         "uuid" => SchemaFormat::KnownFormat(KnownFormat::Uuid),
         _ => SchemaFormat::Custom(format.to_owned()),
