@@ -382,8 +382,7 @@ static NAMESPACE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
     let max_rows = config.get_usize("max-rows").unwrap_or(10000);
     MAX_ROWS.store(max_rows, Relaxed);
     config
-        .get_str("namespace")
-        .expect("the `namespace` field should be a str")
+        .get_str("namespace").unwrap_or("")
         .to_case(Case::Snake)
         .leak()
 });
