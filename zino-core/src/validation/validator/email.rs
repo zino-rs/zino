@@ -55,13 +55,13 @@ impl Validator<str> for EmailValidator {
         if user.len() > 64 {
             return Err(UserLengthExceeded);
         }
-        if !EMIAL_USER_PATTERN.is_match(user) {
+        if !EMAIL_USER_PATTERN.is_match(user) {
             return Err(InvalidUser);
         }
         if domain.len() > 255 {
             return Err(DomainLengthExceeded);
         }
-        if !EMIAL_DOMAIN_PATTERN.is_match(domain)
+        if !EMAIL_DOMAIN_PATTERN.is_match(domain)
             && domain
                 .strip_prefix('[')
                 .and_then(|s| s.strip_suffix(']'))
@@ -75,13 +75,13 @@ impl Validator<str> for EmailValidator {
 }
 
 /// Regex for the email user.
-static EMIAL_USER_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
+static EMAIL_USER_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(?i-u)^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+\z")
         .expect("fail to create a regex for the email user")
 });
 
 /// Regex for the email domain.
-static EMIAL_DOMAIN_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
+static EMAIL_DOMAIN_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
         r"(?i-u)^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$",
     )

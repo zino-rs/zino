@@ -24,7 +24,7 @@ path = "../../zino-core"
 version = "0.15.4"
 features = [
     "crypto-sm",
-    "orm-mariadb",
+    "orm-mysql",
     "view-tera",
 ]
 

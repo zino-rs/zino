@@ -76,7 +76,7 @@ impl Model for Order {
     #[inline]
     fn new() -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id: Uuid::now_v7(),
             ..Self::default()
         }
     }

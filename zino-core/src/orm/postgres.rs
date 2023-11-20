@@ -15,9 +15,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
         if let Some(column_type) = self.extra().get_str("column_type") {
             return column_type;
         }
-
-        let type_name = self.type_name();
-        match type_name {
+        match self.type_name() {
             "bool" => "BOOLEAN",
             "u64" | "i64" | "usize" | "isize" | "Option<u64>" | "Option<i64>" => {
                 if self.auto_increment() {
@@ -43,7 +41,6 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             "f64" => "DOUBLE PRECISION",
             "f32" => "REAL",
             "Decimal" => "NUMERIC",
-            "String" | "Option<String>" => "TEXT",
             "DateTime" => "TIMESTAMPTZ",
             "NaiveDateTime" => "TIMESTAMP",
             "NaiveDate" | "Date" => "DATE",
@@ -55,7 +52,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             "Vec<u64>" | "Vec<i64>" => "BIGINT[]",
             "Vec<u32>" | "Vec<i32>" => "INT[]",
             "Map" => "JSONB",
-            _ => type_name,
+            _ => "TEXT",
         }
     }
 
@@ -131,7 +128,6 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     "NULL".into()
                 }
             }
-            "String" | "Option<String>" => Query::escape_string(value).into(),
             "DateTime" | "NaiveDateTime" => match value {
                 "epoch" => "'epoch'".into(),
                 "now" => "now()".into(),
@@ -171,7 +167,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 let value = Query::escape_string(value);
                 format!("{value}::jsonb").into()
             }
-            _ => "NULL".into(),
+            _ => Query::escape_string(value).into(),
         }
     }
 

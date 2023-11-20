@@ -15,9 +15,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
         if let Some(column_type) = self.extra().get_str("column_type") {
             return column_type;
         }
-
-        let type_name = self.type_name();
-        match type_name {
+        match self.type_name() {
             "bool" => "BOOLEAN",
             "u64" | "usize" | "Option<u64>" => "BIGINT UNSIGNED",
             "i64" | "isize" | "Option<i64>" => "BIGINT",
@@ -45,7 +43,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             "Vec<u8>" => "BLOB",
             "Vec<String>" | "Vec<Uuid>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>"
             | "Map" => "JSON",
-            _ => type_name,
+            _ => "TEXT",
         }
     }
 
@@ -119,9 +117,6 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     "NULL".into()
                 }
             }
-            "String" | "Option<String>" | "Uuid" | "Option<Uuid>" => {
-                Query::escape_string(value).into()
-            }
             "DateTime" | "NaiveDateTime" => match value {
                 "epoch" => "from_unixtime(0)".into(),
                 "now" => "current_timestamp(6)".into(),
@@ -155,8 +150,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     format!(r#"json_array({value})"#).into()
                 }
             }
-            "Map" => Query::escape_string(value).into(),
-            _ => "NULL".into(),
+            _ => Query::escape_string(value).into(),
         }
     }
 

@@ -376,15 +376,17 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
 
 /// Database namespace prefix.
 static NAMESPACE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
-    let config = State::shared()
+    State::shared()
         .get_config("database")
-        .expect("the `database` field should be a table");
-    let max_rows = config.get_usize("max-rows").unwrap_or(10000);
-    MAX_ROWS.store(max_rows, Relaxed);
-    config
-        .get_str("namespace").unwrap_or("")
-        .to_case(Case::Snake)
-        .leak()
+        .and_then(|config| {
+            if let Some(max_rows) = config.get_usize("max-rows") {
+                MAX_ROWS.store(max_rows, Relaxed);
+            }
+            config
+                .get_str("namespace")
+                .map(|s| s.to_case(Case::Snake).leak())
+        })
+        .unwrap_or_default()
 });
 
 /// Max number of returning rows.

@@ -15,19 +15,13 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
         if let Some(column_type) = self.extra().get_str("column_type") {
             return column_type;
         }
-
-        let type_name = self.type_name();
-        match type_name {
+        match self.type_name() {
             "bool" => "BOOLEAN",
             "u64" | "i64" | "usize" | "isize" | "Option<u64>" | "Option<i64>" | "u32" | "i32"
             | "u16" | "i16" | "u8" | "i8" | "Option<u32>" | "Option<i32>" => "INTEGER",
             "f64" | "f32" => "REAL",
-            "String" | "Option<String>" => "TEXT",
-            "DateTime" | "NaiveDateTime" | "NaiveDate" | "Date" | "NaiveTime" | "Time" => "TEXT",
-            "Uuid" | "Option<Uuid>" => "TEXT",
             "Vec<u8>" => "BLOB",
-            "Vec<String>" | "Vec<Uuid>" | "Map" => "TEXT",
-            _ => type_name,
+            _ => "TEXT",
         }
     }
 
@@ -95,9 +89,6 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     "NULL".into()
                 }
             }
-            "String" | "Option<String>" | "Uuid" | "Option<Uuid>" => {
-                Query::escape_string(value).into()
-            }
             "DateTime" | "NaiveDateTime" => match value {
                 "epoch" => "datetime(0, 'unixepoch')".into(),
                 "now" => "datetime('now', 'localtime')".into(),
@@ -131,8 +122,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     format!(r#"json_array({value})"#).into()
                 }
             }
-            "Map" => Query::escape_string(value).into(),
-            _ => "NULL".into(),
+            _ => Query::escape_string(value).into(),
         }
     }
 

@@ -18,7 +18,7 @@ use zino_derive::{DecodeRow, Model, ModelAccessor, ModelHooks, Schema};
 #[serde(default)]
 pub struct Tag {
     // Basic fields.
-    #[schema(primary_key, read_only, constructor = "Uuid::new_v4")]
+    #[schema(primary_key, read_only, constructor = "Uuid::now_v7")]
     id: Uuid,
     #[schema(not_null, index_type = "text", comment = "Tag name")]
     name: String,
