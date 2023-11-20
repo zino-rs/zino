@@ -13,6 +13,8 @@ use crate::{
 use reqwest::Response;
 use serde::de::DeserializeOwned;
 use std::{env, fs, path::PathBuf, sync::LazyLock, thread};
+use futures::executor::block_on;
+use sqlx::Executor;
 use toml::value::Table;
 use utoipa::openapi::{OpenApi, OpenApiBuilder};
 
@@ -245,7 +247,20 @@ pub trait Application {
         };
         Ok(data)
     }
+    //检测数据库链接是否正确
+    fn check_database()
+    {
+        if cfg!(feature = "orm") {
+            if let connection = super::orm::GlobalConnection::get("main").unwrap(){
+                block_on( async {
+                    if let Err(err)=connection.pool().execute("SELECT 1").await{
+                        tracing::error!("connect to database failed : {err}");
+                    }
+                } );
+            }
 
+        }
+    }
     /// Handles the graceful shutdown.
     async fn shutdown() {
         #[cfg(feature = "orm")]
