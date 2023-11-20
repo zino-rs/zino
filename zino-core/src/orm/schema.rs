@@ -72,18 +72,26 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Returns the model namespace.
     #[inline]
     fn model_namespace() -> &'static str {
-        [*super::NAMESPACE_PREFIX, Self::MODEL_NAME]
-            .join(":")
-            .leak()
+        if super::NAMESPACE_PREFIX.is_empty() {
+            Self::MODEL_NAME
+        } else {
+            [*super::NAMESPACE_PREFIX, Self::MODEL_NAME]
+                .join(":")
+                .leak()
+        }
     }
 
     /// Returns the table name.
     #[inline]
     fn table_name() -> &'static str {
         Self::TABLE_NAME.unwrap_or_else(|| {
-            [*super::NAMESPACE_PREFIX, Self::MODEL_NAME]
-                .join("_")
-                .leak()
+            if super::NAMESPACE_PREFIX.is_empty() {
+                Self::MODEL_NAME
+            } else {
+                [*super::NAMESPACE_PREFIX, Self::MODEL_NAME]
+                    .join("_")
+                    .leak()
+            }
         })
     }
 
