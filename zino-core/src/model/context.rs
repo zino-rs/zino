@@ -26,7 +26,7 @@ impl QueryContext {
     pub fn new() -> Self {
         Self {
             start_time: Instant::now(),
-            query_id: Uuid::new_v4(),
+            query_id: Uuid::now_v7(),
             query: String::new(),
             arguments: Vec::new(),
             last_insert_id: None,

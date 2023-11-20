@@ -33,7 +33,8 @@ Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
 
 - **`#[schema(format = "format")]`**: The `format` attribute specifies
   the format for a `String` value. Supported values: **`date`** | **`date-time`**
-  | **`email`** | **`ipv4`** | **`ipv6`** | **`time`** | **`uri`** | **`uuid`**.
+  | **`email`** | **`host`** | **`hostname`** | **`ip`** | **`ipv4`** | **`ipv6`**
+  | **`time`** | **`uri`** | **`uuid`**.
 
 
 - **`#[schema(length = N)]`**: The `length` attribute specifies

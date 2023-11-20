@@ -95,10 +95,10 @@ pub trait RequestContext {
         let request_id = self
             .get_header("x-request-id")
             .and_then(|s| s.parse().ok())
-            .unwrap_or_else(Uuid::new_v4);
+            .unwrap_or_else(Uuid::now_v7);
         let trace_id = self
             .get_trace_context()
-            .map_or_else(Uuid::new_v4, |t| Uuid::from_u128(t.trace_id()));
+            .map_or_else(Uuid::now_v7, |t| Uuid::from_u128(t.trace_id()));
         let session_id = self
             .get_header("x-session-id")
             .or_else(|| self.get_header("session_id"))

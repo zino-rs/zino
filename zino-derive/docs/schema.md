@@ -26,11 +26,14 @@ Derives the [`Schema`](zino_core::orm::Schema) trait.
 - **`#[schema(ignore)]`**: The `ignore` annotation is used to skip a particular field
   such that it maps to no database column.
 
+- **`#[schema(type_name = "name")]`**: The `type_name` attribute is used to
+  override the Rust data type of the column.
+
 - **`#[schema(column_name = "name")]`**: All column names are assumed to be in **snake-case**.
   You can override the it by specifying the `column_name` attribute.
 
 - **`#[schema(column_type = "type")]`**: The column type is derived automatically
-  from the mappings of Rust primitive data types for different database drivers.
+  from the mappings of Rust data types for different database drivers.
   You can override the it by specifying the `column_type` attribute.
 
 - **`#[schema(length = N)]`**: The `length` attribute specifies

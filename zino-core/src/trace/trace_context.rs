@@ -37,7 +37,7 @@ impl TraceContext {
         Self {
             span_id,
             version: 0,
-            trace_id: Uuid::new_v4().as_u128(),
+            trace_id: Uuid::now_v7().as_u128(),
             parent_id: None,
             trace_flags: FLAG_SAMPLED | FLAG_RANDOM_TRACE_ID,
             trace_state: TraceState::new(),

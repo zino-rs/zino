@@ -4,8 +4,9 @@ use crate::{error::Error, extension::JsonObjectExt, Map, SharedString};
 mod validator;
 
 pub use validator::{
-    DateTimeValidator, DateValidator, EmailValidator, Ipv4AddrValidator, Ipv6AddrValidator,
-    TimeValidator, UriValidator, UuidValidator, Validator,
+    DateTimeValidator, DateValidator, EmailValidator, HostValidator, HostnameValidator,
+    IpAddrValidator, Ipv4AddrValidator, Ipv6AddrValidator, TimeValidator, UriValidator,
+    UuidValidator, Validator,
 };
 
 /// A record of validation results.
@@ -57,6 +58,21 @@ impl Validation {
             }
             "email" => {
                 if let Err(err) = EmailValidator.validate(value) {
+                    self.record_fail(key, err);
+                }
+            }
+            "host" => {
+                if let Err(err) = HostValidator.validate(value) {
+                    self.record_fail(key, err);
+                }
+            }
+            "hostname" => {
+                if let Err(err) = HostnameValidator.validate(value) {
+                    self.record_fail(key, err);
+                }
+            }
+            "ip" => {
+                if let Err(err) = IpAddrValidator.validate(value) {
                     self.record_fail(key, err);
                 }
             }

@@ -63,7 +63,7 @@ impl MessageChannel {
     /// Creates a new `MessageChannel`.
     pub fn new() -> Self {
         let (sender, receiver) = mpsc::channel(CHANNEL_CAPACITY.load(Relaxed));
-        let sender_id = Uuid::new_v4();
+        let sender_id = Uuid::now_v7();
         let subscriber = Subscriber::new(sender, None);
         let mut senders = CHANNEL_SUBSCRIBERS.write();
         senders.retain(|_, subscriber| !subscriber.emitter().is_closed());

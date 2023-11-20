@@ -89,7 +89,7 @@ pub(crate) fn default_components() -> Components {
     let mut components = OPENAPI_COMPONENTS.get_or_init(Components::new).clone();
 
     // Request ID
-    let request_id_example = Uuid::new_v4();
+    let request_id_example = Uuid::now_v7();
     let request_id_schema = ObjectBuilder::new()
         .schema_type(SchemaType::String)
         .format(Some(SchemaFormat::KnownFormat(KnownFormat::Uuid)))
@@ -142,7 +142,7 @@ pub(crate) fn default_components() -> Components {
         .insert("default".to_owned(), default_response.into());
 
     // Error response
-    let model_id_example = Uuid::new_v4();
+    let model_id_example = Uuid::now_v7();
     let detail_example = format!("404 Not Found: cannot find the model `{model_id_example}`");
     let instance_example = format!("/model/{model_id_example}/view");
     let status_schema = ObjectBuilder::new()

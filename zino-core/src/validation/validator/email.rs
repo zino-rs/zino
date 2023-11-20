@@ -3,11 +3,11 @@ use super::Validator;
 use regex::Regex;
 use std::{fmt, net::IpAddr, str::FromStr, sync::LazyLock};
 
-/// A validator for email address.
+/// A validator for the email address.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EmailValidator;
 
-/// An error for email address validation.
+/// An error for the email address validation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InvalidEmail {
     /// The value is empty.

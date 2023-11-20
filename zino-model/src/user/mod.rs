@@ -44,10 +44,10 @@ pub struct User {
     #[schema(default_value = "User::model_namespace", index_type = "hash")]
     namespace: String,
     #[cfg(feature = "visibility")]
-    #[schema(column_type = "String", default_value = "UserVisibility::default")]
+    #[schema(type_name = "String", default_value = "UserVisibility::default")]
     visibility: UserVisibility,
     #[schema(
-        column_type = "String",
+        type_name = "String",
         default_value = "UserStatus::default",
         index_type = "hash"
     )]

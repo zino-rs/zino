@@ -20,8 +20,9 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
     ];
 
     // Special attributes
-    const SPECIAL_ATTRIBUTES: [&str; 7] = [
+    const SPECIAL_ATTRIBUTES: [&str; 8] = [
         "ignore",
+        "type_name",
         "not_null",
         "default_value",
         "index_type",
@@ -83,7 +84,7 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
         && let Fields::Named(fields) = data.fields
     {
         for field in fields.named.into_iter() {
-            let type_name = parser::get_type_name(&field.ty);
+            let mut type_name = parser::get_type_name(&field.ty);
             if let Some(ident) = field.ident
                 && !type_name.is_empty()
             {
@@ -123,6 +124,11 @@ pub fn derive_schema(item: TokenStream) -> TokenStream {
                             "ignore" => {
                                 ignore = true;
                                 break 'inner;
+                            }
+                            "type_name" => {
+                                if let Some(value) = value {
+                                    type_name = value;
+                                }
                             }
                             "column_type" => {
                                 column_type = value;
