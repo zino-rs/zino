@@ -5,12 +5,12 @@ use regex::Regex;
 mod validator;
 
 pub use validator::{
-    AlphabeticValidator, AlphanumericValidator, AsciiValidator, AsciiAlphabeticValidator,
+    AlphabeticValidator, AlphanumericValidator, AsciiAlphabeticValidator,
     AsciiAlphanumericValidator, AsciiDigitValidator, AsciiHexdigitValidator,
-    AsciiLowercaseValidator, AsciiUppercaseValidator, DateTimeValidator, DateValidator,
-    EmailValidator, HostValidator, HostnameValidator, IpAddrValidator, Ipv4AddrValidator,
-    Ipv6AddrValidator, LowercaseValidator, NumericValidator, RegexValidator, TimeValidator,
-    UppercaseValidator, UriValidator, UuidValidator, Validator,
+    AsciiLowercaseValidator, AsciiUppercaseValidator, AsciiValidator, DateTimeValidator,
+    DateValidator, EmailValidator, HostValidator, HostnameValidator, IpAddrValidator,
+    Ipv4AddrValidator, Ipv6AddrValidator, LowercaseValidator, NumericValidator, RegexValidator,
+    TimeValidator, UppercaseValidator, UriValidator, UuidValidator, Validator,
 };
 
 /// A record of validation results.

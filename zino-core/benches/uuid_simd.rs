@@ -2,15 +2,27 @@ use uuid::Uuid;
 use uuid_simd::UuidExt;
 
 pub fn bench(c: &mut criterion::Criterion) {
-    c.bench_function("format_uuid", |b| {
+    c.bench_function("format_uuid_v4", |b| {
         b.iter(|| {
             let value = Uuid::new_v4();
             value.to_string()
         })
     });
-    c.bench_function("format_uuid_simd", |b| {
+    c.bench_function("format_uuid_v7", |b| {
+        b.iter(|| {
+            let value = Uuid::now_v7();
+            value.to_string()
+        })
+    });
+    c.bench_function("format_uuid_v4_simd", |b| {
         b.iter(|| {
             let value = Uuid::new_v4();
+            value.format_hyphenated().to_string()
+        })
+    });
+    c.bench_function("format_uuid_v7_simd", |b| {
+        b.iter(|| {
+            let value = Uuid::now_v7();
             value.format_hyphenated().to_string()
         })
     });

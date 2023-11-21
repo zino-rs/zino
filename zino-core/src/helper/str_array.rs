@@ -45,7 +45,7 @@ mod tests {
     #[test]
     fn it_parses_str_array() {
         assert_eq!(
-            parse_str_array("id,name,roles_count:array_length(roles,1)"),
+            parse_str_array("id,name,roles_count:array_length(roles,1)", ','),
             vec!["id", "name", "roles_count:array_length(roles,1)"],
         );
     }

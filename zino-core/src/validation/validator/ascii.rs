@@ -11,7 +11,7 @@ impl Validator<str> for AsciiValidator {
     #[inline]
     fn validate(&self, data: &str) -> Result<(), Self::Error> {
         for (index, ch) in data.char_indices() {
-            if !ch.is_ascii) {
+            if !ch.is_ascii() {
                 bail!(
                     "the char `{}` at the index `{}` is not an ASCII character",
                     ch,

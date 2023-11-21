@@ -1,5 +1,5 @@
 use super::Reference;
-use crate::{extension::JsonObjectExt, JsonValue, Map};
+use crate::{extension::{JsonObjectExt, JsonValueExt}, JsonValue, Map};
 use apache_avro::schema::{Name, RecordField, RecordFieldOrder, Schema, UnionSchema};
 use serde::Serialize;
 use std::{borrow::Cow, collections::BTreeMap};
@@ -178,6 +178,35 @@ impl<'a> Column<'a> {
     #[inline]
     pub fn is_write_only(&self) -> bool {
         self.has_attribute("write_only")
+    }
+
+    /// Returns `true` if the column is an option type.
+    ///
+    /// Only supports **`Option<Uuid>`** | **`Option<String>`**
+    /// | **`Option<i64>`** | **`Option<u64>`** | **`Vec<i32>`** | **`Vec<u32>`**.
+    #[inline]
+    pub fn is_option_type(&self) -> bool {
+        matches!(
+            self.type_name(),
+            "Option<Uuid>"
+                | "Option<String>"
+                | "Option<i64>"
+                | "Option<u64>"
+                | "Option<i32>"
+                | "Option<u32>"
+        )
+    }
+
+    /// Returns `true` if the column is an array type.
+    ///
+    /// Only supports **`Vec<Uuid>`** | **`Vec<String>`** | **`Vec<i64>`** | **`Vec<u64>`**
+    /// | **`Vec<i32>`** | **`Vec<u32>`**.
+    #[inline]
+    pub fn is_array_type(&self) -> bool {
+        matches!(
+            self.type_name(),
+            "Vec<Uuid>" | "Vec<String>" | "Vec<i64>" | "Vec<u64>" | "Vec<i32>" | "Vec<u32>"
+        )
     }
 
     /// Returns the Avro schema.
@@ -426,7 +455,12 @@ impl<'a> Column<'a> {
             definition.upsert("default", value.clone());
         }
         if let Some(value) = extra.get("example") {
-            definition.upsert("example", value.clone());
+            if self.is_array_type() {
+                let values = value.parse_str_array();
+                definition.upsert("example", values);
+            } else {
+                definition.upsert("example", value.clone());
+            }
         }
         if let Some(values) = extra.parse_enum_values("examples") {
             definition.upsert("examples", values);

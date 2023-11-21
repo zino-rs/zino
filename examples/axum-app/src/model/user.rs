@@ -26,7 +26,7 @@ pub struct User {
     name: String,
     #[schema(
         auto_initialized,
-        enum_values = "Active,Inactive,Locked,Deleted",
+        enum_values = "Active | Inactive | Locked | Deleted",
         default_value = "Inactive",
         index_type = "hash",
         comment = "User status"
@@ -47,7 +47,7 @@ pub struct User {
     email: String,
     #[schema(format = "uri")]
     avatar: String,
-    #[schema(snapshot, nonempty, unique_items, comment = "User roles")]
+    #[schema(snapshot, nonempty, unique_items, comment = "User roles", example = "admin, worker")]
     roles: Vec<String>,
     #[schema(unique_items, reference = "Tag", comment = "User tags")]
     tags: Vec<i64>,
