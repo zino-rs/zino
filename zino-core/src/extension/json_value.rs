@@ -282,7 +282,7 @@ impl JsonValueExt for JsonValue {
 
     fn parse_array<T: FromStr>(&self) -> Option<Vec<T>> {
         let values = match &self {
-            JsonValue::String(s) => helper::parse_str_array(s)
+            JsonValue::String(s) => helper::parse_str_array(s, ',')
                 .into_iter()
                 .filter_map(|s| (!s.is_empty()).then_some(Cow::Borrowed(s)))
                 .collect::<Vec<_>>()
@@ -299,7 +299,7 @@ impl JsonValueExt for JsonValue {
 
     fn parse_str_array(&self) -> Option<Vec<&str>> {
         let values = match &self {
-            JsonValue::String(s) => Some(helper::parse_str_array(s)),
+            JsonValue::String(s) => Some(helper::parse_str_array(s, ',')),
             JsonValue::Array(vec) => Some(vec.iter().filter_map(|v| v.as_str()).collect()),
             _ => None,
         };

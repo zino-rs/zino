@@ -157,9 +157,9 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         "$in" => "IN",
                         "$nin" => "NOT IN",
                         "$between" => "BETWEEN",
-                        "$glob" => "GLOB",
                         "$like" => "LIKE",
                         "$rlike" => "REGEXP",
+                        "$glob" => "GLOB",
                         "$is" => "IS",
                         "$size" => "json_array_length",
                         _ => {

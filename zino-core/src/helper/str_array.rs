@@ -1,5 +1,5 @@
 /// Parses a str array.
-pub(crate) fn parse_str_array(s: &str) -> Vec<&str> {
+pub(crate) fn parse_str_array(s: &str, separator: char) -> Vec<&str> {
     let mut str_array = Vec::new();
     let mut chars_stack = Vec::new();
     let mut last_index = 0;
@@ -23,13 +23,12 @@ pub(crate) fn parse_str_array(s: &str) -> Vec<&str> {
                     return str_array;
                 }
             }
-            ',' => {
-                if chars_stack.is_empty() {
+            _ => {
+                if c == separator && chars_stack.is_empty() {
                     str_array.push(&s[last_index..i]);
                     last_index = i + 1;
                 }
             }
-            _ => {}
         }
     }
     if !chars_stack.is_empty() {

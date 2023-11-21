@@ -1,6 +1,16 @@
+use proc_macro2::TokenStream;
+use quote::quote;
 use syn::{
     punctuated::Punctuated, Attribute, Expr, GenericArgument, Lit, Meta, PathArguments, Token, Type,
 };
+
+/// Quotes the `Option<String>` value.
+pub(super) fn quote_option_string(value: Option<String>) -> TokenStream {
+    match value {
+        Some(v) => quote! { Some(#v) },
+        None => quote! { None },
+    }
+}
 
 /// Parses the `Option<T>` type.
 pub(super) fn parse_option_type(type_name: &str) -> Option<&str> {

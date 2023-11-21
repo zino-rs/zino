@@ -101,12 +101,6 @@ pub(super) trait QueryExt<DB> {
                         conditions.push(format!("(NOT {condition})"));
                     }
                 }
-                "$nor" => {
-                    if let Some(filters) = value.as_array() {
-                        let condition = Self::format_logical_filters::<M>(filters, " OR ");
-                        conditions.push(format!("(NOT {condition})"));
-                    }
-                }
                 "$or" => {
                     if let Some(filters) = value.as_array() {
                         let condition = Self::format_logical_filters::<M>(filters, " OR ");

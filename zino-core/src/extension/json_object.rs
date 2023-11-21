@@ -415,7 +415,7 @@ impl JsonObjectExt for Map {
     fn parse_array<T: FromStr>(&self, key: &str) -> Option<Vec<T>> {
         self.get(key)
             .and_then(|v| match v {
-                JsonValue::String(s) => helper::parse_str_array(s)
+                JsonValue::String(s) => helper::parse_str_array(s, ',')
                     .into_iter()
                     .filter_map(|s| (!s.is_empty()).then_some(Cow::Borrowed(s)))
                     .collect::<Vec<_>>()
@@ -437,7 +437,7 @@ impl JsonObjectExt for Map {
     fn parse_str_array(&self, key: &str) -> Option<Vec<&str>> {
         self.get(key)
             .and_then(|v| match v {
-                JsonValue::String(s) => Some(helper::parse_str_array(s)),
+                JsonValue::String(s) => Some(helper::parse_str_array(s, ',')),
                 JsonValue::Array(v) => Some(v.iter().filter_map(|v| v.as_str()).collect()),
                 _ => None,
             })
@@ -451,7 +451,7 @@ impl JsonObjectExt for Map {
         self.get(key)
             .and_then(|v| match v {
                 JsonValue::String(s) => {
-                    let values = helper::parse_str_array(s);
+                    let values = helper::parse_str_array(s, '|');
                     let vec = values
                         .iter()
                         .map(|s| {

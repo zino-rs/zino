@@ -4,6 +4,7 @@ Derives the [`Model`](zino_core::model::Model) trait.
 
 - **`#[schema(constructor = "path")]`**: The `constructor` attribute is used to
   create a new instance of the column type in `Model::new()`.
+  The function must be callable as `fn() -> T`.
 
 - **`#[schema(read_only)]`**: The `read_only` annotation is used to indicate that
   the column is read-only and can not be modified after creation.

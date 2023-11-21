@@ -31,10 +31,17 @@ Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
 - **`#[schema(nonempty)]`**: The `nonempty` annotation is used to indicate that
   the `String`, `Vec<T>` or `Map` value should be nonempty.
 
+- **`#[schema(validator = "validator")]`**: The `validator` attribute specifies
+  a custom validator which is used to validate the string value.
+  If the value is a function, it must be callable as `fn() -> T`.
+
 - **`#[schema(format = "format")]`**: The `format` attribute specifies
-  the format for a `String` value. Supported values: **`date`** | **`date-time`**
-  | **`email`** | **`host`** | **`hostname`** | **`ip`** | **`ipv4`** | **`ipv6`**
-  | **`time`** | **`uri`** | **`uuid`**.
+  the format for a `String` value. Supported values: **`alphabetic`** | **`alphanumeric`**
+  | **`ascii`** | **`ascii-alphabetic`** | **`ascii-alphanumeric`** | **`ascii-digit`**
+  | **`ascii-hexdigit`** | **`ascii-lowercase`** | **`ascii-uppercase`**
+  | **`date`** | **`date-time`** | **`email`** | **`host`** | **`hostname`**
+  | **`ip`** | **`ipv4`** | **`ipv6`** | **`lowercase`** | **`numeric`**
+  | **`regex`** | **`time`** | **`uppercase`** | **`uri`** | **`uuid`**.
 
 
 - **`#[schema(length = N)]`**: The `length` attribute specifies

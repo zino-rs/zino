@@ -8,11 +8,11 @@ Derives the [`Schema`](zino_core::orm::Schema) trait.
 
 - **`#[schema(reader_name = "name")]`**: The `reader_name` attribute specifies
   the model reader name of database services. The names are defined in the database cofiguration.
-  Default: **`main`**.
+  Default value: **`main`**.
 
 - **`#[schema(writer_name = "name")]`**: The `writer_name` attribute specifies
   the model writer name of database services. The names are defined in the database cofiguration.
-  Default: **`main`**.
+  Default value: **`main`**.
 
 - **`#[schema(table_name = "name")]`**: The `table_name` attribute specifies
   the corresponding table in the database. The default table name is obtained by

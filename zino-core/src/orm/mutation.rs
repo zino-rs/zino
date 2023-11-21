@@ -23,7 +23,7 @@ impl MutationExt<DatabaseDriver> for Mutation {
                 "$inc" => {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
-                            if fields.contains(key)
+                            if (permissive || fields.contains(key))
                                 && let Some(col) = M::get_column(key).filter(|c| !c.is_read_only())
                             {
                                 let key = Query::format_field(key);
@@ -37,7 +37,7 @@ impl MutationExt<DatabaseDriver> for Mutation {
                 "$mul" => {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
-                            if fields.contains(key)
+                            if (permissive || fields.contains(key))
                                 && let Some(col) = M::get_column(key).filter(|c| !c.is_read_only())
                             {
                                 let key = Query::format_field(key);
@@ -51,7 +51,7 @@ impl MutationExt<DatabaseDriver> for Mutation {
                 "$min" => {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
-                            if fields.contains(key)
+                            if (permissive || fields.contains(key))
                                 && let Some(col) = M::get_column(key).filter(|c| !c.is_read_only())
                             {
                                 let key = Query::format_field(key);
@@ -65,7 +65,7 @@ impl MutationExt<DatabaseDriver> for Mutation {
                 "$max" => {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
-                            if fields.contains(key)
+                            if (permissive || fields.contains(key))
                                 && let Some(col) = M::get_column(key).filter(|c| !c.is_read_only())
                             {
                                 let key = Query::format_field(key);

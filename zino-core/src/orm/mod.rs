@@ -58,6 +58,32 @@
 //! let records = User::query::<Record>(sql, params.as_object()).await?;
 //! ```
 //!
+//! # Query operators
+//!
+//! | Name       | MySQL               | PostgreSQL       | SQLite                |
+//! |------------|---------------------|------------------|-----------------------|
+//! | `$and`     | `AND`               | `AND`            | `AND`                 |
+//! | `$or`      | `OR`                | `OR`             | `OR`                  |
+//! | `$not`     | `NOT`               | `NOT`            | `NOT`                 |
+//! | `$rand`    | `rand()`            | `random()`       | `abs(random())`       |
+//! | `$text`    | `match() against()` | `to_tsvector()`  | `MATCH`               |
+//! | `$eq`      | `=`                 | `=`              | `=`                   |
+//! | `$ne`      | `<>`                | `<>`             | `<>`                  |
+//! | `$lt`      | `<`                 | `<`              | `<`                   |
+//! | `$le`      | `<=`                | `<=`             | `<=`                  |
+//! | `$gt`      | `>`                 | `>`              | `>`                   |
+//! | `$ge`      | `>=`                | `>=`             | `>=`                  |
+//! | `$in`      | `IN`                | `IN`             | `IN`                  |
+//! | `$nin`     | `NOT IN`            | `NOT IN`         | `NOT IN`              |
+//! | `$between` | `BETWEEN AND`       | `BETWEEN AND`    | `BETWEEN AND`         |
+//! | `$like`    | `LIKE`              | `LIKE`           | `LIKE`                |
+//! | `$ilike`   | `ILIKE`             | `ILIKE`          | N/A                   |
+//! | `$rlike`   | `RLIKE`             | `~*`             | `REGEXP`              |
+//! | `$glob`    | N/A                 | N/A              | `GLOB`                |
+//! | `$is`      | `IS`                | `IS`             | `IS`                  |
+//! | `$all`     | N/A                 | `@>`             | N/A                   |
+//! | `$size`    | `json_length()`     | `array_length()` | `json_array_length()` |
+//!
 //! [`Mongoose`]: https://mongoosejs.com/
 //! [`Prisma`]: https://www.prisma.io/
 //! [`TypeORM`]: https://typeorm.io/

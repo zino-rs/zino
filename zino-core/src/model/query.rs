@@ -11,7 +11,7 @@ pub struct Query {
     fields: Vec<String>,
     // Filters.
     filters: Map,
-    // Sort order.
+    // Sort order: `false` for ascending and `true` for descending.
     sort_order: Vec<(SharedString, bool)>,
     // Offset.
     offset: usize,

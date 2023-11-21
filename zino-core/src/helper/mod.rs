@@ -1,4 +1,4 @@
-/// Helper methods.
+/// Helper utilities.
 mod form_data;
 mod header;
 mod mask_text;
