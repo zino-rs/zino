@@ -244,7 +244,13 @@ impl Application for AxumCluster {
                     .serve(app.into_make_service_with_connect_info::<SocketAddr>())
                     .with_graceful_shutdown(Self::shutdown())
             });
-            Self::check_database();
+            if let Some(config) = app_state.get_config("database") {
+                if let Some(check)=config.get_bool("check"){
+                    if check{
+                        Self::check_database();
+                    }
+                }
+            }
             for result in futures::future::join_all(servers).await {
                 if let Err(err) = result {
                     tracing::error!("axum server error: {err}");
