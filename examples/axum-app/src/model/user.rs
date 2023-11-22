@@ -26,7 +26,7 @@ pub struct User {
     name: String,
     #[schema(
         auto_initialized,
-        enum_values = "Active | Inactive | Locked | Deleted",
+        enum_values = "Active | Inactive | Locked | Deleted | Archived",
         default_value = "Inactive",
         index_type = "hash",
         comment = "User status"
@@ -42,12 +42,20 @@ pub struct User {
     account: String,
     #[schema(not_null, write_only, comment = "User password")]
     password: String,
+    #[schema(format = "phone_number")]
     mobile: String,
     #[schema(format = "email")]
     email: String,
     #[schema(format = "uri")]
     avatar: String,
-    #[schema(snapshot, nonempty, unique_items, comment = "User roles", example = "admin, worker")]
+    #[schema(
+        snapshot,
+        nonempty,
+        unique_items,
+        enum_values = "admin | worker | auditor",
+        comment = "User roles",
+        example = "admin, worker"
+    )]
     roles: Vec<String>,
     #[schema(unique_items, reference = "Tag", comment = "User tags")]
     tags: Vec<i64>,

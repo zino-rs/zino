@@ -130,6 +130,20 @@ pub trait ModelHooks: Model {
         Ok(())
     }
 
+    /// A hook running before archiving a model in the table.
+    #[inline]
+    async fn before_archive(&mut self) -> Result<Self::Data, Error> {
+        self.before_save().await
+    }
+
+    /// A hook running after archiving a model in the table.
+    #[inline]
+    async fn after_archive(ctx: &QueryContext, data: Self::Data) -> Result<(), Error> {
+        Self::after_save(ctx, data).await?;
+        ctx.emit_metrics("archive");
+        Ok(())
+    }
+
     /// A hook running before updating a model in the table.
     #[inline]
     async fn before_update(&mut self) -> Result<Self::Data, Error> {

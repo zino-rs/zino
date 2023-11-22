@@ -70,8 +70,19 @@ Derives the [`Schema`](zino_core::orm::Schema) trait.
 - **`#[schema(primary_key)]`**: The `primary_key` annotation is used to
   mark a column as the primary key.
 
+- **`#[schema(foreign_key)]`**: The `foreign_key` annotation is used to
+  mark a column as the foreign key.
+
 - **`#[schema(read_only)]`**: The `read_only` annotation is used to indicate that
   the column is read-only and can not be modified after creation.
 
 - **`#[schema(write_only)]`**: The `write_only` annotation is used to indicate that
   the column is write-only and can not be seen by frontend users.
+
+- **`#[schema(on_delete = "action")]`**: The `on_delete` attribute sepcifies
+  the referential action for a foreign key when the parent table has a `DELETE` operation.
+  Supported values: **`cascade`** | **`restrict`**.
+
+- **`#[schema(on_update = "action")]`**: The `on_update` attribute sepcifies
+  the referential action for a foreign key when the parent table has an `UPDATE` operation.
+  Supported values: **`cascade`** | **`restrict`**.

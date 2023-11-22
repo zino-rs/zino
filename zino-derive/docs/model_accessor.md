@@ -38,11 +38,13 @@ Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
 - **`#[schema(format = "format")]`**: The `format` attribute specifies
   the format for a `String` value. Supported values: **`alphabetic`** | **`alphanumeric`**
   | **`ascii`** | **`ascii-alphabetic`** | **`ascii-alphanumeric`** | **`ascii-digit`**
-  | **`ascii-hexdigit`** | **`ascii-lowercase`** | **`ascii-uppercase`**
-  | **`date`** | **`date-time`** | **`email`** | **`host`** | **`hostname`**
-  | **`ip`** | **`ipv4`** | **`ipv6`** | **`lowercase`** | **`numeric`**
+  | **`ascii-hexdigit`** | **`ascii-lowercase`** | **`ascii-uppercase`** | **`credit-card`**
+  | **`date`** | **`date-time`** | **`email`** | **`host`** | **`hostname`** | **`ip`**
+  | **`ipv4`** | **`ipv6`** | **`lowercase`** | **`numeric`** | **`phone_number`**
   | **`regex`** | **`time`** | **`uppercase`** | **`uri`** | **`uuid`**.
 
+- **`#[schema(enum_values = "value1 | value2 | ...")]`**: The `enum_values` attribute specifies
+  the enumerated values for a `String` or `Vec<String>` value.
 
 - **`#[schema(length = N)]`**: The `length` attribute specifies
   the fixed length for a `String` value.

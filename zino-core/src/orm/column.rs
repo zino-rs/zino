@@ -2,17 +2,35 @@ use crate::{
     extension::JsonObjectExt,
     model::{Column, EncodeColumn},
 };
+use convert_case::{Case, Casing};
 
 /// Extension trait for [`Column`](crate::model::Column).
 pub(super) trait ColumnExt {
+    /// Returns the type annotation.
+    fn type_annotation(&self) -> &'static str;
+
     /// Returns the field definition.
     fn field_definition(&self, primary_key_name: &str) -> String;
 
-    /// Returns the type annotation.
-    fn type_annotation(&self) -> &'static str;
+    /// Returns the constraints.
+    fn constraints(&self) -> Vec<String>;
 }
 
 impl<'a> ColumnExt for Column<'a> {
+    fn type_annotation(&self) -> &'static str {
+        if cfg!(feature = "orm-postgres") {
+            match self.column_type() {
+                "UUID" => "::UUID",
+                "BIGINT" | "BIGSERIAL" => "::BIGINT",
+                "INT" | "SERIAL" => "::INT",
+                "SMALLINT" | "SMALLSERIAL" => "::SMALLINT",
+                _ => "::TEXT",
+            }
+        } else {
+            ""
+        }
+    }
+
     fn field_definition(&self, primary_key_name: &str) -> String {
         let column_name = self
             .extra()
@@ -56,17 +74,29 @@ impl<'a> ColumnExt for Column<'a> {
         definition
     }
 
-    fn type_annotation(&self) -> &'static str {
-        if cfg!(feature = "orm-postgres") {
-            match self.column_type() {
-                "UUID" => "::UUID",
-                "BIGINT" | "BIGSERIAL" => "::BIGINT",
-                "INT" | "SERIAL" => "::INT",
-                "SMALLINT" | "SMALLSERIAL" => "::SMALLINT",
-                _ => "::TEXT",
+    fn constraints(&self) -> Vec<String> {
+        let mut constraints = Vec::new();
+        let extra = self.extra();
+        let column_name = self
+            .extra()
+            .get_str("column_name")
+            .unwrap_or_else(|| self.name());
+        if extra.contains_key("foreign_key")
+            && let Some(reference) = self.reference()
+        {
+            let parent_table_name = reference.name();
+            let parent_column_name = reference.column_name();
+            let mut constraint = format!(
+                "FOREIGN KEY ({column_name}) REFERENCES {parent_table_name}({parent_column_name})"
+            );
+            if let Some(action) = extra.get_str("on_delete") {
+                constraint = format!("{constraint} ON DELETE {}", action.to_case(Case::Upper));
             }
-        } else {
-            ""
+            if let Some(action) = extra.get_str("on_update") {
+                constraint = format!("{constraint} ON UPDATE {}", action.to_case(Case::Upper));
+            }
+            constraints.push(constraint);
         }
+        constraints
     }
 }

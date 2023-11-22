@@ -177,12 +177,20 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let table_name = Self::table_name();
-        let columns = Self::columns()
+        let columns = Self::columns();
+        let mut definitions = columns
             .iter()
             .map(|col| col.field_definition(primary_key_name))
-            .collect::<Vec<_>>()
-            .join(",\n  ");
-        let sql = format!("CREATE TABLE IF NOT EXISTS {table_name} (\n  {columns}\n);");
+            .collect::<Vec<_>>();
+        for col in columns {
+            let mut constraints = col.constraints();
+            if !constraints.is_empty() {
+                definitions.append(&mut constraints);
+            }
+        }
+
+        let definitions = definitions.join(",\n  ");
+        let sql = format!("CREATE TABLE IF NOT EXISTS {table_name} (\n  {definitions}\n);");
         sqlx::query(&sql).execute(pool).await?;
         Self::after_create_table().await?;
         Ok(())

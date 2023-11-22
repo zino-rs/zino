@@ -192,6 +192,12 @@ where
         self.status().eq_ignore_ascii_case("Deleted")
     }
 
+    /// Returns `true` if the `status` is `Archived`.
+    #[inline]
+    fn is_archived(&self) -> bool {
+        self.status().eq_ignore_ascii_case("Archived")
+    }
+
     /// Returns `true` if the `description` is nonempty.
     #[inline]
     fn has_description(&self) -> bool {
@@ -315,7 +321,7 @@ where
         mutation
     }
 
-    /// Constructs the `Mutation` for a soft delete of the model.
+    /// Constructs a `Mutation` for logically deleting the model.
     fn soft_delete_mutation(&self) -> Mutation {
         let mut mutation = Self::default_mutation();
         let mut updates = self.next_edition_updates();
@@ -324,11 +330,20 @@ where
         mutation
     }
 
-    /// Constructs the `Mutation` for a lock of the model.
+    /// Constructs a `Mutation` for locking the model.
     fn lock_mutation(&self) -> Mutation {
         let mut mutation = Self::default_mutation();
         let mut updates = self.next_edition_updates();
         updates.upsert("status", "Locked");
+        mutation.append_updates(&mut updates);
+        mutation
+    }
+
+    /// Constructs a `Mutation` for archiving the model.
+    fn archive_mutation(&self) -> Mutation {
+        let mut mutation = Self::default_mutation();
+        let mut updates = self.next_edition_updates();
+        updates.upsert("status", "Archived");
         mutation.append_updates(&mut updates);
         mutation
     }
@@ -410,6 +425,18 @@ where
         Ok(())
     }
 
+    /// Archives a model of the primary key by setting the status as `Archived`.
+    async fn archive_by_id(id: &K) -> Result<(), Error> {
+        let mut model = Self::try_get_model(id).await?;
+        let model_data = model.before_archive().await?;
+
+        let query = model.current_version_query();
+        let mut mutation = model.archive_mutation();
+        let ctx = Self::update_one(&query, &mut mutation).await?;
+        Self::after_archive(&ctx, model_data).await?;
+        Ok(())
+    }
+
     /// Updates a model of the primary key using the json object.
     async fn update_by_id(
         id: &K,
@@ -423,8 +450,8 @@ where
             && model.version() != version
         {
             bail!(
-                "409 Conflict: there is a version conflict for `{}`",
-                version
+                "409 Conflict: there is a version conflict for the model `{}`",
+                id
             );
         }
         Self::before_validation(data, extension.as_ref()).await?;
@@ -441,10 +468,12 @@ where
         if !validation.is_success() {
             return Ok((validation, model));
         }
-        if model.is_locked() {
-            data.retain(|key, _value| key == "visibility" || key == "status");
-        } else if model.is_deleted() {
+        if model.is_deleted() {
             data.retain(|key, _value| key == "status");
+        } else if model.is_locked() {
+            data.retain(|key, _value| key == "visibility" || key == "status");
+        } else if model.is_archived() {
+            bail!("403 Forbidden: archived model `{}` can not be modified", id);
         }
         model.after_validation(data).await?;
 

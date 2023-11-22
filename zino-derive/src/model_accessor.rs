@@ -288,11 +288,42 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 }
                             }
                             "format" if type_name == "String" => {
-                                field_constraints.push(quote! {
-                                    if !self.#ident.is_empty() {
-                                        validation.validate_format(#name, self.#ident.as_str(), #value);
+                                if let Some(value) = value {
+                                    field_constraints.push(quote! {
+                                        if !self.#ident.is_empty() {
+                                            validation.validate_format(#name, self.#ident.as_str(), #value);
+                                        }
+                                    });
+                                }
+                            }
+                            "enum_values" => {
+                                if let Some(value) = value {
+                                    let values =
+                                        value.split('|').map(|s| s.trim()).collect::<Vec<_>>();
+                                    if type_name == "String" {
+                                        field_constraints.push(quote! {
+                                            if !self.#ident.is_empty() {
+                                                let values = [#(#values),*];
+                                                let value = self.#ident.as_str();
+                                                if !values.contains(&value) {
+                                                    let message = format!("the value `{value}` is not allowed");
+                                                    validation.record(#name, message);
+                                                }
+                                            }
+                                        });
+                                    } else if type_name == "Vec<String>" {
+                                        field_constraints.push(quote! {
+                                            let values = [#(#values),*];
+                                            for value in self.#ident.iter() {
+                                                if !values.contains(&value.as_str()) {
+                                                    let message = format!("the value `{value}` is not allowed");
+                                                    validation.record(#name, message);
+                                                    break;
+                                                }
+                                            }
+                                        });
                                     }
-                                });
+                                }
                             }
                             "length" => {
                                 let length = value

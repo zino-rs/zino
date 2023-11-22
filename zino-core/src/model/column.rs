@@ -1,5 +1,8 @@
 use super::Reference;
-use crate::{extension::{JsonObjectExt, JsonValueExt}, JsonValue, Map};
+use crate::{
+    extension::{JsonObjectExt, JsonValueExt},
+    JsonValue, Map,
+};
 use apache_avro::schema::{Name, RecordField, RecordFieldOrder, Schema, UnionSchema};
 use serde::Serialize;
 use std::{borrow::Cow, collections::BTreeMap};
@@ -162,7 +165,7 @@ impl<'a> Column<'a> {
         true
     }
 
-    /// Returns `true` if the column is the primary key.
+    /// Returns `true` if the column is a primary key.
     #[inline]
     pub fn is_primary_key(&self) -> bool {
         self.has_attribute("primary_key")

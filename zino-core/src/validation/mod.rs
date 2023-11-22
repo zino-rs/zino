@@ -1,6 +1,5 @@
 //! Generic validator and common validation rules.
 use crate::{error::Error, extension::JsonObjectExt, Map, SharedString};
-use regex::Regex;
 
 mod validator;
 
@@ -8,10 +7,22 @@ pub use validator::{
     AlphabeticValidator, AlphanumericValidator, AsciiAlphabeticValidator,
     AsciiAlphanumericValidator, AsciiDigitValidator, AsciiHexdigitValidator,
     AsciiLowercaseValidator, AsciiUppercaseValidator, AsciiValidator, DateTimeValidator,
-    DateValidator, EmailValidator, HostValidator, HostnameValidator, IpAddrValidator,
-    Ipv4AddrValidator, Ipv6AddrValidator, LowercaseValidator, NumericValidator, RegexValidator,
-    TimeValidator, UppercaseValidator, UriValidator, UuidValidator, Validator,
+    DateValidator, HostValidator, HostnameValidator, IpAddrValidator, Ipv4AddrValidator,
+    Ipv6AddrValidator, LowercaseValidator, NumericValidator, TimeValidator, UppercaseValidator,
+    UriValidator, UuidValidator, Validator,
 };
+
+#[cfg(feature = "validator-credit-card")]
+pub use validator::CreditCardValidator;
+
+#[cfg(feature = "validator-email")]
+pub use validator::EmailValidator;
+
+#[cfg(feature = "validator-phone-number")]
+pub use validator::PhoneNumberValidator;
+
+#[cfg(feature = "validator-regex")]
+pub use validator::RegexValidator;
 
 /// A record of validation results.
 #[derive(Debug, Default)]
@@ -48,15 +59,6 @@ impl Validation {
     }
 
     /// Validates the string value with a specific format.
-    ///
-    /// # Supported formats
-    ///
-    /// **`alphabetic`** | **`alphanumeric`** | **`ascii-alphabetic`**
-    /// | **`ascii-alphanumeric`** | **`ascii-digit`** | **`ascii-hexdigit`**
-    /// | **`ascii-lowercase`** | **`ascii-uppercase`** | **`date`** | **`date-time`**
-    /// | **`email`** | **`host`** | **`hostname`** | **`ip`** | **`ipv4`** | **`ipv6`**
-    /// | **`lowercase`** | **`numeric`** | **`regex`** | **`time`** | **`uppercase`**
-    /// | **`uri`** | **`uuid`**
     pub fn validate_format(&mut self, key: impl Into<SharedString>, value: &str, format: &str) {
         match format {
             "alphabetic" => {
@@ -104,6 +106,12 @@ impl Validation {
                     self.record_fail(key, err);
                 }
             }
+            #[cfg(feature = "validator-credit-card")]
+            "credit-card" => {
+                if let Err(err) = CreditCardValidator.validate(value) {
+                    self.record_fail(key, err);
+                }
+            }
             "date" => {
                 if let Err(err) = DateValidator.validate(value) {
                     self.record_fail(key, err);
@@ -114,6 +122,7 @@ impl Validation {
                     self.record_fail(key, err);
                 }
             }
+            #[cfg(feature = "validator-email")]
             "email" => {
                 if let Err(err) = EmailValidator.validate(value) {
                     self.record_fail(key, err);
@@ -154,6 +163,13 @@ impl Validation {
                     self.record_fail(key, err);
                 }
             }
+            #[cfg(feature = "validator-phone-number")]
+            "phone_number" => {
+                if let Err(err) = PhoneNumberValidator.validate(value) {
+                    self.record_fail(key, err);
+                }
+            }
+            #[cfg(feature = "validator-regex")]
             "regex" => {
                 if let Err(err) = RegexValidator.validate(value) {
                     self.record_fail(key, err);
@@ -181,21 +197,6 @@ impl Validation {
             }
             _ => {
                 tracing::warn!("supported format `{format}`");
-            }
-        }
-    }
-
-    /// Validates the string value with a regex pattern.
-    pub fn validate_pattern(&mut self, key: impl Into<SharedString>, value: &str, pattern: &str) {
-        match Regex::new(pattern) {
-            Ok(re) => {
-                if !re.is_match(value) {
-                    self.record(key, "invalid value for the pattern");
-                }
-            }
-            Err(err) => {
-                tracing::error!("fail to compile the regex: {err}");
-                self.record(key, "fail to compile the regex");
             }
         }
     }
