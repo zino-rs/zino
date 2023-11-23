@@ -46,7 +46,6 @@ accessor-redb = ["accessor", "opendal/services-redb"]
 accessor-redis = ["accessor", "opendal/services-redis"]
 accessor-s3 = ["accessor", "opendal/services-s3"]
 accessor-sled = ["accessor", "opendal/services-sled"]
-accessor-sqlite = ["accessor", "opendal/services-sqlite"]
 accessor-supabase = ["accessor", "opendal/services-supabase"]
 accessor-webdav = ["accessor", "opendal/services-webdav"]
 accessor-webhdfs = ["accessor", "opendal/services-webhdfs"]
@@ -80,7 +79,6 @@ all-accessors = [
     "accessor-redis",
     "accessor-s3",
     "accessor-sled",
-    "accessor-sqlite",
     "accessor-supabase",
     "accessor-webdav",
     "accessor-webhdfs",
@@ -163,7 +161,7 @@ cron = "0.12.0"
 csv = "1.3.0"
 dotenvy = "0.15.7"
 etag = "4.0.0"
-faster-hex = "0.8.1"
+faster-hex = "0.9.0"
 fluent = "0.16.0"
 futures = "0.3.29"
 hkdf = "0.12.3"
@@ -193,7 +191,7 @@ task-local-extensions = "0.1.4"
 toml = "0.8.8"
 tracing = "0.1.40"
 tracing-appender = "0.2.3"
-url = "2.4.1"
+url = "2.5.0"
 
 [dependencies.argon2]
 version = "0.5.2"
@@ -274,7 +272,7 @@ version = "1.11.2"
 features = ["serde"]
 
 [dependencies.sqlx]
-version = "0.7.2"
+version = "0.7.3"
 optional = true
 features = [
     "chrono",

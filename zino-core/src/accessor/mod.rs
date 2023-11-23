@@ -33,7 +33,6 @@
 //! | `redis`       | Redis services.                          | `accessor-redis`      |
 //! | `s3`          | AWS S3 alike services.                   | `accessor-s3`         |
 //! | `sled`        | Sled services.                           | `accessor-sled`       |
-//! | `sqlite`      | SQLite services.                         | `accessor-sqlite`     |
 //! | `supabase`    | Supabase services.                       | `accessor-supabase`   |
 //! | `webdav`      | WebDAV services.                         | `accessor-webdav`     |
 //! | `webhdfs`     | WebHDFS services.                        | `accessor-webhdfs`    |
@@ -541,27 +540,6 @@ impl GlobalAccessor {
                 }
                 if let Some(tree) = config.get_str("tree") {
                     builder.tree(tree);
-                }
-                Ok(Operator::new(builder)?.finish())
-            }
-            #[cfg(feature = "accessor-sqlite")]
-            "sqlite" => {
-                let mut builder = services::Sqlite::default();
-                if let Some(database) = config.get_str("database") {
-                    let dsn = format!("file://{database}.db");
-                    builder.connection_string(dsn.as_str());
-                }
-                if let Some(root) = config.get_str("root") {
-                    builder.root(root);
-                }
-                if let Some(table) = config.get_str("table") {
-                    builder.table(table);
-                }
-                if let Some(key_field) = config.get_str("key-field") {
-                    builder.key_field(key_field);
-                }
-                if let Some(value_field) = config.get_str("value-field") {
-                    builder.value_field(value_field);
                 }
                 Ok(Operator::new(builder)?.finish())
             }

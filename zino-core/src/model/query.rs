@@ -17,6 +17,8 @@ pub struct Query {
     offset: usize,
     // Limit.
     limit: usize,
+    // Extra attributes.
+    extra: Map,
 }
 
 impl Query {
@@ -29,6 +31,7 @@ impl Query {
             sort_order: Vec::new(),
             offset: 0,
             limit: 0,
+            extra: Map::new(),
         }
     }
 
@@ -38,6 +41,7 @@ impl Query {
         let mut validation = Validation::new();
         let mut pagination_current_page = None;
         let filters = &mut self.filters;
+        let extra = &mut self.extra;
         for (key, value) in data.iter().filter(|(_, v)| !v.is_ignorable()) {
             match key.as_str() {
                 "fields" | "columns" => {
@@ -70,9 +74,10 @@ impl Query {
                     }
                 }
                 "limit" | "page_size" => {
-                    if let Some(result) = value.parse_usize() {
+                    // Parses as `isize` so that it can accept `-1`
+                    if let Some(result) = value.parse_isize() {
                         match result {
-                            Ok(limit) => self.limit = limit,
+                            Ok(limit) => self.limit = usize::MIN.saturating_add_signed(limit),
                             Err(err) => validation.record_fail("limit", err),
                         }
                     }
@@ -89,13 +94,15 @@ impl Query {
                     if let Some(result) = value.parse_bool() {
                         match result {
                             Ok(flag) => {
-                                filters.upsert(key, flag);
+                                extra.upsert(key, flag);
                             }
                             Err(err) => validation.record_fail(key.to_owned(), err),
                         }
                     }
                 }
-                "timestamp" | "nonce" | "signature" => (),
+                "timestamp" | "nonce" | "signature" => {
+                    extra.upsert(key, value.clone());
+                }
                 _ => {
                     if let Some(value) = value.as_str()
                         && value != "all"
@@ -227,7 +234,7 @@ impl Query {
     /// Returns `true` if the `flag` has been enabled.
     #[inline]
     pub fn enabled(&self, flag: &str) -> bool {
-        self.filters.get_bool(flag).is_some_and(|b| b)
+        self.extra.get_bool(flag).is_some_and(|b| b)
     }
 
     /// Returns `true` if the `populate` flag has been enabled.
@@ -264,6 +271,7 @@ impl Default for Query {
             sort_order: Vec::new(),
             offset: 0,
             limit: 10,
+            extra: Map::new(),
         }
     }
 }

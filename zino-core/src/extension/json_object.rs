@@ -44,6 +44,10 @@ pub trait JsonObjectExt {
     /// Extracts the integer value corresponding to the key.
     fn get_i64(&self, key: &str) -> Option<i64>;
 
+    /// Extracts the integer value corresponding to the key
+    /// and represents it as `isize` if possible.
+    fn get_isize(&self, key: &str) -> Option<isize>;
+
     /// Extracts the float value corresponding to the key
     /// and represents it as `f32` if possible.
     fn get_f32(&self, key: &str) -> Option<f32>;
@@ -110,6 +114,9 @@ pub trait JsonObjectExt {
 
     /// Extracts the value corresponding to the key and parses it as `i64`.
     fn parse_i64(&self, key: &str) -> Option<Result<i64, ParseIntError>>;
+
+    /// Extracts the value corresponding to the key and parses it as `isize`.
+    fn parse_isize(&self, key: &str) -> Option<Result<isize, ParseIntError>>;
 
     /// Extracts the value corresponding to the key and parses it as `f32`.
     fn parse_f32(&self, key: &str) -> Option<Result<f32, ParseFloatError>>;
@@ -240,6 +247,13 @@ impl JsonObjectExt for Map {
     #[inline]
     fn get_i64(&self, key: &str) -> Option<i64> {
         self.get(key).and_then(|v| v.as_i64())
+    }
+
+    #[inline]
+    fn get_isize(&self, key: &str) -> Option<isize> {
+        self.get(key)
+            .and_then(|v| v.as_i64())
+            .and_then(|i| isize::try_from(i).ok())
     }
 
     #[inline]
@@ -382,6 +396,15 @@ impl JsonObjectExt for Map {
         let value = self.get(key);
         value
             .and_then(|v| v.as_i64())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    fn parse_isize(&self, key: &str) -> Option<Result<isize, ParseIntError>> {
+        let value = self.get(key);
+        value
+            .and_then(|v| v.as_i64())
+            .and_then(|i| isize::try_from(i).ok())
             .map(Ok)
             .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
     }

@@ -7,7 +7,11 @@ members = [
     "zino-derive",
     "zino-dioxus",
     "zino-extra",
+    "zino-middleware",
     "zino-model",
+    "zino-router",
+    "zino-rpc",
+    "zino-server",
 ]
 
 [profile.release]

@@ -37,6 +37,10 @@ pub trait JsonValueExt {
     /// Returns `None` otherwise.
     fn as_i32(&self) -> Option<i32>;
 
+    /// If the `Value` is an integer, represent it as `isize` if possible.
+    /// Returns `None` otherwise.
+    fn as_isize(&self) -> Option<isize>;
+
     /// If the `Value` is a float, represent it as `f32` if possible.
     /// Returns `None` otherwise.
     fn as_f32(&self) -> Option<f32>;
@@ -84,6 +88,9 @@ pub trait JsonValueExt {
 
     /// Parses the JSON value as `i64`.
     fn parse_i64(&self) -> Option<Result<i64, ParseIntError>>;
+
+    /// Parses the JSON value as `isize`.
+    fn parse_isize(&self) -> Option<Result<isize, ParseIntError>>;
 
     /// Parses the JSON value as `f32`.
     fn parse_f32(&self) -> Option<Result<f32, ParseFloatError>>;
@@ -173,6 +180,11 @@ impl JsonValueExt for JsonValue {
     }
 
     #[inline]
+    fn as_isize(&self) -> Option<isize> {
+        self.as_i64().and_then(|i| isize::try_from(i).ok())
+    }
+
+    #[inline]
     fn as_f32(&self) -> Option<f32> {
         self.as_f64().map(|f| f as f32)
     }
@@ -257,6 +269,13 @@ impl JsonValueExt for JsonValue {
 
     fn parse_i64(&self) -> Option<Result<i64, ParseIntError>> {
         self.as_i64()
+            .map(Ok)
+            .or_else(|| self.as_str().map(|s| s.parse()))
+    }
+
+    fn parse_isize(&self) -> Option<Result<isize, ParseIntError>> {
+        self.as_i64()
+            .and_then(|i| isize::try_from(i).ok())
             .map(Ok)
             .or_else(|| self.as_str().map(|s| s.parse()))
     }

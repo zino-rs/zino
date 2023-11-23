@@ -162,9 +162,13 @@ where
         };
 
         let mut data = Map::data_entries(models);
-        if req.get_query("page_size").is_some() && req.get_query("total_rows").is_none() {
+        if let Some(page_size) = req.get_query("page_size").and_then(|s| s.parse().ok())
+            && req.get_query("total_rows").is_none()
+        {
             let total_rows = Self::count(&query).await.extract(&req)?;
+            let page_count = total_rows.div_ceil(page_size);
             data.upsert("total_rows", total_rows);
+            data.upsert("page_count", page_count);
         }
         res.set_json_data(data);
         Ok(res.into())

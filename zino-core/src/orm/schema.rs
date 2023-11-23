@@ -57,7 +57,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     async fn acquire_writer() -> Result<&'static ConnectionPool, Error>;
 
     /// Returns the driver name.
-    /// It takes one of the values: `mysql`, `postgres` and `sqlite`.
+    ///
+    /// Supported drivers: **`mariadb`** | **`mysql`** | **`postgres`** | **`sqlite`** | **`tidb`**.
     #[inline]
     fn driver_name() -> &'static str {
         super::DRIVER_NAME

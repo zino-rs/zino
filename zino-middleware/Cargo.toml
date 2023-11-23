@@ -1,0 +1,14 @@
+[package]
+name = "zino-middleware"
+description = "Middlewares for zino."
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+categories = ["asynchronous", "network-programming", "web-programming"]
+keywords = ["http", "web", "framework"]
+homepage = "https://github.com/photino/zino"
+repository = "https://github.com/photino/zino"
+documentation = "https://docs.rs/zino-middleware"
+readme = "README.md"
+
+[dependencies]
