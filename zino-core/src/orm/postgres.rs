@@ -221,17 +221,20 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                             }
                         }
                     } else if operator == "BETWEEN" {
-                        if let Some(values) = value.as_array()
+                        if let Some(values) = value.parse_str_array()
                             && let [min_value, max_value, ..] = values.as_slice()
                         {
+                            let min_value = self.format_value(min_value);
+                            let max_value = self.format_value(max_value);
                             let condition =
-                                format!(r#"{field} BETWEEN {min_value} AND {max_value}"#);
+                                format!(r#"({field} BETWEEN {min_value} AND {max_value})"#);
                             conditions.push(condition);
                         }
                     } else if operator == "array_length" {
-                        let value = self.encode_value(Some(value));
-                        let condition = format!(r#"array_length({field}, 1) = {value}"#);
-                        conditions.push(condition);
+                        if let Some(Ok(length)) = value.parse_usize() {
+                            let condition = format!(r#"array_length({field}, 1) = {length}"#);
+                            conditions.push(condition);
+                        }
                     } else {
                         let value = self.encode_value(Some(value));
                         let condition = format!(r#"{field} {operator} {value}"#);
@@ -250,6 +253,8 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             let min_value = self.encode_value(range.first());
             let max_value = self.encode_value(range.last());
             return format!(r#"{field} >= {min_value} AND {field} < {max_value}"#);
+        } else if value.is_null() {
+            return format!(r#"{field} IS NULL"#);
         }
 
         match type_name {
@@ -268,6 +273,8 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         format!(r#"{field} IS NULL"#)
                     } else if value == "not_null" {
                         format!(r#"{field} IS NOT NULL"#)
+                    } else if value == "nonzero" {
+                        format!(r#"{field} <> 0"#)
                     } else if value.contains(',') {
                         let value = value.split(',').collect::<Vec<_>>().join(",");
                         format!(r#"{field} IN ({value})"#)
@@ -363,7 +370,9 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             }
             "Vec<Uuid>" | "Vec<String>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>" => {
                 if let Some(value) = value.as_str() {
-                    if value.contains(';') {
+                    if value == "nonempty" {
+                        format!(r#"array_length({field}, 1) > 0"#)
+                    } else if value.contains(';') {
                         value
                             .split(',')
                             .map(|v| {

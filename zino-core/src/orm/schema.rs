@@ -1147,9 +1147,28 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         serde_json::from_value(data.into()).map_err(Error::from)
     }
 
+    /// Checks whether there is a model selected by the query in the table.
+    async fn exists(query: &Query) -> Result<bool, Error> {
+        let pool = Self::acquire_reader().await?.pool();
+        Self::before_query(query).await?;
+
+        let table_name = Self::table_name();
+        let filters = query.format_filters::<Self>();
+        let sql = format!("SELECT 1 FROM {table_name} {filters} LIMIT 1;");
+
+        let mut ctx = Self::before_scan(&sql).await?;
+        let row = sqlx::query(&sql).fetch_optional(pool).await?;
+        let num_rows = if row.is_some() { 1 } else { 0 };
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(num_rows), true);
+        Self::after_scan(&ctx).await?;
+        Self::after_query(&ctx).await?;
+        Ok(num_rows == 1)
+    }
+
     /// Counts the number of rows selected by the query in the table.
     async fn count(query: &Query) -> Result<u64, Error> {
-        let pool = Self::acquire_writer().await?.pool();
+        let pool = Self::acquire_reader().await?.pool();
         Self::before_count(query).await?;
 
         let table_name = Self::table_name();
@@ -1171,7 +1190,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         query: &Query,
         columns: &[(&str, bool)],
     ) -> Result<T, Error> {
-        let pool = Self::acquire_writer().await?.pool();
+        let pool = Self::acquire_reader().await?.pool();
         Self::before_count(query).await?;
 
         let table_name = query.format_table_name::<Self>();
@@ -1459,6 +1478,40 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::after_scan(&ctx).await?;
         Self::after_query(&ctx).await?;
         Ok(data)
+    }
+
+    /// Finds a model selected by the primary key in the table,
+    /// and decodes the column value as a single concrete type `T`.
+    async fn find_scalar_by_id<T>(primary_key: &Self::PrimaryKey, column: &str) -> Result<T, Error>
+    where
+        T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
+    {
+        let pool = Self::acquire_reader().await?.pool();
+
+        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let table_name = Self::table_name();
+        let projection = Query::format_field(column);
+        let placeholder = Query::placeholder(1);
+        let sql = if cfg!(feature = "orm-postgres") {
+            let type_annotation = Self::primary_key_column().type_annotation();
+            format!(
+                "SELECT {projection} FROM {table_name} \
+                    WHERE {primary_key_name} = ({placeholder}){type_annotation};"
+            )
+        } else {
+            format!(
+                "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {placeholder};"
+            )
+        };
+
+        let mut ctx = Self::before_scan(&sql).await?;
+        let query = sqlx::query_scalar(&sql).bind(primary_key.to_string());
+        let scalar = query.fetch_one(pool).await?;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(1), true);
+        Self::after_scan(&ctx).await?;
+        Self::after_query(&ctx).await?;
+        Ok(scalar)
     }
 
     /// Finds a model selected by the primary key in the table, and parses it as `Self`.

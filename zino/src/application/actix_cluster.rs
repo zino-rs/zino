@@ -200,6 +200,7 @@ impl Application for ActixCluster {
                 .unwrap_or_else(|err| panic!("fail to create an HTTP server: {err}"))
                 .run()
             });
+            Self::load().await;
             for result in futures::future::join_all(servers).await {
                 if let Err(err) = result {
                     tracing::error!("actix server error: {err}");

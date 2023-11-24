@@ -431,6 +431,60 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     });
                                 }
                             }
+                            "less_than" => {
+                                if let Some(value) = value {
+                                    if let Some((field_type, field_type_fn)) =
+                                        value.split_once("::")
+                                    {
+                                        let field_type_ident = format_ident!("{}", field_type);
+                                        let field_type_fn_ident =
+                                            format_ident!("{}", field_type_fn);
+                                        field_constraints.push(quote! {
+                                            let field_value = <#field_type_ident>::#field_type_fn_ident();
+                                            if self.#ident >= field_value {
+                                                let message = format!("should be less than `{field_value}`");
+                                                validation.record(#name, message);
+                                            }
+                                        });
+                                    } else {
+                                        let field_ident = format_ident!("{}", value);
+                                        field_constraints.push(quote! {
+                                            let field_value = self.#field_ident;
+                                            if self.#ident >= field_value {
+                                                let message = format!("should be less than `{field_value}`");
+                                                validation.record(#name, message);
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                            "greater_than" => {
+                                if let Some(value) = value {
+                                    if let Some((field_type, field_type_fn)) =
+                                        value.split_once("::")
+                                    {
+                                        let field_type_ident = format_ident!("{}", field_type);
+                                        let field_type_fn_ident =
+                                            format_ident!("{}", field_type_fn);
+                                        field_constraints.push(quote! {
+                                            let field_value = <#field_type_ident>::#field_type_fn_ident();
+                                            if self.#ident <= field_value {
+                                                let message = format!("should be greater than `{field_value}`");
+                                                validation.record(#name, message);
+                                            }
+                                        });
+                                    } else {
+                                        let field_ident = format_ident!("{}", value);
+                                        field_constraints.push(quote! {
+                                            let field_value = self.#field_ident;
+                                            if self.#ident <= field_value {
+                                                let message = format!("should be greater than `{field_value}`");
+                                                validation.record(#name, message);
+                                            }
+                                        });
+                                    }
+                                }
+                            }
                             _ => (),
                         }
                     }
@@ -628,12 +682,13 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             }
 
             fn default_snapshot_query() -> Query {
-                let mut query = Self::default_query();
+                let mut query = Query::default();
                 let fields = [
                     Self::PRIMARY_KEY_NAME,
                     #(#snapshot_fields),*
                 ];
                 query.allow_fields(&fields);
+                query.deny_fields(Self::write_only_fields());
                 query
             }
 

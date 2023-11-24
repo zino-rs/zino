@@ -10,7 +10,7 @@ const INTEGER_TYPES: [&str; 10] = [
 ];
 
 // Special attributes
-const SPECIAL_ATTRIBUTES: [&str; 9] = [
+const SPECIAL_ATTRIBUTES: [&str; 11] = [
     "ignore",
     "type_name",
     "not_null",
@@ -20,6 +20,8 @@ const SPECIAL_ATTRIBUTES: [&str; 9] = [
     "comment",
     "constructor",
     "validator",
+    "less_than",
+    "greater_than",
 ];
 
 // Reserved fields

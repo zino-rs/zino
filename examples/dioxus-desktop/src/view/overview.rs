@@ -3,15 +3,21 @@ use dioxus_free_icons::{icons::go_icons::*, Icon};
 
 pub fn Overview(cx: Scope) -> Element {
     let core_crates = [
-        ("zino", "Framework integrations."),
-        ("zino-core", "Core types and traits."),
-        ("zino-derive", "Derived traits."),
-        ("zino-model", "Domain models."),
+        ("zino", "Framework integrations"),
+        ("zino-core", "Core types and traits"),
+        ("zino-derive", "Derived traits"),
+        ("zino-model", "Domain models"),
+    ];
+    let server_crates = [
+        ("zino-server", "A HTTP server"),
+        ("zino-router", "A flexible router"),
+        ("zino-middleware", "Middlewares"),
+        ("zino-rpc", "RPC support"),
     ];
     let extra_crates = [
-        ("zino-extra", "Extra utilities."),
-        ("zino-dioxus", "Dioxus components."),
-        ("zino-cli", "CLI tools."),
+        ("zino-extra", "Extra utilities"),
+        ("zino-dioxus", "Dioxus components"),
+        ("zino-cli", "CLI tools"),
     ];
     render! {
         div {
@@ -202,6 +208,15 @@ pub fn Overview(cx: Scope) -> Element {
         div {
             class: "columns is-6",
             for d in core_crates {
+                CrateListing {
+                    name: d.0,
+                    description: d.1,
+                }
+            }
+        }
+        div {
+            class: "columns is-6",
+            for d in server_crates {
                 CrateListing {
                     name: d.0,
                     description: d.1,

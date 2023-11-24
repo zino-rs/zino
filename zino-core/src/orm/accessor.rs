@@ -350,7 +350,7 @@ where
 
     /// Constructs a default snapshot `Query` for the model.
     fn default_snapshot_query() -> Query {
-        let mut query = Self::default_query();
+        let mut query = Query::default();
         let fields = [
             Self::PRIMARY_KEY_NAME,
             "name",
@@ -359,13 +359,16 @@ where
             "version",
         ];
         query.allow_fields(&fields);
+        query.deny_fields(Self::write_only_fields());
         query
     }
 
     /// Constructs a default list `Query` for the model.
     fn default_list_query() -> Query {
-        let mut query = Self::default_query();
-        query.deny_fields(&["content", "extra"]);
+        let mut query = Query::default();
+        let ignored_fields = [Self::write_only_fields(), &["content", "extra"]].concat();
+        query.allow_fields(Self::fields());
+        query.deny_fields(&ignored_fields);
         query.add_filter("status", Map::from_entry("$ne", "Deleted"));
         query.set_sort_order("updated_at", true);
         query

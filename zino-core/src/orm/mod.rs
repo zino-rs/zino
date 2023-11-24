@@ -358,6 +358,17 @@ impl GlobalConnection {
         SHARED_CONNECTION_POOLS.get_pool(name)
     }
 
+    /// Iterates over the shared connection pools and
+    /// attempts to establish a database connection for each of them.
+    pub async fn connect_all() {
+        for cp in SHARED_CONNECTION_POOLS.0.iter() {
+            if let Err(err) = cp.pool().acquire().await {
+                let name = cp.name();
+                tracing::error!("fail to acquire a connection for the `{name}` service: {err}");
+            }
+        }
+    }
+
     /// Shuts down the shared connection pools to ensure all connections are gracefully closed.
     pub async fn close_all() {
         for cp in SHARED_CONNECTION_POOLS.0.iter() {

@@ -214,6 +214,22 @@ pub trait Application {
         self
     }
 
+    /// Loads resources after booting the application.
+    async fn load() {
+        #[cfg(feature = "orm")]
+        {
+            crate::orm::GlobalConnection::connect_all().await;
+        }
+    }
+
+    /// Handles the graceful shutdown.
+    async fn shutdown() {
+        #[cfg(feature = "orm")]
+        {
+            crate::orm::GlobalConnection::close_all().await;
+        }
+    }
+
     /// Makes an HTTP request to the provided resource
     /// using [`reqwest`](https://crates.io/crates/reqwest).
     async fn fetch(resource: &str, options: Option<&Map>) -> Result<Response, Error> {
@@ -244,14 +260,6 @@ pub trait Application {
             serde_json::from_str(&text)?
         };
         Ok(data)
-    }
-
-    /// Handles the graceful shutdown.
-    async fn shutdown() {
-        #[cfg(feature = "orm")]
-        {
-            crate::orm::GlobalConnection::close_all().await;
-        }
     }
 }
 

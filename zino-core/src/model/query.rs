@@ -35,6 +35,12 @@ impl Query {
         }
     }
 
+    /// Creates a new instance with the entry.
+    #[inline]
+    pub fn from_entry(key: impl Into<String>, value: impl Into<JsonValue>) -> Self {
+        Self::new(Map::from_entry(key, value))
+    }
+
     /// Updates the query using the json object and returns the validation result.
     #[must_use]
     pub fn read_map(&mut self, data: &Map) -> Validation {
@@ -179,6 +185,12 @@ impl Query {
     #[inline]
     pub fn append_filters(&mut self, filters: &mut Map) {
         self.filters.append(filters);
+    }
+
+    /// Removes a query filter with the key.
+    #[inline]
+    pub fn remove_filter(&mut self, key: &str) -> Option<JsonValue> {
+        self.filters.remove(key)
     }
 
     /// Sets the sort order.

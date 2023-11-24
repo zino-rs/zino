@@ -23,6 +23,12 @@ impl Mutation {
         }
     }
 
+    /// Creates a new instance with the entry.
+    #[inline]
+    pub fn from_entry(key: impl Into<String>, value: impl Into<JsonValue>) -> Self {
+        Self::new(Map::from_entry(key, value))
+    }
+
     /// Updates the mutation using the json object and returns the validation result.
     #[must_use]
     pub fn read_map(&mut self, data: &Map) -> Validation {

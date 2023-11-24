@@ -43,7 +43,7 @@ password = "GCILxF2OoLWjLKgqnSXSFErrmUU"
 [[mysql]]
 host = "127.0.0.1"
 port = 3306
-database = "data_cube"
+database = "data_cube3"
 username = "root"
 password = "GCILxF2OoLWjLKgqnSXSFErrmUU"
 

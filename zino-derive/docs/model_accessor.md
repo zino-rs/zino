@@ -14,7 +14,7 @@ Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
   mark a column as the primary key.
 
 - **`#[schema(snapshot)]`**: The `snapshot` annotation is used to indicate that
-  the column should be included in query population. Built-in snapshot fields:
+  the column should be included in a query population. Built-in snapshot fields:
   **`id`** | **`name`** | **`status`** | **`updated_at`** | **`version`**.
 
 - **`#[schema(reference = "Model")]`**: The `reference` attribute specifies
@@ -22,7 +22,7 @@ Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
   It will be used for constriaint check and query population.
 
 - **`#[schema(unique)]`**: The `unique` annotation is used to indicate that
-  the column has a unique constraint.
+  the column value should be unique in the table.
 
 - **`#[schema(not_null)]`**: The `not_null` annotation is used to indicate that
   the column has a not-null constraint. It also prohibits the cases when
@@ -36,7 +36,7 @@ Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
   If the value is a function, it must be callable as `fn() -> T`.
 
 - **`#[schema(format = "format")]`**: The `format` attribute specifies
-  the format for a `String` value. Supported values: **`alphabetic`** | **`alphanumeric`**
+  the format of a `String` value. Supported values: **`alphabetic`** | **`alphanumeric`**
   | **`ascii`** | **`ascii-alphabetic`** | **`ascii-alphanumeric`** | **`ascii-digit`**
   | **`ascii-hexdigit`** | **`ascii-lowercase`** | **`ascii-uppercase`** | **`credit-card`**
   | **`date`** | **`date-time`** | **`email`** | **`host`** | **`hostname`** | **`ip`**
@@ -63,3 +63,11 @@ Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
 
 - **`#[schema(unique_items)]`**: The `unique_items` annotation is used to indicate that
   the array items should be unique.
+
+- **`#[schema(less_than = "value")]`**: The `less_than` attribute specifies
+  a comparison relation in which the column value is less than another column.
+  If the value is a function, it must be callable as `fn() -> T`.
+
+- **`#[schema(greater_than = "value")]`**: The `less_than` attribute specifies
+  a comparison relation in which the column value is greater than another column.
+  If the value is a function, it must be callable as `fn() -> T`.
