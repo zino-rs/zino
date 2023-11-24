@@ -11,10 +11,10 @@ use actix_web::{
 use std::{fs, path::PathBuf, time::Duration};
 use utoipa_rapidoc::RapiDoc;
 use zino_core::{
-    application::{Application, ServerTag, StaticRecord},
+    application::{Application, ServerTag},
     extension::TomlTableExt,
     response::Response,
-    schedule::{AsyncCronJob, Job, JobScheduler},
+    schedule::AsyncScheduler,
 };
 
 /// An HTTP server cluster for `actix-web`.
@@ -39,20 +39,18 @@ impl Application for ActixCluster {
         self
     }
 
-    fn run(self, async_jobs: StaticRecord<AsyncCronJob>) {
+    fn run<T: AsyncScheduler + Send + 'static>(self, scheduler: Option<T>) {
         let runtime = Runtime::new().expect("fail to build Tokio runtime for `ActixCluster`");
-        let mut scheduler = JobScheduler::new();
-        for (cron_expr, exec) in async_jobs {
-            scheduler.add(Job::new_async(cron_expr, exec));
-        }
-        runtime.spawn(async move {
-            loop {
-                scheduler.tick_async().await;
+        if let Some(mut scheduler) = scheduler {
+            runtime.spawn(async move {
+                loop {
+                    scheduler.tick().await;
 
-                // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
-                rt::time::sleep(scheduler.time_till_next_job()).await;
-            }
-        });
+                    // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
+                    rt::time::sleep(scheduler.time_till_next_job()).await;
+                }
+            });
+        }
 
         runtime.block_on(async {
             let default_routes = self.default_routes.leak() as &'static [_];

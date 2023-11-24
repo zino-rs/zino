@@ -18,7 +18,7 @@ pub use zino_core::{
     reject,
     request::RequestContext,
     response::{ExtractRejection, Rejection, StatusCode, WebHook},
-    schedule::{AsyncCronJob, CronJob},
+    schedule::{AsyncCronJob, AsyncJob, AsyncJobScheduler, CronJob, Job, JobScheduler},
     state::State,
     validation::Validation,
     warn, BoxFuture, Map, Record, Uuid,

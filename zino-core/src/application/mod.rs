@@ -5,7 +5,7 @@ use crate::{
     error::Error,
     extension::{HeaderMapExt, JsonObjectExt, TomlTableExt},
     openapi,
-    schedule::{AsyncCronJob, CronJob, Job, JobScheduler},
+    schedule::{AsyncScheduler, Scheduler},
     state::{Env, State},
     trace::TraceContext,
     Map,
@@ -38,11 +38,8 @@ pub trait Application {
     /// Registers default routes.
     fn register(self, routes: Self::Routes) -> Self;
 
-    /// Registers routes with a server tag.
-    fn register_with(self, server_tag: ServerTag, routes: Self::Routes) -> Self;
-
-    /// Runs the application.
-    fn run(self, async_jobs: StaticRecord<AsyncCronJob>);
+    /// Runs the application with an optional scheduler for async jobs.
+    fn run<T: AsyncScheduler + Send + 'static>(self, scheduler: Option<T>);
 
     /// Boots the application. It also initializes the required directories
     /// and setups the default secret key, the tracing subscriber,
@@ -95,6 +92,19 @@ pub trait Application {
         let app = Self::boot();
         init(Self::shared_state());
         app
+    }
+
+    /// Registers routes with a server tag.
+    #[inline]
+    fn register_with(self, server_tag: ServerTag, routes: Self::Routes) -> Self
+    where
+        Self: Sized,
+    {
+        if server_tag == ServerTag::Debug {
+            self.register(routes)
+        } else {
+            self
+        }
     }
 
     /// Registers routes for debugger.
@@ -199,14 +209,11 @@ pub trait Application {
     }
 
     /// Spawns a new thread to run cron jobs.
-    fn spawn(self, jobs: StaticRecord<CronJob>) -> Self
+    fn spawn<T>(self, mut scheduler: T) -> Self
     where
         Self: Sized,
+        T: Scheduler + Send + 'static,
     {
-        let mut scheduler = JobScheduler::new();
-        for (cron_expr, exec) in jobs {
-            scheduler.add(Job::new(cron_expr, exec));
-        }
         thread::spawn(move || loop {
             scheduler.tick();
             thread::sleep(scheduler.time_till_next_job());

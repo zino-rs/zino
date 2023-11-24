@@ -20,6 +20,6 @@ fn main() {
     zino::Cluster::boot()
         .register(router::routes())
         .register_debug(router::debug_routes())
-        .spawn(schedule::jobs())
-        .run(schedule::async_jobs())
+        .spawn(schedule::job_scheduler())
+        .run(schedule::async_job_scheduler().into())
 }

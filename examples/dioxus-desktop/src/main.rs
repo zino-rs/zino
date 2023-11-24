@@ -16,6 +16,6 @@ type App = Desktop<Route>;
 fn main() {
     App::boot()
         .register(Route::default())
-        .spawn(schedule::jobs())
-        .run(schedule::async_jobs())
+        .spawn(schedule::job_scheduler())
+        .run(schedule::async_job_scheduler().into())
 }

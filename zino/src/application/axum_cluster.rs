@@ -24,10 +24,10 @@ use tower_http::{
 };
 use utoipa_rapidoc::RapiDoc;
 use zino_core::{
-    application::{Application, ServerTag, StaticRecord},
+    application::{Application, ServerTag},
     extension::TomlTableExt,
     response::{FullResponse, Response},
-    schedule::{AsyncCronJob, Job, JobScheduler},
+    schedule::AsyncScheduler,
 };
 
 /// An HTTP server cluster for `axum`.
@@ -52,7 +52,7 @@ impl Application for AxumCluster {
         self
     }
 
-    fn run(self, async_jobs: StaticRecord<AsyncCronJob>) {
+    fn run<T: AsyncScheduler + Send + 'static>(self, scheduler: Option<T>) {
         let runtime = Builder::new_multi_thread()
             .thread_keep_alive(Duration::from_secs(10))
             .thread_stack_size(2 * 1024 * 1024)
@@ -60,18 +60,16 @@ impl Application for AxumCluster {
             .enable_all()
             .build()
             .expect("fail to build Tokio runtime for `AxumCluster`");
-        let mut scheduler = JobScheduler::new();
-        for (cron_expr, exec) in async_jobs {
-            scheduler.add(Job::new_async(cron_expr, exec));
-        }
-        runtime.spawn(async move {
-            loop {
-                scheduler.tick_async().await;
+        if let Some(mut scheduler) = scheduler {
+            runtime.spawn(async move {
+                loop {
+                    scheduler.tick().await;
 
-                // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
-                tokio::time::sleep(scheduler.time_till_next_job()).await;
-            }
-        });
+                    // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
+                    tokio::time::sleep(scheduler.time_till_next_job()).await;
+                }
+            });
+        }
 
         runtime.block_on(async {
             let default_routes = self.default_routes;
