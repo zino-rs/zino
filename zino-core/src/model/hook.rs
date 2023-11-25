@@ -98,6 +98,7 @@ pub trait ModelHooks: Model {
     #[inline]
     async fn after_insert(ctx: &QueryContext, data: Self::Data) -> Result<(), Error> {
         Self::after_save(ctx, data).await?;
+        #[cfg(feature = "metrics")]
         ctx.emit_metrics("insert");
         Ok(())
     }
@@ -112,6 +113,7 @@ pub trait ModelHooks: Model {
     #[inline]
     async fn after_soft_delete(ctx: &QueryContext, data: Self::Data) -> Result<(), Error> {
         Self::after_save(ctx, data).await?;
+        #[cfg(feature = "metrics")]
         ctx.emit_metrics("soft_delete");
         Ok(())
     }
@@ -126,6 +128,7 @@ pub trait ModelHooks: Model {
     #[inline]
     async fn after_lock(ctx: &QueryContext, data: Self::Data) -> Result<(), Error> {
         Self::after_save(ctx, data).await?;
+        #[cfg(feature = "metrics")]
         ctx.emit_metrics("lock");
         Ok(())
     }
@@ -140,6 +143,7 @@ pub trait ModelHooks: Model {
     #[inline]
     async fn after_archive(ctx: &QueryContext, data: Self::Data) -> Result<(), Error> {
         Self::after_save(ctx, data).await?;
+        #[cfg(feature = "metrics")]
         ctx.emit_metrics("archive");
         Ok(())
     }
@@ -154,6 +158,7 @@ pub trait ModelHooks: Model {
     #[inline]
     async fn after_update(ctx: &QueryContext, data: Self::Data) -> Result<(), Error> {
         Self::after_save(ctx, data).await?;
+        #[cfg(feature = "metrics")]
         ctx.emit_metrics("update");
         Ok(())
     }
@@ -168,6 +173,7 @@ pub trait ModelHooks: Model {
     #[inline]
     async fn after_upsert(ctx: &QueryContext, data: Self::Data) -> Result<(), Error> {
         Self::after_save(ctx, data).await?;
+        #[cfg(feature = "metrics")]
         ctx.emit_metrics("upsert");
         Ok(())
     }
@@ -203,6 +209,7 @@ pub trait ModelHooks: Model {
         } else {
             tracing::error!(query, query_id, "fail to detele a model from the table");
         }
+        #[cfg(feature = "metrics")]
         ctx.emit_metrics("delete");
         Ok(())
     }
@@ -219,6 +226,7 @@ pub trait ModelHooks: Model {
         if !ctx.is_success() {
             ctx.record_error("fail to count the models in the table");
         }
+        #[cfg(feature = "metrics")]
         ctx.emit_metrics("count");
         Ok(())
     }
@@ -235,6 +243,7 @@ pub trait ModelHooks: Model {
         if !ctx.is_success() {
             ctx.record_error("fail to select the models from the table");
         }
+        #[cfg(feature = "metrics")]
         ctx.emit_metrics("query");
         Ok(())
     }
@@ -251,6 +260,7 @@ pub trait ModelHooks: Model {
         if !ctx.is_success() {
             ctx.record_error("fail to update the models in the table");
         }
+        #[cfg(feature = "metrics")]
         ctx.emit_metrics("mutation");
         Ok(())
     }

@@ -168,7 +168,7 @@ impl Application for ActixCluster {
                                     rapidoc = rapidoc.custom_html(html.leak());
                                 }
                                 app = app.service(rapidoc.path(path));
-                                tracing::warn!(
+                                tracing::info!(
                                     "RapiDoc router `{path}` is registered for `{addr}`"
                                 );
                             }
@@ -177,7 +177,7 @@ impl Application for ActixCluster {
                                 RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
                                     .path("/rapidoc");
                             app = app.service(rapidoc);
-                            tracing::warn!("RapiDoc router `/rapidoc` is registered for `{addr}`");
+                            tracing::info!("RapiDoc router `/rapidoc` is registered for `{addr}`");
                         }
                     }
 

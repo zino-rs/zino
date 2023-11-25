@@ -194,14 +194,14 @@ impl Application for AxumCluster {
                             } else {
                                 app = app.merge(rapidoc.path(path));
                             }
-                            tracing::warn!("RapiDoc router `{path}` is registered for `{addr}`");
+                            tracing::info!("RapiDoc router `{path}` is registered for `{addr}`");
                         }
                     } else {
                         let rapidoc =
                             RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
                                 .path("/rapidoc");
                         app = app.merge(rapidoc);
-                        tracing::warn!("RapiDoc router `/rapidoc` is registered for `{addr}`");
+                        tracing::info!("RapiDoc router `/rapidoc` is registered for `{addr}`");
                     }
                 }
 
@@ -256,9 +256,8 @@ impl Application for AxumCluster {
             if let Err(err) = signal::ctrl_c().await {
                 tracing::error!("fail to install the `Ctrl+C` handler: {err}");
             }
-            if cfg!(feature = "orm") {
-                zino_core::orm::GlobalConnection::close_all().await;
-            }
+            #[cfg(feature = "orm")]
+            zino_core::orm::GlobalConnection::close_all().await;
         };
         #[cfg(unix)]
         let terminate = async {
@@ -266,9 +265,8 @@ impl Application for AxumCluster {
                 .expect("fail to install the terminate signal handler")
                 .recv()
                 .await;
-            if cfg!(feature = "orm") {
-                zino_core::orm::GlobalConnection::close_all().await;
-            }
+            #[cfg(feature = "orm")]
+            zino_core::orm::GlobalConnection::close_all().await;
         };
         #[cfg(not(unix))]
         let terminate = std::future::pending::<()>();

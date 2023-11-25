@@ -18,15 +18,18 @@ The following optional features are available:
 | `chatbot`           | Enables the chatbot services.                          | No       |
 | `connector`         | Enables the data source connectors.                    | No       |
 | `crypto-sm`         | Enables China's Standards of Encryption Algorithms.    | No       |
+| `metrics`           | Enables the [`metrics`] exporter.                      | No       |
 | `orm`               | Enables the ORM for MySQL, PostgreSQL or **SQLite**.   | No       |
 | `runtime-async-std` | Enables the [`async-std`] runtime.                     | No       |
 | `runtime-tokio`     | Enables the [`tokio`] runtime.                         | Yes      |
 | `tls-native`        | Enables the [`native-tls`] TLS backend.                | No       |
 | `tls-rustls`        | Enables the [`rustls`] TLS backend.                    | Yes      |
+| `validator`         | Enables the common validation rules.                   | No       |
 | `view`              | Enables the HTML template rendering.                   | No       |
 
 [`zino`]: https://github.com/photino/zino
 [`opendal`]: https://crates.io/crates/opendal
+[`metrics`]: https://crates.io/crates/metrics
 [`async-std`]: https://crates.io/crates/async-std
 [`tokio`]: https://crates.io/crates/tokio
 [`native-tls`]: https://crates.io/crates/native-tls

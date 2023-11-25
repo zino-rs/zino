@@ -16,19 +16,19 @@ use std::{env, fs, path::PathBuf, sync::LazyLock, thread};
 use toml::value::Table;
 use utoipa::openapi::{OpenApi, OpenApiBuilder};
 
-mod metrics_exporter;
 mod secret_key;
 mod server_tag;
 mod static_record;
 mod system_monitor;
 mod tracing_subscriber;
 
-pub use server_tag::ServerTag;
-pub use static_record::StaticRecord;
-
 pub(crate) mod http_client;
+#[cfg(feature = "metrics")]
+mod metrics_exporter;
 
 pub(crate) use secret_key::SECRET_KEY;
+pub use server_tag::ServerTag;
+pub use static_record::StaticRecord;
 
 /// Application interfaces.
 pub trait Application {
@@ -54,13 +54,17 @@ pub trait Application {
         // Application setups.
         secret_key::init::<Self>();
         tracing_subscriber::init::<Self>();
-        metrics_exporter::init::<Self>();
+
+        // Metrics exporter.
+        #[cfg(feature = "metrics")]
+        self::metrics_exporter::init::<Self>();
+
+        // HTTP client.
         http_client::init::<Self>();
 
+        // View template.
         #[cfg(feature = "view")]
-        {
-            crate::view::init::<Self>();
-        }
+        crate::view::init::<Self>();
 
         // Initializes the directories to ensure that they are ready for use.
         if let Some(dirs) = SHARED_APP_STATE.get_config("dirs") {
@@ -224,17 +228,13 @@ pub trait Application {
     /// Loads resources after booting the application.
     async fn load() {
         #[cfg(feature = "orm")]
-        {
-            crate::orm::GlobalConnection::connect_all().await;
-        }
+        crate::orm::GlobalConnection::connect_all().await;
     }
 
     /// Handles the graceful shutdown.
     async fn shutdown() {
         #[cfg(feature = "orm")]
-        {
-            crate::orm::GlobalConnection::close_all().await;
-        }
+        crate::orm::GlobalConnection::close_all().await;
     }
 
     /// Makes an HTTP request to the provided resource

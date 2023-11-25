@@ -75,7 +75,7 @@
 //! | `$ge`      | `>=`                | `>=`             | `>=`                  |
 //! | `$in`      | `IN`                | `IN`             | `IN`                  |
 //! | `$nin`     | `NOT IN`            | `NOT IN`         | `NOT IN`              |
-//! | `$between` | `BETWEEN AND`       | `BETWEEN AND`    | `BETWEEN AND`         |
+//! | `$betw`    | `BETWEEN AND`       | `BETWEEN AND`    | `BETWEEN AND`         |
 //! | `$like`    | `LIKE`              | `LIKE`           | `LIKE`                |
 //! | `$ilike`   | `ILIKE`             | `ILIKE`          | N/A                   |
 //! | `$rlike`   | `RLIKE`             | `~*`             | `REGEXP`              |
@@ -362,9 +362,11 @@ impl GlobalConnection {
     /// attempts to establish a database connection for each of them.
     pub async fn connect_all() {
         for cp in SHARED_CONNECTION_POOLS.0.iter() {
+            let name = cp.name();
             if let Err(err) = cp.pool().acquire().await {
-                let name = cp.name();
                 tracing::error!("fail to acquire a connection for the `{name}` service: {err}");
+            } else {
+                tracing::info!("established a database connection for the `{name}` service");
             }
         }
     }

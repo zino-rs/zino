@@ -52,7 +52,7 @@ impl<T> State<T> {
                 .and_then(|res| res.into_string().map_err(|err| err.into()))
             {
                 Ok(toml_str) => {
-                    tracing::warn!(env, "`{config_url}` fetched");
+                    tracing::info!(env, "`{config_url}` fetched");
                     toml_str.parse().unwrap_or_default()
                 }
                 Err(err) => {
@@ -64,7 +64,7 @@ impl<T> State<T> {
             let config_file = application::PROJECT_DIR.join(format!("./config/config.{env}.toml"));
             match std::fs::read_to_string(&config_file) {
                 Ok(toml_str) => {
-                    tracing::warn!(env, "`config.{env}.toml` loaded");
+                    tracing::info!(env, "`config.{env}.toml` loaded");
                     toml_str.parse().unwrap_or_default()
                 }
                 Err(err) => {

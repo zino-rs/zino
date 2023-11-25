@@ -84,12 +84,15 @@ pub trait RequestContext {
     /// Creates a new request context.
     fn new_context(&self) -> Context {
         // Emit metrics.
-        metrics::increment_gauge!("zino_http_requests_in_flight", 1.0);
-        metrics::increment_counter!(
-            "zino_http_requests_total",
-            "method" => self.request_method().as_ref().to_owned(),
-            "route" => self.matched_route().into_owned(),
-        );
+        #[cfg(feature = "metrics")]
+        {
+            metrics::increment_gauge!("zino_http_requests_in_flight", 1.0);
+            metrics::increment_counter!(
+                "zino_http_requests_total",
+                "method" => self.request_method().as_ref().to_owned(),
+                "route" => self.matched_route().into_owned(),
+            );
+        }
 
         // Parse tracing headers.
         let request_id = self

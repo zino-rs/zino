@@ -196,7 +196,8 @@ impl Validation {
                 }
             }
             _ => {
-                tracing::warn!("supported format `{format}`");
+                let field = key.into();
+                tracing::warn!("unsupported format `{format}` for the field `{field}`");
             }
         }
     }

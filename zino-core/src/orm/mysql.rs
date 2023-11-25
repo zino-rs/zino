@@ -174,7 +174,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         "$ge" => ">=",
                         "$in" => "IN",
                         "$nin" => "NOT IN",
-                        "$between" => "BETWEEN",
+                        "$betw" => "BETWEEN",
                         "$like" => "LIKE",
                         "$ilike" => "ILIKE",
                         "$rlike" => "RLIKE",

@@ -1,4 +1,4 @@
-use crate::{SharedString, Uuid};
+use crate::Uuid;
 use std::time::Instant;
 
 /// Data associated with a query.
@@ -124,8 +124,9 @@ impl QueryContext {
     }
 
     /// Emits the metrics for the query.
+    #[cfg(feature = "metrics")]
     #[inline]
-    pub fn emit_metrics(&self, action: impl Into<SharedString>) {
+    pub fn emit_metrics(&self, action: impl Into<crate::SharedString>) {
         metrics::histogram!(
             "zino_model_query_duration_seconds",
             self.start_time().elapsed().as_secs_f64(),

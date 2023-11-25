@@ -4,7 +4,7 @@
 
 #[doc(no_inline)]
 pub use zino_core::{
-    application::{Application, StaticRecord},
+    application::Application,
     auth::{
         AccessKeyId, AuthorizationProvider, JwtClaims, SecretAccessKey, SecurityToken, UserSession,
     },
