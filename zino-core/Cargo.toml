@@ -123,12 +123,13 @@ full = [
     "view",
 ]
 metrics = ["dep:metrics", "dep:metrics-exporter-prometheus"]
-orm = ["sqlx", "sqlx/sqlite"]
-orm-mariadb = ["orm", "sqlx/mysql"]
-orm-mysql = ["orm", "sqlx/mysql"]
-orm-postgres = ["orm", "sqlx/postgres"]
-orm-sqlite = ["orm", "sqlx/sqlite"]
-orm-tidb = ["orm", "sqlx/mysql"]
+orm = ["orm-sqlx"]
+orm-mariadb = ["orm-sqlx", "sqlx/mysql"]
+orm-mysql = ["orm-sqlx", "sqlx/mysql"]
+orm-postgres = ["orm-sqlx", "sqlx/postgres"]
+orm-sqlite = ["orm-sqlx", "sqlx/sqlite"]
+orm-sqlx = ["orm", "sqlx", "sqlx/sqlite"]
+orm-tidb = ["orm-sqlx", "sqlx/mysql"]
 runtime-async-std = ["sqlx?/runtime-async-std"]
 runtime-tokio = ["sqlx?/runtime-tokio"]
 tls-native = [
@@ -198,7 +199,7 @@ version = "0.5.2"
 features = ["std"]
 
 [dependencies.async-openai]
-version = "0.16.3"
+version = "0.17.0"
 optional = true
 
 [dependencies.card-validate]

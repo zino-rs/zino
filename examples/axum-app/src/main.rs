@@ -21,5 +21,5 @@ fn main() {
         .register(router::routes())
         .register_debug(router::debug_routes())
         .spawn(schedule::job_scheduler())
-        .run(schedule::async_job_scheduler().into())
+        .run_with(schedule::async_job_scheduler())
 }

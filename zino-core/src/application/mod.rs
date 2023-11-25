@@ -5,7 +5,7 @@ use crate::{
     error::Error,
     extension::{HeaderMapExt, JsonObjectExt, TomlTableExt},
     openapi,
-    schedule::{AsyncScheduler, Scheduler},
+    schedule::{AsyncJobScheduler, AsyncScheduler, Scheduler},
     state::{Env, State},
     trace::TraceContext,
     Map,
@@ -22,9 +22,10 @@ mod static_record;
 mod system_monitor;
 mod tracing_subscriber;
 
-pub(crate) mod http_client;
 #[cfg(feature = "metrics")]
 mod metrics_exporter;
+
+pub(crate) mod http_client;
 
 pub(crate) use secret_key::SECRET_KEY;
 pub use server_tag::ServerTag;
@@ -39,7 +40,7 @@ pub trait Application {
     fn register(self, routes: Self::Routes) -> Self;
 
     /// Runs the application with an optional scheduler for async jobs.
-    fn run<T: AsyncScheduler + Send + 'static>(self, scheduler: Option<T>);
+    fn run_with<T: AsyncScheduler + Send + 'static>(self, scheduler: T);
 
     /// Boots the application. It also initializes the required directories
     /// and setups the default secret key, the tracing subscriber,
@@ -223,6 +224,15 @@ pub trait Application {
             thread::sleep(scheduler.time_till_next_job());
         });
         self
+    }
+
+    /// Runs the application with a default job scheduler.
+    #[inline]
+    fn run(self)
+    where
+        Self: Sized,
+    {
+        self.run_with(AsyncJobScheduler::default());
     }
 
     /// Loads resources after booting the application.

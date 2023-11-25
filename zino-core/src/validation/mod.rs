@@ -14,13 +14,10 @@ pub use validator::{
 
 #[cfg(feature = "validator-credit-card")]
 pub use validator::CreditCardValidator;
-
 #[cfg(feature = "validator-email")]
 pub use validator::EmailValidator;
-
 #[cfg(feature = "validator-phone-number")]
 pub use validator::PhoneNumberValidator;
-
 #[cfg(feature = "validator-regex")]
 pub use validator::RegexValidator;
 

@@ -7,8 +7,10 @@ use crate::{
     AvroValue, JsonValue, Map, Record, SharedString, Uuid,
 };
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
-use sqlx::{types::Decimal, Column as _, Row, TypeInfo, ValueRef};
 use std::borrow::Cow;
+
+#[cfg(feature = "orm-sqlx")]
+use sqlx::{types::Decimal, Column as _, Row, TypeInfo, ValueRef};
 
 impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
     fn column_type(&self) -> &str {
@@ -378,6 +380,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
     }
 }
 
+#[cfg(feature = "orm-sqlx")]
 impl DecodeRow<DatabaseRow> for Map {
     type Error = Error;
 
@@ -454,6 +457,7 @@ impl DecodeRow<DatabaseRow> for Map {
     }
 }
 
+#[cfg(feature = "orm-sqlx")]
 impl DecodeRow<DatabaseRow> for Record {
     type Error = Error;
 
@@ -526,6 +530,7 @@ impl DecodeRow<DatabaseRow> for Record {
     }
 }
 
+#[cfg(feature = "orm-sqlx")]
 impl QueryExt<DatabaseDriver> for Query {
     type QueryResult = sqlx::mysql::MySqlQueryResult;
 

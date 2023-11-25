@@ -219,6 +219,11 @@ impl JobScheduler {
 
 impl Scheduler for JobScheduler {
     #[inline]
+    fn is_ready(&self) -> bool {
+        !self.jobs.is_empty()
+    }
+
+    #[inline]
     fn time_till_next_job(&self) -> Duration {
         self.time_till_next_job()
     }

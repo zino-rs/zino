@@ -17,5 +17,5 @@ fn main() {
     App::boot()
         .register(Route::default())
         .spawn(schedule::job_scheduler())
-        .run(schedule::async_job_scheduler().into())
+        .run_with(schedule::async_job_scheduler())
 }

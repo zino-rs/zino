@@ -10,6 +10,9 @@ pub use job::{CronJob, Job, JobScheduler};
 
 /// An interface for scheduling sync jobs.
 pub trait Scheduler {
+    /// Returns `true` if the scheduler is ready to run.
+    fn is_ready(&self) -> bool;
+
     /// Returns the duration till the next job is supposed to run.
     fn time_till_next_job(&self) -> Duration;
 
@@ -19,6 +22,9 @@ pub trait Scheduler {
 
 /// An interface for scheduling async jobs.
 pub trait AsyncScheduler {
+    /// Returns `true` if the scheduler is ready to run.
+    fn is_ready(&self) -> bool;
+
     /// Returns the duration till the next job is supposed to run.
     fn time_till_next_job(&self) -> Duration;
 

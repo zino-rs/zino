@@ -26,4 +26,4 @@ pub use zino_core::{
 
 #[cfg(feature = "orm")]
 #[doc(no_inline)]
-pub use zino_core::orm::{ModelAccessor, ModelHelper, Schema};
+pub use zino_core::orm::{ModelAccessor, ModelHelper, ScalarQuery, Schema, Transaction};

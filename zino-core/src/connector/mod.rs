@@ -48,7 +48,6 @@ mod connector_mysql;
 mod connector_postgres;
 #[cfg(feature = "connector-sqlite")]
 mod connector_sqlite;
-
 #[cfg(any(
     feature = "connector-mysql",
     feature = "connector-postgres",
@@ -58,7 +57,6 @@ mod sqlx_common;
 
 #[cfg(feature = "connector-arrow")]
 pub use connector_arrow::{ArrowConnector, DataFrameExecutor};
-
 #[cfg(feature = "connector-http")]
 pub use connector_http::HttpConnector;
 

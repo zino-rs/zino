@@ -38,7 +38,7 @@ where
         self
     }
 
-    fn run<T: AsyncScheduler + Send + 'static>(self, scheduler: Option<T>) {
+    fn run_with<T: AsyncScheduler + Send + 'static>(self, mut scheduler: T) {
         let runtime = Builder::new_multi_thread()
             .thread_keep_alive(Duration::from_secs(10))
             .thread_stack_size(2 * 1024 * 1024)
@@ -46,7 +46,7 @@ where
             .enable_all()
             .build()
             .expect("fail to build Tokio runtime for `DioxusDesktop`");
-        if let Some(mut scheduler) = scheduler {
+        if scheduler.is_ready() {
             runtime.spawn(async move {
                 loop {
                     scheduler.tick().await;

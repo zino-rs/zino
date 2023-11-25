@@ -39,9 +39,9 @@ impl Application for ActixCluster {
         self
     }
 
-    fn run<T: AsyncScheduler + Send + 'static>(self, scheduler: Option<T>) {
+    fn run_with<T: AsyncScheduler + Send + 'static>(self, mut scheduler: T) {
         let runtime = Runtime::new().expect("fail to build Tokio runtime for `ActixCluster`");
-        if let Some(mut scheduler) = scheduler {
+        if scheduler.is_ready() {
             runtime.spawn(async move {
                 loop {
                     scheduler.tick().await;
