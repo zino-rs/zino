@@ -358,9 +358,19 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             }
 
             async fn acquire_reader() -> Result<&'static ConnectionPool, ZinoError> {
-                use zino_core::{bail, warn};
-                if let Some(connection_pool) = #schema_reader.get() {
-                    Ok(*connection_pool)
+                use zino_core::{bail, orm::PoolManager, warn};
+
+                if let Some(reader) = #schema_reader.get() {
+                    if reader.is_available()
+                        || reader.is_retryable() && reader.check_availability().await
+                    {
+                        Ok(*reader)
+                    } else if let Ok(connection_pool) = Self::init_reader() {
+                        reader.increment_missed_count();
+                        Ok(connection_pool)
+                    } else {
+                        Ok(*reader)
+                    }
                 } else {
                     let model_name = Self::MODEL_NAME;
                     let connection_pool = Self::init_reader()?;
@@ -399,9 +409,19 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             }
 
             async fn acquire_writer() -> Result<&'static ConnectionPool, ZinoError> {
-                use zino_core::{bail, warn};
-                if let Some(connection_pool) = #schema_writer.get() {
-                    Ok(*connection_pool)
+                use zino_core::{bail, orm::PoolManager, warn};
+
+                if let Some(writer) = #schema_writer.get() {
+                    if writer.is_available()
+                        || writer.is_retryable() && writer.check_availability().await
+                    {
+                        Ok(*writer)
+                    } else if let Ok(connection_pool) = Self::init_writer() {
+                        writer.increment_missed_count();
+                        Ok(connection_pool)
+                    } else {
+                        Ok(*writer)
+                    }
                 } else {
                     let model_name = Self::MODEL_NAME;
                     let connection_pool = Self::init_writer()?;

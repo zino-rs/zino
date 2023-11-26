@@ -238,13 +238,13 @@ pub trait Application {
     /// Loads resources after booting the application.
     async fn load() {
         #[cfg(feature = "orm")]
-        crate::orm::GlobalConnection::connect_all().await;
+        crate::orm::GlobalPool::connect_all().await;
     }
 
     /// Handles the graceful shutdown.
     async fn shutdown() {
         #[cfg(feature = "orm")]
-        crate::orm::GlobalConnection::close_all().await;
+        crate::orm::GlobalPool::close_all().await;
     }
 
     /// Makes an HTTP request to the provided resource

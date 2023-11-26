@@ -1,5 +1,5 @@
 use super::DatabasePool;
-use std::sync::atomic::{AtomicBool, Ordering::Relaxed};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering::Relaxed};
 
 /// A database connection pool with metadata.
 #[derive(Debug)]
@@ -12,6 +12,8 @@ pub struct ConnectionPool<P = DatabasePool> {
     pool: P,
     /// Availability.
     available: AtomicBool,
+    /// Missed count.
+    missed_count: AtomicUsize,
 }
 
 impl<P> ConnectionPool<P> {
@@ -23,6 +25,7 @@ impl<P> ConnectionPool<P> {
             database,
             pool,
             available: AtomicBool::new(true),
+            missed_count: AtomicUsize::new(0),
         }
     }
 
@@ -33,9 +36,38 @@ impl<P> ConnectionPool<P> {
     }
 
     /// Stores the value into the availability of the connection pool.
-    #[inline]
     pub fn store_availability(&self, available: bool) {
         self.available.store(available, Relaxed);
+        if available {
+            self.reset_missed_count();
+        } else {
+            self.increment_missed_count();
+        }
+    }
+
+    /// Returns the number of missed count.
+    #[inline]
+    pub fn missed_count(&self) -> usize {
+        self.missed_count.load(Relaxed)
+    }
+
+    /// Increments the missed count by 1.
+    #[inline]
+    pub fn increment_missed_count(&self) {
+        self.missed_count.fetch_add(1, Relaxed);
+    }
+
+    /// Resets the number of missed count.
+    #[inline]
+    pub fn reset_missed_count(&self) {
+        self.missed_count.store(0, Relaxed);
+    }
+
+    /// Returns `true` if the connection pool is retryable to connect.
+    #[inline]
+    pub fn is_retryable(&self) -> bool {
+        let missed_count = self.missed_count();
+        missed_count > 2 && missed_count.is_power_of_two()
     }
 
     /// Returns the name.

@@ -3,17 +3,21 @@ use crate::extension::TomlTableExt;
 use std::time::Duration;
 use toml::value::Table;
 
-/// An interface for creating a connection pool.
-pub trait Connection {
+/// A manager of the connection pool.
+pub trait PoolManager {
     /// Connects lazily to the database according to the config.
-    fn connect_with_config(config: &'static Table) -> ConnectionPool<Self>
-    where
-        Self: Sized;
+    fn with_config(config: &'static Table) -> Self;
+
+    /// Checks the availability of the connection pool.
+    async fn check_availability(&self) -> bool;
+
+    /// Shuts down the connection pool.
+    async fn close(&self);
 }
 
 #[cfg(feature = "orm-sqlx")]
-impl Connection for DatabasePool {
-    fn connect_with_config(config: &'static Table) -> ConnectionPool<Self> {
+impl PoolManager for ConnectionPool<DatabasePool> {
+    fn with_config(config: &'static Table) -> Self {
         use sqlx::{pool::PoolOptions, Connection};
 
         let name = config.get_str("name").unwrap_or("main");
@@ -32,13 +36,13 @@ impl Connection for DatabasePool {
         let min_connections = config.get_u32("min-connections").unwrap_or(1);
         let max_lifetime = config
             .get_duration("max-lifetime")
-            .unwrap_or_else(|| Duration::from_secs(60 * 60));
+            .unwrap_or_else(|| Duration::from_secs(24 * 60 * 60));
         let idle_timeout = config
             .get_duration("idle-timeout")
-            .unwrap_or_else(|| Duration::from_secs(10 * 60));
+            .unwrap_or_else(|| Duration::from_secs(60 * 60));
         let acquire_timeout = config
             .get_duration("acquire-timeout")
-            .unwrap_or_else(|| Duration::from_secs(30));
+            .unwrap_or_else(|| Duration::from_secs(10));
         let health_check_interval = config.get_u64("health-check-interval").unwrap_or(60);
         let pool = PoolOptions::<super::DatabaseDriver>::new()
             .max_connections(max_connections)
@@ -50,20 +54,42 @@ impl Connection for DatabasePool {
             .before_acquire(move |conn, meta| {
                 Box::pin(async move {
                     if meta.idle_for.as_secs() > health_check_interval
-                        && let Some(cp) = super::SHARED_CONNECTION_POOLS.get_pool(name)
+                        && let Some(cp) = super::GlobalPool::get(name)
                     {
                         if let Err(err) = conn.ping().await {
+                            let name = cp.name();
                             cp.store_availability(false);
+                            tracing::error!(
+                                "fail to ping the database for the `{name}` service: {err}"
+                            );
                             return Err(err);
                         } else {
-                            cp.store_availability(cp.pool().num_idle() > 0);
+                            cp.store_availability(true);
                         }
                     }
                     Ok(true)
                 })
             })
             .connect_lazy_with(connect_options);
-        ConnectionPool::new(name, database, pool)
+        Self::new(name, database, pool)
+    }
+
+    async fn check_availability(&self) -> bool {
+        if let Err(err) = self.pool().acquire().await {
+            let name = self.name();
+            tracing::error!("fail to acquire a connection for the `{name}` service: {err}");
+            self.store_availability(false);
+            false
+        } else {
+            self.store_availability(true);
+            true
+        }
+    }
+
+    async fn close(&self) {
+        let name = self.name();
+        tracing::warn!("closing the connection pool for the `{name}` service");
+        self.pool().close().await;
     }
 }
 

@@ -48,7 +48,15 @@ impl Executor for sqlx::Pool<super::DatabaseDriver> {
     type QueryResult = <super::DatabaseDriver as sqlx::Database>::QueryResult;
 
     async fn execute(&self, sql: &str) -> Result<Self::QueryResult, Error> {
-        sqlx::query(sql).execute(self).await.map_err(Error::from)
+        match sqlx::query(sql).execute(self).await {
+            Ok(result) => Ok(result),
+            Err(err) => {
+                if matches!(err, sqlx::error::Error::PoolTimedOut) {
+                    super::GlobalPool::connect_all().await;
+                }
+                Err(err.into())
+            }
+        }
     }
 
     async fn execute_with<T: ToString>(
@@ -60,21 +68,39 @@ impl Executor for sqlx::Pool<super::DatabaseDriver> {
         for arg in arguments {
             query = query.bind(arg.to_string());
         }
-        query.execute(self).await.map_err(Error::from)
+        match query.execute(self).await {
+            Ok(result) => Ok(result),
+            Err(err) => {
+                if matches!(err, sqlx::error::Error::PoolTimedOut) {
+                    super::GlobalPool::connect_all().await;
+                }
+                Err(err.into())
+            }
+        }
     }
 
     async fn fetch(&self, sql: &str) -> Result<Vec<Self::Row>, Error> {
-        use futures::TryStreamExt;
+        use futures::StreamExt;
         use std::sync::atomic::Ordering::Relaxed;
 
         let mut stream = sqlx::query(sql).fetch(self);
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
         let mut rows = Vec::with_capacity(stream.size_hint().0.min(max_rows));
-        while let Some(row) = stream.try_next().await?
+        while let Some(result) = stream.next().await
             && max_rows > 0
         {
-            rows.push(row);
-            max_rows -= 1;
+            match result {
+                Ok(row) => {
+                    rows.push(row);
+                    max_rows -= 1;
+                }
+                Err(err) => {
+                    if matches!(err, sqlx::error::Error::PoolTimedOut) {
+                        super::GlobalPool::connect_all().await;
+                    }
+                    return Err(err.into());
+                }
+            }
         }
         Ok(rows)
     }
@@ -84,7 +110,7 @@ impl Executor for sqlx::Pool<super::DatabaseDriver> {
         sql: &str,
         arguments: &[T],
     ) -> Result<Vec<Self::Row>, Error> {
-        use futures::TryStreamExt;
+        use futures::StreamExt;
         use std::sync::atomic::Ordering::Relaxed;
 
         let mut query = sqlx::query(sql);
@@ -95,24 +121,47 @@ impl Executor for sqlx::Pool<super::DatabaseDriver> {
         let mut stream = query.fetch(self);
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
         let mut rows = Vec::with_capacity(stream.size_hint().0.min(max_rows));
-        while let Some(row) = stream.try_next().await?
+        while let Some(result) = stream.next().await
             && max_rows > 0
         {
-            rows.push(row);
-            max_rows -= 1;
+            match result {
+                Ok(row) => {
+                    rows.push(row);
+                    max_rows -= 1;
+                }
+                Err(err) => {
+                    if matches!(err, sqlx::error::Error::PoolTimedOut) {
+                        super::GlobalPool::connect_all().await;
+                    }
+                    return Err(err.into());
+                }
+            }
         }
         Ok(rows)
     }
 
     async fn fetch_one(&self, sql: &str) -> Result<Self::Row, Error> {
-        sqlx::query(sql).fetch_one(self).await.map_err(Error::from)
+        match sqlx::query(sql).fetch_one(self).await {
+            Ok(row) => Ok(row),
+            Err(err) => {
+                if matches!(err, sqlx::error::Error::PoolTimedOut) {
+                    super::GlobalPool::connect_all().await;
+                }
+                Err(err.into())
+            }
+        }
     }
 
     async fn fetch_optional(&self, sql: &str) -> Result<Option<Self::Row>, Error> {
-        sqlx::query(sql)
-            .fetch_optional(self)
-            .await
-            .map_err(Error::from)
+        match sqlx::query(sql).fetch_optional(self).await {
+            Ok(row) => Ok(row),
+            Err(err) => {
+                if matches!(err, sqlx::error::Error::PoolTimedOut) {
+                    super::GlobalPool::connect_all().await;
+                }
+                Err(err.into())
+            }
+        }
     }
 
     async fn fetch_optional_with<T: ToString>(
@@ -124,6 +173,14 @@ impl Executor for sqlx::Pool<super::DatabaseDriver> {
         for arg in arguments {
             query = query.bind(arg.to_string());
         }
-        query.fetch_optional(self).await.map_err(Error::from)
+        match query.fetch_optional(self).await {
+            Ok(row) => Ok(row),
+            Err(err) => {
+                if matches!(err, sqlx::error::Error::PoolTimedOut) {
+                    super::GlobalPool::connect_all().await;
+                }
+                Err(err.into())
+            }
+        }
     }
 }

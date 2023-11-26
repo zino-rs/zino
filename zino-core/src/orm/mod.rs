@@ -99,9 +99,9 @@ use std::sync::{
 
 mod accessor;
 mod column;
-mod connection;
 mod executor;
 mod helper;
+mod manager;
 mod mutation;
 mod pool;
 mod query;
@@ -109,9 +109,9 @@ mod schema;
 mod transaction;
 
 pub use accessor::ModelAccessor;
-pub use connection::Connection;
 pub use executor::Executor;
 pub use helper::ModelHelper;
+pub use manager::PoolManager;
 pub use pool::ConnectionPool;
 pub use schema::Schema;
 pub use transaction::Transaction;
@@ -199,9 +199,9 @@ impl ConnectionPools {
 
 /// Global access to the shared connection pools.
 #[derive(Debug, Clone, Copy, Default)]
-pub struct GlobalConnection;
+pub struct GlobalPool;
 
-impl GlobalConnection {
+impl GlobalPool {
     /// Gets the connection pool for the specific service.
     #[inline]
     pub fn get(name: &str) -> Option<&'static ConnectionPool> {
@@ -210,23 +210,18 @@ impl GlobalConnection {
 
     /// Iterates over the shared connection pools and
     /// attempts to establish a database connection for each of them.
+    #[inline]
     pub async fn connect_all() {
         for cp in SHARED_CONNECTION_POOLS.0.iter() {
-            let name = cp.name();
-            if let Err(err) = cp.pool().acquire().await {
-                tracing::error!("fail to acquire a connection for the `{name}` service: {err}");
-            } else {
-                tracing::info!("established a database connection for the `{name}` service");
-            }
+            cp.check_availability().await;
         }
     }
 
     /// Shuts down the shared connection pools to ensure all connections are gracefully closed.
+    #[inline]
     pub async fn close_all() {
         for cp in SHARED_CONNECTION_POOLS.0.iter() {
-            let name = cp.name();
-            tracing::warn!("closing the connection pool for the `{name}` service");
-            cp.pool().close().await;
+            cp.close().await;
         }
     }
 }
@@ -250,7 +245,7 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
     let pools = databases
         .iter()
         .filter_map(|v| v.as_table())
-        .map(DatabasePool::connect_with_config)
+        .map(ConnectionPool::with_config)
         .collect();
     if database_type == driver {
         tracing::warn!(driver, "connect to database services lazily");

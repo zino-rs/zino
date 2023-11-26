@@ -257,7 +257,7 @@ impl Application for AxumCluster {
                 tracing::error!("fail to install the `Ctrl+C` handler: {err}");
             }
             #[cfg(feature = "orm")]
-            zino_core::orm::GlobalConnection::close_all().await;
+            zino_core::orm::GlobalPool::close_all().await;
         };
         #[cfg(unix)]
         let terminate = async {
@@ -266,7 +266,7 @@ impl Application for AxumCluster {
                 .recv()
                 .await;
             #[cfg(feature = "orm")]
-            zino_core::orm::GlobalConnection::close_all().await;
+            zino_core::orm::GlobalPool::close_all().await;
         };
         #[cfg(not(unix))]
         let terminate = std::future::pending::<()>();

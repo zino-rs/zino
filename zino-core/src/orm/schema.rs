@@ -1,6 +1,6 @@
 use super::{
     column::ColumnExt, mutation::MutationExt, query::QueryExt, ConnectionPool, DatabaseRow,
-    Executor, ModelHelper,
+    Executor, GlobalPool, ModelHelper,
 };
 use crate::{
     bail,
@@ -156,16 +156,14 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Initializes the model reader.
     #[inline]
     fn init_reader() -> Result<&'static ConnectionPool, Error> {
-        super::SHARED_CONNECTION_POOLS
-            .get_pool(Self::READER_NAME)
+        GlobalPool::get(Self::READER_NAME)
             .ok_or_else(|| warn!("connection to the database is unavailable"))
     }
 
     /// Initializes the model writer.
     #[inline]
     fn init_writer() -> Result<&'static ConnectionPool, Error> {
-        super::SHARED_CONNECTION_POOLS
-            .get_pool(Self::WRITER_NAME)
+        GlobalPool::get(Self::WRITER_NAME)
             .ok_or_else(|| warn!("connection to the database is unavailable"))
     }
 
