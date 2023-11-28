@@ -1,7 +1,7 @@
 [package]
 name = "zino-derive"
 description = "Derived traits for zino."
-version = "0.13.1"
+version = "0.13.2"
 rust-version = "1.73"
 edition = "2021"
 license = "MIT"
@@ -15,11 +15,11 @@ proc-macro = true
 
 [dependencies]
 convert_case = "0.6.0"
-proc-macro2 = "1.0.68"
+proc-macro2 = "1.0.70"
 quote = "1.0.33"
 syn = "2.0.39"
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.16.1"
+version = "0.16.2"
 features = ["orm"]

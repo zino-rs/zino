@@ -87,6 +87,12 @@ where
         DateTime::default()
     }
 
+    /// Returns the `deleted_at` field.
+    #[inline]
+    fn deleted_at(&self) -> Option<DateTime> {
+        None
+    }
+
     /// Returns the `version` field.
     #[inline]
     fn version(&self) -> u64 {

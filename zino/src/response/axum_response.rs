@@ -2,7 +2,7 @@ use axum::response::IntoResponse;
 use zino_core::response::{FullResponse, Rejection, Response, ResponseCode};
 
 /// An HTTP response for `axum`.
-pub struct AxumResponse<S>(Response<S>);
+pub struct AxumResponse<S: ResponseCode>(Response<S>);
 
 impl<S: ResponseCode> From<Response<S>> for AxumResponse<S> {
     #[inline]

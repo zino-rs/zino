@@ -4,7 +4,13 @@ use quote::{format_ident, quote};
 use syn::{Data, DeriveInput, Fields};
 
 /// Reserved fields
-const RESERVED_FIELDS: [&str; 4] = ["created_at", "updated_at", "version", "edition"];
+const RESERVED_FIELDS: [&str; 5] = [
+    "created_at",
+    "updated_at",
+    "deleted_at",
+    "version",
+    "edition",
+];
 
 /// Parses the token stream for the `Model` trait derivation.
 pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {

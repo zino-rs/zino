@@ -1,8 +1,9 @@
 /// Default controller for the `Model`.
-pub trait DefaultController<K, U = K> {
-    /// The request extractor.
+pub trait DefaultController<K, U> {
+    /// A type for the request extractor.
     type Request;
-    /// The response result.
+
+    /// A type for the response result.
     type Result;
 
     /// Creates a new model.
@@ -55,17 +56,18 @@ use zino_core::{
     model::{ModelHooks, Mutation, Query},
     orm::{ModelAccessor, ModelHelper},
     request::RequestContext,
-    response::{ExtractRejection, Rejection, StatusCode},
+    response::{ExtractRejection, Rejection, Response, StatusCode},
     JsonValue, Map,
 };
 
 #[cfg(any(feature = "actix", feature = "axum"))]
 #[cfg(feature = "orm")]
-impl<K, U, M: ModelAccessor<K, U>> DefaultController<K, U> for M
+impl<K, U, M> DefaultController<K, U> for M
 where
     K: Default + std::fmt::Display + PartialEq + std::str::FromStr,
-    U: Default + std::fmt::Display + PartialEq,
     <K as std::str::FromStr>::Err: std::error::Error,
+    U: Default + std::fmt::Display + PartialEq,
+    M: ModelAccessor<K, U>,
 {
     type Request = crate::Request;
     type Result = crate::Result;
@@ -104,7 +106,7 @@ where
         let id = req.parse_param::<K>("id")?;
         Self::soft_delete_by_id(&id).await.extract(&req)?;
 
-        let res = crate::Response::default().context(&req);
+        let res = Response::new(StatusCode::OK).context(&req);
         Ok(res.into())
     }
 
@@ -116,7 +118,7 @@ where
         let (validation, model) = Self::update_by_id(&id, &mut body, extension)
             .await
             .extract(&req)?;
-        let mut res = crate::Response::from(validation).context(&req);
+        let mut res = Response::from(validation).context(&req);
         if res.is_success() {
             let model_filters = model.next_version_filters();
             res.set_json_data(Map::data_entry(model_filters));
@@ -127,7 +129,7 @@ where
     async fn view(req: Self::Request) -> Self::Result {
         let id = req.parse_param::<K>("id")?;
         let model = Self::fetch_by_id(&id).await.extract(&req)?;
-        let mut res = crate::Response::default().context(&req);
+        let mut res = Response::new(StatusCode::OK).context(&req);
         res.set_json_data(Map::data_entry(model));
         Ok(res.into())
     }
@@ -178,7 +180,7 @@ where
         let id = req.parse_param::<K>("id")?;
         Self::delete_by_id(&id).await.extract(&req)?;
 
-        let res = crate::Response::default().context(&req);
+        let res = Response::new(StatusCode::OK).context(&req);
         Ok(res.into())
     }
 
@@ -216,14 +218,13 @@ where
             }
         }
         if !validations.is_empty() {
-            let mut res = crate::Response::new(StatusCode::BAD_REQUEST);
+            let mut res = Response::new(StatusCode::BAD_REQUEST);
             res.set_json_data(validations);
             Ok(res.into())
         } else {
             let ctx = Self::insert_many(models).await.extract(&req)?;
             let data = Map::from_entry("rows_affected", ctx.rows_affected());
-            let mut res = crate::Response::default().context(&req);
-            res.set_code(StatusCode::CREATED);
+            let mut res = Response::new(StatusCode::OK).context(&req);
             res.set_json_data(data);
             Ok(res.into())
         }
@@ -240,7 +241,7 @@ where
         let query = Query::new(filters);
         let ctx = Self::delete_many(&query).await.extract(&req)?;
         let data = Map::from_entry("rows_affected", ctx.rows_affected());
-        let mut res = crate::Response::default().context(&req);
+        let mut res = Response::new(StatusCode::OK).context(&req);
         res.set_json_data(data);
         Ok(res.into())
     }
@@ -262,7 +263,7 @@ where
             }
         }
 
-        let mut res = crate::Response::default().context(&req);
+        let mut res = Response::new(StatusCode::OK).context(&req);
         res.set_json_data(Map::from_entry("rows_affected", rows_affected));
         Ok(res.into())
     }
@@ -303,14 +304,14 @@ where
                 let mut map = validation.into_map();
                 map.upsert("index", index);
 
-                let mut res = crate::Response::new(StatusCode::BAD_REQUEST);
+                let mut res = Response::new(StatusCode::BAD_REQUEST);
                 res.set_json_data(map);
                 return Ok(res.into());
             }
         }
 
         let data = Map::from_entry("rows_affected", rows_affected);
-        let mut res = crate::Response::default().context(&req);
+        let mut res = Response::new(StatusCode::OK).context(&req);
         res.set_json_data(data);
         Ok(res.into())
     }
@@ -397,7 +398,7 @@ where
 
     async fn schema(req: Self::Request) -> Self::Result {
         let schema = serde_json::to_value(Self::schema()).extract(&req)?;
-        let mut res = crate::Response::default().context(&req);
+        let mut res = Response::new(StatusCode::OK).context(&req);
         res.set_json_response(schema);
         Ok(res.into())
     }
@@ -440,7 +441,7 @@ where
             definition
         };
 
-        let mut res = crate::Response::default().context(&req);
+        let mut res = Response::new(StatusCode::OK).context(&req);
         res.set_json_response(data);
         Ok(res.into())
     }

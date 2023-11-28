@@ -43,6 +43,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let mut snapshot_fields = Vec::new();
     let mut snapshot_entries = Vec::new();
     let mut field_constraints = Vec::new();
+    let mut ignored_list_fields = Vec::new();
+    let mut list_query_methods = Vec::new();
     let mut populated_queries = Vec::new();
     let mut populated_one_queries = Vec::new();
     let mut primary_key_type = String::from("Uuid");
@@ -492,37 +494,52 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 if primary_key_name == name {
                     primary_key_type = type_name;
                 } else {
-                    let name_ident = format_ident!("{}", name);
+                    let field_name = name.as_str();
+                    let field_ident = format_ident!("{}", field_name);
                     let mut snapshot_field = None;
-                    match field_alias.as_deref().unwrap_or(name.as_str()) {
-                        "name" | "status" => {
+                    match field_alias.as_deref().unwrap_or(field_name) {
+                        "name" if type_name == "String" => {
                             let method = quote! {
                                 #[inline]
-                                fn #name_ident(&self) -> &str {
-                                    self.#name_ident.as_ref()
+                                fn #field_ident(&self) -> &str {
+                                    self.#field_ident.as_ref()
                                 }
                             };
                             column_methods.push(method);
-                            snapshot_field = Some(name.as_str());
+                            snapshot_field = Some(field_name);
                         }
-                        "namespace" | "visibility" | "description" => {
+                        "namespace" | "visibility" | "description" if type_name == "String" => {
                             let method = quote! {
                                 #[inline]
-                                fn #name_ident(&self) -> &str {
-                                    self.#name_ident.as_ref()
+                                fn #field_ident(&self) -> &str {
+                                    self.#field_ident.as_ref()
                                 }
                             };
                             column_methods.push(method);
+                        }
+                        "status" if type_name == "String" => {
+                            let method = quote! {
+                                #[inline]
+                                fn #field_ident(&self) -> &str {
+                                    self.#field_ident.as_ref()
+                                }
+                            };
+                            column_methods.push(method);
+                            snapshot_field = Some(field_name);
+                            list_query_methods.push(quote! {
+                                query.add_filter(#field_name, Map::from_entry("$ne", "Deleted"));
+                            });
                         }
                         "content" | "extra" if type_name == "Map" => {
                             let method = quote! {
                                 #[inline]
-                                fn #name_ident(&self) -> Option<&Map> {
-                                    let map = &self.#name_ident;
+                                fn #field_ident(&self) -> Option<&Map> {
+                                    let map = &self.#field_ident;
                                     (!map.is_empty()).then_some(map)
                                 }
                             };
                             column_methods.push(method);
+                            ignored_list_fields.push(field_name.to_owned());
                         }
                         "owner_id" | "maintainer_id" => {
                             let user_type_opt = type_name.strip_prefix("Option");
@@ -535,15 +552,15 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             let method = if user_type_opt.is_some() {
                                 quote! {
                                     #[inline]
-                                    fn #name_ident(&self) -> Option<&#user_type_ident> {
-                                        self.#name_ident.as_ref()
+                                    fn #field_ident(&self) -> Option<&#user_type_ident> {
+                                        self.#field_ident.as_ref()
                                     }
                                 }
                             } else {
                                 quote! {
                                     #[inline]
-                                    fn #name_ident(&self) -> Option<&#user_type_ident> {
-                                        let id = &self.#name_ident;
+                                    fn #field_ident(&self) -> Option<&#user_type_ident> {
+                                        let id = &self.#field_ident;
                                         (id != &#user_type_ident::default()).then_some(id)
                                     }
                                 }
@@ -554,8 +571,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                         "created_at" if type_name == "DateTime" => {
                             let method = quote! {
                                 #[inline]
-                                fn #name_ident(&self) -> DateTime {
-                                    self.#name_ident
+                                fn #field_ident(&self) -> DateTime {
+                                    self.#field_ident
                                 }
                             };
                             column_methods.push(method);
@@ -563,40 +580,73 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                         "updated_at" if type_name == "DateTime" => {
                             let method = quote! {
                                 #[inline]
-                                fn #name_ident(&self) -> DateTime {
-                                    self.#name_ident
+                                fn #field_ident(&self) -> DateTime {
+                                    self.#field_ident
                                 }
                             };
                             column_methods.push(method);
-                            snapshot_field = Some("updated_at");
+                            snapshot_field = Some(field_name);
+                            list_query_methods.push(quote! {
+                                query.set_sort_order(#field_name, true);
+                            });
+                        }
+                        "deleted_at" if type_name == "Option<DateTime>" => {
+                            let method = quote! {
+                                #[inline]
+                                fn #field_ident(&self) -> Option<DateTime> {
+                                    self.#field_ident
+                                }
+                            };
+                            column_methods.push(method);
+                            column_methods.push(quote! {
+                                #[inline]
+                                fn is_deleted(&self) -> bool {
+                                    self.#field_ident.is_some()
+                                }
+                            });
+                            list_query_methods.push(quote! {
+                                query.add_filter(#field_name, "null");
+                            });
                         }
                         "version" if type_name == "u64" => {
                             let method = quote! {
                                 #[inline]
-                                fn #name_ident(&self) -> u64 {
-                                    self.#name_ident
+                                fn #field_ident(&self) -> u64 {
+                                    self.#field_ident
                                 }
                             };
                             column_methods.push(method);
-                            snapshot_field = Some("version");
+                            snapshot_field = Some(field_name);
                         }
                         "edition" if type_name == "u32" => {
                             let method = quote! {
                                 #[inline]
-                                fn #name_ident(&self) -> u32 {
-                                    self.#name_ident
+                                fn #field_ident(&self) -> u32 {
+                                    self.#field_ident
                                 }
                             };
                             column_methods.push(method);
                         }
                         _ => (),
                     }
-                    if let Some(field) = snapshot_field {
-                        let field_ident = format_ident!("{}", field);
+                    if let Some(field_name) = snapshot_field {
+                        let field_ident = format_ident!("{}", field_name);
                         snapshot_entries.push(quote! {
-                            snapshot.upsert(#field, self.#field_ident.clone());
+                            snapshot.upsert(#field_name, self.#field_ident.clone());
                         });
-                        snapshot_fields.push(field.to_owned());
+                        snapshot_fields.push(field_name.to_owned());
+                    }
+                    if ignored_list_fields.is_empty() {
+                        list_query_methods.push(quote! {
+                            query.deny_fields(Self::write_only_fields());
+                        });
+                    } else {
+                        list_query_methods.push(quote! {
+                            query.deny_fields(&[
+                                Self::write_only_fields(),
+                                &[#(#ignored_list_fields),*],
+                            ].concat());
+                        });
                     }
                 }
             }
@@ -689,6 +739,13 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 ];
                 query.allow_fields(&fields);
                 query.deny_fields(Self::write_only_fields());
+                query
+            }
+
+            fn default_list_query() -> Query {
+                let mut query = Query::default();
+                query.allow_fields(Self::fields());
+                #(#list_query_methods)*
                 query
             }
 

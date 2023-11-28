@@ -42,7 +42,7 @@ pub type DataTransformer = fn(data: &JsonValue) -> Result<Bytes, Error>;
 /// An HTTP response.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub struct Response<S = StatusCode> {
+pub struct Response<S: ResponseCode> {
     /// A URI reference that identifies the problem type.
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -56,7 +56,11 @@ pub struct Response<S = StatusCode> {
     /// Error code.
     #[serde(rename = "error")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    error_code: Option<SharedString>,
+    error_code: Option<S::ErrorCode>,
+    /// Business code.
+    #[serde(rename = "code")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    business_code: Option<S::BusinessCode>,
     /// A human-readable explanation specific to this occurrence of the problem.
     #[serde(skip_serializing_if = "Option::is_none")]
     detail: Option<SharedString>,
@@ -111,6 +115,7 @@ impl<S: ResponseCode> Response<S> {
             title: code.title(),
             status_code: code.status_code(),
             error_code: code.error_code(),
+            business_code: code.business_code(),
             detail: None,
             instance: None,
             success,
@@ -143,6 +148,7 @@ impl<S: ResponseCode> Response<S> {
             title: code.title(),
             status_code: code.status_code(),
             error_code: code.error_code(),
+            business_code: code.business_code(),
             detail: None,
             instance: (!success).then(|| ctx.instance().into()),
             success,
@@ -202,6 +208,7 @@ impl<S: ResponseCode> Response<S> {
                 self.title = code.title();
                 self.status_code = code.status_code();
                 self.error_code = code.error_code();
+                self.business_code = code.business_code();
                 self.success = false;
                 self.detail = Some(err.to_string().into());
                 self.message = None;
@@ -220,6 +227,7 @@ impl<S: ResponseCode> Response<S> {
         self.title = code.title();
         self.status_code = code.status_code();
         self.error_code = code.error_code();
+        self.business_code = code.business_code();
         self.success = success;
         if success {
             self.detail = None;
@@ -365,7 +373,7 @@ impl<S: ResponseCode> Response<S> {
 
     /// Sets the plain text as the response body.
     #[inline]
-    pub fn set_text_response<T: ?Sized + Serialize>(&mut self, data: impl Into<String>) {
+    pub fn set_text_response(&mut self, data: impl Into<String>) {
         self.set_json_data(data.into());
         self.set_content_type("text/plain; charset=utf-8");
     }
@@ -431,6 +439,18 @@ impl<S: ResponseCode> Response<S> {
     #[inline]
     pub fn status_code(&self) -> u16 {
         self.status_code
+    }
+
+    /// Returns the error code.
+    #[inline]
+    pub fn error_code(&self) -> Option<&S::ErrorCode> {
+        self.error_code.as_ref()
+    }
+
+    /// Returns the business code.
+    #[inline]
+    pub fn business_code(&self) -> Option<&S::BusinessCode> {
+        self.business_code.as_ref()
     }
 
     /// Returns `true` if the response is successful or `false` otherwise.

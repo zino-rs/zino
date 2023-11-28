@@ -13,7 +13,7 @@ use zino_core::{
 };
 
 /// An HTTP response for `actix-web`.
-pub struct ActixResponse<S>(Response<S>);
+pub struct ActixResponse<S: ResponseCode>(Response<S>);
 
 impl<S: ResponseCode> From<Response<S>> for ActixResponse<S> {
     #[inline]

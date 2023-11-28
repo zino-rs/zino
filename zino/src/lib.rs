@@ -24,20 +24,19 @@ pub use controller::DefaultController;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "actix")] {
-        use actix_web::{http::StatusCode, web::ServiceConfig, HttpRequest};
-
-        use application::actix_cluster::ActixCluster;
-        use request::actix_request::ActixExtractor;
-        use response::actix_response::{ActixRejection, ActixResponse};
+        use crate::application::actix_cluster::ActixCluster;
+        use crate::request::actix_request::ActixExtractor;
+        use crate::response::actix_response::{ActixRejection, ActixResponse};
+        use zino_core::response::StatusCode;
 
         /// HTTP server cluster for `actix-web`.
         pub type Cluster = ActixCluster;
 
         /// Router configure for `actix-web`.
-        pub type RouterConfigure = fn(cfg: &mut ServiceConfig);
+        pub type RouterConfigure = fn(cfg: &mut actix_web::web::ServiceConfig);
 
         /// A specialized request extractor for `actix-web`.
-        pub type Request = ActixExtractor<HttpRequest>;
+        pub type Request = ActixExtractor<actix_web::HttpRequest>;
 
         /// A specialized response for `actix-web`.
         pub type Response = zino_core::response::Response<StatusCode>;
@@ -45,11 +44,10 @@ cfg_if::cfg_if! {
         /// A specialized `Result` type for `actix-web`.
         pub type Result<T = ActixResponse<StatusCode>> = std::result::Result<T, ActixRejection>;
     } else if #[cfg(feature = "axum")] {
-        use axum::{body::Body, http::{self, StatusCode}};
-
-        use application::axum_cluster::AxumCluster;
-        use request::axum_request::AxumExtractor;
-        use response::axum_response::{AxumRejection, AxumResponse};
+        use crate::application::axum_cluster::AxumCluster;
+        use crate::request::axum_request::AxumExtractor;
+        use crate::response::axum_response::{AxumRejection, AxumResponse};
+        use zino_core::response::StatusCode;
 
         pub use channel::axum_channel::MessageChannel;
 
@@ -57,7 +55,7 @@ cfg_if::cfg_if! {
         pub type Cluster = AxumCluster;
 
         /// A specialized request extractor for `axum`.
-        pub type Request = AxumExtractor<http::Request<Body>>;
+        pub type Request = AxumExtractor<axum::http::Request<axum::body::Body>>;
 
         /// A specialized response for `axum`.
         pub type Response = zino_core::response::Response<StatusCode>;
@@ -65,7 +63,7 @@ cfg_if::cfg_if! {
         /// A specialized `Result` type for `axum`.
         pub type Result<T = AxumResponse<StatusCode>> = std::result::Result<T, AxumRejection>;
     } else if #[cfg(feature = "dioxus-desktop")] {
-        use application::dioxus_desktop::DioxusDesktop;
+        use crate::application::dioxus_desktop::DioxusDesktop;
 
         /// Desktop applications for `dioxus`.
         pub type Desktop<R> = DioxusDesktop<R>;
