@@ -47,6 +47,9 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let mut list_query_methods = Vec::new();
     let mut populated_queries = Vec::new();
     let mut populated_one_queries = Vec::new();
+    let mut soft_delete_updates = Vec::new();
+    let mut lock_updates = Vec::new();
+    let mut archive_updates = Vec::new();
     let mut primary_key_type = String::from("Uuid");
     let mut primary_key_name = String::from("id");
     let mut user_id_type = String::new();
@@ -529,6 +532,15 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             list_query_methods.push(quote! {
                                 query.add_filter(#field_name, Map::from_entry("$ne", "Deleted"));
                             });
+                            soft_delete_updates.push(quote! {
+                                updates.upsert(#field_name, "Deleted");
+                            });
+                            lock_updates.push(quote! {
+                                updates.upsert(#field_name, "Locked");
+                            });
+                            archive_updates.push(quote! {
+                                updates.upsert(#field_name, "Archived");
+                            });
                         }
                         "content" | "extra" if type_name == "Map" => {
                             let method = quote! {
@@ -607,6 +619,9 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             list_query_methods.push(quote! {
                                 query.add_filter(#field_name, "null");
                             });
+                            soft_delete_updates.push(quote! {
+                                updates.upsert(#field_name, DateTime::now().to_utc_timestamp());
+                            });
                         }
                         "version" if type_name == "u64" => {
                             let method = quote! {
@@ -626,6 +641,42 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 }
                             };
                             column_methods.push(method);
+                        }
+                        "is_deleted" if type_name == "bool" => {
+                            column_methods.push(quote! {
+                                #[inline]
+                                fn is_deleted(&self) -> bool {
+                                    self.#field_ident
+                                }
+                            });
+                            list_query_methods.push(quote! {
+                                query.add_filter(#field_name, false);
+                            });
+                            soft_delete_updates.push(quote! {
+                                updates.upsert(#field_name, true);
+                            });
+                        }
+                        "is_locked" if type_name == "bool" => {
+                            column_methods.push(quote! {
+                                #[inline]
+                                fn is_locked(&self) -> bool {
+                                    self.#field_ident
+                                }
+                            });
+                            lock_updates.push(quote! {
+                                updates.upsert(#field_name, true);
+                            });
+                        }
+                        "is_archived" if type_name == "bool" => {
+                            column_methods.push(quote! {
+                                #[inline]
+                                fn is_archived(&self) -> bool {
+                                    self.#field_ident
+                                }
+                            });
+                            archive_updates.push(quote! {
+                                updates.upsert(#field_name, true);
+                            });
                         }
                         _ => (),
                     }
@@ -710,7 +761,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let model_user_id_type = format_ident!("{}", user_id_type);
     quote! {
         use zino_core::{
-            model::Query,
+            model::{Mutation, Query},
             orm::{ModelAccessor, ModelHelper as _},
             validation::Validation as ZinoValidation,
             Map as ZinoMap,
@@ -729,6 +780,30 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 snapshot.upsert(Self::PRIMARY_KEY_NAME, self.primary_key_value());
                 #(#snapshot_entries)*
                 snapshot
+            }
+
+            fn soft_delete_mutation(&self) -> Mutation {
+                let mut mutation = Self::default_mutation();
+                let mut updates = self.next_edition_updates();
+                #(#soft_delete_updates)*
+                mutation.append_updates(&mut updates);
+                mutation
+            }
+
+            fn lock_mutation(&self) -> Mutation {
+                let mut mutation = Self::default_mutation();
+                let mut updates = self.next_edition_updates();
+                #(#lock_updates)*
+                mutation.append_updates(&mut updates);
+                mutation
+            }
+
+            fn archive_mutation(&self) -> Mutation {
+                let mut mutation = Self::default_mutation();
+                let mut updates = self.next_edition_updates();
+                #(#archive_updates)*
+                mutation.append_updates(&mut updates);
+                mutation
             }
 
             fn default_snapshot_query() -> Query {

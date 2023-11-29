@@ -57,8 +57,8 @@ pub trait ResponseCode {
 }
 
 impl ResponseCode for StatusCode {
-    type ErrorCode = ();
-    type BusinessCode = ();
+    type ErrorCode = SharedString;
+    type BusinessCode = u16;
 
     const OK: Self = StatusCode::OK;
     const BAD_REQUEST: Self = StatusCode::BAD_REQUEST;

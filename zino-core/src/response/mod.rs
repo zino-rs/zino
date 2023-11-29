@@ -42,7 +42,7 @@ pub type DataTransformer = fn(data: &JsonValue) -> Result<Bytes, Error>;
 /// An HTTP response.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub struct Response<S: ResponseCode> {
+pub struct Response<S: ResponseCode = StatusCode> {
     /// A URI reference that identifies the problem type.
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -219,7 +219,7 @@ impl<S: ResponseCode> Response<S> {
         self
     }
 
-    /// Sets the code.
+    /// Sets the response code.
     pub fn set_code(&mut self, code: S) {
         let success = code.is_success();
         let message = code.message();
@@ -236,6 +236,24 @@ impl<S: ResponseCode> Response<S> {
             self.detail = message;
             self.message = None;
         }
+    }
+
+    /// Sets the status code.
+    #[inline]
+    pub fn set_status_code(&mut self, status_code: impl Into<u16>) {
+        self.status_code = status_code.into();
+    }
+
+    /// Sets the error code.
+    #[inline]
+    pub fn set_error_code(&mut self, error_code: impl Into<S::ErrorCode>) {
+        self.error_code = Some(error_code.into());
+    }
+
+    /// Sets the bussiness code.
+    #[inline]
+    pub fn set_business_code(&mut self, business_code: impl Into<S::BusinessCode>) {
+        self.business_code = Some(business_code.into());
     }
 
     /// Sets a URI reference that identifies the specific occurrence of the problem.

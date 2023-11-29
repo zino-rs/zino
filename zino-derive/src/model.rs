@@ -4,7 +4,10 @@ use quote::{format_ident, quote};
 use syn::{Data, DeriveInput, Fields};
 
 /// Reserved fields
-const RESERVED_FIELDS: [&str; 5] = [
+const RESERVED_FIELDS: [&str; 8] = [
+    "is_deleted",
+    "is_locked",
+    "is_archived",
     "created_at",
     "updated_at",
     "deleted_at",

@@ -1,4 +1,4 @@
-//! Extension traits and helper utilities.
+//! Extension traits for frequently used types.
 
 mod avro_record;
 mod header_map;
