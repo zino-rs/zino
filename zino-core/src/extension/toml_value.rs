@@ -19,9 +19,21 @@ pub trait TomlValueExt {
     /// Returns `None` otherwise.
     fn as_usize(&self) -> Option<usize>;
 
+    /// If the `Value` is an integer, represent it as `i8` if possible.
+    /// Returns `None` otherwise.
+    fn as_i8(&self) -> Option<i8>;
+
+    /// If the `Value` is an integer, represent it as `i16` if possible.
+    /// Returns `None` otherwise.
+    fn as_i16(&self) -> Option<i16>;
+
     /// If the `Value` is an integer, represent it as `i32` if possible.
     /// Returns `None` otherwise.
     fn as_i32(&self) -> Option<i32>;
+
+    /// If the `Value` is an integer, represent it as `isize` if possible.
+    /// Returns `None` otherwise.
+    fn as_isize(&self) -> Option<isize>;
 
     /// If the `Value` is a float, represent it as `f32` if possible.
     /// Returns `None` otherwise.
@@ -53,8 +65,23 @@ impl TomlValueExt for TomlValue {
     }
 
     #[inline]
+    fn as_i8(&self) -> Option<i8> {
+        self.as_integer().and_then(|i| i8::try_from(i).ok())
+    }
+
+    #[inline]
+    fn as_i16(&self) -> Option<i16> {
+        self.as_integer().and_then(|i| i16::try_from(i).ok())
+    }
+
+    #[inline]
     fn as_i32(&self) -> Option<i32> {
         self.as_integer().and_then(|i| i32::try_from(i).ok())
+    }
+
+    #[inline]
+    fn as_isize(&self) -> Option<isize> {
+        self.as_integer().and_then(|i| isize::try_from(i).ok())
     }
 
     #[inline]

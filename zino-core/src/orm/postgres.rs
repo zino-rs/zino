@@ -1,12 +1,12 @@
 use super::{query::QueryExt, DatabaseDriver, DatabaseRow, Schema};
 use crate::{
-    datetime::DateTime,
+    datetime::{Date, DateTime, Time},
     error::Error,
     extension::{JsonObjectExt, JsonValueExt},
     model::{Column, DecodeRow, EncodeColumn, Query},
     AvroValue, JsonValue, Map, Record, SharedString, Uuid,
 };
-use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
+use chrono::NaiveDateTime;
 use std::borrow::Cow;
 
 #[cfg(feature = "orm-sqlx")]
@@ -43,10 +43,10 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             "f64" => "DOUBLE PRECISION",
             "f32" => "REAL",
             "Decimal" => "NUMERIC",
+            "Date" | "NaiveDate" => "DATE",
+            "Time" | "NaiveTime" => "TIME",
             "DateTime" => "TIMESTAMPTZ",
             "NaiveDateTime" => "TIMESTAMP",
-            "NaiveDate" | "Date" => "DATE",
-            "NaiveTime" | "Time" => "TIME",
             "Uuid" | "Option<Uuid>" => "UUID",
             "Vec<u8>" => "BYTEA",
             "Vec<String>" => "TEXT[]",
@@ -198,7 +198,6 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         "$ilike" => "ILIKE",
                         "$rlike" => "~*",
                         "$is" => "IS",
-                        "$all" => "@>",
                         "$size" => "array_length",
                         _ => {
                             if cfg!(debug_assertions) && name.starts_with('$') {
@@ -333,7 +332,48 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     format!(r#"{field} = {value}"#)
                 }
             }
-            "DateTime" | "Date" | "Time" | "NaiveDateTime" | "NaiveDate" | "NaiveTime" => {
+            "DateTime" | "NaiveDateTime" => {
+                if let Some(value) = value.as_str() {
+                    if let Some((min_value, max_value)) = value.split_once(',') {
+                        let min_value = self.format_value(min_value);
+                        let max_value = self.format_value(max_value);
+                        format!(r#"{field} >= {min_value} AND {field} < {max_value}"#)
+                    } else {
+                        let length = value.len();
+                        let value = self.format_value(value);
+                        match length {
+                            4 => format!(r#"to_char({field}, 'YYYY') = {value}"#),
+                            7 => format!(r#"to_char({field}, 'YYYY-MM') = {value}"#),
+                            10 => format!(r#"to_char({field}, 'YYYY-MM-DD') = {value}"#),
+                            _ => format!(r#"{field} = {value}"#),
+                        }
+                    }
+                } else {
+                    let value = self.encode_value(Some(value));
+                    format!(r#"{field} = {value}"#)
+                }
+            }
+            "Date" | "NaiveDate" => {
+                if let Some(value) = value.as_str() {
+                    if let Some((min_value, max_value)) = value.split_once(',') {
+                        let min_value = self.format_value(min_value);
+                        let max_value = self.format_value(max_value);
+                        format!(r#"{field} >= {min_value} AND {field} < {max_value}"#)
+                    } else {
+                        let length = value.len();
+                        let value = self.format_value(value);
+                        match length {
+                            4 => format!(r#"to_char({field}, 'YYYY') = {value}"#),
+                            7 => format!(r#"to_char({field}, 'YYYY-MM') = {value}"#),
+                            _ => format!(r#"{field} = {value}"#),
+                        }
+                    }
+                } else {
+                    let value = self.encode_value(Some(value));
+                    format!(r#"{field} = {value}"#)
+                }
+            }
+            "Time" | "NaiveTime" => {
                 if let Some(value) = value.as_str() {
                     if let Some((min_value, max_value)) = value.split_once(',') {
                         let min_value = self.format_value(min_value);
@@ -441,12 +481,8 @@ impl DecodeRow<DatabaseRow> for Map {
                     "TIMESTAMP" => decode_raw::<NaiveDateTime>(field, raw_value)?
                         .to_string()
                         .into(),
-                    "DATE" => decode_raw::<NaiveDate>(field, raw_value)?
-                        .to_string()
-                        .into(),
-                    "TIME" => decode_raw::<NaiveTime>(field, raw_value)?
-                        .to_string()
-                        .into(),
+                    "DATE" => decode_raw::<Date>(field, raw_value)?.into(),
+                    "TIME" => decode_raw::<Time>(field, raw_value)?.into(),
                     "UUID" => decode_raw::<Uuid>(field, raw_value)?.to_string().into(),
                     "BYTEA" => decode_raw::<Vec<u8>>(field, raw_value)?.into(),
                     "INT4[]" => decode_raw::<Vec<i32>>(field, raw_value)?.into(),
@@ -498,12 +534,8 @@ impl DecodeRow<DatabaseRow> for Record {
                     "TIMESTAMP" => decode_raw::<NaiveDateTime>(field, raw_value)?
                         .to_string()
                         .into(),
-                    "DATE" => decode_raw::<NaiveDate>(field, raw_value)?
-                        .to_string()
-                        .into(),
-                    "TIME" => decode_raw::<NaiveTime>(field, raw_value)?
-                        .to_string()
-                        .into(),
+                    "DATE" => decode_raw::<Date>(field, raw_value)?.into(),
+                    "TIME" => decode_raw::<Time>(field, raw_value)?.into(),
                     "UUID" => decode_raw::<Uuid>(field, raw_value)?.into(),
                     "BYTEA" => decode_raw::<Vec<u8>>(field, raw_value)?.into(),
                     "INT4[]" => {

@@ -1,7 +1,29 @@
 use super::{DatabaseDriver, DatabaseRow};
 use crate::{error::Error, BoxError};
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Local, NaiveDate, NaiveTime};
 use sqlx::{database::HasValueRef, Database, Decode, Row, Type};
+
+impl<DB> Type<DB> for crate::datetime::Date
+where
+    DB: Database,
+    NaiveDate: Type<DB>,
+{
+    #[inline]
+    fn type_info() -> <DB as Database>::TypeInfo {
+        <NaiveDate as Type<DB>>::type_info()
+    }
+}
+
+impl<DB> Type<DB> for crate::datetime::Time
+where
+    DB: Database,
+    NaiveTime: Type<DB>,
+{
+    #[inline]
+    fn type_info() -> <DB as Database>::TypeInfo {
+        <NaiveTime as Type<DB>>::type_info()
+    }
+}
 
 impl<DB> Type<DB> for crate::datetime::DateTime
 where
@@ -11,6 +33,28 @@ where
     #[inline]
     fn type_info() -> <DB as Database>::TypeInfo {
         <DateTime<Local> as Type<DB>>::type_info()
+    }
+}
+
+impl<'r, DB> Decode<'r, DB> for crate::datetime::Date
+where
+    DB: Database,
+    NaiveDate: Decode<'r, DB>,
+{
+    #[inline]
+    fn decode(value: <DB as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxError> {
+        <NaiveDate as Decode<'r, DB>>::decode(value).map(|dt| dt.into())
+    }
+}
+
+impl<'r, DB> Decode<'r, DB> for crate::datetime::Time
+where
+    DB: Database,
+    NaiveTime: Decode<'r, DB>,
+{
+    #[inline]
+    fn decode(value: <DB as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxError> {
+        <NaiveTime as Decode<'r, DB>>::decode(value).map(|dt| dt.into())
     }
 }
 

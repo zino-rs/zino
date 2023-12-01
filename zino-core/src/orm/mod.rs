@@ -67,6 +67,7 @@
 //! | `$not`     | `NOT`               | `NOT`            | `NOT`                 |
 //! | `$rand`    | `rand()`            | `random()`       | `abs(random())`       |
 //! | `$text`    | `match() against()` | `to_tsvector()`  | `MATCH`               |
+//! | `$ovlp`    | `overlaps()`        | `OVERLAPS`       | N/A                   |
 //! | `$eq`      | `=`                 | `=`              | `=`                   |
 //! | `$ne`      | `<>`                | `<>`             | `<>`                  |
 //! | `$lt`      | `<`                 | `<`              | `<`                   |
@@ -81,7 +82,6 @@
 //! | `$rlike`   | `RLIKE`             | `~*`             | `REGEXP`              |
 //! | `$glob`    | N/A                 | N/A              | `GLOB`                |
 //! | `$is`      | `IS`                | `IS`             | `IS`                  |
-//! | `$all`     | N/A                 | `@>`             | N/A                   |
 //! | `$size`    | `json_length()`     | `array_length()` | `json_array_length()` |
 //!
 //! [`Mongoose`]: https://mongoosejs.com/

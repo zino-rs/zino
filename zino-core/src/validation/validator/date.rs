@@ -1,8 +1,9 @@
 use super::Validator;
-use chrono::{format::ParseError, NaiveDate};
+use crate::datetime::Date;
+use chrono::format::ParseError;
 use std::str::FromStr;
 
-/// A validator for date.
+/// A validator for [`Date`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DateValidator;
 
@@ -11,7 +12,7 @@ impl Validator<str> for DateValidator {
 
     #[inline]
     fn validate(&self, data: &str) -> Result<(), Self::Error> {
-        NaiveDate::from_str(data)?;
+        Date::from_str(data)?;
         Ok(())
     }
 }

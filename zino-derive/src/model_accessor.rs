@@ -1,6 +1,7 @@
 use super::parser;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
+use std::collections::HashMap;
 use syn::{Data, DeriveInput, Fields};
 
 /// Parses the token stream for the `ModelAccessor` trait derivation.
@@ -56,7 +57,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     if let Data::Struct(data) = input.data
         && let Fields::Named(fields) = data.fields
     {
-        let mut model_references: Vec<(String, Vec<String>)> = Vec::new();
+        let mut model_references: HashMap<String, Vec<String>> = HashMap::new();
         for field in fields.named.into_iter() {
             let type_name = parser::get_type_name(&field.ty);
             if let Some(ident) = field.ident
@@ -170,9 +171,10 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                             }
                                         });
                                     }
-                                    match model_references.iter_mut().find(|r| r.0 == value) {
-                                        Some(r) => r.1.push(name.clone()),
-                                        None => model_references.push((value, vec![name.clone()])),
+                                    if let Some(vec) = model_references.get_mut(&value) {
+                                        vec.push(name.clone());
+                                    } else {
+                                        model_references.insert(value, vec![name.clone()]);
                                     }
                                 }
                             }
@@ -702,36 +704,21 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 }
             }
         }
-        if model_references.is_empty() {
-            populated_queries.push(quote! {
-                let mut models = Self::find::<Map>(query).await?;
-                for model in models.iter_mut() {
-                    Self::after_decode(model).await?;
-                    translate_enabled.then(|| Self::translate_model(model));
-                }
-            });
-            populated_one_queries.push(quote! {
-                let mut model = Self::find_by_id::<Map>(id)
-                    .await?
-                    .ok_or_else(|| zino_core::warn!("404 Not Found: cannot find the model `{}`", id))?;
-                Self::after_decode(&mut model).await?;
-                Self::translate_model(&mut model);
-            });
-        } else {
-            populated_queries.push(quote! {
-                let mut models = Self::find::<Map>(query).await?;
-                for model in models.iter_mut() {
-                    Self::after_decode(model).await?;
-                    translate_enabled.then(|| Self::translate_model(model));
-                }
-            });
-            populated_one_queries.push(quote! {
-                let mut model = Self::find_by_id::<Map>(id)
-                    .await?
-                    .ok_or_else(|| zino_core::warn!("404 Not Found: cannot find the model `{}`", id))?;
-                Self::after_decode(&mut model).await?;
-                Self::translate_model(&mut model);
-            });
+        populated_queries.push(quote! {
+            let mut models = Self::find::<Map>(query).await?;
+            for model in models.iter_mut() {
+                Self::after_decode(model).await?;
+                translate_enabled.then(|| Self::translate_model(model));
+            }
+        });
+        populated_one_queries.push(quote! {
+            let mut model = Self::find_by_id::<Map>(id)
+                .await?
+                .ok_or_else(|| zino_core::warn!("404 Not Found: cannot find the model `{}`", id))?;
+            Self::after_decode(&mut model).await?;
+            Self::translate_model(&mut model);
+        });
+        if !model_references.is_empty() {
             for (model, ref_fields) in model_references.into_iter() {
                 let model_ident = format_ident!("{}", model);
                 let populated_query = quote! {

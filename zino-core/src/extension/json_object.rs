@@ -1,6 +1,6 @@
 use super::JsonValueExt;
 use crate::{
-    datetime::{self, DateTime},
+    datetime::{self, Date, DateTime, Time},
     helper, openapi, JsonValue, Map, Record, Uuid,
 };
 use std::{
@@ -38,6 +38,14 @@ pub trait JsonObjectExt {
     fn get_usize(&self, key: &str) -> Option<usize>;
 
     /// Extracts the integer value corresponding to the key
+    /// and represents it as `i8` if possible.
+    fn get_i8(&self, key: &str) -> Option<i8>;
+
+    /// Extracts the integer value corresponding to the key
+    /// and represents it as `i16` if possible.
+    fn get_i16(&self, key: &str) -> Option<i16>;
+
+    /// Extracts the integer value corresponding to the key
     /// and represents it as `i32` if possible.
     fn get_i32(&self, key: &str) -> Option<i32>;
 
@@ -61,6 +69,14 @@ pub trait JsonObjectExt {
     /// Extracts the string corresponding to the key
     /// and represents it as `Uuid` if possible.
     fn get_uuid(&self, key: &str) -> Option<Uuid>;
+
+    /// Extracts the string corresponding to the key
+    /// and represents it as `Date` if possible.
+    fn get_date(&self, key: &str) -> Option<Date>;
+
+    /// Extracts the string corresponding to the key
+    /// and represents it as `Time` if possible.
+    fn get_time(&self, key: &str) -> Option<Time>;
 
     /// Extracts the string corresponding to the key
     /// and represents it as `DateTime` if possible.
@@ -109,6 +125,12 @@ pub trait JsonObjectExt {
     /// Extracts the value corresponding to the key and parses it as `usize`.
     fn parse_usize(&self, key: &str) -> Option<Result<usize, ParseIntError>>;
 
+    /// Extracts the value corresponding to the key and parses it as `i8`.
+    fn parse_i8(&self, key: &str) -> Option<Result<i8, ParseIntError>>;
+
+    /// Extracts the value corresponding to the key and parses it as `i16`.
+    fn parse_i16(&self, key: &str) -> Option<Result<i16, ParseIntError>>;
+
     /// Extracts the value corresponding to the key and parses it as `i32`.
     fn parse_i32(&self, key: &str) -> Option<Result<i32, ParseIntError>>;
 
@@ -148,6 +170,12 @@ pub trait JsonObjectExt {
     /// Extracts the string corresponding to the key and parses it as `Uuid`.
     /// If the `Uuid` is `nil`, it also returns `None`.
     fn parse_uuid(&self, key: &str) -> Option<Result<Uuid, uuid::Error>>;
+
+    /// Extracts the string corresponding to the key and parses it as `Date`.
+    fn parse_date(&self, key: &str) -> Option<Result<Date, chrono::format::ParseError>>;
+
+    /// Extracts the string corresponding to the key and parses it as `Time`.
+    fn parse_time(&self, key: &str) -> Option<Result<Time, chrono::format::ParseError>>;
 
     /// Extracts the string corresponding to the key and parses it as `DateTime`.
     fn parse_datetime(&self, key: &str) -> Option<Result<DateTime, chrono::format::ParseError>>;
@@ -238,6 +266,20 @@ impl JsonObjectExt for Map {
     }
 
     #[inline]
+    fn get_i8(&self, key: &str) -> Option<i8> {
+        self.get(key)
+            .and_then(|v| v.as_i64())
+            .and_then(|i| i8::try_from(i).ok())
+    }
+
+    #[inline]
+    fn get_i16(&self, key: &str) -> Option<i16> {
+        self.get(key)
+            .and_then(|v| v.as_i64())
+            .and_then(|i| i16::try_from(i).ok())
+    }
+
+    #[inline]
     fn get_i32(&self, key: &str) -> Option<i32> {
         self.get(key)
             .and_then(|v| v.as_i64())
@@ -273,6 +315,16 @@ impl JsonObjectExt for Map {
 
     #[inline]
     fn get_uuid(&self, key: &str) -> Option<Uuid> {
+        self.get_str(key).and_then(|s| s.parse().ok())
+    }
+
+    #[inline]
+    fn get_date(&self, key: &str) -> Option<Date> {
+        self.get_str(key).and_then(|s| s.parse().ok())
+    }
+
+    #[inline]
+    fn get_time(&self, key: &str) -> Option<Time> {
         self.get_str(key).and_then(|s| s.parse().ok())
     }
 
@@ -379,6 +431,24 @@ impl JsonObjectExt for Map {
         value
             .and_then(|v| v.as_u64())
             .and_then(|i| usize::try_from(i).ok())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    fn parse_i8(&self, key: &str) -> Option<Result<i8, ParseIntError>> {
+        let value = self.get(key);
+        value
+            .and_then(|v| v.as_i64())
+            .and_then(|i| i8::try_from(i).ok())
+            .map(Ok)
+            .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
+    }
+
+    fn parse_i16(&self, key: &str) -> Option<Result<i16, ParseIntError>> {
+        let value = self.get(key);
+        value
+            .and_then(|v| v.as_i64())
+            .and_then(|i| i16::try_from(i).ok())
             .map(Ok)
             .or_else(|| value.and_then(|v| v.as_str()).map(|s| s.parse()))
     }
@@ -504,6 +574,16 @@ impl JsonObjectExt for Map {
             .map(|s| s.trim_start_matches("urn:uuid:"))
             .filter(|s| !s.chars().all(|c| c == '0' || c == '-'))
             .map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_date(&self, key: &str) -> Option<Result<Date, chrono::format::ParseError>> {
+        self.get_str(key).map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_time(&self, key: &str) -> Option<Result<Time, chrono::format::ParseError>> {
+        self.get_str(key).map(|s| s.parse())
     }
 
     #[inline]

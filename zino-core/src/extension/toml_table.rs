@@ -28,11 +28,23 @@ pub trait TomlTableExt {
     fn get_usize(&self, key: &str) -> Option<usize>;
 
     /// Extracts the integer value corresponding to the key and
+    /// represents it as `i8` if possible.
+    fn get_i8(&self, key: &str) -> Option<i8>;
+
+    /// Extracts the integer value corresponding to the key and
+    /// represents it as `i16` if possible.
+    fn get_i16(&self, key: &str) -> Option<i16>;
+
+    /// Extracts the integer value corresponding to the key and
     /// represents it as `i32` if possible.
     fn get_i32(&self, key: &str) -> Option<i32>;
 
     /// Extracts the integer value corresponding to the key.
     fn get_i64(&self, key: &str) -> Option<i64>;
+
+    /// Extracts the integer value corresponding to the key and
+    /// represents it as `isize` if possible.
+    fn get_isize(&self, key: &str) -> Option<isize>;
 
     /// Extracts the float value corresponding to the key and
     /// represents it as `f32` if possible.
@@ -109,6 +121,20 @@ impl TomlTableExt for Table {
     }
 
     #[inline]
+    fn get_i8(&self, key: &str) -> Option<i8> {
+        self.get(key)
+            .and_then(|v| v.as_integer())
+            .and_then(|i| i8::try_from(i).ok())
+    }
+
+    #[inline]
+    fn get_i16(&self, key: &str) -> Option<i16> {
+        self.get(key)
+            .and_then(|v| v.as_integer())
+            .and_then(|i| i16::try_from(i).ok())
+    }
+
+    #[inline]
     fn get_i32(&self, key: &str) -> Option<i32> {
         self.get(key)
             .and_then(|v| v.as_integer())
@@ -118,6 +144,13 @@ impl TomlTableExt for Table {
     #[inline]
     fn get_i64(&self, key: &str) -> Option<i64> {
         self.get(key).and_then(|v| v.as_integer())
+    }
+
+    #[inline]
+    fn get_isize(&self, key: &str) -> Option<isize> {
+        self.get(key)
+            .and_then(|v| v.as_integer())
+            .and_then(|i| isize::try_from(i).ok())
     }
 
     #[inline]

@@ -1,5 +1,5 @@
 use crate::{
-    datetime::{self, DateTime},
+    datetime::{self, Date, DateTime, Time},
     extension::JsonObjectExt,
     helper, JsonValue, Map, Uuid,
 };
@@ -33,6 +33,14 @@ pub trait JsonValueExt {
     /// Returns `None` otherwise.
     fn as_usize(&self) -> Option<usize>;
 
+    /// If the `Value` is an integer, represent it as `i8` if possible.
+    /// Returns `None` otherwise.
+    fn as_i8(&self) -> Option<i8>;
+
+    /// If the `Value` is an integer, represent it as `i16` if possible.
+    /// Returns `None` otherwise.
+    fn as_i16(&self) -> Option<i16>;
+
     /// If the `Value` is an integer, represent it as `i32` if possible.
     /// Returns `None` otherwise.
     fn as_i32(&self) -> Option<i32>;
@@ -56,6 +64,14 @@ pub trait JsonValueExt {
     /// If the `Value` is a String, represent it as `Uuid` if possible.
     /// Returns `None` otherwise.
     fn as_uuid(&self) -> Option<Uuid>;
+
+    /// If the `Value` is a String, represent it as `Date` if possible.
+    /// Returns `None` otherwise.
+    fn as_date(&self) -> Option<Date>;
+
+    /// If the `Value` is a String, represent it as `Time` if possible.
+    /// Returns `None` otherwise.
+    fn as_time(&self) -> Option<Time>;
 
     /// If the `Value` is a String, represent it as `DateTime` if possible.
     /// Returns `None` otherwise.
@@ -82,6 +98,12 @@ pub trait JsonValueExt {
 
     /// Parses the JSON value as `usize`.
     fn parse_usize(&self) -> Option<Result<usize, ParseIntError>>;
+
+    /// Parses the JSON value as `i8`.
+    fn parse_i8(&self) -> Option<Result<i8, ParseIntError>>;
+
+    /// Parses the JSON value as `i16`.
+    fn parse_i16(&self) -> Option<Result<i16, ParseIntError>>;
 
     /// Parses the JSON value as `i32`.
     fn parse_i32(&self) -> Option<Result<i32, ParseIntError>>;
@@ -113,6 +135,12 @@ pub trait JsonValueExt {
     /// Parses the JSON value as `Uuid`.
     /// If the `Uuid` is `nil`, it also returns `None`.
     fn parse_uuid(&self) -> Option<Result<Uuid, uuid::Error>>;
+
+    /// Parses the JSON value as `Date`.
+    fn parse_date(&self) -> Option<Result<Date, chrono::format::ParseError>>;
+
+    /// Parses the JSON value as `Time`.
+    fn parse_time(&self) -> Option<Result<Time, chrono::format::ParseError>>;
 
     /// Parses the JSON value as `DateTime`.
     fn parse_datetime(&self) -> Option<Result<DateTime, chrono::format::ParseError>>;
@@ -175,6 +203,16 @@ impl JsonValueExt for JsonValue {
     }
 
     #[inline]
+    fn as_i8(&self) -> Option<i8> {
+        self.as_i64().and_then(|i| i8::try_from(i).ok())
+    }
+
+    #[inline]
+    fn as_i16(&self) -> Option<i16> {
+        self.as_i64().and_then(|i| i16::try_from(i).ok())
+    }
+
+    #[inline]
     fn as_i32(&self) -> Option<i32> {
         self.as_i64().and_then(|i| i32::try_from(i).ok())
     }
@@ -207,6 +245,16 @@ impl JsonValueExt for JsonValue {
 
     #[inline]
     fn as_uuid(&self) -> Option<Uuid> {
+        self.as_str().and_then(|s| s.parse().ok())
+    }
+
+    #[inline]
+    fn as_date(&self) -> Option<Date> {
+        self.as_str().and_then(|s| s.parse().ok())
+    }
+
+    #[inline]
+    fn as_time(&self) -> Option<Time> {
         self.as_str().and_then(|s| s.parse().ok())
     }
 
@@ -256,6 +304,20 @@ impl JsonValueExt for JsonValue {
     fn parse_usize(&self) -> Option<Result<usize, ParseIntError>> {
         self.as_u64()
             .and_then(|i| usize::try_from(i).ok())
+            .map(Ok)
+            .or_else(|| self.as_str().map(|s| s.parse()))
+    }
+
+    fn parse_i8(&self) -> Option<Result<i8, ParseIntError>> {
+        self.as_i64()
+            .and_then(|i| i8::try_from(i).ok())
+            .map(Ok)
+            .or_else(|| self.as_str().map(|s| s.parse()))
+    }
+
+    fn parse_i16(&self) -> Option<Result<i16, ParseIntError>> {
+        self.as_i64()
+            .and_then(|i| i16::try_from(i).ok())
             .map(Ok)
             .or_else(|| self.as_str().map(|s| s.parse()))
     }
@@ -331,6 +393,16 @@ impl JsonValueExt for JsonValue {
             .map(|s| s.trim_start_matches("urn:uuid:"))
             .filter(|s| !s.chars().all(|c| c == '0' || c == '-'))
             .map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_date(&self) -> Option<Result<Date, chrono::format::ParseError>> {
+        self.as_str().map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_time(&self) -> Option<Result<Time, chrono::format::ParseError>> {
+        self.as_str().map(|s| s.parse())
     }
 
     #[inline]

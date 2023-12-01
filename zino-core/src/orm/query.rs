@@ -131,6 +131,34 @@ pub(super) trait QueryExt<DB> {
                         }
                     }
                 }
+                "$ovlp" => {
+                    if let Some(value) = value.parse_str_array()
+                        && let &[start_field, end_field, start_value, end_value] = value.as_slice()
+                    {
+                        let start_field = Self::format_field(start_field);
+                        let end_field = Self::format_field(end_field);
+                        let start_value = Self::escape_string(start_value);
+                        let end_value = Self::escape_string(end_value);
+                        let condition = if cfg!(any(
+                            feature = "orm-mariadb",
+                            feature = "orm-mysql",
+                            feature = "orm-tidb"
+                        )) {
+                            format!(
+                                r#"overlaps({start_field}, {end_field}, {start_value}, {end_value})"#
+                            )
+                        } else if cfg!(feature = "orm-postgres") {
+                            format!(
+                                r#"({start_field}, {end_field}) OVERLAPS ({start_value}, {end_value})"#
+                            )
+                        } else {
+                            format!(
+                                r#"({start_field} <= {end_value} AND {end_field} >= {start_value})"#
+                            )
+                        };
+                        conditions.push(condition);
+                    }
+                }
                 _ => {
                     if let Some(col) = M::get_column(key) {
                         let condition = col.format_filter(key, value);
@@ -192,6 +220,35 @@ pub(super) trait QueryExt<DB> {
                         "$or" => {
                             if let Some(filters) = value.as_array() {
                                 let condition = Self::format_logical_filters::<M>(filters, " OR ");
+                                conditions.push(condition);
+                            }
+                        }
+                        "$ovlp" => {
+                            if let Some(value) = value.parse_str_array()
+                                && let &[start_field, end_field, start_value, end_value] =
+                                    value.as_slice()
+                            {
+                                let start_field = Self::format_field(start_field);
+                                let end_field = Self::format_field(end_field);
+                                let start_value = Self::escape_string(start_value);
+                                let end_value = Self::escape_string(end_value);
+                                let condition = if cfg!(any(
+                                    feature = "orm-mariadb",
+                                    feature = "orm-mysql",
+                                    feature = "orm-tidb"
+                                )) {
+                                    format!(
+                                        r#"overlaps({start_field}, {end_field}, {start_value}, {end_value})"#
+                                    )
+                                } else if cfg!(feature = "orm-postgres") {
+                                    format!(
+                                        r#"({start_field}, {end_field}) OVERLAPS ({start_value}, {end_value})"#
+                                    )
+                                } else {
+                                    format!(
+                                        r#"({start_field} <= {end_value} AND {end_field} >= {start_value})"#
+                                    )
+                                };
                                 conditions.push(condition);
                             }
                         }

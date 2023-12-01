@@ -1,8 +1,9 @@
 use super::Validator;
-use chrono::{format::ParseError, NaiveTime};
+use crate::datetime::Time;
+use chrono::format::ParseError;
 use std::str::FromStr;
 
-/// A validator for time.
+/// A validator for [`Time`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TimeValidator;
 
@@ -11,7 +12,7 @@ impl Validator<str> for TimeValidator {
 
     #[inline]
     fn validate(&self, data: &str) -> Result<(), Self::Error> {
-        NaiveTime::from_str(data)?;
+        Time::from_str(data)?;
         Ok(())
     }
 }
