@@ -275,6 +275,24 @@ impl DateTime {
         self.0.second()
     }
 
+    /// Returns the millisecond number from 0 to 999.
+    #[inline]
+    pub fn millisecond(&self) -> u32 {
+        self.0.timestamp_subsec_millis() % 1000
+    }
+
+    /// Returns the microsecond number from 0 to 999.
+    #[inline]
+    pub fn microsecond(&self) -> u32 {
+        self.0.timestamp_subsec_micros() % 1000
+    }
+
+    /// Returns the nanosecond number from 0 to 999.
+    #[inline]
+    pub fn nanosecond(&self) -> u32 {
+        self.0.timestamp_subsec_nanos() % 1_000_000
+    }
+
     /// Returns the ISO week number starting from 1.
     ///
     /// The return value ranges from 1 to 53. (The last week of year differs by years.)
@@ -294,7 +312,13 @@ impl DateTime {
     /// Returns the day of week starting from 0 (Sunday) to 6 (Saturday).
     #[inline]
     pub fn day_of_week(&self) -> u8 {
-        self.0.weekday() as u8
+        self.iso_day_of_week() % 7
+    }
+
+    /// Returns the ISO day of week starting from 1 (Monday) to 7 (Sunday).
+    #[inline]
+    pub fn iso_day_of_week(&self) -> u8 {
+        (self.0.weekday() as u8) + 1
     }
 
     /// Returns `true` if the current year is a leap year.
@@ -666,6 +690,7 @@ mod tests {
 
         let date = "2023-11-30".parse::<Date>().unwrap();
         let datetime = DateTime::from(date);
+        assert!(datetime.day_of_week() == 4);
         assert_eq!("2023-11-30", datetime.format_date());
         assert_eq!("00:00:00", datetime.format_time());
     }

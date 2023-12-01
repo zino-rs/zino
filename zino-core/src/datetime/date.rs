@@ -1,5 +1,5 @@
-use crate::{AvroValue, JsonValue};
-use chrono::{format::ParseError, Datelike, Local, NaiveDate};
+use crate::{error::Error, AvroValue, JsonValue};
+use chrono::{format::ParseError, Datelike, Days, Local, Months, NaiveDate};
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
     fmt,
@@ -13,6 +13,19 @@ use std::{
 pub struct Date(NaiveDate);
 
 impl Date {
+    /// Attempts to create a new instance.
+    #[inline]
+    pub fn try_new(year: i32, month: u32, day: u32) -> Result<Self, Error> {
+        NaiveDate::from_ymd_opt(year, month, day)
+            .map(Self)
+            .ok_or_else(|| {
+                let message = format!(
+                    "fail to create a date from year: `{year}`, month: `{month}`, day: `{day}`"
+                );
+                Error::new(message)
+            })
+    }
+
     /// Returns a new instance which corresponds to the current date.
     #[inline]
     pub fn today() -> Self {
@@ -122,7 +135,13 @@ impl Date {
     /// Returns the day of week starting from 0 (Sunday) to 6 (Saturday).
     #[inline]
     pub fn day_of_week(&self) -> u8 {
-        self.0.weekday() as u8
+        self.iso_day_of_week() % 7
+    }
+
+    /// Returns the ISO day of week starting from 1 (Monday) to 7 (Sunday).
+    #[inline]
+    pub fn iso_day_of_week(&self) -> u8 {
+        (self.0.weekday() as u8) + 1
     }
 
     /// Returns `true` if the current year is a leap year.
@@ -201,6 +220,38 @@ impl Date {
             NaiveDate::from_ymd_opt(year, month, 1)
         };
         Self(date_opt.unwrap_or_default())
+    }
+
+    /// Adds a duration in months to the date.
+    /// Returns `None` if the resulting date would be out of range.
+    #[inline]
+    pub fn checked_add_months(self, months: u32) -> Option<Self> {
+        self.0.checked_add_months(Months::new(months)).map(Self)
+    }
+
+    /// Subtracts a duration in months from the date.
+    /// Returns `None` if the resulting date would be out of range.
+    #[inline]
+    pub fn checked_sub_months(self, months: u32) -> Option<Self> {
+        self.0.checked_sub_months(Months::new(months)).map(Self)
+    }
+
+    /// Adds a duration in days to the date.
+    /// Returns `None` if the resulting date would be out of range.
+    #[inline]
+    pub fn checked_add_days(self, days: u32) -> Option<Self> {
+        self.0
+            .checked_add_days(Days::new(u64::from(days)))
+            .map(Self)
+    }
+
+    /// Subtracts a duration in days from the date.
+    /// Returns `None` if the resulting date would be out of range.
+    #[inline]
+    pub fn checked_sub_days(self, days: u32) -> Option<Self> {
+        self.0
+            .checked_sub_days(Days::new(u64::from(days)))
+            .map(Self)
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::{AvroValue, JsonValue};
+use crate::{error::Error, AvroValue, JsonValue};
 use chrono::{format::ParseError, Local, NaiveTime, Timelike};
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
@@ -13,6 +13,19 @@ use std::{
 pub struct Time(NaiveTime);
 
 impl Time {
+    /// Attempts to create a new instance.
+    #[inline]
+    pub fn try_new(hour: u32, minute: u32, second: u32) -> Result<Self, Error> {
+        NaiveTime::from_hms_opt(hour, minute, second)
+            .map(Self)
+            .ok_or_else(|| {
+                let message = format!(
+                    "fail to create a time from hour: `{hour}`, minute: `{minute}`, second: `{second}`"
+                );
+                Error::new(message)
+            })
+    }
+
     /// Returns a new instance which corresponds to the current time.
     #[inline]
     pub fn now() -> Self {
