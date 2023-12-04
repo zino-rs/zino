@@ -231,8 +231,8 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     format!(r#"{field} IS NOT TRUE"#)
                 }
             }
-            "u64" | "i64" | "u32" | "i32" | "Option<u64>" | "Option<i64>" | "Option<u32>"
-            | "Option<i32>" => {
+            "u64" | "i64" | "u32" | "i32" | "u16" | "i16" | "u8" | "i8" | "usize" | "isize"
+            | "Option<u64>" | "Option<i64>" | "Option<u32>" | "Option<i32>" => {
                 if let Some(value) = value.as_str() {
                     if value == "null" {
                         format!(r#"{field} IS NULL"#)

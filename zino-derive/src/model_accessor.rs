@@ -48,6 +48,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let mut list_query_methods = Vec::new();
     let mut populated_queries = Vec::new();
     let mut populated_one_queries = Vec::new();
+    let mut sample_queries = Vec::new();
     let mut soft_delete_updates = Vec::new();
     let mut lock_updates = Vec::new();
     let mut archive_updates = Vec::new();
@@ -175,6 +176,23 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                         vec.push(name.clone());
                                     } else {
                                         model_references.insert(value, vec![name.clone()]);
+                                    }
+                                    if parser::check_vec_type(&type_name) {
+                                        sample_queries.push(quote! {
+                                            if let Some(col) = Self::get_column(#name) {
+                                                let size = col.random_size();
+                                                let values = <#model_ident>::sample(size).await?;
+                                                associations.upsert(#name, values);
+                                            }
+                                        });
+                                    } else {
+                                        sample_queries.push(quote! {
+                                            if let Some(col) = Self::get_column(#name) {
+                                                let size = col.random_size();
+                                                let values = <#model_ident>::sample(size).await?;
+                                                associations.upsert(#name, values.first().cloned());
+                                            }
+                                        });
                                     }
                                 }
                             }
@@ -830,6 +848,12 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
 
             async fn fetch_by_id(id: &#model_primary_key_type) -> Result<ZinoMap, ZinoError> {
                 #(#populated_one_queries)*
+            }
+
+            async fn random_associations() -> Result<ZinoMap, Error> {
+                let mut associations = ZinoMap::new();
+                #(#sample_queries)*
+                Ok(associations)
             }
         }
     }

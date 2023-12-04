@@ -154,3 +154,10 @@ where
         Ok(scalar)
     }
 }
+
+impl<K, T> ScalarQuery<K> for T
+where
+    K: Default + Display + PartialEq,
+    T: Schema<PrimaryKey = K>,
+{
+}

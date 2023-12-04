@@ -90,7 +90,6 @@
 //! [`PostgREST`]: https://postgrest.org/
 
 use crate::{extension::TomlTableExt, state::State};
-use convert_case::{Case, Casing};
 use smallvec::SmallVec;
 use std::sync::{
     atomic::{AtomicUsize, Ordering::Relaxed},
@@ -263,12 +262,26 @@ static NAMESPACE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
     State::shared()
         .get_config("database")
         .and_then(|config| {
+            config
+                .get_str("namespace")
+                .filter(|s| !s.is_empty())
+                .map(|s| [s, ":"].concat().leak())
+        })
+        .unwrap_or_default()
+});
+
+/// Database table prefix.
+static TABLE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
+    State::shared()
+        .get_config("database")
+        .and_then(|config| {
             if let Some(max_rows) = config.get_usize("max-rows") {
                 MAX_ROWS.store(max_rows, Relaxed);
             }
             config
                 .get_str("namespace")
-                .map(|s| s.to_case(Case::Snake).leak())
+                .filter(|s| !s.is_empty())
+                .map(|s| [s, "_"].concat().leak())
         })
         .unwrap_or_default()
 });

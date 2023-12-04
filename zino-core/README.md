@@ -18,6 +18,7 @@ The following optional features are available:
 | `chatbot`           | Enables the chatbot services.                          | No       |
 | `connector`         | Enables the data source connectors.                    | No       |
 | `crypto-sm`         | Enables China's Standards of Encryption Algorithms.    | No       |
+| `locale`            | Enables the support for locale related utilities.      | No       |
 | `metrics`           | Enables the [`metrics`] exporter.                      | No       |
 | `orm`               | Enables the ORM for MySQL, PostgreSQL or **SQLite**.   | No       |
 | `runtime-async-std` | Enables the [`async-std`] runtime.                     | No       |

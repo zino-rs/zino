@@ -1,5 +1,6 @@
 //! Generic validator and common validation rules.
 use crate::{error::Error, extension::JsonObjectExt, Map, SharedString};
+use smallvec::SmallVec;
 
 mod validator;
 
@@ -24,7 +25,7 @@ pub use validator::RegexValidator;
 /// A record of validation results.
 #[derive(Debug, Default)]
 pub struct Validation {
-    failed_entries: Vec<(SharedString, Error)>,
+    failed_entries: SmallVec<[(SharedString, Error); 4]>,
 }
 
 impl Validation {
@@ -32,15 +33,18 @@ impl Validation {
     #[inline]
     pub fn new() -> Self {
         Self {
-            failed_entries: Vec::new(),
+            failed_entries: SmallVec::new(),
         }
     }
 
     /// Creates a new instance with the entry.
     #[inline]
     pub fn from_entry(key: impl Into<SharedString>, err: impl Into<Error>) -> Self {
-        let failed_entries = vec![(key.into(), err.into())];
-        Self { failed_entries }
+        let mut entries = SmallVec::new();
+        entries.push((key.into(), err.into()));
+        Self {
+            failed_entries: entries,
+        }
     }
 
     /// Records an entry with the supplied message.
@@ -161,7 +165,7 @@ impl Validation {
                 }
             }
             #[cfg(feature = "validator-phone-number")]
-            "phone_number" => {
+            "phone-number" => {
                 if let Err(err) = PhoneNumberValidator.validate(value) {
                     self.record_fail(key, err);
                 }
@@ -211,13 +215,24 @@ impl Validation {
         self.failed_entries.is_empty()
     }
 
+    /// Returns a list of invalid params.
+    #[inline]
+    pub fn invalid_params(&self) -> Vec<&str> {
+        self.failed_entries
+            .iter()
+            .map(|entry| entry.0.as_ref())
+            .collect()
+    }
+
     /// Consumes the validation and returns as a json object.
     #[must_use]
     pub fn into_map(self) -> Map {
         let failed_entries = self.failed_entries;
         let mut map = Map::with_capacity(failed_entries.len());
         for (key, err) in failed_entries {
-            map.upsert(key, err.to_string());
+            let message = err.message();
+            tracing::warn!("invalid value for `{key}`: {message}");
+            map.upsert(key, message);
         }
         map
     }

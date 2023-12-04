@@ -22,7 +22,7 @@ pub struct User {
     // Basic fields.
     #[schema(primary_key, auto_increment, read_only)]
     id: i64,
-    #[schema(not_null, index_type = "text", comment = "User name")]
+    #[schema(not_null, index_type = "text", comment = "User name", locale = "en")]
     name: String,
     #[schema(
         auto_initialized,
@@ -32,17 +32,25 @@ pub struct User {
         comment = "User status"
     )]
     status: String,
-    #[schema(index_type = "text")]
+    #[schema(index_type = "text", locale = "en")]
     description: String,
 
     // Info fields.
     #[schema(not_null, unique, write_only, constructor = "AccessKeyId::new")]
     access_key_id: String,
-    #[schema(not_null, unique, write_only, comment = "User account")]
+    #[schema(
+        not_null,
+        unique,
+        write_only,
+        comment = "User account",
+        index_type = "hash",
+        min_length = 4,
+        max_length = 16
+    )]
     account: String,
     #[schema(not_null, write_only, comment = "User password")]
     password: String,
-    #[schema(format = "phone_number")]
+    #[schema(format = "phone-number")]
     mobile: String,
     #[schema(format = "email")]
     email: String,
@@ -63,11 +71,11 @@ pub struct User {
     // Security.
     #[schema(generated)]
     last_login_at: DateTime,
-    #[schema(generated)]
+    #[schema(generated, format = "ip")]
     last_login_ip: String,
     #[schema(generated)]
     current_login_at: DateTime,
-    #[schema(generated)]
+    #[schema(generated, format = "ip")]
     current_login_ip: String,
     #[schema(generated)]
     login_count: u32,

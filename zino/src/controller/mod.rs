@@ -47,6 +47,9 @@ pub trait DefaultController<K, U> {
 
     /// Gets the model definition.
     async fn definition(req: Self::Request) -> Self::Result;
+
+    /// Mocks the model data.
+    async fn mock(req: Self::Request) -> Self::Result;
 }
 
 #[cfg(any(feature = "actix", feature = "axum"))]
@@ -443,6 +446,28 @@ where
 
         let mut res = Response::new(StatusCode::OK).context(&req);
         res.set_json_response(data);
+        Ok(res.into())
+    }
+
+    async fn mock(req: Self::Request) -> Self::Result {
+        let mut query = Query::default();
+        let mut res = req.query_validation(&mut query)?;
+
+        let limit = query.limit();
+        let validate_only = query.validate_only();
+        let mut models = Vec::with_capacity(limit);
+        for _ in 0..limit {
+            let (validation, model) = Self::mock().await.extract(&req)?;
+            if validation.is_success() && !validate_only {
+                models.push(model.snapshot());
+                model.insert().await.extract(&req)?;
+            } else {
+                models.push(model.into_map());
+            }
+        }
+
+        let data = Map::data_entries(models);
+        res.set_json_data(data);
         Ok(res.into())
     }
 }

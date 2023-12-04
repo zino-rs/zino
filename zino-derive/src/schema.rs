@@ -10,7 +10,7 @@ const INTEGER_TYPES: [&str; 10] = [
 ];
 
 // Special attributes
-const SPECIAL_ATTRIBUTES: [&str; 11] = [
+const SPECIAL_ATTRIBUTES: [&str; 9] = [
     "ignore",
     "type_name",
     "not_null",
@@ -18,8 +18,6 @@ const SPECIAL_ATTRIBUTES: [&str; 11] = [
     "index_type",
     "reference",
     "comment",
-    "constructor",
-    "validator",
     "less_than",
     "greater_than",
 ];
@@ -164,6 +162,11 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             }
                             "write_only" => {
                                 write_only_fields.push(quote! { #name });
+                            }
+                            "constructor" | "validator" => {
+                                extra_attributes.push(quote! {
+                                    column.set_extra_attribute(#key, true);
+                                });
                             }
                             _ => (),
                         }

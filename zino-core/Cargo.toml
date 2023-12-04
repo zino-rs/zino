@@ -93,6 +93,14 @@ all-connectors = [
     "connector-postgres",
     "connector-sqlite",
 ]
+all-locales = [
+    "locale",
+    "locale-en",
+    "locale-es",
+    "locale-de",
+    "locale-fr",
+    "locale-zh",
+]
 all-validators = [
     "validator-credit-card",
     "validator-email",
@@ -117,11 +125,18 @@ full = [
     "all-auth",
     "all-chatbots",
     "all-connectors",
+    "all-locales",
     "all-validators",
     "metrics",
     "orm",
     "view",
 ]
+locale = ["random_word"]
+locale-en = ["locale", "random_word/en"]
+locale-es = ["locale", "random_word/es"]
+locale-de = ["locale", "random_word/de"]
+locale-fr = ["locale", "random_word/fr"]
+locale-zh = ["locale", "random_word/zh"]
 metrics = ["dep:metrics", "dep:metrics-exporter-prometheus"]
 orm = ["orm-sqlx"]
 orm-mariadb = ["orm-sqlx", "sqlx/mysql"]
@@ -247,6 +262,10 @@ optional = true
 
 [dependencies.phonenumber]
 version = "0.3.3"
+optional = true
+
+[dependencies.random_word]
+version = "0.4.1"
 optional = true
 
 [dependencies.reqwest]

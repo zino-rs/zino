@@ -73,7 +73,7 @@ pub struct User {
     email: String,
     location: String,
     locale: String,
-    #[schema(format = "phone_number")]
+    #[schema(format = "phone-number")]
     mobile: String,
     #[schema(snapshot, nonempty, unique_items, index_type = "gin")]
     roles: Vec<String>,
@@ -83,8 +83,10 @@ pub struct User {
 
     // Security.
     last_login_at: DateTime,
+    #[schema(format = "ip")]
     last_login_ip: String,
     current_login_at: DateTime,
+    #[schema(format = "ip")]
     current_login_ip: String,
     login_count: u32,
     failed_login_count: u8,

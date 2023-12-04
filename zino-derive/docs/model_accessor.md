@@ -40,8 +40,12 @@ Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
   | **`ascii`** | **`ascii-alphabetic`** | **`ascii-alphanumeric`** | **`ascii-digit`**
   | **`ascii-hexdigit`** | **`ascii-lowercase`** | **`ascii-uppercase`** | **`credit-card`**
   | **`date`** | **`date-time`** | **`email`** | **`host`** | **`hostname`** | **`ip`**
-  | **`ipv4`** | **`ipv6`** | **`lowercase`** | **`numeric`** | **`phone_number`**
+  | **`ipv4`** | **`ipv6`** | **`lowercase`** | **`numeric`** | **`phone-number`**
   | **`regex`** | **`time`** | **`uppercase`** | **`uri`** | **`uuid`**.
+
+- **`#[schema(locale = "lang")]`**: The `locale` attribute specifies
+  the language for the column value. It will be used in data mocking.
+  Supported values: **`en`** | **`es`** | **`de`** | **`fr`** | **`zh`**.
 
 - **`#[schema(enum_values = "value1 | value2 | ...")]`**: The `enum_values` attribute specifies
   the enumerated values for a `String` or `Vec<String>` value.

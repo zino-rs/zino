@@ -3,7 +3,7 @@ use crate::{
     bail,
     datetime::DateTime,
     error::Error,
-    extension::JsonObjectExt,
+    extension::{JsonObjectExt, JsonValueExt},
     model::{ModelHooks, Mutation, Query},
     validation::Validation,
     warn, JsonValue, Map,
@@ -492,6 +492,57 @@ where
         let model_data = model.before_update().await?;
         let ctx = Self::update_one(&query, &mut mutation).await?;
         Self::after_update(&ctx, model_data).await?;
+        Ok((validation, model))
+    }
+
+    /// Generates random random_associations for the model.
+    async fn random_associations() -> Result<Map, Error> {
+        let mut associations = Map::new();
+        let table_name = Self::table_name();
+        for col in Self::columns() {
+            if let Some(reference) = col.reference()
+                && reference.name() == table_name
+            {
+                let col_name = col.name();
+                let size = col.random_size();
+                let values = Self::sample(size).await?;
+                if col.is_array_type() {
+                    associations.upsert(col_name, values);
+                } else {
+                    associations.upsert(col_name, values.first().cloned());
+                }
+            }
+        }
+        Ok(associations)
+    }
+
+    /// Attempts to generate a mocked model.
+    async fn mock() -> Result<(Validation, Self), Error> {
+        let mut data = Self::before_mock().await?;
+        let mut associations = Self::random_associations().await?;
+        data.append(&mut associations);
+        for col in Self::columns() {
+            if !col.has_attribute("constructor") {
+                let value = col.mock_value();
+                if !value.is_ignorable() {
+                    data.upsert(col.name(), value);
+                }
+            }
+        }
+        Self::before_validation(&mut data, None).await?;
+
+        let mut model = Self::new();
+        let validation = model.read_map(&data);
+        if !validation.is_success() {
+            return Ok((validation, model));
+        }
+
+        let validation = model.check_constraints().await?;
+        if !validation.is_success() {
+            return Ok((validation, model));
+        }
+        model.after_validation(&mut data).await?;
+        model.after_mock().await?;
         Ok((validation, model))
     }
 }

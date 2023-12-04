@@ -288,4 +288,16 @@ pub trait ModelHooks: Model {
     ) -> Result<(), Error> {
         Ok(())
     }
+
+    /// A hook running before mocking the model data.
+    #[inline]
+    async fn before_mock() -> Result<Map, Error> {
+        Ok(Map::new())
+    }
+
+    /// A hook running after mocking the model data.
+    #[inline]
+    async fn after_mock(&mut self) -> Result<(), Error> {
+        Ok(())
+    }
 }

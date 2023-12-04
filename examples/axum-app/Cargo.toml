@@ -24,6 +24,7 @@ path = "../../zino-core"
 version = "0.16.3"
 features = [
     "crypto-sm",
+    "locale-en",
     "orm-mysql",
     "validator-email",
     "validator-phone-number",

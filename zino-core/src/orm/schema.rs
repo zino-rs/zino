@@ -71,27 +71,13 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Returns the model namespace.
     #[inline]
     fn model_namespace() -> &'static str {
-        if super::NAMESPACE_PREFIX.is_empty() {
-            Self::MODEL_NAME
-        } else {
-            [*super::NAMESPACE_PREFIX, Self::MODEL_NAME]
-                .join(":")
-                .leak()
-        }
+        [*super::NAMESPACE_PREFIX, Self::MODEL_NAME].concat().leak()
     }
 
     /// Returns the table name.
     #[inline]
     fn table_name() -> &'static str {
-        Self::TABLE_NAME.unwrap_or_else(|| {
-            if super::NAMESPACE_PREFIX.is_empty() {
-                Self::MODEL_NAME
-            } else {
-                [*super::NAMESPACE_PREFIX, Self::MODEL_NAME]
-                    .join("_")
-                    .leak()
-            }
-        })
+        Self::TABLE_NAME.unwrap_or_else(|| [*super::TABLE_PREFIX, Self::MODEL_NAME].concat().leak())
     }
 
     /// Returns the primary key as a JSON value.
@@ -1347,6 +1333,41 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 primary_key
             );
         }
+    }
+
+    /// Randomly selects the specified number of models from the table
+    /// and returns a list of the primary key values.
+    async fn sample(size: usize) -> Result<Vec<JsonValue>, Error> {
+        if size == 0 {
+            return Ok(Vec::new());
+        }
+
+        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let mut query = Query::default();
+        query.allow_fields(&[primary_key_name]);
+        query.add_filter("$rand", 0.05);
+        query.set_limit(size);
+
+        let mut data = Self::find::<Map>(&query)
+            .await?
+            .into_iter()
+            .filter_map(|mut map| map.remove(primary_key_name))
+            .collect::<Vec<_>>();
+        let remainder_size = size - data.len();
+        if remainder_size > 0 {
+            let mut query = Query::default();
+            query.add_filter(primary_key_name, Map::from_entry("$nin", data.clone()));
+            query.allow_fields(&[primary_key_name]);
+            query.set_limit(remainder_size);
+
+            let remainder_data = Self::find::<Map>(&query).await?;
+            for mut map in remainder_data {
+                if let Some(value) = map.remove(primary_key_name) {
+                    data.push(value);
+                }
+            }
+        }
+        Ok(data)
     }
 
     /// Filters the values of the primary key.

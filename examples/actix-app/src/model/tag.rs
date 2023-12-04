@@ -28,7 +28,7 @@ pub struct Tag {
     description: String,
 
     // Info fields.
-    #[schema(not_null, comment = "Tag category")]
+    #[schema(not_null, comment = "Tag category", index_type = "hash")]
     category: String,
     #[schema(snapshot, reference = "Tag", comment = "Optional parent tag")]
     parent_id: Option<Uuid>,

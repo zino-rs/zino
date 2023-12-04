@@ -6,6 +6,7 @@ mod json_raw_value;
 mod serde_map;
 mod sha256_sm3;
 mod str_join;
+mod string_format;
 mod uuid_simd;
 
 criterion::criterion_group!(
@@ -18,6 +19,7 @@ criterion::criterion_group!(
     serde_map::bench,
     sha256_sm3::bench,
     str_join::bench,
+    string_format::bench,
     uuid_simd::bench,
 );
 criterion::criterion_main!(benches);

@@ -90,10 +90,12 @@ impl<'a> ColumnExt for Column<'a> {
                 "FOREIGN KEY ({column_name}) REFERENCES {parent_table_name}({parent_column_name})"
             );
             if let Some(action) = extra.get_str("on_delete") {
-                constraint = format!("{constraint} ON DELETE {}", action.to_case(Case::Upper));
+                constraint.push_str(" ON DELETE ");
+                constraint.push_str(&action.to_case(Case::Upper));
             }
             if let Some(action) = extra.get_str("on_update") {
-                constraint = format!("{constraint} ON UPDATE {}", action.to_case(Case::Upper));
+                constraint.push_str(" ON UPDATE ");
+                constraint.push_str(&action.to_case(Case::Upper));
             }
             constraints.push(constraint);
         }

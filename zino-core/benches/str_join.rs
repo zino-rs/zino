@@ -13,6 +13,13 @@ pub fn bench(c: &mut criterion::Criterion) {
             [model_name, field].join(".")
         })
     });
+    c.bench_function("str_concat", |b| {
+        b.iter(|| {
+            let model_name = "user.";
+            let field = "tags";
+            [model_name, field].concat()
+        })
+    });
     c.bench_function("str_add", |b| {
         b.iter(|| {
             let model_name = "user";
