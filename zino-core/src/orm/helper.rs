@@ -22,32 +22,32 @@ where
     }
 
     /// Encrypts the password for the model.
-    fn encrypt_password(passowrd: &str) -> Result<String, Error> {
+    fn encrypt_password(password: &str) -> Result<String, Error> {
         let key = Self::secret_key();
-        let passowrd = passowrd.as_bytes();
-        if let Ok(bytes) = base64::decode(passowrd)
+        let password = password.as_bytes();
+        if let Ok(bytes) = base64::decode(password)
             && bytes.len() == 256
         {
-            crypto::encrypt_hashed_password(passowrd, key)
+            crypto::encrypt_hashed_password(password, key)
                 .map_err(|err| warn!("fail to encrypt hashed password: {}", err.message()))
         } else {
-            crypto::encrypt_raw_password(passowrd, key)
+            crypto::encrypt_raw_password(password, key)
                 .map_err(|err| warn!("fail to encrypt raw password: {}", err.message()))
         }
     }
 
     /// Verifies the password for the model.
-    fn verify_password(passowrd: &str, encrypted_password: &str) -> Result<bool, Error> {
+    fn verify_password(password: &str, encrypted_password: &str) -> Result<bool, Error> {
         let key = Self::secret_key();
-        let passowrd = passowrd.as_bytes();
+        let password = password.as_bytes();
         let encrypted_password = encrypted_password.as_bytes();
-        if let Ok(bytes) = base64::decode(passowrd)
+        if let Ok(bytes) = base64::decode(password)
             && bytes.len() == 256
         {
-            crypto::verify_hashed_password(passowrd, encrypted_password, key)
+            crypto::verify_hashed_password(password, encrypted_password, key)
                 .map_err(|err| warn!("fail to verify hashed password: {}", err.message()))
         } else {
-            crypto::verify_raw_password(passowrd, encrypted_password, key)
+            crypto::verify_raw_password(password, encrypted_password, key)
                 .map_err(|err| warn!("fail to verify raw password: {}", err.message()))
         }
     }

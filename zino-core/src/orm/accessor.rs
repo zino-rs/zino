@@ -495,7 +495,7 @@ where
         Ok((validation, model))
     }
 
-    /// Generates random random_associations for the model.
+    /// Generates random associations for the model.
     async fn random_associations() -> Result<Map, Error> {
         let mut associations = Map::new();
         let table_name = Self::table_name();

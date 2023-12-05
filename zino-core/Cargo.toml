@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.16.3"
+version = "0.16.4"
 rust-version = "1.73"
 edition = "2021"
 license = "MIT"
@@ -327,7 +327,7 @@ features = [
 ]
 
 [dependencies.unic-langid]
-version = "0.9.1"
+version = "0.9.3"
 features = ["macros"]
 
 [dependencies.ureq]
