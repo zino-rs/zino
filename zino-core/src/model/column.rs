@@ -219,6 +219,22 @@ impl<'a> Column<'a> {
         )
     }
 
+    /// Returns `true` if the column has a type of `DateTime`, `Date`, `Time`,
+    /// or `String` with a format `date-time`, `date`, `time`.
+    pub fn is_datetime_type(&self) -> bool {
+        match self.type_name() {
+            "DateTime" | "Date" | "Time" | "NaiveDateTime" | "NaiveDate" | "NaiveTime" => true,
+            "String" => {
+                if let Some(format) = self.extra.get_str("format") {
+                    matches!(format, "date-time" | "date" | "time")
+                } else {
+                    false
+                }
+            }
+            _ => false,
+        }
+    }
+
     /// Returns the Avro schema.
     pub fn schema(&self) -> Schema {
         let type_name = self.type_name();

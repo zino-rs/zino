@@ -283,8 +283,9 @@ macro_rules! reject {
         return Err(Rejection::bad_request($validation).context(&$ctx).into());
     }};
     ($ctx:ident, $key:literal, $message:literal $(,)?) => {{
-        let err = warn!("invalid value for `{}`: {}", $key, $message);
-        return Err(Rejection::from_validation_entry($key, $message).context(&$ctx).into());
+        let err = Error::new($message);
+        warn!("invalid value for `{}`: {}", $key, $message);
+        return Err(Rejection::from_validation_entry($key, err).context(&$ctx).into());
     }};
     ($ctx:ident, $key:literal, $err:expr $(,)?) => {{
         return Err(Rejection::from_validation_entry($key, $err).context(&$ctx).into());

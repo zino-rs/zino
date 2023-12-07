@@ -40,4 +40,4 @@ version = "0.13.5"
 
 [dependencies.zino-dioxus]
 path = "../../zino-dioxus"
-version = "0.1.5"
+version = "0.1.4"

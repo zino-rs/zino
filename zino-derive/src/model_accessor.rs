@@ -286,7 +286,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     });
                                 }
                             }
-                            "validator" if type_name == "String" => {
+                            "validator" if is_readable && type_name == "String" => {
                                 if let Some(value) = value {
                                     if let Some((validator, validator_fn)) = value.split_once("::")
                                     {
@@ -312,7 +312,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     }
                                 }
                             }
-                            "format" if type_name == "String" => {
+                            "format" if is_readable && type_name == "String" => {
                                 if let Some(value) = value {
                                     field_constraints.push(quote! {
                                         if !self.#ident.is_empty() {
@@ -350,7 +350,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     }
                                 }
                             }
-                            "length" => {
+                            "length" if is_readable => {
                                 let length = value
                                     .and_then(|s| s.parse::<usize>().ok())
                                     .unwrap_or_default();
@@ -372,7 +372,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     });
                                 }
                             }
-                            "max_length" => {
+                            "max_length" if is_readable => {
                                 let length = value
                                     .and_then(|s| s.parse::<usize>().ok())
                                     .unwrap_or_default();
@@ -394,7 +394,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     });
                                 }
                             }
-                            "min_length" => {
+                            "min_length" if is_readable => {
                                 let length = value
                                     .and_then(|s| s.parse::<usize>().ok())
                                     .unwrap_or_default();

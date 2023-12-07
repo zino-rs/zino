@@ -4,16 +4,19 @@ use std::sync::OnceLock;
 
 /// Initializes the secret key.
 pub(super) fn init<APP: Application + ?Sized>() {
-    let checksum: [u8; 32] = APP::config()
+    let config = APP::config();
+    let checksum: [u8; 32] = config
         .get_str("checksum")
         .and_then(|checksum| checksum.as_bytes().first_chunk().copied())
         .unwrap_or_else(|| {
-            tracing::warn!("the `checksum` is not set properly for deriving a secret key");
-
-            let app_name = APP::name();
-            let app_version = APP::version();
-            let app_key = format!("{app_name}@{app_version}");
-            crypto::digest(app_key.as_bytes())
+            let secret = config
+                .get_str("secret")
+                .map(|s| s.to_owned())
+                .unwrap_or_else(|| {
+                    tracing::warn!("an auto-generated `secret` is used for deriving a secret key");
+                    format!("{}@{}", APP::name(), APP::version())
+                });
+            crypto::digest(secret.as_bytes())
         });
 
     let secret_key = crypto::derive_key("ZINO:APPLICATION", &checksum);

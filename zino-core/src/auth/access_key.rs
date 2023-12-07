@@ -9,7 +9,7 @@ use hmac::{
     Hmac, Mac,
 };
 use rand::{distributions::Alphanumeric, Rng};
-use std::{borrow::Cow, env, fmt, iter, sync::LazyLock};
+use std::{borrow::Cow, fmt, iter, sync::LazyLock};
 
 #[cfg(feature = "auth-totp")]
 use totp_rs::{Algorithm, TOTP};
@@ -124,22 +124,17 @@ impl AsRef<[u8]> for SecretAccessKey {
 
 /// Shared secret.
 static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
-    let config = State::shared().config();
+    let app_config = State::shared().config();
+    let config = app_config.get_table("access-key").unwrap_or(app_config);
     let checksum: [u8; 32] = config
-        .get_table("access-key")
-        .and_then(|t| t.get_str("checksum"))
+        .get_str("checksum")
         .and_then(|checksum| checksum.as_bytes().first_chunk().copied())
         .unwrap_or_else(|| {
-            tracing::warn!("the `checksum` is not set properly for deriving a secret key");
-
-            let app_name = config
-                .get_str("name")
-                .map(|s| s.to_owned())
-                .unwrap_or_else(|| {
-                    env::var("CARGO_PKG_NAME")
-                        .expect("fail to get the environment variable `CARGO_PKG_NAME`")
-                });
-            crypto::digest(app_name.as_bytes())
+            let secret = config.get_str("secret").unwrap_or_else(|| {
+                tracing::warn!("an auto-generated `secret` is used for deriving a secret key");
+                crate::application::APP_NMAE.as_ref()
+            });
+            crypto::digest(secret.as_bytes())
         });
     crypto::derive_key("ZINO:ACCESS-KEY", &checksum)
 });

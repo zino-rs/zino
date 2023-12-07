@@ -68,17 +68,20 @@ where
 
 /// Secret key.
 static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
-    let config = State::shared()
-        .get_config("database")
-        .expect("the `database` field should be a table");
+    let app_config = State::shared().config();
+    let config = app_config.get_table("database").unwrap_or(app_config);
     let checksum: [u8; 32] = config
         .get_str("checksum")
         .and_then(|checksum| checksum.as_bytes().first_chunk().copied())
         .unwrap_or_else(|| {
-            tracing::warn!("the `checksum` is not set properly for deriving a secret key");
-
-            let driver_name = format!("{}{}", *super::TABLE_PREFIX, super::DRIVER_NAME);
-            crypto::digest(driver_name.as_bytes())
+            let secret = config
+                .get_str("secret")
+                .map(|s| s.to_owned())
+                .unwrap_or_else(|| {
+                    tracing::warn!("an auto-generated `secret` is used for deriving a secret key");
+                    format!("{}{}", *super::TABLE_PREFIX, super::DRIVER_NAME)
+                });
+            crypto::digest(secret.as_bytes())
         });
     crypto::derive_key("ZINO:ORM", &checksum)
 });

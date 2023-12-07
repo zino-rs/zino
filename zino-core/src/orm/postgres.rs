@@ -254,6 +254,13 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             let min_value = self.encode_value(range.first());
             let max_value = self.encode_value(range.last());
             return format!(r#"{field} >= {min_value} AND {field} < {max_value}"#);
+        } else if let Some(value) = value.as_str()
+            && let Some((min_value, max_value)) = value.split_once(',')
+            && self.is_datetime_type()
+        {
+            let min_value = self.format_value(min_value);
+            let max_value = self.format_value(max_value);
+            return format!(r#"{field} >= {min_value} AND {field} < {max_value}"#);
         } else if value.is_null() {
             return format!(r#"{field} IS NULL"#);
         }
@@ -334,19 +341,13 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             }
             "DateTime" | "NaiveDateTime" => {
                 if let Some(value) = value.as_str() {
-                    if let Some((min_value, max_value)) = value.split_once(',') {
-                        let min_value = self.format_value(min_value);
-                        let max_value = self.format_value(max_value);
-                        format!(r#"{field} >= {min_value} AND {field} < {max_value}"#)
-                    } else {
-                        let length = value.len();
-                        let value = self.format_value(value);
-                        match length {
-                            4 => format!(r#"to_char({field}, 'YYYY') = {value}"#),
-                            7 => format!(r#"to_char({field}, 'YYYY-MM') = {value}"#),
-                            10 => format!(r#"to_char({field}, 'YYYY-MM-DD') = {value}"#),
-                            _ => format!(r#"{field} = {value}"#),
-                        }
+                    let length = value.len();
+                    let value = self.format_value(value);
+                    match length {
+                        4 => format!(r#"to_char({field}, 'YYYY') = {value}"#),
+                        7 => format!(r#"to_char({field}, 'YYYY-MM') = {value}"#),
+                        10 => format!(r#"to_char({field}, 'YYYY-MM-DD') = {value}"#),
+                        _ => format!(r#"{field} = {value}"#),
                     }
                 } else {
                     let value = self.encode_value(Some(value));
@@ -355,18 +356,12 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             }
             "Date" | "NaiveDate" => {
                 if let Some(value) = value.as_str() {
-                    if let Some((min_value, max_value)) = value.split_once(',') {
-                        let min_value = self.format_value(min_value);
-                        let max_value = self.format_value(max_value);
-                        format!(r#"{field} >= {min_value} AND {field} < {max_value}"#)
-                    } else {
-                        let length = value.len();
-                        let value = self.format_value(value);
-                        match length {
-                            4 => format!(r#"to_char({field}, 'YYYY') = {value}"#),
-                            7 => format!(r#"to_char({field}, 'YYYY-MM') = {value}"#),
-                            _ => format!(r#"{field} = {value}"#),
-                        }
+                    let length = value.len();
+                    let value = self.format_value(value);
+                    match length {
+                        4 => format!(r#"to_char({field}, 'YYYY') = {value}"#),
+                        7 => format!(r#"to_char({field}, 'YYYY-MM') = {value}"#),
+                        _ => format!(r#"{field} = {value}"#),
                     }
                 } else {
                     let value = self.encode_value(Some(value));
@@ -375,13 +370,13 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             }
             "Time" | "NaiveTime" => {
                 if let Some(value) = value.as_str() {
-                    if let Some((min_value, max_value)) = value.split_once(',') {
-                        let min_value = self.format_value(min_value);
-                        let max_value = self.format_value(max_value);
-                        format!(r#"{field} >= {min_value} AND {field} < {max_value}"#)
-                    } else {
-                        let value = self.format_value(value);
-                        format!(r#"{field} = {value}"#)
+                    let length = value.len();
+                    let value = self.format_value(value);
+                    match length {
+                        2 => format!(r#"to_char({field}, 'HH24') = {value}"#),
+                        5 => format!(r#"to_char({field}, 'HH24:MI') = {value}"#),
+                        8 => format!(r#"to_char({field}, 'HH24:MI:SS') = {value}"#),
+                        _ => format!(r#"{field} = {value}"#),
                     }
                 } else {
                     let value = self.encode_value(Some(value));

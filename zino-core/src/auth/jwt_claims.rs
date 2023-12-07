@@ -12,7 +12,7 @@ use jwt_simple::{
     common::VerificationOptions,
 };
 use serde::{de::DeserializeOwned, Serialize};
-use std::{env, sync::LazyLock, time::Duration};
+use std::{sync::LazyLock, time::Duration};
 
 /// JWT Claims.
 #[derive(Debug, Clone)]
@@ -192,22 +192,17 @@ static DEFAULT_REFRESH_INTERVAL: LazyLock<Duration> = LazyLock::new(|| {
 
 /// Shared secret access key for the HMAC algorithm.
 static SECRET_KEY: LazyLock<JwtHmacKey> = LazyLock::new(|| {
-    let config = State::shared().config();
+    let app_config = State::shared().config();
+    let config = app_config.get_table("jwt").unwrap_or(app_config);
     let checksum: [u8; 32] = config
-        .get_table("jwt")
-        .and_then(|t| t.get_str("checksum"))
+        .get_str("checksum")
         .and_then(|checksum| checksum.as_bytes().first_chunk().copied())
         .unwrap_or_else(|| {
-            tracing::warn!("the `checksum` is not set properly for deriving a secret key");
-
-            let app_name = config
-                .get_str("name")
-                .map(|s| s.to_owned())
-                .unwrap_or_else(|| {
-                    env::var("CARGO_PKG_NAME")
-                        .expect("fail to get the environment variable `CARGO_PKG_NAME`")
-                });
-            crypto::digest(app_name.as_bytes())
+            let secret = config.get_str("secret").unwrap_or_else(|| {
+                tracing::warn!("an auto-generated `secret` is used for deriving a secret key");
+                crate::application::APP_NMAE.as_ref()
+            });
+            crypto::digest(secret.as_bytes())
         });
     let secret_key = crypto::derive_key("ZINO:JWT", &checksum);
     JwtHmacKey::from_bytes(&secret_key)

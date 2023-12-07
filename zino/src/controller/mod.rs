@@ -278,6 +278,7 @@ where
         let data = req.parse_body::<Vec<Map>>().await?;
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
         let upsert_mode = req.get_query("mode") == Some("upsert");
+        let validate_only = query.validate_only();
         let no_check = query.no_check();
         let limit = query.limit();
         let mut rows_affected = 0;
@@ -305,12 +306,14 @@ where
                         .await
                         .map_err(|err| Rejection::from_error(err).context(&req))?;
                 }
-                if upsert_mode {
-                    model.upsert().await.extract(&req)?;
-                } else {
-                    model.insert().await.extract(&req)?;
+                if !validate_only {
+                    if upsert_mode {
+                        model.upsert().await.extract(&req)?;
+                    } else {
+                        model.insert().await.extract(&req)?;
+                    }
+                    rows_affected += 1;
                 }
-                rows_affected += 1;
             } else {
                 let mut map = validation.into_map();
                 map.upsert("index", index);
