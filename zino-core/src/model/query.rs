@@ -96,7 +96,7 @@ impl Query {
                         }
                     }
                 }
-                "populate" | "translate" | "show_deleted" | "validate_only" => {
+                "populate" | "translate" | "show_deleted" | "validate_only" | "no_check" => {
                     if let Some(result) = value.parse_bool() {
                         match result {
                             Ok(flag) => {
@@ -271,6 +271,12 @@ impl Query {
     #[inline]
     pub fn validate_only(&self) -> bool {
         self.enabled("validate_only")
+    }
+
+    /// Returns `true` if the `no_check` flag has been enabled.
+    #[inline]
+    pub fn no_check(&self) -> bool {
+        self.enabled("no_check")
     }
 }
 

@@ -22,7 +22,7 @@ pub struct User {
     // Basic fields.
     #[schema(primary_key, auto_increment, read_only)]
     id: i64,
-    #[schema(not_null, index_type = "text", comment = "User name", locale = "en")]
+    #[schema(not_null, index_type = "text", comment = "User name")]
     name: String,
     #[schema(
         auto_initialized,
@@ -32,7 +32,7 @@ pub struct User {
         comment = "User status"
     )]
     status: String,
-    #[schema(index_type = "text", locale = "en")]
+    #[schema(index_type = "text")]
     description: String,
 
     // Info fields.

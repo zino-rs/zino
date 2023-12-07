@@ -77,7 +77,7 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
         .unwrap_or_else(|| {
             tracing::warn!("the `checksum` is not set properly for deriving a secret key");
 
-            let driver_name = format!("{}_{}", *super::NAMESPACE_PREFIX, super::DRIVER_NAME);
+            let driver_name = format!("{}{}", *super::TABLE_PREFIX, super::DRIVER_NAME);
             crypto::digest(driver_name.as_bytes())
         });
     crypto::derive_key("ZINO:ORM", &checksum)

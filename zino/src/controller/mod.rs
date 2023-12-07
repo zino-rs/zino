@@ -272,11 +272,19 @@ where
     }
 
     async fn import(mut req: Self::Request) -> Self::Result {
-        let is_upsert_mode = req.get_query("mode").is_some_and(|s| s == "upsert");
+        let mut query = Query::new(Map::new());
+        let mut res = req.query_validation(&mut query)?;
+
         let data = req.parse_body::<Vec<Map>>().await?;
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
+        let upsert_mode = query.get_str("mode") == Some("upsert");
+        let no_check = query.no_check();
+        let limit = query.limit();
         let mut rows_affected = 0;
         for (index, mut map) in data.into_iter().enumerate() {
+            if limit > 0 && rows_affected >= limit {
+                break;
+            }
             Self::before_extract()
                 .await
                 .map_err(|err| Rejection::from_error(err).context(&req))?;
@@ -286,7 +294,7 @@ where
 
             let mut model = Self::new();
             let mut validation = model.read_map(&map);
-            if validation.is_success() {
+            if validation.is_success() && !no_check {
                 validation = model.check_constraints().await.extract(&req)?;
             }
             if validation.is_success() {
@@ -297,7 +305,7 @@ where
                         .await
                         .map_err(|err| Rejection::from_error(err).context(&req))?;
                 }
-                if is_upsert_mode {
+                if upsert_mode {
                     model.upsert().await.extract(&req)?;
                 } else {
                     model.insert().await.extract(&req)?;
@@ -314,7 +322,6 @@ where
         }
 
         let data = Map::from_entry("rows_affected", rows_affected);
-        let mut res = Response::new(StatusCode::OK).context(&req);
         res.set_json_data(data);
         Ok(res.into())
     }
