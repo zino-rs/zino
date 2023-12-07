@@ -277,7 +277,7 @@ where
 
         let data = req.parse_body::<Vec<Map>>().await?;
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
-        let upsert_mode = query.get_str("mode") == Some("upsert");
+        let upsert_mode = req.get_str("mode") == Some("upsert");
         let no_check = query.no_check();
         let limit = query.limit();
         let mut rows_affected = 0;
