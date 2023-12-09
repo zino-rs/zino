@@ -168,6 +168,8 @@ impl Connector for HttpConnector {
             map.get_u64("total")
                 .or_else(|| map.get_u64("total_rows"))
                 .or_else(|| map.get_u64("rows_affected"))
+                .or_else(|| map.get_u64("num_entries"))
+                .or_else(|| map.get_u64("num_items"))
         });
         Ok(rows_affected)
     }

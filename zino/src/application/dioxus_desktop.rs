@@ -40,7 +40,7 @@ where
 
     fn run_with<T: AsyncScheduler + Send + 'static>(self, mut scheduler: T) {
         let runtime = Builder::new_multi_thread()
-            .thread_keep_alive(Duration::from_secs(10))
+            .thread_keep_alive(Duration::from_secs(60))
             .thread_stack_size(2 * 1024 * 1024)
             .global_queue_interval(61)
             .enable_all()

@@ -81,7 +81,7 @@ impl Application for ActixCluster {
                 let mut backlog = 2048; // Maximum number of pending connections
                 let mut max_connections = 25000; // Maximum number of concurrent connections
                 let mut body_limit = 128 * 1024 * 1024; // 128MB
-                let mut request_timeout = Duration::from_secs(30); // 30 seconds
+                let mut request_timeout = Duration::from_secs(60); // 60 seconds
                 if let Some(config) = app_state.get_config("server") {
                     if let Some(dir) = config.get_str("page-dir") {
                         public_route_prefix = "/page";

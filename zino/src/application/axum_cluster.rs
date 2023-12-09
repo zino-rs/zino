@@ -54,7 +54,7 @@ impl Application for AxumCluster {
 
     fn run_with<T: AsyncScheduler + Send + 'static>(self, mut scheduler: T) {
         let runtime = Builder::new_multi_thread()
-            .thread_keep_alive(Duration::from_secs(10))
+            .thread_keep_alive(Duration::from_secs(60))
             .thread_stack_size(2 * 1024 * 1024)
             .global_queue_interval(61)
             .enable_all()
@@ -99,7 +99,7 @@ impl Application for AxumCluster {
                 let mut sse_route = None;
                 let mut websocket_route = None;
                 let mut body_limit = 128 * 1024 * 1024; // 128MB
-                let mut request_timeout = Duration::from_secs(30); // 30 seconds
+                let mut request_timeout = Duration::from_secs(60); // 60 seconds
                 if let Some(config) = app_state.get_config("server") {
                     if let Some(dir) = config.get_str("page-dir") {
                         public_route_prefix = "/page";

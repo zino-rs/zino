@@ -235,7 +235,7 @@ pub fn Overview(cx: Scope) -> Element {
     }
 }
 
-#[inline_props]
+#[component]
 fn CrateListing<'a>(cx: Scope<'a>, name: &'a str, description: &'a str) -> Element {
     render! {
         div {

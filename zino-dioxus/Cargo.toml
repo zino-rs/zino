@@ -1,7 +1,7 @@
 [package]
 name = "zino-dioxus"
 description = "Dioxus components for zino."
-version = "0.1.4"
+version = "0.2.0"
 rust-version = "1.73"
 edition = "2021"
 license = "MIT"
@@ -13,12 +13,12 @@ documentation = "https://docs.rs/zino-dioxus"
 readme = "README.md"
 
 [dependencies]
-dioxus = "0.4.0"
-dioxus-core = "0.4.2"
-dioxus-router = "0.4.1"
+dioxus = "0.4.3"
+dioxus-core = "0.4.3"
+dioxus-router = "0.4.3"
 dioxus-free-icons = "0.7.0"
 smallvec = "1.11.1"
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.16.0"
+version = "0.17.0"

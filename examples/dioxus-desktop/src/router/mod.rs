@@ -25,7 +25,7 @@ impl Default for Route {
     }
 }
 
-#[inline_props]
+#[component]
 fn PageNotFound(cx: Scope, segments: Vec<String>) -> Element {
     let path = segments.join("/");
     render! {

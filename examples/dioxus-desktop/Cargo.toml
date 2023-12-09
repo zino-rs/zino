@@ -1,14 +1,14 @@
 [package]
 name = "dioxus-desktop"
 description = "An example for Dioxus desktop integration."
-version = "0.1.5"
+version = "0.2.0"
 rust-version = "1.73"
 edition = "2021"
 publish = false
 
 [dependencies]
-dioxus = "0.4.0"
-dioxus-router = "0.4.1"
+dioxus = "0.4.3"
+dioxus-router = "0.4.3"
 tracing = "0.1.40"
 
 [dependencies.dioxus-free-icons]
@@ -26,18 +26,18 @@ features = ["derive"]
 
 [dependencies.zino]
 path = "../../zino"
-version = "0.15.5"
+version = "0.16.0"
 features = ["dioxus-desktop"]
 
 [dependencies.zino-core]
 path = "../../zino-core"
-version = "0.16.5"
+version = "0.17.0"
 features = ["orm-sqlite"]
 
 [dependencies.zino-model]
 path = "../../zino-model"
-version = "0.13.5"
+version = "0.14.0"
 
 [dependencies.zino-dioxus]
 path = "../../zino-dioxus"
-version = "0.1.4"
+version = "0.2.0"

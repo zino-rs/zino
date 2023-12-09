@@ -42,7 +42,7 @@ impl PoolManager for ConnectionPool<DatabasePool> {
             .unwrap_or_else(|| Duration::from_secs(60 * 60));
         let acquire_timeout = config
             .get_duration("acquire-timeout")
-            .unwrap_or_else(|| Duration::from_secs(10));
+            .unwrap_or_else(|| Duration::from_secs(60));
         let health_check_interval = config.get_u64("health-check-interval").unwrap_or(60);
         let pool = PoolOptions::<super::DatabaseDriver>::new()
             .max_connections(max_connections)

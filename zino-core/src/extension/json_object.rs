@@ -220,10 +220,13 @@ pub trait JsonObjectExt {
     fn from_entry(key: impl Into<String>, value: impl Into<JsonValue>) -> Self;
 
     /// Creates a new instance with a single key `entry`.
-    fn data_entry(value: impl Into<JsonValue>) -> Self;
+    fn data_entry(value: Map) -> Self;
 
-    /// Creates a new instance with a single key `entries`.
-    fn data_entries(value: Vec<Map>) -> Self;
+    /// Creates a new instance with the `entries`.
+    fn data_entries(values: Vec<Map>) -> Self;
+
+    /// Creates a new instance with the `items`.
+    fn data_items<T: Into<JsonValue>>(values: Vec<T>) -> Self;
 }
 
 impl JsonObjectExt for Map {
@@ -659,16 +662,25 @@ impl JsonObjectExt for Map {
     }
 
     #[inline]
-    fn data_entry(value: impl Into<JsonValue>) -> Self {
+    fn data_entry(value: Map) -> Self {
         let mut map = Map::with_capacity(1);
         map.insert("entry".to_owned(), value.into());
         map
     }
 
     #[inline]
-    fn data_entries(value: Vec<Map>) -> Self {
-        let mut map = Map::with_capacity(1);
-        map.insert("entries".to_owned(), value.into());
+    fn data_entries(values: Vec<Map>) -> Self {
+        let mut map = Map::with_capacity(2);
+        map.insert("num_entries".to_owned(), values.len().into());
+        map.insert("entries".to_owned(), values.into());
+        map
+    }
+
+    #[inline]
+    fn data_items<T: Into<JsonValue>>(values: Vec<T>) -> Self {
+        let mut map = Map::with_capacity(2);
+        map.insert("num_items".to_owned(), values.len().into());
+        map.insert("items".to_owned(), values.into());
         map
     }
 }

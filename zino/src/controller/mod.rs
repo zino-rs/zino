@@ -469,8 +469,14 @@ where
         for _ in 0..limit {
             let (validation, model) = Self::mock().await.extract(&req)?;
             if validation.is_success() && !validate_only {
-                models.push(model.snapshot());
-                model.insert().await.extract(&req)?;
+                let mut model_snapshot = model.snapshot();
+                let ctx = model.insert().await.extract(&req)?;
+                if let Some(last_insert_id) = ctx.last_insert_id()
+                    && model_snapshot.get_i64("id") == Some(0)
+                {
+                    model_snapshot.upsert("id", last_insert_id);
+                }
+                models.push(model_snapshot);
             } else {
                 models.push(model.into_map());
             }

@@ -66,7 +66,7 @@ fn StargazerHistory(cx: Scope) -> Element {
     }
 }
 
-#[inline_props]
+#[component]
 fn StargazerPaginate(cx: Scope, num_stargazers: usize) -> Element {
     let mut page = use_state(cx, || 1);
     let stargazers = use_future(cx, (page,), |(page,)| {
@@ -289,7 +289,7 @@ fn StargazerPaginate(cx: Scope, num_stargazers: usize) -> Element {
     }
 }
 
-#[inline_props]
+#[component]
 fn StargazerListing<'a>(cx: Scope<'a>, index: usize, stargazer: &'a Map) -> Element {
     let name = stargazer.get_str("login").unwrap_or_default();
     let avatar_url = stargazer.get_str("avatar_url").unwrap_or_default();

@@ -51,7 +51,7 @@ pub fn DependencyList(cx: Scope) -> Element {
     }
 }
 
-#[inline_props]
+#[component]
 fn DependencyListing<'a>(cx: Scope<'a>, dep: &'a Map) -> Element {
     let name = dep.get_str("name").unwrap_or_default();
     let requirements = dep.get_str("requirements").unwrap_or_default();
