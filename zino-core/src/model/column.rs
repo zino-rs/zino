@@ -152,7 +152,7 @@ impl<'a> Column<'a> {
         self.extra.contains_key(attribute)
     }
 
-    /// Returns `true` if the user has any of the specific attributes.
+    /// Returns `true` if the column has any of the specific attributes.
     pub fn has_any_attributes(&self, attributes: &[&str]) -> bool {
         for attribute in attributes {
             if self.has_attribute(attribute) {
@@ -162,7 +162,7 @@ impl<'a> Column<'a> {
         false
     }
 
-    /// Returns `true` if the user has all of the specific attributes.
+    /// Returns `true` if the column has all of the specific attributes.
     pub fn has_all_attributes(&self, attributes: &[&str]) -> bool {
         for attribute in attributes {
             if !self.has_attribute(attribute) {
@@ -549,7 +549,7 @@ impl<'a> Column<'a> {
         }
     }
 
-    /// Generates a mocked Json value for the column
+    /// Generates a mocked Json value for the column.
     pub fn mock_value(&self) -> JsonValue {
         if self.reference().is_some() {
             return JsonValue::Null;

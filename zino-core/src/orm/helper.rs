@@ -83,5 +83,6 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
                 });
             crypto::digest(secret.as_bytes())
         });
-    crypto::derive_key("ZINO:ORM", &checksum)
+    let info = config.get_str("info").unwrap_or("ZINO:ORM");
+    crypto::derive_key(info, &checksum)
 });

@@ -136,5 +136,6 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
             });
             crypto::digest(secret.as_bytes())
         });
-    crypto::derive_key("ZINO:ACCESS-KEY", &checksum)
+    let info = config.get_str("info").unwrap_or("ZINO:ACCESS-KEY");
+    crypto::derive_key(info, &checksum)
 });

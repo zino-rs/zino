@@ -14,6 +14,7 @@ use std::{
 };
 use toml::value::Table;
 
+mod config;
 mod data;
 mod env;
 
@@ -42,39 +43,31 @@ impl<T> State<T> {
         }
     }
 
-    /// Loads the config file according to the specific env.
+    /// Loads the config according to the specific env.
+    ///
+    /// It supports the `json`, `yaml` or `toml` format of configuration source data,
+    /// which can be specified by the environment variable `ZINO_APP_CONFIG_FORMAT`.
+    /// By default, it reads the config from a local file. If `ZINO_APP_CONFIG_URL` is set,
+    /// it will fetch the config from the URL instead.
     pub fn load_config(&mut self) {
         let env = self.env.as_str();
-        let config = if let Ok(config_url) = std::env::var("ZINO_APP_CONFIG_URL") {
-            match ureq::get(&config_url)
-                .query("env", env)
-                .call()
-                .and_then(|res| res.into_string().map_err(|err| err.into()))
-            {
-                Ok(toml_str) => {
-                    tracing::info!(env, "`{config_url}` fetched");
-                    toml_str.parse().unwrap_or_default()
-                }
-                Err(err) => {
-                    tracing::error!("fail to fetch the config url `{config_url}`: {err}");
-                    Table::new()
-                }
-            }
+        let config_table = if let Ok(config_url) = std::env::var("ZINO_APP_CONFIG_URL") {
+            config::fetch_config_url(&config_url, env).unwrap_or_else(|err| {
+                tracing::error!("fail to fetch the config url `{config_url}`: {err}");
+                Table::new()
+            })
         } else {
-            let config_file = application::PROJECT_DIR.join(format!("./config/config.{env}.toml"));
-            match std::fs::read_to_string(&config_file) {
-                Ok(toml_str) => {
-                    tracing::info!(env, "`config.{env}.toml` loaded");
-                    toml_str.parse().unwrap_or_default()
-                }
-                Err(err) => {
-                    let config_file = config_file.display();
-                    tracing::error!("fail to read the config file `{config_file}`: {err}");
-                    Table::new()
-                }
-            }
+            let format = std::env::var("ZINO_APP_CONFIG_FORMAT")
+                .map(|s| s.to_ascii_lowercase())
+                .unwrap_or_else(|_| "toml".to_owned());
+            let config_file = format!("./config/config.{env}.{format}");
+            let config_file_path = application::PROJECT_DIR.join(&config_file);
+            config::read_config_file(&config_file_path, env).unwrap_or_else(|err| {
+                tracing::error!("fail to read the config file `{config_file}`: {err}");
+                Table::new()
+            })
         };
-        self.config = config;
+        self.config = config_table;
     }
 
     /// Set the state data.

@@ -16,10 +16,10 @@ where
 }
 
 #[cfg(feature = "orm-sqlx")]
-impl<'c, K, M> Transaction<K, sqlx::Transaction<'c, DatabaseDriver>> for M
+impl<'c, M, K> Transaction<K, sqlx::Transaction<'c, DatabaseDriver>> for M
 where
-    K: Default + Display + PartialEq,
     M: Schema<PrimaryKey = K>,
+    K: Default + Display + PartialEq,
 {
     /// Executes the specific operations inside a transaction.
     /// If the operations return an error, the transaction will be rolled back;

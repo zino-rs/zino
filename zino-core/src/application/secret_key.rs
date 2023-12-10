@@ -19,7 +19,8 @@ pub(super) fn init<APP: Application + ?Sized>() {
             crypto::digest(secret.as_bytes())
         });
 
-    let secret_key = crypto::derive_key("ZINO:APPLICATION", &checksum);
+    let info = config.get_str("info").unwrap_or("ZINO:APPLICATION");
+    let secret_key = crypto::derive_key(info, &checksum);
     SECRET_KEY
         .set(secret_key)
         .expect("fail to set the secret key");

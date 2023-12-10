@@ -204,7 +204,8 @@ static SECRET_KEY: LazyLock<JwtHmacKey> = LazyLock::new(|| {
             });
             crypto::digest(secret.as_bytes())
         });
-    let secret_key = crypto::derive_key("ZINO:JWT", &checksum);
+    let info = config.get_str("info").unwrap_or("ZINO:JWT");
+    let secret_key = crypto::derive_key(info, &checksum);
     JwtHmacKey::from_bytes(&secret_key)
 });
 

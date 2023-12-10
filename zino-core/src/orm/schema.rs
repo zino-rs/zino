@@ -709,9 +709,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Finds a list of models selected by the query in the table,
     /// and decodes it as `Vec<T>`.
-    async fn find<T: DecodeRow<DatabaseRow, Error = Error>>(
-        query: &Query,
-    ) -> Result<Vec<T>, Error> {
+    async fn find<T>(query: &Query) -> Result<Vec<T>, Error>
+    where
+        T: DecodeRow<DatabaseRow, Error = Error>,
+    {
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
@@ -749,9 +750,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Finds one model selected by the query in the table,
     /// and decodes it as an instance of type `T`.
-    async fn find_one<T: DecodeRow<DatabaseRow, Error = Error>>(
-        query: &Query,
-    ) -> Result<Option<T>, Error> {
+    async fn find_one<T>(query: &Query) -> Result<Option<T>, Error>
+    where
+        T: DecodeRow<DatabaseRow, Error = Error>,
+    {
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
@@ -967,11 +969,15 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Performs a left outer join to another table to filter rows in the joined table,
     /// and decodes it as `Vec<T>`.
-    async fn lookup<M: Schema, T: DecodeRow<DatabaseRow, Error = Error>>(
+    async fn lookup<M, T, const N: usize>(
         query: &Query,
-        left_columns: &[&str],
-        right_columns: &[&str],
-    ) -> Result<Vec<T>, Error> {
+        left_columns: [&str; N],
+        right_columns: [&str; N],
+    ) -> Result<Vec<T>, Error>
+    where
+        M: Schema,
+        T: DecodeRow<DatabaseRow, Error = Error>,
+    {
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
@@ -1016,12 +1022,16 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Performs a left outer join to another table to filter rows in the "joined" table,
     /// and parses it as `Vec<T>`.
-    async fn lookup_as<M: Schema, T: DeserializeOwned>(
+    async fn lookup_as<M, T, const N: usize>(
         query: &Query,
-        left_columns: &[&str],
-        right_columns: &[&str],
-    ) -> Result<Vec<T>, Error> {
-        let mut data = Self::lookup::<M, Map>(query, left_columns, right_columns).await?;
+        left_columns: [&str; N],
+        right_columns: [&str; N],
+    ) -> Result<Vec<T>, Error>
+    where
+        M: Schema,
+        T: DeserializeOwned,
+    {
+        let mut data = Self::lookup::<M, Map, N>(query, left_columns, right_columns).await?;
         let translate_enabled = query.translate_enabled();
         for model in data.iter_mut() {
             Self::after_decode(model).await?;
@@ -1070,10 +1080,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Counts the number of rows selected by the query in the table.
     /// The boolean value determines whether it only counts distinct values or not.
-    async fn count_many<T: DecodeRow<DatabaseRow, Error = Error>>(
-        query: &Query,
-        columns: &[(&str, bool)],
-    ) -> Result<T, Error> {
+    async fn count_many<T>(query: &Query, columns: &[(&str, bool)]) -> Result<T, Error>
+    where
+        T: DecodeRow<DatabaseRow, Error = Error>,
+    {
         let pool = Self::acquire_reader().await?.pool();
         Self::before_count(query).await?;
 
@@ -1136,10 +1146,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Executes the query in the table, and decodes it as `Vec<T>`.
-    async fn query<T: DecodeRow<DatabaseRow, Error = Error>>(
-        query: &str,
-        params: Option<&Map>,
-    ) -> Result<Vec<T>, Error> {
+    async fn query<T>(query: &str, params: Option<&Map>) -> Result<Vec<T>, Error>
+    where
+        T: DecodeRow<DatabaseRow, Error = Error>,
+    {
         let pool = Self::acquire_reader().await?.pool();
         let (sql, values) = Query::prepare_query(query, params);
 
@@ -1174,10 +1184,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Executes the query in the table, and decodes it as an instance of type `T`.
-    async fn query_one<T: DecodeRow<DatabaseRow, Error = Error>>(
-        query: &str,
-        params: Option<&Map>,
-    ) -> Result<Option<T>, Error> {
+    async fn query_one<T>(query: &str, params: Option<&Map>) -> Result<Option<T>, Error>
+    where
+        T: DecodeRow<DatabaseRow, Error = Error>,
+    {
         let pool = Self::acquire_reader().await?.pool();
         let (sql, values) = Query::prepare_query(query, params);
 
@@ -1253,9 +1263,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Finds a model selected by the primary key in the table,
     /// and decodes it as an instance of type `T`.
-    async fn find_by_id<T: DecodeRow<DatabaseRow, Error = Error>>(
-        primary_key: &Self::PrimaryKey,
-    ) -> Result<Option<T>, Error> {
+    async fn find_by_id<T>(primary_key: &Self::PrimaryKey) -> Result<Option<T>, Error>
+    where
+        T: DecodeRow<DatabaseRow, Error = Error>,
+    {
         let pool = Self::acquire_reader().await?.pool();
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;

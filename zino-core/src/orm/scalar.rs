@@ -155,9 +155,9 @@ where
     }
 }
 
-impl<K, T> ScalarQuery<K> for T
+impl<M, K> ScalarQuery<K> for M
 where
+    M: Schema<PrimaryKey = K>,
     K: Default + Display + PartialEq,
-    T: Schema<PrimaryKey = K>,
 {
 }

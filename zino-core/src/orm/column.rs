@@ -4,7 +4,7 @@ use crate::{
 };
 use convert_case::{Case, Casing};
 
-/// Extension trait for [`Column`](crate::model::Column).
+/// Extension trait for [`Column`].
 pub(super) trait ColumnExt {
     /// Returns the type annotation.
     fn type_annotation(&self) -> &'static str;

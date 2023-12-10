@@ -33,6 +33,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             {
                 let name = ident.to_string();
                 let mut enable_setter = true;
+                let mut is_inherent = false;
                 for attr in field.attrs.iter() {
                     let arguments = parser::parse_schema_attr(attr);
                     for (key, value) in arguments.into_iter() {
@@ -58,6 +59,9 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             "read_only" | "generated" | "reserved" => {
                                 enable_setter = false;
                             }
+                            "inherent" => {
+                                is_inherent = true;
+                            }
                             _ => (),
                         }
                     }
@@ -65,12 +69,23 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 if enable_setter && !RESERVED_FIELDS.contains(&name.as_str()) {
                     let setter = if type_name == "String" {
                         if name == "password" {
-                            quote! {
-                                if let Some(password) = data.parse_string("password") {
-                                    use zino_core::orm::ModelHelper;
-                                    match Self::encrypt_password(&password) {
-                                        Ok(password) => self.password = password,
-                                        Err(err) => validation.record_fail("password", err),
+                            if is_inherent {
+                                quote! {
+                                    if let Some(password) = data.parse_string("password") {
+                                        match Self::encrypt_password(&password) {
+                                            Ok(password) => self.password = password,
+                                            Err(err) => validation.record_fail("password", err),
+                                        }
+                                    }
+                                }
+                            } else {
+                                quote! {
+                                    if let Some(password) = data.parse_string("password") {
+                                        use zino_core::orm::ModelHelper;
+                                        match Self::encrypt_password(&password) {
+                                            Ok(password) => self.password = password,
+                                            Err(err) => validation.record_fail("password", err),
+                                        }
                                     }
                                 }
                             }
