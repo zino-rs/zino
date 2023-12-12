@@ -67,6 +67,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 let name = ident.to_string();
                 let mut field_alias = None;
                 for attr in field.attrs.iter() {
+                    let type_name = type_name.as_str();
                     let arguments = parser::parse_schema_attr(attr);
                     let is_readable = arguments.iter().all(|arg| arg.0 != "write_only");
                     for (key, value) in arguments.into_iter() {
@@ -115,8 +116,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                                 validation.record(#name, "it is a nonexistent value");
                                             }
                                         });
-                                    } else if type_name == "Option<Uuid>"
-                                        || type_name == "Option<String>"
+                                    } else if matches!(type_name, "Option<Uuid>" | "Option<String>")
                                     {
                                         field_constraints.push(quote! {
                                             if let Some(value) = self.#ident {
@@ -127,8 +127,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                                 }
                                             }
                                         });
-                                    } else if type_name == "Vec<Uuid>" || type_name == "Vec<String>"
-                                    {
+                                    } else if matches!(type_name, "Vec<Uuid>" | "Vec<String>") {
                                         field_constraints.push(quote! {
                                             let values = self.#ident
                                                 .iter()
@@ -142,7 +141,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                                 }
                                             }
                                         });
-                                    } else if parser::check_vec_type(&type_name) {
+                                    } else if parser::check_vec_type(type_name) {
                                         field_constraints.push(quote! {
                                             let values = self.#ident.clone();
                                             let length = values.len();
@@ -153,7 +152,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                                 }
                                             }
                                         });
-                                    } else if parser::check_option_type(&type_name) {
+                                    } else if parser::check_option_type(type_name) {
                                         field_constraints.push(quote! {
                                             if let Some(value) = self.#ident {
                                                 let values = vec![value.clone()];
@@ -177,7 +176,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     } else {
                                         model_references.insert(value, vec![name.clone()]);
                                     }
-                                    if parser::check_vec_type(&type_name) {
+                                    if parser::check_vec_type(type_name) {
                                         sample_queries.push(quote! {
                                             if let Some(col) = Self::get_column(#name) {
                                                 let size = col.random_size();
@@ -239,7 +238,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                             }
                                         }
                                     });
-                                } else if parser::check_option_type(&type_name) {
+                                } else if parser::check_option_type(type_name) {
                                     field_constraints.push(quote! {
                                         if let Some(value) = self.#ident {
                                             let columns = [(#name, value.into())];
@@ -276,8 +275,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 }
                             }
                             "nonempty" if is_readable => {
-                                if parser::check_vec_type(&type_name)
-                                    || matches!(type_name.as_str(), "String" | "Map")
+                                if parser::check_vec_type(type_name)
+                                    || matches!(type_name, "String" | "Map")
                                 {
                                     field_constraints.push(quote! {
                                         if self.#ident.is_empty() {
@@ -418,7 +417,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             }
                             "max_items" => {
                                 if let Some(length) = value.and_then(|s| s.parse::<usize>().ok())
-                                    && parser::check_vec_type(&type_name)
+                                    && parser::check_vec_type(type_name)
                                 {
                                     field_constraints.push(quote! {
                                         let length = #length;
@@ -431,7 +430,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             }
                             "min_items" => {
                                 if let Some(length) = value.and_then(|s| s.parse::<usize>().ok())
-                                    && parser::check_vec_type(&type_name)
+                                    && parser::check_vec_type(type_name)
                                 {
                                     field_constraints.push(quote! {
                                         let length = #length;
@@ -443,7 +442,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 }
                             }
                             "unique_items" => {
-                                if parser::check_vec_type(&type_name) {
+                                if parser::check_vec_type(type_name) {
                                     field_constraints.push(quote! {
                                         let slice = self.#ident.as_slice();
                                         for index in 1..slice.len() {

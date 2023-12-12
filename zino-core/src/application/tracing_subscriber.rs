@@ -6,6 +6,7 @@ use tracing_appender::{
     non_blocking::WorkerGuard,
     rolling::{RollingFileAppender, Rotation},
 };
+use tracing_log::LogTracer;
 use tracing_subscriber::{
     filter::{EnvFilter, LevelFilter},
     fmt::{time::OffsetTime, writer::MakeWriterExt},
@@ -18,6 +19,9 @@ pub(super) fn init<APP: Application + ?Sized>() {
         tracing::warn!("the tracing subscriber has already been initialized");
         return;
     }
+
+    // Convert log records to tracing events.
+    LogTracer::init().expect("fail to initialize the log tracer");
 
     // Initialize `OffsetTime` before forking threads.
     let local_offset_time = OffsetTime::local_rfc_3339().expect("could not get local offset");

@@ -246,6 +246,11 @@ pub trait RequestContext {
 
     /// Gets the route parameter by name.
     /// The name should not include `:`, `*`, `{` or `}`.
+    ///
+    /// # Note
+    ///
+    /// Please note that it does not handle the percent-decoding.
+    /// You can use [`parse_param()`](Self::parse_param) if you need percent-decoding.
     fn get_param(&self, name: &str) -> Option<&str> {
         const CAPTURES: [char; 4] = [':', '*', '{', '}'];
         if let Some(index) = self
@@ -267,7 +272,8 @@ pub trait RequestContext {
         <T as FromStr>::Err: std::error::Error,
     {
         if let Some(param) = self.get_param(name) {
-            param
+            percent_encoding::percent_decode_str(param)
+                .decode_utf8_lossy()
                 .parse::<T>()
                 .map_err(|err| Rejection::from_validation_entry(name.to_owned(), err).context(self))
         } else {
@@ -280,6 +286,11 @@ pub trait RequestContext {
     }
 
     /// Gets the query value of the URI by name.
+    ///
+    /// # Note
+    ///
+    /// Please note that it does not handle the percent-decoding.
+    /// You can use [`parse_query()`](Self::parse_query) if you need percent-decoding.
     fn get_query(&self, name: &str) -> Option<&str> {
         self.original_uri().query()?.split('&').find_map(|param| {
             if let Some((key, value)) = param.split_once('=')

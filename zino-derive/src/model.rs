@@ -1,4 +1,5 @@
 use super::parser;
+use convert_case::{Case, Casing};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{Data, DeriveInput, Fields};
@@ -68,24 +69,23 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 }
                 if enable_setter && !RESERVED_FIELDS.contains(&name.as_str()) {
                     let setter = if type_name == "String" {
-                        if name == "password" {
-                            if is_inherent {
-                                quote! {
-                                    if let Some(password) = data.parse_string("password") {
-                                        match Self::encrypt_password(&password) {
-                                            Ok(password) => self.password = password,
-                                            Err(err) => validation.record_fail("password", err),
-                                        }
+                        if is_inherent {
+                            let parser_ident = format_ident!("parse_{}", name.to_case(Case::Snake));
+                            quote! {
+                                if let Some(value) = data.parse_string(#name) {
+                                    match Self::#parser_ident(&value) {
+                                        Ok(value) => self.#ident = value,
+                                        Err(err) => validation.record_fail(#name, err),
                                     }
                                 }
-                            } else {
-                                quote! {
-                                    if let Some(password) = data.parse_string("password") {
-                                        use zino_core::orm::ModelHelper;
-                                        match Self::encrypt_password(&password) {
-                                            Ok(password) => self.password = password,
-                                            Err(err) => validation.record_fail("password", err),
-                                        }
+                            }
+                        } else if name == "password" {
+                            quote! {
+                                if let Some(password) = data.parse_string(#name) {
+                                    use zino_core::orm::ModelHelper;
+                                    match Self::encrypt_password(&password) {
+                                        Ok(password) => self.password = password,
+                                        Err(err) => validation.record_fail(#name, err),
                                     }
                                 }
                             }
