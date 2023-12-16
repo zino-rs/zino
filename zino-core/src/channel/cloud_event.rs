@@ -1,4 +1,4 @@
-use crate::{datetime::DateTime, JsonValue, Map};
+use crate::{datetime::DateTime, JsonValue, Map, SharedString};
 use serde::{Deserialize, Serialize};
 
 /// Cloud event.
@@ -6,54 +6,78 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[serde(default)]
-pub struct CloudEvent {
+pub struct CloudEvent<T = ()> {
+    /// Spec version.
+    #[serde(rename = "specversion")]
+    spec_version: SharedString,
     /// Event ID.
     id: String,
     /// Event source.
     source: String,
-    /// Event topic.
+    /// Event type.
     #[serde(rename = "type")]
-    topic: String,
-    /// Response data.
-    #[serde(skip_serializing_if = "JsonValue::is_null")]
-    data: JsonValue,
-    /// Session ID.
-    #[serde(rename = "sessionid")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    session_id: Option<String>,
+    event_type: String,
     /// Timestamp.
     #[serde(rename = "time")]
     timestamp: DateTime,
-    /// Version.
-    #[serde(rename = "specversion")]
-    version: String,
+    /// Event data.
+    #[serde(skip_serializing_if = "JsonValue::is_null")]
+    data: JsonValue,
+    /// Optional data content type.
+    #[serde(rename = "datacontenttype")]
+    data_content_type: Option<SharedString>,
+    /// Optional data schema.
+    #[serde(rename = "dataschema")]
+    data_schema: Option<SharedString>,
+    /// Optional subject.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    subject: Option<SharedString>,
+    /// Optional session ID.
+    #[serde(rename = "sessionid")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    session_id: Option<String>,
+    /// Extensions.
+    #[serde(flatten)]
+    extensions: T,
 }
 
-impl CloudEvent {
+impl<T: Default> CloudEvent<T> {
     /// Creates a new instance.
     #[inline]
-    pub fn new(id: String, source: String, topic: String, data: JsonValue) -> Self {
+    pub fn new(id: String, source: String, event_type: String) -> Self {
         Self {
+            spec_version: "1.0".into(),
             id,
             source,
-            topic,
-            data,
-            session_id: None,
+            event_type,
             timestamp: DateTime::now(),
-            version: "1.0".to_owned(),
+            data: JsonValue::Null,
+            data_content_type: None,
+            data_schema: None,
+            subject: None,
+            session_id: None,
+            extensions: T::default(),
         }
+    }
+}
+
+impl<T> CloudEvent<T> {
+    /// Sets the event data.
+    #[inline]
+    pub fn set_data(&mut self, data: impl Into<JsonValue>) {
+        self.data = data.into();
+    }
+
+    /// Sets the subject.
+    #[inline]
+    pub fn set_subject(&mut self, subject: impl Into<SharedString>) {
+        self.subject = Some(subject.into());
     }
 
     /// Sets the session ID.
     #[inline]
-    pub fn set_session_id(&mut self, session_id: String) {
-        self.session_id = Some(session_id);
-    }
-
-    /// Returns the session ID.
-    #[inline]
-    pub fn session_id(&self) -> Option<&str> {
-        self.session_id.as_deref()
+    pub fn set_session_id(&mut self, session_id: impl ToString) {
+        self.session_id = Some(session_id.to_string());
     }
 
     /// Returns the event ID as a `str`.
@@ -68,10 +92,22 @@ impl CloudEvent {
         self.source.as_str()
     }
 
-    /// Returns the event topic (a.k.a *event type*) as a `str`.
+    /// Returns the event type as a `str`.
     #[inline]
-    pub fn topic(&self) -> &str {
-        self.topic.as_str()
+    pub fn event_type(&self) -> &str {
+        self.event_type.as_str()
+    }
+
+    /// Returns a reference to the optional subject.
+    #[inline]
+    pub fn subject(&self) -> Option<&str> {
+        self.subject.as_deref()
+    }
+
+    /// Returns a reference to the optional session ID.
+    #[inline]
+    pub fn session_id(&self) -> Option<&str> {
+        self.session_id.as_deref()
     }
 
     /// Stringifies the event data as `String`.
@@ -79,7 +115,9 @@ impl CloudEvent {
     pub fn stringify_data(&self) -> String {
         self.data.to_string()
     }
+}
 
+impl<T: Serialize> CloudEvent<T> {
     /// Consumes the event and returns as a json object.
     ///
     /// # Panics

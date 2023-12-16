@@ -764,7 +764,7 @@ pub trait RequestContext {
         }
     }
 
-    /// Creates a new subscription instance.
+    /// Constructs a new subscription instance.
     fn subscription(&self) -> Subscription {
         let mut subscription = self.parse_query::<Subscription>().unwrap_or_default();
         if subscription.session_id().is_none()
@@ -775,14 +775,15 @@ pub trait RequestContext {
         subscription
     }
 
-    /// Creates a new cloud event instance.
-    fn cloud_event(&self, topic: String, data: JsonValue) -> CloudEvent {
+    /// Constructs a new cloud event instance.
+    fn cloud_event(&self, event_type: String, data: JsonValue) -> CloudEvent {
         let id = self.request_id().to_string();
         let source = self.instance();
-        let mut event = CloudEvent::new(id, source, topic, data);
+        let mut event = CloudEvent::new(id, source, event_type);
         if let Some(session_id) = self.session_id() {
             event.set_session_id(session_id);
         }
+        event.set_data(data);
         event
     }
 }

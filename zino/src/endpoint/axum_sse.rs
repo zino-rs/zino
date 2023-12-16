@@ -21,12 +21,12 @@ pub(crate) async fn sse_handler(
         if session_id.is_none() || session_id.as_deref() != event_session_id {
             let event_source = event.source();
             if source.as_ref().filter(|&s| event_source != s).is_none() {
-                let event_topic = event.topic();
-                if topic.as_ref().filter(|&t| event_topic != t).is_none() {
+                let event_type = event.event_type();
+                if topic.as_ref().filter(|&t| event_type != t).is_none() {
                     let event_id = event.id();
                     let event_data = event.stringify_data();
                     let sse_event = Event::default()
-                        .event(event_topic)
+                        .event(event_type)
                         .data(event_data)
                         .id(event_id);
                     sse_event_filter = Some(Ok(sse_event));

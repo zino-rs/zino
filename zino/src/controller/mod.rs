@@ -131,14 +131,22 @@ where
 
     async fn view(req: Self::Request) -> Self::Result {
         let id = req.parse_param::<K>("id")?;
-        let model = Self::fetch_by_id(&id).await.extract(&req)?;
+        let model = if req.get_query("fetch") == Some("false") {
+            Self::find_by_id(&id).await.extract(&req)?
+        } else {
+            Self::fetch_by_id(&id).await.extract(&req)?
+        };
         let mut res = Response::new(StatusCode::OK).context(&req);
         res.set_json_data(Map::data_entry(model));
         Ok(res.into())
     }
 
     async fn list(req: Self::Request) -> Self::Result {
-        let mut query = Self::default_list_query();
+        let mut query = match req.get_query("mode") {
+            Some("full") => Self::default_query(),
+            Some("snapshot") => Self::default_snapshot_query(),
+            _ => Self::default_list_query(),
+        };
         let mut res = req.query_validation(&mut query)?;
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
         Self::before_list(&mut query, extension.as_ref())
@@ -277,7 +285,7 @@ where
 
         let data = req.parse_body::<Vec<Map>>().await?;
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
-        let upsert_mode = req.get_query("mode") == Some("upsert");
+        let enable_upsert = req.get_query("upsert") == Some("true");
         let validate_only = query.validate_only();
         let no_check = query.no_check();
         let limit = query.limit();
@@ -307,7 +315,7 @@ where
                         .map_err(|err| Rejection::from_error(err).context(&req))?;
                 }
                 if !validate_only {
-                    if upsert_mode {
+                    if enable_upsert {
                         model.upsert().await.extract(&req)?;
                     } else {
                         model.insert().await.extract(&req)?;
@@ -389,8 +397,8 @@ where
         query.allow_fields(&["parent_id"]);
         query.add_filter("parent_id", Map::from_entry("$in", values));
         query.add_filter("status", Map::from_entry("$ne", "Deleted"));
-        query.set_sort_order("parent_id", true);
-        query.set_sort_order("created_at", true);
+        query.order_by_desc("parent_id");
+        query.order_by_desc("created_at");
         query.set_limit(0);
 
         let mut children = Self::find::<Map>(&query).await.extract(&req)?;

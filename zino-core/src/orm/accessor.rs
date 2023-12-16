@@ -376,7 +376,7 @@ where
         query.allow_fields(Self::fields());
         query.deny_fields(&ignored_fields);
         query.add_filter("status", Map::from_entry("$ne", "Deleted"));
-        query.set_sort_order("updated_at", true);
+        query.order_by_desc("updated_at");
         query
     }
 

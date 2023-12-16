@@ -793,10 +793,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Populates the related data in the corresponding `columns` for `Vec<Map>` using
     /// a merged select on the primary key, which solves the `N+1` problem.
-    async fn populate<const N: usize>(
+    async fn populate(
         query: &mut Query,
         data: &mut Vec<Map>,
-        columns: [&str; N],
+        columns: &[&str],
     ) -> Result<u64, Error> {
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
@@ -804,7 +804,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
         for row in data.iter() {
-            for col in columns {
+            for &col in columns {
                 if let Some(value) = row.get(col).cloned() {
                     if let JsonValue::Array(mut vec) = value {
                         values.append(&mut vec);
@@ -849,7 +849,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::after_query(&ctx).await?;
 
         for row in data {
-            for col in columns {
+            for &col in columns {
                 if let Some(vec) = row.get_array(col)
                     && !vec.is_empty()
                 {
@@ -884,17 +884,17 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Populates the related data in the corresponding `columns` for `Map` using
     /// a merged select on the primary key, which solves the `N+1` problem.
-    async fn populate_one<const N: usize>(
+    async fn populate_one(
         query: &mut Query,
         data: &mut Map,
-        columns: [&str; N],
+        columns: &[&str],
     ) -> Result<(), Error> {
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
-        for col in columns {
+        for &col in columns {
             if let Some(value) = data.get(col).cloned() {
                 if let JsonValue::Array(mut vec) = value {
                     values.append(&mut vec);
@@ -935,7 +935,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::after_scan(&ctx).await?;
         Self::after_query(&ctx).await?;
 
-        for col in columns {
+        for &col in columns {
             if let Some(vec) = data.get_array(col)
                 && !vec.is_empty()
             {
@@ -969,11 +969,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Performs a left outer join to another table to filter rows in the joined table,
     /// and decodes it as `Vec<T>`.
-    async fn lookup<M, T, const N: usize>(
-        query: &Query,
-        left_columns: [&str; N],
-        right_columns: [&str; N],
-    ) -> Result<Vec<T>, Error>
+    async fn lookup<M, T>(query: &Query, columns: &[(&str, &str)]) -> Result<Vec<T>, Error>
     where
         M: Schema,
         T: DecodeRow<DatabaseRow, Error = Error>,
@@ -989,9 +985,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let pagination = query.format_pagination();
-        let on_expressions = left_columns
+        let on_expressions = columns
             .iter()
-            .zip(right_columns.iter())
             .map(|(left_col, right_col)| {
                 let left_col = format!("{model_name}.{left_col}");
                 let right_col = format!("{other_model_name}.{right_col}");
@@ -1022,16 +1017,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Performs a left outer join to another table to filter rows in the "joined" table,
     /// and parses it as `Vec<T>`.
-    async fn lookup_as<M, T, const N: usize>(
-        query: &Query,
-        left_columns: [&str; N],
-        right_columns: [&str; N],
-    ) -> Result<Vec<T>, Error>
+    async fn lookup_as<M, T>(query: &Query, columns: &[(&str, &str)]) -> Result<Vec<T>, Error>
     where
         M: Schema,
         T: DeserializeOwned,
     {
-        let mut data = Self::lookup::<M, Map, N>(query, left_columns, right_columns).await?;
+        let mut data = Self::lookup::<M, Map>(query, columns).await?;
         let translate_enabled = query.translate_enabled();
         for model in data.iter_mut() {
             Self::after_decode(model).await?;
@@ -1403,10 +1394,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Returns `true` if the model is unique on the column values.
-    async fn is_unique_on<const N: usize>(
-        &self,
-        columns: [(&str, JsonValue); N],
-    ) -> Result<bool, Error> {
+    async fn is_unique_on(&self, columns: Vec<(&str, JsonValue)>) -> Result<bool, Error> {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut query = Query::default();
         let mut fields = vec![primary_key_name];

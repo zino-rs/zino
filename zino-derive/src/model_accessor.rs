@@ -29,7 +29,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                     .collect::<Vec<_>>();
                 let composite_field = fields.join("_");
                 composite_constraints.push(quote! {
-                    let columns = [#(#column_values),*];
+                    let columns = vec![#(#column_values),*];
                     if !self.is_unique_on(columns).await? {
                         validation.record(#composite_field, "the composite values should be unique");
                     }
@@ -200,7 +200,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     field_constraints.push(quote! {
                                         let value = self.#ident;
                                         if !value.is_nil() {
-                                            let columns = [(#name, value.to_string().into())];
+                                            let columns = vec![(#name, value.to_string().into())];
                                             if !self.is_unique_on(columns).await? {
                                                 let message = format!("the value `{value}` is not unique");
                                                 validation.record(#name, message);
@@ -211,7 +211,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     field_constraints.push(quote! {
                                         let value = self.#ident.as_str();
                                         if !value.is_empty() {
-                                            let columns = [(#name, value.into())];
+                                            let columns = vec![(#name, value.into())];
                                             if !self.is_unique_on(columns).await? {
                                                 let message = format!("the value `{value}` is not unique");
                                                 validation.record(#name, message);
@@ -221,7 +221,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 } else if type_name == "Option<String>" {
                                     field_constraints.push(quote! {
                                         if let Some(value) = self.#ident.as_deref() && !value.is_empty() {
-                                            let columns = [(#name, value.into())];
+                                            let columns = vec![(#name, value.into())];
                                             if !self.is_unique_on(columns).await? {
                                                 let message = format!("the value `{value}` is not unique");
                                                 validation.record(#name, message);
@@ -231,7 +231,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 } else if type_name == "Option<Uuid>" {
                                     field_constraints.push(quote! {
                                         if let Some(value) = self.#ident && !value.is_nil() {
-                                            let columns = [(#name, value.to_string().into())];
+                                            let columns = vec![(#name, value.to_string().into())];
                                             if !self.is_unique_on(columns).await? {
                                                 let message = format!("the value `{value}` is not unique");
                                                 validation.record(#name, message);
@@ -241,7 +241,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 } else if parser::check_option_type(type_name) {
                                     field_constraints.push(quote! {
                                         if let Some(value) = self.#ident {
-                                            let columns = [(#name, value.into())];
+                                            let columns = vec![(#name, value.into())];
                                             if !self.is_unique_on(columns).await? {
                                                 let message = format!("the value `{value}` is not unique");
                                                 validation.record(#name, message);
@@ -251,7 +251,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 } else {
                                     field_constraints.push(quote! {
                                         let value = self.#ident;
-                                        let columns = [(#name, value.into())];
+                                        let columns = vec![(#name, value.into())];
                                         if !self.is_unique_on(columns).await? {
                                             let message = format!("the value `{value}` is not unique");
                                             validation.record(#name, message);
@@ -618,7 +618,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             column_methods.push(method);
                             snapshot_field = Some(field_name);
                             list_query_methods.push(quote! {
-                                query.set_sort_order(#field_name, true);
+                                query.order_by_desc(#field_name);
                             });
                         }
                         "deleted_at" if type_name == "Option<DateTime>" => {
@@ -741,12 +741,12 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 let populated_query = quote! {
                     let mut query = #model_ident::default_snapshot_query();
                     query.add_filter("translate", translate_enabled);
-                    #model_ident::populate(&mut query, &mut models, [#(#ref_fields),*]).await?;
+                    #model_ident::populate(&mut query, &mut models, &[#(#ref_fields),*]).await?;
                 };
                 let populated_one_query = quote! {
                     let mut query = #model_ident::default_query();
                     query.add_filter("translate", true);
-                    #model_ident::populate_one(&mut query, &mut model, [#(#ref_fields),*]).await?;
+                    #model_ident::populate_one(&mut query, &mut model, &[#(#ref_fields),*]).await?;
                 };
                 populated_queries.push(populated_query);
                 populated_one_queries.push(populated_one_query);

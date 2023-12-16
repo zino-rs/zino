@@ -85,14 +85,14 @@ impl MessageChannel {
         let sender_id = &self.sender_id;
         let event = message.into();
         let source = event.source();
-        let topic = event.topic();
+        let event_type = event.event_type();
         let subscribers = CHANNEL_SUBSCRIBERS.read();
         for (key, subscriber) in subscribers.iter() {
             let emitter = subscriber.emitter();
             if key != sender_id && !emitter.is_closed() {
                 let is_subscribed = if let Some(subscription) = subscriber.filter() {
                     subscription.source().filter(|&s| source != s).is_none()
-                        && subscription.topic().filter(|&t| topic != t).is_none()
+                        && subscription.topic().filter(|&t| event_type != t).is_none()
                 } else {
                     true
                 };

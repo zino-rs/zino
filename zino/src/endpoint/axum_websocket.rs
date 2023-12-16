@@ -24,8 +24,8 @@ pub(crate) async fn websocket_handler(
                     if session_id.is_none() || session_id != event_session_id {
                         let event_source = event.source();
                         if source.filter(|&s| event_source != s).is_none() {
-                            let event_topic = event.topic();
-                            if topic.filter(|&t| event_topic != t).is_none() {
+                            let event_type = event.event_type();
+                            if topic.filter(|&t| event_type != t).is_none() {
                                 if let Err(err) = socket.send(Message::Text(message)).await {
                                     tracing::error!("{err}");
                                 }

@@ -182,7 +182,7 @@ etag = "4.0.0"
 faster-hex = "0.9.0"
 fluent = "0.16.0"
 futures = "0.3.29"
-hkdf = "0.12.3"
+hkdf = "0.12.4"
 hmac = "0.12.1"
 http = "0.2.11"
 http-body = "0.4.6"
@@ -191,7 +191,7 @@ jwt-simple = "0.11.9"
 md-5 = "0.10.6"
 mime = "0.3.17"
 mime_guess = "2.0.4"
-multer = "2.1.0"
+multer = "3.0.0"
 parking_lot = "0.12.1"
 percent-encoding = "2.3.1"
 rand = "0.8.5"
@@ -241,7 +241,7 @@ version = "0.21.1"
 optional = true
 
 [dependencies.metrics-exporter-prometheus]
-version = "0.12.1"
+version = "0.12.2"
 optional = true
 
 [dependencies.minijinja]
