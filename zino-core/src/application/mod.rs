@@ -53,8 +53,8 @@ pub trait Application {
         dotenvy::dotenv().ok();
 
         // Application setups.
-        secret_key::init::<Self>();
         tracing_subscriber::init::<Self>();
+        secret_key::init::<Self>();
 
         // Metrics exporter.
         #[cfg(feature = "metrics")]

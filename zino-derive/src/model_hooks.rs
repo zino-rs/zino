@@ -36,7 +36,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             "correlates_with" => {
                                 correlatation_field = value;
                             }
-                            "referenced_field" => {
+                            "foreign_field" => {
                                 if let Some(value) = value {
                                     field_mapping = Some((name.clone(), value));
                                 }

@@ -3,6 +3,7 @@ use crate::{
     validation::Validation,
     JsonValue, Map, SharedString,
 };
+use smallvec::SmallVec;
 
 #[derive(Debug, Clone)]
 /// A query type for models.
@@ -12,7 +13,7 @@ pub struct Query {
     // Filters.
     filters: Map,
     // Sort order: `false` for ascending and `true` for descending.
-    sort_order: Vec<(SharedString, bool)>,
+    sort_order: SmallVec<[(SharedString, bool); 2]>,
     // Offset.
     offset: usize,
     // Limit.
@@ -28,7 +29,7 @@ impl Query {
         Self {
             fields: Vec::new(),
             filters: filters.into().into_map_opt().unwrap_or_default(),
-            sort_order: Vec::new(),
+            sort_order: SmallVec::new(),
             offset: 0,
             limit: 0,
             extra: Map::new(),
@@ -68,7 +69,7 @@ impl Query {
                                     (s.to_owned().into(), true)
                                 }
                             })
-                            .collect::<Vec<_>>();
+                            .collect();
                     }
                 }
                 "offset" | "skip" => {
@@ -237,7 +238,7 @@ impl Query {
     /// A `true` boolean value represents a descending order.
     #[inline]
     pub fn sort_order(&self) -> &[(SharedString, bool)] {
-        &self.sort_order
+        self.sort_order.as_slice()
     }
 
     /// Returns the query offset.
@@ -295,7 +296,7 @@ impl Default for Query {
         Self {
             fields: Vec::new(),
             filters: Map::new(),
-            sort_order: Vec::new(),
+            sort_order: SmallVec::new(),
             offset: 0,
             limit: 10,
             extra: Map::new(),
