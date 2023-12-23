@@ -1,7 +1,7 @@
 use crate::{datetime::DateTime, extension::JsonObjectExt, Map};
 use parking_lot::RwLock;
 use std::sync::LazyLock;
-use sysinfo::{DiskExt, NetworkExt, NetworksExt, System, SystemExt};
+use sysinfo::{Disks, Networks, System};
 
 /// Refreshes the system and retrieves the information.
 pub(super) fn refresh_and_retrieve() -> Map {
@@ -13,14 +13,11 @@ pub(super) fn refresh_and_retrieve() -> Map {
     let mut map = SYSTEM_INFO.clone();
 
     // Retrieves OS information.
-    map.upsert("os.uptime", sys.uptime());
+    map.upsert("os.uptime", System::uptime());
 
     // Retrieves the system load average value.
-    if sys
-        .name()
-        .is_some_and(|sys_name| !sys_name.eq_ignore_ascii_case("windows"))
-    {
-        let load_avg = sys.load_average();
+    if System::name().is_some_and(|sys_name| !sys_name.eq_ignore_ascii_case("windows")) {
+        let load_avg = System::load_average();
         let load_avg_values = vec![load_avg.one, load_avg.five, load_avg.fifteen];
         map.upsert("os.load_average", load_avg_values);
     }
@@ -33,9 +30,11 @@ pub(super) fn refresh_and_retrieve() -> Map {
     map.upsert("mem.used_swap", sys.used_swap());
 
     // Retrieves the disks list.
+    let disks = Disks::new_with_refreshed_list();
     map.upsert(
         "disk.available_space",
-        sys.disks()
+        disks
+            .list()
             .iter()
             .fold(0, |sum, disk| sum + disk.available_space()),
     );
@@ -53,7 +52,8 @@ pub(super) fn refresh_and_retrieve() -> Map {
     let mut network_total_errors_on_received = 0;
     let mut network_errors_on_transmitted = 0;
     let mut network_total_errors_on_transmitted = 0;
-    for (_name, network) in sys.networks() {
+    let networks = Networks::new_with_refreshed_list();
+    for (_name, network) in &networks {
         network_received += network.received();
         network_total_received += network.total_received();
         network_transmitted += network.transmitted();
@@ -97,8 +97,6 @@ fn refresh_system() {
     let mut sys = SHARED_SYSTEM_MONITOR.write();
     sys.refresh_cpu();
     sys.refresh_memory();
-    sys.refresh_disks_list();
-    sys.networks_mut().refresh_networks_list();
 }
 
 /// Static system information.
@@ -107,12 +105,11 @@ static SYSTEM_INFO: LazyLock<Map> = LazyLock::new(|| {
     let mut sys = System::new();
     sys.refresh_cpu();
     sys.refresh_memory();
-    sys.refresh_disks_list();
 
     // Retrieves OS information.
-    map.upsert("os.name", sys.name());
-    map.upsert("os.version", sys.os_version());
-    if let Ok(boot_time) = i64::try_from(sys.boot_time()) {
+    map.upsert("os.name", System::name());
+    map.upsert("os.version", System::os_version());
+    if let Ok(boot_time) = i64::try_from(System::boot_time()) {
         map.upsert("os.booted_at", DateTime::from_timestamp(boot_time));
     }
 
@@ -125,9 +122,11 @@ static SYSTEM_INFO: LazyLock<Map> = LazyLock::new(|| {
     map.upsert("mem.total_swap", sys.total_swap());
 
     // Retrieves the disks list.
+    let disks = Disks::new_with_refreshed_list();
     map.upsert(
         "disk.total_space",
-        sys.disks()
+        disks
+            .list()
             .iter()
             .fold(0, |sum, disk| sum + disk.total_space()),
     );

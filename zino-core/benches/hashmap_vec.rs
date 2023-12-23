@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 pub fn bench(c: &mut criterion::Criterion) {
-    c.bench_function("hashmap_lookup_", |b| {
+    c.bench_function("hashmap_lookup", |b| {
         b.iter(|| {
             let mut map = HashMap::new();
             map.insert("en-US", "Welcome!");

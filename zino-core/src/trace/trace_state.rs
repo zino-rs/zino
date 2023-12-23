@@ -1,18 +1,21 @@
 use crate::SharedString;
+use smallvec::SmallVec;
 use std::fmt;
 
 /// A record of vendor-specific trace data across tracing systems.
 #[derive(Debug, Clone)]
 pub struct TraceState {
     /// Vendor-specific trace state.
-    states: Vec<(SharedString, String)>,
+    states: SmallVec<[(SharedString, String); 2]>,
 }
 
 impl TraceState {
     /// Creates a new instance.
     #[inline]
     pub fn new() -> Self {
-        Self { states: Vec::new() }
+        Self {
+            states: SmallVec::new(),
+        }
     }
 
     /// Constructs an instance from the `tracestate` header value.

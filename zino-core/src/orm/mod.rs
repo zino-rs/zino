@@ -45,6 +45,25 @@
 //! let ctx = User::update_many(&query, &mut mutation).await?;
 //! ctx.emit_metrics("user_refresh");
 //!
+//! // Constructs a model `Query` with projection fields.
+//! let mut query = Query::new(json!({
+//!     "project.start_date": { "$le": "2023-10-07" },
+//!     "project.start_date": { "$ge": "2023-10-01" },
+//!     "task.status": "Completed",
+//! }));
+//! query.allow_fields(&[
+//!     "task.id",
+//!     "task.name",
+//!     "task.status",
+//!     "task.project_id",
+//!     "project.start_date",
+//!     "project.end_date",
+//! ]);
+//! query.order_by_desc("task.updated_at");
+//!
+//! // Performs a LEFT OUTER JOIN using `lookup` provided by the `Schema` trait.
+//! let entries = Task::lookup::<Project, Map>(&query, &[("project_id", "id")]).await?;
+//!
 //! // Executes the raw SQL with interpolations `${param}` and argument bindings `#{param}`.
 //! let sql =
 //!     "SELECT u.id, u.name, u.tags, t.id, t.name \
