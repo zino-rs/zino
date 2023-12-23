@@ -16,7 +16,7 @@ features = ["derive"]
 
 [dependencies.zino]
 path = "../../zino"
-version = "0.16.3"
+version = "0.16.4"
 features = ["actix"]
 
 [dependencies.zino-core]

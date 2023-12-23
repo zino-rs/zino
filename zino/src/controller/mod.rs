@@ -299,7 +299,7 @@ where
             } else {
                 100
             };
-            (false, batch_size.min(limit))
+            (false, batch_size)
         };
 
         let mut rows_affected = 0;
