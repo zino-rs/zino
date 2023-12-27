@@ -26,7 +26,7 @@ pub struct Application {
     // Basic fields.
     #[schema(read_only)]
     id: Uuid,
-    #[schema(not_null, index_type = "text")]
+    #[schema(not_null)]
     name: String,
     #[cfg(feature = "namespace")]
     #[schema(default_value = "Application::model_namespace", index_type = "hash")]
@@ -36,7 +36,7 @@ pub struct Application {
     visibility: String,
     #[schema(default_value = "Active", index_type = "hash")]
     status: String,
-    #[schema(index_type = "text")]
+
     description: String,
 
     // Info fields.

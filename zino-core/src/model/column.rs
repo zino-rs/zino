@@ -235,6 +235,12 @@ impl<'a> Column<'a> {
         }
     }
 
+    /// Returns `true` if the column supports fuzzy search.
+    #[inline]
+    pub fn fuzzy_search(&self) -> bool {
+        self.index_type() == Some("text") || self.has_attribute("fuzzy_search")
+    }
+
     /// Returns the Avro schema.
     pub fn schema(&self) -> Schema {
         let type_name = self.type_name();

@@ -38,7 +38,7 @@ pub struct User {
     // Basic fields.
     #[schema(read_only)]
     id: Uuid,
-    #[schema(not_null, index_type = "text")]
+    #[schema(not_null)]
     name: String,
     #[cfg(feature = "namespace")]
     #[schema(default_value = "User::model_namespace", index_type = "hash")]
@@ -52,7 +52,6 @@ pub struct User {
         index_type = "hash"
     )]
     status: UserStatus,
-    #[schema(index_type = "text")]
     description: String,
 
     // Info fields.

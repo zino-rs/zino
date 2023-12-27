@@ -20,15 +20,14 @@ pub struct Tag {
     // Basic fields.
     #[schema(primary_key, auto_increment, read_only)]
     id: i64,
-    #[schema(not_null, index_type = "text", comment = "Tag name")]
+    #[schema(not_null, comment = "Tag name")]
     name: String,
     #[schema(default_value = "Active", index_type = "hash")]
     status: String,
-    #[schema(index_type = "text")]
     description: String,
 
     // Info fields.
-    #[schema(not_null, comment = "Tag category", index_type = "hash")]
+    #[schema(not_null, index_type = "hash", comment = "Tag category")]
     category: String,
     #[schema(snapshot, reference = "Tag", comment = "Optional parent tag")]
     parent_id: Option<i64>,

@@ -129,9 +129,9 @@ impl QueryContext {
     pub fn emit_metrics(&self, action: impl Into<crate::SharedString>) {
         metrics::histogram!(
             "zino_model_query_duration_seconds",
-            self.start_time().elapsed().as_secs_f64(),
             "action" => action.into(),
-        );
+        )
+        .record(self.start_time().elapsed().as_secs_f64());
     }
 }
 

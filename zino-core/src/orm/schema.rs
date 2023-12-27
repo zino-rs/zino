@@ -427,8 +427,9 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             let entries = columns
                 .iter()
                 .map(|col| col.encode_value(map.get(col.name())))
-                .collect::<Vec<_>>();
-            values.push(format!("({})", entries.join(", ")));
+                .collect::<Vec<_>>()
+                .join(", ");
+            values.push(format!("({entries})"));
         }
 
         let table_name = Self::table_name();

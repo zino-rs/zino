@@ -302,7 +302,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         format!(r#"({field} = '') IS NOT FALSE"#)
                     } else if value == "not_null" {
                         format!(r#"({field} = '') IS FALSE"#)
-                    } else if self.index_type() == Some("text") {
+                    } else if self.fuzzy_search() {
                         if value.contains(',') {
                             value
                                 .split(',')

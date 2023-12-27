@@ -79,6 +79,9 @@ Derives the [`Schema`](zino_core::orm::Schema) trait.
 - **`#[schema(write_only)]`**: The `write_only` annotation is used to indicate that
   the column is write-only and can not be seen by frontend users.
 
+- **`#[schema(fuzzy_search)]`**: The `fuzzy_search` annotation is used to indicate that
+  the column supports fuzzy search.
+
 - **`#[schema(on_delete = "action")]`**: The `on_delete` attribute sepcifies
   the referential action for a foreign key when the parent table has a `DELETE` operation.
   Supported values: **`cascade`** | **`restrict`**.

@@ -22,7 +22,7 @@ pub struct User {
     // Basic fields.
     #[schema(primary_key, auto_increment, read_only)]
     id: i64,
-    #[schema(not_null, index_type = "text", comment = "User name")]
+    #[schema(not_null, comment = "User name")]
     name: String,
     #[schema(
         auto_initialized,
@@ -32,7 +32,6 @@ pub struct User {
         comment = "User status"
     )]
     status: String,
-    #[schema(index_type = "text")]
     description: String,
 
     // Info fields.
@@ -42,10 +41,10 @@ pub struct User {
         not_null,
         unique,
         write_only,
-        comment = "User account",
         index_type = "hash",
         min_length = 4,
-        max_length = 16
+        max_length = 16,
+        comment = "User account"
     )]
     account: String,
     #[schema(not_null, write_only, comment = "User password")]
@@ -61,8 +60,8 @@ pub struct User {
         nonempty,
         unique_items,
         enum_values = "admin | worker | auditor",
-        comment = "User roles",
-        example = "admin, worker"
+        example = "admin, worker",
+        comment = "User roles"
     )]
     roles: Vec<String>,
     #[schema(unique_items, reference = "Tag", comment = "User tags")]

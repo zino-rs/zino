@@ -86,12 +86,13 @@ pub trait RequestContext {
         // Emit metrics.
         #[cfg(feature = "metrics")]
         {
-            metrics::increment_gauge!("zino_http_requests_in_flight", 1.0);
-            metrics::increment_counter!(
+            metrics::gauge!("zino_http_requests_in_flight").increment(1.0);
+            metrics::counter!(
                 "zino_http_requests_total",
                 "method" => self.request_method().as_ref().to_owned(),
                 "route" => self.matched_route().into_owned(),
-            );
+            )
+            .increment(1);
         }
 
         // Parse tracing headers.

@@ -607,19 +607,16 @@ impl<S: ResponseCode> Response<S> {
     ///
     /// It should only be called when the response will finish.
     pub fn response_time(&self) -> Duration {
-        let start_time = self.start_time;
+        let response_time = self.start_time.elapsed();
         #[cfg(feature = "metrics")]
         {
             let labels = [("status_code", self.status_code().to_string())];
-            metrics::decrement_gauge!("zino_http_requests_in_flight", 1.0);
-            metrics::increment_counter!("zino_http_responses_total", &labels);
-            metrics::histogram!(
-                "zino_http_requests_duration_seconds",
-                start_time.elapsed().as_secs_f64(),
-                &labels,
-            );
+            metrics::gauge!("zino_http_requests_in_flight").decrement(1.0);
+            metrics::counter!("zino_http_responses_total", &labels).increment(1);
+            metrics::histogram!("zino_http_requests_duration_seconds", &labels,)
+                .record(response_time.as_secs_f64());
         }
-        start_time.elapsed()
+        response_time
     }
 
     /// Sends a file to the client.

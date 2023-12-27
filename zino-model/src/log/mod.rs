@@ -24,7 +24,7 @@ pub struct Log {
     // Basic fields.
     #[schema(read_only)]
     id: Uuid,
-    #[schema(not_null, index_type = "text")]
+    #[schema(not_null)]
     name: String,
     #[cfg(feature = "namespace")]
     #[schema(default_value = "Log::model_namespace", index_type = "hash")]
@@ -34,7 +34,7 @@ pub struct Log {
     visibility: String,
     #[schema(default_value = "Active", index_type = "hash")]
     status: String,
-    #[schema(index_type = "text")]
+
     description: String,
 
     // Info fields.
@@ -47,7 +47,7 @@ pub struct Log {
     topic: String,
     #[schema(read_only)]
     level: String,
-    #[schema(read_only, index_type = "text")]
+    #[schema(read_only)]
     message: String,
     #[schema(read_only)]
     source: String,
