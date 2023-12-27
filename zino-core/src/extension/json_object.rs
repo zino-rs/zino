@@ -3,6 +3,7 @@ use crate::{
     datetime::{self, Date, DateTime, Time},
     helper, openapi, JsonValue, Map, Record, Uuid,
 };
+use rust_decimal::Decimal;
 use std::{
     borrow::Cow,
     net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr},
@@ -182,6 +183,9 @@ pub trait JsonObjectExt {
 
     /// Extracts the string corresponding to the key and parses it as `Duration`.
     fn parse_duration(&self, key: &str) -> Option<Result<Duration, datetime::ParseDurationError>>;
+
+    /// Extracts the string corresponding to the key and parses it as `Decimal`.
+    fn parse_decimal(&self, key: &str) -> Option<Result<Decimal, rust_decimal::Error>>;
 
     /// Extracts the string corresponding to the key and parses it as `Url`.
     fn parse_url(&self, key: &str) -> Option<Result<Url, url::ParseError>>;
@@ -597,6 +601,11 @@ impl JsonObjectExt for Map {
     #[inline]
     fn parse_duration(&self, key: &str) -> Option<Result<Duration, datetime::ParseDurationError>> {
         self.get_str(key).map(datetime::parse_duration)
+    }
+
+    #[inline]
+    fn parse_decimal(&self, key: &str) -> Option<Result<Decimal, rust_decimal::Error>> {
+        self.get_str(key).map(|s| s.parse())
     }
 
     #[inline]
