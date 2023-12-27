@@ -285,14 +285,33 @@ where
 
         let data = req.parse_body::<Vec<Map>>().await?;
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
-        let enable_upsert = req.get_query("upsert") == Some("true");
         let validate_only = query.validate_only();
         let no_check = query.no_check();
         let limit = query.limit();
+        let query_filters = query.filters();
+        let (enable_upsert, batch_size) = if query_filters.get_str("upsert") == Some("true") {
+            (true, 1)
+        } else if validate_only {
+            (false, 0)
+        } else {
+            let batch_size = if let Some(Ok(size)) = query_filters.parse_usize("batch_size") {
+                size
+            } else {
+                100
+            };
+            (false, batch_size)
+        };
+
         let mut rows_affected = 0;
+        let mut batch_models = Vec::with_capacity(batch_size);
         for (index, mut map) in data.into_iter().enumerate() {
             if limit > 0 && rows_affected >= limit {
                 break;
+            }
+            if batch_models.len() == batch_size && batch_size > 0 {
+                let mut models = Vec::with_capacity(batch_size);
+                models.append(&mut batch_models);
+                Self::insert_many(models).await.extract(&req)?;
             }
             Self::before_extract()
                 .await
@@ -317,8 +336,10 @@ where
                 if !validate_only {
                     if enable_upsert {
                         model.upsert().await.extract(&req)?;
-                    } else {
+                    } else if batch_size == 1 {
                         model.insert().await.extract(&req)?;
+                    } else {
+                        batch_models.push(model);
                     }
                     rows_affected += 1;
                 }
@@ -330,6 +351,9 @@ where
                 res.set_json_data(map);
                 return Ok(res.into());
             }
+        }
+        if !batch_models.is_empty() {
+            Self::insert_many(batch_models).await.extract(&req)?;
         }
 
         let data = Map::from_entry("rows_affected", rows_affected);

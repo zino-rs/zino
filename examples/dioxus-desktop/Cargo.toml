@@ -26,7 +26,7 @@ features = ["derive"]
 
 [dependencies.zino]
 path = "../../zino"
-version = "0.16.5"
+version = "0.16.6"
 features = ["dioxus-desktop"]
 
 [dependencies.zino-core]
