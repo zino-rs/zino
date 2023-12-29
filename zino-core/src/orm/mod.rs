@@ -163,6 +163,9 @@ cfg_if::cfg_if! {
         /// MySQL database pool.
         pub type DatabasePool = sqlx::mysql::MySqlPool;
 
+        /// MySQL database connection.
+        pub type DatabaseConnection = sqlx::MySqlConnection;
+
         /// A single row from the MySQL database.
         pub type DatabaseRow = sqlx::mysql::MySqlRow;
     } else if #[cfg(feature = "orm-postgres")] {
@@ -177,6 +180,9 @@ cfg_if::cfg_if! {
         /// PostgreSQL database pool.
         pub type DatabasePool = sqlx::postgres::PgPool;
 
+        /// PostgreSQL database connection.
+        pub type DatabaseConnection = sqlx::PgConnection;
+
         /// A single row from the PostgreSQL database.
         pub type DatabaseRow = sqlx::postgres::PgRow;
     } else {
@@ -190,6 +196,9 @@ cfg_if::cfg_if! {
 
         /// SQLite database pool.
         pub type DatabasePool = sqlx::sqlite::SqlitePool;
+
+        /// SQLite database connection.
+        pub type DatabaseConnection = sqlx::SqliteConnection;
 
         /// A single row from the SQLite database.
         pub type DatabaseRow = sqlx::sqlite::SqliteRow;

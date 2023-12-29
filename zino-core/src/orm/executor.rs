@@ -9,45 +9,45 @@ pub trait Executor {
     type QueryResult;
 
     /// Executes the query and return the total number of rows affected.
-    async fn execute(&self, sql: &str) -> Result<Self::QueryResult, Error>;
+    async fn execute(self, sql: &str) -> Result<Self::QueryResult, Error>;
 
     /// Executes the query with arguments and return the total number of rows affected.
     async fn execute_with<T: ToString>(
-        &self,
+        self,
         sql: &str,
         arguments: &[T],
     ) -> Result<Self::QueryResult, Error>;
 
     /// Executes the query and return all the generated results.
-    async fn fetch(&self, sql: &str) -> Result<Vec<Self::Row>, Error>;
+    async fn fetch(self, sql: &str) -> Result<Vec<Self::Row>, Error>;
 
     /// Executes the query with arguments and return all the generated results.
     async fn fetch_with<T: ToString>(
-        &self,
+        self,
         sql: &str,
         arguments: &[T],
     ) -> Result<Vec<Self::Row>, Error>;
 
     /// Executes the query and returns exactly one row.
-    async fn fetch_one(&self, sql: &str) -> Result<Self::Row, Error>;
+    async fn fetch_one(self, sql: &str) -> Result<Self::Row, Error>;
 
     /// Executes the query and returns at most one row.
-    async fn fetch_optional(&self, sql: &str) -> Result<Option<Self::Row>, Error>;
+    async fn fetch_optional(self, sql: &str) -> Result<Option<Self::Row>, Error>;
 
     /// Executes the query with arguments and returns at most one row.
     async fn fetch_optional_with<T: ToString>(
-        &self,
+        self,
         sql: &str,
         arguments: &[T],
     ) -> Result<Option<Self::Row>, Error>;
 }
 
 #[cfg(feature = "orm-sqlx")]
-impl Executor for sqlx::Pool<super::DatabaseDriver> {
+macro impl_sqlx_executor() {
     type Row = super::DatabaseRow;
     type QueryResult = <super::DatabaseDriver as sqlx::Database>::QueryResult;
 
-    async fn execute(&self, sql: &str) -> Result<Self::QueryResult, Error> {
+    async fn execute(self, sql: &str) -> Result<Self::QueryResult, Error> {
         match sqlx::query(sql).execute(self).await {
             Ok(result) => Ok(result),
             Err(err) => {
@@ -60,7 +60,7 @@ impl Executor for sqlx::Pool<super::DatabaseDriver> {
     }
 
     async fn execute_with<T: ToString>(
-        &self,
+        self,
         sql: &str,
         arguments: &[T],
     ) -> Result<Self::QueryResult, Error> {
@@ -79,7 +79,7 @@ impl Executor for sqlx::Pool<super::DatabaseDriver> {
         }
     }
 
-    async fn fetch(&self, sql: &str) -> Result<Vec<Self::Row>, Error> {
+    async fn fetch(self, sql: &str) -> Result<Vec<Self::Row>, Error> {
         use futures::StreamExt;
         use std::sync::atomic::Ordering::Relaxed;
 
@@ -106,7 +106,7 @@ impl Executor for sqlx::Pool<super::DatabaseDriver> {
     }
 
     async fn fetch_with<T: ToString>(
-        &self,
+        self,
         sql: &str,
         arguments: &[T],
     ) -> Result<Vec<Self::Row>, Error> {
@@ -140,7 +140,7 @@ impl Executor for sqlx::Pool<super::DatabaseDriver> {
         Ok(rows)
     }
 
-    async fn fetch_one(&self, sql: &str) -> Result<Self::Row, Error> {
+    async fn fetch_one(self, sql: &str) -> Result<Self::Row, Error> {
         match sqlx::query(sql).fetch_one(self).await {
             Ok(row) => Ok(row),
             Err(err) => {
@@ -152,7 +152,7 @@ impl Executor for sqlx::Pool<super::DatabaseDriver> {
         }
     }
 
-    async fn fetch_optional(&self, sql: &str) -> Result<Option<Self::Row>, Error> {
+    async fn fetch_optional(self, sql: &str) -> Result<Option<Self::Row>, Error> {
         match sqlx::query(sql).fetch_optional(self).await {
             Ok(row) => Ok(row),
             Err(err) => {
@@ -165,7 +165,7 @@ impl Executor for sqlx::Pool<super::DatabaseDriver> {
     }
 
     async fn fetch_optional_with<T: ToString>(
-        &self,
+        self,
         sql: &str,
         arguments: &[T],
     ) -> Result<Option<Self::Row>, Error> {
@@ -183,4 +183,14 @@ impl Executor for sqlx::Pool<super::DatabaseDriver> {
             }
         }
     }
+}
+
+#[cfg(feature = "orm-sqlx")]
+impl<'c> Executor for &'c sqlx::Pool<super::DatabaseDriver> {
+    impl_sqlx_executor!();
+}
+
+#[cfg(feature = "orm-sqlx")]
+impl<'c> Executor for &'c mut super::DatabaseConnection {
+    impl_sqlx_executor!();
 }

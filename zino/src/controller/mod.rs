@@ -297,7 +297,7 @@ where
             let batch_size = if let Some(Ok(size)) = query_filters.parse_usize("batch_size") {
                 size
             } else {
-                100
+                1
             };
             (false, batch_size)
         };

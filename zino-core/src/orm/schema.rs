@@ -1120,7 +1120,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Executes the query in the table, and returns the total number of rows affected.
     async fn execute(query: &str, params: Option<&Map>) -> Result<QueryContext, Error> {
-        let pool = Self::acquire_reader().await?.pool();
+        let pool = Self::acquire_writer().await?.pool();
         let (sql, values) = Query::prepare_query(query, params);
 
         let mut ctx = Self::before_scan(&sql).await?;
