@@ -5,12 +5,11 @@ use crate::{
     crypto,
     encoding::base64,
     extension::TomlTableExt,
-    helper,
+    helper, LazyLock,
 };
 use std::{
     borrow::Cow,
     net::{IpAddr, Ipv4Addr, SocketAddr},
-    sync::LazyLock,
 };
 use toml::value::Table;
 

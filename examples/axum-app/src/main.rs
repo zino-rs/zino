@@ -1,5 +1,3 @@
-#![feature(lazy_cell)]
-
 mod controller;
 mod domain;
 mod extension;

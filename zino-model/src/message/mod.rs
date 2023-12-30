@@ -117,8 +117,11 @@ impl Model for Message {
 }
 
 impl ModelHooks for Message {
+    type Data = ();
     #[cfg(feature = "maintainer-id")]
     type Extension = UserSession<Uuid, String>;
+    #[cfg(not(feature = "maintainer-id"))]
+    type Extension = ();
 
     #[cfg(feature = "maintainer-id")]
     #[inline]

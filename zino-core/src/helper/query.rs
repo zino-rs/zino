@@ -1,6 +1,6 @@
-use crate::{JsonValue, Map};
+use crate::{JsonValue, LazyLock, Map};
 use regex::{Captures, Regex};
-use std::{borrow::Cow, sync::LazyLock};
+use std::borrow::Cow;
 
 /// Formats the query using interpolation of the parameters.
 ///

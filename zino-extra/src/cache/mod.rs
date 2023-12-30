@@ -2,8 +2,8 @@
 
 use lru::LruCache;
 use parking_lot::RwLock;
-use std::{num::NonZeroUsize, sync::LazyLock};
-use zino_core::{state::State, JsonValue};
+use std::num::NonZeroUsize;
+use zino_core::{state::State, JsonValue, LazyLock};
 
 /// Global cache built on the top of [`LruCache`].
 #[derive(Debug, Clone, Copy, Default)]

@@ -2,7 +2,6 @@
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::sync::LazyLock;
 use zino_core::{
     auth::{AccessKeyId, UserSession},
     bail,
@@ -12,7 +11,7 @@ use zino_core::{
     model::{Model, ModelHooks},
     orm::ModelHelper,
     validation::Validation,
-    Map, Uuid,
+    LazyLock, Map, Uuid,
 };
 use zino_derive::{DecodeRow, ModelAccessor, Schema};
 
@@ -174,8 +173,11 @@ impl Model for User {
 }
 
 impl ModelHooks for User {
+    type Data = ();
     #[cfg(feature = "maintainer-id")]
     type Extension = UserSession<Uuid, String>;
+    #[cfg(not(feature = "maintainer-id"))]
+    type Extension = ();
 
     #[cfg(feature = "maintainer-id")]
     #[inline]

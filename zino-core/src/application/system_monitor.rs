@@ -1,6 +1,5 @@
-use crate::{datetime::DateTime, extension::JsonObjectExt, Map};
+use crate::{datetime::DateTime, extension::JsonObjectExt, LazyLock, Map};
 use parking_lot::RwLock;
-use std::sync::LazyLock;
 use sysinfo::{Disks, Networks, System};
 
 /// Refreshes the system and retrieves the information.

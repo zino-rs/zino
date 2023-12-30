@@ -7,8 +7,9 @@
 //! | `openai`         | OpenAI                 | `chatbot-openai`       |
 //!
 
-use crate::{application::StaticRecord, error::Error, extension::TomlTableExt, state::State, Map};
-use std::sync::LazyLock;
+use crate::{
+    application::StaticRecord, error::Error, extension::TomlTableExt, state::State, LazyLock, Map,
+};
 use toml::Table;
 
 mod client;

@@ -1,5 +1,7 @@
-use super::{Connector, DataSource, DataSourceConnector::Sqlite};
-use crate::{error::Error, extension::TomlTableExt};
+use super::{sqlx_common::SerializeRow, Connector, DataSource, DataSourceConnector::Sqlite};
+use crate::{error::Error, extension::TomlTableExt, helper, AvroValue, Map, Record};
+use futures::TryStreamExt;
+use serde::de::DeserializeOwned;
 use sqlx::sqlite::{SqlitePool, SqlitePoolOptions};
 use std::time::Duration;
 use toml::Table;
@@ -32,5 +34,92 @@ impl Connector for SqlitePool {
         Ok(data_source)
     }
 
-    super::sqlx_common::impl_sqlx_connector!(SqlitePool);
+    async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, Error> {
+        let (sql, values) = helper::prepare_sql_query(query, params, '?');
+        let mut query = sqlx::query(&sql);
+        for value in values {
+            query = query.bind(value.to_string());
+        }
+
+        let query_result = query.execute(self).await?;
+        Ok(Some(query_result.rows_affected()))
+    }
+
+    async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, Error> {
+        let (sql, values) = helper::prepare_sql_query(query, params, '?');
+        let mut query = sqlx::query(&sql);
+        for value in values {
+            query = query.bind(value.to_string());
+        }
+
+        let mut rows = query.fetch(self);
+        let mut records = Vec::new();
+        while let Some(row) = rows.try_next().await? {
+            let value = apache_avro::to_value(&SerializeRow(row))?;
+            if let AvroValue::Record(record) = value {
+                records.push(record);
+            }
+        }
+        Ok(records)
+    }
+
+    async fn query_as<T: DeserializeOwned>(
+        &self,
+        query: &str,
+        params: Option<&Map>,
+    ) -> Result<Vec<T>, Error> {
+        let (sql, values) = helper::prepare_sql_query(query, params, '?');
+        let mut query = sqlx::query(&sql);
+        for value in values {
+            query = query.bind(value.to_string());
+        }
+
+        let mut rows = query.fetch(self);
+        let mut data = Vec::new();
+        while let Some(row) = rows.try_next().await? {
+            let json_value = serde_json::to_value(&SerializeRow(row))?;
+            let value = serde_json::from_value(json_value)?;
+            data.push(value);
+        }
+        Ok(data)
+    }
+
+    async fn query_one(&self, query: &str, params: Option<&Map>) -> Result<Option<Record>, Error> {
+        let (sql, values) = helper::prepare_sql_query(query, params, '?');
+        let mut query = sqlx::query(&sql);
+        for value in values {
+            query = query.bind(value.to_string());
+        }
+
+        let data = if let Some(row) = query.fetch_optional(self).await? {
+            let value = apache_avro::to_value(&SerializeRow(row))?;
+            if let AvroValue::Record(record) = value {
+                Some(record)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+        Ok(data)
+    }
+
+    async fn query_one_as<T: DeserializeOwned>(
+        &self,
+        query: &str,
+        params: Option<&Map>,
+    ) -> Result<Option<T>, Error> {
+        let (sql, values) = helper::prepare_sql_query(query, params, '?');
+        let mut query = sqlx::query(&sql);
+        for value in values {
+            query = query.bind(value.to_string());
+        }
+
+        if let Some(row) = query.fetch_optional(self).await? {
+            let json_value = serde_json::to_value(&SerializeRow(row))?;
+            serde_json::from_value(json_value).map_err(Error::from)
+        } else {
+            Ok(None)
+        }
+    }
 }

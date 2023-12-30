@@ -3,8 +3,6 @@
 #![doc(html_logo_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.svg")]
 #![allow(async_fn_in_trait)]
 #![forbid(unsafe_code)]
-#![feature(doc_auto_cfg)]
-#![feature(lazy_cell)]
 
 pub mod group;
 pub mod policy;

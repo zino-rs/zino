@@ -117,8 +117,11 @@ impl Model for Log {
 }
 
 impl ModelHooks for Log {
+    type Data = ();
     #[cfg(feature = "maintainer-id")]
     type Extension = UserSession<Uuid, String>;
+    #[cfg(not(feature = "maintainer-id"))]
+    type Extension = ();
 
     #[cfg(feature = "maintainer-id")]
     #[inline]

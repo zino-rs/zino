@@ -4,7 +4,7 @@ use crate::{
     error::Error,
     extension::{JsonObjectExt, TomlTableExt},
     state::State,
-    JsonValue, Map,
+    JsonValue, LazyLock, Map,
 };
 use jwt_simple::{
     algorithms::MACLike,
@@ -12,7 +12,7 @@ use jwt_simple::{
     common::VerificationOptions,
 };
 use serde::{de::DeserializeOwned, Serialize};
-use std::{sync::LazyLock, time::Duration};
+use std::time::Duration;
 
 /// JWT Claims.
 #[derive(Debug, Clone)]
@@ -196,7 +196,7 @@ static SECRET_KEY: LazyLock<JwtHmacKey> = LazyLock::new(|| {
     let config = app_config.get_table("jwt").unwrap_or(app_config);
     let checksum: [u8; 32] = config
         .get_str("checksum")
-        .and_then(|checksum| checksum.as_bytes().first_chunk().copied())
+        .and_then(|checksum| checksum.as_bytes().try_into().ok())
         .unwrap_or_else(|| {
             let secret = config.get_str("secret").unwrap_or_else(|| {
                 tracing::warn!("an auto-generated `secret` is used for deriving a secret key");

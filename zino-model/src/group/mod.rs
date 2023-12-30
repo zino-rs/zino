@@ -122,8 +122,11 @@ impl Model for Group {
 }
 
 impl ModelHooks for Group {
+    type Data = ();
     #[cfg(feature = "maintainer-id")]
     type Extension = UserSession<Uuid, String>;
+    #[cfg(not(feature = "maintainer-id"))]
+    type Extension = ();
 
     #[cfg(feature = "maintainer-id")]
     #[inline]

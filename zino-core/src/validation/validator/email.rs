@@ -1,7 +1,8 @@
 use self::InvalidEmail::*;
 use super::Validator;
+use crate::LazyLock;
 use regex::Regex;
-use std::{fmt, net::IpAddr, str::FromStr, sync::LazyLock};
+use std::{fmt, net::IpAddr, str::FromStr};
 
 /// A validator for the email address.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

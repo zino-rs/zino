@@ -3,11 +3,6 @@
 #![doc(html_logo_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.svg")]
 #![allow(async_fn_in_trait)]
 #![forbid(unsafe_code)]
-#![feature(associated_type_defaults)]
-#![feature(decl_macro)]
-#![feature(doc_auto_cfg)]
-#![feature(lazy_cell)]
-#![feature(slice_first_last_chunk)]
 
 mod crypto;
 mod encoding;
@@ -65,6 +60,9 @@ pub type TomlValue = toml::Value;
 
 /// A Universally Unique Identifier (UUID).
 pub type Uuid = uuid::Uuid;
+
+/// A value which is initialized on the first access.
+pub type LazyLock<T> = once_cell::sync::Lazy<T>;
 
 /// An allocation-optimized string.
 pub type SharedString = std::borrow::Cow<'static, str>;

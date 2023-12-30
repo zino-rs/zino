@@ -1,11 +1,12 @@
 //! Internationalization and localization.
 
 use crate::{
-    application, bail, error::Error, extension::TomlTableExt, state::State, warn, SharedString,
+    application, bail, error::Error, extension::TomlTableExt, state::State, warn, LazyLock,
+    SharedString,
 };
 use fluent::{bundle::FluentBundle, FluentArgs, FluentResource};
 use intl_memoizer::concurrent::IntlLangMemoizer;
-use std::{fs, io::ErrorKind, sync::LazyLock};
+use std::{fs, io::ErrorKind};
 use unic_langid::LanguageIdentifier;
 
 mod language;

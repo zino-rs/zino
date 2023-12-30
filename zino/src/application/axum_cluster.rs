@@ -6,9 +6,7 @@ use axum::{
     middleware::from_fn,
     routing, BoxError, Router, Server,
 };
-use std::{
-    convert::Infallible, fs, net::SocketAddr, path::PathBuf, sync::LazyLock, time::Duration,
-};
+use std::{convert::Infallible, fs, net::SocketAddr, path::PathBuf, time::Duration};
 use tokio::{runtime::Builder, signal};
 use tower::{
     timeout::{error::Elapsed, TimeoutLayer},
@@ -28,6 +26,7 @@ use zino_core::{
     extension::TomlTableExt,
     response::{FullResponse, Response},
     schedule::AsyncScheduler,
+    LazyLock,
 };
 
 /// An HTTP server cluster for `axum`.

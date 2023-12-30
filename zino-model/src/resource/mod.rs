@@ -117,8 +117,11 @@ impl Model for Resource {
 }
 
 impl ModelHooks for Resource {
+    type Data = ();
     #[cfg(feature = "maintainer-id")]
     type Extension = UserSession<Uuid, String>;
+    #[cfg(not(feature = "maintainer-id"))]
+    type Extension = ();
 
     #[cfg(feature = "maintainer-id")]
     #[inline]

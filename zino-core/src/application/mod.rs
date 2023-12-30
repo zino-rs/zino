@@ -8,11 +8,11 @@ use crate::{
     schedule::{AsyncJobScheduler, AsyncScheduler, Scheduler},
     state::{Env, State},
     trace::TraceContext,
-    Map,
+    LazyLock, Map,
 };
 use reqwest::Response;
 use serde::de::DeserializeOwned;
-use std::{env, fs, path::PathBuf, sync::LazyLock, thread};
+use std::{env, fs, path::PathBuf, thread};
 use toml::value::Table;
 use utoipa::openapi::{OpenApi, OpenApiBuilder};
 

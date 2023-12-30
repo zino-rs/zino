@@ -2,13 +2,15 @@ use axum::{
     body::{Body, BoxBody, Bytes},
     http::{HeaderMap, Request, Response},
 };
-use std::{sync::LazyLock, time::Duration};
+use std::time::Duration;
 use tower_http::{
     classify::{SharedClassifier, StatusInRangeAsFailures, StatusInRangeFailureClass},
     trace::TraceLayer,
 };
 use tracing::{field::Empty, Span};
-use zino_core::{application::Application, extension::HeaderMapExt, trace::TraceContext, Uuid};
+use zino_core::{
+    application::Application, extension::HeaderMapExt, trace::TraceContext, LazyLock, Uuid,
+};
 
 /// Type aliases.
 type CustomMakeSpan = fn(&Request<Body>) -> Span;

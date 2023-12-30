@@ -1,6 +1,6 @@
-use std::{sync::LazyLock, time::Duration};
+use std::time::Duration;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer, ExposeHeaders};
-use zino_core::{application::Application, extension::TomlTableExt};
+use zino_core::{application::Application, extension::TomlTableExt, LazyLock};
 
 /// CORS middleware.
 pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {

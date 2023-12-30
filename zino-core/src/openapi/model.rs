@@ -1,6 +1,6 @@
-use crate::{extension::JsonObjectExt, model::Translation, Map};
+use crate::{extension::JsonObjectExt, model::Translation, LazyLock, Map};
 use convert_case::{Case, Casing};
-use std::{collections::HashMap, sync::LazyLock};
+use std::collections::HashMap;
 
 /// Translates the model data.
 pub(crate) fn translate_model_entry(model: &mut Map, model_name: &str) {

@@ -1,9 +1,9 @@
 use super::Schema;
 use crate::{
     crypto, encoding::base64, error::Error, extension::TomlTableExt, openapi, state::State, warn,
-    Map,
+    LazyLock, Map,
 };
-use std::{fmt::Display, sync::LazyLock};
+use std::fmt::Display;
 
 /// Helper utilities for models.
 pub trait ModelHelper<K>: Schema<PrimaryKey = K>
@@ -68,7 +68,7 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
     let config = app_config.get_table("database").unwrap_or(app_config);
     let checksum: [u8; 32] = config
         .get_str("checksum")
-        .and_then(|checksum| checksum.as_bytes().first_chunk().copied())
+        .and_then(|checksum| checksum.as_bytes().try_into().ok())
         .unwrap_or_else(|| {
             let secret = config
                 .get_str("secret")

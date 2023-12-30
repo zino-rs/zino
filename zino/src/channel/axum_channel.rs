@@ -1,10 +1,7 @@
 use parking_lot::RwLock;
 use std::{
     collections::HashMap,
-    sync::{
-        atomic::{AtomicUsize, Ordering::Relaxed},
-        LazyLock,
-    },
+    sync::atomic::{AtomicUsize, Ordering::Relaxed},
 };
 use tokio::sync::mpsc::{self, error::TrySendError, Receiver, Sender};
 use tokio_stream::{wrappers::ReceiverStream, Stream};
@@ -12,7 +9,7 @@ use zino_core::{
     application::Application,
     channel::{CloudEvent, Subscription},
     extension::TomlTableExt,
-    Uuid,
+    LazyLock, Uuid,
 };
 
 /// A emitter is a sender of cloud events.

@@ -3,13 +3,14 @@ use crate::{
     encoding::base64,
     extension::TomlTableExt,
     state::State,
+    LazyLock,
 };
 use hmac::{
     digest::{FixedOutput, KeyInit, MacMarker, Update},
     Hmac, Mac,
 };
 use rand::{distributions::Alphanumeric, Rng};
-use std::{borrow::Cow, fmt, iter, sync::LazyLock};
+use std::{borrow::Cow, fmt, iter};
 
 #[cfg(feature = "auth-totp")]
 use totp_rs::{Algorithm, TOTP};
@@ -128,7 +129,7 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
     let config = app_config.get_table("access-key").unwrap_or(app_config);
     let checksum: [u8; 32] = config
         .get_str("checksum")
-        .and_then(|checksum| checksum.as_bytes().first_chunk().copied())
+        .and_then(|checksum| checksum.as_bytes().try_into().ok())
         .unwrap_or_else(|| {
             let secret = config.get_str("secret").unwrap_or_else(|| {
                 tracing::warn!("an auto-generated `secret` is used for deriving a secret key");

@@ -278,7 +278,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             orm::{self, ConnectionPool, Schema},
         };
 
-        static #avro_schema: std::sync::LazyLock<schema::Schema> = std::sync::LazyLock::new(|| {
+        static #avro_schema: zino_core::LazyLock<schema::Schema> = zino_core::LazyLock::new(|| {
             let mut fields = #schema_columns.iter().enumerate()
                 .map(|(index, col)| {
                     let mut field = col.record_field();
@@ -299,16 +299,16 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             };
             schema::Schema::Record(record_schema)
         });
-        static #schema_primary_key_column: std::sync::LazyLock<Column> =
-            std::sync::LazyLock::new(|| #primary_key_column);
-        static #schema_columns: std::sync::LazyLock<[Column; #num_columns]> =
-            std::sync::LazyLock::new(|| [#(#columns),*]);
-        static #schema_fields: std::sync::LazyLock<[&str; #num_columns]> =
-            std::sync::LazyLock::new(|| [#(#column_fields),*]);
-        static #schema_read_only_fields: std::sync::LazyLock<[&str; #num_read_only_fields]> =
-            std::sync::LazyLock::new(|| [#(#read_only_fields),*]);
-        static #schema_write_only_fields: std::sync::LazyLock<[&str; #num_write_only_fields]> =
-            std::sync::LazyLock::new(|| [#(#write_only_fields),*]);
+        static #schema_primary_key_column: zino_core::LazyLock<Column> =
+            zino_core::LazyLock::new(|| #primary_key_column);
+        static #schema_columns: zino_core::LazyLock<[Column; #num_columns]> =
+            zino_core::LazyLock::new(|| [#(#columns),*]);
+        static #schema_fields: zino_core::LazyLock<[&str; #num_columns]> =
+            zino_core::LazyLock::new(|| [#(#column_fields),*]);
+        static #schema_read_only_fields: zino_core::LazyLock<[&str; #num_read_only_fields]> =
+            zino_core::LazyLock::new(|| [#(#read_only_fields),*]);
+        static #schema_write_only_fields: zino_core::LazyLock<[&str; #num_write_only_fields]> =
+            zino_core::LazyLock::new(|| [#(#write_only_fields),*]);
         static #schema_reader: std::sync::OnceLock<&ConnectionPool> = std::sync::OnceLock::new();
         static #schema_writer: std::sync::OnceLock<&ConnectionPool> = std::sync::OnceLock::new();
 
@@ -333,12 +333,12 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
 
             #[inline]
             fn primary_key_column() -> &'static Column<'static> {
-                std::sync::LazyLock::force(&#schema_primary_key_column)
+                zino_core::LazyLock::force(&#schema_primary_key_column)
             }
 
             #[inline]
             fn schema() -> &'static schema::Schema {
-                std::sync::LazyLock::force(&#avro_schema)
+                zino_core::LazyLock::force(&#avro_schema)
             }
 
             #[inline]

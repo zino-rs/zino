@@ -38,14 +38,13 @@
 //! | `webhdfs`     | WebHDFS services.                        | `accessor-webhdfs`    |
 //!
 
-use crate::{application::StaticRecord, extension::TomlTableExt, state::State};
+use crate::{application::StaticRecord, extension::TomlTableExt, state::State, LazyLock};
 use opendal::{
     layers::{MetricsLayer, RetryLayer, TracingLayer},
     services, Error,
     ErrorKind::Unsupported,
     Operator,
 };
-use std::sync::LazyLock;
 use toml::Table;
 
 /// Global storage accessor built on the top of [`opendal`](https://crates.io/crates/opendal).

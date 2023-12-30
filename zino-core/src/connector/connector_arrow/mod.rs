@@ -6,7 +6,7 @@ use crate::{
     bail,
     error::Error,
     extension::TomlTableExt,
-    helper, warn, Map, Record,
+    helper, warn, LazyLock, Map, Record,
 };
 use datafusion::{
     arrow::{datatypes::Schema, record_batch::RecordBatch},
@@ -24,7 +24,7 @@ use std::{
     fs::File,
     io::Write,
     path::PathBuf,
-    sync::{Arc, LazyLock, OnceLock},
+    sync::{Arc, OnceLock},
 };
 use toml::value::{Array, Table};
 

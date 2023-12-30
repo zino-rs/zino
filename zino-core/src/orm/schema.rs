@@ -7,7 +7,7 @@ use crate::{
     error::Error,
     extension::{JsonObjectExt, JsonValueExt},
     model::{Column, DecodeRow, EncodeColumn, ModelHooks, Mutation, Query, QueryContext},
-    warn, JsonValue, Map, Uuid,
+    warn, JsonValue, Map,
 };
 use serde::de::DeserializeOwned;
 use std::fmt::Display;
@@ -17,7 +17,7 @@ use std::fmt::Display;
 /// This trait can be derived by `zino_derive::Schema`.
 pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Primary key.
-    type PrimaryKey: Default + Display + PartialEq = Uuid;
+    type PrimaryKey: Default + Display + PartialEq;
 
     /// Model name.
     const MODEL_NAME: &'static str;

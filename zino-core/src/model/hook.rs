@@ -11,9 +11,9 @@ use std::borrow::Cow;
 /// This trait can be derived by `zino_derive::ModelHooks`.
 pub trait ModelHooks: Model {
     /// Model data.
-    type Data: Default = ();
+    type Data: Default;
     /// Extension data.
-    type Extension: Clone + Send + Sync + 'static = ();
+    type Extension: Clone + Send + Sync + 'static;
 
     /// A hook running before extracting the model data.
     #[inline]

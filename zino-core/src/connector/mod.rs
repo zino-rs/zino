@@ -25,11 +25,10 @@
 //!
 
 use crate::{
-    application::StaticRecord, error::Error, extension::TomlTableExt, state::State, AvroValue, Map,
-    Record,
+    application::StaticRecord, error::Error, extension::TomlTableExt, state::State, AvroValue,
+    LazyLock, Map, Record,
 };
 use serde::de::DeserializeOwned;
-use std::sync::LazyLock;
 use toml::Table;
 
 mod data_source;

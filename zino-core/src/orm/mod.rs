@@ -108,12 +108,9 @@
 //! [`TypeORM`]: https://typeorm.io/
 //! [`PostgREST`]: https://postgrest.org/
 
-use crate::{extension::TomlTableExt, state::State};
+use crate::{extension::TomlTableExt, state::State, LazyLock};
 use smallvec::SmallVec;
-use std::sync::{
-    atomic::{AtomicUsize, Ordering::Relaxed},
-    LazyLock,
-};
+use std::sync::atomic::{AtomicUsize, Ordering::Relaxed};
 
 mod accessor;
 mod column;
