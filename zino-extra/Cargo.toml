@@ -1,7 +1,7 @@
 [package]
 name = "zino-extra"
 description = "Extra utilities for zino."
-version = "0.1.5"
+version = "0.2.0"
 rust-version = "1.75"
 edition = "2021"
 license = "MIT"
@@ -41,4 +41,4 @@ optional = true
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.17.0"
+version = "0.18.0"

@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.17.4"
+version = "0.18.0"
 rust-version = "1.75"
 edition = "2021"
 license = "MIT"
@@ -369,7 +369,6 @@ criterion = "0.5.1"
 data-encoding = "2.4.0"
 libsm = "0.6.0"
 sm3 = "0.4.2"
-sonic-rs = "0.3.0"
 tinyvec = { version = "1.6.0", features = ["alloc"] }
 uuid-simd = "0.8.0"
 

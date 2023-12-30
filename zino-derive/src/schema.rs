@@ -74,9 +74,6 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
         if let Fields::Named(fields) = data.fields {
             for field in fields.named.into_iter() {
                 let mut type_name = parser::get_type_name(&field.ty);
-                if type_name.is_empty() {
-                    continue;
-                }
                 if let Some(ident) = field.ident {
                     let name = ident.to_string();
                     let mut ignore = false;

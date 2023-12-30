@@ -184,7 +184,7 @@ impl NamedFile {
         let suffix = ".encrypted";
         let bytes = crypto::decrypt(self.as_ref(), key.as_ref())?;
         if let Some(ref mut file_name) = self.file_name {
-            if !file_name.ends_with(suffix) {
+            if file_name.ends_with(suffix) {
                 file_name.truncate(file_name.len() - suffix.len());
             }
         }

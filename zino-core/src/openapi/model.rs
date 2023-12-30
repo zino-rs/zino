@@ -9,7 +9,7 @@ pub(crate) fn translate_model_entry(model: &mut Map, model_name: &str) {
     for (key, translation) in MODEL_TRANSLATIONS.iter() {
         if let Some(field) = key.strip_prefix(&model_name_prefix) {
             if let Some(value) = model.get(field) {
-                let translated_field = [field, "translated"].join("_");
+                let translated_field = [field, "_translated"].concat();
                 let translated_value = translation
                     .translate(value)
                     .unwrap_or_else(|| value.clone());

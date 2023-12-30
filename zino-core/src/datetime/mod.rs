@@ -617,7 +617,7 @@ impl FromStr for DateTime {
             let dt = s.parse::<chrono::DateTime<Utc>>()?;
             Ok(dt.with_timezone(&Local).into())
         } else {
-            let dt = [s, "Z"].join("").parse::<chrono::DateTime<Utc>>()?;
+            let dt = [s, "Z"].concat().parse::<chrono::DateTime<Utc>>()?;
             Ok(dt.with_timezone(&Local).into())
         }
     }

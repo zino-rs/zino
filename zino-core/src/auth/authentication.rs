@@ -264,7 +264,7 @@ impl Authentication {
             validation.record("signature", "should be nonempty");
         } else if self
             .sign_with::<H>(secret_access_key)
-            .is_ok_and(|token| token != signature)
+            .is_ok_and(|s| s != signature)
         {
             validation.record("signature", "invalid signature");
         }

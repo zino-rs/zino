@@ -21,10 +21,8 @@ pub async fn list_stargazers(per_page: u8, page: usize) -> Result<Vec<Map>, Erro
     });
     let mut data: Vec<Map> = App::fetch_json(resource, options.as_object()).await?;
     for d in data.iter_mut() {
-        if let Some(user) = d.remove("user") {
-            if let Some(mut user) = user.into_map_opt() {
-                d.append(&mut user);
-            }
+        if let Some(mut user) = d.remove("user").and_then(|u| u.into_map_opt()) {
+            d.append(&mut user);
         }
     }
     Ok(data)

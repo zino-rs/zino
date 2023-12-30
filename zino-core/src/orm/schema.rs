@@ -870,7 +870,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         for row in data {
             for &col in columns {
                 if let Some(vec) = row.get_array(col).filter(|vec| !vec.is_empty()) {
-                    let populated_field = [col, "populated"].join("_");
+                    let populated_field = [col, "_populated"].concat();
                     let populated_values = vec
                         .iter()
                         .map(|key| {
@@ -890,7 +890,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                         .iter()
                         .find_map(|(k, v)| (key == k).then_some(v));
                     if let Some(value) = populated_value {
-                        let populated_field = [col, "populated"].join("_");
+                        let populated_field = [col, "_populated"].concat();
                         row.upsert(populated_field, value.clone());
                     }
                 }
@@ -954,7 +954,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         for &col in columns {
             if let Some(vec) = data.get_array(col).filter(|vec| !vec.is_empty()) {
-                let populated_field = [col, "populated"].join("_");
+                let populated_field = [col, "_populated"].concat();
                 let populated_values = vec
                     .iter()
                     .map(|key| {
@@ -974,7 +974,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     .iter()
                     .find_map(|(k, v)| (key == k).then_some(v));
                 if let Some(value) = populated_value {
-                    let populated_field = [col, "populated"].join("_");
+                    let populated_field = [col, "_populated"].concat();
                     data.upsert(populated_field, value.clone());
                 }
             }

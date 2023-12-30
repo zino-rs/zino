@@ -13,9 +13,6 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let mut decode_model_fields = Vec::new();
     for field in parser::parse_struct_fields(input.data) {
         let type_name = parser::get_type_name(&field.ty);
-        if type_name.is_empty() {
-            continue;
-        }
         if let Some(ident) = field.ident {
             let name = ident.to_string();
             let mut ignore = false;
