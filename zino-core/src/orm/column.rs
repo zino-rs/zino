@@ -81,8 +81,9 @@ impl<'a> ColumnExt for Column<'a> {
             .extra()
             .get_str("column_name")
             .unwrap_or_else(|| self.name());
-        if extra.contains_key("foreign_key")
-            && let Some(reference) = self.reference()
+        if let Some(reference) = self
+            .reference()
+            .filter(|_| extra.contains_key("foreign_key"))
         {
             let parent_table_name = reference.name();
             let parent_column_name = reference.column_name();

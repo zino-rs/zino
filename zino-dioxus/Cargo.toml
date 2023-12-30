@@ -2,7 +2,7 @@
 name = "zino-dioxus"
 description = "Dioxus components for zino."
 version = "0.2.0"
-rust-version = "1.73"
+rust-version = "1.75"
 edition = "2021"
 license = "MIT"
 categories = ["gui", "network-programming", "web-programming"]

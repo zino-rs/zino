@@ -177,10 +177,8 @@ pub trait RequestContext {
     /// Gets a cookie with the given name.
     fn get_cookie(&self, name: &str) -> Option<Cookie<'_>> {
         self.get_header("cookie")?.split(';').find_map(|cookie| {
-            if let Some((key, value)) = cookie.split_once('=')
-                && key == name
-            {
-                Some(Cookie::new(key, value))
+            if let Some((key, value)) = cookie.split_once('=') {
+                (key == name).then(|| Cookie::new(key, value))
             } else {
                 None
             }
@@ -294,10 +292,8 @@ pub trait RequestContext {
     /// You can use [`parse_query()`](Self::parse_query) if you need percent-decoding.
     fn get_query(&self, name: &str) -> Option<&str> {
         self.original_uri().query()?.split('&').find_map(|param| {
-            if let Some((key, value)) = param.split_once('=')
-                && key == name
-            {
-                Some(value)
+            if let Some((key, value)) = param.split_once('=') {
+                (key == name).then_some(value)
             } else {
                 None
             }
@@ -768,10 +764,10 @@ pub trait RequestContext {
     /// Constructs a new subscription instance.
     fn subscription(&self) -> Subscription {
         let mut subscription = self.parse_query::<Subscription>().unwrap_or_default();
-        if subscription.session_id().is_none()
-            && let Some(session_id) = self.session_id()
-        {
-            subscription.set_session_id(Some(session_id));
+        if subscription.session_id().is_none() {
+            if let Some(session_id) = self.session_id() {
+                subscription.set_session_id(Some(session_id));
+            }
         }
         subscription
     }

@@ -96,14 +96,33 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Gets a column for the field.
     #[inline]
     fn get_column(key: &str) -> Option<&Column<'static>> {
-        let key = if let Some((name, field)) = key.split_once('.')
-            && (Self::model_name() == name || Self::table_name() == name)
-        {
-            field
+        let key = if let Some((name, field)) = key.split_once('.') {
+            if Self::model_name() == name || Self::table_name() == name {
+                field
+            } else {
+                return None;
+            }
         } else {
             key
         };
         Self::columns().iter().find(|col| col.name() == key)
+    }
+
+    /// Gets a column for the field if it is writable.
+    #[inline]
+    fn get_writable_column(key: &str) -> Option<&Column<'static>> {
+        let key = if let Some((name, field)) = key.split_once('.') {
+            if Self::model_name() == name || Self::table_name() == name {
+                field
+            } else {
+                return None;
+            }
+        } else {
+            key
+        };
+        Self::columns()
+            .iter()
+            .find(|col| col.name() == key && !col.is_read_only())
     }
 
     /// Returns `true` if the model has a column for the specific field.
@@ -224,9 +243,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     .or_else(|| d.get_str("COLUMN_NAME"))
                     == Some(column_name)
             });
-            if let Some(d) = column_opt
-                && let Some(data_type) = d.get_str("data_type").or_else(|| d.get_str("DATA_TYPE"))
-            {
+            if let Some(d) = column_opt {
+                let data_type = d.get_str("data_type").or_else(|| d.get_str("DATA_TYPE"));
                 let column_default = d
                     .get_str("column_default")
                     .or_else(|| d.get_str("COLUMN_DEFAULT"));
@@ -851,9 +869,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         for row in data {
             for &col in columns {
-                if let Some(vec) = row.get_array(col)
-                    && !vec.is_empty()
-                {
+                if let Some(vec) = row.get_array(col).filter(|vec| !vec.is_empty()) {
                     let populated_field = [col, "populated"].join("_");
                     let populated_values = vec
                         .iter()
@@ -937,9 +953,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::after_query(&ctx).await?;
 
         for &col in columns {
-            if let Some(vec) = data.get_array(col)
-                && !vec.is_empty()
-            {
+            if let Some(vec) = data.get_array(col).filter(|vec| !vec.is_empty()) {
                 let populated_field = [col, "populated"].join("_");
                 let populated_values = vec
                     .iter()

@@ -161,11 +161,11 @@ impl Application for ActixCluster {
                                 } else {
                                     RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
                                 };
-                                if let Some(custom_html) = config.get_str("custom-html")
-                                    && let Ok(html) =
-                                        fs::read_to_string(project_dir.join(custom_html))
-                                {
-                                    rapidoc = rapidoc.custom_html(html.leak());
+                                if let Some(custom_html) = config.get_str("custom-html") {
+                                    let custom_html_file = project_dir.join(custom_html);
+                                    if let Ok(html) = fs::read_to_string(custom_html_file) {
+                                        rapidoc = rapidoc.custom_html(html.leak());
+                                    }
                                 }
                                 app = app.service(rapidoc.path(path));
                                 tracing::info!(

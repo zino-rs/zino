@@ -2,7 +2,7 @@ use super::parser;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use std::collections::HashMap;
-use syn::{Data, DeriveInput, Fields};
+use syn::DeriveInput;
 
 /// Parses the token stream for the `ModelAccessor` trait derivation.
 pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
@@ -10,30 +10,30 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let mut composite_constraints = Vec::new();
     for attr in input.attrs.iter() {
         for (key, value) in parser::parse_schema_attr(attr).into_iter() {
-            if let Some(value) = value
-                && key == "unique_on"
-            {
-                let mut fields = Vec::new();
-                let column_values = value
-                    .trim_start_matches('(')
-                    .trim_end_matches(')')
-                    .split(',')
-                    .map(|s| {
-                        let field = s.trim();
-                        let field_ident = format_ident!("{}", field);
-                        fields.push(field);
-                        quote! {
-                            (#field, self.#field_ident.to_string().into())
+            if key == "unique_on" {
+                if let Some(value) = value {
+                    let mut fields = Vec::new();
+                    let column_values = value
+                        .trim_start_matches('(')
+                        .trim_end_matches(')')
+                        .split(',')
+                        .map(|s| {
+                            let field = s.trim();
+                            let field_ident = format_ident!("{}", field);
+                            fields.push(field);
+                            quote! {
+                                (#field, self.#field_ident.to_string().into())
+                            }
+                        })
+                        .collect::<Vec<_>>();
+                    let composite_field = fields.join("_");
+                    composite_constraints.push(quote! {
+                        let columns = vec![#(#column_values),*];
+                        if !self.is_unique_on(columns).await? {
+                            validation.record(#composite_field, "the composite values should be unique");
                         }
-                    })
-                    .collect::<Vec<_>>();
-                let composite_field = fields.join("_");
-                composite_constraints.push(quote! {
-                    let columns = vec![#(#column_values),*];
-                    if !self.is_unique_on(columns).await? {
-                        validation.record(#composite_field, "the composite values should be unique");
-                    }
-                });
+                    });
+                }
             }
         }
     }
@@ -55,70 +55,67 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let mut primary_key_type = String::from("Uuid");
     let mut primary_key_name = String::from("id");
     let mut user_id_type = String::new();
-    if let Data::Struct(data) = input.data
-        && let Fields::Named(fields) = data.fields
-    {
-        let mut model_references: HashMap<String, Vec<String>> = HashMap::new();
-        for field in fields.named.into_iter() {
-            let type_name = parser::get_type_name(&field.ty);
-            if let Some(ident) = field.ident
-                && !type_name.is_empty()
-            {
-                let name = ident.to_string();
-                let mut field_alias = None;
-                for attr in field.attrs.iter() {
-                    let type_name = type_name.as_str();
-                    let arguments = parser::parse_schema_attr(attr);
-                    let is_readable = arguments.iter().all(|arg| arg.0 != "write_only");
-                    for (key, value) in arguments.into_iter() {
-                        match key.as_str() {
-                            "alias" => {
-                                field_alias = value;
+    let mut model_references: HashMap<String, Vec<String>> = HashMap::new();
+    for field in parser::parse_struct_fields(input.data) {
+        let type_name = parser::get_type_name(&field.ty);
+        if type_name.is_empty() {
+            continue;
+        }
+        if let Some(ident) = field.ident {
+            let name = ident.to_string();
+            let mut field_alias = None;
+            for attr in field.attrs.iter() {
+                let type_name = type_name.as_str();
+                let arguments = parser::parse_schema_attr(attr);
+                let is_readable = arguments.iter().all(|arg| arg.0 != "write_only");
+                for (key, value) in arguments.into_iter() {
+                    match key.as_str() {
+                        "alias" => {
+                            field_alias = value;
+                        }
+                        "primary_key" => {
+                            primary_key_name = name.clone();
+                        }
+                        "snapshot" => {
+                            let field = name.clone();
+                            let field_ident = format_ident!("{}", field);
+                            if type_name == "Uuid" {
+                                snapshot_entries.push(quote! {
+                                    snapshot.upsert(#field, self.#field_ident.to_string());
+                                });
+                            } else if type_name == "Option<Uuid>" {
+                                snapshot_entries.push(quote! {
+                                    let snapshot_value = self.#field_ident
+                                        .map(|v| v.to_string());
+                                    snapshot.upsert(#field, snapshot_value);
+                                });
+                            } else if type_name == "Vec<Uuid>" {
+                                snapshot_entries.push(quote! {
+                                    let snapshot_value = self.#field_ident.iter()
+                                        .map(|v| v.to_string())
+                                        .collect::<Vec<_>>();
+                                    snapshot.upsert(#field, snapshot_value);
+                                });
+                            } else {
+                                snapshot_entries.push(quote! {
+                                    snapshot.upsert(#field, self.#field_ident.clone());
+                                });
                             }
-                            "primary_key" => {
-                                primary_key_name = name.clone();
-                            }
-                            "snapshot" => {
-                                let field = name.clone();
-                                let field_ident = format_ident!("{}", field);
+                            snapshot_fields.push(field);
+                        }
+                        "reference" => {
+                            if let Some(value) = value {
+                                let model_ident = format_ident!("{}", value);
                                 if type_name == "Uuid" {
-                                    snapshot_entries.push(quote! {
-                                        snapshot.upsert(#field, self.#field_ident.to_string());
+                                    field_constraints.push(quote! {
+                                        let values = vec![self.#ident.to_string()];
+                                        let data = <#model_ident>::filter(values).await?;
+                                        if data.len() != 1 {
+                                            validation.record(#name, "it is a nonexistent value");
+                                        }
                                     });
-                                } else if type_name == "Option<Uuid>" {
-                                    snapshot_entries.push(quote! {
-                                        let snapshot_value = self.#field_ident
-                                            .map(|v| v.to_string());
-                                        snapshot.upsert(#field, snapshot_value);
-                                    });
-                                } else if type_name == "Vec<Uuid>" {
-                                    snapshot_entries.push(quote! {
-                                        let snapshot_value = self.#field_ident.iter()
-                                            .map(|v| v.to_string())
-                                            .collect::<Vec<_>>();
-                                        snapshot.upsert(#field, snapshot_value);
-                                    });
-                                } else {
-                                    snapshot_entries.push(quote! {
-                                        snapshot.upsert(#field, self.#field_ident.clone());
-                                    });
-                                }
-                                snapshot_fields.push(field);
-                            }
-                            "reference" => {
-                                if let Some(value) = value {
-                                    let model_ident = format_ident!("{}", value);
-                                    if type_name == "Uuid" {
-                                        field_constraints.push(quote! {
-                                            let values = vec![self.#ident.to_string()];
-                                            let data = <#model_ident>::filter(values).await?;
-                                            if data.len() != 1 {
-                                                validation.record(#name, "it is a nonexistent value");
-                                            }
-                                        });
-                                    } else if matches!(type_name, "Option<Uuid>" | "Option<String>")
-                                    {
-                                        field_constraints.push(quote! {
+                                } else if matches!(type_name, "Option<Uuid>" | "Option<String>") {
+                                    field_constraints.push(quote! {
                                             if let Some(value) = self.#ident {
                                                 let values = vec![value.to_string()];
                                                 let data = <#model_ident>::filter(values).await?;
@@ -127,8 +124,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                                 }
                                             }
                                         });
-                                    } else if matches!(type_name, "Vec<Uuid>" | "Vec<String>") {
-                                        field_constraints.push(quote! {
+                                } else if matches!(type_name, "Vec<Uuid>" | "Vec<String>") {
+                                    field_constraints.push(quote! {
                                             let values = self.#ident
                                                 .iter()
                                                 .map(|v| v.to_string())
@@ -141,8 +138,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                                 }
                                             }
                                         });
-                                    } else if parser::check_vec_type(type_name) {
-                                        field_constraints.push(quote! {
+                                } else if parser::check_vec_type(type_name) {
+                                    field_constraints.push(quote! {
                                             let values = self.#ident.clone();
                                             let length = values.len();
                                             if length > 0 {
@@ -152,8 +149,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                                 }
                                             }
                                         });
-                                    } else if parser::check_option_type(type_name) {
-                                        field_constraints.push(quote! {
+                                } else if parser::check_option_type(type_name) {
+                                    field_constraints.push(quote! {
                                             if let Some(value) = self.#ident {
                                                 let values = vec![value.clone()];
                                                 let data = <#model_ident>::filter(values).await?;
@@ -162,42 +159,42 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                                 }
                                             }
                                         });
-                                    } else {
-                                        field_constraints.push(quote! {
-                                            let values = vec![self.#ident.clone()];
-                                            let data = <#model_ident>::filter(values).await?;
-                                            if data.len() != 1 {
-                                                validation.record(#name, "it is a nonexistent value");
-                                            }
-                                        });
-                                    }
-                                    if let Some(vec) = model_references.get_mut(&value) {
-                                        vec.push(name.clone());
-                                    } else {
-                                        model_references.insert(value, vec![name.clone()]);
-                                    }
-                                    if parser::check_vec_type(type_name) {
-                                        sample_queries.push(quote! {
-                                            if let Some(col) = Self::get_column(#name) {
-                                                let size = col.random_size();
-                                                let values = <#model_ident>::sample(size).await?;
-                                                associations.upsert(#name, values);
-                                            }
-                                        });
-                                    } else {
-                                        sample_queries.push(quote! {
-                                            if let Some(col) = Self::get_column(#name) {
-                                                let size = col.random_size();
-                                                let values = <#model_ident>::sample(size).await?;
-                                                associations.upsert(#name, values.first().cloned());
-                                            }
-                                        });
-                                    }
+                                } else {
+                                    field_constraints.push(quote! {
+                                        let values = vec![self.#ident.clone()];
+                                        let data = <#model_ident>::filter(values).await?;
+                                        if data.len() != 1 {
+                                            validation.record(#name, "it is a nonexistent value");
+                                        }
+                                    });
+                                }
+                                if let Some(vec) = model_references.get_mut(&value) {
+                                    vec.push(name.clone());
+                                } else {
+                                    model_references.insert(value, vec![name.clone()]);
+                                }
+                                if parser::check_vec_type(type_name) {
+                                    sample_queries.push(quote! {
+                                        if let Some(col) = Self::get_column(#name) {
+                                            let size = col.random_size();
+                                            let values = <#model_ident>::sample(size).await?;
+                                            associations.upsert(#name, values);
+                                        }
+                                    });
+                                } else {
+                                    sample_queries.push(quote! {
+                                        if let Some(col) = Self::get_column(#name) {
+                                            let size = col.random_size();
+                                            let values = <#model_ident>::sample(size).await?;
+                                            associations.upsert(#name, values.first().cloned());
+                                        }
+                                    });
                                 }
                             }
-                            "unique" => {
-                                if type_name == "Uuid" {
-                                    field_constraints.push(quote! {
+                        }
+                        "unique" => {
+                            if type_name == "Uuid" {
+                                field_constraints.push(quote! {
                                         let value = self.#ident;
                                         if !value.is_nil() {
                                             let columns = vec![(#name, value.to_string().into())];
@@ -207,8 +204,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                             }
                                         }
                                     });
-                                } else if type_name == "String" {
-                                    field_constraints.push(quote! {
+                            } else if type_name == "String" {
+                                field_constraints.push(quote! {
                                         let value = self.#ident.as_str();
                                         if !value.is_empty() {
                                             let columns = vec![(#name, value.into())];
@@ -218,8 +215,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                             }
                                         }
                                     });
-                                } else if type_name == "Option<String>" {
-                                    field_constraints.push(quote! {
+                            } else if type_name == "Option<String>" {
+                                field_constraints.push(quote! {
                                         if let Some(value) = self.#ident.as_deref() && !value.is_empty() {
                                             let columns = vec![(#name, value.into())];
                                             if !self.is_unique_on(columns).await? {
@@ -228,8 +225,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                             }
                                         }
                                     });
-                                } else if type_name == "Option<Uuid>" {
-                                    field_constraints.push(quote! {
+                            } else if type_name == "Option<Uuid>" {
+                                field_constraints.push(quote! {
                                         if let Some(value) = self.#ident && !value.is_nil() {
                                             let columns = vec![(#name, value.to_string().into())];
                                             if !self.is_unique_on(columns).await? {
@@ -238,8 +235,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                             }
                                         }
                                     });
-                                } else if parser::check_option_type(type_name) {
-                                    field_constraints.push(quote! {
+                            } else if parser::check_option_type(type_name) {
+                                field_constraints.push(quote! {
                                         if let Some(value) = self.#ident {
                                             let columns = vec![(#name, value.into())];
                                             if !self.is_unique_on(columns).await? {
@@ -248,50 +245,49 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                             }
                                         }
                                     });
-                                } else {
-                                    field_constraints.push(quote! {
-                                        let value = self.#ident;
-                                        let columns = vec![(#name, value.into())];
-                                        if !self.is_unique_on(columns).await? {
-                                            let message = format!("the value `{value}` is not unique");
-                                            validation.record(#name, message);
-                                        }
-                                    });
-                                }
+                            } else {
+                                field_constraints.push(quote! {
+                                    let value = self.#ident;
+                                    let columns = vec![(#name, value.into())];
+                                    if !self.is_unique_on(columns).await? {
+                                        let message = format!("the value `{value}` is not unique");
+                                        validation.record(#name, message);
+                                    }
+                                });
                             }
-                            "not_null" if is_readable => {
-                                if type_name == "String" {
-                                    field_constraints.push(quote! {
-                                        if self.#ident.is_empty() {
-                                            validation.record(#name, "it should be nonempty");
-                                        }
-                                    });
-                                } else if type_name == "Uuid" {
-                                    field_constraints.push(quote! {
-                                        if self.#ident.is_nil() {
-                                            validation.record(#name, "it should not be nil");
-                                        }
-                                    });
-                                }
+                        }
+                        "not_null" if is_readable => {
+                            if type_name == "String" {
+                                field_constraints.push(quote! {
+                                    if self.#ident.is_empty() {
+                                        validation.record(#name, "it should be nonempty");
+                                    }
+                                });
+                            } else if type_name == "Uuid" {
+                                field_constraints.push(quote! {
+                                    if self.#ident.is_nil() {
+                                        validation.record(#name, "it should not be nil");
+                                    }
+                                });
                             }
-                            "nonempty" if is_readable => {
-                                if parser::check_vec_type(type_name)
-                                    || matches!(type_name, "String" | "Map")
-                                {
-                                    field_constraints.push(quote! {
-                                        if self.#ident.is_empty() {
-                                            validation.record(#name, "it should be nonempty");
-                                        }
-                                    });
-                                }
+                        }
+                        "nonempty" if is_readable => {
+                            if parser::check_vec_type(type_name)
+                                || matches!(type_name, "String" | "Map")
+                            {
+                                field_constraints.push(quote! {
+                                    if self.#ident.is_empty() {
+                                        validation.record(#name, "it should be nonempty");
+                                    }
+                                });
                             }
-                            "validator" if is_readable && type_name == "String" => {
-                                if let Some(value) = value {
-                                    if let Some((validator, validator_fn)) = value.split_once("::")
-                                    {
-                                        let validator_ident = format_ident!("{}", validator);
-                                        let validator_fn_ident = format_ident!("{}", validator_fn);
-                                        field_constraints.push(quote! {
+                        }
+                        "validator" if is_readable && type_name == "String" => {
+                            if let Some(value) = value {
+                                if let Some((validator, validator_fn)) = value.split_once("::") {
+                                    let validator_ident = format_ident!("{}", validator);
+                                    let validator_fn_ident = format_ident!("{}", validator_fn);
+                                    field_constraints.push(quote! {
                                             if !self.#ident.is_empty() {
                                                 let validator = <#validator_ident>::#validator_fn_ident();
                                                 if let Err(err) = validator.validate(self.#ident.as_str()) {
@@ -299,33 +295,32 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                                 }
                                             }
                                         });
-                                    } else {
-                                        let validator_ident = format_ident!("{}", value);
-                                        field_constraints.push(quote! {
+                                } else {
+                                    let validator_ident = format_ident!("{}", value);
+                                    field_constraints.push(quote! {
                                             if !self.#ident.is_empty() {
                                                 if let Err(err) = #validator_ident.validate(self.#ident.as_str()) {
                                                     validation.record_fail(#name, err);
                                                 }
                                             }
                                         });
-                                    }
                                 }
                             }
-                            "format" if is_readable && type_name == "String" => {
-                                if let Some(value) = value {
-                                    field_constraints.push(quote! {
+                        }
+                        "format" if is_readable && type_name == "String" => {
+                            if let Some(value) = value {
+                                field_constraints.push(quote! {
                                         if !self.#ident.is_empty() {
                                             validation.validate_format(#name, self.#ident.as_str(), #value);
                                         }
                                     });
-                                }
                             }
-                            "enum_values" => {
-                                if let Some(value) = value {
-                                    let values =
-                                        value.split('|').map(|s| s.trim()).collect::<Vec<_>>();
-                                    if type_name == "String" {
-                                        field_constraints.push(quote! {
+                        }
+                        "enum_values" => {
+                            if let Some(value) = value {
+                                let values = value.split('|').map(|s| s.trim()).collect::<Vec<_>>();
+                                if type_name == "String" {
+                                    field_constraints.push(quote! {
                                             if !self.#ident.is_empty() {
                                                 let values = [#(#values),*];
                                                 let value = self.#ident.as_str();
@@ -335,8 +330,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                                 }
                                             }
                                         });
-                                    } else if type_name == "Vec<String>" {
-                                        field_constraints.push(quote! {
+                                } else if type_name == "Vec<String>" {
+                                    field_constraints.push(quote! {
                                             let values = [#(#values),*];
                                             for value in self.#ident.iter() {
                                                 if !values.contains(&value.as_str()) {
@@ -346,79 +341,78 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                                 }
                                             }
                                         });
+                                }
+                            }
+                        }
+                        "length" if is_readable => {
+                            let length = value
+                                .and_then(|s| s.parse::<usize>().ok())
+                                .unwrap_or_default();
+                            if type_name == "String" {
+                                field_constraints.push(quote! {
+                                    let length = #length;
+                                    if self.#ident.len() != length {
+                                        let message = format!("the length should be {length}");
+                                        validation.record(#name, message);
                                     }
-                                }
+                                });
+                            } else if type_name == "Option<String>" {
+                                field_constraints.push(quote! {
+                                    let length = #length;
+                                    if let Some(ref s) = self.#ident && s.len() != length {
+                                        let message = format!("the length should be {length}");
+                                        validation.record(#name, message);
+                                    }
+                                });
                             }
-                            "length" if is_readable => {
-                                let length = value
-                                    .and_then(|s| s.parse::<usize>().ok())
-                                    .unwrap_or_default();
-                                if type_name == "String" {
-                                    field_constraints.push(quote! {
-                                        let length = #length;
-                                        if self.#ident.len() != length {
-                                            let message = format!("the length should be {length}");
-                                            validation.record(#name, message);
-                                        }
-                                    });
-                                } else if type_name == "Option<String>" {
-                                    field_constraints.push(quote! {
-                                        let length = #length;
-                                        if let Some(ref s) = self.#ident && s.len() != length {
-                                            let message = format!("the length should be {length}");
-                                            validation.record(#name, message);
-                                        }
-                                    });
-                                }
-                            }
-                            "max_length" if is_readable => {
-                                let length = value
-                                    .and_then(|s| s.parse::<usize>().ok())
-                                    .unwrap_or_default();
-                                if type_name == "String" {
-                                    field_constraints.push(quote! {
+                        }
+                        "max_length" if is_readable => {
+                            let length = value
+                                .and_then(|s| s.parse::<usize>().ok())
+                                .unwrap_or_default();
+                            if type_name == "String" {
+                                field_constraints.push(quote! {
                                         let length = #length;
                                         if self.#ident.len() > length {
                                             let message = format!("the length should be at most {length}");
                                             validation.record(#name, message);
                                         }
                                     });
-                                } else if type_name == "Option<String>" {
-                                    field_constraints.push(quote! {
+                            } else if type_name == "Option<String>" {
+                                field_constraints.push(quote! {
                                         let length = #length;
                                         if let Some(ref s) = self.#ident && s.len() > length {
                                             let message = format!("the length should be at most {length}");
                                             validation.record(#name, message);
                                         }
                                     });
-                                }
                             }
-                            "min_length" if is_readable => {
-                                let length = value
-                                    .and_then(|s| s.parse::<usize>().ok())
-                                    .unwrap_or_default();
-                                if type_name == "String" {
-                                    field_constraints.push(quote! {
+                        }
+                        "min_length" if is_readable => {
+                            let length = value
+                                .and_then(|s| s.parse::<usize>().ok())
+                                .unwrap_or_default();
+                            if type_name == "String" {
+                                field_constraints.push(quote! {
                                         let length = #length;
                                         if self.#ident.len() < length {
                                             let message = format!("the length should be at least {length}");
                                             validation.record(#name, message);
                                         }
                                     });
-                                } else if type_name == "Option<String>" {
-                                    field_constraints.push(quote! {
+                            } else if type_name == "Option<String>" {
+                                field_constraints.push(quote! {
                                         let length = #length;
                                         if let Some(ref s) = self.#ident && s.len() < length {
                                             let message = format!("the length should be at least {length}");
                                             validation.record(#name, message);
                                         }
                                     });
-                                }
                             }
-                            "max_items" => {
-                                if let Some(length) = value.and_then(|s| s.parse::<usize>().ok())
-                                    && parser::check_vec_type(type_name)
-                                {
+                        }
+                        "max_items" => {
+                            if let Some(length) = value.and_then(|s| s.parse::<usize>().ok()) {
+                                if parser::check_vec_type(type_name) {
                                     field_constraints.push(quote! {
                                         let length = #length;
                                         if self.#ident.len() > length {
@@ -428,10 +422,10 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     });
                                 }
                             }
-                            "min_items" => {
-                                if let Some(length) = value.and_then(|s| s.parse::<usize>().ok())
-                                    && parser::check_vec_type(type_name)
-                                {
+                        }
+                        "min_items" => {
+                            if let Some(length) = value.and_then(|s| s.parse::<usize>().ok()) {
+                                if parser::check_vec_type(type_name) {
                                     field_constraints.push(quote! {
                                         let length = #length;
                                         if self.#ident.len() < length {
@@ -441,320 +435,314 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     });
                                 }
                             }
-                            "unique_items" => {
-                                if parser::check_vec_type(type_name) {
-                                    field_constraints.push(quote! {
-                                        let slice = self.#ident.as_slice();
-                                        for index in 1..slice.len() {
-                                            if slice[index..].contains(&slice[index - 1]) {
-                                                let message = format!("array items should be unique");
-                                                validation.record(#name, message);
-                                                break;
-                                            }
+                        }
+                        "unique_items" => {
+                            if parser::check_vec_type(type_name) {
+                                field_constraints.push(quote! {
+                                    let slice = self.#ident.as_slice();
+                                    for index in 1..slice.len() {
+                                        if slice[index..].contains(&slice[index - 1]) {
+                                            let message = format!("array items should be unique");
+                                            validation.record(#name, message);
+                                            break;
                                         }
-                                    });
-                                }
+                                    }
+                                });
                             }
-                            "less_than" => {
-                                if let Some(value) = value {
-                                    if let Some((field_type, field_type_fn)) =
-                                        value.split_once("::")
-                                    {
-                                        let field_type_ident = format_ident!("{}", field_type);
-                                        let field_type_fn_ident =
-                                            format_ident!("{}", field_type_fn);
-                                        field_constraints.push(quote! {
+                        }
+                        "less_than" => {
+                            if let Some(value) = value {
+                                if let Some((field_type, field_type_fn)) = value.split_once("::") {
+                                    let field_type_ident = format_ident!("{}", field_type);
+                                    let field_type_fn_ident = format_ident!("{}", field_type_fn);
+                                    field_constraints.push(quote! {
                                             let field_value = <#field_type_ident>::#field_type_fn_ident();
                                             if self.#ident >= field_value {
                                                 let message = format!("should be less than `{field_value}`");
                                                 validation.record(#name, message);
                                             }
                                         });
-                                    } else {
-                                        let field_ident = format_ident!("{}", value);
-                                        field_constraints.push(quote! {
+                                } else {
+                                    let field_ident = format_ident!("{}", value);
+                                    field_constraints.push(quote! {
                                             let field_value = self.#field_ident;
                                             if self.#ident >= field_value {
                                                 let message = format!("should be less than `{field_value}`");
                                                 validation.record(#name, message);
                                             }
                                         });
-                                    }
                                 }
                             }
-                            "greater_than" => {
-                                if let Some(value) = value {
-                                    if let Some((field_type, field_type_fn)) =
-                                        value.split_once("::")
-                                    {
-                                        let field_type_ident = format_ident!("{}", field_type);
-                                        let field_type_fn_ident =
-                                            format_ident!("{}", field_type_fn);
-                                        field_constraints.push(quote! {
+                        }
+                        "greater_than" => {
+                            if let Some(value) = value {
+                                if let Some((field_type, field_type_fn)) = value.split_once("::") {
+                                    let field_type_ident = format_ident!("{}", field_type);
+                                    let field_type_fn_ident = format_ident!("{}", field_type_fn);
+                                    field_constraints.push(quote! {
                                             let field_value = <#field_type_ident>::#field_type_fn_ident();
                                             if self.#ident <= field_value {
                                                 let message = format!("should be greater than `{field_value}`");
                                                 validation.record(#name, message);
                                             }
                                         });
-                                    } else {
-                                        let field_ident = format_ident!("{}", value);
-                                        field_constraints.push(quote! {
+                                } else {
+                                    let field_ident = format_ident!("{}", value);
+                                    field_constraints.push(quote! {
                                             let field_value = self.#field_ident;
                                             if self.#ident <= field_value {
                                                 let message = format!("should be greater than `{field_value}`");
                                                 validation.record(#name, message);
                                             }
                                         });
-                                    }
                                 }
                             }
-                            _ => (),
-                        }
-                    }
-                }
-                if primary_key_name == name {
-                    primary_key_type = type_name;
-                } else {
-                    let field_name = name.as_str();
-                    let field_ident = format_ident!("{}", field_name);
-                    let mut snapshot_field = None;
-                    match field_alias.as_deref().unwrap_or(field_name) {
-                        "name" if type_name == "String" => {
-                            let method = quote! {
-                                #[inline]
-                                fn #field_ident(&self) -> &str {
-                                    self.#field_ident.as_ref()
-                                }
-                            };
-                            column_methods.push(method);
-                            snapshot_field = Some(field_name);
-                        }
-                        "namespace" | "visibility" | "description" if type_name == "String" => {
-                            let method = quote! {
-                                #[inline]
-                                fn #field_ident(&self) -> &str {
-                                    self.#field_ident.as_ref()
-                                }
-                            };
-                            column_methods.push(method);
-                        }
-                        "status" if type_name == "String" => {
-                            let method = quote! {
-                                #[inline]
-                                fn #field_ident(&self) -> &str {
-                                    self.#field_ident.as_ref()
-                                }
-                            };
-                            column_methods.push(method);
-                            snapshot_field = Some(field_name);
-                            list_query_methods.push(quote! {
-                                query.add_filter(#field_name, Map::from_entry("$ne", "Deleted"));
-                            });
-                            soft_delete_updates.push(quote! {
-                                updates.upsert(#field_name, "Deleted");
-                            });
-                            lock_updates.push(quote! {
-                                updates.upsert(#field_name, "Locked");
-                            });
-                            archive_updates.push(quote! {
-                                updates.upsert(#field_name, "Archived");
-                            });
-                        }
-                        "content" | "extra" if type_name == "Map" => {
-                            let method = quote! {
-                                #[inline]
-                                fn #field_ident(&self) -> Option<&Map> {
-                                    let map = &self.#field_ident;
-                                    (!map.is_empty()).then_some(map)
-                                }
-                            };
-                            column_methods.push(method);
-                            ignored_list_fields.push(field_name.to_owned());
-                        }
-                        "owner_id" | "maintainer_id" => {
-                            let user_type_opt = type_name.strip_prefix("Option");
-                            let user_type = if let Some(user_type) = user_type_opt {
-                                user_type.trim_matches(|c| c == '<' || c == '>').to_owned()
-                            } else {
-                                type_name.clone()
-                            };
-                            let user_type_ident = format_ident!("{}", user_type);
-                            let method = if user_type_opt.is_some() {
-                                quote! {
-                                    #[inline]
-                                    fn #field_ident(&self) -> Option<&#user_type_ident> {
-                                        self.#field_ident.as_ref()
-                                    }
-                                }
-                            } else {
-                                quote! {
-                                    #[inline]
-                                    fn #field_ident(&self) -> Option<&#user_type_ident> {
-                                        let id = &self.#field_ident;
-                                        (id != &#user_type_ident::default()).then_some(id)
-                                    }
-                                }
-                            };
-                            column_methods.push(method);
-                            user_id_type = user_type;
-                        }
-                        "created_at" if type_name == "DateTime" => {
-                            let method = quote! {
-                                #[inline]
-                                fn #field_ident(&self) -> DateTime {
-                                    self.#field_ident
-                                }
-                            };
-                            column_methods.push(method);
-                        }
-                        "updated_at" if type_name == "DateTime" => {
-                            let method = quote! {
-                                #[inline]
-                                fn #field_ident(&self) -> DateTime {
-                                    self.#field_ident
-                                }
-                            };
-                            column_methods.push(method);
-                            snapshot_field = Some(field_name);
-                            list_query_methods.push(quote! {
-                                query.order_by_desc(#field_name);
-                            });
-                        }
-                        "deleted_at" if type_name == "Option<DateTime>" => {
-                            let method = quote! {
-                                #[inline]
-                                fn #field_ident(&self) -> Option<DateTime> {
-                                    self.#field_ident
-                                }
-                            };
-                            column_methods.push(method);
-                            column_methods.push(quote! {
-                                #[inline]
-                                fn is_deleted(&self) -> bool {
-                                    self.#field_ident.is_some()
-                                }
-                            });
-                            list_query_methods.push(quote! {
-                                query.add_filter(#field_name, "null");
-                            });
-                            soft_delete_updates.push(quote! {
-                                updates.upsert(#field_name, DateTime::now().to_utc_timestamp());
-                            });
-                        }
-                        "version" if type_name == "u64" => {
-                            let method = quote! {
-                                #[inline]
-                                fn #field_ident(&self) -> u64 {
-                                    self.#field_ident
-                                }
-                            };
-                            column_methods.push(method);
-                            snapshot_field = Some(field_name);
-                        }
-                        "edition" if type_name == "u32" => {
-                            let method = quote! {
-                                #[inline]
-                                fn #field_ident(&self) -> u32 {
-                                    self.#field_ident
-                                }
-                            };
-                            column_methods.push(method);
-                        }
-                        "is_deleted" if type_name == "bool" => {
-                            column_methods.push(quote! {
-                                #[inline]
-                                fn is_deleted(&self) -> bool {
-                                    self.#field_ident
-                                }
-                            });
-                            list_query_methods.push(quote! {
-                                query.add_filter(#field_name, false);
-                            });
-                            soft_delete_updates.push(quote! {
-                                updates.upsert(#field_name, true);
-                            });
-                        }
-                        "is_locked" if type_name == "bool" => {
-                            column_methods.push(quote! {
-                                #[inline]
-                                fn is_locked(&self) -> bool {
-                                    self.#field_ident
-                                }
-                            });
-                            lock_updates.push(quote! {
-                                updates.upsert(#field_name, true);
-                            });
-                        }
-                        "is_archived" if type_name == "bool" => {
-                            column_methods.push(quote! {
-                                #[inline]
-                                fn is_archived(&self) -> bool {
-                                    self.#field_ident
-                                }
-                            });
-                            archive_updates.push(quote! {
-                                updates.upsert(#field_name, true);
-                            });
                         }
                         _ => (),
                     }
-                    if let Some(field_name) = snapshot_field {
-                        let field_ident = format_ident!("{}", field_name);
-                        snapshot_entries.push(quote! {
-                            snapshot.upsert(#field_name, self.#field_ident.clone());
-                        });
-                        snapshot_fields.push(field_name.to_owned());
+                }
+            }
+            if primary_key_name == name {
+                primary_key_type = type_name;
+            } else {
+                let field_name = name.as_str();
+                let field_ident = format_ident!("{}", field_name);
+                let mut snapshot_field = None;
+                match field_alias.as_deref().unwrap_or(field_name) {
+                    "name" if type_name == "String" => {
+                        let method = quote! {
+                            #[inline]
+                            fn #field_ident(&self) -> &str {
+                                self.#field_ident.as_ref()
+                            }
+                        };
+                        column_methods.push(method);
+                        snapshot_field = Some(field_name);
                     }
-                    if ignored_list_fields.is_empty() {
+                    "namespace" | "visibility" | "description" if type_name == "String" => {
+                        let method = quote! {
+                            #[inline]
+                            fn #field_ident(&self) -> &str {
+                                self.#field_ident.as_ref()
+                            }
+                        };
+                        column_methods.push(method);
+                    }
+                    "status" if type_name == "String" => {
+                        let method = quote! {
+                            #[inline]
+                            fn #field_ident(&self) -> &str {
+                                self.#field_ident.as_ref()
+                            }
+                        };
+                        column_methods.push(method);
+                        snapshot_field = Some(field_name);
                         list_query_methods.push(quote! {
-                            query.deny_fields(Self::write_only_fields());
+                            query.add_filter(#field_name, Map::from_entry("$ne", "Deleted"));
                         });
-                    } else {
-                        list_query_methods.push(quote! {
-                            query.deny_fields(&[
-                                Self::write_only_fields(),
-                                &[#(#ignored_list_fields),*],
-                            ].concat());
+                        soft_delete_updates.push(quote! {
+                            updates.upsert(#field_name, "Deleted");
+                        });
+                        lock_updates.push(quote! {
+                            updates.upsert(#field_name, "Locked");
+                        });
+                        archive_updates.push(quote! {
+                            updates.upsert(#field_name, "Archived");
                         });
                     }
+                    "content" | "extra" if type_name == "Map" => {
+                        let method = quote! {
+                            #[inline]
+                            fn #field_ident(&self) -> Option<&Map> {
+                                let map = &self.#field_ident;
+                                (!map.is_empty()).then_some(map)
+                            }
+                        };
+                        column_methods.push(method);
+                        ignored_list_fields.push(field_name.to_owned());
+                    }
+                    "owner_id" | "maintainer_id" => {
+                        let user_type_opt = type_name.strip_prefix("Option");
+                        let user_type = if let Some(user_type) = user_type_opt {
+                            user_type.trim_matches(|c| c == '<' || c == '>').to_owned()
+                        } else {
+                            type_name.clone()
+                        };
+                        let user_type_ident = format_ident!("{}", user_type);
+                        let method = if user_type_opt.is_some() {
+                            quote! {
+                                #[inline]
+                                fn #field_ident(&self) -> Option<&#user_type_ident> {
+                                    self.#field_ident.as_ref()
+                                }
+                            }
+                        } else {
+                            quote! {
+                                #[inline]
+                                fn #field_ident(&self) -> Option<&#user_type_ident> {
+                                    let id = &self.#field_ident;
+                                    (id != &#user_type_ident::default()).then_some(id)
+                                }
+                            }
+                        };
+                        column_methods.push(method);
+                        user_id_type = user_type;
+                    }
+                    "created_at" if type_name == "DateTime" => {
+                        let method = quote! {
+                            #[inline]
+                            fn #field_ident(&self) -> DateTime {
+                                self.#field_ident
+                            }
+                        };
+                        column_methods.push(method);
+                    }
+                    "updated_at" if type_name == "DateTime" => {
+                        let method = quote! {
+                            #[inline]
+                            fn #field_ident(&self) -> DateTime {
+                                self.#field_ident
+                            }
+                        };
+                        column_methods.push(method);
+                        snapshot_field = Some(field_name);
+                        list_query_methods.push(quote! {
+                            query.order_by_desc(#field_name);
+                        });
+                    }
+                    "deleted_at" if type_name == "Option<DateTime>" => {
+                        let method = quote! {
+                            #[inline]
+                            fn #field_ident(&self) -> Option<DateTime> {
+                                self.#field_ident
+                            }
+                        };
+                        column_methods.push(method);
+                        column_methods.push(quote! {
+                            #[inline]
+                            fn is_deleted(&self) -> bool {
+                                self.#field_ident.is_some()
+                            }
+                        });
+                        list_query_methods.push(quote! {
+                            query.add_filter(#field_name, "null");
+                        });
+                        soft_delete_updates.push(quote! {
+                            updates.upsert(#field_name, DateTime::now().to_utc_timestamp());
+                        });
+                    }
+                    "version" if type_name == "u64" => {
+                        let method = quote! {
+                            #[inline]
+                            fn #field_ident(&self) -> u64 {
+                                self.#field_ident
+                            }
+                        };
+                        column_methods.push(method);
+                        snapshot_field = Some(field_name);
+                    }
+                    "edition" if type_name == "u32" => {
+                        let method = quote! {
+                            #[inline]
+                            fn #field_ident(&self) -> u32 {
+                                self.#field_ident
+                            }
+                        };
+                        column_methods.push(method);
+                    }
+                    "is_deleted" if type_name == "bool" => {
+                        column_methods.push(quote! {
+                            #[inline]
+                            fn is_deleted(&self) -> bool {
+                                self.#field_ident
+                            }
+                        });
+                        list_query_methods.push(quote! {
+                            query.add_filter(#field_name, false);
+                        });
+                        soft_delete_updates.push(quote! {
+                            updates.upsert(#field_name, true);
+                        });
+                    }
+                    "is_locked" if type_name == "bool" => {
+                        column_methods.push(quote! {
+                            #[inline]
+                            fn is_locked(&self) -> bool {
+                                self.#field_ident
+                            }
+                        });
+                        lock_updates.push(quote! {
+                            updates.upsert(#field_name, true);
+                        });
+                    }
+                    "is_archived" if type_name == "bool" => {
+                        column_methods.push(quote! {
+                            #[inline]
+                            fn is_archived(&self) -> bool {
+                                self.#field_ident
+                            }
+                        });
+                        archive_updates.push(quote! {
+                            updates.upsert(#field_name, true);
+                        });
+                    }
+                    _ => (),
+                }
+                if let Some(field_name) = snapshot_field {
+                    let field_ident = format_ident!("{}", field_name);
+                    snapshot_entries.push(quote! {
+                        snapshot.upsert(#field_name, self.#field_ident.clone());
+                    });
+                    snapshot_fields.push(field_name.to_owned());
+                }
+                if ignored_list_fields.is_empty() {
+                    list_query_methods.push(quote! {
+                        query.deny_fields(Self::write_only_fields());
+                    });
+                } else {
+                    list_query_methods.push(quote! {
+                        query.deny_fields(&[
+                            Self::write_only_fields(),
+                            &[#(#ignored_list_fields),*],
+                        ].concat());
+                    });
                 }
             }
         }
-        populated_queries.push(quote! {
-            let mut models = Self::find::<Map>(query).await?;
-            for model in models.iter_mut() {
-                Self::after_decode(model).await?;
-                translate_enabled.then(|| Self::translate_model(model));
-            }
-        });
-        populated_one_queries.push(quote! {
-            let mut model = Self::find_by_id::<Map>(id)
-                .await?
-                .ok_or_else(|| zino_core::warn!("404 Not Found: cannot find the model `{}`", id))?;
-            Self::after_decode(&mut model).await?;
-            Self::translate_model(&mut model);
-        });
-        if !model_references.is_empty() {
-            for (model, ref_fields) in model_references.into_iter() {
-                let model_ident = format_ident!("{}", model);
-                let populated_query = quote! {
-                    let mut query = #model_ident::default_snapshot_query();
-                    query.add_filter("translate", translate_enabled);
-                    #model_ident::populate(&mut query, &mut models, &[#(#ref_fields),*]).await?;
-                };
-                let populated_one_query = quote! {
-                    let mut query = #model_ident::default_query();
-                    query.add_filter("translate", true);
-                    #model_ident::populate_one(&mut query, &mut model, &[#(#ref_fields),*]).await?;
-                };
-                populated_queries.push(populated_query);
-                populated_one_queries.push(populated_one_query);
-            }
-        }
-        populated_queries.push(quote! { Ok(models) });
-        populated_one_queries.push(quote! { Ok(model) });
     }
+    populated_queries.push(quote! {
+        let mut models = Self::find::<Map>(query).await?;
+        for model in models.iter_mut() {
+            Self::after_decode(model).await?;
+            translate_enabled.then(|| Self::translate_model(model));
+        }
+    });
+    populated_one_queries.push(quote! {
+        let mut model = Self::find_by_id::<Map>(id)
+            .await?
+            .ok_or_else(|| zino_core::warn!("404 Not Found: cannot find the model `{}`", id))?;
+        Self::after_decode(&mut model).await?;
+        Self::translate_model(&mut model);
+    });
+    if !model_references.is_empty() {
+        for (model, ref_fields) in model_references.into_iter() {
+            let model_ident = format_ident!("{}", model);
+            let populated_query = quote! {
+                let mut query = #model_ident::default_snapshot_query();
+                query.add_filter("translate", translate_enabled);
+                #model_ident::populate(&mut query, &mut models, &[#(#ref_fields),*]).await?;
+            };
+            let populated_one_query = quote! {
+                let mut query = #model_ident::default_query();
+                query.add_filter("translate", true);
+                #model_ident::populate_one(&mut query, &mut model, &[#(#ref_fields),*]).await?;
+            };
+            populated_queries.push(populated_query);
+            populated_one_queries.push(populated_one_query);
+        }
+    }
+    populated_queries.push(quote! { Ok(models) });
+    populated_one_queries.push(quote! { Ok(model) });
     if user_id_type.is_empty() {
         user_id_type = primary_key_type.clone();
     }

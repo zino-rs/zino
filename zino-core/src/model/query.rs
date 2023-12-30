@@ -111,17 +111,19 @@ impl Query {
                     extra.upsert(key, value.clone());
                 }
                 _ => {
-                    if let Some(value) = value.as_str()
-                        && value != "all"
-                    {
-                        if key.starts_with('$')
-                            && let Some(expr) = value.strip_prefix('(')
-                        {
-                            filters.upsert(key, Self::parse_logical_query(expr));
-                        } else if value.starts_with('$')
-                            && let Some((operator, value)) = value.split_once('.')
-                        {
-                            filters.upsert(key, Map::from_entry(operator, value));
+                    if let Some(value) = value.as_str().filter(|&s| s != "all") {
+                        if key.starts_with('$') {
+                            if let Some(expr) = value.strip_prefix('(') {
+                                filters.upsert(key, Self::parse_logical_query(expr));
+                            } else {
+                                filters.upsert(key, value);
+                            }
+                        } else if value.starts_with('$') {
+                            if let Some((operator, value)) = value.split_once('.') {
+                                filters.upsert(key, Map::from_entry(operator, value));
+                            } else {
+                                filters.upsert(key, value);
+                            }
                         } else {
                             filters.upsert(key, value);
                         }
@@ -141,18 +143,20 @@ impl Query {
     fn parse_logical_query(expr: &str) -> Vec<Map> {
         let mut filters = Vec::new();
         for expr in expr.trim_end_matches(')').split(',') {
-            if let Some((key, expr)) = expr.split_once('.')
-                && let Some((operator, value)) = expr.split_once('.')
-            {
-                let value = if value.starts_with('$')
-                    && let Some((operator, expr)) = value.split_once('(')
-                {
-                    Map::from_entry(operator, Self::parse_logical_query(expr)).into()
-                } else {
-                    JsonValue::from(value)
-                };
-                let filter = Map::from_entry(key, Map::from_entry(operator, value));
-                filters.push(filter);
+            if let Some((key, expr)) = expr.split_once('.') {
+                if let Some((operator, value)) = expr.split_once('.') {
+                    let value = if value.starts_with('$') {
+                        if let Some((operator, expr)) = value.split_once('(') {
+                            Map::from_entry(operator, Self::parse_logical_query(expr)).into()
+                        } else {
+                            JsonValue::from(value)
+                        }
+                    } else {
+                        JsonValue::from(value)
+                    };
+                    let filter = Map::from_entry(key, Map::from_entry(operator, value));
+                    filters.push(filter);
+                }
             }
         }
         filters

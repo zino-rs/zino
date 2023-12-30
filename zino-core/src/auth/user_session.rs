@@ -217,9 +217,7 @@ impl<U, T> UserSession<U, String, T> {
                 } else {
                     role.strip_prefix(r.as_str())
                 };
-                if let Some(s) = remainder
-                    && s.starts_with(':')
-                {
+                if remainder.is_some_and(|s| s.starts_with(':')) {
                     return true;
                 }
             }

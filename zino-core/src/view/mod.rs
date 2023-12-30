@@ -30,10 +30,10 @@ cfg_if::cfg_if! {
 pub(crate) fn init<APP: Application + ?Sized>() {
     let app_state = APP::shared_state();
     let mut template_dir = "templates";
-    if let Some(view) = app_state.get_config("view")
-        && let Some(dir) = view.get_str("template-dir")
-    {
-        template_dir = dir;
+    if let Some(view) = app_state.get_config("view") {
+        if let Some(dir) = view.get_str("template-dir") {
+            template_dir = dir;
+        }
     }
 
     let template_dir = if Path::new(template_dir).exists() {

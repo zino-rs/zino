@@ -122,15 +122,13 @@ where
             let mut claims = JwtClaims::new(user_id.as_ref());
 
             let user_id = user_id.parse()?;
-            if let Some(role_field) = Self::ROLE_FIELD
-                && user.contains_key(role_field)
-            {
+            if let Some(role_field) = Self::ROLE_FIELD.filter(|&field| user.contains_key(field)) {
                 claims.add_data_entry("roles", user.parse_str_array(role_field));
             }
-            if let Some(tenant_id_field) = Self::TENANT_ID_FIELD
-                && let Some(tenant_id) = user.remove(tenant_id_field)
-            {
-                claims.add_data_entry("tenant_id", tenant_id);
+            if let Some(tenant_id_field) = Self::TENANT_ID_FIELD {
+                if let Some(tenant_id) = user.remove(tenant_id_field) {
+                    claims.add_data_entry("tenant_id", tenant_id);
+                }
             }
 
             let mut data = Map::new();
@@ -178,15 +176,13 @@ where
             .await?
             .ok_or_else(|| warn!("404 Not Found: cannot get the user `{}`", user_id))?;
         let mut claims = JwtClaims::new(user_id);
-        if let Some(role_field) = Self::ROLE_FIELD
-            && user.contains_key(role_field)
-        {
+        if let Some(role_field) = Self::ROLE_FIELD.filter(|&field| user.contains_key(field)) {
             claims.add_data_entry("roles", user.parse_str_array(role_field));
         }
-        if let Some(tenant_id_field) = Self::TENANT_ID_FIELD
-            && let Some(tenant_id) = user.remove(tenant_id_field)
-        {
-            claims.add_data_entry("tenant_id", tenant_id);
+        if let Some(tenant_id_field) = Self::TENANT_ID_FIELD {
+            if let Some(tenant_id) = user.remove(tenant_id_field) {
+                claims.add_data_entry("tenant_id", tenant_id);
+            }
         }
 
         let mut data = Map::new();
@@ -223,30 +219,34 @@ where
             .await?
             .ok_or_else(|| warn!("404 Not Found: cannot get the user `{}`", user_id))?;
         let data = claims.data();
-        if let Some(role_field) = Self::ROLE_FIELD
-            && let Some(roles) = data.get("roles")
-            && user.get(role_field) != Some(roles)
-        {
-            bail!("401 Unauthorized: invalid for the `{}` field", role_field);
+        if let Some(role_field) = Self::ROLE_FIELD {
+            if let Some(roles) = data.get("roles") {
+                if user.get(role_field) != Some(roles) {
+                    bail!("401 Unauthorized: invalid for the `{}` field", role_field);
+                }
+            }
         }
-        if let Some(tenant_id_field) = Self::TENANT_ID_FIELD
-            && let Some(tenant_id) = data.get("tenant_id")
-            && user.get(tenant_id_field) != Some(tenant_id)
-        {
-            bail!(
-                "401 Unauthorized: invalid for the `{}` field",
-                tenant_id_field
-            );
+        if let Some(tenant_id_field) = Self::TENANT_ID_FIELD {
+            if let Some(tenant_id) = data.get("tenant_id") {
+                if user.get(tenant_id_field) != Some(tenant_id) {
+                    bail!(
+                        "401 Unauthorized: invalid for the `{}` field",
+                        tenant_id_field
+                    );
+                }
+            }
         }
-        if let Some(login_at_field) = Self::LOGIN_AT_FIELD
-            && let Some(login_at_str) = user.get_str(login_at_field)
-            && let Ok(login_at) = login_at_str.parse::<DateTime>()
-            && claims.issued_at().timestamp() < login_at.timestamp()
-        {
-            bail!(
-                "401 Unauthorized: invalid before the `{}` time",
-                login_at_field
-            );
+        if let Some(login_at_field) = Self::LOGIN_AT_FIELD {
+            if let Some(login_at_str) = user.get_str(login_at_field) {
+                if let Ok(login_at) = login_at_str.parse::<DateTime>() {
+                    if claims.issued_at().timestamp() < login_at.timestamp() {
+                        bail!(
+                            "401 Unauthorized: invalid before the `{}` time",
+                            login_at_field
+                        );
+                    }
+                }
+            }
         }
         Ok(true)
     }

@@ -455,8 +455,9 @@ where
         Self::before_extract().await?;
 
         let mut model = Self::try_get_model(id).await?;
-        if let Some(version) = data.get_u64("version")
-            && model.version() != version
+        if data
+            .get_u64("version")
+            .is_some_and(|version| model.version() != version)
         {
             bail!(
                 "409 Conflict: there is a version conflict for the model `{}`",
@@ -500,9 +501,7 @@ where
         let mut associations = Map::new();
         let table_name = Self::table_name();
         for col in Self::columns() {
-            if let Some(reference) = col.reference()
-                && reference.name() == table_name
-            {
+            if col.reference().is_some_and(|r| r.name() == table_name) {
                 let col_name = col.name();
                 let size = col.random_size();
                 let values = Self::sample(size).await?;

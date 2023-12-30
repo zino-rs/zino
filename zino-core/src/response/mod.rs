@@ -554,10 +554,12 @@ impl<S: ResponseCode> Response<S> {
         let has_json_data = !self.json_data.is_null();
         let bytes_opt = if has_bytes_data {
             Some(self.bytes_data.clone())
-        } else if let Some(transformer) = self.data_transformer.as_ref()
-            && has_json_data
-        {
-            Some(transformer(&self.json_data)?)
+        } else if has_json_data {
+            if let Some(transformer) = self.data_transformer.as_ref() {
+                Some(transformer(&self.json_data)?)
+            } else {
+                None
+            }
         } else {
             None
         };
@@ -626,13 +628,13 @@ impl<S: ResponseCode> Response<S> {
             displayed_inline = helper::displayed_inline(content_type);
             self.set_content_type(content_type.to_string());
         }
-        if let Some(file_name) = file.file_name()
-            && !displayed_inline
-        {
-            self.insert_header(
-                "content-disposition",
-                format!(r#"attachment; filename="{file_name}""#),
-            );
+        if !displayed_inline {
+            if let Some(file_name) = file.file_name() {
+                self.insert_header(
+                    "content-disposition",
+                    format!(r#"attachment; filename="{file_name}""#),
+                );
+            }
         }
         self.insert_header("etag", file.etag());
         self.set_bytes_data(Bytes::from(file));
@@ -692,10 +694,10 @@ impl<S: ResponseCode> From<Response<S>> for FullResponse {
         };
 
         for (key, value) in response.finalize() {
-            if let Ok(header_name) = HeaderName::try_from(key.as_ref())
-                && let Ok(header_value) = HeaderValue::try_from(value)
-            {
-                res.headers_mut().insert(header_name, header_value);
+            if let Ok(header_name) = HeaderName::try_from(key.as_ref()) {
+                if let Ok(header_value) = HeaderValue::try_from(value) {
+                    res.headers_mut().insert(header_name, header_value);
+                }
             }
         }
 

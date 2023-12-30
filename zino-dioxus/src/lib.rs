@@ -3,7 +3,6 @@
 #![doc(html_logo_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.svg")]
 #![allow(non_snake_case)]
 #![forbid(unsafe_code)]
-#![feature(let_chains)]
 
 pub mod class;
 pub mod extension;

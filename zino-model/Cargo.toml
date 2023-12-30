@@ -2,7 +2,7 @@
 name = "zino-model"
 description = "Domain models for zino."
 version = "0.14.4"
-rust-version = "1.73"
+rust-version = "1.75"
 edition = "2021"
 license = "MIT"
 categories = ["web-programming", "database"]

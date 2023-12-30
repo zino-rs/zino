@@ -160,7 +160,7 @@ impl NamedFile {
     /// Appends the bytes into a file at the path.
     #[inline]
     pub fn append(&self, path: impl AsRef<Path>) -> Result<(), io::Error> {
-        let mut file = OpenOptions::new().write(true).append(true).open(path)?;
+        let mut file = OpenOptions::new().append(true).open(path)?;
         file.write_all(self.as_ref())
     }
 
@@ -169,10 +169,10 @@ impl NamedFile {
     pub fn encrypt_with(&mut self, key: impl AsRef<[u8]>) -> Result<(), Error> {
         let suffix = ".encrypted";
         let bytes = crypto::encrypt(self.as_ref(), key.as_ref())?;
-        if let Some(ref mut file_name) = self.file_name
-            && !file_name.ends_with(suffix)
-        {
-            file_name.push_str(suffix);
+        if let Some(ref mut file_name) = self.file_name {
+            if !file_name.ends_with(suffix) {
+                file_name.push_str(suffix);
+            }
         }
         self.bytes = bytes.into();
         Ok(())
@@ -183,10 +183,10 @@ impl NamedFile {
     pub fn decrypt_with(&mut self, key: impl AsRef<[u8]>) -> Result<(), Error> {
         let suffix = ".encrypted";
         let bytes = crypto::decrypt(self.as_ref(), key.as_ref())?;
-        if let Some(ref mut file_name) = self.file_name
-            && file_name.ends_with(suffix)
-        {
-            file_name.truncate(file_name.len() - suffix.len());
+        if let Some(ref mut file_name) = self.file_name {
+            if !file_name.ends_with(suffix) {
+                file_name.truncate(file_name.len() - suffix.len());
+            }
         }
         self.bytes = bytes.into();
         Ok(())

@@ -2,6 +2,7 @@
 name = "zino-middleware"
 description = "Middlewares for zino."
 version = "0.0.1"
+rust-version = "1.75"
 edition = "2021"
 license = "MIT"
 categories = ["asynchronous", "network-programming", "web-programming"]

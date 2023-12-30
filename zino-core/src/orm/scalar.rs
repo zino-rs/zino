@@ -53,11 +53,13 @@ where
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        while let Some(row) = rows.try_next().await?
-            && max_rows > 0
-        {
-            data.push(row.try_get_unchecked(0)?);
-            max_rows -= 1;
+        while max_rows > 0 {
+            if let Some(row) = rows.try_next().await? {
+                data.push(row.try_get_unchecked(0)?);
+                max_rows -= 1;
+            } else {
+                break;
+            }
         }
         ctx.set_query(&sql);
         ctx.set_query_result(Some(u64::try_from(data.len())?), true);
@@ -107,11 +109,13 @@ where
         let mut rows = query.fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        while let Some(row) = rows.try_next().await?
-            && max_rows > 0
-        {
-            data.push(row.try_get_unchecked(0)?);
-            max_rows -= 1;
+        while max_rows > 0 {
+            if let Some(row) = rows.try_next().await? {
+                data.push(row.try_get_unchecked(0)?);
+                max_rows -= 1;
+            } else {
+                break;
+            }
         }
         ctx.set_query(sql.as_ref());
         ctx.append_arguments(&mut arguments);

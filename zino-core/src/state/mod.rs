@@ -179,9 +179,7 @@ impl State {
     pub fn encrypt_password(config: &Table) -> Option<Cow<'_, str>> {
         let password = config.get_str("password")?;
         application::SECRET_KEY.get().and_then(|key| {
-            if let Ok(data) = base64::decode(password)
-                && crypto::decrypt(&data, key).is_ok()
-            {
+            if base64::decode(password).is_ok_and(|data| crypto::decrypt(&data, key).is_ok()) {
                 Some(password.into())
             } else {
                 crypto::encrypt(password.as_bytes(), key)
@@ -195,10 +193,10 @@ impl State {
     pub fn decrypt_password(config: &Table) -> Option<Cow<'_, str>> {
         let password = config.get_str("password")?;
         if let Ok(data) = base64::decode(password) {
-            if let Some(key) = application::SECRET_KEY.get()
-                && let Ok(plaintext) = crypto::decrypt(&data, key)
-            {
-                return Some(String::from_utf8_lossy(&plaintext).into_owned().into());
+            if let Some(key) = application::SECRET_KEY.get() {
+                if let Ok(plaintext) = crypto::decrypt(&data, key) {
+                    return Some(String::from_utf8_lossy(&plaintext).into_owned().into());
+                }
             }
         }
         if let Some(encrypted_password) = Self::encrypt_password(config).as_deref() {

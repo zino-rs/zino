@@ -248,10 +248,10 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
                     .parse::<Table>()
                     .expect("fail to parse the OpenAPI file as a TOML table");
                 if file.file_name() == "OPENAPI.toml" {
-                    if let Some(info_config) = openapi_config.get_table("info")
-                        && OPENAPI_INFO.set(info_config.clone()).is_err()
-                    {
-                        panic!("fail to set OpenAPI info");
+                    if let Some(info_config) = openapi_config.get_table("info") {
+                        if OPENAPI_INFO.set(info_config.clone()).is_err() {
+                            panic!("fail to set OpenAPI info");
+                        }
                     }
                     if let Some(servers) = openapi_config.get_array("servers") {
                         let servers = servers
@@ -340,11 +340,11 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
                 }
                 if let Some(webhooks) = openapi_config.get_table("webhooks") {
                     for (webhook_name, webhook_request) in webhooks {
-                        if let Some(request) = webhook_request.as_table()
-                            && let Ok(webhook) = WebHook::try_new(request)
-                        {
-                            let webhook_name = webhook_name.to_owned().leak() as &'static str;
-                            webhook_definitions.insert(webhook_name, webhook);
+                        if let Some(request) = webhook_request.as_table() {
+                            if let Ok(webhook) = WebHook::try_new(request) {
+                                let webhook_name = webhook_name.to_owned().leak() as &'static str;
+                                webhook_definitions.insert(webhook_name, webhook);
+                            }
                         }
                     }
                 }

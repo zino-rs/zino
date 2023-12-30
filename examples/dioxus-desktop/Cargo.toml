@@ -2,7 +2,7 @@
 name = "dioxus-desktop"
 description = "An example for Dioxus desktop integration."
 version = "0.2.0"
-rust-version = "1.73"
+rust-version = "1.75"
 edition = "2021"
 publish = false
 

@@ -43,7 +43,10 @@ pub fn parse_duration(mut input: &str) -> Result<Duration, ParseDurationError> {
     let mut nonterminated = true;
     let mut last_unit_order = 0;
     let mut milliseconds = 0;
-    while nonterminated && let Some(index) = input.find(|ch: char| ch.is_alphabetic()) {
+    while nonterminated {
+        let Some(index) = input.find(|ch: char| ch.is_alphabetic()) else {
+            break;
+        };
         let (number, remainder) = input.split_at(index);
         let number = number
             .parse::<u64>()

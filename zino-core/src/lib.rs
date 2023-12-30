@@ -2,14 +2,11 @@
 #![doc(html_favicon_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.png")]
 #![doc(html_logo_url = "https://photino.github.io/zino-docs-zh/assets/zino-logo.svg")]
 #![allow(async_fn_in_trait)]
-#![allow(stable_features)]
 #![forbid(unsafe_code)]
 #![feature(associated_type_defaults)]
-#![feature(async_fn_in_trait)]
 #![feature(decl_macro)]
 #![feature(doc_auto_cfg)]
 #![feature(lazy_cell)]
-#![feature(let_chains)]
 #![feature(slice_first_last_chunk)]
 
 mod crypto;

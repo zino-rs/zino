@@ -186,14 +186,14 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                             }
                         }
                     } else if operator == "BETWEEN" {
-                        if let Some(values) = value.parse_str_array()
-                            && let [min_value, max_value, ..] = values.as_slice()
-                        {
-                            let min_value = self.format_value(min_value);
-                            let max_value = self.format_value(max_value);
-                            let condition =
-                                format!(r#"({field} BETWEEN {min_value} AND {max_value})"#);
-                            conditions.push(condition);
+                        if let Some(values) = value.parse_str_array() {
+                            if let [min_value, max_value] = values.as_slice() {
+                                let min_value = self.format_value(min_value);
+                                let max_value = self.format_value(max_value);
+                                let condition =
+                                    format!(r#"({field} BETWEEN {min_value} AND {max_value})"#);
+                                conditions.push(condition);
+                            }
                         }
                     } else if operator == "json_array_length" {
                         if let Some(Ok(length)) = value.parse_usize() {
@@ -212,15 +212,14 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     return conditions.join(" AND ");
                 }
             }
-        } else if let Some(range) = value.as_array()
-            && range.len() == 2
-        {
-            let min_value = self.encode_value(range.first());
-            let max_value = self.encode_value(range.last());
+        } else if let Some([min_value, max_value]) = value.as_array().map(|v| v.as_slice()) {
+            let min_value = self.encode_value(Some(min_value));
+            let max_value = self.encode_value(Some(max_value));
             return format!(r#"{field} >= {min_value} AND {field} < {max_value}"#);
-        } else if let Some(value) = value.as_str()
-            && let Some((min_value, max_value)) = value.split_once(',')
-            && self.is_datetime_type()
+        } else if let Some((min_value, max_value)) = value
+            .as_str()
+            .and_then(|value| value.split_once(','))
+            .filter(|_| self.is_datetime_type())
         {
             let min_value = self.format_value(min_value);
             let max_value = self.format_value(max_value);

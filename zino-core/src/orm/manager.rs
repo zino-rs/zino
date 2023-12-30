@@ -53,18 +53,18 @@ impl PoolManager for ConnectionPool<DatabasePool> {
             .test_before_acquire(false)
             .before_acquire(move |conn, meta| {
                 Box::pin(async move {
-                    if meta.idle_for.as_secs() > health_check_interval
-                        && let Some(cp) = super::GlobalPool::get(name)
-                    {
-                        if let Err(err) = conn.ping().await {
-                            let name = cp.name();
-                            cp.store_availability(false);
-                            tracing::error!(
-                                "fail to ping the database for the `{name}` service: {err}"
-                            );
-                            return Err(err);
-                        } else {
-                            cp.store_availability(true);
+                    if meta.idle_for.as_secs() > health_check_interval {
+                        if let Some(cp) = super::GlobalPool::get(name) {
+                            if let Err(err) = conn.ping().await {
+                                let name = cp.name();
+                                cp.store_availability(false);
+                                tracing::error!(
+                                    "fail to ping the database for the `{name}` service: {err}"
+                                );
+                                return Err(err);
+                            } else {
+                                cp.store_availability(true);
+                            }
                         }
                     }
                     Ok(true)

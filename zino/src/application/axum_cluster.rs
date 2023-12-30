@@ -187,10 +187,13 @@ impl Application for AxumCluster {
                             } else {
                                 RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
                             };
-                            if let Some(custom_html) = config.get_str("custom-html")
-                                && let Ok(html) = fs::read_to_string(project_dir.join(custom_html))
-                            {
-                                app = app.merge(rapidoc.custom_html(html.as_str()).path(path));
+                            if let Some(custom_html) = config.get_str("custom-html") {
+                                let custom_html_file = project_dir.join(custom_html);
+                                if let Ok(html) = fs::read_to_string(custom_html_file) {
+                                    app = app.merge(rapidoc.custom_html(html.as_str()).path(path));
+                                } else {
+                                    app = app.merge(rapidoc.path(path));
+                                }
                             } else {
                                 app = app.merge(rapidoc.path(path));
                             }

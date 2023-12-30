@@ -23,13 +23,13 @@ impl MutationExt<DatabaseDriver> for Mutation {
                 "$inc" => {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
-                            if (permissive || fields.contains(key))
-                                && let Some(col) = M::get_column(key).filter(|c| !c.is_read_only())
-                            {
-                                let key = Query::format_field(key);
-                                let value = col.encode_value(Some(value));
-                                let mutation = format!(r#"{key} = {value} + {key}"#);
-                                mutations.push(mutation);
+                            if permissive || fields.contains(key) {
+                                if let Some(col) = M::get_writable_column(key) {
+                                    let key = Query::format_field(key);
+                                    let value = col.encode_value(Some(value));
+                                    let mutation = format!(r#"{key} = {value} + {key}"#);
+                                    mutations.push(mutation);
+                                }
                             }
                         }
                     }
@@ -37,13 +37,13 @@ impl MutationExt<DatabaseDriver> for Mutation {
                 "$mul" => {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
-                            if (permissive || fields.contains(key))
-                                && let Some(col) = M::get_column(key).filter(|c| !c.is_read_only())
-                            {
-                                let key = Query::format_field(key);
-                                let value = col.encode_value(Some(value));
-                                let mutation = format!(r#"{key} = {value} * {key}"#);
-                                mutations.push(mutation);
+                            if permissive || fields.contains(key) {
+                                if let Some(col) = M::get_writable_column(key) {
+                                    let key = Query::format_field(key);
+                                    let value = col.encode_value(Some(value));
+                                    let mutation = format!(r#"{key} = {value} * {key}"#);
+                                    mutations.push(mutation);
+                                }
                             }
                         }
                     }
@@ -51,13 +51,13 @@ impl MutationExt<DatabaseDriver> for Mutation {
                 "$min" => {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
-                            if (permissive || fields.contains(key))
-                                && let Some(col) = M::get_column(key).filter(|c| !c.is_read_only())
-                            {
-                                let key = Query::format_field(key);
-                                let value = col.encode_value(Some(value));
-                                let mutation = format!(r#"{key} = LEAST({value}, {key})"#);
-                                mutations.push(mutation);
+                            if permissive || fields.contains(key) {
+                                if let Some(col) = M::get_writable_column(key) {
+                                    let key = Query::format_field(key);
+                                    let value = col.encode_value(Some(value));
+                                    let mutation = format!(r#"{key} = LEAST({value}, {key})"#);
+                                    mutations.push(mutation);
+                                }
                             }
                         }
                     }
@@ -65,25 +65,25 @@ impl MutationExt<DatabaseDriver> for Mutation {
                 "$max" => {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
-                            if (permissive || fields.contains(key))
-                                && let Some(col) = M::get_column(key).filter(|c| !c.is_read_only())
-                            {
-                                let key = Query::format_field(key);
-                                let value = col.encode_value(Some(value));
-                                let mutation = format!(r#"{key} = GREATEST({value}, {key})"#);
-                                mutations.push(mutation);
+                            if permissive || fields.contains(key) {
+                                if let Some(col) = M::get_writable_column(key) {
+                                    let key = Query::format_field(key);
+                                    let value = col.encode_value(Some(value));
+                                    let mutation = format!(r#"{key} = GREATEST({value}, {key})"#);
+                                    mutations.push(mutation);
+                                }
                             }
                         }
                     }
                 }
                 _ => {
-                    if (permissive || fields.contains(key))
-                        && let Some(col) = M::get_column(key).filter(|c| !c.is_read_only())
-                    {
-                        let key = Query::format_field(key);
-                        let value = col.encode_value(Some(value));
-                        let mutation = format!(r#"{key} = {value}"#);
-                        mutations.push(mutation);
+                    if permissive || fields.contains(key) {
+                        if let Some(col) = M::get_writable_column(key) {
+                            let key = Query::format_field(key);
+                            let value = col.encode_value(Some(value));
+                            let mutation = format!(r#"{key} = {value}"#);
+                            mutations.push(mutation);
+                        }
                     }
                 }
             }

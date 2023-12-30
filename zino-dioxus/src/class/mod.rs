@@ -78,15 +78,13 @@ impl<'a> Class<'a> {
     /// Returns the namespace.
     #[inline]
     pub fn namespace(&self) -> Option<&str> {
-        self.namespace
+        self.namespace.filter(|s| !s.is_empty())
     }
 
     /// Formats `self` as a `Cow<str>`.
     pub fn format(&self) -> Cow<'_, str> {
         let classes = self.classes.as_slice();
-        if let Some(namespace) = self.namespace()
-            && !namespace.is_empty()
-        {
+        if let Some(namespace) = self.namespace() {
             let class = if let [class] = classes {
                 [namespace, class].join("-")
             } else {

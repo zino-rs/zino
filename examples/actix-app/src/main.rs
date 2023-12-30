@@ -1,6 +1,3 @@
-#![allow(async_fn_in_trait)]
-#![allow(stable_features)]
-#![feature(async_fn_in_trait)]
 #![feature(lazy_cell)]
 
 mod controller;

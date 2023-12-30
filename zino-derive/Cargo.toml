@@ -2,7 +2,7 @@
 name = "zino-derive"
 description = "Derived traits for zino."
 version = "0.14.4"
-rust-version = "1.73"
+rust-version = "1.75"
 edition = "2021"
 license = "MIT"
 homepage = "https://github.com/photino/zino"

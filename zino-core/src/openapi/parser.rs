@@ -380,9 +380,7 @@ fn parse_schema_format(format: &str) -> SchemaFormat {
 fn parse_path_parameters(path: &str) -> Vec<Parameter> {
     let mut parameters = Vec::new();
     for segment in path.split('/') {
-        if let Some(part) = segment.strip_prefix('{')
-            && let Some(name) = part.strip_suffix('}')
-        {
+        if let Some(name) = segment.strip_prefix('{').and_then(|s| s.strip_suffix('}')) {
             let schema_name = name.to_case(Case::Camel);
             let parameter = ParameterBuilder::new()
                 .name(name)

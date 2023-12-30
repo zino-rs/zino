@@ -89,10 +89,10 @@ where
             .extract(&req)?;
 
         let ctx = model.insert().await.extract(&req)?;
-        if let Some(last_insert_id) = ctx.last_insert_id()
-            && model_snapshot.get_i64("id") == Some(0)
-        {
-            model_snapshot.upsert("id", last_insert_id);
+        if let Some(last_insert_id) = ctx.last_insert_id() {
+            if model_snapshot.get_i64("id") == Some(0) {
+                model_snapshot.upsert("id", last_insert_id);
+            }
         }
 
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
@@ -175,13 +175,13 @@ where
         };
 
         let mut data = Map::data_entries(models);
-        if let Some(page_size) = req.get_query("page_size").and_then(|s| s.parse().ok())
-            && req.get_query("total_rows").is_none()
-        {
-            let total_rows = Self::count(&query).await.extract(&req)?;
-            let page_count = total_rows.div_ceil(page_size);
-            data.upsert("total_rows", total_rows);
-            data.upsert("page_count", page_count);
+        if let Some(page_size) = req.get_query("page_size").and_then(|s| s.parse().ok()) {
+            if req.get_query("total_rows").is_none() {
+                let total_rows = Self::count(&query).await.extract(&req)?;
+                let page_count = total_rows.div_ceil(page_size);
+                data.upsert("total_rows", total_rows);
+                data.upsert("page_count", page_count);
+            }
         }
         res.set_json_data(data);
         Ok(res.into())
@@ -503,10 +503,10 @@ where
             if validation.is_success() && !validate_only {
                 let mut model_snapshot = model.snapshot();
                 let ctx = model.insert().await.extract(&req)?;
-                if let Some(last_insert_id) = ctx.last_insert_id()
-                    && model_snapshot.get_i64("id") == Some(0)
-                {
-                    model_snapshot.upsert("id", last_insert_id);
+                if let Some(last_insert_id) = ctx.last_insert_id() {
+                    if model_snapshot.get_i64("id") == Some(0) {
+                        model_snapshot.upsert("id", last_insert_id);
+                    }
                 }
                 models.push(model_snapshot);
             } else {

@@ -76,11 +76,11 @@ pub trait Application {
                 } else {
                     project_dir.join(dir)
                 };
-                if !path.exists()
-                    && let Err(err) = fs::create_dir_all(&path)
-                {
-                    let path = path.display();
-                    tracing::error!("fail to create the directory {path}: {err}");
+                if !path.exists() {
+                    if let Err(err) = fs::create_dir_all(&path) {
+                        let path = path.display();
+                        tracing::error!("fail to create the directory {path}: {err}");
+                    }
                 }
             }
         }
@@ -203,8 +203,9 @@ pub trait Application {
     /// Returns the shared directory with the specific name,
     /// which is defined in the `dirs` table.
     fn shared_dir(name: &str) -> PathBuf {
-        let path = if let Some(dirs) = SHARED_APP_STATE.get_config("dirs")
-            && let Some(path) = dirs.get_str(name)
+        let path = if let Some(path) = SHARED_APP_STATE
+            .get_config("dirs")
+            .and_then(|t| t.get_str(name))
         {
             path
         } else {
