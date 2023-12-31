@@ -23,7 +23,7 @@ which emphasizes **simplicity**, **extensibility** and **productivity**.
 ## Getting started
 
 You can start with the example [`actix-app`], [`axum-app`] or [`dioxus-desktop`].
-It requires stable **rustc 75+** to build the project.
+It requires **Rust 1.75+** to build the project.
 
 ```shell
 cd examples/axum-app

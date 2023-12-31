@@ -15,6 +15,7 @@ readme = "README.md"
 [package.metadata.docs.rs]
 features = ["full"]
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 all-formats = ["format", "format-pdf"]

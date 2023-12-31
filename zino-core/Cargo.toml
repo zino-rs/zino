@@ -15,6 +15,7 @@ readme = "README.md"
 [package.metadata.docs.rs]
 features = ["full", "runtime-tokio"]
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 accessor = ["opendal"]

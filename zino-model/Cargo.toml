@@ -12,6 +12,10 @@ repository = "https://github.com/photino/zino"
 documentation = "https://docs.rs/zino-model"
 readme = "README.md"
 
+[package.metadata.docs.rs]
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+rustdoc-args = ["--cfg", "docsrs"]
+
 [features]
 default = [
     "namespace",

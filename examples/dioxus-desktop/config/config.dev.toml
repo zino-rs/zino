@@ -8,7 +8,7 @@ uploads = "local/uploads"
 
 [window]
 title = "DataCube"
-theme = "Light"
+theme = "Dark"
 transparent = false
 
 [desktop]
