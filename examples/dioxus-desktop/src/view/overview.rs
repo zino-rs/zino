@@ -53,7 +53,7 @@ pub fn Overview(cx: Scope) -> Element {
                         }
                         a {
                             class: "mr-2",
-                            href: "https://github.com/photino/zino/tags",
+                            href: "https://github.com/zino-rs/zino/tags",
                             img {
                                 src: "https://img.shields.io/github/v/tag/photino/zino",
                             }
@@ -68,56 +68,56 @@ pub fn Overview(cx: Scope) -> Element {
                         }
                         a {
                             class: "mr-2",
-                            href: "https://github.com/photino/zino/stargazers",
+                            href: "https://github.com/zino-rs/zino/stargazers",
                             img {
                                 src: "https://img.shields.io/github/stars/photino/zino",
                             }
                         }
                         a {
                             class: "mr-2",
-                            href: "https://github.com/photino/zino/watchers",
+                            href: "https://github.com/zino-rs/zino/watchers",
                             img {
                                 src: "https://img.shields.io/github/watchers/photino/zino",
                             }
                         }
                         a {
                             class: "mr-2",
-                            href: "https://github.com/photino/zino/forks",
+                            href: "https://github.com/zino-rs/zino/forks",
                             img {
                                 src: "https://img.shields.io/github/forks/photino/zino",
                             }
                         }
                         a {
                             class: "mr-2",
-                            href: "https://github.com/photino/zino/graphs/contributors",
+                            href: "https://github.com/zino-rs/zino/graphs/contributors",
                             img {
                                 src: "https://img.shields.io/github/contributors/photino/zino",
                             }
                         }
                         a {
                             class: "mr-2",
-                            href: "https://github.com/photino/zino/commits/main",
+                            href: "https://github.com/zino-rs/zino/commits/main",
                             img {
                                 src: "https://img.shields.io/github/last-commit/photino/zino/main",
                             }
                         }
                         a {
                             class: "mr-2",
-                            href: "https://github.com/photino/zino/pulls",
+                            href: "https://github.com/zino-rs/zino/pulls",
                             img {
                                 src: "https://img.shields.io/github/issues-pr/photino/zino"
                             }
                         }
                         a {
                             class: "mr-2",
-                            href: "https://github.com/photino/zino/actions/workflows/rust.yml",
+                            href: "https://github.com/zino-rs/zino/actions/workflows/rust.yml",
                             img {
                                 src: "https://img.shields.io/github/actions/workflow/status/photino/zino/rust.yml",
                             }
                         }
                         a {
                             class: "mr-2",
-                            href: "https://github.com/photino/zino/blob/main/LICENSE",
+                            href: "https://github.com/zino-rs/zino/blob/main/LICENSE",
                             img {
                                 src: "https://img.shields.io/github/license/photino/zino",
                             }
@@ -151,7 +151,7 @@ pub fn Overview(cx: Scope) -> Element {
                         class: "card-content",
                         a {
                             class: "mr-2",
-                            href: "https://github.com/photino/zino/issues",
+                            href: "https://github.com/zino-rs/zino/issues",
                             img {
                                 src: "https://img.shields.io/github/issues/photino/zino",
                             }
@@ -159,7 +159,7 @@ pub fn Overview(cx: Scope) -> Element {
                         for label in ["bug", "enhancement", "dependencies"] {
                             a {
                                 class: "mr-2",
-                                href: "https://github.com/photino/zino/labels/{label}",
+                                href: "https://github.com/zino-rs/zino/labels/{label}",
                                 img {
                                     src: "https://img.shields.io/github/issues/photino/zino/{label}",
                                 }

@@ -1,4 +1,4 @@
-[![github]](https://github.com/photino/zino)
+[![github]](https://github.com/zino-rs/zino)
 [![crates-io]](https://crates.io/crates/zino-dioxus)
 [![docs-rs]](https://docs.rs/zino-dioxus)
 
@@ -12,7 +12,7 @@ Dioxus components for [`zino`].
 
 The design of our components is most inspired by [`Bulma`] and [`daisyUI`].
 
-[`zino`]: https://github.com/photino/zino
+[`zino`]: https://github.com/zino-rs/zino
 [`Bulma`]: https://bulma.io/
 [`daisyUI`]: https://daisyui.com/
 

@@ -7,8 +7,8 @@ edition = "2021"
 license = "MIT"
 categories = ["gui", "network-programming", "web-programming"]
 keywords = ["zino", "dioxus", "components"]
-homepage = "https://github.com/photino/zino"
-repository = "https://github.com/photino/zino"
+homepage = "https://github.com/zino-rs/zino"
+repository = "https://github.com/zino-rs/zino"
 documentation = "https://docs.rs/zino-dioxus"
 readme = "README.md"
 
@@ -18,6 +18,15 @@ dioxus-core = "0.4.3"
 dioxus-router = "0.4.3"
 dioxus-free-icons = "0.7.0"
 smallvec = "1.11.1"
+
+[dependencies.uuid]
+version = "1.6.1"
+features = [
+    "fast-rng",
+    "serde",
+    "v4",
+    "v7",
+]
 
 [dependencies.zino-core]
 path = "../zino-core"

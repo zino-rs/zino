@@ -1,4 +1,4 @@
-[![github]](https://github.com/photino/zino)
+[![github]](https://github.com/zino-rs/zino)
 [![crates-io]](https://crates.io/crates/zino-extra)
 [![docs-rs]](https://docs.rs/zino-extra)
 
@@ -17,4 +17,4 @@ The following optional features are available:
 | `cache`             | Enables the cache services.                            | No       |
 | `format`            | Enables the support for common file formats.           | No       |
 
-[`zino`]: https://github.com/photino/zino
+[`zino`]: https://github.com/zino-rs/zino

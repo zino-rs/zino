@@ -21,7 +21,7 @@ pub use zino_core::{
     schedule::{AsyncCronJob, AsyncJob, AsyncJobScheduler, CronJob, Job, JobScheduler},
     state::State,
     validation::Validation,
-    warn, BoxFuture, LazyLock, Map, Record, Uuid,
+    warn, BoxFuture, Decimal, LazyLock, Map, Record, Uuid,
 };
 
 #[cfg(feature = "orm")]

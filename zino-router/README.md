@@ -1,4 +1,4 @@
-[![github]](https://github.com/photino/zino)
+[![github]](https://github.com/zino-rs/zino)
 [![crates-io]](https://crates.io/crates/zino-router)
 [![docs-rs]](https://docs.rs/zino-router)
 
@@ -8,4 +8,4 @@
 
 A flexible router for [`zino`].
 
-[`zino`]: https://github.com/photino/zino
+[`zino`]: https://github.com/zino-rs/zino

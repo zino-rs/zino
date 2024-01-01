@@ -309,7 +309,7 @@ fn StargazerListing<'a>(cx: Scope<'a>, index: usize, stargazer: &'a Map) -> Elem
                    img { src: avatar_url },
                 }
             }
-            th {
+            td {
                 a {
                     href: "https://github.com/{name}?tab=followers",
                     img {

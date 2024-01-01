@@ -52,12 +52,12 @@ For Chinese rustaceans, you can also follow our WeChat official account to canta
 
 ![zino-web](https://user-images.githubusercontent.com/3446306/265183253-90b4f8bb-33d2-4e14-b6e3-78da313e2e68.png)
 
-[`zino-core`]: https://github.com/photino/zino/tree/main/zino-core
-[`zino-derive`]: https://github.com/photino/zino/tree/main/zino-derive
-[`zino-model`]: https://github.com/photino/zino/tree/main/zino-model
-[`zino-extra`]: https://github.com/photino/zino/tree/main/zino-extra
-[`zino-dioxus`]: https://github.com/photino/zino/tree/main/zino-dioxus
-[`zino-cli`]: https://github.com/photino/zino/tree/main/zino-cli
+[`zino-core`]: https://github.com/zino-rs/zino/tree/main/zino-core
+[`zino-derive`]: https://github.com/zino-rs/zino/tree/main/zino-derive
+[`zino-model`]: https://github.com/zino-rs/zino/tree/main/zino-model
+[`zino-extra`]: https://github.com/zino-rs/zino/tree/main/zino-extra
+[`zino-dioxus`]: https://github.com/zino-rs/zino/tree/main/zino-dioxus
+[`zino-cli`]: https://github.com/zino-rs/zino/tree/main/zino-cli
 [zino]: https://crates.io/crates/zino
 [zino-docs]: https://docs.rs/zino
 [zino-core]: https://crates.io/crates/zino-core
@@ -78,8 +78,8 @@ For Chinese rustaceans, you can also follow our WeChat official account to canta
 [`actix-web`]: https://crates.io/crates/actix-web
 [`axum`]: https://crates.io/crates/axum
 [`dioxus`]: https://crates.io/crates/dioxus
-[`actix-app`]: https://github.com/photino/zino/tree/main/examples/actix-app
-[`axum-app`]: https://github.com/photino/zino/tree/main/examples/axum-app
-[`dioxus-desktop`]: https://github.com/photino/zino/tree/main/examples/dioxus-desktop
-[license]: https://github.com/photino/zino/blob/main/LICENSE
-[zino-issue]: https://github.com/photino/zino/issues/new
+[`actix-app`]: https://github.com/zino-rs/zino/tree/main/examples/actix-app
+[`axum-app`]: https://github.com/zino-rs/zino/tree/main/examples/axum-app
+[`dioxus-desktop`]: https://github.com/zino-rs/zino/tree/main/examples/dioxus-desktop
+[license]: https://github.com/zino-rs/zino/blob/main/LICENSE
+[zino-issue]: https://github.com/zino-rs/zino/issues/new

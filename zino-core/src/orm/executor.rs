@@ -87,19 +87,19 @@ macro_rules! impl_sqlx_executor {
             let mut stream = sqlx::query(sql).fetch(self);
             let mut max_rows = super::MAX_ROWS.load(Relaxed);
             let mut rows = Vec::with_capacity(stream.size_hint().0.min(max_rows));
-            while max_rows > 0 {
-                match stream.next().await {
-                    Some(Ok(row)) => {
+            while let Some(result) = stream.next().await {
+                match result {
+                    Ok(row) if max_rows > 0 => {
                         rows.push(row);
                         max_rows -= 1;
                     }
-                    Some(Err(err)) => {
+                    Err(err) => {
                         if matches!(err, sqlx::error::Error::PoolTimedOut) {
                             super::GlobalPool::connect_all().await;
                         }
                         return Err(err.into());
                     }
-                    None => break,
+                    _ => break,
                 }
             }
             Ok(rows)
@@ -121,19 +121,19 @@ macro_rules! impl_sqlx_executor {
             let mut stream = query.fetch(self);
             let mut max_rows = super::MAX_ROWS.load(Relaxed);
             let mut rows = Vec::with_capacity(stream.size_hint().0.min(max_rows));
-            while max_rows > 0 {
-                match stream.next().await {
-                    Some(Ok(row)) => {
+            while let Some(result) = stream.next().await {
+                match result {
+                    Ok(row) if max_rows > 0 => {
                         rows.push(row);
                         max_rows -= 1;
                     }
-                    Some(Err(err)) => {
+                    Err(err) => {
                         if matches!(err, sqlx::error::Error::PoolTimedOut) {
                             super::GlobalPool::connect_all().await;
                         }
                         return Err(err.into());
                     }
-                    None => break,
+                    _ => break,
                 }
             }
             Ok(rows)

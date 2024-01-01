@@ -7,8 +7,8 @@ edition = "2021"
 license = "MIT"
 categories = ["asynchronous", "network-programming", "web-programming::http-server"]
 keywords = ["http", "web", "framework"]
-homepage = "https://github.com/photino/zino"
-repository = "https://github.com/photino/zino"
+homepage = "https://github.com/zino-rs/zino"
+repository = "https://github.com/zino-rs/zino"
 documentation = "https://docs.rs/zino"
 readme = "README.md"
 

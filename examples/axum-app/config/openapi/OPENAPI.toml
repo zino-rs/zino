@@ -5,7 +5,7 @@ An example for [axum] integration.
 
 [axum]: https://crates.io/crates/axum
 """
-contact = { url = "https://github.com/photino/zino" }
+contact = { url = "https://github.com/zino-rs/zino" }
 license = "MIT"
 
 [security_schemes.jwt_auth]

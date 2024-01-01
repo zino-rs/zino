@@ -1,4 +1,4 @@
-[![github]](https://github.com/photino/zino)
+[![github]](https://github.com/zino-rs/zino)
 [![crates-io]](https://crates.io/crates/zino-model)
 [![docs-rs]](https://docs.rs/zino-model)
 
@@ -8,5 +8,5 @@
 
 Domain models for [`zino`].
 
-[`zino`]: https://github.com/photino/zino
+[`zino`]: https://github.com/zino-rs/zino
 

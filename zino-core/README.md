@@ -1,4 +1,4 @@
-[![github]](https://github.com/photino/zino)
+[![github]](https://github.com/zino-rs/zino)
 [![crates-io]](https://crates.io/crates/zino-core)
 [![docs-rs]](https://docs.rs/zino-core)
 
@@ -28,7 +28,7 @@ The following optional features are available:
 | `validator`         | Enables the common validation rules.                   | No       |
 | `view`              | Enables the HTML template rendering.                   | No       |
 
-[`zino`]: https://github.com/photino/zino
+[`zino`]: https://github.com/zino-rs/zino
 [`opendal`]: https://crates.io/crates/opendal
 [`metrics`]: https://crates.io/crates/metrics
 [`async-std`]: https://crates.io/crates/async-std

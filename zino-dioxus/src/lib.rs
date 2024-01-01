@@ -9,5 +9,6 @@ pub mod extension;
 pub mod icon;
 pub mod layout;
 pub mod menu;
+pub mod message;
 pub mod prelude;
 pub mod theme;

@@ -1,4 +1,4 @@
-use crate::{datetime, extension::TomlValueExt, Map};
+use crate::{datetime, extension::TomlValueExt, Map, Uuid};
 use std::time::Duration;
 use toml::value::{Array, Table};
 
@@ -74,6 +74,10 @@ pub trait TomlTableExt {
     /// Extracts the string corresponding to the key
     /// and parses it as `Duration`.
     fn get_duration(&self, key: &str) -> Option<Duration>;
+
+    /// Extracts the string corresponding to the key and parses it as `Uuid`.
+    /// If the `Uuid` is `nil`, it also returns `None`.
+    fn parse_uuid(&self, key: &str) -> Option<Result<Uuid, uuid::Error>>;
 
     /// Converts `self` to a JSON object.
     fn to_map(&self) -> Map;
@@ -197,6 +201,13 @@ impl TomlTableExt for Table {
     fn get_duration(&self, key: &str) -> Option<Duration> {
         self.get_str(key)
             .and_then(|s| datetime::parse_duration(s).ok())
+    }
+
+    fn parse_uuid(&self, key: &str) -> Option<Result<Uuid, uuid::Error>> {
+        self.get_str(key)
+            .map(|s| s.trim_start_matches("urn:uuid:"))
+            .filter(|s| !s.chars().all(|c| c == '0' || c == '-'))
+            .map(|s| s.parse())
     }
 
     fn to_map(&self) -> Map {

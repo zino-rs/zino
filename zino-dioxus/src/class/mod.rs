@@ -149,4 +149,11 @@ macro_rules! format_class {
             .map(Class::format)
             .unwrap_or_else(|| $default_class.into())
     };
+    ($cx:ident, $class_prop:ident, $default_class:expr) => {
+        $cx.props
+            .$class_prop
+            .as_ref()
+            .map(Class::format)
+            .unwrap_or_else(|| $default_class.into())
+    };
 }

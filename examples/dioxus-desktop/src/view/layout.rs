@@ -41,7 +41,7 @@ pub fn Wrapper(cx: Scope) -> Element {
             }
             NavbarEnd {
                 NavbarLink {
-                    to: "https://github.com/photino/zino",
+                    to: "https://github.com/zino-rs/zino",
                     IconText {
                         Icon {
                             SvgIcon { icon: BsGithub }

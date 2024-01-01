@@ -512,7 +512,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::before_mutation(query, mutation).await?;
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let table_name = query.format_table_name::<Self>();
+        let table_name = Self::table_name();
         let filters = query.format_filters::<Self>();
         let updates = mutation.format_updates::<Self>();
         let sql = if cfg!(any(
@@ -557,7 +557,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_writer().await?.pool();
         Self::before_mutation(query, mutation).await?;
 
-        let table_name = query.format_table_name::<Self>();
+        let table_name = Self::table_name();
         let filters = query.format_filters::<Self>();
         let updates = mutation.format_updates::<Self>();
         let sql = format!("UPDATE {table_name} SET {updates} {filters};");

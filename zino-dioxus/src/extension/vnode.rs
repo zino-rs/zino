@@ -1,6 +1,6 @@
 use dioxus_core::{DynamicNode::Component, VNode};
 
-/// Extension trait for [`VNode`](dioxus_core::VNode).
+/// Extension trait for [`VNode`].
 pub trait VNodeExt {
     /// Returns `true` if `self` has a given component node as its child.
     fn has_component(&self, name: &str) -> bool;

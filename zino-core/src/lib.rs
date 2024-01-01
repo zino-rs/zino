@@ -62,6 +62,9 @@ pub type TomlValue = toml::Value;
 /// A Universally Unique Identifier (UUID).
 pub type Uuid = uuid::Uuid;
 
+/// A 128 bit representation of a fixed-precision decimal number.
+pub type Decimal = rust_decimal::Decimal;
+
 /// A value which is initialized on the first access.
 pub type LazyLock<T> = once_cell::sync::Lazy<T>;
 

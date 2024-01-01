@@ -1,5 +1,5 @@
 use super::{DatabaseDriver, DatabaseRow};
-use crate::{error::Error, BoxError};
+use crate::{error::Error, BoxError, Decimal, Uuid};
 use chrono::{DateTime, Local, NaiveDate, NaiveTime};
 use sqlx::{database::HasValueRef, Database, Decode, Row, Type};
 
@@ -78,12 +78,54 @@ where
     row.try_get_unchecked(field).map_err(Error::from)
 }
 
+/// Decodes a single value as `Decimal` for the field in a row.
+#[cfg(any(
+    feature = "orm-mariadb",
+    feature = "orm-mysql",
+    feature = "orm-postgres",
+    feature = "orm-tidb"
+))]
+#[inline]
+pub fn decode_decimal(row: &DatabaseRow, field: &str) -> Result<Decimal, Error> {
+    row.try_get_unchecked(field).map_err(Error::from)
+}
+
+/// Decodes a single value as `Decimal` for the field in a row.
+#[cfg(not(any(
+    feature = "orm-mariadb",
+    feature = "orm-mysql",
+    feature = "orm-postgres",
+    feature = "orm-tidb"
+)))]
+#[inline]
+pub fn decode_decimal(row: &DatabaseRow, field: &str) -> Result<Decimal, Error> {
+    decode::<String>(row, field)
+        .and_then(|value| value.parse().map_err(Error::from))
+        .map_err(Error::from)
+}
+
+/// Decodes a single value as `Uuid` for the field in a row.
+#[cfg(feature = "orm-postgres")]
+#[inline]
+pub fn decode_uuid(row: &DatabaseRow, field: &str) -> Result<Uuid, Error> {
+    row.try_get_unchecked(field).map_err(Error::from)
+}
+
+/// Decodes a single value as `Uuid` for the field in a row.
+#[cfg(not(feature = "orm-postgres"))]
+#[inline]
+pub fn decode_uuid(row: &DatabaseRow, field: &str) -> Result<Uuid, Error> {
+    decode::<String>(row, field)
+        .and_then(|value| value.parse().map_err(Error::from))
+        .map_err(Error::from)
+}
+
 /// Decodes a single value as `Vec<T>` for the field in a row.
 #[cfg(feature = "orm-postgres")]
 #[inline]
-pub fn decode_array<'r, T>(row: &'r sqlx::postgres::PgRow, field: &str) -> Result<Vec<T>, Error>
+pub fn decode_array<'r, T>(row: &'r DatabaseRow, field: &str) -> Result<Vec<T>, Error>
 where
-    T: for<'a> Decode<'a, sqlx::Postgres> + sqlx::Type<sqlx::Postgres>,
+    T: for<'a> Decode<'a, DatabaseDriver> + sqlx::Type<DatabaseDriver>,
 {
     row.try_get_unchecked(field).map_err(Error::from)
 }

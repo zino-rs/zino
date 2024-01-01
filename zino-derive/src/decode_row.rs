@@ -28,7 +28,15 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             if ignore {
                 continue;
             }
-            if type_name == "Map" {
+            if type_name == "Uuid" {
+                decode_model_fields.push(quote! {
+                    model.#ident = orm::decode_uuid(row, #name)?;
+                });
+            } else if type_name == "Decimal" {
+                decode_model_fields.push(quote! {
+                    model.#ident = orm::decode_decimal(row, #name)?;
+                });
+            } else if type_name == "Map" {
                 decode_model_fields.push(quote! {
                     if let JsonValue::Object(map) = orm::decode(row, #name)? {
                         model.#ident = map;

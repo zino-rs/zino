@@ -169,3 +169,24 @@ pub struct NavbarLinkProps<'a> {
     /// The children to render within the component.
     children: Element<'a>,
 }
+
+/// A container for each single item of the navbar.
+pub fn NavbarItem<'a>(cx: Scope<'a, NavbarItemProps<'a>>) -> Element {
+    let class = format_class!(cx, "navbar-item");
+    render! {
+        div {
+            class: "{class}",
+            &cx.props.children
+        }
+    }
+}
+
+/// The [`NavbarItem`] properties struct for the configuration of the component.
+#[derive(Props)]
+pub struct NavbarItemProps<'a> {
+    /// The class attribute for the component.
+    #[props(into)]
+    pub class: Option<Class<'a>>,
+    /// The children to render within the component.
+    children: Element<'a>,
+}

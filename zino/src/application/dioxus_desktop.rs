@@ -56,6 +56,9 @@ where
                 }
             });
         }
+        runtime.block_on(async {
+            Self::load().await;
+        });
 
         let app_env = Self::env();
         let app_name = Self::name();

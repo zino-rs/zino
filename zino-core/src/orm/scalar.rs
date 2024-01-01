@@ -53,8 +53,8 @@ where
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        while max_rows > 0 {
-            if let Some(row) = rows.try_next().await? {
+        while let Some(row) = rows.try_next().await? {
+            if max_rows > 0 {
                 data.push(row.try_get_unchecked(0)?);
                 max_rows -= 1;
             } else {
@@ -109,8 +109,8 @@ where
         let mut rows = query.fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        while max_rows > 0 {
-            if let Some(row) = rows.try_next().await? {
+        while let Some(row) = rows.try_next().await? {
+            if max_rows > 0 {
                 data.push(row.try_get_unchecked(0)?);
                 max_rows -= 1;
             } else {

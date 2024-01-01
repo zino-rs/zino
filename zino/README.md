@@ -1,4 +1,4 @@
-[![github]](https://github.com/photino/zino)
+[![github]](https://github.com/zino-rs/zino)
 [![crates-io]](https://crates.io/crates/zino)
 [![docs-rs]](https://docs.rs/zino)
 
@@ -38,13 +38,13 @@ The following optional features are available:
 | `orm`        | Enables the ORM for MySQL, PostgreSQL or **SQLite**. | Yes      |
 | `view`       | Enables the HTML template rendering.                 | Yes      |
 
-[`zino`]: https://github.com/photino/zino
+[`zino`]: https://github.com/zino-rs/zino
 [`sqlx`]: https://crates.io/crates/sqlx
 [`tracing`]: https://crates.io/crates/tracing
 [`metrics`]: https://crates.io/crates/metrics
 [`actix-web`]: https://crates.io/crates/actix-web
 [`axum`]: https://crates.io/crates/axum
 [`dioxus`]: https://crates.io/crates/dioxus
-[`actix-app`]: https://github.com/photino/zino/tree/main/examples/actix-app
-[`axum-app`]: https://github.com/photino/zino/tree/main/examples/axum-app
-[`dioxus-desktop`]: https://github.com/photino/zino/tree/main/examples/dioxus-desktop
+[`actix-app`]: https://github.com/zino-rs/zino/tree/main/examples/actix-app
+[`axum-app`]: https://github.com/zino-rs/zino/tree/main/examples/axum-app
+[`dioxus-desktop`]: https://github.com/zino-rs/zino/tree/main/examples/dioxus-desktop

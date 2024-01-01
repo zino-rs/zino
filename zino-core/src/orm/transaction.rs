@@ -172,7 +172,7 @@ where
         let mutation = mutations.0;
         Self::before_mutation(query, mutation).await?;
 
-        let table_name = query.format_table_name::<Self>();
+        let table_name = Self::table_name();
         let filters = query.format_filters::<Self>();
         let updates = mutation.format_updates::<Self>();
         let sql = format!("UPDATE {table_name} SET {updates} {filters};");
@@ -190,7 +190,7 @@ where
         let mutation = mutations.1;
         S::before_mutation(query, mutation).await?;
 
-        let table_name = query.format_table_name::<S>();
+        let table_name = S::table_name();
         let filters = query.format_filters::<S>();
         let updates = mutation.format_updates::<S>();
         let sql = format!("UPDATE {table_name} SET {updates} {filters};");
