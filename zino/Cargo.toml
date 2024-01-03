@@ -58,7 +58,7 @@ view = ["zino-core/view"]
 
 [dependencies]
 cfg-if = "1.0"
-serde_json = "1.0.108"
+serde_json = "1.0.110"
 tracing = "0.1.40"
 
 [dependencies.actix-cors]
@@ -82,7 +82,7 @@ features = [
 ]
 
 [dependencies.async-trait]
-version = "0.1.75"
+version = "0.1.77"
 optional = true
 
 [dependencies.axum]

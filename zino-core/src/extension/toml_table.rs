@@ -1,6 +1,10 @@
 use crate::{datetime, extension::TomlValueExt, Map, Uuid};
-use std::time::Duration;
+use std::{
+    net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr},
+    time::Duration,
+};
 use toml::value::{Array, Table};
+use url::{self, Url};
 
 /// Extension trait for [`Table`](toml::Table).
 pub trait TomlTableExt {
@@ -78,6 +82,18 @@ pub trait TomlTableExt {
     /// Extracts the string corresponding to the key and parses it as `Uuid`.
     /// If the `Uuid` is `nil`, it also returns `None`.
     fn parse_uuid(&self, key: &str) -> Option<Result<Uuid, uuid::Error>>;
+
+    /// Extracts the string corresponding to the key and parses it as `Url`.
+    fn parse_url(&self, key: &str) -> Option<Result<Url, url::ParseError>>;
+
+    /// Extracts the string corresponding to the key and parses it as `IpAddr`.
+    fn parse_ip(&self, key: &str) -> Option<Result<IpAddr, AddrParseError>>;
+
+    /// Extracts the string corresponding to the key and parses it as `Ipv4Addr`.
+    fn parse_ipv4(&self, key: &str) -> Option<Result<Ipv4Addr, AddrParseError>>;
+
+    /// Extracts the string corresponding to the key and parses it as `Ipv6Addr`.
+    fn parse_ipv6(&self, key: &str) -> Option<Result<Ipv6Addr, AddrParseError>>;
 
     /// Converts `self` to a JSON object.
     fn to_map(&self) -> Map;
@@ -208,6 +224,26 @@ impl TomlTableExt for Table {
             .map(|s| s.trim_start_matches("urn:uuid:"))
             .filter(|s| !s.chars().all(|c| c == '0' || c == '-'))
             .map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_url(&self, key: &str) -> Option<Result<Url, url::ParseError>> {
+        self.get_str(key).map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_ip(&self, key: &str) -> Option<Result<IpAddr, AddrParseError>> {
+        self.get_str(key).map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_ipv4(&self, key: &str) -> Option<Result<Ipv4Addr, AddrParseError>> {
+        self.get_str(key).map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_ipv6(&self, key: &str) -> Option<Result<Ipv6Addr, AddrParseError>> {
+        self.get_str(key).map(|s| s.parse())
     }
 
     fn to_map(&self) -> Map {

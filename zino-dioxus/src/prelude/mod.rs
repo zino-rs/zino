@@ -3,6 +3,7 @@
 pub use crate::{
     class::Class,
     extension::FormDataExt,
+    form::{FormField, FormFieldContainer, FormGroup},
     icon::{Icon, IconText},
     layout::{Container, FluidContainer, MainContainer},
     menu::{
@@ -11,4 +12,5 @@ pub use crate::{
     },
     message::Notification,
     theme::Theme,
+    typography::FixedWidthSpan,
 };

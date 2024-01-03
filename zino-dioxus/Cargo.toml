@@ -19,6 +19,10 @@ dioxus-router = "0.4.3"
 dioxus-free-icons = "0.7.0"
 smallvec = "1.11.1"
 
+[dependencies.chrono]
+version = "0.4.31"
+features = ["serde"]
+
 [dependencies.uuid]
 version = "1.6.1"
 features = [

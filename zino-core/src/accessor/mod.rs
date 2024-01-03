@@ -333,9 +333,6 @@ impl GlobalAccessor {
                 if let Some(segments) = config.get_usize("segments") {
                     builder.segments(segments);
                 }
-                if let Some(thread_pool_enabled) = config.get_bool("thread-pool-enabled") {
-                    builder.thread_pool_enabled(thread_pool_enabled);
-                }
                 Ok(Operator::new(builder)?.finish())
             }
             #[cfg(feature = "accessor-mysql")]

@@ -70,21 +70,21 @@ pub fn Overview(cx: Scope) -> Element {
                             class: "mr-2",
                             href: "https://github.com/zino-rs/zino/stargazers",
                             img {
-                                src: "https://img.shields.io/github/stars/photino/zino",
+                                src: "https://img.shields.io/github/stars/photino/zino?style=flat",
                             }
                         }
                         a {
                             class: "mr-2",
                             href: "https://github.com/zino-rs/zino/watchers",
                             img {
-                                src: "https://img.shields.io/github/watchers/photino/zino",
+                                src: "https://img.shields.io/github/watchers/photino/zino?style=flat",
                             }
                         }
                         a {
                             class: "mr-2",
                             href: "https://github.com/zino-rs/zino/forks",
                             img {
-                                src: "https://img.shields.io/github/forks/photino/zino",
+                                src: "https://img.shields.io/github/forks/photino/zino?style=flat",
                             }
                         }
                         a {

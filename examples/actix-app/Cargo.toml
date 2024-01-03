@@ -11,7 +11,7 @@ actix-web = "4.4.0"
 tracing = "0.1.40"
 
 [dependencies.serde]
-version = "1.0.193"
+version = "1.0.194"
 features = ["derive"]
 
 [dependencies.zino]

@@ -14,7 +14,10 @@ pub fn Notification<'a>(cx: Scope<'a, NotificationProps<'a>>) -> Element {
                 class: "{class}",
                 button {
                     class: "{close_class}",
-                    onclick: |_event| {
+                    onclick: move |event| {
+                        if let Some(handler) = cx.props.on_close.as_ref() {
+                            handler.call(event);
+                        }
                         close_notification.set(true);
                     }
                 }
@@ -33,6 +36,8 @@ pub struct NotificationProps<'a> {
     /// A class to apply to the `close` button element.
     #[props(into)]
     pub close_class: Option<Class<'a>>,
+    /// An event handler to be called when the `close` button is clicked.
+    pub on_close: Option<EventHandler<'a, MouseEvent>>,
     /// The children to render within the component.
     children: Element<'a>,
 }
