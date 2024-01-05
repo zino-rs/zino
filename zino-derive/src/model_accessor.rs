@@ -76,7 +76,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                         "snapshot" => {
                             let field = name.clone();
                             let field_ident = format_ident!("{}", field);
-                            if type_name == "Uuid" {
+                            if matches!(type_name, "Uuid" | "Decimal") {
                                 snapshot_entries.push(quote! {
                                     snapshot.upsert(#field, self.#field_ident.to_string());
                                 });

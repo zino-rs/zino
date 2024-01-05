@@ -151,6 +151,9 @@ impl Application for AxumCluster {
                             serve_dir_route.layer(from_fn(middleware::serve_static_pages));
                     }
                     app = app.merge(serve_dir_route);
+                    tracing::info!(
+                        "Static pages `{public_route_prefix}/**` are registered for `{addr}`"
+                    );
                 }
                 if let Some(path) = sse_route {
                     app = app.route(path, routing::get(endpoint::sse_handler));

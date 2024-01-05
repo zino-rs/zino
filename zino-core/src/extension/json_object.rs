@@ -1,7 +1,11 @@
 use super::JsonValueExt;
 use crate::{
     datetime::{self, Date, DateTime, Time},
-    helper, openapi, JsonValue, Map, Record, Uuid,
+    helper,
+    model::Model,
+    openapi,
+    validation::Validation,
+    JsonValue, Map, Record, Uuid,
 };
 use rust_decimal::Decimal;
 use std::{
@@ -199,6 +203,9 @@ pub trait JsonObjectExt {
     /// Extracts the string corresponding to the key and parses it as `Ipv6Addr`.
     fn parse_ipv6(&self, key: &str) -> Option<Result<Ipv6Addr, AddrParseError>>;
 
+    /// Extracts the value corresponding to the key and parses it as a model `M`.
+    fn parse_model<M: Model>(&self, key: &str) -> Option<Result<M, Validation>>;
+
     /// Looks up a value by a JSON Pointer.
     ///
     /// A Pointer is a Unicode string with the reference tokens separated by `/`.
@@ -213,6 +220,9 @@ pub trait JsonObjectExt {
 
     /// Translates the map with the OpenAPI data.
     fn translate_with_openapi(&mut self, name: &str);
+
+    /// Attempts to read the map as an instance of the model `M`.
+    fn read_as_model<M: Model>(&self) -> Result<M, Validation>;
 
     /// Serializes the map into a query string.
     fn to_query_string(&self) -> String;
@@ -631,6 +641,18 @@ impl JsonObjectExt for Map {
         self.get_str(key).map(|s| s.parse())
     }
 
+    fn parse_model<M: Model>(&self, key: &str) -> Option<Result<M, Validation>> {
+        self.get_object(key).map(|data| {
+            let mut model = M::new();
+            let validation = model.read_map(data);
+            if validation.is_success() {
+                Ok(model)
+            } else {
+                Err(validation)
+            }
+        })
+    }
+
     fn pointer(&self, pointer: &str) -> Option<&JsonValue> {
         let Some(path) = pointer.strip_prefix('/') else {
             return None;
@@ -651,6 +673,16 @@ impl JsonObjectExt for Map {
     #[inline]
     fn translate_with_openapi(&mut self, name: &str) {
         openapi::translate_model_entry(self, name);
+    }
+
+    fn read_as_model<M: Model>(&self) -> Result<M, Validation> {
+        let mut model = M::new();
+        let validation = model.read_map(self);
+        if validation.is_success() {
+            Ok(model)
+        } else {
+            Err(validation)
+        }
     }
 
     #[inline]

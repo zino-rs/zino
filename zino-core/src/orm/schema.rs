@@ -435,6 +435,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Inserts many models into the table.
     async fn insert_many(models: Vec<Self>) -> Result<QueryContext, Error> {
+        if models.is_empty() {
+            bail!("the list of models to be inserted should be nonempty");
+        }
+
         let pool = Self::acquire_writer().await?.pool();
         let columns = Self::columns();
         let mut values = Vec::with_capacity(models.len());
@@ -824,11 +828,15 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut values = Vec::new();
         for row in data.iter() {
             for &col in columns {
-                if let Some(value) = row.get(col).cloned() {
-                    if let JsonValue::Array(mut vec) = value {
-                        values.append(&mut vec);
-                    } else {
-                        values.push(value);
+                if let Some(value) = row.get(col) {
+                    if let JsonValue::Array(vec) = value {
+                        for value in vec {
+                            if !values.contains(value) {
+                                values.push(value.clone());
+                            }
+                        }
+                    } else if !values.contains(value) {
+                        values.push(value.clone());
                     }
                 }
             }
@@ -912,11 +920,15 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
         for &col in columns {
-            if let Some(value) = data.get(col).cloned() {
-                if let JsonValue::Array(mut vec) = value {
-                    values.append(&mut vec);
-                } else {
-                    values.push(value);
+            if let Some(value) = data.get(col) {
+                if let JsonValue::Array(vec) = value {
+                    for value in vec {
+                        if !values.contains(value) {
+                            values.push(value.clone());
+                        }
+                    }
+                } else if !values.contains(value) {
+                    values.push(value.clone());
                 }
             }
         }
