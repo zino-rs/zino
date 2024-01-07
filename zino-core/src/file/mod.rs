@@ -48,6 +48,12 @@ impl NamedFile {
         self.field_name = Some(field_name.into());
     }
 
+    /// Sets the file name.
+    #[inline]
+    pub fn set_file_name(&mut self, file_name: impl Into<String>) {
+        self.file_name = Some(file_name.into());
+    }
+
     /// Sets the content type.
     #[inline]
     pub fn set_content_type(&mut self, content_type: Mime) {
@@ -189,6 +195,23 @@ impl NamedFile {
             }
         }
         self.bytes = bytes.into();
+        Ok(())
+    }
+
+    /// Renames the stem portion of the file name.
+    #[inline]
+    pub fn rename_file_stem(&mut self, file_stem: &str) -> Result<(), Error> {
+        let file_name = if let Some(ext) = self
+            .file_name
+            .as_ref()
+            .and_then(|s| Path::new(s).extension())
+        {
+            let ext = ext.to_string_lossy();
+            format!("{file_stem}.{ext}")
+        } else {
+            file_stem.to_owned()
+        };
+        self.file_name = Some(file_name);
         Ok(())
     }
 

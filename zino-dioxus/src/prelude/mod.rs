@@ -2,9 +2,10 @@
 
 pub use crate::{
     class::Class,
+    dialog::ModalCard,
     extension::FormDataExt,
-    form::{FormField, FormFieldContainer, FormGroup},
-    icon::{Icon, IconText},
+    form::{FormAddons, FormField, FormFieldContainer, FormGroup},
+    icon::{Icon, IconText, SvgIcon},
     layout::{Container, FluidContainer, MainContainer},
     menu::{
         Dropdown, Navbar, NavbarBrand, NavbarCenter, NavbarEnd, NavbarItem, NavbarLink, NavbarMenu,

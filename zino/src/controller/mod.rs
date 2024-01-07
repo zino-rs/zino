@@ -107,7 +107,7 @@ where
 
     async fn delete(req: Self::Request) -> Self::Result {
         let id = req.parse_param::<K>("id")?;
-        Self::soft_delete_by_id(&id).await.extract(&req)?;
+        Self::delete_by_id(&id).await.extract(&req)?;
 
         let res = Response::new(StatusCode::OK).context(&req);
         Ok(res.into())
@@ -189,7 +189,7 @@ where
 
     async fn soft_delete(req: Self::Request) -> Self::Result {
         let id = req.parse_param::<K>("id")?;
-        Self::delete_by_id(&id).await.extract(&req)?;
+        Self::soft_delete_by_id(&id).await.extract(&req)?;
 
         let res = Response::new(StatusCode::OK).context(&req);
         Ok(res.into())

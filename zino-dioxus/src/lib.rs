@@ -5,6 +5,7 @@
 #![forbid(unsafe_code)]
 
 pub mod class;
+pub mod dialog;
 pub mod extension;
 pub mod form;
 pub mod icon;

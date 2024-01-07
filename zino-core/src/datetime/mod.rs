@@ -3,7 +3,7 @@
 use crate::{AvroValue, JsonValue};
 use chrono::{
     format::ParseError, Datelike, Days, Local, Months, NaiveDate, NaiveDateTime, NaiveTime,
-    SecondsFormat, TimeZone, Timelike, Utc,
+    SecondsFormat, TimeZone, Timelike, Utc, Weekday,
 };
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
@@ -325,6 +325,12 @@ impl DateTime {
     #[inline]
     pub fn is_leap_year(&self) -> bool {
         self.0.date_naive().leap_year()
+    }
+
+    /// Returns `true` if the current day is weekend.
+    #[inline]
+    pub fn is_weekend(&self) -> bool {
+        matches!(self.0.weekday(), Weekday::Sat | Weekday::Sun)
     }
 
     /// Returns the number of days in the current year.

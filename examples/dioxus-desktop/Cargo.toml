@@ -21,7 +21,7 @@ features = [
 ]
 
 [dependencies.serde]
-version = "1.0.194"
+version = "1.0.195"
 features = ["derive"]
 
 [dependencies.zino]

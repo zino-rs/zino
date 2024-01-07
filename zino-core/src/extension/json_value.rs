@@ -1,7 +1,7 @@
 use crate::{
     datetime::{self, Date, DateTime, Time},
     extension::JsonObjectExt,
-    helper, JsonValue, Map, Uuid,
+    helper, Decimal, JsonValue, Map, Uuid,
 };
 use csv::{ByteRecord, Writer};
 use std::{
@@ -135,6 +135,9 @@ pub trait JsonValueExt {
     /// Parses the JSON value as `Uuid`.
     /// If the `Uuid` is `nil`, it also returns `None`.
     fn parse_uuid(&self) -> Option<Result<Uuid, uuid::Error>>;
+
+    /// Parses the JSON value as `Decimal`.
+    fn parse_decimal(&self) -> Option<Result<Decimal, rust_decimal::Error>>;
 
     /// Parses the JSON value as `Date`.
     fn parse_date(&self) -> Option<Result<Date, chrono::format::ParseError>>;
@@ -393,6 +396,11 @@ impl JsonValueExt for JsonValue {
             .map(|s| s.trim_start_matches("urn:uuid:"))
             .filter(|s| !s.chars().all(|c| c == '0' || c == '-'))
             .map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_decimal(&self) -> Option<Result<Decimal, rust_decimal::Error>> {
+        self.as_str().map(|s| s.parse())
     }
 
     #[inline]

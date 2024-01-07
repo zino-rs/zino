@@ -32,6 +32,10 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 decode_model_fields.push(quote! {
                     model.#ident = orm::decode_uuid(row, #name)?;
                 });
+            } else if type_name == "Option<Uuid>" {
+                decode_model_fields.push(quote! {
+                    model.#ident = orm::decode_uuid(row, #name).ok();
+                });
             } else if type_name == "Decimal" {
                 decode_model_fields.push(quote! {
                     model.#ident = orm::decode_decimal(row, #name)?;

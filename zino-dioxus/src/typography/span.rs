@@ -33,7 +33,7 @@ pub struct FixedWidthSpanProps<'a> {
     /// The width of the span.
     #[props(into)]
     pub width: JsonValue,
-    /// The text alignment in one of `left`, `right`, `center` and `justify`.
+    /// The `text-align` CSS property: `left` | `right` | `center` | `justify`.
     #[props(into)]
     pub align: Option<Cow<'a, str>>,
     /// The children to render within the component.

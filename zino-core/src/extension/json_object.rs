@@ -176,6 +176,9 @@ pub trait JsonObjectExt {
     /// If the `Uuid` is `nil`, it also returns `None`.
     fn parse_uuid(&self, key: &str) -> Option<Result<Uuid, uuid::Error>>;
 
+    /// Extracts the string corresponding to the key and parses it as `Decimal`.
+    fn parse_decimal(&self, key: &str) -> Option<Result<Decimal, rust_decimal::Error>>;
+
     /// Extracts the string corresponding to the key and parses it as `Date`.
     fn parse_date(&self, key: &str) -> Option<Result<Date, chrono::format::ParseError>>;
 
@@ -187,9 +190,6 @@ pub trait JsonObjectExt {
 
     /// Extracts the string corresponding to the key and parses it as `Duration`.
     fn parse_duration(&self, key: &str) -> Option<Result<Duration, datetime::ParseDurationError>>;
-
-    /// Extracts the string corresponding to the key and parses it as `Decimal`.
-    fn parse_decimal(&self, key: &str) -> Option<Result<Decimal, rust_decimal::Error>>;
 
     /// Extracts the string corresponding to the key and parses it as `Url`.
     fn parse_url(&self, key: &str) -> Option<Result<Url, url::ParseError>>;
@@ -597,6 +597,11 @@ impl JsonObjectExt for Map {
     }
 
     #[inline]
+    fn parse_decimal(&self, key: &str) -> Option<Result<Decimal, rust_decimal::Error>> {
+        self.get_str(key).map(|s| s.parse())
+    }
+
+    #[inline]
     fn parse_date(&self, key: &str) -> Option<Result<Date, chrono::format::ParseError>> {
         self.get_str(key).map(|s| s.parse())
     }
@@ -614,11 +619,6 @@ impl JsonObjectExt for Map {
     #[inline]
     fn parse_duration(&self, key: &str) -> Option<Result<Duration, datetime::ParseDurationError>> {
         self.get_str(key).map(datetime::parse_duration)
-    }
-
-    #[inline]
-    fn parse_decimal(&self, key: &str) -> Option<Result<Decimal, rust_decimal::Error>> {
-        self.get_str(key).map(|s| s.parse())
     }
 
     #[inline]

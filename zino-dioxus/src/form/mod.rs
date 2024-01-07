@@ -3,6 +3,6 @@
 mod field;
 
 pub use field::{
-    FormField, FormFieldContainer, FormFieldContainerProps, FormFieldProps, FormGroup,
-    FormGroupProps,
+    FormAddons, FormAddonsProps, FormField, FormFieldContainer, FormFieldContainerProps,
+    FormFieldProps, FormGroup, FormGroupProps,
 };

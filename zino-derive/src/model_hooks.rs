@@ -54,14 +54,15 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
         if let Some(field_mappings) = field_embeddings.get(&correlatation_field) {
             let model_ident = format_ident!("{}", model);
             for (field, referenced_field) in field_mappings {
-                embedding_queries.push(quote! {
-                            if data.contains_key(#correlatation_field) {
-                                let id = &self.#correlatation_field;
-                                let value = <#model_ident>::find_scalar_by_id(&id, #referenced_field).await?;
-                                self.#field = value;
-                                data.upsert(#field, value.to_string());
-                            }
-                        });
+                let query = quote! {
+                    if data.contains_key(#correlatation_field) {
+                        let id = &self.#correlatation_field;
+                        let value = <#model_ident>::find_scalar_by_id(&id, #referenced_field).await?;
+                        self.#field = value;
+                        data.upsert(#field, value.to_string());
+                    }
+                };
+                embedding_queries.push(query);
             }
         }
     }

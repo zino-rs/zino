@@ -3,7 +3,9 @@ use std::time::Duration;
 use zino_core::{
     datetime::{self, Date, DateTime, Time},
     extension::JsonObjectExt,
-    Map, Uuid,
+    model::Model,
+    validation::Validation,
+    Decimal, Map, Uuid,
 };
 
 /// Extension trait for [`FormData`].
@@ -14,6 +16,9 @@ pub trait FormDataExt {
     /// Extracts the string value and parses it as `Uuid`.
     /// If the `Uuid` is `nil`, it also returns `None`.
     fn parse_uuid(&self) -> Option<Result<Uuid, uuid::Error>>;
+
+    /// Parses the JSON value as `Decimal`.
+    fn parse_decimal(&self) -> Option<Result<Decimal, rust_decimal::Error>>;
 
     /// Parses the string value as `Date`.
     fn parse_date(&self) -> Option<Result<Date, chrono::format::ParseError>>;
@@ -26,6 +31,9 @@ pub trait FormDataExt {
 
     /// Parses the string value as `Duration`.
     fn parse_duration(&self) -> Option<Result<Duration, datetime::ParseDurationError>>;
+
+    /// Attempts to read the map as an instance of the model `M`.
+    fn read_as_model<M: Model>(&self) -> Result<M, Validation>;
 
     /// Converts `self` to a JSON object.
     fn to_map(&self) -> Map;
@@ -42,6 +50,11 @@ impl FormDataExt for FormData {
             .map(|s| s.trim_start_matches("urn:uuid:"))
             .filter(|s| !s.chars().all(|c| c == '0' || c == '-'))
             .map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_decimal(&self) -> Option<Result<Decimal, rust_decimal::Error>> {
+        self.get_str().map(|s| s.parse())
     }
 
     #[inline]
@@ -62,6 +75,16 @@ impl FormDataExt for FormData {
     #[inline]
     fn parse_duration(&self) -> Option<Result<Duration, datetime::ParseDurationError>> {
         self.get_str().map(datetime::parse_duration)
+    }
+
+    fn read_as_model<M: Model>(&self) -> Result<M, Validation> {
+        let mut model = M::new();
+        let validation = model.read_map(&self.to_map());
+        if validation.is_success() {
+            Ok(model)
+        } else {
+            Err(validation)
+        }
     }
 
     fn to_map(&self) -> Map {

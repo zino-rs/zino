@@ -79,10 +79,25 @@ pub struct FormFieldProps<'a> {
 /// Grouped fields with the form control.
 pub fn FormGroup<'a>(cx: Scope<'a, FormGroupProps<'a>>) -> Element {
     let class = format_class!(cx, "field is-grouped");
+    let container_class = if let Some(prop) = cx.props.float {
+        match prop {
+            "left" => format!("{class} is-pulled-left").into(),
+            "right" => format!("{class} is-pulled-right").into(),
+            _ => class,
+        }
+    } else {
+        class
+    };
+    let control_class = format_class!(cx, control_class, "control");
     render! {
         div {
-            class: "{class}",
-            &cx.props.children
+            class: "{container_class}",
+            for item in cx.props.items.iter() {
+                div {
+                    class: "{control_class}",
+                    item
+                }
+            }
         }
     }
 }
@@ -96,6 +111,51 @@ pub struct FormGroupProps<'a> {
     /// A class to apply custom styles.
     #[props(into)]
     pub control_class: Option<Class<'a>>,
-    /// The children to render within the component.
-    children: Element<'a>,
+    /// The `float` CSS property: `left` | `right`.
+    pub float: Option<&'a str>,
+    /// The items to be grouped.
+    #[props(into)]
+    pub items: Vec<Element<'a>>,
+}
+
+/// Attaches inputs, buttons, and dropdowns together with the form control.
+pub fn FormAddons<'a>(cx: Scope<'a, FormAddonsProps<'a>>) -> Element {
+    let class = format_class!(cx, "field has-addons");
+    let control_class = format_class!(cx, control_class, "control");
+    let expand = cx.props.expand;
+    let items = cx.props.items.iter().enumerate().map(|(index, item)| {
+        let expand_class = if expand == index + 1 {
+            "is-expanded"
+        } else {
+            ""
+        };
+        (expand_class, item)
+    });
+    render! {
+        div {
+            class: "{class}",
+            for (expand_class, item) in items {
+                div {
+                    class: "{control_class} {expand_class}",
+                    item
+                }
+            }
+        }
+    }
+}
+
+/// The [`FormAddons`] properties struct for the configuration of the component.
+#[derive(Props)]
+pub struct FormAddonsProps<'a> {
+    /// The class attribute for the component.
+    #[props(into)]
+    pub class: Option<Class<'a>>,
+    /// A class to apply custom styles.
+    #[props(into)]
+    pub control_class: Option<Class<'a>>,
+    /// A modifier to expand the `n`th element to fill up the remaining space.
+    pub expand: usize,
+    /// The items to be grouped.
+    #[props(into)]
+    pub items: Vec<Element<'a>>,
 }
