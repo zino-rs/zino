@@ -54,11 +54,11 @@ pub struct ModalCardProps<'a> {
     // A class to apply to the `close` button element.
     #[props(into)]
     pub close_class: Option<Class<'a>>,
+    /// An event handler to be called when the `close` button is clicked.
+    pub on_close: Option<EventHandler<'a, MouseEvent>>,
     /// A flag to determine whether the modal is visible or not.
     #[props(default = false)]
     pub visible: bool,
-    /// An event handler to be called when the `close` button is clicked.
-    pub on_close: Option<EventHandler<'a, MouseEvent>>,
     /// The title in the modal header.
     #[props(into)]
     pub title: Cow<'a, str>,

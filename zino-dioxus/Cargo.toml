@@ -24,6 +24,11 @@ smallvec = "1.11.1"
 version = "0.4.31"
 features = ["serde"]
 
+[dependencies.tokio]
+version = "1.35.1"
+default-features = false
+features = ["time"]
+
 [dependencies.uuid]
 version = "1.6.1"
 features = [

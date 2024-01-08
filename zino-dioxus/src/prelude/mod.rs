@@ -2,8 +2,8 @@
 
 pub use crate::{
     class::Class,
-    dialog::ModalCard,
     extension::FormDataExt,
+    feedback::{Message, ModalCard, Notification},
     form::{FormAddons, FormField, FormFieldContainer, FormGroup},
     icon::{Icon, IconText, SvgIcon},
     layout::{Container, FluidContainer, MainContainer},
@@ -11,7 +11,6 @@ pub use crate::{
         Dropdown, Navbar, NavbarBrand, NavbarCenter, NavbarEnd, NavbarItem, NavbarLink, NavbarMenu,
         NavbarStart, Sidebar,
     },
-    message::Notification,
     theme::Theme,
     typography::FixedWidthSpan,
 };

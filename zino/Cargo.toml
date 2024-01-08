@@ -62,7 +62,7 @@ serde_json = "1.0.111"
 tracing = "0.1.40"
 
 [dependencies.actix-cors]
-version = "0.6.5"
+version = "0.7.0"
 optional = true
 
 [dependencies.actix-files]
