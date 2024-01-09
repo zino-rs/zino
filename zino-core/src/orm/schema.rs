@@ -1088,7 +1088,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut ctx = Self::before_scan(&sql).await?;
 
         let row = pool.fetch_one(&sql).await?;
-        let count = Map::decode_row(&row)?.get_u64("count").unwrap_or_default();
+        let map = Map::decode_row(&row)?;
+
+        // SQLite may return a string value for the count value.
+        let count = map.parse_u64("count").transpose()?.unwrap_or_default();
         ctx.set_query(sql);
         ctx.set_query_result(Some(count), true);
         Self::after_scan(&ctx).await?;

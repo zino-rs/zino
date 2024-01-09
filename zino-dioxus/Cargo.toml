@@ -16,13 +16,16 @@ readme = "README.md"
 dioxus = "0.4.3"
 dioxus-core = "0.4.3"
 dioxus-router = "0.4.3"
-dioxus-free-icons = "0.7.0"
 rust_decimal = "1.33.1"
 smallvec = "1.11.1"
 
 [dependencies.chrono]
 version = "0.4.31"
 features = ["serde"]
+
+[dependencies.dioxus-free-icons]
+version = "0.7.0"
+features = ["font-awesome-solid"]
 
 [dependencies.tokio]
 version = "1.35.1"

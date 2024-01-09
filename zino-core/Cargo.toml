@@ -171,7 +171,7 @@ view-tera = ["view", "dep:tera"]
 [dependencies]
 aes-gcm-siv = "0.11.1"
 apache-avro = "0.16.0"
-base64 = "0.21.5"
+base64 = "0.21.6"
 bytes = "1.5.0"
 cfg-if = "1.0"
 convert_case = "0.6.0"
@@ -252,7 +252,7 @@ version = "0.13.0"
 optional = true
 
 [dependencies.minijinja]
-version = "1.0.10"
+version = "1.0.11"
 optional = true
 features = ["debug", "loader"]
 

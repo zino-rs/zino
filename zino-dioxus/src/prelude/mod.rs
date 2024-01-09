@@ -7,9 +7,9 @@ pub use crate::{
     form::{FormAddons, FormField, FormFieldContainer, FormGroup},
     icon::{Icon, IconText, SvgIcon},
     layout::{Container, FluidContainer, MainContainer},
-    menu::{
+    navigation::{
         Dropdown, Navbar, NavbarBrand, NavbarCenter, NavbarEnd, NavbarItem, NavbarLink, NavbarMenu,
-        NavbarStart, Sidebar,
+        NavbarStart, Pagination, Sidebar,
     },
     theme::Theme,
     typography::FixedWidthSpan,

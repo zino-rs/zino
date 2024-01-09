@@ -10,7 +10,7 @@ pub mod feedback;
 pub mod form;
 pub mod icon;
 pub mod layout;
-pub mod menu;
+pub mod navigation;
 pub mod prelude;
 pub mod theme;
 pub mod typography;

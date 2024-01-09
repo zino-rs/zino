@@ -124,11 +124,7 @@ pub fn FormAddons<'a>(cx: Scope<'a, FormAddonsProps<'a>>) -> Element {
     let control_class = format_class!(cx, control_class, "control");
     let expand = cx.props.expand;
     let items = cx.props.items.iter().enumerate().map(|(index, item)| {
-        let expand_class = if expand == index + 1 {
-            "is-expanded"
-        } else {
-            ""
-        };
+        let expand_class = Class::check("is-expanded", expand == index + 1);
         (expand_class, item)
     });
     render! {

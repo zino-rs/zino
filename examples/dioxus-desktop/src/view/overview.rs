@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
-use dioxus_free_icons::{icons::go_icons::*, Icon};
+use dioxus_free_icons::icons::go_icons::*;
+use zino_dioxus::prelude::*;
 
 pub fn Overview(cx: Scope) -> Element {
     let core_crates = [
@@ -30,11 +31,7 @@ pub fn Overview(cx: Scope) -> Element {
                         class: "card-header",
                         div {
                             class: "card-header-title",
-                            Icon {
-                                width: 14,
-                                height: 14,
-                                icon: GoMarkGithub,
-                            }
+                            SvgIcon { shape: GoMarkGithub, width: 14, intrinsic: true }
                             span {
                                 class: "ml-1",
                                 "GitHub status"
@@ -136,11 +133,7 @@ pub fn Overview(cx: Scope) -> Element {
                         class: "card-header",
                         div {
                             class: "card-header-title",
-                            Icon {
-                                width: 14,
-                                height: 14,
-                                icon: GoIssueOpened,
-                            }
+                            SvgIcon { shape: GoIssueOpened, width: 14, intrinsic: true }
                             span {
                                 class: "ml-1",
                                 "GitHub issues"
@@ -176,11 +169,7 @@ pub fn Overview(cx: Scope) -> Element {
                         class: "card-header",
                         div {
                             class: "card-header-title",
-                            Icon {
-                                width: 14,
-                                height: 14,
-                                icon: GoHistory,
-                            }
+                            SvgIcon { shape: GoHistory, width: 14, intrinsic: true }
                             span {
                                 class: "ml-1",
                                 "GitHub commits"

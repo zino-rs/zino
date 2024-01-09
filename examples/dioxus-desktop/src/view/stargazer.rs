@@ -1,7 +1,7 @@
 use crate::service;
 use dioxus::prelude::*;
-use dioxus_free_icons::{icons::bs_icons::*, Icon};
 use zino::prelude::*;
+use zino_dioxus::prelude::*;
 
 pub fn StargazerList(cx: Scope) -> Element {
     let stargazers_count = use_future(cx, (), |_| service::stargazer::get_stargazers_count());
@@ -16,7 +16,7 @@ pub fn StargazerList(cx: Scope) -> Element {
                     }
                     div {
                         class: "column",
-                        StargazerPaginate { num_stargazers: *count }
+                        StargazerListTable { num_stargazers: *count }
                     }
                 }
             }
@@ -67,20 +67,13 @@ fn StargazerHistory(cx: Scope) -> Element {
 }
 
 #[component]
-fn StargazerPaginate(cx: Scope, num_stargazers: usize) -> Element {
-    let mut page = use_state(cx, || 1);
-    let stargazers = use_future(cx, (page,), |(page,)| {
-        service::stargazer::list_stargazers(10, *page)
+fn StargazerListTable(cx: Scope, num_stargazers: usize) -> Element {
+    let current_page = use_state(cx, || 1);
+    let stargazers = use_future(cx, current_page, |current_page| {
+        service::stargazer::list_stargazers(10, *current_page)
     });
     match stargazers.value() {
         Some(Ok(stargazers)) => {
-            let total_pages = num_stargazers.div_ceil(10);
-            let prev_invisible = if **page == 1 { "is-invisible" } else { "" };
-            let next_invisible = if stargazers.len() < 10 {
-                "is-invisible"
-            } else {
-                ""
-            };
             render! {
                 table {
                     class: "table is-fullwidth",
@@ -95,177 +88,18 @@ fn StargazerPaginate(cx: Scope, num_stargazers: usize) -> Element {
                     }
                     tbody {
                         for (index, stargazer) in stargazers.iter().enumerate() {
-                            StargazerListing {
-                                index: (**page - 1) * 10 + index + 1,
+                            StargazerItem {
+                                index: (**current_page - 1) * 10 + index + 1,
                                 stargazer: stargazer,
                             }
                         }
                     }
                 }
-                nav {
-                    class: "pagination is-centered",
-                    a {
-                        class: "pagination-previous {prev_invisible}",
-                        onclick: move |_| {
-                            page -= 1;
-                        },
-                        Icon {
-                            width: 16,
-                            height: 16,
-                            icon: BsArrowLeft,
-                        }
-                        span {
-                            class: "ml-1",
-                            "Previous"
-                        }
-                    }
-                    ul {
-                        class: "pagination-list",
-                        if **page > 2 {
-                            rsx!(
-                                li {
-                                    a {
-                                        class: "pagination-link",
-                                        onclick: move |_| {
-                                            page.set(1);
-                                        },
-                                        "1"
-                                    }
-                                }
-                            )
-                        }
-                        if **page > 3 {
-                            rsx!(
-                                li {
-                                    span {
-                                        class: "pagination-ellipsis",
-                                        "…"
-                                    }
-                                }
-                            )
-                        }
-                        if total_pages < page + 1 {
-                            rsx!(
-                                li {
-                                    a {
-                                        class: "pagination-link",
-                                        onclick: move |_| {
-                                            page -= 3;
-                                        },
-                                        "{page - 3}"
-                                    }
-                                }
-                            )
-                        }
-                        if total_pages < page + 2 {
-                            rsx!(
-                                li {
-                                    a {
-                                        class: "pagination-link",
-                                        onclick: move |_| {
-                                            page -= 2;
-                                        },
-                                        "{page - 2}"
-                                    }
-                                }
-                            )
-                        }
-                        if **page > 1 {
-                            rsx!(
-                                li {
-                                    a {
-                                        class: "pagination-link",
-                                        onclick: move |_| {
-                                            page -= 1;
-                                        },
-                                        "{page - 1}"
-                                    }
-                                }
-                            )
-                        }
-                        li {
-                            a {
-                                class: "pagination-link is-current",
-                                "{page}"
-                            }
-                        }
-                        if **page < total_pages {
-                            rsx!(
-                                li {
-                                    a {
-                                        class: "pagination-link",
-                                        onclick: move |_| {
-                                            page += 1;
-                                        },
-                                        "{page + 1}"
-                                    }
-                                }
-                            )
-                        }
-                        if **page < 3 {
-                            rsx!(
-                                li {
-                                    a {
-                                        class: "pagination-link",
-                                        onclick: move |_| {
-                                            page += 2;
-                                        },
-                                        "{page + 2}"
-                                    }
-                                }
-                            )
-                        }
-                        if **page < 2 {
-                            rsx!(
-                                li {
-                                    a {
-                                        class: "pagination-link",
-                                        onclick: move |_| {
-                                            page += 3;
-                                        },
-                                        "{page + 3}"
-                                    }
-                                }
-                            )
-                        }
-                        if total_pages > page + 2 {
-                            rsx!(
-                                li {
-                                    span {
-                                        class: "pagination-ellipsis",
-                                        "…"
-                                    }
-                                }
-                            )
-                        }
-                        if total_pages > page + 1 {
-                            rsx!(
-                                li {
-                                    a {
-                                        class: "pagination-link",
-                                        onclick: move |_| {
-                                            page.set(total_pages);
-                                        },
-                                        "{total_pages}"
-                                    }
-                                }
-                            )
-                        }
-                    }
-                    a {
-                        class: "pagination-next {next_invisible}",
-                        onclick: move |_| {
-                            page += 1;
-                        },
-                        span {
-                            class: "mr-1",
-                            "Next"
-                        }
-                        Icon {
-                            width: 16,
-                            height: 16,
-                            icon: BsArrowRight,
-                        }
+                Pagination {
+                    total: *num_stargazers,
+                    current_page: **current_page,
+                    on_change: |page| {
+                        current_page.set(page);
                     }
                 }
             }
@@ -290,7 +124,7 @@ fn StargazerPaginate(cx: Scope, num_stargazers: usize) -> Element {
 }
 
 #[component]
-fn StargazerListing<'a>(cx: Scope<'a>, index: usize, stargazer: &'a Map) -> Element {
+fn StargazerItem<'a>(cx: Scope<'a>, index: usize, stargazer: &'a Map) -> Element {
     let name = stargazer.get_str("login").unwrap_or_default();
     let avatar_url = stargazer.get_str("avatar_url").unwrap_or_default();
     let starred_at = stargazer.get_str("starred_at").unwrap_or_default();

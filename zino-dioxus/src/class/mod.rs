@@ -9,7 +9,7 @@ pub struct Class<'a> {
     /// Optional namespace.
     namespace: Option<&'a str>,
     /// A list of classes.
-    classes: SmallVec<[&'a str; 5]>,
+    classes: SmallVec<[&'a str; 4]>,
 }
 
 impl<'a> Class<'a> {
@@ -28,6 +28,16 @@ impl<'a> Class<'a> {
         Self {
             namespace: (!namespace.is_empty()).then_some(namespace),
             classes: class.split_whitespace().collect(),
+        }
+    }
+
+    /// Creates a new instance when the condition holds, otherwise returns a empty class.
+    #[inline]
+    pub fn check(class: &'a str, condition: bool) -> Self {
+        if condition {
+            Self::new(class)
+        } else {
+            Self::default()
         }
     }
 
@@ -83,6 +93,10 @@ impl<'a> Class<'a> {
 
     /// Formats `self` as a `Cow<str>`.
     pub fn format(&self) -> Cow<'_, str> {
+        if self.classes.is_empty() {
+            return Cow::Borrowed("");
+        }
+
         let classes = self.classes.as_slice();
         if let Some(namespace) = self.namespace() {
             let class = if let [class] = classes {

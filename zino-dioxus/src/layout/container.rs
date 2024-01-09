@@ -45,7 +45,7 @@ pub struct FluidContainerProps<'a> {
 
 /// A container rendered as the `<main>` element.
 pub fn MainContainer<'a>(cx: Scope<'a, MainContainerProps<'a>>) -> Element {
-    let class = format_class!(cx, "container-fluid my-4 px-4");
+    let class = format_class!(cx, "container-fluid px-3 my-3");
     render! {
         main {
             class: "{class}",

@@ -45,9 +45,15 @@ pub fn SvgIcon<'a, T: IconShape + Copy>(cx: Scope<'a, SvgIconProps<'a, T>>) -> E
     let class = format_class!(cx, "icon");
     let width = cx.props.width;
     let height = cx.props.height.unwrap_or(width);
+    let style = if cx.props.intrinsic {
+        format!("width:{width}px;height:{height}px")
+    } else {
+        String::new()
+    };
     render! {
         span {
             class: "{class}",
+            style: "{style}",
             dioxus_free_icons::Icon {
                 icon: cx.props.shape,
                 width: width,
@@ -71,6 +77,9 @@ pub struct SvgIconProps<'a, T: IconShape> {
     /// The height of the `<svg>` element.
     #[props(into)]
     pub height: Option<u32>,
+    /// A flag to use the instrinsic size for the icon.
+    #[props(default = false)]
+    pub intrinsic: bool,
 }
 
 /// A wrapper for combining an icon with text.
