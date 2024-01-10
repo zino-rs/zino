@@ -345,7 +345,7 @@ version = "2.9.1"
 features = ["json"]
 
 [dependencies.utoipa]
-version = "4.1.0"
+version = "4.2.0"
 features = [
     "non_strict_integers",
     "preserve_order",

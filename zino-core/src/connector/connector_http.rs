@@ -98,9 +98,15 @@ impl HttpConnector {
     }
 
     /// Makes an HTTP request with the given query and params.
-    pub async fn fetch(&self, query: &str, params: Option<&Map>) -> Result<Response, Error> {
+    pub async fn fetch(
+        &self,
+        query: Option<&str>,
+        params: Option<&Map>,
+    ) -> Result<Response, Error> {
         let mut url = self.base_url.clone();
-        url.set_query(Some(query));
+        if let Some(query) = query.filter(|s| !s.is_empty()) {
+            url.set_query(Some(query));
+        }
 
         let resource = helper::format_query(url.as_str(), params);
         let mut options = Map::from_entry("method", self.method.as_str());
@@ -138,7 +144,7 @@ impl HttpConnector {
     /// and deserializes the response body via JSON.
     pub async fn fetch_json<T: DeserializeOwned>(
         &self,
-        query: &str,
+        query: Option<&str>,
         params: Option<&Map>,
     ) -> Result<T, Error> {
         let response = self.fetch(query, params).await?.error_for_status()?;
@@ -163,7 +169,7 @@ impl Connector for HttpConnector {
     }
 
     async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, Error> {
-        let data: JsonValue = self.fetch_json(query, params).await?;
+        let data: JsonValue = self.fetch_json(Some(query), params).await?;
         let rows_affected = data.into_map_opt().and_then(|map| {
             map.get_u64("total")
                 .or_else(|| map.get_u64("total_rows"))
@@ -175,7 +181,7 @@ impl Connector for HttpConnector {
     }
 
     async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, Error> {
-        let records = match self.fetch_json(query, params).await? {
+        let records = match self.fetch_json(Some(query), params).await? {
             JsonValue::Array(vec) => vec
                 .into_iter()
                 .filter_map(|v| v.into_map_opt())
@@ -210,7 +216,7 @@ impl Connector for HttpConnector {
         query: &str,
         params: Option<&Map>,
     ) -> Result<Vec<T>, Error> {
-        let data = match self.fetch_json(query, params).await? {
+        let data = match self.fetch_json(Some(query), params).await? {
             JsonValue::Array(vec) => vec
                 .into_iter()
                 .filter_map(|value| value.into_map_opt())
@@ -239,7 +245,7 @@ impl Connector for HttpConnector {
     }
 
     async fn query_one(&self, query: &str, params: Option<&Map>) -> Result<Option<Record>, Error> {
-        let record = match self.fetch_json(query, params).await? {
+        let record = match self.fetch_json(Some(query), params).await? {
             JsonValue::Object(mut map) => {
                 let data = if let Some(json_pointer) = &self.json_pointer {
                     map.pointer(json_pointer).cloned()
@@ -266,7 +272,7 @@ impl Connector for HttpConnector {
         query: &str,
         params: Option<&Map>,
     ) -> Result<Option<T>, Error> {
-        if let JsonValue::Object(mut map) = self.fetch_json(query, params).await? {
+        if let JsonValue::Object(mut map) = self.fetch_json(Some(query), params).await? {
             let data = if let Some(json_pointer) = &self.json_pointer {
                 map.pointer(json_pointer).cloned()
             } else {

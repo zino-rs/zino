@@ -100,6 +100,9 @@ pub trait JsonObjectExt {
     /// Extracts the array value corresponding to the key and parses it as `Vec<i64>`.
     fn get_i64_array(&self, key: &str) -> Option<Vec<i64>>;
 
+    /// Extracts the array value corresponding to the key and parses it as `Vec<f32>`.
+    fn get_f32_array(&self, key: &str) -> Option<Vec<f32>>;
+
     /// Extracts the array value corresponding to the key and parses it as `Vec<f64>`.
     fn get_f64_array(&self, key: &str) -> Option<Vec<f64>>;
 
@@ -374,6 +377,16 @@ impl JsonObjectExt for Map {
     fn get_i64_array(&self, key: &str) -> Option<Vec<i64>> {
         self.get_array(key)
             .map(|values| values.iter().filter_map(|v| v.as_i64()).collect())
+    }
+
+    #[inline]
+    fn get_f32_array(&self, key: &str) -> Option<Vec<f32>> {
+        self.get_array(key).map(|values| {
+            values
+                .iter()
+                .filter_map(|v| v.as_f64().map(|f| f as f32))
+                .collect()
+        })
     }
 
     #[inline]

@@ -66,7 +66,7 @@ version = "0.7.0"
 optional = true
 
 [dependencies.actix-files]
-version = "0.6.4"
+version = "0.6.5"
 optional = true
 
 [dependencies.actix-web]
@@ -167,7 +167,7 @@ optional = true
 features = ["opentelemetry_0_21"]
 
 [dependencies.utoipa]
-version = "4.1.0"
+version = "4.2.0"
 optional = true
 
 [dependencies.utoipa-rapidoc]
