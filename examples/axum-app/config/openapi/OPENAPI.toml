@@ -7,6 +7,7 @@ An example for [axum] integration.
 """
 contact = { url = "https://github.com/zino-rs/zino" }
 license = "MIT"
+version = "1.0"
 
 [security_schemes.jwt_auth]
 type = "http"
