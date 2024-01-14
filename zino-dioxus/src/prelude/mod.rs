@@ -4,7 +4,7 @@ pub use crate::{
     class::Class,
     extension::FormDataExt,
     feedback::{Message, ModalCard, Notification},
-    form::{FormAddons, FormField, FormFieldContainer, FormGroup},
+    form::{DataEntry, DataSelect, FormAddons, FormField, FormFieldContainer, FormGroup},
     icon::{Icon, IconText, SvgIcon},
     layout::{Container, FluidContainer, MainContainer},
     navigation::{

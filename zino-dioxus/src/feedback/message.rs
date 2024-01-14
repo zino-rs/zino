@@ -5,15 +5,21 @@ use zino_core::error::Error;
 
 /// Global messages as feedback in response to user operations.
 pub fn Message<'a>(cx: Scope<'a, MessageProps<'a>>) -> Element {
+    if cx.props.hidden {
+        return None;
+    }
+
     let class = format_class!(cx, "message");
     let close_class = format_class!(cx, close_class, "delete");
-    let hidden_class = Class::check("is-hidden", !cx.props.visible);
     let title = cx.props.title.as_deref().unwrap_or_default();
     match cx.props.future.value() {
         Some(Ok(())) => {
             render! {
                 div {
-                    class: "{class} {hidden_class} is-success",
+                    class: "{class} is-success",
+                    position: "fixed",
+                    top: "4rem",
+                    right: "0.75rem",
                     if !title.is_empty() {
                         render!(div {
                             class: "message-header",
@@ -38,7 +44,10 @@ pub fn Message<'a>(cx: Scope<'a, MessageProps<'a>>) -> Element {
         Some(Err(err)) => {
             render! {
                 div {
-                    class: "{class} {hidden_class} is-danger",
+                    class: "{class} is-danger",
+                    position: "fixed",
+                    top: "4rem",
+                    right: "0.75rem",
                     if !title.is_empty() {
                         render!(div {
                             class: "message-header",
@@ -62,34 +71,30 @@ pub fn Message<'a>(cx: Scope<'a, MessageProps<'a>>) -> Element {
             }
         }
         None => {
-            if let Some(loading) = cx.props.loading.as_ref() {
-                render! {
-                    div {
-                        class: "{class} {hidden_class} is-warning",
-                        if !title.is_empty() {
-                            render!(div {
-                                class: "message-header",
-                                span { "{title}" }
-                                button {
-                                    class: "{close_class}",
-                                    onclick: move |_event| {
-                                        if let Some(handler) = cx.props.on_close.as_ref() {
-                                            handler.call(false);
-                                        }
+            let loading = cx.props.loading.as_ref()?;
+            render! {
+                div {
+                    class: "{class} is-warning",
+                    position: "fixed",
+                    top: "4rem",
+                    right: "0.75rem",
+                    if !title.is_empty() {
+                        render!(div {
+                            class: "message-header",
+                            span { "{title}" }
+                            button {
+                                class: "{close_class}",
+                                onclick: move |_event| {
+                                    if let Some(handler) = cx.props.on_close.as_ref() {
+                                        handler.call(false);
                                     }
                                 }
-                            })
-                        }
-                        div {
-                            class: "message-body",
-                            span { "{loading}" }
-                        }
+                            }
+                        })
                     }
-                }
-            } else {
-                render! {
                     div {
-                        class: "{class} is-hidden",
+                        class: "message-body",
+                        span { "{loading}" }
                     }
                 }
             }
@@ -110,9 +115,9 @@ pub struct MessageProps<'a> {
     pub future: &'a UseFuture<Result<(), Error>>,
     /// An event handler to be called when the `close` button is clicked.
     pub on_close: Option<EventHandler<'a, bool>>,
-    /// A flag to determine whether the message is visible or not.
+    /// A flag to determine whether the message is hidden or not.
     #[props(default = false)]
-    pub visible: bool,
+    pub hidden: bool,
     /// The title in the message header.
     #[props(into)]
     pub title: Option<Cow<'a, str>>,

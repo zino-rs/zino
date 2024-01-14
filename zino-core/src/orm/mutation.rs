@@ -55,7 +55,11 @@ impl MutationExt<DatabaseDriver> for Mutation {
                                 if let Some(col) = M::get_writable_column(key) {
                                     let key = Query::format_field(key);
                                     let value = col.encode_value(Some(value));
-                                    let mutation = format!(r#"{key} = LEAST({value}, {key})"#);
+                                    let mutation = if cfg!(feature = "orm-sqlite") {
+                                        format!(r#"{key} = MIN({value}, {key})"#)
+                                    } else {
+                                        format!(r#"{key} = LEAST({value}, {key})"#)
+                                    };
                                     mutations.push(mutation);
                                 }
                             }
@@ -69,7 +73,11 @@ impl MutationExt<DatabaseDriver> for Mutation {
                                 if let Some(col) = M::get_writable_column(key) {
                                     let key = Query::format_field(key);
                                     let value = col.encode_value(Some(value));
-                                    let mutation = format!(r#"{key} = GREATEST({value}, {key})"#);
+                                    let mutation = if cfg!(feature = "orm-sqlite") {
+                                        format!(r#"{key} = MAX({value}, {key})"#)
+                                    } else {
+                                        format!(r#"{key} = GREATEST({value}, {key})"#)
+                                    };
                                     mutations.push(mutation);
                                 }
                             }

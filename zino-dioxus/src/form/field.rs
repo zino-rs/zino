@@ -52,11 +52,12 @@ pub struct FormFieldContainerProps<'a> {
 pub fn FormField<'a>(cx: Scope<'a, FormFieldProps<'a>>) -> Element {
     let class = format_class!(cx, "field");
     let control_class = format_class!(cx, control_class, "control");
+    let expanded_class = Class::check("is-expanded", cx.props.expanded);
     render! {
         div {
             class: "{class}",
             div {
-                class: "{control_class}",
+                class: "{control_class} {expanded_class}",
                 &cx.props.children
             }
         }
@@ -72,6 +73,9 @@ pub struct FormFieldProps<'a> {
     /// A class to apply custom styles.
     #[props(into)]
     pub control_class: Option<Class<'a>>,
+    /// A flag to determine whether the control is expanded or not.
+    #[props(default = false)]
+    pub expanded: bool,
     /// The children to render within the component.
     children: Element<'a>,
 }
