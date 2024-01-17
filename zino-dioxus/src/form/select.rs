@@ -32,7 +32,7 @@ pub fn DataSelect<'a, T: DataEntry>(cx: Scope<'a, DataSelectProps<'a, T>>) -> El
                     },
                     for entry in entries {
                         option {
-                            key: "{entry.value()}",
+                            key: "{entry.key()}",
                             value: "{entry.value()}",
                             "{entry.label()}"
                         }

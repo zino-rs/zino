@@ -171,7 +171,7 @@ view-tera = ["view", "dep:tera"]
 [dependencies]
 aes-gcm-siv = "0.11.1"
 apache-avro = "0.16.0"
-base64 = "0.21.6"
+base64 = "0.21.7"
 bytes = "1.5.0"
 cfg-if = "1.0"
 convert_case = "0.6.0"
@@ -275,7 +275,7 @@ version = "0.3.3"
 optional = true
 
 [dependencies.random_word]
-version = "0.4.1"
+version = "0.4.2"
 optional = true
 
 [dependencies.reqwest]
@@ -306,7 +306,7 @@ version = "0.5.1"
 optional = true
 
 [dependencies.smallvec]
-version = "1.11.2"
+version = "1.12.0"
 features = ["serde"]
 
 [dependencies.sqlx]

@@ -120,7 +120,7 @@ version = "0.3.30"
 optional = true
 
 [dependencies.image]
-version = "0.24.7"
+version = "0.24.8"
 optional = true
 
 [dependencies.parking_lot]
