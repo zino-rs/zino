@@ -219,7 +219,7 @@ version = "0.5.2"
 features = ["std"]
 
 [dependencies.async-openai]
-version = "0.18.0"
+version = "0.18.1"
 optional = true
 
 [dependencies.card-validate]
@@ -306,7 +306,7 @@ version = "0.5.1"
 optional = true
 
 [dependencies.smallvec]
-version = "1.12.0"
+version = "1.13.0"
 features = ["serde"]
 
 [dependencies.sqlx]
@@ -354,7 +354,7 @@ features = [
 ]
 
 [dependencies.uuid]
-version = "1.6.1"
+version = "1.7.0"
 features = [
     "fast-rng",
     "serde",

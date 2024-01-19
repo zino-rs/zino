@@ -2,9 +2,9 @@ use async_trait::async_trait;
 use axum::{
     body::{Body, HttpBody},
     extract::{ConnectInfo, FromRequest, MatchedPath, OriginalUri},
-    http::{HeaderMap, Method, Request, Uri},
+    http::{HeaderMap, Method, Request},
 };
-use bytes::{Buf, BufMut, Bytes};
+use bytes::{Buf, BufMut};
 use std::{
     borrow::Cow,
     convert::Infallible,
@@ -16,7 +16,7 @@ use std::{
 use zino_core::{
     error::Error,
     extension::HeaderMapExt,
-    request::{Context, RequestContext},
+    request::{Context, RequestContext, Uri},
     state::Data,
 };
 
@@ -119,7 +119,7 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
-    async fn read_body_bytes(&mut self) -> Result<Bytes, Error> {
+    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error> {
         let bytes = to_bytes(self.body_mut()).await?;
         Ok(bytes)
     }
@@ -138,20 +138,20 @@ impl FromRequest<(), Body> for AxumExtractor<Request<Body>> {
 /// Concatenates the buffers from a body into a single `Bytes` asynchronously.
 ///
 /// Copy from https://docs.rs/hyper/0.14.27/hyper/body/fn.to_bytes.html
-async fn to_bytes<T: HttpBody + Unpin>(mut body: T) -> Result<Bytes, T::Error> {
+async fn to_bytes<T: HttpBody + Unpin>(mut body: T) -> Result<Vec<u8>, T::Error> {
     let _ = Pin::new(&mut body);
 
     // If there's only 1 chunk, we can just return Buf::to_bytes()
     let mut first = if let Some(buf) = body.data().await {
         buf?
     } else {
-        return Ok(Bytes::new());
+        return Ok(Vec::new());
     };
 
     let second = if let Some(buf) = body.data().await {
         buf?
     } else {
-        return Ok(first.copy_to_bytes(first.remaining()));
+        return Ok(first.copy_to_bytes(first.remaining()).into());
     };
 
     // Don't pre-emptively reserve *too* much.
@@ -170,5 +170,5 @@ async fn to_bytes<T: HttpBody + Unpin>(mut body: T) -> Result<Bytes, T::Error> {
         vec.put(buf?);
     }
 
-    Ok(vec.into())
+    Ok(vec)
 }

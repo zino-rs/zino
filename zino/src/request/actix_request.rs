@@ -1,6 +1,6 @@
 use actix_web::{
     dev::{Payload, ServiceRequest},
-    http::{header::HeaderMap, Method, Uri},
+    http::{header::HeaderMap, Method},
     web::Bytes,
     FromRequest, HttpMessage, HttpRequest,
 };
@@ -13,7 +13,7 @@ use std::{
 };
 use zino_core::{
     error::Error,
-    request::{Context, RequestContext},
+    request::{Context, RequestContext, Uri},
     state::Data,
 };
 
@@ -95,9 +95,9 @@ impl RequestContext for ActixExtractor<HttpRequest> {
     }
 
     #[inline]
-    async fn read_body_bytes(&mut self) -> Result<Bytes, Error> {
+    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error> {
         let bytes = Bytes::from_request(&self.0, &mut self.1).await?;
-        Ok(bytes)
+        Ok(bytes.into())
     }
 }
 

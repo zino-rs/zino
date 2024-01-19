@@ -18,10 +18,8 @@ use crate::{
     validation::Validation,
     warn, JsonValue, Map, SharedString, Uuid,
 };
-use bytes::Bytes;
 use cookie::{Cookie, SameSite};
 use fluent::FluentArgs;
-use http::Uri;
 use jwt_simple::algorithms::MACLike;
 use multer::Multipart;
 use serde::{de::DeserializeOwned, Serialize};
@@ -36,6 +34,9 @@ use unic_langid::LanguageIdentifier;
 mod context;
 
 pub use context::Context;
+
+/// The URI component of a request.
+pub type Uri = http::Uri;
 
 /// Request context.
 pub trait RequestContext {
@@ -73,7 +74,7 @@ pub trait RequestContext {
     fn client_ip(&self) -> Option<IpAddr>;
 
     /// Reads the entire request body into a byte buffer.
-    async fn read_body_bytes(&mut self) -> Result<Bytes, Error>;
+    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error>;
 
     /// Returns the request path regardless of nesting.
     #[inline]

@@ -1,14 +1,11 @@
 use actix_web::{
     body::BoxBody,
-    http::{
-        header::{self, HeaderName, HeaderValue},
-        StatusCode,
-    },
+    http::header::{self, HeaderName, HeaderValue},
     HttpRequest, HttpResponse, Responder, ResponseError,
 };
 use std::fmt;
 use zino_core::{
-    response::{Rejection, Response, ResponseCode},
+    response::{Rejection, Response, ResponseCode, StatusCode},
     trace::TimingMetric,
 };
 
