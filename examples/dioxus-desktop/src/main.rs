@@ -1,7 +1,10 @@
 #![allow(non_snake_case)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod controller;
+mod domain;
+mod extension;
+mod logic;
+mod model;
 mod router;
 mod schedule;
 mod service;

@@ -306,7 +306,7 @@ version = "0.5.1"
 optional = true
 
 [dependencies.smallvec]
-version = "1.13.0"
+version = "1.13.1"
 features = ["serde"]
 
 [dependencies.sqlx]
@@ -323,7 +323,7 @@ version = "1.19.1"
 optional = true
 
 [dependencies.totp-rs]
-version = "5.4.0"
+version = "5.5.1"
 optional = true
 features = ["otpauth", "qr"]
 
