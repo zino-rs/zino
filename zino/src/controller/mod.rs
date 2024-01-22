@@ -107,7 +107,8 @@ where
 
     async fn delete(req: Self::Request) -> Self::Result {
         let id = req.parse_param::<K>("id")?;
-        Self::delete_by_id(&id).await.extract(&req)?;
+        let model = Self::try_get_model(&id).await.extract(&req)?;
+        model.delete().await.extract(&req)?;
 
         let res = Response::new(StatusCode::OK).context(&req);
         Ok(res.into())
@@ -303,6 +304,7 @@ where
         };
 
         let mut rows_affected = 0;
+        let mut validations = Vec::new();
         let mut batch_models = Vec::with_capacity(batch_size);
         for (index, mut map) in data.into_iter().enumerate() {
             if limit > 0 && rows_affected >= limit {
@@ -347,16 +349,24 @@ where
                 let mut map = validation.into_map();
                 map.upsert("index", index);
 
-                let mut res = Response::new(StatusCode::BAD_REQUEST);
-                res.set_json_data(map);
-                return Ok(res.into());
+                if validate_only {
+                    validations.push(map);
+                } else {
+                    let mut res = Response::new(StatusCode::BAD_REQUEST);
+                    res.set_json_data(map);
+                    return Ok(res.into());
+                }
             }
         }
         if !batch_models.is_empty() {
             Self::insert_many(batch_models).await.extract(&req)?;
         }
 
-        let data = Map::from_entry("rows_affected", rows_affected);
+        let data = if validations.is_empty() {
+            Map::from_entry("rows_affected", rows_affected)
+        } else {
+            Map::from_entry("validations", validations)
+        };
         res.set_json_data(data);
         Ok(res.into())
     }

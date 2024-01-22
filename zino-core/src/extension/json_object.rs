@@ -546,9 +546,12 @@ impl JsonObjectExt for Map {
                     .filter_map(|s| (!s.is_empty()).then_some(Cow::Borrowed(s)))
                     .collect::<Vec<_>>()
                     .into(),
-                JsonValue::Array(vec) => {
-                    Some(vec.iter().filter_map(|v| v.parse_string()).collect())
-                }
+                JsonValue::Array(vec) => vec
+                    .iter()
+                    .filter(|v| !v.is_null())
+                    .filter_map(|v| v.parse_string())
+                    .collect::<Vec<_>>()
+                    .into(),
                 _ => None,
             })
             .and_then(|values| {
