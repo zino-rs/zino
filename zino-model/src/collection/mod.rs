@@ -38,7 +38,6 @@ pub struct Collection {
     visibility: String,
     #[schema(default_value = "Active", index_type = "hash")]
     status: String,
-
     description: String,
 
     // Info fields.
@@ -51,7 +50,6 @@ pub struct Collection {
     tags: Vec<Uuid>, // tag.id, tag.namespace = "*:collection"
 
     // Extensions.
-    content: Map,
     extra: Map,
 
     // Revisions.

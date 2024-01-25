@@ -431,8 +431,8 @@ where
         query.allow_fields(&["parent_id"]);
         query.add_filter("parent_id", Map::from_entry("$in", values));
         query.add_filter("status", Map::from_entry("$ne", "Deleted"));
-        query.order_by_desc("parent_id");
-        query.order_by_desc("created_at");
+        query.order_desc("parent_id");
+        query.order_desc("created_at");
         query.set_limit(0);
 
         let mut children = Self::find::<Map>(&query).await.extract(&req)?;

@@ -51,12 +51,6 @@ where
         ""
     }
 
-    /// Returns the `content` field.
-    #[inline]
-    fn content(&self) -> Option<&Map> {
-        None
-    }
-
     /// Returns the `extra` field.
     #[inline]
     fn extra(&self) -> Option<&Map> {
@@ -208,12 +202,6 @@ where
     #[inline]
     fn has_description(&self) -> bool {
         !self.description().is_empty()
-    }
-
-    /// Returns a reference to the value corresponding to the key in `content`.
-    #[inline]
-    fn get_content_value(&self, key: &str) -> Option<&JsonValue> {
-        self.content()?.get(key)
     }
 
     /// Returns a reference to the value corresponding to the key in `extra`.
@@ -372,11 +360,11 @@ where
     /// Constructs a default list `Query` for the model.
     fn default_list_query() -> Query {
         let mut query = Query::default();
-        let ignored_fields = [Self::write_only_fields(), &["content", "extra"]].concat();
+        let ignored_fields = [Self::write_only_fields(), &["extra"]].concat();
         query.allow_fields(Self::fields());
         query.deny_fields(&ignored_fields);
         query.add_filter("status", Map::from_entry("$ne", "Deleted"));
-        query.order_by_desc("updated_at");
+        query.order_desc("updated_at");
         query
     }
 

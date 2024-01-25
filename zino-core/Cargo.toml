@@ -227,7 +227,7 @@ version = "2.3.0"
 optional = true
 
 [dependencies.chrono]
-version = "0.4.31"
+version = "0.4.32"
 features = ["serde"]
 
 [dependencies.ctr]

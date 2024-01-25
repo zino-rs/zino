@@ -37,7 +37,6 @@ pub struct Resource {
     visibility: String,
     #[schema(default_value = "Active", index_type = "hash")]
     status: String,
-
     description: String,
 
     // Info fields.
@@ -52,7 +51,6 @@ pub struct Resource {
     tags: Vec<Uuid>, // tag.id, tag.namespace = "*:resource"
 
     // Extensions.
-    content: Map,
     extra: Map,
 
     // Revisions.

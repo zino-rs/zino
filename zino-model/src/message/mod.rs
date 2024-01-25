@@ -35,7 +35,6 @@ pub struct Message {
     visibility: String,
     #[schema(default_value = "Active", index_type = "hash")]
     status: String,
-
     description: String,
 
     // Info fields.
@@ -52,7 +51,6 @@ pub struct Message {
     tags: Vec<Uuid>, // tag.id, tag.namespace = "*:message"
 
     // Extensions.
-    content: Map,
     extra: Map,
 
     // Revisions.

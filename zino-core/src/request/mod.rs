@@ -774,8 +774,8 @@ pub trait RequestContext {
     }
 
     /// Constructs a new cloud event instance.
-    fn cloud_event(&self, event_type: String, data: JsonValue) -> CloudEvent {
-        let id = self.request_id().to_string();
+    fn cloud_event(&self, event_type: SharedString, data: JsonValue) -> CloudEvent {
+        let id = self.request_id();
         let source = self.instance();
         let mut event = CloudEvent::new(id, source, event_type);
         if let Some(session_id) = self.session_id() {

@@ -34,7 +34,6 @@ pub struct Record {
     visibility: String,
     #[schema(default_value = "Active", index_type = "hash")]
     status: String,
-
     description: String,
 
     // Info fields.
@@ -47,7 +46,6 @@ pub struct Record {
 
     // Extensions.
     #[schema(read_only)]
-    content: Map,
     extra: Map,
 
     // Revisions.

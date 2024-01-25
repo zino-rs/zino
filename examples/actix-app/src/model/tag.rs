@@ -34,8 +34,6 @@ pub struct Tag {
 
     // Extensions.
     #[schema(reserved)]
-    content: Map,
-    #[schema(reserved)]
     extra: Map,
 
     // Revisions.

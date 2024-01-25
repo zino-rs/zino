@@ -43,7 +43,6 @@ pub struct Tag {
     parent_id: Option<Uuid>, // tag.id, tag.namespace = {tag.namespace}, tag.category = {tag.category}
 
     // Extensions.
-    content: Map,
     extra: Map,
 
     // Revisions.

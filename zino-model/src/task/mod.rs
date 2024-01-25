@@ -60,7 +60,6 @@ pub struct Task {
     tags: Vec<Uuid>, // tag.id, tag.namespace = "*:task"
 
     // Extensions.
-    content: Map,
     extra: Map,
 
     // Revisions.

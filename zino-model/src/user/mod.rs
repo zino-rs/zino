@@ -90,7 +90,6 @@ pub struct User {
     failed_login_count: u8,
 
     // Extensions.
-    content: Map,
     extra: Map,
 
     // Revisions.

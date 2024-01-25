@@ -16,7 +16,7 @@ pub struct CloudEvent<T = ()> {
     source: String,
     /// Event type.
     #[serde(rename = "type")]
-    event_type: String,
+    event_type: SharedString,
     /// Timestamp.
     #[serde(rename = "time")]
     timestamp: DateTime,
@@ -44,12 +44,16 @@ pub struct CloudEvent<T = ()> {
 impl<T: Default> CloudEvent<T> {
     /// Creates a new instance.
     #[inline]
-    pub fn new(id: String, source: String, event_type: String) -> Self {
+    pub fn new(
+        id: impl ToString,
+        source: impl ToString,
+        event_type: impl Into<SharedString>,
+    ) -> Self {
         Self {
             spec_version: "1.0".into(),
-            id,
-            source,
-            event_type,
+            id: id.to_string(),
+            source: source.to_string(),
+            event_type: event_type.into(),
             timestamp: DateTime::now(),
             data: JsonValue::Null,
             data_content_type: None,
@@ -95,7 +99,7 @@ impl<T> CloudEvent<T> {
     /// Returns the event type as a `str`.
     #[inline]
     pub fn event_type(&self) -> &str {
-        self.event_type.as_str()
+        self.event_type.as_ref()
     }
 
     /// Returns a reference to the optional subject.

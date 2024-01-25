@@ -198,9 +198,17 @@ impl Query {
         self.filters.remove(key)
     }
 
+    /// Sets the sort order.
+    #[inline]
+    pub fn order_by(&mut self, field: impl Into<SharedString>, descending: bool) {
+        let field = field.into();
+        self.sort_order.retain(|(s, _)| s != &field);
+        self.sort_order.push((field, descending));
+    }
+
     /// Sets the sort with an ascending order.
     #[inline]
-    pub fn order_by_asc(&mut self, field: impl Into<SharedString>) {
+    pub fn order_asc(&mut self, field: impl Into<SharedString>) {
         let field = field.into();
         self.sort_order.retain(|(s, _)| s != &field);
         self.sort_order.push((field, false));
@@ -208,7 +216,7 @@ impl Query {
 
     /// Sets the sort with an descending order.
     #[inline]
-    pub fn order_by_desc(&mut self, field: impl Into<SharedString>) {
+    pub fn order_desc(&mut self, field: impl Into<SharedString>) {
         let field = field.into();
         self.sort_order.retain(|(s, _)| s != &field);
         self.sort_order.push((field, true));

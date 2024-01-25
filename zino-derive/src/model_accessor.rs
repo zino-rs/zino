@@ -547,7 +547,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             updates.upsert(#field_name, "Archived");
                         });
                     }
-                    "content" | "extra" if type_name == "Map" => {
+                    "extra" if type_name == "Map" => {
                         let method = quote! {
                             #[inline]
                             fn #field_ident(&self) -> Option<&Map> {
@@ -604,7 +604,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                         column_methods.push(method);
                         snapshot_field = Some(field_name);
                         list_query_methods.push(quote! {
-                            query.order_by_desc(#field_name);
+                            query.order_desc(#field_name);
                         });
                     }
                     "deleted_at" if type_name == "Option<DateTime>" => {

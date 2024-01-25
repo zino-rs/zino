@@ -38,7 +38,6 @@ pub struct Order {
     visibility: String,
     #[schema(default_value = "Active", index_type = "hash")]
     status: String,
-
     description: String,
 
     // Info fields.
@@ -53,7 +52,6 @@ pub struct Order {
     tags: Vec<Uuid>, // tag.id, tag.namespace = "*:order"
 
     // Extensions.
-    content: Map,
     extra: Map,
 
     // Revisions.

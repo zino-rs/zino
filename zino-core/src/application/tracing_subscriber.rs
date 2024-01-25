@@ -116,8 +116,9 @@ pub(super) fn init<APP: Application + ?Sized>() {
         let subscriber = tracing_subscriber::registry()
             .with(filter_layer)
             .with(pretty_fmt_layer);
-        tracing::subscriber::set_global_default(subscriber)
-            .expect("fail to set the default subscriber with a `Pretty` formatter");
+        if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
+            tracing::warn!("fail to set the default subscriber with a `Pretty` formatter: {err}");
+        }
     } else {
         let json_fmt_layer = fmt_layer
             .json()
@@ -126,8 +127,9 @@ pub(super) fn init<APP: Application + ?Sized>() {
         let subscriber = tracing_subscriber::registry()
             .with(filter_layer)
             .with(json_fmt_layer);
-        tracing::subscriber::set_global_default(subscriber)
-            .expect("fail to set the default subscriber with a `Json` formatter");
+        if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
+            tracing::warn!("fail to set the default subscriber with a `Json` formatter: {err}");
+        }
     };
     TRACING_APPENDER_GUARD
         .set(worker_guard)

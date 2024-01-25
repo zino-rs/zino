@@ -81,8 +81,6 @@ pub struct User {
 
     // Extensions.
     #[schema(reserved)]
-    content: Map,
-    #[schema(reserved)]
     extra: Map,
 
     // Revisions.

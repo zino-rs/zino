@@ -62,7 +62,7 @@ where
             "country",
         ];
         let mut claims = Map::new();
-        if let Some(map) = self.content() {
+        if let Some(map) = self.extra() {
             for (key, value) in map {
                 if key == "address" {
                     if let Some(map) = value.as_object() {

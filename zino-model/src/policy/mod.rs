@@ -38,7 +38,6 @@ pub struct Policy {
     visibility: String,
     #[schema(default_value = "Active", index_type = "hash")]
     status: String,
-
     description: String,
 
     // Info fields.
@@ -55,7 +54,6 @@ pub struct Policy {
     tags: Vec<Uuid>, // tag.id, tag.namespace = "*:policy"
 
     // Extensions.
-    content: Map,
     extra: Map,
 
     // Revisions.

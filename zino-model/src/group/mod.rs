@@ -35,7 +35,6 @@ pub struct Group {
     visibility: String,
     #[schema(default_value = "Active", index_type = "hash")]
     status: String,
-
     description: String,
 
     // Info fields.
@@ -48,7 +47,6 @@ pub struct Group {
     tags: Vec<Uuid>, // tag.id, tag.namespace = "*:group"
 
     // Extensions.
-    content: Map,
     extra: Map,
 
     // Revisions.
