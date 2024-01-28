@@ -146,9 +146,6 @@ impl ArrowConnector {
                         if table_schema.is_some() {
                             options.schema = table_schema.as_ref();
                         }
-                        if let Some(infinite) = table.get_bool("infinite") {
-                            options.infinite = infinite;
-                        }
                         ctx.register_avro(table_name, &table_path, options).await?;
                     }
                     "csv" => {
@@ -166,9 +163,6 @@ impl ArrowConnector {
                                 "xz" => FileCompressionType::XZ,
                                 _ => FileCompressionType::UNCOMPRESSED,
                             };
-                        }
-                        if let Some(infinite) = table.get_bool("infinite") {
-                            options.infinite = infinite;
                         }
                         ctx.register_csv(table_name, &table_path, options).await?;
                     }
