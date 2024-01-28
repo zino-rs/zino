@@ -46,4 +46,18 @@ pub fn bench(c: &mut criterion::Criterion) {
             serde_json::to_vec(&res)
         })
     });
+    c.bench_function("sonic_serialize_json_object", |b| {
+        b.iter(|| {
+            let mut res = Map::new();
+            res.upsert("status_code", 200);
+            res.upsert("request_id", Uuid::new_v4().to_string());
+
+            let mut data = Map::new();
+            data.upsert("name", "alice");
+            data.upsert("age", 18);
+            data.upsert("roles", vec!["admin", "worker"]);
+            res.upsert("data", data);
+            sonic_rs::to_vec(&res)
+        })
+    });
 }

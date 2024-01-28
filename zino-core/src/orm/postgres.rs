@@ -662,7 +662,7 @@ impl QueryExt<DatabaseDriver> for Query {
     fn format_table_name<M: Schema>(&self) -> String {
         let table_name = M::table_name();
         let model_name = M::model_name();
-        format!(r#""{table_name}" "{model_name}""#)
+        format!(r#""{table_name}" AS "{model_name}""#)
     }
 
     fn parse_text_search(filter: &Map) -> Option<String> {

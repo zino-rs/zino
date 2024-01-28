@@ -220,12 +220,12 @@ impl Application for AxumCluster {
                         ServiceBuilder::new()
                             .layer(DefaultBodyLimit::max(body_limit))
                             .layer(
-                                CompressionLayer::new().gzip(true).br(true).compress_when(
+                                CompressionLayer::new().gzip(true).compress_when(
                                     DefaultPredicate::new()
                                         .and(NotForContentType::new("application/msgpack")),
                                 ),
                             )
-                            .layer(DecompressionLayer::new().gzip(true).br(true))
+                            .layer(DecompressionLayer::new().gzip(true))
                             .layer(LazyLock::force(&middleware::TRACING_MIDDLEWARE))
                             .layer(LazyLock::force(&middleware::CORS_MIDDLEWARE))
                             .layer(from_fn(middleware::request_context))

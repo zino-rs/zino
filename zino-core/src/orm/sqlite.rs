@@ -621,10 +621,10 @@ impl QueryExt<DatabaseDriver> for Query {
             }
         }
         if virtual_tables.is_empty() {
-            format!(r#"`{table_name}` `{model_name}`"#)
+            format!(r#"`{table_name}` AS `{model_name}`"#)
         } else {
             format!(
-                r#"`{table_name}` `{model_name}`, {}"#,
+                r#"`{table_name}` AS `{model_name}`, {}"#,
                 virtual_tables.join(", ")
             )
         }

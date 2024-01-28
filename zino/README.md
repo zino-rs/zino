@@ -35,8 +35,8 @@ The following optional features are available:
 | `actix`      | Enables the integration with [`actix-web`].          | No       |
 | `axum`       | Enables the integration with [`axum`].               | No       |
 | `dioxus`     | Enables the integration with [`dioxus`].             | No       |
-| `orm`        | Enables the ORM for MySQL, PostgreSQL or **SQLite**. | Yes      |
-| `view`       | Enables the HTML template rendering.                 | Yes      |
+| `orm`        | Enables the ORM for MySQL, PostgreSQL or **SQLite**. | No       |
+| `view`       | Enables the HTML template rendering.                 | No       |
 
 [`zino`]: https://github.com/zino-rs/zino
 [`sqlx`]: https://crates.io/crates/sqlx

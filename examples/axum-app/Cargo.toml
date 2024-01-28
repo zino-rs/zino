@@ -1,27 +1,30 @@
 [package]
 name = "axum-app"
 description = "An example for axum integration."
-version = "0.11.3"
+version = "0.12.0"
 rust-version = "1.75"
 edition = "2021"
 publish = false
 
 [dependencies]
-axum = "0.6.20"
 tracing = "0.1.40"
 
+[dependencies.axum]
+version = "0.6.20"
+default-features = false
+
 [dependencies.serde]
-version = "1.0.195"
+version = "1.0.196"
 features = ["derive"]
 
 [dependencies.zino]
 path = "../../zino"
-version = "0.17.4"
+version = "0.18.0"
 features = ["axum"]
 
 [dependencies.zino-core]
 path = "../../zino-core"
-version = "0.18.4"
+version = "0.19.0"
 features = [
     "crypto-sm",
     "orm-mysql",
@@ -32,8 +35,8 @@ features = [
 
 [dependencies.zino-derive]
 path = "../../zino-derive"
-version = "0.15.4"
+version = "0.16.0"
 
 [dependencies.zino-model]
 path = "../../zino-model"
-version = "0.15.4"
+version = "0.16.0"
