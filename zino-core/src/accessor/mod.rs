@@ -11,7 +11,6 @@
 //! | `dashmap`     | Dashmap backend.                         | `accessor-dashmap`    |
 //! | `dropbox`     | Dropbox backend.                         | `accessor-dropbox`    |
 //! | `fs`          | POSIX alike file system.                 | `accessor-fs`         |
-//! | `ftp`         | FTP and FTPS.                            | `accessor-ftp`        |
 //! | `gcs`         | Google Cloud Storage services.           | `accessor-gcs`        |
 //! | `gdrive`      | GoogleDrive backend.                     | `accessor-gdrive`     |
 //! | `ghac`        | Github Action Cache services.            | `accessor-ghac`       |
@@ -175,23 +174,6 @@ impl GlobalAccessor {
                 }
                 if let Some(atomic_write_dir) = config.get_str("atomic-write-dir") {
                     builder.atomic_write_dir(atomic_write_dir);
-                }
-                Ok(Operator::new(builder)?.finish())
-            }
-            #[cfg(feature = "accessor-ftp")]
-            "ftp" => {
-                let mut builder = services::Ftp::default();
-                if let Some(root) = config.get_str("root") {
-                    builder.root(root);
-                }
-                if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
-                }
-                if let Some(user) = config.get_str("user") {
-                    builder.user(user);
-                }
-                if let Some(password) = State::decrypt_password(config) {
-                    builder.password(password.as_ref());
                 }
                 Ok(Operator::new(builder)?.finish())
             }

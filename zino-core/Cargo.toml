@@ -26,7 +26,6 @@ accessor-cos = ["accessor", "opendal/services-cos"]
 accessor-dashmap = ["accessor", "opendal/services-dashmap"]
 accessor-dropbox = ["accessor", "opendal/services-dropbox"]
 accessor-fs = ["accessor", "opendal/services-fs"]
-accessor-ftp = ["accessor", "opendal/services-ftp"]
 accessor-gcs = ["accessor", "opendal/services-gcs"]
 accessor-gdrive = ["accessor", "opendal/services-gdrive"]
 accessor-ghac = ["accessor", "opendal/services-ghac"]
@@ -59,7 +58,6 @@ all-accessors = [
     "accessor-dashmap",
     "accessor-dropbox",
     "accessor-fs",
-    "accessor-ftp",
     "accessor-gcs",
     "accessor-gdrive",
     "accessor-ghac",
