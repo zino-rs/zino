@@ -126,7 +126,7 @@ pub trait JsonValueExt {
 
     /// Parses the JSON value as `Vec<T>`.
     /// If the vec is empty, it also returns `None`.
-    fn parse_array<T: FromStr>(&self) -> Option<Vec<T>>;
+    fn parse_array<T: FromStr>(&self) -> Option<Result<Vec<T>, <T as FromStr>::Err>>;
 
     /// Parses the JSON value as `Vec<&str>`.
     /// If the vec is empty, it also returns `None`.
@@ -364,26 +364,27 @@ impl JsonValueExt for JsonValue {
             .filter(|s| !s.is_empty())
     }
 
-    fn parse_array<T: FromStr>(&self) -> Option<Vec<T>> {
+    fn parse_array<T: FromStr>(&self) -> Option<Result<Vec<T>, <T as FromStr>::Err>> {
         let values = match &self {
             JsonValue::String(s) => helper::parse_str_array(s, ',')
                 .into_iter()
                 .filter_map(|s| (!s.is_empty()).then_some(Cow::Borrowed(s)))
-                .collect::<Vec<_>>()
-                .into(),
+                .collect::<Vec<_>>(),
             JsonValue::Array(vec) => vec
                 .iter()
                 .filter(|v| !v.is_null())
                 .filter_map(|v| v.parse_string())
-                .collect::<Vec<_>>()
-                .into(),
-            _ => None,
+                .collect::<Vec<_>>(),
+            _ => return None,
         };
-        let vec = values?
-            .iter()
-            .filter_map(|s| s.parse().ok())
-            .collect::<Vec<_>>();
-        (!vec.is_empty()).then_some(vec)
+        let mut vec = Vec::with_capacity(values.len());
+        for value in values {
+            match value.parse() {
+                Ok(v) => vec.push(v),
+                Err(err) => return Some(Err(err)),
+            }
+        }
+        (!vec.is_empty()).then_some(Ok(vec))
     }
 
     fn parse_str_array(&self) -> Option<Vec<&str>> {

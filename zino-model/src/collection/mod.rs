@@ -92,8 +92,11 @@ impl Model for Collection {
             self.description = description.into_owned();
         }
         #[cfg(feature = "tags")]
-        if let Some(tags) = data.parse_array("tags") {
-            self.tags = tags;
+        if let Some(result) = data.parse_array("tags") {
+            match result {
+                Ok(tags) => self.tags = tags,
+                Err(err) => validation.record_fail("tags", err),
+            }
         }
         #[cfg(feature = "owner-id")]
         if let Some(result) = data.parse_uuid("owner_id") {

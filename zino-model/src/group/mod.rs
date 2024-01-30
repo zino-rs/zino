@@ -94,12 +94,18 @@ impl Model for Group {
                 Err(err) => validation.record_fail("manager_id", err),
             }
         }
-        if let Some(members) = data.parse_array("members") {
-            self.members = members;
+        if let Some(result) = data.parse_array("members") {
+            match result {
+                Ok(members) => self.members = members,
+                Err(err) => validation.record_fail("members", err),
+            }
         }
         #[cfg(feature = "tags")]
-        if let Some(tags) = data.parse_array("tags") {
-            self.tags = tags;
+        if let Some(result) = data.parse_array("tags") {
+            match result {
+                Ok(tags) => self.tags = tags,
+                Err(err) => validation.record_fail("tags", err),
+            }
         }
         #[cfg(feature = "owner-id")]
         if let Some(result) = data.parse_uuid("owner_id") {

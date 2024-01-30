@@ -108,7 +108,7 @@ where
             .ok_or_else(|| warn!("the subject of a JWT token should be specified"))?
             .parse()?;
         let mut user_session = Self::new(user_id, None);
-        if let Some(roles) = data
+        if let Some(Ok(roles)) = data
             .parse_array("roles")
             .or_else(|| data.parse_array("role"))
         {

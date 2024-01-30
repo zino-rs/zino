@@ -17,7 +17,14 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = []
+default = [
+    "namespace",
+    "visibility",
+    "tags",
+    "owner-id",
+    "maintainer-id",
+    "edition",
+]
 namespace = []
 visibility = []
 tags = []
@@ -35,7 +42,7 @@ version = "1.0.196"
 features = ["derive"]
 
 [dependencies.strum]
-version = "0.26.0"
+version = "0.26.1"
 features = ["derive"]
 
 [dependencies.zino-core]

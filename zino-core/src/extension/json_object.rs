@@ -160,7 +160,7 @@ pub trait JsonObjectExt {
 
     /// Extracts the array value corresponding to the key and parses it as `Vec<T>`.
     /// If the vec is empty, it also returns `None`.
-    fn parse_array<T: FromStr>(&self, key: &str) -> Option<Vec<T>>;
+    fn parse_array<T: FromStr>(&self, key: &str) -> Option<Result<Vec<T>, <T as FromStr>::Err>>;
 
     /// Extracts the array value corresponding to the key and parses it as `Vec<&str>`.
     /// If the vec is empty, it also returns `None`.
@@ -538,29 +538,27 @@ impl JsonObjectExt for Map {
             .filter(|s| !s.is_empty())
     }
 
-    fn parse_array<T: FromStr>(&self, key: &str) -> Option<Vec<T>> {
-        self.get(key)
-            .and_then(|v| match v {
-                JsonValue::String(s) => helper::parse_str_array(s, ',')
-                    .into_iter()
-                    .filter_map(|s| (!s.is_empty()).then_some(Cow::Borrowed(s)))
-                    .collect::<Vec<_>>()
-                    .into(),
-                JsonValue::Array(vec) => vec
-                    .iter()
-                    .filter(|v| !v.is_null())
-                    .filter_map(|v| v.parse_string())
-                    .collect::<Vec<_>>()
-                    .into(),
-                _ => None,
-            })
-            .and_then(|values| {
-                let vec = values
-                    .iter()
-                    .filter_map(|s| s.parse().ok())
-                    .collect::<Vec<_>>();
-                (!vec.is_empty()).then_some(vec)
-            })
+    fn parse_array<T: FromStr>(&self, key: &str) -> Option<Result<Vec<T>, <T as FromStr>::Err>> {
+        let values = match self.get(key)? {
+            JsonValue::String(s) => helper::parse_str_array(s, ',')
+                .into_iter()
+                .filter_map(|s| (!s.is_empty()).then_some(Cow::Borrowed(s)))
+                .collect::<Vec<_>>(),
+            JsonValue::Array(vec) => vec
+                .iter()
+                .filter(|v| !v.is_null())
+                .filter_map(|v| v.parse_string())
+                .collect::<Vec<_>>(),
+            _ => return None,
+        };
+        let mut vec = Vec::with_capacity(values.len());
+        for value in values {
+            match value.parse() {
+                Ok(v) => vec.push(v),
+                Err(err) => return Some(Err(err)),
+            }
+        }
+        (!vec.is_empty()).then_some(Ok(vec))
     }
 
     fn parse_str_array(&self, key: &str) -> Option<Vec<&str>> {
@@ -774,7 +772,7 @@ mod tests {
         );
         assert_eq!(
             map.parse_array::<String>("roles"),
-            Some(vec!["admin".to_owned(), "worker".to_owned()])
+            Some(Ok(vec!["admin".to_owned(), "worker".to_owned()]))
         );
     }
 

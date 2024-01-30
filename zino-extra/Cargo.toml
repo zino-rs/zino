@@ -29,7 +29,7 @@ full = ["all-formats", "cache"]
 toml = "0.8.4"
 
 [dependencies.lru]
-version = "0.12.0"
+version = "0.12.2"
 optional = true
 
 [dependencies.parking_lot]

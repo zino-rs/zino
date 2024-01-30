@@ -151,10 +151,16 @@ where
 pub fn decode_array<'r, T>(row: &'r DatabaseRow, field: &str) -> Result<Vec<T>, Error>
 where
     T: Decode<'r, DatabaseDriver> + std::str::FromStr,
+    <T as std::str::FromStr>::Err: std::error::Error,
 {
     use crate::{extension::JsonValueExt, JsonValue};
 
-    decode::<JsonValue>(row, field).map(|value| value.parse_array().unwrap_or_default())
+    let value = decode::<JsonValue>(row, field)?;
+    if let Some(result) = value.parse_array() {
+        result.map_err(Error::from)
+    } else {
+        Ok(Vec::new())
+    }
 }
 
 /// Decodes a raw value at the index.

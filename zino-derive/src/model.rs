@@ -111,8 +111,11 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                     }
                 } else if parser::check_vec_type(&type_name) {
                     quote! {
-                        if let Some(values) = data.parse_array(#name) {
-                            self.#ident = values;
+                        if let Some(result) = data.parse_array(#name) {
+                            match result {
+                                Ok(values) => self.#ident = values,
+                                Err(err) => validation.record_fail(#name, err),
+                            }
                         }
                     }
                 } else if let Some(type_generics) = parser::parse_option_type(&type_name) {
