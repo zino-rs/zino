@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+#[allow(clippy::vec_init_then_push)]
 pub fn bench(c: &mut criterion::Criterion) {
     c.bench_function("hashmap_lookup", |b| {
         b.iter(|| {
