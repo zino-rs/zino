@@ -14,7 +14,7 @@ pub(crate) async fn serve_static_pages(mut req: Request<Body>, next: Next<Body>)
                 format!("{path}.html")
             };
             if let Some(query) = uri.query() {
-                path_and_query.push_str("?");
+                path_and_query.push('?');
                 path_and_query.push_str(query);
             }
             if let Ok(uri) = path_and_query.parse() {

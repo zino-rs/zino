@@ -295,7 +295,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                                 .collect::<Vec<_>>()
                                 .join(" OR ")
                         } else {
-                            let value = Query::escape_string(format!("{value}"));
+                            let value = Query::escape_string(value);
                             format!(r#"{field} RLIKE {value}"#)
                         }
                     } else if value.contains(',') {

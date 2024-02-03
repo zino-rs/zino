@@ -61,7 +61,7 @@ impl RequestContext for ActixExtractor<HttpRequest> {
 
     #[inline]
     fn header_map(&self) -> &Self::Headers {
-        self.headers().into()
+        self.headers()
     }
 
     #[inline]
