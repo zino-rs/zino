@@ -51,7 +51,7 @@ where
             req.extensions_mut().insert(ctx);
         }
 
-        let fut = self.service.call(req.into());
+        let fut = self.service.call(req);
         Box::pin(async move {
             let res = fut.await?;
             Ok(res)

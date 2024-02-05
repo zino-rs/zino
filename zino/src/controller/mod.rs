@@ -475,10 +475,10 @@ where
         if matches!(action, "insert" | "import") {
             let required_fields = columns
                 .iter()
-                .filter_map(|col| {
-                    (col.is_not_null() && !col.is_primary_key() || col.has_attribute("nonempty"))
-                        .then(|| col.name())
+                .filter(|&col| {
+                    col.is_not_null() && !col.is_primary_key() || col.has_attribute("nonempty")
                 })
+                .map(|col| col.name())
                 .collect::<Vec<_>>();
             definition.upsert("required", required_fields);
         }

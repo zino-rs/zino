@@ -41,7 +41,7 @@ impl ArrowSchemaExt for Schema {
                 TomlValue::Array(array) => {
                     let length = array.len();
                     if let [TomlValue::String(value_type)] = array.as_slice() {
-                        let item_data_type = parse_arrow_data_type(&value_type)?;
+                        let item_data_type = parse_arrow_data_type(value_type)?;
                         let field = Field::new("item", item_data_type, true);
                         DataType::List(Arc::new(field))
                     } else if length >= 2 {
