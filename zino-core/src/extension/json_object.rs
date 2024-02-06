@@ -115,6 +115,12 @@ pub trait JsonObjectExt {
     /// Extracts the object value corresponding to the key.
     fn get_object(&self, key: &str) -> Option<&Map>;
 
+    /// Extracts the populated data corresponding to the key.
+    fn get_populated(&self, key: &str) -> Option<&Map>;
+
+    /// Extracts the translated string value corresponding to the key.
+    fn get_translated(&self, key: &str) -> Option<&str>;
+
     /// Extracts the value corresponding to the key and parses it as `bool`.
     fn parse_bool(&self, key: &str) -> Option<Result<bool, ParseBoolError>>;
 
@@ -416,6 +422,18 @@ impl JsonObjectExt for Map {
         self.get(key).and_then(|v| v.as_object())
     }
 
+    #[inline]
+    fn get_populated(&self, key: &str) -> Option<&Map> {
+        let populated_field = [key, "_populated"].concat();
+        self.get_object(&populated_field)
+    }
+
+    #[inline]
+    fn get_translated(&self, key: &str) -> Option<&str> {
+        let translated_field = [key, "_translated"].concat();
+        self.get_str(&translated_field)
+    }
+
     fn parse_bool(&self, key: &str) -> Option<Result<bool, ParseBoolError>> {
         let value = self.get(key);
         value
@@ -668,9 +686,7 @@ impl JsonObjectExt for Map {
     }
 
     fn pointer(&self, pointer: &str) -> Option<&JsonValue> {
-        let Some(path) = pointer.strip_prefix('/') else {
-            return None;
-        };
+        let path = pointer.strip_prefix('/')?;
         if let Some(position) = path.find('/') {
             let (key, pointer) = path.split_at(position);
             self.get(key)?.pointer(pointer)
