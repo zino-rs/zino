@@ -111,28 +111,46 @@ impl Application for ActixCluster {
                 }
 
                 HttpServer::new(move || {
-                    let index_file_handler = web::get()
-                        .to(|| async { NamedFile::open_async("./public/index.html").await });
-                    let favicon_file_handler = web::get()
-                        .to(|| async { NamedFile::open_async("./public/favicon.ico").await });
-                    let static_files = Files::new(public_route_prefix, public_dir.clone())
-                        .show_files_listing()
-                        .index_file("index.html")
-                        .prefer_utf8(true)
-                        .default_handler(fn_service(|req: ServiceRequest| async {
-                            let (req, _) = req.into_parts();
-                            let file = NamedFile::open_async("./public/404.html").await?;
-                            let res = file.into_response(&req);
-                            Ok(ServiceResponse::new(req, res))
-                        }));
-                    let mut app = App::new()
-                        .route("/", index_file_handler)
-                        .route("/favicon.ico", favicon_file_handler)
-                        .service(static_files)
-                        .default_service(web::to(|req: Request| async {
-                            let res = Response::new(StatusCode::NOT_FOUND);
-                            ActixResponse::from(res).respond_to(&req.into())
-                        }));
+                    let mut app = App::new().default_service(web::to(|req: Request| async {
+                        let res = Response::new(StatusCode::NOT_FOUND);
+                        ActixResponse::from(res).respond_to(&req.into())
+                    }));
+                    if public_dir.exists() {
+                        let index_file = public_dir.join("index.html");
+                        let favicon_file = public_dir.join("favicon.ico");
+                        if index_file.exists() {
+                            let index_file_handler = web::get().to(move || async {
+                                NamedFile::open_async("./public/index.html").await
+                            });
+                            app = app.route("/", index_file_handler);
+                        }
+                        if favicon_file.exists() {
+                            let favicon_file_handler = web::get().to(|| async {
+                                NamedFile::open_async("./public/favicon.ico").await
+                            });
+                            app = app.route("/favicon.ico", favicon_file_handler);
+                        }
+
+                        let mut static_files = Files::new(public_route_prefix, public_dir.clone())
+                            .show_files_listing()
+                            .index_file("index.html")
+                            .prefer_utf8(true);
+                        let not_found_file = public_dir.join("404.html");
+                        if not_found_file.exists() {
+                            static_files = static_files.default_handler(fn_service(
+                                |req: ServiceRequest| async {
+                                    let (req, _) = req.into_parts();
+                                    let file = NamedFile::open_async("./public/404.html").await?;
+                                    let res = file.into_response(&req);
+                                    Ok(ServiceResponse::new(req, res))
+                                },
+                            ));
+                        }
+                        app = app.service(static_files);
+                        tracing::info!(
+                            "Static pages `{public_route_prefix}/**` are registered for `{addr}`"
+                        );
+                    }
                     for route in default_routes {
                         app = app.configure(route);
                     }

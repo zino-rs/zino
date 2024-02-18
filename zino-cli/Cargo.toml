@@ -25,4 +25,4 @@ features = ["color", "derive"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.19.0"
+version = "0.19.1"

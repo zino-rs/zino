@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-#[allow(clippy::vec_init_then_push)]
 pub fn bench(c: &mut criterion::Criterion) {
     c.bench_function("hashmap_lookup", |b| {
         b.iter(|| {
@@ -13,10 +12,11 @@ pub fn bench(c: &mut criterion::Criterion) {
     });
     c.bench_function("vec_lookup", |b| {
         b.iter(|| {
-            let mut vec = Vec::new();
-            vec.push(("en-US", "Welcome!"));
-            vec.push(("zh-CN", "欢迎！"));
-            vec.push(("zh-HK", "歡迎！"));
+            let vec = vec![
+                ("en-US", "Welcome!"),
+                ("zh-CN", "欢迎！"),
+                ("zh-HK", "歡迎！"),
+            ];
             vec.iter()
                 .find_map(|(lang, text)| (lang == &"zh-CN").then_some(text))
                 .is_some()
