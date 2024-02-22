@@ -21,6 +21,47 @@ use toml::Table;
 use url::Url;
 
 /// A connector to HTTP services.
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use zino_core::{connector::HttpConnector, error::Error, state::State, LazyLock, Map};
+///
+/// static AMAP_GEOCODE_CONNECTOR: LazyLock<HttpConnector> = LazyLock::new(|| {
+///     let config = State::shared()
+///         .get_config("amap")
+///         .expect("the `amap` field should be a table");
+///     let base_url = "https://restapi.amap.com/v3/geocode/geo";
+///     let mut connector = HttpConnector::try_new("GET", base_url)
+///         .expect("fail to construct AMap Geocode connector");
+///     connector.set_query(&json!({
+///         "key": config.get_str("key"),
+///         "address": "${address}",
+///         "city": "${city}",
+///         "output": "JSON",
+///     }));
+///     connector
+/// });
+///
+/// async fn get_lng_lat(city: &str, address: &str) -> Result<(f32, f32), Error> {
+///     let params = json!({
+///         "city": city,
+///         "address": address,
+///     });
+///     let data: Map = AMAP_GEOCODE_CONNECTOR
+///         .fetch_json(None, params.as_object())
+///         .await?;
+///     if let Some(Ok(postions)) = data
+///         .pointer("/geocodes/0/location")
+///         .and_then(|v| v.parse_array())
+///     {
+///         Ok((postions[0], postions[1]))
+///     } else {
+///         bail!("fail to parse the location");
+///     }
+/// }
+/// ```
+#[derive(Debug, Clone)]
 pub struct HttpConnector {
     /// HTTP request method (VERB).
     method: Method,
@@ -48,7 +89,7 @@ impl HttpConnector {
 
     /// Attempts to construct a new instance from the config.
     #[inline]
-    pub fn try_with_config(config: &Table) -> Result<Self, Error> {
+    pub fn try_from_config(config: &Table) -> Result<Self, Error> {
         let method = config.get_str("method").unwrap_or("GET");
         let base_url = config
             .get_str("base-url")
@@ -74,6 +115,12 @@ impl HttpConnector {
     #[inline]
     pub fn insert_header(&mut self, key: &str, value: impl Into<JsonValue>) {
         self.headers.upsert(key, value.into());
+    }
+
+    /// Sets the request path.
+    #[inline]
+    pub fn set_path(&mut self, path: &str) {
+        self.base_url.set_path(path);
     }
 
     /// Sets the request query.
@@ -163,7 +210,7 @@ impl Connector for HttpConnector {
         let name = config.get_str("name").unwrap_or("http");
         let catalog = config.get_str("catalog").unwrap_or(name);
 
-        let connector = HttpConnector::try_with_config(config)?;
+        let connector = HttpConnector::try_from_config(config)?;
         let data_source = DataSource::new("http", None, name, catalog, Http(connector));
         Ok(data_source)
     }

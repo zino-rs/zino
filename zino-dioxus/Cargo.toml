@@ -16,7 +16,7 @@ readme = "README.md"
 dioxus = "0.4.3"
 dioxus-core = "0.4.3"
 dioxus-router = "0.4.3"
-rust_decimal = "1.33.1"
+rust_decimal = "1.34.3"
 smallvec = "1.11.1"
 
 [dependencies.chrono]

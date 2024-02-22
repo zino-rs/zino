@@ -38,7 +38,7 @@ sqlx = "0.7.2"
 tracing = "0.1.40"
 
 [dependencies.serde]
-version = "1.0.196"
+version = "1.0.197"
 features = ["derive"]
 
 [dependencies.strum]
