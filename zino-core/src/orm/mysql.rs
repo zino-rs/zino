@@ -630,7 +630,16 @@ impl QueryExt<DatabaseDriver> for Query {
                 .map(|field| {
                     if let Some((alias, expr)) = field.split_once(':') {
                         let alias = Self::format_field(alias.trim());
-                        format!(r#"{expr} AS {alias}"#)
+                        if expr.contains('.') {
+                            let field = expr
+                                .split('.')
+                                .map(|s| format!("`{s}`"))
+                                .collect::<Vec<_>>()
+                                .join(".");
+                            format!(r#"{field} AS {alias}"#).into()
+                        } else {
+                            format!(r#"{expr} AS {alias}"#).into()
+                        }
                     } else if field.contains('.') {
                         field
                             .split('.')

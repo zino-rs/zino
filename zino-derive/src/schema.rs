@@ -75,7 +75,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             for field in fields.named.into_iter() {
                 let mut type_name = parser::get_type_name(&field.ty);
                 if let Some(ident) = field.ident {
-                    let name = ident.to_string();
+                    let name = ident.to_string().trim_start_matches("r#").to_owned();
+                    let mut column_name = name.clone();
                     let mut ignore = false;
                     let mut not_null = false;
                     let mut column_type = None;
@@ -115,6 +116,12 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 "type_name" => {
                                     if let Some(value) = value {
                                         type_name = value;
+                                    }
+                                }
+                                "column_name" => {
+                                    if let Some(value) = value {
+                                        let table_aliase = model_name.to_case(Case::Snake);
+                                        column_name = format!("{column_name}:{table_aliase}.{value}");
                                     }
                                 }
                                 "column_type" => {
@@ -244,7 +251,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                         primary_key_column = Some(column.clone());
                     }
                     columns.push(column);
-                    column_fields.push(quote! { #name });
+                    column_fields.push(quote! { #column_name });
                 }
             }
         }

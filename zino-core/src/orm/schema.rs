@@ -237,7 +237,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         for col in Self::columns() {
-            let column_name = col.name();
+            let column_name = col
+                .extra()
+                .get_str("column_name")
+                .unwrap_or_else(|| col.name());
             let column_opt = data.iter().find(|d| {
                 d.get_str("column_name")
                     .or_else(|| d.get_str("COLUMN_NAME"))

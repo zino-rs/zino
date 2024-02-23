@@ -30,11 +30,11 @@ Derives the [`Schema`](zino_core::orm::Schema) trait.
   override the Rust data type of the column.
 
 - **`#[schema(column_name = "name")]`**: All column names are assumed to be in **snake-case**.
-  You can override the it by specifying the `column_name` attribute.
+  You can override it by specifying the `column_name` attribute.
 
 - **`#[schema(column_type = "type")]`**: The column type is derived automatically
   from the mappings of Rust data types for different database drivers.
-  You can override the it by specifying the `column_type` attribute.
+  You can override it by specifying the `column_type` attribute.
 
 - **`#[schema(length = N)]`**: The `length` attribute specifies
   the fixed string length which will override the `column_type` as `CHAR(N)`.
