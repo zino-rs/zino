@@ -180,6 +180,12 @@ impl Query {
             .retain(|field| !fields.contains(&field.as_str()))
     }
 
+    /// Adds a projection field with the alias.
+    #[inline]
+    pub fn add_field_alias(&mut self, expr: impl Into<String>, alias: impl Into<String>) {
+        self.fields.push([alias.into(), expr.into()].join(":"));
+    }
+
     /// Adds a key-value pair to the query filters.
     #[inline]
     pub fn add_filter(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) {

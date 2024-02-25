@@ -42,8 +42,8 @@ where
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
-        let table_name = query.format_table_name::<Self>();
-        let projection = query.format_table_fields::<Self>();
+        let table_name = Self::table_name();
+        let projection = query.format_projection();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let pagination = query.format_pagination();
@@ -156,6 +156,63 @@ where
         Self::after_scan(&ctx).await?;
         Self::after_query(&ctx).await?;
         Ok(scalar)
+    }
+
+    /// Finds a primary key selected by the query in the table.
+    async fn find_primary_key(query: &Query) -> Result<K, Error>
+    where
+        K: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
+    {
+        let pool = Self::acquire_reader().await?.pool();
+        Self::before_query(query).await?;
+
+        let table_name = Self::table_name();
+        let projection = Self::PRIMARY_KEY_NAME;
+        let filters = query.format_filters::<Self>();
+        let sort = query.format_sort();
+        let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} LIMIT 1;");
+
+        let mut ctx = Self::before_scan(&sql).await?;
+        let scalar = sqlx::query_scalar(&sql).fetch_one(pool).await?;
+        ctx.set_query(sql);
+        ctx.set_query_result(Some(1), true);
+        Self::after_scan(&ctx).await?;
+        Self::after_query(&ctx).await?;
+        Ok(scalar)
+    }
+
+    /// Finds a list of primary keys selected by the query in the table.
+    async fn find_primary_keys(query: &Query) -> Result<Vec<K>, Error>
+    where
+        K: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
+    {
+        let pool = Self::acquire_reader().await?.pool();
+        Self::before_query(query).await?;
+
+        let table_name = Self::table_name();
+        let projection = Self::PRIMARY_KEY_NAME;
+        let filters = query.format_filters::<Self>();
+        let sort = query.format_sort();
+        let pagination = query.format_pagination();
+        let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} {pagination};");
+
+        let mut ctx = Self::before_scan(&sql).await?;
+        let mut rows = sqlx::query(&sql).fetch(pool);
+        let mut data = Vec::new();
+        let mut max_rows = super::MAX_ROWS.load(Relaxed);
+        while let Some(row) = rows.try_next().await? {
+            if max_rows > 0 {
+                data.push(row.try_get_unchecked(0)?);
+                max_rows -= 1;
+            } else {
+                break;
+            }
+        }
+        ctx.set_query(&sql);
+        ctx.set_query_result(Some(u64::try_from(data.len())?), true);
+        Self::after_scan(&ctx).await?;
+        Self::after_query(&ctx).await?;
+        Ok(data)
     }
 }
 

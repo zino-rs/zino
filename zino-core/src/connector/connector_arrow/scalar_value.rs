@@ -3,6 +3,7 @@ use datafusion::{
     arrow::datatypes::{DataType, Field},
     scalar::ScalarValue,
 };
+use std::sync::Arc;
 
 /// Extension trait for [`ScalarValue`](datafusion::scalar::ScalarValue).
 pub(super) trait ScalarValueExt {
@@ -36,17 +37,15 @@ impl ScalarValueExt for ScalarValue {
                 Self::List(Self::new_list(&scalars, &data_type))
             }
             TomlValue::Table(table) => {
-                let mut fields = Vec::with_capacity(table.len());
-                let scalars = table
+                let entries = table
                     .into_iter()
-                    .map(|(key, value)| {
+                    .filter_map(|(key, value)| {
                         let scalar = Self::from_toml_value(value);
                         let field = Field::new(key, scalar.data_type(), true);
-                        fields.push(field);
-                        scalar
+                        scalar.to_array().ok().map(|array| (Arc::new(field), array))
                     })
                     .collect::<Vec<_>>();
-                Self::Struct(Some(scalars), fields.into())
+                Self::Struct(Arc::new(entries.into()))
             }
         }
     }
@@ -83,17 +82,15 @@ impl ScalarValueExt for ScalarValue {
                 Self::List(Self::new_list(&scalars, &data_type))
             }
             JsonValue::Object(map) => {
-                let mut fields = Vec::with_capacity(map.len());
-                let scalars = map
+                let entries = map
                     .into_iter()
-                    .map(|(key, value)| {
+                    .filter_map(|(key, value)| {
                         let scalar = Self::from_json_value(value);
                         let field = Field::new(key, scalar.data_type(), true);
-                        fields.push(field);
-                        scalar
+                        scalar.to_array().ok().map(|array| (Arc::new(field), array))
                     })
                     .collect::<Vec<_>>();
-                Self::Struct(Some(scalars), fields.into())
+                Self::Struct(Arc::new(entries.into()))
             }
         }
     }

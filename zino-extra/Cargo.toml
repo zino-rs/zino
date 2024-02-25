@@ -29,7 +29,7 @@ full = ["all-formats", "cache"]
 toml = "0.8.4"
 
 [dependencies.lru]
-version = "0.12.2"
+version = "0.12.3"
 optional = true
 
 [dependencies.parking_lot]
@@ -42,4 +42,4 @@ optional = true
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.19.1"
+version = "0.19.2"

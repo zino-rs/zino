@@ -68,7 +68,7 @@ pub(super) trait QueryExt<DB> {
                     if let Some((alias, expr)) = field.split_once(':') {
                         let alias = Self::format_field(alias.trim());
                         if expr.contains('.') {
-                            let field = Self::format_field(expr);
+                            let field = Self::format_field(expr.trim());
                             format!(r#"{field} AS {alias}"#).into()
                         } else {
                             format!(r#"{expr} AS {alias}"#).into()

@@ -120,8 +120,9 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 }
                                 "column_name" => {
                                     if let Some(value) = value {
-                                        let table_aliase = model_name.to_case(Case::Snake);
-                                        column_name = format!("{column_name}:{table_aliase}.{value}");
+                                        let table_alias = model_name.to_case(Case::Snake);
+                                        column_name =
+                                            format!("{column_name}:{table_alias}.{value}");
                                     }
                                 }
                                 "column_type" => {

@@ -632,13 +632,14 @@ impl QueryExt<DatabaseDriver> for Query {
                         let alias = Self::format_field(alias.trim());
                         if expr.contains('.') {
                             let field = expr
+                                .trim()
                                 .split('.')
                                 .map(|s| format!("`{s}`"))
                                 .collect::<Vec<_>>()
                                 .join(".");
-                            format!(r#"{field} AS {alias}"#).into()
+                            format!(r#"{field} AS {alias}"#)
                         } else {
-                            format!(r#"{expr} AS {alias}"#).into()
+                            format!(r#"{expr} AS {alias}"#)
                         }
                     } else if field.contains('.') {
                         field

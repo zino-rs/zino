@@ -25,8 +25,6 @@ pub struct Tag {
     #[schema(default_value = "Active", index_type = "hash")]
     status: String,
     description: String,
-    #[schema(column_name = "tt", default_value = 1)]
-    r#type: i8,
 
     // Info fields.
     #[schema(not_null, index_type = "hash", comment = "Tag category")]
