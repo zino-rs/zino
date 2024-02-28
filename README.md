@@ -27,7 +27,26 @@ It requires **Rust 1.75+** to build the project.
 
 ```shell
 cd examples/axum-app
-cargo run -- --env=dev
+cargo run
+```
+
+Here is the simplest application to run a server:
+```
+[package]
+name = "zino-app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+zino = { version = "0.18.2", features = ["axum"] }
+```
+
+```rust
+use zino::prelude::*;
+
+fn main() {
+    zino::Cluster::boot().run()
+}
 ```
 
 ## Crates
@@ -48,9 +67,6 @@ This project is licensed under the [MIT license][license].
 ## Community
 
 If you have any problems or ideas, please don't hesitate to [open an issue][zino-issue].
-For Chinese rustaceans, you can also follow our WeChat official account to cantact us:
-
-![zino-web](https://user-images.githubusercontent.com/3446306/265183253-90b4f8bb-33d2-4e14-b6e3-78da313e2e68.png)
 
 [`zino-core`]: https://github.com/zino-rs/zino/tree/main/zino-core
 [`zino-derive`]: https://github.com/zino-rs/zino/tree/main/zino-derive

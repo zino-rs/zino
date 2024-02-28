@@ -26,6 +26,25 @@ which emphasizes **simplicity**, **extensibility** and **productivity**.
 
 You can start with the example [`actix-app`], [`axum-app`] or [`dioxus-desktop`].
 
+Here is the simplest application to run a server:
+```
+[package]
+name = "zino-app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+zino = { version = "0.18.2", features = ["axum"] }
+```
+
+```rust
+use zino::prelude::*;
+
+fn main() {
+    zino::Cluster::boot().run()
+}
+```
+
 ## Feature flags
 
 The following optional features are available:
