@@ -13,8 +13,6 @@ use crate::{
 use bytes::Bytes;
 use cookie::Cookie;
 use etag::EntityTag;
-use http::header::{self, HeaderName, HeaderValue};
-use http_body::Full;
 use serde::Serialize;
 use smallvec::SmallVec;
 use std::{
@@ -33,16 +31,13 @@ pub use webhook::WebHook;
 /// An HTTP status code.
 pub type StatusCode = http::StatusCode;
 
-/// An Http response with the body that consists of a single chunk.
-pub type FullResponse = http::Response<Full<Bytes>>;
-
 /// A function pointer of transforming the response data.
 pub type DataTransformer = fn(data: &JsonValue) -> Result<Bytes, Error>;
 
 /// An HTTP response.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub struct Response<S: ResponseCode = StatusCode> {
+pub struct Response<S: ResponseCode> {
     /// A URI reference that identifies the problem type.
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -675,32 +670,5 @@ impl<S: ResponseCode> From<Validation> for Response<S> {
             res.set_validation_data(validation);
             res
         }
-    }
-}
-
-impl<S: ResponseCode> From<Response<S>> for FullResponse {
-    fn from(mut response: Response<S>) -> Self {
-        let mut res = match response.read_bytes() {
-            Ok(data) => http::Response::builder()
-                .status(response.status_code())
-                .header(header::CONTENT_TYPE, response.content_type())
-                .body(Full::from(data))
-                .unwrap_or_default(),
-            Err(err) => http::Response::builder()
-                .status(S::INTERNAL_SERVER_ERROR.status_code())
-                .header(header::CONTENT_TYPE, "text/plain; charset=utf-8")
-                .body(Full::from(err.to_string()))
-                .unwrap_or_default(),
-        };
-
-        for (key, value) in response.finalize() {
-            if let Ok(header_name) = HeaderName::try_from(key.as_ref()) {
-                if let Ok(header_value) = HeaderValue::try_from(value) {
-                    res.headers_mut().insert(header_name, header_value);
-                }
-            }
-        }
-
-        res
     }
 }

@@ -22,7 +22,6 @@ cfg_if::cfg_if! {
         use crate::application::actix_cluster::ActixCluster;
         use crate::request::actix_request::ActixExtractor;
         use crate::response::actix_response::{ActixRejection, ActixResponse};
-        use zino_core::response::StatusCode;
 
         /// HTTP server cluster for `actix-web`.
         pub type Cluster = ActixCluster;
@@ -34,15 +33,14 @@ cfg_if::cfg_if! {
         pub type Request = ActixExtractor<actix_web::HttpRequest>;
 
         /// A specialized response for `actix-web`.
-        pub type Response = zino_core::response::Response<StatusCode>;
+        pub type Response = zino_core::response::Response<actix_web::http::StatusCode>;
 
         /// A specialized `Result` type for `actix-web`.
-        pub type Result<T = ActixResponse<StatusCode>> = std::result::Result<T, ActixRejection>;
+        pub type Result<T = ActixResponse> = std::result::Result<T, ActixRejection>;
     } else if #[cfg(feature = "axum")] {
         use crate::application::axum_cluster::AxumCluster;
         use crate::request::axum_request::AxumExtractor;
         use crate::response::axum_response::{AxumRejection, AxumResponse};
-        use zino_core::response::StatusCode;
 
         pub use channel::axum_channel::MessageChannel;
 
@@ -53,10 +51,10 @@ cfg_if::cfg_if! {
         pub type Request = AxumExtractor<axum::http::Request<axum::body::Body>>;
 
         /// A specialized response for `axum`.
-        pub type Response = zino_core::response::Response<StatusCode>;
+        pub type Response = zino_core::response::Response<axum::http::StatusCode>;
 
         /// A specialized `Result` type for `axum`.
-        pub type Result<T = AxumResponse<StatusCode>> = std::result::Result<T, AxumRejection>;
+        pub type Result<T = AxumResponse> = std::result::Result<T, AxumRejection>;
     } else if #[cfg(feature = "dioxus-desktop")] {
         use crate::application::dioxus_desktop::DioxusDesktop;
 

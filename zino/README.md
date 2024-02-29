@@ -27,7 +27,7 @@ which emphasizes **simplicity**, **extensibility** and **productivity**.
 You can start with the example [`actix-app`], [`axum-app`] or [`dioxus-desktop`].
 
 Here is the simplest application to run a server:
-```
+```toml
 [package]
 name = "zino-app"
 version = "0.1.0"
@@ -37,7 +37,7 @@ edition = "2021"
 zino = { version = "0.18.2", features = ["axum"] }
 ```
 
-```rust
+```rust,ignore
 use zino::prelude::*;
 
 fn main() {

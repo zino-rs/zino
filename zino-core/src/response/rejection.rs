@@ -1,5 +1,5 @@
 use self::RejectionKind::*;
-use super::{FullResponse, Response, StatusCode};
+use super::{Response, StatusCode};
 use crate::{
     error::Error,
     request::{Context, RequestContext},
@@ -231,13 +231,6 @@ impl From<Rejection> for Response<StatusCode> {
         }
         res.set_trace_context(rejection.trace_context);
         res
-    }
-}
-
-impl From<Rejection> for FullResponse {
-    #[inline]
-    fn from(rejection: Rejection) -> Self {
-        Response::from(rejection).into()
     }
 }
 

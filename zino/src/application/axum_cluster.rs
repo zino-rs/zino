@@ -1,4 +1,4 @@
-use crate::{endpoint, middleware, AxumExtractor};
+use crate::{endpoint, middleware, response::axum_response::AxumResponse, AxumExtractor};
 use axum::{
     error_handling::HandleErrorLayer,
     extract::{rejection::LengthLimitError, DefaultBodyLimit},
@@ -24,7 +24,7 @@ use utoipa_rapidoc::RapiDoc;
 use zino_core::{
     application::{Application, ServerTag},
     extension::TomlTableExt,
-    response::{FullResponse, Response},
+    response::Response,
     schedule::AsyncScheduler,
     LazyLock,
 };
@@ -214,7 +214,7 @@ impl Application for AxumCluster {
                     .fallback_service(tower::service_fn(|req| async {
                         let req = AxumExtractor::from(req);
                         let res = Response::new(StatusCode::NOT_FOUND).context(&req);
-                        Ok::<FullResponse, Infallible>(res.into())
+                        Ok::<AxumResponse, Infallible>(res.into())
                     }))
                     .layer(
                         ServiceBuilder::new()
@@ -239,7 +239,7 @@ impl Application for AxumCluster {
                                     StatusCode::INTERNAL_SERVER_ERROR
                                 };
                                 let res = Response::new(status_code);
-                                Ok::<FullResponse, Infallible>(res.into())
+                                Ok::<AxumResponse, Infallible>(res.into())
                             }))
                             .layer(TimeoutLayer::new(request_timeout)),
                     );

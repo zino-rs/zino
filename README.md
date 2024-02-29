@@ -31,7 +31,7 @@ cargo run
 ```
 
 Here is the simplest application to run a server:
-```
+```toml
 [package]
 name = "zino-app"
 version = "0.1.0"

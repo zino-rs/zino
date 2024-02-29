@@ -1,16 +1,19 @@
 use actix_web::{
     body::BoxBody,
-    http::header::{self, HeaderName, HeaderValue},
+    http::{
+        header::{self, HeaderName, HeaderValue},
+        StatusCode,
+    },
     HttpRequest, HttpResponse, Responder, ResponseError,
 };
 use std::fmt;
 use zino_core::{
-    response::{Rejection, Response, ResponseCode, StatusCode},
+    response::{Rejection, Response, ResponseCode},
     trace::TimingMetric,
 };
 
 /// An HTTP response for `actix-web`.
-pub struct ActixResponse<S: ResponseCode>(Response<S>);
+pub struct ActixResponse<S: ResponseCode = StatusCode>(Response<S>);
 
 impl<S: ResponseCode> From<Response<S>> for ActixResponse<S> {
     #[inline]
