@@ -21,5 +21,5 @@ syn = "2.0.50"
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.19.2"
+version = "0.19.3"
 features = ["orm"]

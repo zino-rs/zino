@@ -22,7 +22,7 @@ impl<S: ResponseCode> From<Response<S>> for AxumResponse<S> {
 impl<S: ResponseCode> IntoResponse for AxumResponse<S> {
     #[inline]
     fn into_response(self) -> axum::response::Response {
-        self::build_http_response(self.0).into_response()
+        build_http_response(self.0).into_response()
     }
 }
 
@@ -39,14 +39,12 @@ impl From<Rejection> for AxumRejection {
 impl IntoResponse for AxumRejection {
     #[inline]
     fn into_response(self) -> axum::response::Response {
-        self::build_http_response(self.0).into_response()
+        build_http_response(self.0).into_response()
     }
 }
 
 /// Build http response from `zino_core::response::Response`.
-pub(crate) fn build_http_response<S: ResponseCode>(
-    mut response: Response<S>,
-) -> http::Response<Full<Bytes>> {
+fn build_http_response<S: ResponseCode>(mut response: Response<S>) -> http::Response<Full<Bytes>> {
     let mut res = match response.read_bytes() {
         Ok(data) => http::Response::builder()
             .status(response.status_code())

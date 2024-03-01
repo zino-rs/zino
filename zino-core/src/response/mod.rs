@@ -654,6 +654,38 @@ impl<S: ResponseCode> Response<S> {
     }
 }
 
+impl Response<StatusCode> {
+    /// Constructs a new response with status `200 OK`.
+    #[inline]
+    pub fn ok() -> Self {
+        Response::new(StatusCode::OK)
+    }
+
+    /// Constructs a new response with status `201 Created`.
+    #[inline]
+    pub fn created() -> Self {
+        Response::new(StatusCode::CREATED)
+    }
+
+    /// Constructs a new response with status `400 Bad Request`.
+    #[inline]
+    pub fn bad_request() -> Self {
+        Response::new(StatusCode::BAD_REQUEST)
+    }
+
+    /// Constructs a new response with status `404 Not Found`.
+    #[inline]
+    pub fn not_found() -> Self {
+        Response::new(StatusCode::NOT_FOUND)
+    }
+
+    /// Constructs a new response with status `500 Internal Server Error`.
+    #[inline]
+    pub fn internal_server_error() -> Self {
+        Response::new(StatusCode::INTERNAL_SERVER_ERROR)
+    }
+}
+
 impl<S: ResponseCode> Default for Response<S> {
     #[inline]
     fn default() -> Self {

@@ -22,7 +22,7 @@ impl<S: ResponseCode> From<Response<S>> for ActixResponse<S> {
     }
 }
 
-impl Responder for ActixResponse<StatusCode> {
+impl<S: ResponseCode> Responder for ActixResponse<S> {
     type Body = BoxBody;
 
     fn respond_to(self, req: &HttpRequest) -> HttpResponse<Self::Body> {
@@ -118,7 +118,7 @@ impl ResponseError for ActixRejection {
 }
 
 /// Build http response from `zino_core::response::Response`.
-fn build_http_response(response: &mut Response<StatusCode>) -> HttpResponse<BoxBody> {
+fn build_http_response<S: ResponseCode>(response: &mut Response<S>) -> HttpResponse<BoxBody> {
     match response.read_bytes() {
         Ok(data) => {
             let status_code = response

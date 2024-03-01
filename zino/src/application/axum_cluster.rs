@@ -1,4 +1,4 @@
-use crate::{endpoint, middleware, response::axum_response::AxumResponse, AxumExtractor};
+use crate::{endpoint, middleware, AxumExtractor, AxumResponse};
 use axum::{
     error_handling::HandleErrorLayer,
     extract::{rejection::LengthLimitError, DefaultBodyLimit},

@@ -13,7 +13,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
                 .get_str("secret")
                 .map(|s| s.to_owned())
                 .unwrap_or_else(|| {
-                    tracing::warn!("an auto-generated `secret` is used for deriving a secret key");
+                    tracing::warn!("auto-generated `secret` is used for deriving a secret key");
                     format!("{}@{}", APP::name(), APP::version())
                 });
             crypto::digest(secret.as_bytes())

@@ -74,7 +74,7 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
                 .get_str("secret")
                 .map(|s| s.to_owned())
                 .unwrap_or_else(|| {
-                    tracing::warn!("an auto-generated `secret` is used for deriving a secret key");
+                    tracing::warn!("auto-generated `secret` is used for deriving a secret key");
                     format!("{}{}", *super::TABLE_PREFIX, super::DRIVER_NAME)
                 });
             crypto::digest(secret.as_bytes())

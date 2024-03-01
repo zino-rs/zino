@@ -719,8 +719,7 @@ pub trait RequestContext {
         }
     }
 
-    /// Makes an HTTP request to the provided resource
-    /// using [`reqwest`](https://crates.io/crates/reqwest).
+    /// Makes an HTTP request to the provided resource.
     async fn fetch(
         &self,
         resource: &str,

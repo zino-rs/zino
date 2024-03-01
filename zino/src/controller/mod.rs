@@ -110,7 +110,7 @@ where
         let model = Self::try_get_model(&id).await.extract(&req)?;
         model.delete().await.extract(&req)?;
 
-        let res = Response::new(StatusCode::OK).context(&req);
+        let res = Response::default().context(&req);
         Ok(res.into())
     }
 
@@ -137,7 +137,7 @@ where
         } else {
             Self::fetch_by_id(&id).await.extract(&req)?
         };
-        let mut res = Response::new(StatusCode::OK).context(&req);
+        let mut res = Response::default().context(&req);
         res.set_json_data(Map::data_entry(model));
         Ok(res.into())
     }
@@ -192,7 +192,7 @@ where
         let id = req.parse_param::<K>("id")?;
         Self::soft_delete_by_id(&id).await.extract(&req)?;
 
-        let res = Response::new(StatusCode::OK).context(&req);
+        let res = Response::default().context(&req);
         Ok(res.into())
     }
 
@@ -230,13 +230,13 @@ where
             }
         }
         if !validations.is_empty() {
-            let mut res = Response::new(StatusCode::BAD_REQUEST);
+            let mut res = Response::bad_request();
             res.set_json_data(validations);
             Ok(res.into())
         } else {
             let ctx = Self::insert_many(models).await.extract(&req)?;
             let data = Map::from_entry("rows_affected", ctx.rows_affected());
-            let mut res = Response::new(StatusCode::OK).context(&req);
+            let mut res = Response::default().context(&req);
             res.set_json_data(data);
             Ok(res.into())
         }
@@ -253,7 +253,7 @@ where
         let query = Query::new(filters);
         let ctx = Self::delete_many(&query).await.extract(&req)?;
         let data = Map::from_entry("rows_affected", ctx.rows_affected());
-        let mut res = Response::new(StatusCode::OK).context(&req);
+        let mut res = Response::default().context(&req);
         res.set_json_data(data);
         Ok(res.into())
     }
@@ -275,7 +275,7 @@ where
             }
         }
 
-        let mut res = Response::new(StatusCode::OK).context(&req);
+        let mut res = Response::default().context(&req);
         res.set_json_data(Map::from_entry("rows_affected", rows_affected));
         Ok(res.into())
     }
@@ -352,7 +352,7 @@ where
                 if validate_only {
                     validations.push(map);
                 } else {
-                    let mut res = Response::new(StatusCode::BAD_REQUEST);
+                    let mut res = Response::bad_request();
                     res.set_json_data(map);
                     return Ok(res.into());
                 }
@@ -462,7 +462,7 @@ where
 
     async fn schema(req: Self::Request) -> Self::Result {
         let schema = serde_json::to_value(Self::schema()).extract(&req)?;
-        let mut res = Response::new(StatusCode::OK).context(&req);
+        let mut res = Response::default().context(&req);
         res.set_json_response(schema);
         Ok(res.into())
     }
@@ -505,7 +505,7 @@ where
             definition
         };
 
-        let mut res = Response::new(StatusCode::OK).context(&req);
+        let mut res = Response::default().context(&req);
         res.set_json_response(data);
         Ok(res.into())
     }

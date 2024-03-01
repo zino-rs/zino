@@ -199,7 +199,7 @@ static SECRET_KEY: LazyLock<JwtHmacKey> = LazyLock::new(|| {
         .and_then(|checksum| checksum.as_bytes().try_into().ok())
         .unwrap_or_else(|| {
             let secret = config.get_str("secret").unwrap_or_else(|| {
-                tracing::warn!("an auto-generated `secret` is used for deriving a secret key");
+                tracing::warn!("auto-generated `secret` is used for deriving a secret key");
                 crate::application::APP_NMAE.as_ref()
             });
             crypto::digest(secret.as_bytes())

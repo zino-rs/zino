@@ -248,8 +248,7 @@ pub trait Application {
         crate::orm::GlobalPool::close_all().await;
     }
 
-    /// Makes an HTTP request to the provided resource
-    /// using [`reqwest`](https://crates.io/crates/reqwest).
+    /// Makes an HTTP request to the provided resource.
     async fn fetch(resource: &str, options: Option<&Map>) -> Result<Response, Error> {
         let mut trace_context = TraceContext::new();
         let span_id = trace_context.span_id();
@@ -323,7 +322,7 @@ pub(crate) static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
                     the current directory will be used as the project directory"
             );
             env::current_dir()
-                .expect("the project directory does not exist or permissions are insufficient")
+                .expect("project directory does not exist or permissions are insufficient")
         })
 });
 
