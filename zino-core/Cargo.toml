@@ -137,6 +137,7 @@ locale-de = ["locale", "random_word/de"]
 locale-fr = ["locale", "random_word/fr"]
 locale-zh = ["locale", "random_word/zh"]
 metrics = ["dep:metrics", "dep:metrics-exporter-prometheus"]
+mimalloc = ["dep:mimalloc"]
 orm = ["orm-sqlx"]
 orm-mariadb = ["orm-sqlx", "sqlx/mysql"]
 orm-mysql = ["orm-sqlx", "sqlx/mysql"]
@@ -169,12 +170,12 @@ view-tera = ["view", "dep:tera"]
 [dependencies]
 aes-gcm-siv = "0.11.1"
 apache-avro = "0.16.0"
-base64 = "0.21.7"
+base64 = "0.22.0"
 bytes = "1.5.0"
 cfg-if = "1.0"
 convert_case = "0.6.0"
 cookie = "0.18.0"
-cron = "0.12.0"
+cron = "0.12.1"
 csv = "1.3.0"
 dotenvy = "0.15.7"
 etag = "4.0.0"
@@ -203,7 +204,7 @@ ryu = "1.0.17"
 serde_qs = "0.12.0"
 serde_yaml = "0.9.32"
 sha2 = "0.10.8"
-sysinfo = "0.30.5"
+sysinfo = "0.30.6"
 task-local-extensions = "0.1.4"
 toml = "0.8.9"
 tracing = "0.1.40"
@@ -216,7 +217,7 @@ version = "0.5.3"
 features = ["std"]
 
 [dependencies.async-openai]
-version = "0.18.3"
+version = "0.19.0"
 optional = true
 
 [dependencies.card-validate]
@@ -248,6 +249,10 @@ optional = true
 version = "0.13.1"
 optional = true
 
+[dependencies.mimalloc]
+version = "0.1.39"
+optional = true
+
 [dependencies.minijinja]
 version = "1.0.12"
 optional = true
@@ -258,7 +263,7 @@ version = "4.4.2"
 optional = true
 
 [dependencies.opendal]
-version = "0.45.0"
+version = "0.45.1"
 optional = true
 default-features = false
 features = ["layers-all"]
@@ -369,7 +374,7 @@ criterion = "0.5.1"
 data-encoding = "2.5.0"
 libsm = "0.6.0"
 sm3 = "0.4.2"
-sonic-rs = "0.3.2"
+sonic-rs = "0.3.3"
 tinyvec = { version = "1.6.0", features = ["alloc"] }
 uuid-simd = "0.8.0"
 

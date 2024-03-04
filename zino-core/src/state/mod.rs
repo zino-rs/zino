@@ -1,4 +1,48 @@
 //! Application scoped state.
+//!
+//! # Examples
+//!
+//! ```toml
+//! # config/config.dev.toml
+//!
+//! [redis]
+//! host = "127.0.0.1"
+//! port = 6379
+//! database = "dbnum"
+//! username = "some_user"
+//! password = "hsfU4Y3aRbxVNuLpVG5T+wb9jIDdQyaUIiPgeQrP0ZRM1g"
+//!
+//! ```
+//!
+//! ```rust,ignore
+//! //! src/extension/redis.rs
+//!
+//! use redis::{Client, Connection};
+//! use zino_core::{error::Error, state::State, LazyLock};
+//!
+//! #[derive(Debug, Clone, Copy)]
+//! pub struct Redis;
+//!
+//! impl Redis {
+//!     #[inline]
+//!     pub async fn connect() -> Result<Connection, Error> {
+//!         REDIS_CLIENT.get_async_connection().await.map_err(Error::from)
+//!     }
+//! }
+//!
+//! static REDIS_CLIENT: LazyLock<Client> = LazyLock::new(|| {
+//!     let config = State::shared()
+//!         .get_config("redis")
+//!         .expect("the `redis` field should be a table");
+//!     let database = config
+//!         .get_str("database")
+//!         .expect("the `database` field should be a str");
+//!     let authority = State::format_authority(config, Some(6379));
+//!     let url = format!("redis://{authority}/{database}");
+//!     Client::open(url)
+//!         .expect("fail to create a connector to the redis server")
+//! });
+//! ```
 
 use crate::{
     application::{self, ServerTag},

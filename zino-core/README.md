@@ -20,6 +20,7 @@ The following optional features are available:
 | `crypto-sm`         | Enables China's Standards of Encryption Algorithms.    | No       |
 | `locale`            | Enables the support for locale related utilities.      | No       |
 | `metrics`           | Enables the [`metrics`] exporter.                      | No       |
+| `mimalloc`          | Enables the [`mimalloc`] memory allocator.             | No       |
 | `orm`               | Enables the ORM for MySQL, PostgreSQL or **SQLite**.   | No       |
 | `runtime-async-std` | Enables the [`async-std`] runtime.                     | No       |
 | `runtime-tokio`     | Enables the [`tokio`] runtime.                         | Yes      |
@@ -31,6 +32,7 @@ The following optional features are available:
 [`zino`]: https://github.com/zino-rs/zino
 [`opendal`]: https://crates.io/crates/opendal
 [`metrics`]: https://crates.io/crates/metrics
+[`mimalloc`]: https://crates.io/crates/mimalloc
 [`async-std`]: https://crates.io/crates/async-std
 [`tokio`]: https://crates.io/crates/tokio
 [`native-tls`]: https://crates.io/crates/native-tls

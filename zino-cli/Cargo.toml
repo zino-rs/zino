@@ -17,7 +17,7 @@ name = "zli"
 path = "src/main.rs"
 
 [dependencies]
-log = "0.4.20"
+log = "0.4.21"
 
 [dependencies.clap]
 version = "4.5.0"
