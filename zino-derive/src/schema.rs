@@ -160,7 +160,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     comment = value;
                                 }
                                 "primary_key" => {
-                                    primary_key_name = name.clone();
+                                    primary_key_name.clone_from(&name);
                                 }
                                 "read_only" => {
                                     read_only_fields.push(quote! { #name });
@@ -181,7 +181,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                         continue;
                     }
                     if primary_key_name == name {
-                        primary_key_type = type_name.clone();
+                        primary_key_type.clone_from(&type_name);
                         not_null = true;
                         extra_attributes.push(quote! {
                             column.set_extra_attribute("primary_key", true);

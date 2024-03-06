@@ -71,7 +71,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             field_alias = value;
                         }
                         "primary_key" => {
-                            primary_key_name = name.clone();
+                            primary_key_name.clone_from(&name);
                         }
                         "snapshot" => {
                             let field = name.clone();
@@ -741,7 +741,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     populated_queries.push(quote! { Ok(models) });
     populated_one_queries.push(quote! { Ok(model) });
     if user_id_type.is_empty() {
-        user_id_type = primary_key_type.clone();
+        user_id_type.clone_from(&primary_key_type);
     }
 
     // Output

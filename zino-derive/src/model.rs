@@ -52,7 +52,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 }
                             }
                         }
-                        "read_only" | "generated" | "reserved" => {
+                        "ignore" | "read_only" | "generated" | "reserved" => {
                             enable_setter = false;
                         }
                         "inherent" => {

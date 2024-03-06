@@ -36,7 +36,7 @@ features = ["orm-sqlite"]
 
 [dependencies.zino-model]
 path = "../../zino-model"
-version = "0.16.2"
+version = "0.16.3"
 
 [dependencies.zino-dioxus]
 path = "../../zino-dioxus"
