@@ -56,6 +56,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let mut primary_key_name = String::from("id");
     let mut user_id_type = String::new();
     let mut model_references: HashMap<String, Vec<String>> = HashMap::new();
+    let mut populated_field_mappings: HashMap<String, String> = HashMap::new();
     for field in parser::parse_struct_fields(input.data) {
         let type_name = parser::get_type_name(&field.ty);
         if let Some(ident) = field.ident {
@@ -187,6 +188,12 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                         }
                                     });
                                 }
+                            }
+                        }
+                        "fetch_as" => {
+                            if let Some(value) = value {
+                                let populated_field = [&name, "_populated"].concat();
+                                populated_field_mappings.insert(populated_field, value);
                             }
                         }
                         "unique" => {
@@ -726,13 +733,31 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             let model_ident = format_ident!("{}", model);
             let populated_query = quote! {
                 let mut query = #model_ident::default_snapshot_query();
-                query.add_filter("translate", translate_enabled);
+                query.set_extra_flag("translate", translate_enabled);
                 #model_ident::populate(&mut query, &mut models, &[#(#ref_fields),*]).await?;
             };
             let populated_one_query = quote! {
                 let mut query = #model_ident::default_query();
-                query.add_filter("translate", true);
+                query.set_extra_flag("translate", true);
                 #model_ident::populate_one(&mut query, &mut model, &[#(#ref_fields),*]).await?;
+            };
+            populated_queries.push(populated_query);
+            populated_one_queries.push(populated_one_query);
+        }
+    }
+    if !populated_field_mappings.is_empty() {
+        for (key, new_key) in populated_field_mappings {
+            let populated_query = quote! {
+                for model in &mut models {
+                    if let Some(value) = model.remove(#key) {
+                        model.upsert(#new_key, value);
+                    }
+                }
+            };
+            let populated_one_query = quote! {
+                if let Some(value) = model.remove(#key) {
+                    model.upsert(#new_key, value);
+                }
             };
             populated_queries.push(populated_query);
             populated_one_queries.push(populated_one_query);

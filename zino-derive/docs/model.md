@@ -2,9 +2,16 @@ Derives the [`Model`](zino_core::model::Model) trait.
 
 # Attributes on struct fields
 
+- **`#[schema(ignore)]`**: The `ignore` annotation is used to skip a particular field
+  such that it maps to no database column.
+
 - **`#[schema(constructor = "path")]`**: The `constructor` attribute is used to
   create a new instance of the column type in `Model::new()`.
   The function must be callable as `fn() -> T`.
+
+- **`#[schema(composable)]`**: The `composable` annotation indicates that the column value 
+  relates to a particular model. It is only valid for the data type `M`, `Option<M>` or `Vec<M>`,
+  where `M` is a model.
 
 - **`#[schema(read_only)]`**: The `read_only` annotation indicates that
   the column is read-only and can not be modified after creation.

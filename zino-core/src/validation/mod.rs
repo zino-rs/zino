@@ -1,6 +1,7 @@
 //! Generic validator and common validation rules.
 use crate::{error::Error, extension::JsonObjectExt, Map, SharedString};
 use smallvec::SmallVec;
+use std::fmt;
 
 mod validator;
 
@@ -231,9 +232,22 @@ impl Validation {
         let mut map = Map::with_capacity(failed_entries.len());
         for (key, err) in failed_entries {
             let message = err.message();
-            tracing::warn!("invalid value for `{key}`: {message}");
+            tracing::warn!("invalid value for `{key}` ({message})");
             map.upsert(key, message);
         }
         map
+    }
+}
+
+impl fmt::Display for Validation {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let failed_entries = &self.failed_entries;
+        let mut errors = Vec::with_capacity(failed_entries.len());
+        for (key, err) in failed_entries {
+            let message = format!("invalid value for `{key}` ({})", err.message());
+            errors.push(message);
+        }
+        write!(f, "{}", errors.join(","))
     }
 }

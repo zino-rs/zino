@@ -19,7 +19,10 @@ Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
 
 - **`#[schema(reference = "Model")]`**: The `reference` attribute specifies
   the referenced model to define a relation between two models.
-  It will be used for constriaint check and query population.
+  It will be used for constraint check and query population.
+
+- **`#[schema(fetch_as = "field")]`**: The `fetch_as` attribute specifies
+  the field name when fetching data of the referenced model.
 
 - **`#[schema(unique)]`**: The `unique` annotation is used to indicate that
   the column value should be unique in the table.

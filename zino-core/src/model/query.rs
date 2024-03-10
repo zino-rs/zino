@@ -18,7 +18,7 @@ pub struct Query {
     offset: usize,
     // Limit.
     limit: usize,
-    // Extra attributes.
+    // Extra flags.
     extra: Map,
 }
 
@@ -202,6 +202,12 @@ impl Query {
     #[inline]
     pub fn remove_filter(&mut self, key: &str) -> Option<JsonValue> {
         self.filters.remove(key)
+    }
+
+    /// Sets the extra flag.
+    #[inline]
+    pub fn set_extra_flag(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) {
+        self.extra.upsert(key, value);
     }
 
     /// Sets the sort order.

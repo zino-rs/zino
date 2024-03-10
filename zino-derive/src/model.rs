@@ -52,6 +52,51 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 }
                             }
                         }
+                        "composable" => {
+                            let setter = if parser::check_vec_type(&type_name) {
+                                quote! {
+                                    if let Some(objects) = data.get_map_array(#name) {
+                                        let num_objects = objects.len();
+                                        let mut models = Vec::with_capacity(num_objects);
+                                        let mut errors = Vec::new();
+                                        for (index, object) in objects.iter().enumerate() {
+                                            match object.read_as_model() {
+                                                Ok(model) => models.push(model),
+                                                Err(err) => {
+                                                    let message = format!("#{index}: {err}");
+                                                    errors.push(message);
+                                                },
+                                            }
+                                        }
+                                        if !errors.is_empty() {
+                                            validation.record(#name, errors.join(";"));
+                                        }
+                                        self.#ident = models;
+                                    }
+                                }
+                            } else if parser::check_option_type(&type_name) {
+                                quote! {
+                                    if let Some(object) = data.parse_object(#name) {
+                                        match object.read_as_model() {
+                                            Ok(model) => self.#ident = Some(model),
+                                            Err(err) => validation.record(#name, err.to_string()),
+                                        }
+                                    }
+                                }
+                            } else {
+                                quote! {
+                                    if let Some(object) = data.parse_object(#name) {
+                                        match object.read_as_model() {
+                                            Ok(model) => self.#ident = model,
+                                            Err(err) => {
+                                                validation.record(#name, err.to_string());
+                                            },
+                                        }
+                                    }
+                                }
+                            };
+                            field_setters.push(setter);
+                        }
                         "ignore" | "read_only" | "generated" | "reserved" => {
                             enable_setter = false;
                         }
@@ -105,8 +150,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                     }
                 } else if type_name == "Map" {
                     quote! {
-                        if let Some(values) = data.parse_object(#name) {
-                            self.#ident = values.clone();
+                        if let Some(object) = data.parse_object(#name) {
+                            self.#ident = object.clone();
                         }
                     }
                 } else if parser::check_vec_type(&type_name) {

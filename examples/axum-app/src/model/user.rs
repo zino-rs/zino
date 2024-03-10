@@ -64,7 +64,12 @@ pub struct User {
         comment = "User roles"
     )]
     roles: Vec<String>,
-    #[schema(unique_items, reference = "Tag", comment = "User tags")]
+    #[schema(
+        unique_items,
+        reference = "Tag",
+        fetch_as = "tags",
+        comment = "User tags"
+    )]
     tags: Vec<i64>,
 
     // Security.
