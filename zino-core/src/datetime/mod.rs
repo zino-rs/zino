@@ -57,24 +57,24 @@ impl DateTime {
     /// from the number of non-leap seconds since the midnight UTC on January 1, 1970.
     #[inline]
     pub fn from_timestamp(secs: i64) -> Self {
-        let dt = NaiveDateTime::from_timestamp_opt(secs, 0).unwrap_or_default();
-        Self(Local.from_utc_datetime(&dt))
+        let dt = chrono::DateTime::from_timestamp(secs, 0).unwrap_or_default();
+        Self(dt.with_timezone(&Local))
     }
 
     /// Returns a new instance corresponding to a UTC date and time,
     /// from the number of non-leap milliseconds since the midnight UTC on January 1, 1970.
     #[inline]
     pub fn from_timestamp_millis(millis: i64) -> Self {
-        let dt = NaiveDateTime::from_timestamp_millis(millis).unwrap_or_default();
-        Self(Local.from_utc_datetime(&dt))
+        let dt = chrono::DateTime::from_timestamp_millis(millis).unwrap_or_default();
+        Self(dt.with_timezone(&Local))
     }
 
     /// Returns a new instance corresponding to a UTC date and time,
     /// from the number of non-leap microseconds since the midnight UTC on January 1, 1970.
     #[inline]
     pub fn from_timestamp_micros(micros: i64) -> Self {
-        let dt = NaiveDateTime::from_timestamp_micros(micros).unwrap_or_default();
-        Self(Local.from_utc_datetime(&dt))
+        let dt = chrono::DateTime::from_timestamp_micros(micros).unwrap_or_default();
+        Self(dt.with_timezone(&Local))
     }
 
     /// Returns the number of non-leap seconds since the midnight UTC on January 1, 1970.

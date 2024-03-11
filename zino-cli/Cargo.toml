@@ -20,9 +20,9 @@ path = "src/main.rs"
 log = "0.4.21"
 
 [dependencies.clap]
-version = "4.5.0"
+version = "4.5.2"
 features = ["color", "derive"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.19.2"
+version = "0.19.4"
