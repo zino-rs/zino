@@ -18,7 +18,7 @@ where
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
-        let table_name = Self::table_name();
+        let table_name = query.format_table_name::<Self>();
         let projection = query.format_projection();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
@@ -42,7 +42,7 @@ where
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
-        let table_name = Self::table_name();
+        let table_name = query.format_table_name::<Self>();
         let projection = query.format_projection();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
@@ -133,7 +133,7 @@ where
         let pool = Self::acquire_reader().await?.pool();
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let table_name = Self::table_name();
+        let table_name = Query::table_name_escaped::<Self>();
         let projection = Query::format_field(column);
         let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
@@ -166,8 +166,8 @@ where
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
-        let table_name = Self::table_name();
         let projection = Self::PRIMARY_KEY_NAME;
+        let table_name = query.format_table_name::<Self>();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} LIMIT 1;");
@@ -189,8 +189,8 @@ where
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
-        let table_name = Self::table_name();
         let projection = Self::PRIMARY_KEY_NAME;
+        let table_name = query.format_table_name::<Self>();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let pagination = query.format_pagination();

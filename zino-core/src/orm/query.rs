@@ -47,6 +47,9 @@ pub(super) trait QueryExt<DB> {
     /// Formats the table name.
     fn format_table_name<M: Schema>(&self) -> String;
 
+    /// Returns the escaped table name.
+    fn table_name_escaped<M: Schema>() -> String;
+
     /// Parses text search filter.
     fn parse_text_search(filter: &Map) -> Option<String>;
 

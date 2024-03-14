@@ -206,7 +206,7 @@ serde_yaml = "0.9.32"
 sha2 = "0.10.8"
 sysinfo = "0.30.7"
 task-local-extensions = "0.1.4"
-toml = "0.8.9"
+toml = "0.8.11"
 tracing = "0.1.40"
 tracing-appender = "0.2.3"
 tracing-log = "0.2.0"
@@ -217,7 +217,7 @@ version = "0.5.3"
 features = ["std"]
 
 [dependencies.async-openai]
-version = "0.19.0"
+version = "0.19.1"
 optional = true
 
 [dependencies.card-validate]
@@ -281,7 +281,7 @@ version = "0.4.3"
 optional = true
 
 [dependencies.reqwest]
-version = "0.11.25"
+version = "0.11.26"
 default-features = false
 features = [
     "cookies",
@@ -312,7 +312,7 @@ version = "1.13.1"
 features = ["serde"]
 
 [dependencies.sqlx]
-version = "0.7.3"
+version = "0.7.4"
 optional = true
 default-features = false
 features = [
@@ -367,14 +367,14 @@ features = [
 ]
 
 [dev-dependencies]
-anyhow = "1.0.80"
+anyhow = "1.0.81"
 arrayvec = "0.7.4"
 base64-simd = "0.8.0"
 criterion = "0.5.1"
 data-encoding = "2.5.0"
 libsm = "0.6.0"
 sm3 = "0.4.2"
-sonic-rs = "0.3.3"
+sonic-rs = "0.3.4"
 tinyvec = { version = "1.6.0", features = ["alloc"] }
 uuid-simd = "0.8.0"
 

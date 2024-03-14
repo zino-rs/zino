@@ -179,6 +179,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let table_name = Self::table_name();
+        let table_name_escaped = Query::table_name_escaped::<Self>();
         let columns = Self::columns();
         let mut definitions = columns
             .iter()
@@ -192,8 +193,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         }
 
         let definitions = definitions.join(",\n  ");
-        let sql = format!("CREATE TABLE IF NOT EXISTS {table_name} (\n  {definitions}\n);");
-        pool.execute(&sql).await?;
+        let sql = format!("CREATE TABLE IF NOT EXISTS {table_name_escaped} (\n  {definitions}\n);");
+        if let Err(err) = pool.execute(&sql).await {
+            tracing::error!(table_name, "fail to execute `{sql}`");
+            return Err(err.into());
+        }
         Self::after_create_table().await?;
         Ok(())
     }
@@ -204,6 +208,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = connection_pool.pool();
 
         let table_name = Self::table_name();
+        let table_name_escaped = Query::table_name_escaped::<Self>();
         let sql = if cfg!(any(
             feature = "orm-mariadb",
             feature = "orm-mysql",
@@ -272,7 +277,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 }
             } else {
                 let column_definition = col.field_definition(primary_key_name);
-                let sql = format!("ALTER TABLE {table_name} ADD COLUMN {column_definition};");
+                let sql =
+                    format!("ALTER TABLE {table_name_escaped} ADD COLUMN {column_definition};");
                 pool.execute(&sql).await?;
                 tracing::warn!(
                     model_name = Self::model_name(),
@@ -289,15 +295,16 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     async fn create_indexes() -> Result<u64, Error> {
         let pool = Self::init_writer()?.pool();
 
-        let table_name = Self::table_name();
         let columns = Self::columns();
+        let table_name = Self::table_name();
+        let table_name_escaped = Query::table_name_escaped::<Self>();
         let mut rows = 0;
         if cfg!(any(
             feature = "orm-mariadb",
             feature = "orm-mysql",
             feature = "orm-tidb"
         )) {
-            let sql = format!("SHOW INDEXES FROM {table_name}");
+            let sql = format!("SHOW INDEXES FROM {table_name_escaped}");
             if pool.fetch(&sql).await?.len() > 1 {
                 return Ok(0);
             }
@@ -312,14 +319,14 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                         let index_type = index_type.to_uppercase();
                         let sql = format!(
                             "CREATE {index_type} INDEX {table_name}_{column_name}_index \
-                                ON {table_name} ({column_name});"
+                                ON {table_name_escaped} ({column_name});"
                         );
                         rows = pool.execute(&sql).await?.rows_affected().max(rows);
                     } else if matches!(index_type, "btree" | "hash") {
                         let index_type = index_type.to_uppercase();
                         let sql = format!(
                             "CREATE INDEX {table_name}_{column_name}_index \
-                                ON {table_name} ({column_name}) USING {index_type};"
+                                ON {table_name_escaped} ({column_name}) USING {index_type};"
                         );
                         rows = pool.execute(&sql).await?.rows_affected().max(rows);
                     }
@@ -329,7 +336,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 let text_search_columns = text_search_columns.join(", ");
                 let sql = format!(
                     "CREATE FULLTEXT INDEX {table_name}_text_search_index \
-                        ON {table_name} ({text_search_columns});"
+                        ON {table_name_escaped} ({text_search_columns});"
                 );
                 rows = pool.execute(&sql).await?.rows_affected().max(rows);
             }
@@ -347,14 +354,15 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     } else if index_type == "unique" {
                         let sql = format!(
                             "CREATE UNIQUE INDEX IF NOT EXISTS {table_name}_{column_name}_index \
-                                ON {table_name} ({column_name});"
+                                ON {table_name_escaped} ({column_name});"
                         );
                         rows = pool.execute(&sql).await?.rows_affected().max(rows);
                     } else {
                         let sort_order = if index_type == "btree" { " DESC" } else { "" };
                         let sql = format!(
                             "CREATE INDEX IF NOT EXISTS {table_name}_{column_name}_index \
-                                ON {table_name} USING {index_type}({column_name}{sort_order});"
+                                ON {table_name_escaped} \
+                                    USING {index_type}({column_name}{sort_order});"
                         );
                         rows = pool.execute(&sql).await?.rows_affected().max(rows);
                     }
@@ -369,7 +377,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 let text_search = format!("to_tsvector('{language}', {text})");
                 let sql = format!(
                     "CREATE INDEX IF NOT EXISTS {table_name}_text_search_{language}_index \
-                        ON {table_name} USING gin({text_search});"
+                        ON {table_name_escaped} USING gin({text_search});"
                 );
                 rows = pool.execute(&sql).await?.rows_affected().max(rows);
             }
@@ -380,7 +388,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     let index_type = if index_type == "unique" { "UNIQUE" } else { "" };
                     let sql = format!(
                         "CREATE {index_type} INDEX IF NOT EXISTS {table_name}_{column_name}_index \
-                            ON {table_name} ({column_name});"
+                            ON {table_name_escaped} ({column_name});"
                     );
                     rows = pool.execute(&sql).await?.rows_affected().max(rows);
                 }
@@ -395,7 +403,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let model_data = self.before_insert().await?;
 
         let map = self.into_map();
-        let table_name = Self::table_name();
+        let table_name = Query::table_name_escaped::<Self>();
         let columns = Self::columns();
 
         let mut fields = Vec::with_capacity(columns.len());
@@ -457,7 +465,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             values.push(format!("({entries})"));
         }
 
-        let table_name = Self::table_name();
+        let table_name = Query::table_name_escaped::<Self>();
         let fields = Self::fields().join(", ");
         let values = values.join(", ");
         let sql = format!("INSERT INTO {table_name} ({fields}) VALUES {values};");
@@ -476,7 +484,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let model_data = self.before_update().await?;
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let table_name = Self::table_name();
+        let table_name = Query::table_name_escaped::<Self>();
         let primary_key = Query::escape_string(self.primary_key());
         let map = self.into_map();
         let read_only_fields = Self::read_only_fields();
@@ -519,7 +527,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::before_mutation(query, mutation).await?;
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let table_name = Self::table_name();
+        let table_name = query.format_table_name::<Self>();
         let filters = query.format_filters::<Self>();
         let updates = mutation.format_updates::<Self>();
         let sql = if cfg!(any(
@@ -564,7 +572,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_writer().await?.pool();
         Self::before_mutation(query, mutation).await?;
 
-        let table_name = Self::table_name();
+        let table_name = query.format_table_name::<Self>();
         let filters = query.format_filters::<Self>();
         let updates = mutation.format_updates::<Self>();
         let sql = format!("UPDATE {table_name} SET {updates} {filters};");
@@ -584,7 +592,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let model_data = self.before_upsert().await?;
 
         let map = self.into_map();
-        let table_name = Self::table_name();
+        let table_name = Query::table_name_escaped::<Self>();
         let fields = Self::fields();
         let num_fields = fields.len();
         let read_only_fields = Self::read_only_fields();
@@ -650,7 +658,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let model_data = self.before_delete().await?;
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let table_name = Self::table_name();
+        let table_name = Query::table_name_escaped::<Self>();
         let primary_key = self.primary_key();
         let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
@@ -944,7 +952,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             return Ok(());
         }
 
-        let table_name = Self::table_name();
+        let table_name = query.format_table_name::<Self>();
         let projection = query.format_projection();
         let filters = query.format_filters::<Self>();
         let sql = format!("SELECT {projection} FROM {table_name} {filters};");
@@ -1066,7 +1074,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
-        let table_name = Self::table_name();
+        let table_name = query.format_table_name::<Self>();
         let filters = query.format_filters::<Self>();
         let sql = format!("SELECT 1 FROM {table_name} {filters} LIMIT 1;");
         let mut ctx = Self::before_scan(&sql).await?;
@@ -1085,7 +1093,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_reader().await?.pool();
         Self::before_count(query).await?;
 
-        let table_name = Self::table_name();
+        let table_name = query.format_table_name::<Self>();
         let filters = query.format_filters::<Self>();
         let sql = format!("SELECT count(*) AS count FROM {table_name} {filters};");
         let mut ctx = Self::before_scan(&sql).await?;
@@ -1253,7 +1261,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_writer().await?.pool();
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let table_name = Self::table_name();
+        let table_name = Query::table_name_escaped::<Self>();
         let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
             let type_annotation = Self::primary_key_column().type_annotation();
@@ -1294,8 +1302,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_reader().await?.pool();
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let table_name = Self::table_name();
         let query = Self::default_query();
+        let table_name = query.format_table_name::<Self>();
         let projection = query.format_projection();
         let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
@@ -1330,8 +1338,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_reader().await?.pool();
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let table_name = Self::table_name();
         let query = Self::default_query();
+        let table_name = query.format_table_name::<Self>();
         let projection = query.format_projection();
         let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {

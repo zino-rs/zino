@@ -640,6 +640,12 @@ impl QueryExt<DatabaseDriver> for Query {
         }
     }
 
+    #[inline]
+    fn table_name_escaped<M: Schema>() -> String {
+        let table_name = M::table_name();
+        format!(r#"`{table_name}`"#)
+    }
+
     fn parse_text_search(filter: &Map) -> Option<String> {
         let fields = filter.parse_str_array("$fields")?;
         filter.parse_string("$search").map(|search| {

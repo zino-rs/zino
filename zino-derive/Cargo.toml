@@ -15,7 +15,7 @@ proc-macro = true
 
 [dependencies]
 convert_case = "0.6.0"
-proc-macro2 = "1.0.78"
+proc-macro2 = "1.0.79"
 quote = "1.0.35"
 syn = "2.0.52"
 

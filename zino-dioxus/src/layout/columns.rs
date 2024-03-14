@@ -20,9 +20,10 @@ pub fn Columns<'a>(cx: Scope<'a, ColumnsProps<'a>>) -> Element {
     } else {
         String::new()
     };
+    let multiline_class = Class::check("is-multiline", cx.props.multiline);
     render! {
         div {
-            class: "{class} {gap_class}",
+            class: "{class} {gap_class} {multiline_class}",
             for column in cx.props.columns.iter() {
                 div {
                     class: "{column_class} {size_class} {offset_class}",
@@ -51,6 +52,9 @@ pub struct ColumnsProps<'a> {
     /// A custom column gap.
     #[props(into)]
     pub gap: Option<u8>,
+    /// A flag to add more column elements than would fit in a single row.
+    #[props(default = false)]
+    pub multiline: bool,
     /// The columns to be rendered.
     #[props(into)]
     pub columns: Vec<Element<'a>>,

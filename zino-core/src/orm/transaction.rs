@@ -95,7 +95,6 @@ where
         // Inserts the model
         let model_data = self.before_insert().await?;
         let map = self.into_map();
-        let table_name = Self::table_name();
         let columns = Self::columns();
 
         let mut fields = Vec::with_capacity(columns.len());
@@ -113,6 +112,7 @@ where
             .collect::<Vec<_>>()
             .join(", ");
         let fields = fields.join(", ");
+        let table_name = Query::table_name_escaped::<Self>();
         let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({values});");
         let mut ctx = Self::before_scan(&sql).await?;
 
@@ -144,7 +144,7 @@ where
             values.push(format!("({entries})"));
         }
 
-        let table_name = S::table_name();
+        let table_name = Query::table_name_escaped::<S>();
         let fields = S::fields().join(", ");
         let values = values.join(", ");
         let sql = format!("INSERT INTO {table_name} ({fields}) VALUES {values};");
@@ -172,7 +172,7 @@ where
         let mutation = mutations.0;
         Self::before_mutation(query, mutation).await?;
 
-        let table_name = Self::table_name();
+        let table_name = query.format_table_name::<Self>();
         let filters = query.format_filters::<Self>();
         let updates = mutation.format_updates::<Self>();
         let sql = format!("UPDATE {table_name} SET {updates} {filters};");
@@ -190,7 +190,7 @@ where
         let mutation = mutations.1;
         S::before_mutation(query, mutation).await?;
 
-        let table_name = S::table_name();
+        let table_name = query.format_table_name::<S>();
         let filters = query.format_filters::<S>();
         let updates = mutation.format_updates::<S>();
         let sql = format!("UPDATE {table_name} SET {updates} {filters};");
