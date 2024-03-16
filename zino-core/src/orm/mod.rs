@@ -110,7 +110,7 @@
 
 use crate::{extension::TomlTableExt, state::State, LazyLock};
 use smallvec::SmallVec;
-use std::sync::atomic::{AtomicUsize, Ordering::Relaxed};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering::Relaxed};
 
 mod accessor;
 mod column;
@@ -303,6 +303,9 @@ static TABLE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
             if let Some(max_rows) = config.get_usize("max-rows") {
                 MAX_ROWS.store(max_rows, Relaxed);
             }
+            if let Some(auto_migration) = config.get_bool("auto-migration") {
+                AUTO_MIGRATION.store(auto_migration, Relaxed);
+            }
             config
                 .get_str("namespace")
                 .filter(|s| !s.is_empty())
@@ -313,3 +316,6 @@ static TABLE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
 
 /// Max number of returning rows.
 static MAX_ROWS: AtomicUsize = AtomicUsize::new(10000);
+
+/// Auto migration.
+static AUTO_MIGRATION: AtomicBool = AtomicBool::new(true);

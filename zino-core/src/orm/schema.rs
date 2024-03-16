@@ -10,7 +10,7 @@ use crate::{
     warn, JsonValue, Map,
 };
 use serde::de::DeserializeOwned;
-use std::fmt::Display;
+use std::{fmt::Display, sync::atomic::Ordering::Relaxed};
 
 /// Database schema.
 ///
@@ -176,6 +176,9 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     async fn create_table() -> Result<(), Error> {
         let pool = Self::init_writer()?.pool();
         Self::before_create_table().await?;
+        if !super::AUTO_MIGRATION.load(Relaxed) {
+            return Ok(());
+        }
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let table_name = Self::table_name();
@@ -205,8 +208,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Synchronizes the table schema for the model.
     async fn synchronize_schema() -> Result<(), Error> {
         let connection_pool = Self::init_writer()?;
-        let pool = connection_pool.pool();
+        if !super::AUTO_MIGRATION.load(Relaxed) {
+            return Ok(());
+        }
 
+        let pool = connection_pool.pool();
         let table_name = Self::table_name();
         let table_name_escaped = Query::table_name_escaped::<Self>();
         let sql = if cfg!(any(
@@ -294,6 +300,9 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Creates indexes for the model.
     async fn create_indexes() -> Result<u64, Error> {
         let pool = Self::init_writer()?.pool();
+        if !super::AUTO_MIGRATION.load(Relaxed) {
+            return Ok(0);
+        }
 
         let columns = Self::columns();
         let table_name = Self::table_name();

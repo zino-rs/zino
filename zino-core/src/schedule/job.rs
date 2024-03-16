@@ -68,7 +68,7 @@ impl Job {
         self
     }
 
-    /// Enables the flag to indicate whether the job can only be executed once.
+    /// Sets the number of maximum ticks as `1` to ensure that the job can only be executed once.
     #[inline]
     pub fn once(mut self) -> Self {
         self.remaining_ticks = Some(1);

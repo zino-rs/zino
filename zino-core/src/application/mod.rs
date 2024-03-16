@@ -17,7 +17,7 @@
 //!             let policy_file = "./config/casbin/policy.csv";
 //!             let enforcer = Enforcer::new(model_file, policy_file).await?;
 //!             if CASBIN_ENFORCER.set(enforcer).is_err() {
-//!                 tracing::error!("fail to intialize the Casbin enforcer");
+//!                 tracing::error!("fail to initialize the Casbin enforcer");
 //!             }
 //!             Ok(())
 //!         });
