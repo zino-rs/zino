@@ -1,4 +1,42 @@
 //! High level abstractions for the application.
+//!
+//! # Examples
+//!
+//! ```rust,ignore
+//! use casbin::prelude::*;
+//! use std::sync::OnceLock;
+//! use zino_core::application::{Application, Plugin};
+//!
+//! #[derive(Debug, Clone, Copy)]
+//! pub struct Casbin;
+//!
+//! impl Casbin {
+//!     pub fn init() -> Plugin {
+//!         let loader = Box::pin(async {
+//!             let model_file = "./config/casbin/model.conf";
+//!             let policy_file = "./config/casbin/policy.csv";
+//!             let enforcer = Enforcer::new(model_file, policy_file).await?;
+//!             if CASBIN_ENFORCER.set(enforcer).is_err() {
+//!                 tracing::error!("fail to intialize the Casbin enforcer");
+//!             }
+//!             Ok(())
+//!         });
+//!         let mut plugin = Plugin::new("casbin");
+//!         plugin.set_loader(loader);
+//!         plugin.enable_dev();
+//!         plugin.enable_prod();
+//!         plugin
+//!     }
+//! }
+//!
+//! static CASBIN_ENFORCER: OnceLock<Enforcer> = OnceLock::new();
+//!
+//! fn main() {
+//!     zino::Cluster::boot()
+//!         .add_plugin(Casbin::init())
+//!         .run()
+//! }
+//! ```
 
 use crate::{
     datetime::DateTime,
@@ -16,6 +54,7 @@ use std::{env, fs, path::PathBuf, thread};
 use toml::value::Table;
 use utoipa::openapi::{OpenApi, OpenApiBuilder};
 
+mod plugin;
 mod secret_key;
 mod server_tag;
 mod static_record;
@@ -28,6 +67,8 @@ mod metrics_exporter;
 pub(crate) mod http_client;
 
 pub(crate) use secret_key::SECRET_KEY;
+
+pub use plugin::Plugin;
 pub use server_tag::ServerTag;
 pub use static_record::StaticRecord;
 
@@ -119,6 +160,16 @@ pub trait Application {
         Self: Sized,
     {
         self.register_with(ServerTag::Debug, routes)
+    }
+
+    /// Adds a custom plugin.
+    #[inline]
+    fn add_plugin(self, plugin: Plugin) -> Self
+    where
+        Self: Sized,
+    {
+        tracing::info!(plugin_name = plugin.name());
+        self
     }
 
     /// Gets the system’s information.
@@ -237,12 +288,14 @@ pub trait Application {
     }
 
     /// Loads resources after booting the application.
+    #[inline]
     async fn load() {
         #[cfg(feature = "orm")]
         crate::orm::GlobalPool::connect_all().await;
     }
 
     /// Handles the graceful shutdown.
+    #[inline]
     async fn shutdown() {
         #[cfg(feature = "orm")]
         crate::orm::GlobalPool::close_all().await;

@@ -14,12 +14,12 @@ updates:
     directory: "/zino-core/"
     schedule:
       interval: "weekly"
-      
+
   - package-ecosystem: "cargo"
     directory: "/zino-derive/"
     schedule:
       interval: "weekly"
-      
+
   - package-ecosystem: "cargo"
     directory: "/zino-model/"
     schedule:

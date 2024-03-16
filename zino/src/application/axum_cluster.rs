@@ -22,7 +22,7 @@ use tower_http::{
 };
 use utoipa_rapidoc::RapiDoc;
 use zino_core::{
-    application::{Application, ServerTag},
+    application::{Application, Plugin, ServerTag},
     extension::TomlTableExt,
     response::Response,
     schedule::AsyncScheduler,
@@ -32,6 +32,8 @@ use zino_core::{
 /// An HTTP server cluster for `axum`.
 #[derive(Default)]
 pub struct AxumCluster {
+    /// Custom plugins.
+    custom_plugins: Vec<Plugin>,
     /// Default routes.
     default_routes: Vec<Router>,
     /// Tagged routes.
@@ -48,6 +50,11 @@ impl Application for AxumCluster {
 
     fn register_with(mut self, server_tag: ServerTag, routes: Self::Routes) -> Self {
         self.tagged_routes.push((server_tag, routes));
+        self
+    }
+
+    fn add_plugin(mut self, plugin: Plugin) -> Self {
+        self.custom_plugins.push(plugin);
         self
     }
 
@@ -248,6 +255,7 @@ impl Application for AxumCluster {
                     .with_graceful_shutdown(Self::shutdown())
             });
             Self::load().await;
+            super::load_plugins(self.custom_plugins, app_env).await;
             for result in futures::future::join_all(servers).await {
                 if let Err(err) = result {
                     tracing::error!("axum server error: {err}");

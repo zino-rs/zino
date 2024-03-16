@@ -7,11 +7,18 @@ use dioxus_router::{components::Router, routable::Routable};
 use image::{error::ImageError, io::Reader};
 use std::{fmt::Display, fs, marker::PhantomData, str::FromStr, time::Duration};
 use tokio::runtime::Builder;
-use zino_core::{application::Application, extension::TomlTableExt, schedule::AsyncScheduler, Map};
+use zino_core::{
+    application::{Application, Plugin},
+    extension::TomlTableExt,
+    schedule::AsyncScheduler,
+    Map,
+};
 
 /// A webview-based desktop renderer for the Dioxus VirtualDom.
 #[derive(Default)]
 pub struct DioxusDesktop<R> {
+    /// Custom plugins.
+    custom_plugins: Vec<Plugin>,
     /// Phantom type of Dioxus router.
     phantom: PhantomData<R>,
 }
@@ -38,6 +45,11 @@ where
         self
     }
 
+    fn add_plugin(mut self, plugin: Plugin) -> Self {
+        self.custom_plugins.push(plugin);
+        self
+    }
+
     fn run_with<T: AsyncScheduler + Send + 'static>(self, mut scheduler: T) {
         let runtime = Builder::new_multi_thread()
             .thread_keep_alive(Duration::from_secs(60))
@@ -56,11 +68,13 @@ where
                 }
             });
         }
-        runtime.block_on(async {
-            Self::load().await;
-        });
 
         let app_env = Self::env();
+        runtime.block_on(async {
+            Self::load().await;
+            super::load_plugins(self.custom_plugins, app_env).await;
+        });
+
         let app_name = Self::name();
         let app_version = Self::version();
         let app_state = Self::shared_state();

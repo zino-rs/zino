@@ -19,6 +19,8 @@ pub struct Job {
     disabled: bool,
     /// Flag to indicate whether the job is executed immediately.
     immediate: bool,
+    /// Remaining ticks.
+    remaining_ticks: Option<usize>,
     /// Cron expression parser.
     schedule: Schedule,
     /// Cron job to run.
@@ -38,6 +40,7 @@ impl Job {
             data: Map::new(),
             disabled: false,
             immediate: false,
+            remaining_ticks: None,
             schedule,
             run: exec,
             last_tick: None,
@@ -55,6 +58,20 @@ impl Job {
     #[inline]
     pub fn immediate(mut self, immediate: bool) -> Self {
         self.immediate = immediate;
+        self
+    }
+
+    /// Sets the number of maximum ticks.
+    #[inline]
+    pub fn max_ticks(mut self, ticks: usize) -> Self {
+        self.remaining_ticks = Some(ticks);
+        self
+    }
+
+    /// Enables the flag to indicate whether the job can only be executed once.
+    #[inline]
+    pub fn once(mut self) -> Self {
+        self.remaining_ticks = Some(1);
         self
     }
 
@@ -82,10 +99,16 @@ impl Job {
         self.disabled
     }
 
-    /// Returns `true` if the job is is executed immediately.
+    /// Returns `true` if the job is executed immediately.
     #[inline]
     pub fn is_immediate(&self) -> bool {
         self.immediate
+    }
+
+    /// Returns `true` if the job is fused and can not be executed any more.
+    #[inline]
+    pub fn is_fused(&self) -> bool {
+        self.remaining_ticks == Some(0)
     }
 
     /// Pauses the job by setting the `disabled` flag to `true`.
@@ -113,15 +136,21 @@ impl Job {
         let run = self.run;
         if let Some(last_tick) = self.last_tick {
             for event in self.schedule.after(&last_tick) {
-                if event > now {
+                if event > now || self.is_fused() {
                     break;
                 }
                 if !disabled {
                     run(self.id, &mut self.data, last_tick.into());
+                    if let Some(ticks) = self.remaining_ticks {
+                        self.remaining_ticks = Some(ticks.saturating_sub(1));
+                    }
                 }
             }
-        } else if !disabled && self.immediate {
+        } else if !disabled && self.immediate && !self.is_fused() {
             run(self.id, &mut self.data, now.into());
+            if let Some(ticks) = self.remaining_ticks {
+                self.remaining_ticks = Some(ticks.saturating_sub(1));
+            }
         }
         self.last_tick = Some(now);
     }
@@ -204,8 +233,15 @@ impl JobScheduler {
     /// It is recommended to sleep for at least 500 milliseconds between invocations of this method.
     #[inline]
     pub fn tick(&mut self) {
+        let mut fused_jobs = Vec::new();
         for job in &mut self.jobs {
             job.tick();
+            if job.is_fused() {
+                fused_jobs.push(job.id());
+            }
+        }
+        for job_id in fused_jobs {
+            self.remove(job_id);
         }
     }
 

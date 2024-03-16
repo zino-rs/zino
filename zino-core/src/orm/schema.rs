@@ -196,7 +196,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let sql = format!("CREATE TABLE IF NOT EXISTS {table_name_escaped} (\n  {definitions}\n);");
         if let Err(err) = pool.execute(&sql).await {
             tracing::error!(table_name, "fail to execute `{sql}`");
-            return Err(err.into());
+            return Err(err);
         }
         Self::after_create_table().await?;
         Ok(())

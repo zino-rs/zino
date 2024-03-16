@@ -8,7 +8,7 @@ pub fn job_scheduler() -> JobScheduler {
     let job = Job::new("0/15 * * * * *", job::every_15s as CronJob).disable(true);
     scheduler.add(job);
 
-    let job = Job::new("0/20 * * * * *", job::every_20s as CronJob).immediate(true);
+    let job = Job::new("0/20 * * * * *", job::every_20s as CronJob).max_ticks(3);
     scheduler.add(job);
 
     scheduler

@@ -11,7 +11,7 @@ use actix_web::{
 use std::{fs, path::PathBuf, time::Duration};
 use utoipa_rapidoc::RapiDoc;
 use zino_core::{
-    application::{Application, ServerTag},
+    application::{Application, Plugin, ServerTag},
     extension::TomlTableExt,
     response::Response,
     schedule::AsyncScheduler,
@@ -20,6 +20,8 @@ use zino_core::{
 /// An HTTP server cluster for `actix-web`.
 #[derive(Default)]
 pub struct ActixCluster {
+    /// Custom plugins.
+    custom_plugins: Vec<Plugin>,
     /// Default routes.
     default_routes: Vec<RouterConfigure>,
     /// Tagged routes.
@@ -36,6 +38,11 @@ impl Application for ActixCluster {
 
     fn register_with(mut self, server_tag: ServerTag, routes: Self::Routes) -> Self {
         self.tagged_routes.push((server_tag, routes));
+        self
+    }
+
+    fn add_plugin(mut self, plugin: Plugin) -> Self {
+        self.custom_plugins.push(plugin);
         self
     }
 
@@ -217,6 +224,7 @@ impl Application for ActixCluster {
                 .run()
             });
             Self::load().await;
+            super::load_plugins(self.custom_plugins, app_env).await;
             for result in futures::future::join_all(servers).await {
                 if let Err(err) = result {
                     tracing::error!("actix server error: {err}");
