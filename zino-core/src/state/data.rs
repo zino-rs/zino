@@ -8,7 +8,7 @@ pub struct Data<T>(T);
 impl<T> Data<T> {
     /// Creates a new instance.
     #[inline]
-    pub fn new(value: T) -> Self {
+    pub const fn new(value: T) -> Self {
         Self(value)
     }
 
@@ -34,7 +34,7 @@ pub struct SharedData<T>(RwLock<T>);
 impl<T> SharedData<T> {
     /// Creates a new instance.
     #[inline]
-    pub fn new(value: T) -> Self {
+    pub const fn new(value: T) -> Self {
         Self(RwLock::new(value))
     }
 

@@ -242,11 +242,11 @@ default-features = false
 features = ["pure-rust"]
 
 [dependencies.metrics]
-version = "0.22.1"
+version = "0.22.3"
 optional = true
 
 [dependencies.metrics-exporter-prometheus]
-version = "0.13.1"
+version = "0.14.0"
 optional = true
 
 [dependencies.mimalloc]

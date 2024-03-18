@@ -23,8 +23,6 @@
 //!         });
 //!         let mut plugin = Plugin::new("casbin");
 //!         plugin.set_loader(loader);
-//!         plugin.enable_dev();
-//!         plugin.enable_prod();
 //!         plugin
 //!     }
 //! }

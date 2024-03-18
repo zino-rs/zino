@@ -110,7 +110,10 @@
 
 use crate::{extension::TomlTableExt, state::State, LazyLock};
 use smallvec::SmallVec;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering::Relaxed};
+use std::sync::{
+    atomic::{AtomicBool, AtomicUsize, Ordering::Relaxed},
+    OnceLock,
+};
 
 mod accessor;
 mod column;
@@ -256,6 +259,11 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
     let Some(database_config) = config.get_table("database") else {
         return ConnectionPools(SmallVec::new());
     };
+    if let Some(time_zone) = database_config.get_str("time-zone") {
+        TIME_ZONE
+            .set(time_zone)
+            .expect("fail to set time zone for the database session");
+    }
 
     // Database connection pools.
     let driver = DRIVER_NAME;
@@ -313,6 +321,9 @@ static TABLE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
         })
         .unwrap_or_default()
 });
+
+/// Optional time zone.
+static TIME_ZONE: OnceLock<&'static str> = OnceLock::new();
 
 /// Max number of returning rows.
 static MAX_ROWS: AtomicUsize = AtomicUsize::new(10000);

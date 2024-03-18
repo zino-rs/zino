@@ -18,7 +18,7 @@ pub trait PoolManager {
 #[cfg(feature = "orm-sqlx")]
 impl PoolManager for ConnectionPool<DatabasePool> {
     fn with_config(config: &'static Table) -> Self {
-        use sqlx::{pool::PoolOptions, Connection};
+        use sqlx::{pool::PoolOptions, Connection, Executor};
 
         let name = config.get_str("name").unwrap_or("main");
 
@@ -68,6 +68,24 @@ impl PoolManager for ConnectionPool<DatabasePool> {
                         }
                     }
                     Ok(true)
+                })
+            })
+            .after_connect(|conn, _meta| {
+                Box::pin(async move {
+                    if let Some(time_zone) = super::TIME_ZONE.get() {
+                        if cfg!(any(
+                            feature = "orm-mariadb",
+                            feature = "orm-mysql",
+                            feature = "orm-tidb"
+                        )) {
+                            let sql = format!("SET time_zone = '{time_zone}';");
+                            conn.execute(sql.as_str()).await?;
+                        } else if cfg!(feature = "orm-postgres") {
+                            let sql = format!("SET TIME ZONE '{time_zone}';");
+                            conn.execute(sql.as_str()).await?;
+                        }
+                    }
+                    Ok(())
                 })
             })
             .connect_lazy_with(connect_options);
@@ -148,7 +166,7 @@ cfg_if::cfg_if! {
         /// Options and flags which can be used to configure a SQLite connection.
         fn new_connect_options(database: &'static str, config: &'static Table) -> SqliteConnectOptions {
             let mut connect_options = SqliteConnectOptions::new().create_if_missing(true);
-            if let Some(read_only) = config.get_bool("read_only") {
+            if let Some(read_only) = config.get_bool("read-only") {
                 connect_options = connect_options.read_only(read_only);
             }
 

@@ -61,7 +61,7 @@ fn StargazerHistory(cx: Scope) -> Element {
             margin_top: "-30px",
             width: 800,
             height: 533,
-            src: "https://api.star-history.com/svg?repos=photino/zino&type={chart_type}",
+            src: "https://api.star-history.com/svg?repos=zino-rs/zino&type={chart_type}",
         }
     }
 }

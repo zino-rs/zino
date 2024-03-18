@@ -58,6 +58,11 @@ where
             .enable_all()
             .build()
             .expect("fail to build Tokio runtime for `DioxusDesktop`");
+        let app_env = Self::env();
+        runtime.block_on(async {
+            Self::load().await;
+            super::load_plugins(self.custom_plugins, app_env).await;
+        });
         if scheduler.is_ready() {
             runtime.spawn(async move {
                 loop {
@@ -68,12 +73,6 @@ where
                 }
             });
         }
-
-        let app_env = Self::env();
-        runtime.block_on(async {
-            Self::load().await;
-            super::load_plugins(self.custom_plugins, app_env).await;
-        });
 
         let app_name = Self::name();
         let app_version = Self::version();

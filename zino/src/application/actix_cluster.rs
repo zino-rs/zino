@@ -48,6 +48,11 @@ impl Application for ActixCluster {
 
     fn run_with<T: AsyncScheduler + Send + 'static>(self, mut scheduler: T) {
         let runtime = Runtime::new().expect("fail to build Tokio runtime for `ActixCluster`");
+        let app_env = Self::env();
+        runtime.block_on(async {
+            Self::load().await;
+            super::load_plugins(self.custom_plugins, app_env).await;
+        });
         if scheduler.is_ready() {
             runtime.spawn(async move {
                 loop {
@@ -66,7 +71,6 @@ impl Application for ActixCluster {
             let app_name = Self::name();
             let app_version = Self::version();
             let app_domain = Self::domain();
-            let app_env = app_state.env();
             let listeners = app_state.listeners();
             let has_debug_server = listeners.iter().any(|listener| listener.0.is_debug());
             let servers = listeners.into_iter().map(|listener| {
@@ -223,8 +227,6 @@ impl Application for ActixCluster {
                 .unwrap_or_else(|err| panic!("fail to create an HTTP server: {err}"))
                 .run()
             });
-            Self::load().await;
-            super::load_plugins(self.custom_plugins, app_env).await;
             for result in futures::future::join_all(servers).await {
                 if let Err(err) = result {
                     tracing::error!("actix server error: {err}");

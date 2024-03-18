@@ -66,6 +66,11 @@ impl Application for AxumCluster {
             .enable_all()
             .build()
             .expect("fail to build Tokio runtime for `AxumCluster`");
+        let app_env = Self::env();
+        runtime.block_on(async {
+            Self::load().await;
+            super::load_plugins(self.custom_plugins, app_env).await;
+        });
         if scheduler.is_ready() {
             runtime.spawn(async move {
                 loop {
@@ -83,7 +88,6 @@ impl Application for AxumCluster {
             let app_state = Self::shared_state();
             let app_name = Self::name();
             let app_version = Self::version();
-            let app_env = app_state.env();
             let listeners = app_state.listeners();
             let has_debug_server = listeners.iter().any(|listener| listener.0.is_debug());
             let servers = listeners.into_iter().map(|listener| {
@@ -254,8 +258,6 @@ impl Application for AxumCluster {
                     .serve(app.into_make_service_with_connect_info::<SocketAddr>())
                     .with_graceful_shutdown(Self::shutdown())
             });
-            Self::load().await;
-            super::load_plugins(self.custom_plugins, app_env).await;
             for result in futures::future::join_all(servers).await {
                 if let Err(err) = result {
                     tracing::error!("axum server error: {err}");

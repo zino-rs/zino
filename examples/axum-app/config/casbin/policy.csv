@@ -1,5 +1,0 @@
-p, user_admin , /user/list, GET
-p, tag_admin , /tag/list, GET
-
-g, *, user_admin 
-g, *, tag_admin
