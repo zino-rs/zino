@@ -15,7 +15,7 @@ use std::{
     str::{FromStr, ParseBoolError},
     time::Duration,
 };
-use url::{self, Url};
+use url::Url;
 
 /// Extension trait for [`Map`](crate::Map).
 pub trait JsonObjectExt {

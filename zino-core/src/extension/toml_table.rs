@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 use toml::value::{Array, Table};
-use url::{self, Url};
+use url::Url;
 
 /// Extension trait for [`Table`](toml::Table).
 pub trait TomlTableExt {
