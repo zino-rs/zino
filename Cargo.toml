@@ -12,6 +12,7 @@ members = [
     "zino-router",
     "zino-rpc",
     "zino-server",
+    "examples/*"
 ]
 
 [profile.release]
