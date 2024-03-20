@@ -1,7 +1,7 @@
 [package]
 name = "zino"
 description = "Next-generation framework for composable applications in Rust."
-version = "0.18.5"
+version = "0.18.6"
 rust-version = "1.75"
 edition = "2021"
 license = "MIT"
@@ -79,7 +79,7 @@ features = [
 ]
 
 [dependencies.async-trait]
-version = "0.1.77"
+version = "0.1.78"
 optional = true
 
 [dependencies.axum]
@@ -171,4 +171,4 @@ optional = true
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.19.3"
+version = "0.19.6"

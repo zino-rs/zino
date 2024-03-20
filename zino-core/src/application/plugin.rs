@@ -1,5 +1,11 @@
-use crate::{error::Error, state::Env, BoxFuture};
+use crate::{
+    error::Error,
+    extension::TomlTableExt,
+    state::{Env, State},
+    BoxFuture,
+};
 use smallvec::SmallVec;
+use toml::value::Table;
 
 /// A custom plugin.
 pub struct Plugin {
@@ -62,6 +68,15 @@ impl Plugin {
         if !self.dependencies.contains(&dependency) {
             self.dependencies.push(dependency);
         }
+    }
+
+    /// Returns a reference to the shared config corresponding to the plugin.
+    #[inline]
+    pub fn get_config(&self) -> Option<&Table> {
+        State::shared()
+            .config()
+            .get_table("plugins")?
+            .get_table(self.name())
     }
 
     /// Returns the plugin name.

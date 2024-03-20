@@ -77,8 +77,3 @@ pub type BoxError = Box<dyn std::error::Error + Sync + Send + 'static>;
 /// An owned dynamically typed future.
 pub type BoxFuture<'a, T = ()> =
     std::pin::Pin<Box<dyn std::future::Future<Output = T> + Send + 'a>>;
-
-/// Use `mimalloc` as the global allocator.
-#[cfg(feature = "mimalloc")]
-#[global_allocator]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;

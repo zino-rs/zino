@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.19.5"
+version = "0.19.6"
 rust-version = "1.75"
 edition = "2021"
 license = "MIT"
@@ -137,7 +137,6 @@ locale-de = ["locale", "random_word/de"]
 locale-fr = ["locale", "random_word/fr"]
 locale-zh = ["locale", "random_word/zh"]
 metrics = ["dep:metrics", "dep:metrics-exporter-prometheus"]
-mimalloc = ["dep:mimalloc"]
 orm = ["orm-sqlx"]
 orm-mariadb = ["orm-sqlx", "sqlx/mysql"]
 orm-mysql = ["orm-sqlx", "sqlx/mysql"]
@@ -202,11 +201,11 @@ rmp-serde = "1.1.2"
 rust_decimal = "1.34.3"
 ryu = "1.0.17"
 serde_qs = "0.12.0"
-serde_yaml = "0.9.32"
+serde_yaml = "0.9.33"
 sha2 = "0.10.8"
 sysinfo = "0.30.7"
 task-local-extensions = "0.1.4"
-toml = "0.8.11"
+toml = "0.8.12"
 tracing = "0.1.40"
 tracing-appender = "0.2.3"
 tracing-log = "0.2.0"
@@ -249,12 +248,8 @@ optional = true
 version = "0.14.0"
 optional = true
 
-[dependencies.mimalloc]
-version = "0.1.39"
-optional = true
-
 [dependencies.minijinja]
-version = "1.0.12"
+version = "1.0.13"
 optional = true
 features = ["debug", "loader"]
 
@@ -281,7 +276,7 @@ version = "0.4.3"
 optional = true
 
 [dependencies.reqwest]
-version = "0.11.26"
+version = "0.11.27"
 default-features = false
 features = [
     "cookies",
@@ -358,7 +353,7 @@ features = [
 ]
 
 [dependencies.uuid]
-version = "1.7.0"
+version = "1.8.0"
 features = [
     "fast-rng",
     "serde",
