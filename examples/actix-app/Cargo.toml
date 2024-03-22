@@ -1,13 +1,12 @@
 [package]
 name = "actix-app"
 description = "An example for actix-web integration."
-version = "0.6.1"
+version = "0.6.2"
 rust-version = "1.75"
 edition = "2021"
 publish = false
 
 [dependencies]
-casbin = "2.2.0"
 tracing = "0.1.40"
 
 [dependencies.actix-web]
@@ -21,7 +20,7 @@ features = ["derive"]
 [dependencies.zino]
 path = "../../zino"
 version = "0.18.6"
-features = ["actix"]
+features = ["actix", "orm"]
 
 [dependencies.zino-core]
 path = "../../zino-core"

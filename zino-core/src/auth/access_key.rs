@@ -12,9 +12,6 @@ use hmac::{
 use rand::{distributions::Alphanumeric, Rng};
 use std::{borrow::Cow, fmt, iter};
 
-#[cfg(feature = "auth-totp")]
-use totp_rs::{Algorithm, TOTP};
-
 /// Access key ID.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct AccessKeyId(String);
@@ -98,14 +95,6 @@ impl SecretAccessKey {
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
         self.0.as_slice()
-    }
-
-    /// Consumes `self` and generates a TOTP used for 2FA authentification.
-    #[cfg(feature = "auth-totp")]
-    pub fn generate_totp(self, issuer: Option<String>, account_name: String) -> TOTP {
-        let mut secret = self.0;
-        secret.truncate(20);
-        TOTP::new_unchecked(Algorithm::SHA1, 6, 1, 30, secret, issuer, account_name)
     }
 }
 

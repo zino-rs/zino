@@ -1,10 +1,10 @@
-use crate::{endpoint, middleware, AxumExtractor, AxumResponse};
+use crate::{middleware, AxumExtractor, AxumResponse};
 use axum::{
     error_handling::HandleErrorLayer,
     extract::{rejection::LengthLimitError, DefaultBodyLimit},
     http::StatusCode,
     middleware::from_fn,
-    routing, BoxError, Router, Server,
+    BoxError, Router, Server,
 };
 use std::{convert::Infallible, fs, net::SocketAddr, path::PathBuf, time::Duration};
 use tokio::{runtime::Builder, signal};
@@ -106,8 +106,6 @@ impl Application for AxumCluster {
                 let default_public_dir = project_dir.join("public");
                 let mut public_route_prefix = "/public";
                 let mut public_dir = PathBuf::new();
-                let mut sse_route = None;
-                let mut websocket_route = None;
                 let mut body_limit = 128 * 1024 * 1024; // 128MB
                 let mut request_timeout = Duration::from_secs(60); // 60 seconds
                 if let Some(config) = app_state.get_config("server") {
@@ -121,12 +119,6 @@ impl Application for AxumCluster {
                     }
                     if let Some(route_prefix) = config.get_str("public-route-prefix") {
                         public_route_prefix = route_prefix;
-                    }
-                    if let Some(path) = config.get_str("sse-route") {
-                        sse_route = Some(path);
-                    }
-                    if let Some(path) = config.get_str("websocket-route") {
-                        websocket_route = Some(path);
                     }
                     if let Some(limit) = config.get_usize("body-limit") {
                         body_limit = limit;
@@ -165,12 +157,6 @@ impl Application for AxumCluster {
                     tracing::info!(
                         "Static pages `{public_route_prefix}/**` are registered for `{addr}`"
                     );
-                }
-                if let Some(path) = sse_route {
-                    app = app.route(path, routing::get(endpoint::sse_handler));
-                }
-                if let Some(path) = websocket_route {
-                    app = app.route(path, routing::get(endpoint::websocket_handler));
                 }
                 for route in &default_routes {
                     app = app.merge(route.clone());

@@ -18,13 +18,14 @@ The following optional features are available:
 | `chatbot`           | Enables the chatbot services.                          | No       |
 | `connector`         | Enables the data source connectors.                    | No       |
 | `crypto-sm`         | Enables China's Standards of Encryption Algorithms.    | No       |
+| `dotenv`            | Enables the configuration loader for a `.env` file.    | No       |
 | `locale`            | Enables the support for locale related utilities.      | No       |
 | `metrics`           | Enables the [`metrics`] exporter.                      | No       |
 | `orm`               | Enables the ORM for MySQL, PostgreSQL or **SQLite**.   | No       |
 | `runtime-async-std` | Enables the [`async-std`] runtime.                     | No       |
-| `runtime-tokio`     | Enables the [`tokio`] runtime.                         | Yes      |
+| `runtime-tokio`     | Enables the [`tokio`] runtime.                         | No       |
 | `tls-native`        | Enables the [`native-tls`] TLS backend.                | No       |
-| `tls-rustls`        | Enables the [`rustls`] TLS backend.                    | Yes      |
+| `tls-rustls`        | Enables the [`rustls`] TLS backend.                    | No       |
 | `validator`         | Enables the common validation rules.                   | No       |
 | `view`              | Enables the HTML template rendering.                   | No       |
 

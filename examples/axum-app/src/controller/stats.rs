@@ -6,7 +6,6 @@ pub async fn index(req: Request) -> Result {
         "method": "GET",
         "path": "/stats",
         "app_state_data": Cluster::state_data(),
-        "app_sysinfo": Cluster::sysinfo(),
     });
     let data = json!({
         "title": "Stats",

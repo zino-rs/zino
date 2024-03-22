@@ -6,9 +6,7 @@
 #![forbid(unsafe_code)]
 
 mod application;
-mod channel;
 mod controller;
-mod endpoint;
 mod middleware;
 mod request;
 mod response;
@@ -41,8 +39,6 @@ cfg_if::cfg_if! {
         use crate::application::axum_cluster::AxumCluster;
         use crate::request::axum_request::AxumExtractor;
         use crate::response::axum_response::{AxumRejection, AxumResponse};
-
-        pub use channel::axum_channel::MessageChannel;
 
         /// HTTP server cluster for `axum`.
         pub type Cluster = AxumCluster;

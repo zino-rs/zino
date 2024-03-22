@@ -56,7 +56,6 @@ mod plugin;
 mod secret_key;
 mod server_tag;
 mod static_record;
-mod system_monitor;
 mod tracing_subscriber;
 
 #[cfg(feature = "metrics")]
@@ -89,6 +88,7 @@ pub trait Application {
         Self: Default,
     {
         // Loads the `.env` file from the current directory or parents.
+        #[cfg(feature = "dotenv")]
         dotenvy::dotenv().ok();
 
         // Application setups.
@@ -168,12 +168,6 @@ pub trait Application {
     {
         tracing::info!(plugin_name = plugin.name());
         self
-    }
-
-    /// Gets the system’s information.
-    #[inline]
-    fn sysinfo() -> Map {
-        system_monitor::refresh_and_retrieve()
     }
 
     /// Gets the [OpenAPI](https://spec.openapis.org/oas/latest.html) document.

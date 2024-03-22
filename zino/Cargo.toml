@@ -34,7 +34,6 @@ axum = [
     "dep:futures",
     "dep:parking_lot",
     "dep:tokio",
-    "dep:tokio-stream",
     "dep:tower",
     "dep:tower-http",
     "utoipa-rapidoc/axum",
@@ -49,10 +48,10 @@ dioxus-desktop = [
     "dep:dioxus-desktop",
     "dep:image",
     "dioxus",
+    "zino-core/runtime-tokio",
 ]
-default = ["orm", "view"]
+default = []
 orm = ["zino-core/orm"]
-view = ["zino-core/view"]
 
 [dependencies]
 cfg-if = "1.0"
@@ -93,7 +92,6 @@ features = [
     "query",
     "tokio",
     "tracing",
-    "ws",
 ]
 
 [dependencies.bytes]
@@ -133,11 +131,6 @@ features = [
     "rt-multi-thread",
     "signal",
 ]
-
-[dependencies.tokio-stream]
-version = "0.1.15"
-optional = true
-features = ["sync"]
 
 [dependencies.tower]
 version = "0.4.13"

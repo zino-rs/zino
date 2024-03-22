@@ -8,14 +8,13 @@ use crate::{
 use reqwest::{
     header::{self, HeaderMap, HeaderName},
     multipart::Form,
-    Certificate, Client, Method, Request, Response, Url,
+    Client, Method, Request, Response, Url,
 };
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, RequestBuilder};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use reqwest_tracing::{ReqwestOtelSpanBackend, TracingMiddleware};
 use std::{
     borrow::Cow,
-    fs,
     net::IpAddr,
     str::FromStr,
     sync::OnceLock,
@@ -51,30 +50,6 @@ pub(super) fn init<APP: Application + ?Sized>() {
         }
         if let Some(tcp_keepalive) = http_client.get_duration("tcp-keepalive") {
             client_builder = client_builder.tcp_keepalive(tcp_keepalive);
-        }
-        if let Some(root_certs) = http_client.get_array("root-certs") {
-            for root_cert in root_certs.iter().filter_map(|cert| cert.as_str()) {
-                match fs::read(root_cert) {
-                    Ok(bytes) => {
-                        if root_cert.ends_with(".der") {
-                            match Certificate::from_der(&bytes) {
-                                Ok(cert) => {
-                                    client_builder = client_builder.add_root_certificate(cert);
-                                }
-                                Err(err) => panic!("fail to read a DER encoded cert: {err}"),
-                            }
-                        } else if root_cert.ends_with(".pem") {
-                            match Certificate::from_pem(&bytes) {
-                                Ok(cert) => {
-                                    client_builder = client_builder.add_root_certificate(cert);
-                                }
-                                Err(err) => panic!("fail to read a PEM encoded cert: {err}"),
-                            }
-                        }
-                    }
-                    Err(err) => panic!("fail to read cert file: {err}"),
-                }
-            }
         }
         if let Some(retries) = http_client.get_u32("max-retries") {
             max_retries = retries;
