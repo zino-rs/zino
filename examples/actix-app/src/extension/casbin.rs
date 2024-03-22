@@ -17,6 +17,7 @@ impl Casbin {
             Ok(())
         });
         let mut plugin = Plugin::new("casbin");
+        plugin.add_dependency("foo");
         plugin.set_loader(loader);
         plugin
     }

@@ -27,7 +27,6 @@ tag = "admin"
 [database]
 namespace = "dc"
 max-rows = 10000
-time-zone = "Asia/Shanghai"
 
 [[postgres]]
 host = "127.0.0.1"

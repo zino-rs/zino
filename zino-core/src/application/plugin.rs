@@ -72,7 +72,7 @@ impl Plugin {
 
     /// Returns a reference to the shared config corresponding to the plugin.
     #[inline]
-    pub fn get_config(&self) -> Option<&Table> {
+    pub fn get_config(&self) -> Option<&'static Table> {
         State::shared()
             .config()
             .get_table("plugins")?
