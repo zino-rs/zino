@@ -49,7 +49,6 @@ pub struct User {
     account: String,
     #[schema(not_null, write_only, comment = "User password")]
     password: String,
-    #[schema(format = "phone-number")]
     mobile: String,
     #[schema(format = "email")]
     email: String,

@@ -8,8 +8,10 @@ const UNSIGNED_INTEGER_TYPES: [&str; 5] = ["u64", "u32", "u16", "u8", "usize"];
 
 /// Parses the token stream for the `DecodeRow` trait derivation.
 pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
-    // Parsing field attributes
+    // Model name
     let name = input.ident;
+
+    // Parsing field attributes
     let mut decode_model_fields = Vec::new();
     for field in parser::parse_struct_fields(input.data) {
         let type_name = parser::get_type_name(&field.ty);

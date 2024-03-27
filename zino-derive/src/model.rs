@@ -21,6 +21,27 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     // Model name
     let name = input.ident;
 
+    // Parsing struct attributes
+    let mut item_name = "entry".to_owned();
+    let mut item_name_plural = "entries".to_owned();
+    for attr in input.attrs.iter() {
+        for (key, value) in parser::parse_schema_attr(attr).into_iter() {
+            match key.as_str() {
+                "item_name" => {
+                    if let Some(value) = value {
+                        item_name = value;
+                    }
+                }
+                "item_name_plural" => {
+                    if let Some(value) = value {
+                        item_name_plural = value;
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
+
     // Parsing field attributes
     let mut field_constructors = Vec::new();
     let mut field_setters = Vec::new();
@@ -216,6 +237,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
         use zino_core::validation::Validation;
 
         impl zino_core::model::Model for #name {
+            const ITEM_NAME: (&'static str, &'static str) = (#item_name, #item_name_plural);
+
             #[inline]
             fn new() -> Self {
                 #model_constructor

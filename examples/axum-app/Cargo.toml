@@ -26,10 +26,8 @@ features = ["axum", "orm"]
 path = "../../zino-core"
 version = "0.20.0"
 features = [
-    "crypto-sm",
     "orm-mysql",
     "validator-email",
-    "validator-phone-number",
     "view-tera",
 ]
 

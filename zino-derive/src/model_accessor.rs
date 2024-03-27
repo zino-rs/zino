@@ -6,6 +6,9 @@ use syn::DeriveInput;
 
 /// Parses the token stream for the `ModelAccessor` trait derivation.
 pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
+    // Model name
+    let name = input.ident;
+
     // Parsing struct attributes
     let mut composite_constraints = Vec::new();
     for attr in input.attrs.iter() {
@@ -39,7 +42,6 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     }
 
     // Parsing field attributes
-    let name = input.ident;
     let mut column_methods = Vec::new();
     let mut snapshot_fields = Vec::new();
     let mut snapshot_entries = Vec::new();

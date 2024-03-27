@@ -1,6 +1,5 @@
 //! The `user` model and related services.
 
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use zino_core::{
     auth::{AccessKeyId, UserSession},
@@ -11,7 +10,7 @@ use zino_core::{
     model::{Model, ModelHooks},
     orm::ModelHelper,
     validation::Validation,
-    LazyLock, Map, Uuid,
+    Map, Uuid,
 };
 use zino_derive::{DecodeRow, ModelAccessor, Schema};
 
@@ -215,8 +214,6 @@ impl User {
         for role in &roles {
             if special_roles.contains(role) && num_roles != 1 {
                 bail!("the special role `{}` is exclusive", role);
-            } else if !USER_ROLE_PATTERN.is_match(role) {
-                bail!("the role `{}` is invalid", role);
             } else if role.is_empty() {
                 bail!("the `roles` can not contain empty values");
             }
@@ -290,11 +287,6 @@ impl User {
         claims
     }
 }
-
-/// Regex for the user role.
-static USER_ROLE_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^[a-z]+[a-z:]+[a-z]+$").expect("fail to create a regex for the user role")
-});
 
 #[cfg(test)]
 mod tests {

@@ -250,7 +250,8 @@ pub trait RequestContext {
     /// # Note
     ///
     /// Please note that it does not handle the percent-decoding.
-    /// You can use [`parse_param()`](Self::parse_param) if you need percent-decoding.
+    /// You can use [`decode_param()`](Self::decode_param) or [`parse_param()`](Self::parse_param)
+    /// if you need percent-decoding.
     fn get_param(&self, name: &str) -> Option<&str> {
         const CAPTURES: [char; 4] = [':', '*', '{', '}'];
         if let Some(index) = self
@@ -261,6 +262,21 @@ pub trait RequestContext {
             self.request_path().splitn(index + 2, '/').nth(index)
         } else {
             None
+        }
+    }
+
+    /// Decodes the UTF-8 percent-encoded route parameter by name.
+    fn decode_param(&self, name: &str) -> Result<Cow<'_, str>, Rejection> {
+        if let Some(value) = self.get_param(name) {
+            percent_encoding::percent_decode_str(value)
+                .decode_utf8()
+                .map_err(|err| Rejection::from_validation_entry(name.to_owned(), err).context(self))
+        } else {
+            Err(Rejection::from_validation_entry(
+                name.to_owned(),
+                warn!("param `{}` does not exist", name),
+            )
+            .context(self))
         }
     }
 
@@ -279,7 +295,7 @@ pub trait RequestContext {
         } else {
             Err(Rejection::from_validation_entry(
                 name.to_owned(),
-                warn!("the param `{}` does not exist", name),
+                warn!("param `{}` does not exist", name),
             )
             .context(self))
         }
@@ -290,7 +306,8 @@ pub trait RequestContext {
     /// # Note
     ///
     /// Please note that it does not handle the percent-decoding.
-    /// You can use [`parse_query()`](Self::parse_query) if you need percent-decoding.
+    /// You can use [`decode_query()`](Self::decode_query) or [`parse_query()`](Self::parse_query)
+    /// if you need percent-decoding.
     fn get_query(&self, name: &str) -> Option<&str> {
         self.original_uri().query()?.split('&').find_map(|param| {
             if let Some((key, value)) = param.split_once('=') {
@@ -301,6 +318,21 @@ pub trait RequestContext {
         })
     }
 
+    /// Decodes the UTF-8 percent-encoded query value of the URI by name.
+    fn decode_query(&self, name: &str) -> Result<Cow<'_, str>, Rejection> {
+        if let Some(value) = self.get_query(name) {
+            percent_encoding::percent_decode_str(value)
+                .decode_utf8()
+                .map_err(|err| Rejection::from_validation_entry(name.to_owned(), err).context(self))
+        } else {
+            Err(Rejection::from_validation_entry(
+                name.to_owned(),
+                warn!("query value `{}` does not exist", name),
+            )
+            .context(self))
+        }
+    }
+
     /// Parses the query as an instance of type `T`.
     /// Returns a default value of `T` when the query is empty.
     /// If the query has a `timestamp` parameter, it will be used to prevent replay attacks.
@@ -309,7 +341,7 @@ pub trait RequestContext {
             if let Some(timestamp) = self.get_query("timestamp").and_then(|s| s.parse().ok()) {
                 let duration = DateTime::from_timestamp(timestamp).span_between_now();
                 if duration > auth::default_time_tolerance() {
-                    let err = warn!("the timestamp `{}` can not be trusted", timestamp);
+                    let err = warn!("timestamp `{}` can not be trusted", timestamp);
                     let rejection = Rejection::from_validation_entry("timestamp", err);
                     return Err(rejection.context(self));
                 }

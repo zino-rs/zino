@@ -101,7 +101,7 @@ where
             .await
             .extract(&req)?;
         res.set_code(StatusCode::CREATED);
-        res.set_json_data(Map::data_entry(model_snapshot));
+        res.set_json_data(Self::data_item(model_snapshot));
         Ok(res.into())
     }
 
@@ -125,7 +125,7 @@ where
         let mut res = Response::from(validation).context(&req);
         if res.is_success() {
             let model_filters = model.next_version_filters();
-            res.set_json_data(Map::data_entry(model_filters));
+            res.set_json_data(Self::data_item(model_filters));
         }
         Ok(res.into())
     }
@@ -138,7 +138,7 @@ where
             Self::fetch_by_id(&id).await.extract(&req)?
         };
         let mut res = Response::default().context(&req);
-        res.set_json_data(Map::data_entry(model));
+        res.set_json_data(Self::data_item(model));
         Ok(res.into())
     }
 
@@ -175,7 +175,7 @@ where
             models
         };
 
-        let mut data = Map::data_entries(models);
+        let mut data = Self::data_items(models);
         if let Some(page_size) = req.get_query("page_size").and_then(|s| s.parse().ok()) {
             if req.get_query("total_rows").is_none() {
                 let total_rows = Self::count(&query).await.extract(&req)?;
@@ -454,7 +454,7 @@ where
             model.upsert("children", model_children);
         }
 
-        let mut data = Map::data_entries(models);
+        let mut data = Self::data_items(models);
         data.upsert("total_rows", total_rows);
         res.set_json_data(data);
         Ok(res.into())
@@ -533,7 +533,7 @@ where
             }
         }
 
-        let data = Map::data_entries(models);
+        let data = Self::data_items(models);
         res.set_json_data(data);
         Ok(res.into())
     }

@@ -27,6 +27,9 @@ pub use translation::Translation;
 ///
 /// This trait can be derived by `zino_derive::Model`.
 pub trait Model: Default + Serialize + DeserializeOwned {
+    /// Data item name.
+    const ITEM_NAME: (&'static str, &'static str) = ("entry", "entries");
+
     /// Creates a new instance.
     #[inline]
     fn new() -> Self {
@@ -79,5 +82,24 @@ pub trait Model: Default + Serialize + DeserializeOwned {
             Ok(AvroValue::Record(record)) => record,
             _ => panic!("the model cann't be converted to an Avro record"),
         }
+    }
+
+    /// Constructs an instance of `Map` for the data item.
+    #[inline]
+    fn data_item(value: impl Into<JsonValue>) -> Map {
+        let item_name = Self::ITEM_NAME.0;
+        let mut map = Map::with_capacity(1);
+        map.insert(item_name.to_owned(), value.into());
+        map
+    }
+
+    /// Constructs an instance of `Map` for the data items.
+    #[inline]
+    fn data_items<T: Into<JsonValue>>(values: Vec<T>) -> Map {
+        let item_name = Self::ITEM_NAME.1;
+        let mut map = Map::with_capacity(2);
+        map.insert(["num", item_name].join("_"), values.len().into());
+        map.insert(item_name.to_owned(), values.into());
+        map
     }
 }

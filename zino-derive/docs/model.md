@@ -1,5 +1,13 @@
 Derives the [`Model`](zino_core::model::Model) trait.
 
+# Attributes on structs
+
+- **`#[schema(item_name = "name")]`**: The `item_name` attribute specifies
+  the corresponding field for a single model data item. Default value: **`entry`**.
+
+- **`#[schema(item_name_plural = "name")]`**: The `item_name_plural` attribute specifies
+  the corresponding field for model data items. Default value: **`entries`**.
+
 # Attributes on struct fields
 
 - **`#[schema(ignore)]`**: The `ignore` annotation is used to skip a particular field
