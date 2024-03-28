@@ -142,6 +142,7 @@ version = "0.4.4"
 optional = true
 features = [
     "add-extension",
+    "catch-panic",
     "compression-gzip",
     "cors",
     "decompression-gzip",

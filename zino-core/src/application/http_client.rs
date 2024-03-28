@@ -261,7 +261,10 @@ impl ReqwestOtelSpanBackend for RequestTiming {
                     "http.response.header.server_timing",
                     headers.get_str("server-timing"),
                 );
-                span.record("context.request_id", headers.get_str("x-request-id"));
+                span.record(
+                    "http.response.header.x_request_id",
+                    headers.get_str("x-request-id"),
+                );
                 span.record("http.response.status_code", response.status().as_u16());
                 span.record("otel.status_code", "OK");
                 tracing::info!("finished HTTP request");

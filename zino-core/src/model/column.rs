@@ -498,7 +498,14 @@ impl<'a> Column<'a> {
             definition.upsert("examples", values);
         }
         if let Some(values) = extra.parse_enum_values("enum_values") {
-            definition.upsert("enum", values);
+            if type_name == "Vec<String>" {
+                let mut items = Map::with_capacity(2);
+                items.upsert("type", "string");
+                items.upsert("enum", values);
+                definition.upsert("items", items);
+            } else {
+                definition.upsert("enum", values);
+            }
         }
         if let Some(Ok(value)) = extra.parse_usize("max_length") {
             definition.upsert("maxLength", value);

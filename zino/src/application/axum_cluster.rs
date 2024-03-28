@@ -6,13 +6,16 @@ use axum::{
     middleware::from_fn,
     BoxError, Router, Server,
 };
-use std::{convert::Infallible, fs, net::SocketAddr, path::PathBuf, time::Duration};
+use std::{
+    any::Any, borrow::Cow, convert::Infallible, fs, net::SocketAddr, path::PathBuf, time::Duration,
+};
 use tokio::{runtime::Builder, signal};
 use tower::{
     timeout::{error::Elapsed, TimeoutLayer},
     ServiceBuilder,
 };
 use tower_http::{
+    catch_panic::CatchPanicLayer,
     compression::{
         predicate::{DefaultPredicate, NotForContentType, Predicate},
         CompressionLayer,
@@ -238,6 +241,20 @@ impl Application for AxumCluster {
                                 let res = Response::new(status_code);
                                 Ok::<AxumResponse, Infallible>(res.into())
                             }))
+                            .layer(CatchPanicLayer::custom(
+                                |err: Box<dyn Any + Send + 'static>| {
+                                    let details = if let Some(s) = err.downcast_ref::<String>() {
+                                        Cow::Owned(s.to_owned())
+                                    } else if let Some(s) = err.downcast_ref::<&str>() {
+                                        Cow::Borrowed(*s)
+                                    } else {
+                                        Cow::Borrowed("Unknown panic message")
+                                    };
+                                    let mut res = Response::internal_server_error();
+                                    res.set_message(details);
+                                    crate::response::axum_response::build_http_response(res)
+                                },
+                            ))
                             .layer(TimeoutLayer::new(request_timeout)),
                     );
                 Server::bind(&addr)

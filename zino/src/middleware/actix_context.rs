@@ -6,6 +6,7 @@ use std::{
     future::{ready, Future, Ready},
     pin::Pin,
 };
+use tracing::Span;
 use zino_core::request::RequestContext;
 
 #[derive(Default)]
@@ -48,6 +49,7 @@ where
 
         let req = ServiceRequest::from(req);
         if let Some(ctx) = new_context {
+            Span::current().record("context.request_id", ctx.request_id().to_string());
             req.extensions_mut().insert(ctx);
         }
 

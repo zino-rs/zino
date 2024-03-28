@@ -108,6 +108,16 @@ impl RootSpanBuilder for CustomRootSpanBuilder {
                 let res = response.response();
                 let headers = res.headers();
                 let traceparent = headers.get("traceparent").and_then(|v| v.to_str().ok());
+                span.record(
+                    "context.span_id",
+                    span.id().map(|id| format!("{:x}", id.into_u64())),
+                );
+                span.record(
+                    "context.trace_id",
+                    traceparent
+                        .and_then(TraceContext::from_traceparent)
+                        .map(|ctx| Uuid::from_u128(ctx.trace_id()).to_string()),
+                );
                 span.record("http.response.header.traceparent", traceparent);
                 span.record(
                     "http.response.header.tracestate",
@@ -116,20 +126,6 @@ impl RootSpanBuilder for CustomRootSpanBuilder {
                 span.record(
                     "http.response.header.server_timing",
                     headers.get("server-timing").and_then(|v| v.to_str().ok()),
-                );
-                span.record(
-                    "context.trace_id",
-                    traceparent
-                        .and_then(TraceContext::from_traceparent)
-                        .map(|ctx| Uuid::from_u128(ctx.trace_id()).to_string()),
-                );
-                span.record(
-                    "context.request_id",
-                    headers.get("x-request-id").and_then(|v| v.to_str().ok()),
-                );
-                span.record(
-                    "context.span_id",
-                    span.id().map(|id| format!("{:x}", id.into_u64())),
                 );
                 if res.error().is_none() {
                     span.record("http.response.status_code", res.status().as_u16());

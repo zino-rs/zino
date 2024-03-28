@@ -88,7 +88,7 @@ impl<T> State<T> {
 
     /// Loads the config according to the specific env.
     ///
-    /// It supports the `json`, `yaml` or `toml` format of configuration source data,
+    /// It supports the `json` or `toml` format of configuration source data,
     /// which can be specified by the environment variable `ZINO_APP_CONFIG_FORMAT`.
     /// By default, it reads the config from a local file. If `ZINO_APP_CONFIG_URL` is set,
     /// it will fetch the config from the URL instead.

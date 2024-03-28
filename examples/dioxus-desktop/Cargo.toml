@@ -32,7 +32,7 @@ features = ["dioxus-desktop", "orm"]
 [dependencies.zino-core]
 path = "../../zino-core"
 version = "0.20.1"
-features = ["orm-sqlite"]
+features = ["orm-sqlite", "tls-rustls"]
 
 [dependencies.zino-model]
 path = "../../zino-model"

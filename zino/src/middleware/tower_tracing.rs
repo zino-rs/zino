@@ -139,6 +139,12 @@ fn custom_on_request(request: &Request<Body>, span: &Span) {
 fn custom_on_response(response: &Response<BoxBody>, latency: Duration, span: &Span) {
     let headers = response.headers();
     let traceparent = headers.get_str("traceparent");
+    span.record(
+        "context.trace_id",
+        traceparent
+            .and_then(TraceContext::from_traceparent)
+            .map(|ctx| Uuid::from_u128(ctx.trace_id()).to_string()),
+    );
     span.record("http.response.header.traceparent", traceparent);
     span.record(
         "http.response.header.tracestate",
@@ -148,13 +154,6 @@ fn custom_on_response(response: &Response<BoxBody>, latency: Duration, span: &Sp
         "http.response.header.server_timing",
         headers.get_str("server-timing"),
     );
-    span.record(
-        "context.trace_id",
-        traceparent
-            .and_then(TraceContext::from_traceparent)
-            .map(|ctx| Uuid::from_u128(ctx.trace_id()).to_string()),
-    );
-    span.record("context.request_id", headers.get_str("x-request-id"));
     span.record("http.response.status_code", response.status().as_u16());
     span.record(
         "http.server.duration",

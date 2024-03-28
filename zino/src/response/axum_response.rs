@@ -44,7 +44,9 @@ impl IntoResponse for AxumRejection {
 }
 
 /// Build http response from `zino_core::response::Response`.
-fn build_http_response<S: ResponseCode>(mut response: Response<S>) -> http::Response<Full<Bytes>> {
+pub(crate) fn build_http_response<S: ResponseCode>(
+    mut response: Response<S>,
+) -> http::Response<Full<Bytes>> {
     let mut res = match response.read_bytes() {
         Ok(data) => http::Response::builder()
             .status(response.status_code())
