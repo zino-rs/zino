@@ -1,0 +1,15 @@
+[package]
+name = "zino-chart"
+description = "Data visualizations for zino."
+version = "0.0.1"
+rust-version = "1.75"
+edition = "2021"
+license = "MIT"
+categories = ["visualization"]
+keywords = ["plotting", "visualization"]
+homepage = "https://github.com/zino-rs/zino"
+repository = "https://github.com/zino-rs/zino"
+documentation = "https://docs.rs/zino-chart"
+readme = "README.md"
+
+[dependencies]
