@@ -371,6 +371,7 @@ fn parse_schema_format(format: &str) -> SchemaFormat {
         "date" => SchemaFormat::KnownFormat(KnownFormat::Date),
         "date-time" => SchemaFormat::KnownFormat(KnownFormat::DateTime),
         "password" => SchemaFormat::KnownFormat(KnownFormat::Password),
+        "uri" => SchemaFormat::KnownFormat(KnownFormat::Uri),
         "uuid" => SchemaFormat::KnownFormat(KnownFormat::Uuid),
         _ => SchemaFormat::Custom(format.to_owned()),
     }
