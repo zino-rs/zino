@@ -6,6 +6,9 @@ use convert_case::{Case, Casing};
 
 /// Extension trait for [`Column`].
 pub(super) trait ColumnExt {
+    /// Returns `true` if it is compatible with the given data type.
+    fn is_compatible(&self, data_type: &str) -> bool;
+
     /// Returns the type annotation.
     fn type_annotation(&self) -> &'static str;
 
@@ -17,6 +20,30 @@ pub(super) trait ColumnExt {
 }
 
 impl<'a> ColumnExt for Column<'a> {
+    fn is_compatible(&self, data_type: &str) -> bool {
+        let column_type = self.column_type();
+        if column_type.eq_ignore_ascii_case(data_type) {
+            return true;
+        }
+
+        let data_type = data_type.to_ascii_uppercase();
+        match column_type {
+            "INT" => data_type == "INTEGER",
+            "SMALLINT UNSIGNED" => data_type == "SMALLINT",
+            "INT UNSIGNED" => data_type == "INT",
+            "BIGINT UNSIGNED" => data_type == "BIGINT",
+            _ => {
+                if cfg!(feature = "orm-postgres") && column_type.ends_with("[]") {
+                    data_type == "ARRAY"
+                } else if column_type.starts_with("TIMESTAMP") {
+                    data_type.starts_with("TIMESTAMP")
+                } else {
+                    false
+                }
+            }
+        }
+    }
+
     fn type_annotation(&self) -> &'static str {
         if cfg!(feature = "orm-postgres") {
             match self.column_type() {

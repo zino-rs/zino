@@ -4,12 +4,16 @@ use toml::value::Table;
 
 /// Fetches the config from a URL.
 pub(super) fn fetch_config_url(config_url: &str, env: &str) -> Result<Table, Error> {
-    let res = ureq::get(config_url).query("env", env).call()?;
-    let config_table = if res.content_type() == "application/json" {
-        let data = res.into_string()?;
-        serde_json::from_str(&data)?
+    let res = reqwest::blocking::get(config_url)?;
+    let config_table = if res
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|s| s.starts_with("application/json"))
+    {
+        res.json()?
     } else {
-        res.into_string()?.parse()?
+        res.text()?.parse()?
     };
     tracing::info!(env, "`{config_url}` fetched");
     Ok(config_table)

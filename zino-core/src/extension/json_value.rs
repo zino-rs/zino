@@ -163,9 +163,6 @@ pub trait JsonValueExt {
     /// Attempts to convert the JSON value to the JSON Lines bytes.
     fn to_jsonlines(&self, buffer: Vec<u8>) -> Result<Vec<u8>, serde_json::Error>;
 
-    /// Attempts to convert the JSON value to the MsgPack bytes.
-    fn to_msgpack(&self, buffer: Vec<u8>) -> Result<Vec<u8>, rmp_serde::encode::Error>;
-
     /// Converts `self` into a map array.
     fn into_map_array(self) -> Vec<Map>;
 
@@ -508,12 +505,6 @@ impl JsonValueExt for JsonValue {
                 Ok(buffer)
             }
         }
-    }
-
-    #[inline]
-    fn to_msgpack(&self, mut buffer: Vec<u8>) -> Result<Vec<u8>, rmp_serde::encode::Error> {
-        rmp_serde::encode::write(&mut buffer, &self)?;
-        Ok(buffer)
     }
 
     #[inline]

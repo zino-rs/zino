@@ -29,7 +29,6 @@ pub(crate) fn get_data_type(content_type: &str) -> &str {
     match content_type {
         "application/json" | "application/problem+json" => "json",
         "application/jsonlines" | "application/x-ndjson" => "ndjson",
-        "application/msgpack" | "application/x-msgpack" => "msgpack",
         "application/octet-stream" => "bytes",
         "application/pdf" => "pdf",
         "application/x-www-form-urlencoded" => "form",

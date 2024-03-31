@@ -33,12 +33,15 @@ maintainer-id = []
 edition = []
 
 [dependencies]
-sqlx = "0.7.4"
 tracing = "0.1.40"
 
 [dependencies.serde]
 version = "1.0.197"
 features = ["derive"]
+
+[dependencies.sqlx]
+version = "0.7.4"
+default-features = false
 
 [dependencies.strum]
 version = "0.26.2"

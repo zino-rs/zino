@@ -393,7 +393,6 @@ where
         match format {
             "csv" => res.set_csv_response(models),
             "jsonlines" => res.set_jsonlines_response(models),
-            "msgpack" => res.set_msgpack_response(models),
             _ => res.set_json_response(models),
         }
         Ok(res.into())

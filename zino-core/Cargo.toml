@@ -147,7 +147,6 @@ tls-native = [
     "opendal?/native-tls",
     "reqwest/native-tls",
     "sqlx?/tls-native-tls",
-    "ureq/native-tls",
 ]
 tls-rustls = [
     "opendal?/rustls",
@@ -193,7 +192,6 @@ regex = "1.10.4"
 reqwest-middleware = "0.2.5"
 reqwest-retry = "0.4.0"
 reqwest-tracing = "0.4.8"
-rmp-serde = "1.1.2"
 rust_decimal = "1.35.0"
 ryu = "1.0.17"
 serde_qs = "0.12.0"
@@ -214,7 +212,7 @@ version = "0.19.1"
 optional = true
 
 [dependencies.card-validate]
-version = "2.3.0"
+version = "2.4.0"
 optional = true
 
 [dependencies.chrono]
@@ -269,6 +267,7 @@ optional = true
 version = "0.11.27"
 default-features = false
 features = [
+    "blocking",
     "cookies",
     "gzip",
     "json",
@@ -323,10 +322,6 @@ features = [
 [dependencies.unic-langid]
 version = "0.9.4"
 features = ["macros"]
-
-[dependencies.ureq]
-version = "2.9.5"
-features = ["json"]
 
 [dependencies.utoipa]
 version = "4.2.0"

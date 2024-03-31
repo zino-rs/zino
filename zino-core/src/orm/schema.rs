@@ -213,6 +213,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         }
 
         let pool = connection_pool.pool();
+        let model_name = Self::model_name();
         let table_name = Self::table_name();
         let table_name_escaped = Query::table_name_escaped::<Self>();
         let sql = if cfg!(any(
@@ -248,6 +249,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         for col in Self::columns() {
+            let column_type = col.column_type();
             let column_name = col
                 .extra()
                 .get_str("column_name")
@@ -270,15 +272,26 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 } else {
                     d.get_str("is_not_null") == Some("1")
                 };
-                if col.is_not_null() != is_not_null && column_name != primary_key_name {
+                if !data_type.is_some_and(|t| col.is_compatible(t)) {
                     tracing::warn!(
-                        model_name = Self::model_name(),
+                        model_name,
                         table_name,
                         column_name,
+                        column_type,
+                        data_type,
+                        column_default,
+                        "column type of the column `{column_name}` should be updated",
+                    );
+                } else if col.is_not_null() != is_not_null && column_name != primary_key_name {
+                    tracing::warn!(
+                        model_name,
+                        table_name,
+                        column_name,
+                        column_type,
                         data_type,
                         column_default,
                         is_not_null,
-                        "the `NOT NULL` constraint of the column `{column_name}` should be updated",
+                        "`NOT NULL` constraint of the column `{column_name}` should be updated",
                     );
                 }
             } else {
@@ -287,9 +300,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     format!("ALTER TABLE {table_name_escaped} ADD COLUMN {column_definition};");
                 pool.execute(&sql).await?;
                 tracing::warn!(
-                    model_name = Self::model_name(),
+                    model_name,
                     table_name,
                     column_name,
+                    column_type,
                     "a new column `{column_name}` has been added",
                 );
             }

@@ -158,10 +158,10 @@ cfg_if::cfg_if! {
         };
 
         /// MySQL database driver.
-        pub type DatabaseDriver = sqlx::mysql::MySql;
+        pub type DatabaseDriver = sqlx::MySql;
 
         /// MySQL database pool.
-        pub type DatabasePool = sqlx::mysql::MySqlPool;
+        pub type DatabasePool = sqlx::MySqlPool;
 
         /// MySQL database connection.
         pub type DatabaseConnection = sqlx::MySqlConnection;
@@ -175,10 +175,10 @@ cfg_if::cfg_if! {
         static DRIVER_NAME: &str = "postgres";
 
         /// PostgreSQL database driver.
-        pub type DatabaseDriver = sqlx::postgres::Postgres;
+        pub type DatabaseDriver = sqlx::Postgres;
 
         /// PostgreSQL database pool.
-        pub type DatabasePool = sqlx::postgres::PgPool;
+        pub type DatabasePool = sqlx::PgPool;
 
         /// PostgreSQL database connection.
         pub type DatabaseConnection = sqlx::PgConnection;
@@ -192,10 +192,10 @@ cfg_if::cfg_if! {
         static DRIVER_NAME: &str = "sqlite";
 
         /// SQLite database driver.
-        pub type DatabaseDriver = sqlx::sqlite::Sqlite;
+        pub type DatabaseDriver = sqlx::Sqlite;
 
         /// SQLite database pool.
-        pub type DatabasePool = sqlx::sqlite::SqlitePool;
+        pub type DatabasePool = sqlx::SqlitePool;
 
         /// SQLite database connection.
         pub type DatabaseConnection = sqlx::SqliteConnection;

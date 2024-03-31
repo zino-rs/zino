@@ -16,10 +16,7 @@ use tower::{
 };
 use tower_http::{
     catch_panic::CatchPanicLayer,
-    compression::{
-        predicate::{DefaultPredicate, NotForContentType, Predicate},
-        CompressionLayer,
-    },
+    compression::{predicate::DefaultPredicate, CompressionLayer},
     decompression::DecompressionLayer,
     services::{ServeDir, ServeFile},
 };
@@ -220,10 +217,9 @@ impl Application for AxumCluster {
                         ServiceBuilder::new()
                             .layer(DefaultBodyLimit::max(body_limit))
                             .layer(
-                                CompressionLayer::new().gzip(true).compress_when(
-                                    DefaultPredicate::new()
-                                        .and(NotForContentType::new("application/msgpack")),
-                                ),
+                                CompressionLayer::new()
+                                    .gzip(true)
+                                    .compress_when(DefaultPredicate::new()),
                             )
                             .layer(DecompressionLayer::new().gzip(true))
                             .layer(LazyLock::force(&middleware::TRACING_MIDDLEWARE))

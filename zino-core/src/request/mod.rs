@@ -360,7 +360,6 @@ pub trait RequestContext {
     /// Currently, we have built-in support for the following `content-type` header values:
     ///
     /// - `application/json`
-    /// - `application/msgpack`
     /// - `application/problem+json`
     /// - `application/x-www-form-urlencoded`
     async fn parse_body<T: DeserializeOwned>(&mut self) -> Result<T, Rejection> {
@@ -375,16 +374,12 @@ pub trait RequestContext {
         }
 
         let is_form = data_type == "form";
-        let is_msgpack = data_type == "msgpack";
         let bytes = self
             .read_body_bytes()
             .await
             .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
         if is_form {
             serde_qs::from_bytes(&bytes)
-                .map_err(|err| Rejection::from_validation_entry("body", err).context(self))
-        } else if is_msgpack {
-            rmp_serde::from_slice(&bytes)
                 .map_err(|err| Rejection::from_validation_entry("body", err).context(self))
         } else {
             serde_json::from_slice(&bytes)
@@ -670,7 +665,6 @@ pub trait RequestContext {
             .map_err(|err| Rejection::from_error(err).context(self))?;
 
         let is_form = data_type == "form";
-        let is_msgpack = data_type == "msgpack";
         let bytes = self
             .read_body_bytes()
             .await
@@ -678,30 +672,6 @@ pub trait RequestContext {
         let extension = self.get_data::<M::Extension>();
         if is_form {
             let mut data = serde_qs::from_bytes(&bytes)
-                .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
-            match M::before_validation(&mut data, extension.as_ref()).await {
-                Ok(()) => {
-                    let validation = model.read_map(&data);
-                    model
-                        .after_validation(&mut data)
-                        .await
-                        .map_err(|err| Rejection::from_error(err).context(self))?;
-                    if let Some(extension) = extension {
-                        model
-                            .after_extract(extension)
-                            .await
-                            .map_err(|err| Rejection::from_error(err).context(self))?;
-                    }
-                    if validation.is_success() {
-                        Ok(Response::with_context(S::OK, self))
-                    } else {
-                        Err(Rejection::bad_request(validation).context(self))
-                    }
-                }
-                Err(err) => Err(Rejection::from_error(err).context(self)),
-            }
-        } else if is_msgpack {
-            let mut data = rmp_serde::from_slice(&bytes)
                 .map_err(|err| Rejection::from_validation_entry("body", err).context(self))?;
             match M::before_validation(&mut data, extension.as_ref()).await {
                 Ok(()) => {

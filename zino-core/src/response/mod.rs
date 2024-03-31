@@ -329,7 +329,6 @@ impl<S: ResponseCode> Response<S> {
     ///
     /// - `application/json`
     /// - `application/jsonlines`
-    /// - `application/msgpack`
     /// - `application/octet-stream`
     /// - `application/problem+json`
     /// - `application/x-www-form-urlencoded`
@@ -366,14 +365,6 @@ impl<S: ResponseCode> Response<S> {
         self.set_json_data(data);
         self.set_content_type("application/jsonlines; charset=utf-8");
         self.set_data_transformer(|data| Ok(data.to_jsonlines(Vec::new())?.into()));
-    }
-
-    /// Sets the MsgPack data as the response body.
-    #[inline]
-    pub fn set_msgpack_response(&mut self, data: impl Into<JsonValue>) {
-        self.set_json_data(data);
-        self.set_content_type("application/msgpack");
-        self.set_data_transformer(|data| Ok(data.to_msgpack(Vec::new())?.into()));
     }
 
     /// Sets the CSV data as the response body.
@@ -582,8 +573,6 @@ impl<S: ResponseCode> Response<S> {
                 value.to_csv(Vec::new())?
             } else if content_type.starts_with("application/jsonlines") {
                 value.to_jsonlines(Vec::new())?
-            } else if content_type.starts_with("application/msgpack") {
-                value.to_msgpack(Vec::new())?
             } else if let JsonValue::String(s) = value {
                 s.as_bytes().to_vec()
             } else {
