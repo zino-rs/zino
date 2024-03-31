@@ -49,7 +49,7 @@ features = ["derive"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.20.2"
+version = "0.20.3"
 features = [
     "orm",
     "validator-email",
@@ -58,4 +58,4 @@ features = [
 
 [dependencies.zino-derive]
 path = "../zino-derive"
-version = "0.17.2"
+version = "0.17.3"
