@@ -13,7 +13,7 @@ pub use zino_core::{
     error::Error,
     extension::{JsonObjectExt, JsonValueExt, TomlTableExt},
     file::NamedFile,
-    fluent_args, json,
+    json,
     model::{Model, ModelHooks, Mutation, Query, QueryContext},
     reject,
     request::RequestContext,
@@ -23,6 +23,10 @@ pub use zino_core::{
     validation::Validation,
     warn, BoxFuture, Decimal, LazyLock, Map, Record, Uuid,
 };
+
+#[cfg(feature = "i18n")]
+#[doc(no_inline)]
+pub use zino_core::fluent_args;
 
 #[cfg(feature = "orm")]
 #[doc(no_inline)]

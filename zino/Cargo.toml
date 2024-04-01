@@ -51,6 +51,7 @@ dioxus-desktop = [
     "zino-core/runtime-tokio",
 ]
 default = []
+i18n = ["zino-core/i18n"]
 orm = ["zino-core/orm"]
 
 [dependencies]
@@ -70,12 +71,7 @@ optional = true
 version = "4.5.1"
 optional = true
 default-features = false
-features = [
-    "compress-gzip",
-    "cookies",
-    "http2",
-    "secure-cookies",
-]
+features = ["compress-gzip"]
 
 [dependencies.async-trait]
 version = "0.1.79"
@@ -85,14 +81,7 @@ optional = true
 version = "0.6.20"
 optional = true
 default-features = false
-features = [
-    "http2",
-    "matched-path",
-    "original-uri",
-    "query",
-    "tokio",
-    "tracing",
-]
+features = ["matched-path", "original-uri", "tokio"]
 
 [dependencies.bytes]
 version = "1.5.0"

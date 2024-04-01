@@ -38,7 +38,7 @@ password = "uzU7eGgSw6HLp63qbjpMQMnl4Kk0SrDDp9bIXkRmcjqwRFRf"
 database = "local/data/main.db"
 
 [tracing]
-filter = "warn"
+level = "warn"
 
 [metrics]
 exporter = "prometheus"

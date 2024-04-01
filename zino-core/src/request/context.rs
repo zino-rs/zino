@@ -1,5 +1,7 @@
 use crate::Uuid;
 use std::time::Instant;
+
+#[cfg(feature = "i18n")]
 use unic_langid::LanguageIdentifier;
 
 /// Data associated with a request-response lifecycle.
@@ -16,6 +18,7 @@ pub struct Context {
     /// Session ID.
     session_id: Option<String>,
     /// Locale.
+    #[cfg(feature = "i18n")]
     locale: Option<LanguageIdentifier>,
 }
 
@@ -28,6 +31,7 @@ impl Context {
             request_id,
             trace_id: Uuid::nil(),
             session_id: None,
+            #[cfg(feature = "i18n")]
             locale: None,
         }
     }
@@ -51,6 +55,7 @@ impl Context {
     }
 
     /// Sets the locale.
+    #[cfg(feature = "i18n")]
     #[inline]
     pub fn set_locale(&mut self, locale: &str) {
         match locale.parse() {
@@ -90,6 +95,7 @@ impl Context {
     }
 
     /// Returns the locale.
+    #[cfg(feature = "i18n")]
     pub fn locale(&self) -> Option<&LanguageIdentifier> {
         self.locale.as_ref()
     }

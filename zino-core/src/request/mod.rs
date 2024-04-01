@@ -11,7 +11,7 @@ use crate::{
     error::Error,
     extension::{HeaderMapExt, JsonObjectExt},
     file::NamedFile,
-    helper, i18n,
+    helper,
     model::{ModelHooks, Query},
     response::{Rejection, Response, ResponseCode},
     trace::{TraceContext, TraceState},
@@ -19,7 +19,6 @@ use crate::{
     warn, JsonValue, Map, SharedString, Uuid,
 };
 use cookie::{Cookie, SameSite};
-use fluent::FluentArgs;
 use jwt_simple::algorithms::MACLike;
 use multer::Multipart;
 use serde::{de::DeserializeOwned, Serialize};
@@ -29,6 +28,12 @@ use std::{
     str::FromStr,
     time::{Duration, Instant},
 };
+
+#[cfg(feature = "i18n")]
+use crate::i18n;
+#[cfg(feature = "i18n")]
+use fluent::FluentArgs;
+#[cfg(feature = "i18n")]
 use unic_langid::LanguageIdentifier;
 
 mod context;
@@ -116,15 +121,18 @@ pub trait RequestContext {
         ctx.set_session_id(session_id);
 
         // Set locale.
-        if let Some(cookie) = self.get_cookie("locale") {
-            ctx.set_locale(cookie.value());
-        } else {
-            let supported_locales = i18n::SUPPORTED_LOCALES.as_slice();
-            let locale = self
-                .get_header("accept-language")
-                .and_then(|languages| i18n::select_language(languages, supported_locales))
-                .unwrap_or(&i18n::DEFAULT_LOCALE);
-            ctx.set_locale(locale);
+        #[cfg(feature = "i18n")]
+        {
+            if let Some(cookie) = self.get_cookie("locale") {
+                ctx.set_locale(cookie.value());
+            } else {
+                let supported_locales = i18n::SUPPORTED_LOCALES.as_slice();
+                let locale = self
+                    .get_header("accept-language")
+                    .and_then(|languages| i18n::select_language(languages, supported_locales))
+                    .unwrap_or(&i18n::DEFAULT_LOCALE);
+                ctx.set_locale(locale);
+            }
         }
         ctx
     }
@@ -226,6 +234,7 @@ pub trait RequestContext {
     }
 
     /// Returns the locale.
+    #[cfg(feature = "i18n")]
     #[inline]
     fn locale(&self) -> Option<LanguageIdentifier> {
         self.get_context().and_then(|ctx| ctx.locale().cloned())
@@ -754,6 +763,7 @@ pub trait RequestContext {
     }
 
     /// Translates the localization message.
+    #[cfg(feature = "i18n")]
     fn translate(&self, message: &str, args: Option<FluentArgs>) -> Result<SharedString, Error> {
         if let Some(locale) = self.locale() {
             i18n::translate(&locale, message, args)

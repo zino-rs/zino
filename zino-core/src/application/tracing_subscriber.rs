@@ -6,12 +6,14 @@ use tracing_appender::{
     non_blocking::WorkerGuard,
     rolling::{RollingFileAppender, Rotation},
 };
-use tracing_log::LogTracer;
 use tracing_subscriber::{
-    filter::{EnvFilter, LevelFilter},
+    filter::LevelFilter,
     fmt::{time::OffsetTime, writer::MakeWriterExt},
     layer::SubscriberExt,
 };
+
+#[cfg(feature = "env-filter")]
+use tracing_subscriber::filter::EnvFilter;
 
 /// Initializes the tracing subscriber.
 pub(super) fn init<APP: Application + ?Sized>() {
@@ -21,17 +23,24 @@ pub(super) fn init<APP: Application + ?Sized>() {
     }
 
     // Convert log records to tracing events.
-    LogTracer::init().expect("fail to initialize the log tracer");
+    #[cfg(feature = "tracing-log")]
+    tracing_log::LogTracer::init().expect("fail to initialize the log tracer");
 
     // Initialize `OffsetTime` before forking threads.
     let local_offset_time = OffsetTime::local_rfc_3339().expect("could not get local offset");
 
     let app_env = APP::env();
     let in_dev_mode = app_env.is_dev();
+    let mut level_filter = if in_dev_mode {
+        LevelFilter::INFO
+    } else {
+        LevelFilter::WARN
+    };
+    #[cfg(feature = "env-filter")]
     let mut env_filter = if in_dev_mode {
         "info,zino=trace,zino_core=trace"
     } else {
-        "info"
+        "warn"
     };
 
     let mut log_dir = "logs";
@@ -52,6 +61,10 @@ pub(super) fn init<APP: Application + ?Sized>() {
         if let Some(period) = config.get_duration("log-rolling-period") {
             log_rolling_period = period;
         }
+        if let Some(level) = config.get_str("level") {
+            level_filter = level.parse().expect("fail to parse the level filter");
+        }
+        #[cfg(feature = "env-filter")]
         if let Some(filter) = config.get_str("filter") {
             env_filter = filter;
         }
@@ -108,14 +121,18 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .with_thread_names(display_thread_names)
         .with_timer(local_offset_time)
         .with_writer(stdout.and(non_blocking_appender));
-    let filter_layer = EnvFilter::builder()
-        .with_default_directive(LevelFilter::WARN.into())
-        .parse_lossy(env_filter);
+    #[cfg(feature = "env-filter")]
+    let env_filter_layer = EnvFilter::builder()
+        .with_default_directive(level_filter.into())
+        .parse(env_filter)
+        .expect("fail to parse the env filter");
     if in_dev_mode {
         let pretty_fmt_layer = fmt_layer.pretty();
-        let subscriber = tracing_subscriber::registry()
-            .with(filter_layer)
-            .with(pretty_fmt_layer);
+        let fmt_subscriber = tracing_subscriber::registry().with(pretty_fmt_layer);
+        #[cfg(feature = "env-filter")]
+        let subscriber = fmt_subscriber.with(env_filter_layer);
+        #[cfg(not(feature = "env-filter"))]
+        let subscriber = fmt_subscriber.with(level_filter);
         if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
             tracing::warn!("fail to set the default subscriber with a `Pretty` formatter: {err}");
         }
@@ -124,9 +141,11 @@ pub(super) fn init<APP: Application + ?Sized>() {
             .json()
             .with_current_span(true)
             .with_span_list(display_span_list);
-        let subscriber = tracing_subscriber::registry()
-            .with(filter_layer)
-            .with(json_fmt_layer);
+        let fmt_subscriber = tracing_subscriber::registry().with(json_fmt_layer);
+        #[cfg(feature = "env-filter")]
+        let subscriber = fmt_subscriber.with(env_filter_layer);
+        #[cfg(not(feature = "env-filter"))]
+        let subscriber = fmt_subscriber.with(level_filter);
         if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
             tracing::warn!("fail to set the default subscriber with a `Json` formatter: {err}");
         }

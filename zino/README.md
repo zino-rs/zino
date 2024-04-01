@@ -54,6 +54,7 @@ The following optional features are available:
 | `actix`      | Enables the integration with [`actix-web`].          | No       |
 | `axum`       | Enables the integration with [`axum`].               | No       |
 | `dioxus`     | Enables the integration with [`dioxus`].             | No       |
+| `i18n`       | Enables the support for internationalization.        | No       |
 | `orm`        | Enables the ORM for MySQL, PostgreSQL or **SQLite**. | No       |
 
 [`zino`]: https://github.com/zino-rs/zino

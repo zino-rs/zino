@@ -19,6 +19,8 @@ The following optional features are available:
 | `connector`         | Enables the data source connectors.                    | No       |
 | `crypto-sm`         | Enables China's Standards of Encryption Algorithms.    | No       |
 | `dotenv`            | Enables the configuration loader for a `.env` file.    | No       |
+| `env-filter`        | Enables the `env-filter` for [`tracing-subscriber`].   | No       |
+| `i18n`              | Enables the support for internationalization.          | No       |
 | `locale`            | Enables the support for locale related utilities.      | No       |
 | `metrics`           | Enables the [`metrics`] exporter.                      | No       |
 | `orm`               | Enables the ORM for MySQL, PostgreSQL or **SQLite**.   | No       |
@@ -26,11 +28,13 @@ The following optional features are available:
 | `runtime-tokio`     | Enables the [`tokio`] runtime.                         | No       |
 | `tls-native`        | Enables the [`native-tls`] TLS backend.                | No       |
 | `tls-rustls`        | Enables the [`rustls`] TLS backend.                    | No       |
+| `tracing-log`       | Enables the `tracing-log` for [`tracing-subscriber`].  | No       |
 | `validator`         | Enables the common validation rules.                   | No       |
 | `view`              | Enables the HTML template rendering.                   | No       |
 
 [`zino`]: https://github.com/zino-rs/zino
 [`opendal`]: https://crates.io/crates/opendal
+[`tracing-subscriber`]: https://crates.io/crates/tracing-subscriber
 [`metrics`]: https://crates.io/crates/metrics
 [`async-std`]: https://crates.io/crates/async-std
 [`tokio`]: https://crates.io/crates/tokio

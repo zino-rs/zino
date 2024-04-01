@@ -17,6 +17,8 @@ pub mod accessor;
 pub mod chatbot;
 #[cfg(feature = "connector")]
 pub mod connector;
+#[cfg(feature = "i18n")]
+pub mod i18n;
 #[cfg(feature = "orm")]
 pub mod orm;
 #[cfg(feature = "view")]
@@ -29,7 +31,6 @@ pub mod datetime;
 pub mod error;
 pub mod extension;
 pub mod file;
-pub mod i18n;
 pub mod model;
 pub mod request;
 pub mod response;
@@ -38,6 +39,7 @@ pub mod state;
 pub mod trace;
 pub mod validation;
 
+#[cfg(feature = "i18n")]
 #[doc(no_inline)]
 pub use fluent::fluent_args;
 

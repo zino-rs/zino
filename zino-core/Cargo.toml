@@ -116,6 +116,7 @@ connector-sqlite = ["connector", "sqlx", "sqlx/sqlite"]
 crypto-sm = ["dep:ctr", "dep:sm3", "dep:sm4"]
 default = []
 dotenv = ["dep:dotenvy"]
+env-filter = ["tracing-subscriber/env-filter", "tracing-subscriber/smallvec"]
 full = [
     "all-accessors",
     "all-chatbots",
@@ -123,10 +124,14 @@ full = [
     "all-locales",
     "all-validators",
     "dotenv",
+    "env-filter",
+    "i18n",
     "metrics",
     "orm",
+    "tracing-log",
     "view",
 ]
+i18n = ["dep:fluent", "dep:intl-memoizer", "dep:unic-langid"]
 locale = ["random_word"]
 locale-en = ["locale", "random_word/en"]
 locale-es = ["locale", "random_word/es"]
@@ -153,6 +158,7 @@ tls-rustls = [
     "reqwest/rustls-tls",
     "sqlx?/tls-rustls",
 ]
+tracing-log = ["dep:tracing-log", "tracing-subscriber/tracing-log"]
 validator = []
 validator-credit-card = ["validator", "dep:card-validate"]
 validator-email = ["validator"]
@@ -174,12 +180,10 @@ cron = "0.12.1"
 csv = "1.3.0"
 etag = "4.0.0"
 faster-hex = "0.9.0"
-fluent = "0.16.0"
 futures = "0.3.30"
 hkdf = "0.12.4"
 hmac = "0.12.1"
 http = "0.2.12"
-intl-memoizer = "0.5.1"
 md-5 = "0.10.6"
 mime = "0.3.17"
 mime_guess = "2.0.4"
@@ -198,11 +202,8 @@ serde_qs = "0.12.0"
 sha2 = "0.10.8"
 smallvec = "1.13.2"
 task-local-extensions = "0.1.4"
-toml = "0.8.12"
 tracing = "0.1.40"
 tracing-appender = "0.2.3"
-tracing-log = "0.2.0"
-unic-langid = "0.9.4"
 url = "2.5.0"
 
 [dependencies.argon2]
@@ -231,6 +232,14 @@ optional = true
 
 [dependencies.dotenvy]
 version = "0.15.7"
+optional = true
+
+[dependencies.fluent]
+version = "0.16.0"
+optional = true
+
+[dependencies.intl-memoizer]
+version = "0.5.1"
 optional = true
 
 [dependencies.jwt-simple]
@@ -307,14 +316,28 @@ features = [
 version = "1.19.1"
 optional = true
 
+[dependencies.toml]
+version = "0.8.12"
+default-features = false
+features = ["parse"]
+
+[dependencies.tracing-log]
+version = "0.2.0"
+optional = true
+
 [dependencies.tracing-subscriber]
 version = "0.3.18"
+default-features = false
 features = [
-    "env-filter",
+    "ansi",
     "json",
     "local-time",
     "parking_lot",
 ]
+
+[dependencies.unic-langid]
+version = "0.9.4"
+optional = true
 
 [dependencies.utoipa]
 version = "4.2.0"

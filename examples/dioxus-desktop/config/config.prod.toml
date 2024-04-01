@@ -26,4 +26,4 @@ namespace = "dc"
 database = "local/data/main.db"
 
 [tracing]
-filter = "warn"
+level = "warn"

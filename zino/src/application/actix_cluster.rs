@@ -223,7 +223,7 @@ impl Application for ActixCluster {
                 .backlog(backlog)
                 .max_connections(max_connections)
                 .client_request_timeout(request_timeout)
-                .bind_auto_h2c(addr)
+                .bind(addr)
                 .unwrap_or_else(|err| panic!("fail to create an HTTP server: {err}"))
                 .run()
             });
