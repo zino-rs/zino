@@ -213,7 +213,7 @@ version = "0.5.3"
 features = ["std"]
 
 [dependencies.async-openai]
-version = "0.19.1"
+version = "0.20.0"
 optional = true
 
 [dependencies.card-validate]
