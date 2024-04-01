@@ -55,6 +55,7 @@ The following optional features are available:
 | `axum`       | Enables the integration with [`axum`].               | No       |
 | `dioxus`     | Enables the integration with [`dioxus`].             | No       |
 | `i18n`       | Enables the support for internationalization.        | No       |
+| `jwt`        | Enables the support for JSON Web Token.              | No       |
 | `orm`        | Enables the ORM for MySQL, PostgreSQL or **SQLite**. | No       |
 
 [`zino`]: https://github.com/zino-rs/zino

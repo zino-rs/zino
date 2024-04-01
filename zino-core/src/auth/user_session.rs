@@ -1,8 +1,9 @@
-use super::{AccessKeyId, JwtClaims, SessionId};
-use crate::{
-    application::APP_DOMAIN, crypto::Digest, error::Error, extension::JsonObjectExt, warn,
-};
+use super::{AccessKeyId, SessionId};
+use crate::{application::APP_DOMAIN, crypto::Digest};
 use std::str::FromStr;
+
+#[cfg(feature = "jwt")]
+use crate::{auth::JwtClaims, error::Error, extension::JsonObjectExt, warn};
 
 /// Role-based user sessions.
 #[derive(Debug, Clone)]
@@ -99,6 +100,7 @@ where
     <U as FromStr>::Err: std::error::Error,
 {
     /// Attempts to construct an instance from a `JwtClaims`.
+    #[cfg(feature = "jwt")]
     pub fn try_from_jwt_claims(claims: JwtClaims) -> Result<Self, Error> {
         let data = claims.data();
         let user_id = claims

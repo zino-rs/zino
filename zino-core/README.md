@@ -17,10 +17,12 @@ The following optional features are available:
 | `accessor`          | Enables the data access layer built with [`opendal`].  | No       |
 | `chatbot`           | Enables the chatbot services.                          | No       |
 | `connector`         | Enables the data source connectors.                    | No       |
+| `cookie`            | Enables the support for cookies.                       | No       |
 | `crypto-sm`         | Enables China's Standards of Encryption Algorithms.    | No       |
 | `dotenv`            | Enables the configuration loader for a `.env` file.    | No       |
 | `env-filter`        | Enables the `env-filter` for [`tracing-subscriber`].   | No       |
 | `i18n`              | Enables the support for internationalization.          | No       |
+| `jwt`               | Enables the support for JSON Web Token.                | No       |
 | `locale`            | Enables the support for locale related utilities.      | No       |
 | `metrics`           | Enables the [`metrics`] exporter.                      | No       |
 | `orm`               | Enables the ORM for MySQL, PostgreSQL or **SQLite**.   | No       |

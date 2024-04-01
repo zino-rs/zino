@@ -51,6 +51,7 @@ features = ["derive"]
 path = "../zino-core"
 version = "0.20.3"
 features = [
+    "jwt",
     "orm",
     "validator-email",
     "validator-phone-number",

@@ -2,10 +2,7 @@
 
 use crate::{
     application::http_client,
-    auth::{
-        self, AccessKeyId, Authentication, JwtClaims, ParseSecurityTokenError, SecurityToken,
-        SessionId,
-    },
+    auth::{AccessKeyId, Authentication, ParseSecurityTokenError, SecurityToken, SessionId},
     channel::{CloudEvent, Subscription},
     datetime::DateTime,
     error::Error,
@@ -18,16 +15,20 @@ use crate::{
     validation::Validation,
     warn, JsonValue, Map, SharedString, Uuid,
 };
-use cookie::{Cookie, SameSite};
-use jwt_simple::algorithms::MACLike;
 use multer::Multipart;
-use serde::{de::DeserializeOwned, Serialize};
-use std::{
-    borrow::Cow,
-    net::IpAddr,
-    str::FromStr,
-    time::{Duration, Instant},
-};
+use serde::de::DeserializeOwned;
+use std::{borrow::Cow, net::IpAddr, str::FromStr, time::Instant};
+
+#[cfg(feature = "cookie")]
+use cookie::{Cookie, SameSite};
+
+#[cfg(feature = "jwt")]
+use crate::auth::JwtClaims;
+#[cfg(feature = "jwt")]
+use jwt_simple::algorithms::MACLike;
+
+#[cfg(any(feature = "cookie", feature = "jwt"))]
+use std::time::Duration;
 
 #[cfg(feature = "i18n")]
 use crate::i18n;
@@ -123,16 +124,18 @@ pub trait RequestContext {
         // Set locale.
         #[cfg(feature = "i18n")]
         {
+            #[cfg(feature = "cookie")]
             if let Some(cookie) = self.get_cookie("locale") {
                 ctx.set_locale(cookie.value());
-            } else {
-                let supported_locales = i18n::SUPPORTED_LOCALES.as_slice();
-                let locale = self
-                    .get_header("accept-language")
-                    .and_then(|languages| i18n::select_language(languages, supported_locales))
-                    .unwrap_or(&i18n::DEFAULT_LOCALE);
-                ctx.set_locale(locale);
+                return ctx;
             }
+
+            let supported_locales = i18n::SUPPORTED_LOCALES.as_slice();
+            let locale = self
+                .get_header("accept-language")
+                .and_then(|languages| i18n::select_language(languages, supported_locales))
+                .unwrap_or(&i18n::DEFAULT_LOCALE);
+            ctx.set_locale(locale);
         }
         ctx
     }
@@ -166,6 +169,7 @@ pub trait RequestContext {
     }
 
     /// Creates a new cookie with the given name and value.
+    #[cfg(feature = "cookie")]
     fn new_cookie(
         &self,
         name: SharedString,
@@ -184,6 +188,7 @@ pub trait RequestContext {
     }
 
     /// Gets a cookie with the given name.
+    #[cfg(feature = "cookie")]
     fn get_cookie(&self, name: &str) -> Option<Cookie<'_>> {
         self.get_header("cookie")?.split(';').find_map(|cookie| {
             if let Some((key, value)) = cookie.split_once('=') {
@@ -347,9 +352,10 @@ pub trait RequestContext {
     /// If the query has a `timestamp` parameter, it will be used to prevent replay attacks.
     fn parse_query<T: Default + DeserializeOwned>(&self) -> Result<T, Rejection> {
         if let Some(query) = self.original_uri().query() {
+            #[cfg(feature = "jwt")]
             if let Some(timestamp) = self.get_query("timestamp").and_then(|s| s.parse().ok()) {
                 let duration = DateTime::from_timestamp(timestamp).span_between_now();
-                if duration > auth::default_time_tolerance() {
+                if duration > crate::auth::default_time_tolerance() {
                     let err = warn!("timestamp `{}` can not be trusted", timestamp);
                     let rejection = Rejection::from_validation_entry("timestamp", err);
                     return Err(rejection.context(self));
@@ -494,11 +500,14 @@ pub trait RequestContext {
         if let Some(date) = self.get_header("date") {
             match DateTime::parse_utc_str(date) {
                 Ok(date) => {
-                    if date.span_between_now() <= auth::default_time_tolerance() {
+                    #[cfg(feature = "jwt")]
+                    if date.span_between_now() <= crate::auth::default_time_tolerance() {
                         authentication.set_date_header("date", date);
                     } else {
                         validation.record("date", "untrusted date");
                     }
+                    #[cfg(not(feature = "jwt"))]
+                    authentication.set_date_header("date", date);
                 }
                 Err(err) => {
                     validation.record_fail("date", err);
@@ -596,9 +605,10 @@ pub trait RequestContext {
     /// Attempts to construct an instance of `JwtClaims` from an HTTP request.
     /// The value is extracted from the query parameter `access_token` or
     /// the `authorization` header.
+    #[cfg(feature = "jwt")]
     fn parse_jwt_claims<T, K>(&self, key: &K) -> Result<JwtClaims<T>, Rejection>
     where
-        T: Default + Serialize + DeserializeOwned,
+        T: Default + serde::Serialize + DeserializeOwned,
         K: MACLike,
     {
         let (param, mut token) = match self.get_query("access_token") {
@@ -616,7 +626,7 @@ pub trait RequestContext {
             return Err(Rejection::bad_request(validation).context(self));
         }
 
-        let mut options = auth::default_verification_options();
+        let mut options = crate::auth::default_verification_options();
         options.reject_before = self
             .get_query("timestamp")
             .and_then(|s| s.parse().ok())

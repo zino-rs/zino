@@ -11,7 +11,6 @@ use crate::{
     JsonValue, SharedString, Uuid,
 };
 use bytes::Bytes;
-use cookie::Cookie;
 use etag::EntityTag;
 use serde::Serialize;
 use smallvec::SmallVec;
@@ -19,6 +18,9 @@ use std::{
     marker::PhantomData,
     time::{Duration, Instant},
 };
+
+#[cfg(feature = "cookie")]
+use cookie::Cookie;
 
 mod rejection;
 mod response_code;
@@ -408,6 +410,7 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Sends a cookie to the user agent.
+    #[cfg(feature = "cookie")]
     #[inline]
     pub fn set_cookie(&mut self, cookie: &Cookie<'_>) {
         self.insert_header("set-cookie", cookie.to_string());

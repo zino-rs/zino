@@ -5,9 +5,7 @@
 #[doc(no_inline)]
 pub use zino_core::{
     application::{Application, Plugin},
-    auth::{
-        AccessKeyId, AuthorizationProvider, JwtClaims, SecretAccessKey, SecurityToken, UserSession,
-    },
+    auth::{AccessKeyId, AuthorizationProvider, SecretAccessKey, SecurityToken, UserSession},
     bail,
     datetime::{Date, DateTime, Time},
     error::Error,
@@ -27,6 +25,10 @@ pub use zino_core::{
 #[cfg(feature = "i18n")]
 #[doc(no_inline)]
 pub use zino_core::fluent_args;
+
+#[cfg(feature = "jwt")]
+#[doc(no_inline)]
+pub use zino_core::auth::JwtClaims;
 
 #[cfg(feature = "orm")]
 #[doc(no_inline)]

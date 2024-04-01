@@ -29,7 +29,6 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let version = APP::version();
     let mut client_builder = Client::builder()
         .user_agent(format!("ZinoBot/1.0 {name}/{version}"))
-        .cookie_store(true)
         .gzip(true);
     let mut max_retries = 3;
     if let Some(http_client) = APP::config().get_table("http-client") {
@@ -54,6 +53,10 @@ pub(super) fn init<APP: Application + ?Sized>() {
         if let Some(retries) = http_client.get_u32("max-retries") {
             max_retries = retries;
         }
+    }
+    #[cfg(feature = "cookie")]
+    {
+        client_builder = client_builder.cookie_store(true);
     }
 
     let reqwest_client = client_builder
