@@ -26,9 +26,9 @@ impl Default for Route {
 }
 
 #[component]
-fn PageNotFound(cx: Scope, segments: Vec<String>) -> Element {
+fn PageNotFound(segments: Vec<String>) -> Element {
     let path = segments.join("/");
-    render! {
+    rsx! {
         div {
             class: "notification is-danger is-light",
             h3 { "Page not found" }

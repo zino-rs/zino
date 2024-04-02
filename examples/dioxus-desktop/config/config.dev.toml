@@ -27,4 +27,4 @@ max-rows = 10000
 database = "local/data/main.db"
 
 [tracing]
-filter = "info,sqlx=info,zino=trace,zino_core=trace"
+filter = "info,dioxus_core=warn,sqlx=info,zino=trace,zino_core=trace"

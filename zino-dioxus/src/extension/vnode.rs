@@ -6,7 +6,7 @@ pub trait VNodeExt {
     fn has_component(&self, name: &str) -> bool;
 }
 
-impl<'a> VNodeExt for VNode<'a> {
+impl VNodeExt for VNode {
     fn has_component(&self, name: &str) -> bool {
         self.dynamic_nodes.iter().any(|node| {
             if let Component(node) = node {

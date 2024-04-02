@@ -2,32 +2,32 @@ use crate::{class::Class, format_class};
 use dioxus::prelude::*;
 
 /// Responsive columns powered by flexbox.
-pub fn Columns<'a>(cx: Scope<'a, ColumnsProps<'a>>) -> Element {
-    let class = format_class!(cx, "columns");
-    let column_class = format_class!(cx, column_class, "column");
-    let size_class = if let Some(size) = cx.props.size {
+pub fn Columns(props: ColumnsProps) -> Element {
+    let class = format_class!(props, "columns");
+    let column_class = format_class!(props, column_class, "column");
+    let size_class = if let Some(size) = props.size {
         format!("is-{size}")
     } else {
         String::new()
     };
-    let offset_class = if let Some(offset) = cx.props.offset {
+    let offset_class = if let Some(offset) = props.offset {
         format!("is-offset-{offset}")
     } else {
         String::new()
     };
-    let gap_class = if let Some(gap) = cx.props.gap {
+    let gap_class = if let Some(gap) = props.gap {
         format!("is-variable is-{gap}")
     } else {
         String::new()
     };
-    let multiline_class = Class::check("is-multiline", cx.props.multiline);
-    render! {
+    let multiline_class = Class::check("is-multiline", props.multiline);
+    rsx! {
         div {
             class: "{class} {gap_class} {multiline_class}",
-            for column in cx.props.columns.iter() {
+            for column in props.columns.iter() {
                 div {
                     class: "{column_class} {size_class} {offset_class}",
-                    column
+                    { column }
                 }
             }
         }
@@ -35,14 +35,14 @@ pub fn Columns<'a>(cx: Scope<'a, ColumnsProps<'a>>) -> Element {
 }
 
 /// The [`Columns`] properties struct for the configuration of the component.
-#[derive(Props)]
-pub struct ColumnsProps<'a> {
+#[derive(Clone, PartialEq, Props)]
+pub struct ColumnsProps {
     /// The class attribute for the component.
     #[props(into)]
-    pub class: Option<Class<'a>>,
+    pub class: Option<Class>,
     /// A class to apply to a single column.
     #[props(into)]
-    pub column_class: Option<Class<'a>>,
+    pub column_class: Option<Class>,
     /// A custom size in the 12 columns system.
     #[props(into)]
     pub size: Option<u8>,
@@ -57,5 +57,5 @@ pub struct ColumnsProps<'a> {
     pub multiline: bool,
     /// The columns to be rendered.
     #[props(into)]
-    pub columns: Vec<Element<'a>>,
+    pub columns: Vec<Element>,
 }

@@ -3,7 +3,7 @@
 pub use crate::{
     class::Class,
     extension::FormDataExt,
-    feedback::{Message, ModalCard, Notification, OperationResult},
+    feedback::{Message, ModalCard, Notification},
     form::{DataEntry, DataSelect, FormAddons, FormField, FormFieldContainer, FormGroup},
     icon::{Icon, IconText, SvgIcon},
     layout::{Columns, Container, FluidContainer, MainContainer},

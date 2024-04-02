@@ -1,52 +1,41 @@
 use super::DataEntry;
 use crate::{class::Class, format_class};
 use dioxus::prelude::*;
-use std::borrow::Cow;
-use zino_core::error::Error;
+use zino_core::SharedString;
 
 /// A control that provides a menu of data entries.
-pub fn DataSelect<'a, T: DataEntry>(cx: Scope<'a, DataSelectProps<'a, T>>) -> Element {
-    let class = format_class!(cx, "select");
-    let fullwidth_class = Class::check("is-fullwidth", cx.props.fullwidth);
-    if let Some(Ok(entries)) = cx.props.future.value() {
-        render! {
-            div {
-                class: "{class} {fullwidth_class}",
-                select {
-                    name: "{cx.props.name}",
-                    required: cx.props.required,
-                    onmounted: move |_event| {
-                        if let Some(handler) = cx.props.on_select.as_ref() {
-                            if let Some(entry) = entries.first() {
-                                handler.call(entry);
-                            }
-                        }
-                    },
-                    onchange: move |event| {
-                        if let Some(handler) = cx.props.on_select.as_ref() {
-                           let value = event.inner().value.as_str();
-                           if let Some(entry) = entries.iter().find(|d| d.value() == value) {
-                               handler.call(entry);
-                           }
-                        }
-                    },
-                    for entry in entries {
-                        option {
-                            key: "{entry.key()}",
-                            value: "{entry.value()}",
-                            "{entry.label()}"
+pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -> Element {
+    let class = format_class!(props, "select");
+    let fullwidth_class = Class::check("is-fullwidth", props.fullwidth);
+    let default_choice = props.options.first().cloned();
+    let entries = props.options.clone();
+    rsx! {
+        div {
+            class: "{class} {fullwidth_class}",
+            select {
+                name: "{props.name}",
+                required: props.required,
+                onmounted: move |_event| {
+                    if let Some(handler) = props.on_select.as_ref() {
+                        if let Some(entry) = default_choice.as_ref() {
+                            handler.call(entry.clone());
                         }
                     }
-                }
-            }
-        }
-    } else {
-        render! {
-            div {
-                class: "{class} {fullwidth_class}",
-                select {
-                    name: "{cx.props.name}",
-                    required: cx.props.required,
+                },
+                onchange: move |event| {
+                    if let Some(handler) = props.on_select.as_ref() {
+                        let value = event.value();
+                        if let Some(entry) = entries.iter().find(|d| d.value() == value) {
+                            handler.call(entry.clone());
+                        }
+                    }
+                },
+                for entry in props.options {
+                    option {
+                        key: "{entry.key()}",
+                        value: "{entry.value()}",
+                        "{entry.label()}"
+                    }
                 }
             }
         }
@@ -54,16 +43,16 @@ pub fn DataSelect<'a, T: DataEntry>(cx: Scope<'a, DataSelectProps<'a, T>>) -> El
 }
 
 /// The [`DataSelect`] properties struct for the configuration of the component.
-#[derive(Props)]
-pub struct DataSelectProps<'a, T: 'static> {
+#[derive(Clone, PartialEq, Props)]
+pub struct DataSelectProps<T: Clone + PartialEq + 'static> {
     /// The class attribute for the component.
     #[props(into)]
-    pub class: Option<Class<'a>>,
-    /// A future value which represents the data entries.
-    pub future: &'a UseFuture<Result<Vec<T>, Error>>,
+    pub class: Option<Class>,
+    /// The data options.
+    pub options: Vec<T>,
     /// The name of the control.
     #[props(into)]
-    pub name: Cow<'a, str>,
+    pub name: SharedString,
     /// A flag to determine whether the control is fullwidth or not.
     #[props(default = false)]
     pub fullwidth: bool,
@@ -71,5 +60,5 @@ pub struct DataSelectProps<'a, T: 'static> {
     #[props(default = false)]
     pub required: bool,
     /// An event handler to be called when the choice is selected.
-    pub on_select: Option<EventHandler<'a, &'a T>>,
+    pub on_select: Option<EventHandler<T>>,
 }

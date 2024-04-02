@@ -5,11 +5,11 @@ use dioxus::prelude::*;
 use dioxus_free_icons::IconShape;
 
 /// A container for any type of icon fonts.
-pub fn Icon<'a>(cx: Scope<'a, IconProps<'a>>) -> Element {
-    let class = format_class!(cx, "icon");
-    if let Some(icon) = cx.props.icon_class.as_ref() {
+pub fn Icon(props: IconProps) -> Element {
+    let class = format_class!(props, "icon");
+    if let Some(icon) = props.icon_class.as_ref() {
         let icon_class = icon.format();
-        render! {
+        rsx! {
             span {
                 class: "{class}",
                 i {
@@ -18,44 +18,44 @@ pub fn Icon<'a>(cx: Scope<'a, IconProps<'a>>) -> Element {
             }
         }
     } else {
-        render! {
+        rsx! {
             span {
                 class: "{class}",
-                &cx.props.children
+                { props.children }
             }
         }
     }
 }
 
 /// The [`Icon`] properties struct for the configuration of the component.
-#[derive(Props)]
-pub struct IconProps<'a> {
+#[derive(Clone, PartialEq, Props)]
+pub struct IconProps {
     /// The class attribute for the component.
     #[props(into)]
-    pub class: Option<Class<'a>>,
+    pub class: Option<Class>,
     /// The class to apply to the `<i>` element for a icon font.
     #[props(into)]
-    pub icon_class: Option<Class<'a>>,
+    pub icon_class: Option<Class>,
     /// The children to render within the component.
-    children: Element<'a>,
+    children: Element,
 }
 
 /// A container for a SVG icon.
-pub fn SvgIcon<'a, T: IconShape + Copy>(cx: Scope<'a, SvgIconProps<'a, T>>) -> Element {
-    let class = format_class!(cx, "icon");
-    let width = cx.props.width;
-    let height = cx.props.height.unwrap_or(width);
-    let style = if cx.props.intrinsic {
+pub fn SvgIcon<T: IconShape + Clone + PartialEq + 'static>(props: SvgIconProps<T>) -> Element {
+    let class = format_class!(props, "icon");
+    let width = props.width;
+    let height = props.height.unwrap_or(width);
+    let style = if props.intrinsic {
         format!("width:{width}px;height:{height}px")
     } else {
         String::new()
     };
-    render! {
+    rsx! {
         span {
             class: "{class}",
             style: "{style}",
             dioxus_free_icons::Icon {
-                icon: cx.props.shape,
+                icon: props.shape,
                 width: width,
                 height: height,
             }
@@ -64,11 +64,11 @@ pub fn SvgIcon<'a, T: IconShape + Copy>(cx: Scope<'a, SvgIconProps<'a, T>>) -> E
 }
 
 /// The [`SvgIcon`] properties struct for the configuration of the component.
-#[derive(Props)]
-pub struct SvgIconProps<'a, T: IconShape> {
+#[derive(Clone, PartialEq, Props)]
+pub struct SvgIconProps<T: IconShape + Clone + PartialEq + 'static> {
     /// The class attribute for the component.
     #[props(into)]
-    pub class: Option<Class<'a>>,
+    pub class: Option<Class>,
     /// The icon shape to use.
     pub shape: T,
     /// The width of the `<svg>` element. Defaults to 20.
@@ -83,22 +83,22 @@ pub struct SvgIconProps<'a, T: IconShape> {
 }
 
 /// A wrapper for combining an icon with text.
-pub fn IconText<'a>(cx: Scope<'a, IconTextProps<'a>>) -> Element {
-    let class = format_class!(cx, "icon-text");
-    render! {
+pub fn IconText(props: IconTextProps) -> Element {
+    let class = format_class!(props, "icon-text");
+    rsx! {
         span {
             class: "{class}",
-            &cx.props.children
+            { props.children }
         }
     }
 }
 
 /// The [`IconText`] properties struct for the configuration of the component.
-#[derive(Props)]
-pub struct IconTextProps<'a> {
+#[derive(Clone, PartialEq, Props)]
+pub struct IconTextProps {
     /// The class attribute for the component.
     #[props(into)]
-    pub class: Option<Class<'a>>,
+    pub class: Option<Class>,
     /// The children to render within the component.
-    children: Element<'a>,
+    children: Element,
 }

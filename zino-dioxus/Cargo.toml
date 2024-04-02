@@ -13,22 +13,22 @@ documentation = "https://docs.rs/zino-dioxus"
 readme = "README.md"
 
 [dependencies]
-dioxus = "0.4.3"
-dioxus-core = "0.4.3"
-dioxus-router = "0.4.3"
-rust_decimal = "1.34.3"
-smallvec = "1.11.1"
+dioxus = "0.5.0"
+dioxus-core = "0.5.0"
+dioxus-router = "0.5.0"
+rust_decimal = "1.35.0"
+smallvec = "1.13.2"
 
 [dependencies.chrono]
-version = "0.4.31"
+version = "0.4.37"
 features = ["serde"]
 
 [dependencies.dioxus-free-icons]
-version = "0.7.0"
+version = "0.8.3"
 features = ["font-awesome-solid"]
 
 [dependencies.uuid]
-version = "1.6.1"
+version = "1.8.0"
 features = [
     "fast-rng",
     "serde",

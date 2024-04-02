@@ -2,22 +2,22 @@ use crate::{class::Class, format_class};
 use dioxus::prelude::*;
 
 /// A vertical menu used in the navigation aside.
-pub fn Sidebar<'a>(cx: Scope<'a, SidebarProps<'a>>) -> Element {
-    let class = format_class!(cx, "sidebar");
-    render! {
+pub fn Sidebar(props: SidebarProps) -> Element {
+    let class = format_class!(props, "sidebar");
+    rsx! {
         div {
             class: "{class}",
-            &cx.props.children
+            { props.children }
         }
     }
 }
 
 /// The [`Sidebar`] properties struct for the configuration of the component.
-#[derive(Props)]
-pub struct SidebarProps<'a> {
+#[derive(Clone, PartialEq, Props)]
+pub struct SidebarProps {
     /// The class attribute for the component.
     #[props(into)]
-    pub class: Option<Class<'a>>,
+    pub class: Option<Class>,
     /// The children to render within the component.
-    children: Element<'a>,
+    children: Element,
 }

@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 use dioxus_free_icons::icons::go_icons::*;
 use zino_dioxus::prelude::*;
 
-pub fn Overview(cx: Scope) -> Element {
+pub fn Overview() -> Element {
     let core_crates = [
         ("zino", "Framework integrations"),
         ("zino-core", "Core types and traits"),
@@ -20,7 +20,7 @@ pub fn Overview(cx: Scope) -> Element {
         ("zino-dioxus", "Dioxus components"),
         ("zino-cli", "CLI tools"),
     ];
-    render! {
+    rsx! {
         div {
             class: "columns is-6",
             div {
@@ -229,8 +229,8 @@ pub fn Overview(cx: Scope) -> Element {
 }
 
 #[component]
-fn CrateListing<'a>(cx: Scope<'a>, name: &'a str, description: &'a str) -> Element {
-    render! {
+fn CrateListing(name: String, description: String) -> Element {
+    rsx! {
         div {
             class: "column is-one-quarter",
             div {

@@ -5,17 +5,17 @@ use std::{borrow::Cow, fmt};
 
 /// A class type for dioxus components.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
-pub struct Class<'a> {
+pub struct Class {
     /// Optional namespace.
-    namespace: Option<&'a str>,
+    namespace: Option<&'static str>,
     /// A list of classes.
-    classes: SmallVec<[&'a str; 4]>,
+    classes: SmallVec<[&'static str; 4]>,
 }
 
-impl<'a> Class<'a> {
+impl Class {
     /// Creates a new instance.
     #[inline]
-    pub fn new(class: &'a str) -> Self {
+    pub fn new(class: &'static str) -> Self {
         Self {
             namespace: None,
             classes: class.split_whitespace().collect(),
@@ -24,7 +24,7 @@ impl<'a> Class<'a> {
 
     /// Creates a new instance with the specific namespace.
     #[inline]
-    pub fn with_namespace(namespace: &'a str, class: &'a str) -> Self {
+    pub fn with_namespace(namespace: &'static str, class: &'static str) -> Self {
         Self {
             namespace: (!namespace.is_empty()).then_some(namespace),
             classes: class.split_whitespace().collect(),
@@ -33,7 +33,7 @@ impl<'a> Class<'a> {
 
     /// Creates a new instance when the condition holds, otherwise returns a empty class.
     #[inline]
-    pub fn check(class: &'a str, condition: bool) -> Self {
+    pub fn check(class: &'static str, condition: bool) -> Self {
         if condition {
             Self::new(class)
         } else {
@@ -43,7 +43,7 @@ impl<'a> Class<'a> {
 
     /// Adds a class to the list, omitting any that are already present.
     #[inline]
-    pub fn add(&mut self, class: &'a str) {
+    pub fn add(&mut self, class: &'static str) {
         if !(class.is_empty() || self.contains(class)) {
             self.classes.push(class);
         }
@@ -57,7 +57,7 @@ impl<'a> Class<'a> {
 
     /// Toggles a class in the list.
     #[inline]
-    pub fn toggle(&mut self, class: &'a str) {
+    pub fn toggle(&mut self, class: &'static str) {
         if let Some(index) = self.classes.iter().position(|&s| s == class) {
             self.classes.remove(index);
         } else {
@@ -67,7 +67,7 @@ impl<'a> Class<'a> {
 
     /// Replaces a class in the list with a new class.
     #[inline]
-    pub fn replace(&mut self, class: &str, new_class: &'a str) {
+    pub fn replace(&mut self, class: &str, new_class: &'static str) {
         if let Some(index) = self.classes.iter().position(|&s| s == class) {
             self.classes[index] = new_class;
         }
@@ -118,16 +118,16 @@ impl<'a> Class<'a> {
     }
 }
 
-impl<'a> From<&'a str> for Class<'a> {
+impl From<&'static str> for Class {
     #[inline]
-    fn from(class: &'a str) -> Self {
+    fn from(class: &'static str) -> Self {
         Self::new(class)
     }
 }
 
-impl<'a> From<Vec<&'a str>> for Class<'a> {
+impl From<Vec<&'static str>> for Class {
     #[inline]
-    fn from(classes: Vec<&'a str>) -> Self {
+    fn from(classes: Vec<&'static str>) -> Self {
         Self {
             namespace: None,
             classes: SmallVec::from_vec(classes),
@@ -135,9 +135,9 @@ impl<'a> From<Vec<&'a str>> for Class<'a> {
     }
 }
 
-impl<'a, const N: usize> From<[&'a str; N]> for Class<'a> {
+impl<const N: usize> From<[&'static str; N]> for Class {
     #[inline]
-    fn from(classes: [&'a str; N]) -> Self {
+    fn from(classes: [&'static str; N]) -> Self {
         Self {
             namespace: None,
             classes: SmallVec::from_slice(&classes),
@@ -145,7 +145,7 @@ impl<'a, const N: usize> From<[&'a str; N]> for Class<'a> {
     }
 }
 
-impl<'a> fmt::Display for Class<'a> {
+impl fmt::Display for Class {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let format = self.format();
@@ -156,15 +156,15 @@ impl<'a> fmt::Display for Class<'a> {
 /// Formats the class with a default value.
 #[macro_export]
 macro_rules! format_class {
-    ($cx:ident, $default_class:expr) => {
-        $cx.props
+    ($props:ident, $default_class:expr) => {
+        $props
             .class
             .as_ref()
             .map(Class::format)
             .unwrap_or_else(|| $default_class.into())
     };
-    ($cx:ident, $class_prop:ident, $default_class:expr) => {
-        $cx.props
+    ($props:ident, $class_prop:ident, $default_class:expr) => {
+        $props
             .$class_prop
             .as_ref()
             .map(Class::format)

@@ -1,18 +1,18 @@
 [package]
 name = "dioxus-desktop"
 description = "An example for Dioxus desktop integration."
-version = "0.3.2"
+version = "0.4.0"
 rust-version = "1.75"
 edition = "2021"
 publish = false
 
 [dependencies]
-dioxus = "0.4.3"
-dioxus-router = "0.4.3"
+dioxus = "0.5.0"
+dioxus-router = "0.5.0"
 tracing = "0.1.40"
 
 [dependencies.dioxus-free-icons]
-version = "0.7.0"
+version = "0.8.3"
 features = [
     "bootstrap",
     "font-awesome-brands",
@@ -32,7 +32,7 @@ features = ["dioxus-desktop", "orm"]
 [dependencies.zino-core]
 path = "../../zino-core"
 version = "0.21.0"
-features = ["orm-sqlite", "tls-rustls"]
+features = ["env-filter", "orm-sqlite", "tls-rustls"]
 
 [dependencies.zino-model]
 path = "../../zino-model"

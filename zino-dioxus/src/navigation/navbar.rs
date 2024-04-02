@@ -3,22 +3,22 @@ use dioxus::prelude::*;
 use dioxus_router::components::{IntoRoutable, Link};
 
 /// A responsive navigation header.
-pub fn Navbar<'a>(cx: Scope<'a, NavbarProps<'a>>) -> Element {
-    let children = cx.props.children.as_ref()?;
-    let class = format_class!(cx, "navbar is-link");
+pub fn Navbar(props: NavbarProps) -> Element {
+    let children = props.children.as_ref()?;
+    let class = format_class!(props, "navbar is-link");
     if children.has_component("NavbarBrand") {
-        render! {
+        rsx! {
             nav {
                 class: "{class}",
-                children
+                { children }
             }
         }
     } else {
-        render! {
+        rsx! {
             nav {
                 class: "{class}",
                 NavbarMenu {
-                    children
+                    { children }
                 }
             }
         }
@@ -26,167 +26,167 @@ pub fn Navbar<'a>(cx: Scope<'a, NavbarProps<'a>>) -> Element {
 }
 
 /// The [`Navbar`] properties struct for the configuration of the component.
-#[derive(Props)]
-pub struct NavbarProps<'a> {
+#[derive(Clone, PartialEq, Props)]
+pub struct NavbarProps {
     /// The class attribute for the component.
     #[props(into)]
-    pub class: Option<Class<'a>>,
+    pub class: Option<Class>,
     /// The children to render within the component.
-    children: Element<'a>,
+    children: Element,
 }
 
 /// A container for the logo and optionally some links or icons.
-pub fn NavbarBrand<'a>(cx: Scope<'a, NavbarBrandProps<'a>>) -> Element {
-    let class = format_class!(cx, "navbar-brand");
-    render! {
+pub fn NavbarBrand(props: NavbarBrandProps) -> Element {
+    let class = format_class!(props, "navbar-brand");
+    rsx! {
         div {
             class: "{class}",
-            &cx.props.children
+            { props.children }
         }
     }
 }
 
 /// The [`NavbarBrand`] properties struct for the configuration of the component.
-#[derive(Props)]
-pub struct NavbarBrandProps<'a> {
+#[derive(Clone, PartialEq, Props)]
+pub struct NavbarBrandProps {
     /// The class attribute for the component.
     #[props(into)]
-    pub class: Option<Class<'a>>,
+    pub class: Option<Class>,
     /// The children to render within the component.
-    children: Element<'a>,
+    children: Element,
 }
 
 /// A horizontal menu used in the navigation header.
-pub fn NavbarMenu<'a>(cx: Scope<'a, NavbarMenuProps<'a>>) -> Element {
-    let class = format_class!(cx, "navbar-menu is-active");
-    render! {
+pub fn NavbarMenu(props: NavbarMenuProps) -> Element {
+    let class = format_class!(props, "navbar-menu is-active");
+    rsx! {
         div {
             class: "{class}",
-            &cx.props.children
+            { props.children }
         }
     }
 }
 
 /// The [`NavbarMenu`] properties struct for the configuration of the component.
-#[derive(Props)]
-pub struct NavbarMenuProps<'a> {
+#[derive(Clone, PartialEq, Props)]
+pub struct NavbarMenuProps {
     /// The class attribute for the component.
     #[props(into)]
-    pub class: Option<Class<'a>>,
+    pub class: Option<Class>,
     /// The children to render within the component.
-    children: Element<'a>,
+    children: Element,
 }
 
 /// The left section of the navbar menu.
-pub fn NavbarStart<'a>(cx: Scope<'a, NavbarStartProps<'a>>) -> Element {
-    let class = format_class!(cx, "navbar-start");
-    render! {
+pub fn NavbarStart(props: NavbarStartProps) -> Element {
+    let class = format_class!(props, "navbar-start");
+    rsx! {
         div {
             class: "{class}",
-            &cx.props.children
+            { props.children }
         }
     }
 }
 
 /// The [`NavbarStart`] properties struct for the configuration of the component.
-#[derive(Props)]
-pub struct NavbarStartProps<'a> {
+#[derive(Clone, PartialEq, Props)]
+pub struct NavbarStartProps {
     /// The class attribute for the component.
     #[props(into)]
-    pub class: Option<Class<'a>>,
+    pub class: Option<Class>,
     /// The children to render within the component.
-    children: Element<'a>,
+    children: Element,
 }
 
 /// The middle section of the navbar menu.
-pub fn NavbarCenter<'a>(cx: Scope<'a, NavbarCenterProps<'a>>) -> Element {
-    let class = format_class!(cx, "navbar-center");
-    render! {
+pub fn NavbarCenter(props: NavbarCenterProps) -> Element {
+    let class = format_class!(props, "navbar-center");
+    rsx! {
         div {
             class: "{class}",
-            &cx.props.children
+            { props.children }
         }
     }
 }
 
 /// The [`NavbarCenter`] properties struct for the configuration of the component.
-#[derive(Props)]
-pub struct NavbarCenterProps<'a> {
+#[derive(Clone, PartialEq, Props)]
+pub struct NavbarCenterProps {
     /// The class attribute for the component.
     #[props(into)]
-    pub class: Option<Class<'a>>,
+    pub class: Option<Class>,
     /// The children to render within the component.
-    children: Element<'a>,
+    children: Element,
 }
 
 /// The right section of the navbar menu.
-pub fn NavbarEnd<'a>(cx: Scope<'a, NavbarEndProps<'a>>) -> Element {
-    let class = format_class!(cx, "navbar-end");
-    render! {
+pub fn NavbarEnd(props: NavbarEndProps) -> Element {
+    let class = format_class!(props, "navbar-end");
+    rsx! {
         div {
             class: "{class}",
-            &cx.props.children
+            { props.children }
         }
     }
 }
 
 /// The [`NavbarEnd`] properties struct for the configuration of the component.
-#[derive(Props)]
-pub struct NavbarEndProps<'a> {
+#[derive(Clone, PartialEq, Props)]
+pub struct NavbarEndProps {
     /// The class attribute for the component.
     #[props(into)]
-    pub class: Option<Class<'a>>,
+    pub class: Option<Class>,
     /// The children to render within the component.
-    children: Element<'a>,
+    children: Element,
 }
 
 /// A link to navigate to another route in the navigation header.
-pub fn NavbarLink<'a>(cx: Scope<'a, NavbarLinkProps<'a>>) -> Element {
-    let class = format_class!(cx, "navbar-item");
-    let active_class = format_class!(cx, "is-active");
-    render! {
+pub fn NavbarLink(props: NavbarLinkProps) -> Element {
+    let class = format_class!(props, "navbar-item");
+    let active_class = format_class!(props, "is-active");
+    rsx! {
         Link {
             class: "{class}",
             active_class: "{active_class}",
-            to: cx.props.to.clone(),
-            &cx.props.children
+            to: props.to.clone(),
+            { props.children }
         }
     }
 }
 
 /// The [`NavbarLink`] properties struct for the configuration of the component.
-#[derive(Props)]
-pub struct NavbarLinkProps<'a> {
+#[derive(Clone, PartialEq, Props)]
+pub struct NavbarLinkProps {
     /// The class attribute for the component.
     #[props(into)]
-    pub class: Option<Class<'a>>,
+    pub class: Option<Class>,
     /// A class to apply to the generate HTML anchor tag if the `target` route is active.
     #[props(into)]
-    pub active_class: Option<Class<'a>>,
+    pub active_class: Option<Class>,
     /// The navigation target. Roughly equivalent to the href attribute of an HTML anchor tag.
     #[props(into)]
     pub to: IntoRoutable,
     /// The children to render within the component.
-    children: Element<'a>,
+    children: Element,
 }
 
 /// A container for each single item of the navbar.
-pub fn NavbarItem<'a>(cx: Scope<'a, NavbarItemProps<'a>>) -> Element {
-    let class = format_class!(cx, "navbar-item");
-    render! {
+pub fn NavbarItem(props: NavbarItemProps) -> Element {
+    let class = format_class!(props, "navbar-item");
+    rsx! {
         div {
             class: "{class}",
-            &cx.props.children
+            { props.children }
         }
     }
 }
 
 /// The [`NavbarItem`] properties struct for the configuration of the component.
-#[derive(Props)]
-pub struct NavbarItemProps<'a> {
+#[derive(Clone, PartialEq, Props)]
+pub struct NavbarItemProps {
     /// The class attribute for the component.
     #[props(into)]
-    pub class: Option<Class<'a>>,
+    pub class: Option<Class>,
     /// The children to render within the component.
-    children: Element<'a>,
+    children: Element,
 }

@@ -2,11 +2,11 @@ use crate::service;
 use dioxus::prelude::*;
 use zino::prelude::*;
 
-pub fn DependencyList(cx: Scope) -> Element {
-    let dependencies = use_future(cx, (), |_| service::dependency::list_dependencies());
-    match dependencies.value() {
+pub fn DependencyList() -> Element {
+    let dependencies = use_resource(service::dependency::list_dependencies);
+    match &*dependencies.value().read_unchecked() {
         Some(Ok(items)) => {
-            render! {
+            rsx! {
                 table {
                     class: "table is-fullwidth",
                     thead {
@@ -25,15 +25,15 @@ pub fn DependencyList(cx: Scope) -> Element {
                         }
                     }
                     tbody {
-                        for item in items.iter() {
-                            DependencyListing { dep: item }
+                        for item in items {
+                            DependencyListing { dep: item.clone() }
                         }
                     }
                 }
             }
         }
         Some(Err(err)) => {
-            render! {
+            rsx! {
                 div {
                     class: "notification is-danger is-light",
                     "An error occurred while fetching dependencies: {err}"
@@ -41,7 +41,7 @@ pub fn DependencyList(cx: Scope) -> Element {
             }
         }
         None => {
-            render! {
+            rsx! {
                 progress {
                     class: "progress is-small is-primary",
                     max: 100,
@@ -52,7 +52,7 @@ pub fn DependencyList(cx: Scope) -> Element {
 }
 
 #[component]
-fn DependencyListing<'a>(cx: Scope<'a>, dep: &'a Map) -> Element {
+fn DependencyListing(dep: Map) -> Element {
     let name = dep.get_str("name").unwrap_or_default();
     let requirements = dep.get_str("requirements").unwrap_or_default();
     let latest_stable = dep.get_str("latest_stable").unwrap_or_default();
@@ -68,7 +68,7 @@ fn DependencyListing<'a>(cx: Scope<'a>, dep: &'a Map) -> Element {
     } else {
         "is-success"
     };
-    render! {
+    rsx! {
         tr {
             td {
                 a {

@@ -42,6 +42,12 @@ pub trait ModelHooks: Model {
         Ok(())
     }
 
+    /// A hook running before checking the constraints.
+    #[inline]
+    async fn before_check(&mut self) -> Result<(), Error> {
+        Ok(())
+    }
+
     /// A hook running before creating the table.
     #[inline]
     async fn before_create_table() -> Result<(), Error> {

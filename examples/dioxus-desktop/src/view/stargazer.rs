@@ -3,11 +3,11 @@ use dioxus::prelude::*;
 use zino::prelude::*;
 use zino_dioxus::prelude::*;
 
-pub fn StargazerList(cx: Scope) -> Element {
-    let stargazers_count = use_future(cx, (), |_| service::stargazer::get_stargazers_count());
-    match stargazers_count.value() {
+pub fn StargazerList() -> Element {
+    let stargazers_count = use_resource(service::stargazer::get_stargazers_count);
+    match &*stargazers_count.value().read_unchecked() {
         Some(Ok(count)) => {
-            render! {
+            rsx! {
                 div {
                     class: "columns is-desktop is-6",
                     div {
@@ -22,7 +22,7 @@ pub fn StargazerList(cx: Scope) -> Element {
             }
         }
         Some(Err(err)) => {
-            render! {
+            rsx! {
                 div {
                     class: "notification is-danger is-light",
                     "An error occurred while fetching stargazers count: {err}"
@@ -30,7 +30,7 @@ pub fn StargazerList(cx: Scope) -> Element {
             }
         }
         None => {
-            render! {
+            rsx! {
                 progress {
                     class: "progress is-small is-primary",
                     max: 100,
@@ -40,15 +40,15 @@ pub fn StargazerList(cx: Scope) -> Element {
     }
 }
 
-fn StargazerHistory(cx: Scope) -> Element {
-    let chart_type = use_state(cx, || "Date");
-    render! {
+fn StargazerHistory() -> Element {
+    let mut chart_type = use_signal(|| "Date");
+    rsx! {
         label {
             class: "checkbox is-pulled-right",
             input {
                 r#type: "checkbox",
-                onchange: |event| {
-                    let value = if event.value == "true" { "Timeline" } else { "Date" };
+                onchange: move |event| {
+                    let value = if event.value() == "true" { "Timeline" } else { "Date" };
                     chart_type.set(value);
                 },
             }
@@ -67,14 +67,14 @@ fn StargazerHistory(cx: Scope) -> Element {
 }
 
 #[component]
-fn StargazerListTable(cx: Scope, num_stargazers: usize) -> Element {
-    let current_page = use_state(cx, || 1);
-    let stargazers = use_future(cx, current_page, |current_page| {
-        service::stargazer::list_stargazers(10, *current_page)
+fn StargazerListTable(num_stargazers: usize) -> Element {
+    let mut current_page = use_signal(|| 1);
+    let stargazers = use_resource(move || async move {
+        service::stargazer::list_stargazers(10, *current_page.read()).await
     });
-    match stargazers.value() {
+    match &*stargazers.value().read_unchecked() {
         Some(Ok(stargazers)) => {
-            render! {
+            rsx! {
                 table {
                     class: "table is-fullwidth",
                     thead {
@@ -89,23 +89,23 @@ fn StargazerListTable(cx: Scope, num_stargazers: usize) -> Element {
                     tbody {
                         for (index, stargazer) in stargazers.iter().enumerate() {
                             StargazerItem {
-                                index: (**current_page - 1) * 10 + index + 1,
-                                stargazer: stargazer,
+                                index: (current_page - 1) * 10 + index + 1,
+                                stargazer: stargazer.clone(),
                             }
                         }
                     }
                 }
                 Pagination {
-                    total: *num_stargazers,
-                    current_page: **current_page,
-                    on_change: |page| {
+                    total: num_stargazers,
+                    current_page: *current_page.read(),
+                    on_change: move |page| {
                         current_page.set(page);
                     }
                 }
             }
         }
         Some(Err(err)) => {
-            render! {
+            rsx! {
                 div {
                     class: "notification is-danger is-light",
                     "An error occurred while fetching stargazers: {err}"
@@ -113,7 +113,7 @@ fn StargazerListTable(cx: Scope, num_stargazers: usize) -> Element {
             }
         }
         None => {
-            render! {
+            rsx! {
                 progress {
                     class: "progress is-small is-primary",
                     max: 100,
@@ -124,11 +124,11 @@ fn StargazerListTable(cx: Scope, num_stargazers: usize) -> Element {
 }
 
 #[component]
-fn StargazerItem<'a>(cx: Scope<'a>, index: usize, stargazer: &'a Map) -> Element {
+fn StargazerItem(index: usize, stargazer: Map) -> Element {
     let name = stargazer.get_str("login").unwrap_or_default();
     let avatar_url = stargazer.get_str("avatar_url").unwrap_or_default();
     let starred_at = stargazer.get_str("starred_at").unwrap_or_default();
-    render! {
+    rsx! {
         tr {
             th { "{index}" }
             td {

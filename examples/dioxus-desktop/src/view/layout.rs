@@ -4,8 +4,8 @@ use dioxus_free_icons::icons::{bs_icons::*, fa_brands_icons::FaRust, fa_solid_ic
 use dioxus_router::prelude::*;
 use zino_dioxus::prelude::*;
 
-pub fn Wrapper(cx: Scope) -> Element {
-    render! {
+pub fn Wrapper() -> Element {
+    rsx! {
         Navbar {
             NavbarStart {
                 NavbarLink {

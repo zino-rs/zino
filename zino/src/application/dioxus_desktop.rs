@@ -11,7 +11,6 @@ use zino_core::{
     application::{Application, Plugin},
     extension::TomlTableExt,
     schedule::AsyncScheduler,
-    Map,
 };
 
 /// A webview-based desktop renderer for the Dioxus VirtualDom.
@@ -29,8 +28,8 @@ where
     <R as FromStr>::Err: Display,
 {
     /// Renders the app root.
-    fn app_root<'a>(cx: Scope<'a, &'static Map>) -> Element<'a> {
-        render! { Router::<R> {} }
+    fn app_root() -> Element {
+        rsx! { Router::<R> {} }
     }
 }
 
@@ -113,7 +112,8 @@ where
         // Desktop configuration
         let mut desktop_config = Config::new()
             .with_window(app_window)
-            .with_disable_context_menu(in_prod_mode);
+            .with_disable_context_menu(in_prod_mode)
+            .with_menu(None);
         if let Some(config) = app_state.get_config("desktop") {
             let mut custom_heads = Vec::new();
             if let Some(icon) = config.get_str("icon") {
@@ -192,6 +192,6 @@ where
             "launch a window named `{window_title}`",
         );
 
-        dioxus_desktop::launch_with_props(Self::app_root, Self::state_data(), desktop_config);
+        dioxus_desktop::launch::launch(Self::app_root, Vec::new(), desktop_config);
     }
 }
