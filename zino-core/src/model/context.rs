@@ -4,6 +4,8 @@ use std::time::Instant;
 /// Data associated with a query.
 #[derive(Debug, Clone)]
 pub struct QueryContext {
+    /// Model name.
+    model_name: &'static str,
     /// Start time.
     start_time: Instant,
     /// Query ID.
@@ -23,8 +25,9 @@ pub struct QueryContext {
 impl QueryContext {
     /// Creates a new instance.
     #[inline]
-    pub fn new() -> Self {
+    pub fn new(model_name: &'static str) -> Self {
         Self {
+            model_name,
             start_time: Instant::now(),
             query_id: Uuid::now_v7(),
             query: String::new(),
@@ -64,6 +67,12 @@ impl QueryContext {
     pub fn set_query_result(&mut self, rows_affected: Option<u64>, success: bool) {
         self.rows_affected = rows_affected;
         self.success = success;
+    }
+
+    /// Returns the model name.
+    #[inline]
+    pub fn model_name(&self) -> &'static str {
+        self.model_name
     }
 
     /// Returns the start time.
@@ -117,10 +126,17 @@ impl QueryContext {
     /// Records an error message for the query.
     #[inline]
     pub fn record_error(&self, message: impl AsRef<str>) {
+        let model_name = self.model_name();
         let query_id = self.query_id().to_string();
         let query = self.query();
         let arguments = self.format_arguments();
-        tracing::error!(query_id, query, arguments, message = message.as_ref());
+        tracing::error!(
+            model_name,
+            query_id,
+            query,
+            arguments,
+            message = message.as_ref()
+        );
     }
 
     /// Emits the metrics for the query.
@@ -129,15 +145,9 @@ impl QueryContext {
     pub fn emit_metrics(&self, action: impl Into<crate::SharedString>) {
         metrics::histogram!(
             "zino_model_query_duration_seconds",
+            "model_name" => self.model_name(),
             "action" => action.into(),
         )
         .record(self.start_time().elapsed().as_secs_f64());
-    }
-}
-
-impl Default for QueryContext {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
     }
 }

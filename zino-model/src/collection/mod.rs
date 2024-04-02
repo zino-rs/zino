@@ -69,6 +69,8 @@ pub struct Collection {
 }
 
 impl Model for Collection {
+    const MODEL_NAME: &'static str = "collection";
+
     #[inline]
     fn new() -> Self {
         Self {

@@ -71,6 +71,8 @@ pub struct Order {
 }
 
 impl Model for Order {
+    const MODEL_NAME: &'static str = "order";
+
     #[inline]
     fn new() -> Self {
         Self {

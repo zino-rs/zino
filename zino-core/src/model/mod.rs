@@ -27,6 +27,8 @@ pub use translation::Translation;
 ///
 /// This trait can be derived by `zino_derive::Model`.
 pub trait Model: Default + Serialize + DeserializeOwned {
+    /// Model name.
+    const MODEL_NAME: &'static str;
     /// Data item name.
     const ITEM_NAME: (&'static str, &'static str) = ("entry", "entries");
 
@@ -34,6 +36,12 @@ pub trait Model: Default + Serialize + DeserializeOwned {
     #[inline]
     fn new() -> Self {
         Self::default()
+    }
+
+    /// Returns the model name.
+    #[inline]
+    fn model_name() -> &'static str {
+        Self::MODEL_NAME
     }
 
     /// Updates the model using the json object and returns the validation result.

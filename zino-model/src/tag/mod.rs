@@ -62,6 +62,8 @@ pub struct Tag {
 }
 
 impl Model for Tag {
+    const MODEL_NAME: &'static str = "tag";
+
     #[inline]
     fn new() -> Self {
         Self {

@@ -71,6 +71,8 @@ pub struct Dataset {
 }
 
 impl Model for Dataset {
+    const MODEL_NAME: &'static str = "dataset";
+
     #[inline]
     fn new() -> Self {
         Self {

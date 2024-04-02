@@ -66,6 +66,8 @@ pub struct Group {
 }
 
 impl Model for Group {
+    const MODEL_NAME: &'static str = "group";
+
     #[inline]
     fn new() -> Self {
         Self {

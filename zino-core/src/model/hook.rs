@@ -57,14 +57,16 @@ pub trait ModelHooks: Model {
     /// A hook running before scanning the table.
     #[inline]
     async fn before_scan(query: &str) -> Result<QueryContext, Error> {
-        let ctx = QueryContext::new();
+        let model_name = Self::model_name();
+        let ctx = QueryContext::new(model_name);
         let query_id = ctx.query_id().to_string();
-        tracing::debug!(query_id, query);
+        tracing::debug!(model_name, query_id, query);
         Ok(ctx)
     }
 
     /// A hook running after scanning the table.
     async fn after_scan(ctx: &QueryContext) -> Result<(), Error> {
+        let model_name = ctx.model_name();
         let query_id = ctx.query_id().to_string();
         let query = ctx.query();
         let arguments = ctx.format_arguments();
@@ -79,6 +81,7 @@ pub trait ModelHooks: Model {
         let execution_time = ctx.start_time().elapsed();
         let execution_time_millis = execution_time.as_millis();
         tracing::info!(
+            model_name,
             query_id,
             query,
             arguments,

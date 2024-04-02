@@ -19,8 +19,6 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Primary key.
     type PrimaryKey: Default + Display + PartialEq;
 
-    /// Model name.
-    const MODEL_NAME: &'static str;
     /// Primary key name.
     const PRIMARY_KEY_NAME: &'static str = "id";
     /// Reader name.
@@ -62,22 +60,16 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         super::DRIVER_NAME
     }
 
-    /// Returns the model name.
+    /// Returns the table name.
     #[inline]
-    fn model_name() -> &'static str {
-        Self::MODEL_NAME
+    fn table_name() -> &'static str {
+        Self::TABLE_NAME.unwrap_or_else(|| [*super::TABLE_PREFIX, Self::MODEL_NAME].concat().leak())
     }
 
     /// Returns the model namespace.
     #[inline]
     fn model_namespace() -> &'static str {
         [*super::NAMESPACE_PREFIX, Self::MODEL_NAME].concat().leak()
-    }
-
-    /// Returns the table name.
-    #[inline]
-    fn table_name() -> &'static str {
-        Self::TABLE_NAME.unwrap_or_else(|| [*super::TABLE_PREFIX, Self::MODEL_NAME].concat().leak())
     }
 
     /// Returns the primary key as a JSON value.

@@ -20,24 +20,26 @@ const RESERVED_FIELDS: [&str; 8] = [
 pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     // Model name
     let name = input.ident;
+    let mut model_name = name.to_string();
 
     // Parsing struct attributes
     let mut item_name = "entry".to_owned();
     let mut item_name_plural = "entries".to_owned();
     for attr in input.attrs.iter() {
         for (key, value) in parser::parse_schema_attr(attr).into_iter() {
-            match key.as_str() {
-                "item_name" => {
-                    if let Some(value) = value {
+            if let Some(value) = value {
+                match key.as_str() {
+                    "model_name" => {
+                        model_name = value;
+                    }
+                    "item_name" => {
                         item_name = value;
                     }
-                }
-                "item_name_plural" => {
-                    if let Some(value) = value {
+                    "item_name_plural" => {
                         item_name_plural = value;
                     }
+                    _ => (),
                 }
-                _ => (),
             }
         }
     }
@@ -224,6 +226,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
         }
     }
 
+    let model_name_snake = model_name.to_case(Case::Snake);
     let model_constructor = if field_constructors.is_empty() {
         quote! { Self::default() }
     } else {
@@ -237,6 +240,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
         use zino_core::validation::Validation;
 
         impl zino_core::model::Model for #name {
+            const MODEL_NAME: &'static str = #model_name_snake;
             const ITEM_NAME: (&'static str, &'static str) = (#item_name, #item_name_plural);
 
             #[inline]

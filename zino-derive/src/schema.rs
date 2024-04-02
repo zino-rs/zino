@@ -259,7 +259,6 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     }
 
     // Output
-    let model_name_snake = model_name.to_case(Case::Snake);
     let model_name_upper_snake = model_name.to_case(Case::UpperSnake);
     let schema_primary_key_type = format_ident!("{}", primary_key_type);
     let schema_primary_key = format_ident!("{}", primary_key_name);
@@ -320,7 +319,6 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
         impl Schema for #name {
             type PrimaryKey = #schema_primary_key_type;
 
-            const MODEL_NAME: &'static str = #model_name_snake;
             const PRIMARY_KEY_NAME: &'static str = #primary_key_name;
             const READER_NAME: &'static str = #reader_name;
             const WRITER_NAME: &'static str = #writer_name;

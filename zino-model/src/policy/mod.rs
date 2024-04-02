@@ -73,6 +73,8 @@ pub struct Policy {
 }
 
 impl Model for Policy {
+    const MODEL_NAME: &'static str = "policy";
+
     #[inline]
     fn new() -> Self {
         Self {

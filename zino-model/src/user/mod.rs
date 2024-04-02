@@ -108,6 +108,8 @@ pub struct User {
 }
 
 impl Model for User {
+    const MODEL_NAME: &'static str = "user";
+
     #[inline]
     fn new() -> Self {
         Self {

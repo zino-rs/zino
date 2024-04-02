@@ -64,6 +64,8 @@ pub struct Source {
 }
 
 impl Model for Source {
+    const MODEL_NAME: &'static str = "source";
+
     #[inline]
     fn new() -> Self {
         Self {

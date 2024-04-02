@@ -67,6 +67,8 @@ pub struct Application {
 }
 
 impl Model for Application {
+    const MODEL_NAME: &'static str = "application";
+
     #[inline]
     fn new() -> Self {
         Self {

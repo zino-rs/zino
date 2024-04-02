@@ -70,6 +70,8 @@ pub struct Message {
 }
 
 impl Model for Message {
+    const MODEL_NAME: &'static str = "message";
+
     #[inline]
     fn new() -> Self {
         Self {

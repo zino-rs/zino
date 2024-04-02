@@ -79,6 +79,8 @@ pub struct Task {
 }
 
 impl Model for Task {
+    const MODEL_NAME: &'static str = "task";
+
     #[inline]
     fn new() -> Self {
         Self {

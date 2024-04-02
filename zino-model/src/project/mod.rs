@@ -64,6 +64,8 @@ pub struct Project {
 }
 
 impl Model for Project {
+    const MODEL_NAME: &'static str = "project";
+
     #[inline]
     fn new() -> Self {
         Self {

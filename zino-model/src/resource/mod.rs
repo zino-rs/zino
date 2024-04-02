@@ -70,6 +70,8 @@ pub struct Resource {
 }
 
 impl Model for Resource {
+    const MODEL_NAME: &'static str = "resource";
+
     #[inline]
     fn new() -> Self {
         Self {

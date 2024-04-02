@@ -65,6 +65,8 @@ pub struct Record {
 }
 
 impl Model for Record {
+    const MODEL_NAME: &'static str = "record";
+
     #[inline]
     fn new() -> Self {
         Self {

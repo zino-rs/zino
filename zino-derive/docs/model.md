@@ -2,6 +2,9 @@ Derives the [`Model`](zino_core::model::Model) trait.
 
 # Attributes on structs
 
+- **`#[schema(model_name = "name")]`**: The default model name is obtained by converting 
+  the struct name to **snake-case**. You can override it by specifying the `model_name` attribute.
+
 - **`#[schema(item_name = "name")]`**: The `item_name` attribute specifies
   the corresponding field for a single model data item. Default value: **`entry`**.
 

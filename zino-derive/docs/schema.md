@@ -2,10 +2,6 @@ Derives the [`Schema`](zino_core::orm::Schema) trait.
 
 # Attributes on structs
 
-- **`#[schema(model_name = "name")]`**: The default model name is obtained by converting 
-  the struct name to **snake-case**. You can override it by specifying the `model_name` attribute.
-  The value will be used as an alias of the table name in SQL.
-
 - **`#[schema(reader_name = "name")]`**: The `reader_name` attribute specifies
   the model reader name of database services. The names are defined in the database cofiguration.
   Default value: **`main`**.

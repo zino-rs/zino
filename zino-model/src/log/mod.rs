@@ -74,6 +74,8 @@ pub struct Log {
 }
 
 impl Model for Log {
+    const MODEL_NAME: &'static str = "log";
+
     #[inline]
     fn new() -> Self {
         Self {
