@@ -61,6 +61,9 @@ mod tracing_subscriber;
 #[cfg(feature = "metrics")]
 mod metrics_exporter;
 
+#[cfg(feature = "sentry")]
+mod sentry_client;
+
 pub(crate) mod http_client;
 
 pub(crate) use secret_key::SECRET_KEY;
@@ -80,33 +83,35 @@ pub trait Application {
     /// Runs the application with an optional scheduler for async jobs.
     fn run_with<T: AsyncScheduler + Send + 'static>(self, scheduler: T);
 
-    /// Boots the application. It also initializes the required directories
-    /// and setups the default secret key, the tracing subscriber,
-    /// the metrics exporter and a global HTTP client.
+    /// Boots the application with the default initialization.
     fn boot() -> Self
     where
         Self: Default,
     {
-        // Loads the `.env` file from the current directory or parents.
+        // Loads the `.env` file from the current directory or parents
         #[cfg(feature = "dotenv")]
         dotenvy::dotenv().ok();
 
-        // Application setups.
+        // Sentry client
+        #[cfg(feature = "sentry")]
+        self::sentry_client::init::<Self>();
+
+        // Application setups
         tracing_subscriber::init::<Self>();
         secret_key::init::<Self>();
 
-        // Metrics exporter.
+        // Metrics exporter
         #[cfg(feature = "metrics")]
         self::metrics_exporter::init::<Self>();
 
-        // HTTP client.
+        // HTTP client
         http_client::init::<Self>();
 
-        // View template.
+        // View template
         #[cfg(feature = "view")]
         crate::view::init::<Self>();
 
-        // Initializes the directories to ensure that they are ready for use.
+        // Initializes the directories to ensure that they are ready for use
         if let Some(dirs) = SHARED_APP_STATE.get_config("dirs") {
             let project_dir = Self::project_dir();
             for dir in dirs.values().filter_map(|v| v.as_str()) {

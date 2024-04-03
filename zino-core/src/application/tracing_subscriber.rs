@@ -12,6 +12,9 @@ use tracing_subscriber::{
     layer::SubscriberExt,
 };
 
+#[cfg(feature = "sentry")]
+use sentry_tracing::EventFilter;
+
 #[cfg(feature = "env-filter")]
 use tracing_subscriber::filter::EnvFilter;
 
@@ -22,15 +25,16 @@ pub(super) fn init<APP: Application + ?Sized>() {
         return;
     }
 
-    // Convert log records to tracing events.
+    // Convert log records to tracing events
     #[cfg(feature = "tracing-log")]
     tracing_log::LogTracer::init().expect("fail to initialize the log tracer");
 
-    // Initialize `OffsetTime` before forking threads.
+    // Initialize `OffsetTime` before forking threads
     let local_offset_time = OffsetTime::local_rfc_3339().expect("could not get local offset");
 
     let app_env = APP::env();
     let in_dev_mode = app_env.is_dev();
+    let mut event_format = if in_dev_mode { "pretty" } else { "json" };
     let mut level_filter = if in_dev_mode {
         LevelFilter::INFO
     } else {
@@ -60,6 +64,9 @@ pub(super) fn init<APP: Application + ?Sized>() {
         }
         if let Some(period) = config.get_duration("log-rolling-period") {
             log_rolling_period = period;
+        }
+        if let Some(format) = config.get_str("format") {
+            event_format = format;
         }
         if let Some(level) = config.get_str("level") {
             level_filter = level.parse().expect("fail to parse the level filter");
@@ -109,6 +116,8 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .build(rolling_file_dir)
         .expect("fail to initialize the rolling file appender");
     let (non_blocking_appender, worker_guard) = tracing_appender::non_blocking(file_appender);
+
+    // Layers
     let stdout = if in_dev_mode {
         io::stdout.with_max_level(Level::DEBUG)
     } else {
@@ -126,30 +135,55 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .with_default_directive(level_filter.into())
         .parse(env_filter)
         .expect("fail to parse the env filter");
-    if in_dev_mode {
-        let pretty_fmt_layer = fmt_layer.pretty();
-        let fmt_subscriber = tracing_subscriber::registry().with(pretty_fmt_layer);
-        #[cfg(feature = "env-filter")]
-        let subscriber = fmt_subscriber.with(env_filter_layer);
-        #[cfg(not(feature = "env-filter"))]
-        let subscriber = fmt_subscriber.with(level_filter);
-        if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
-            tracing::warn!("fail to set the default subscriber with a `Pretty` formatter: {err}");
+    #[cfg(feature = "sentry")]
+    let sentry_layer = sentry_tracing::layer().event_filter(|md| match md.level() {
+        &Level::ERROR => EventFilter::Event,
+        _ => EventFilter::Ignore,
+    });
+
+    let subscriber = tracing_subscriber::registry();
+    #[cfg(feature = "env-filter")]
+    let subscriber = subscriber.with(env_filter_layer);
+    #[cfg(not(feature = "env-filter"))]
+    let subscriber = subscriber.with(level_filter);
+    #[cfg(feature = "sentry")]
+    let subscriber = subscriber.with(sentry_layer);
+    match event_format {
+        "compact" => {
+            let compact_fmt_layer = fmt_layer.compact();
+            let subscriber = subscriber.with(compact_fmt_layer);
+            if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
+                tracing::warn!(
+                    "fail to set the default subscriber with a `Compact` formatter: {err}"
+                );
+            }
         }
-    } else {
-        let json_fmt_layer = fmt_layer
-            .json()
-            .with_current_span(true)
-            .with_span_list(display_span_list);
-        let fmt_subscriber = tracing_subscriber::registry().with(json_fmt_layer);
-        #[cfg(feature = "env-filter")]
-        let subscriber = fmt_subscriber.with(env_filter_layer);
-        #[cfg(not(feature = "env-filter"))]
-        let subscriber = fmt_subscriber.with(level_filter);
-        if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
-            tracing::warn!("fail to set the default subscriber with a `Json` formatter: {err}");
+        "json" => {
+            let json_fmt_layer = fmt_layer
+                .json()
+                .with_current_span(true)
+                .with_span_list(display_span_list);
+            let subscriber = subscriber.with(json_fmt_layer);
+            if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
+                tracing::warn!("fail to set the default subscriber with a `Json` formatter: {err}");
+            }
         }
-    };
+        "pretty" => {
+            let pretty_fmt_layer = fmt_layer.pretty();
+            let subscriber = subscriber.with(pretty_fmt_layer);
+            if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
+                tracing::warn!(
+                    "fail to set the default subscriber with a `Pretty` formatter: {err}"
+                );
+            }
+        }
+        _ => {
+            let subscriber = subscriber.with(fmt_layer);
+            if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
+                tracing::warn!("fail to set the default subscriber with a `Full` formatter: {err}");
+            }
+        }
+    }
     TRACING_APPENDER_GUARD
         .set(worker_guard)
         .expect("fail to set the worker guard for the tracing appender");

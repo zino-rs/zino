@@ -28,6 +28,7 @@ The following optional features are available:
 | `orm`               | Enables the ORM for MySQL, PostgreSQL or **SQLite**.   | No       |
 | `runtime-async-std` | Enables the [`async-std`] runtime.                     | No       |
 | `runtime-tokio`     | Enables the [`tokio`] runtime.                         | No       |
+| `sentry`            | Enables the integration with [`sentry`].               | No       |
 | `tls-native`        | Enables the [`native-tls`] TLS backend.                | No       |
 | `tls-rustls`        | Enables the [`rustls`] TLS backend.                    | No       |
 | `tracing-log`       | Enables the `tracing-log` for [`tracing-subscriber`].  | No       |
@@ -42,3 +43,4 @@ The following optional features are available:
 [`tokio`]: https://crates.io/crates/tokio
 [`native-tls`]: https://crates.io/crates/native-tls
 [`rustls`]: https://crates.io/crates/rustls
+[`sentry`]: https://crates.io/crates/sentry

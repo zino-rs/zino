@@ -152,14 +152,17 @@ orm-sqlx = ["orm", "sqlx", "sqlx/sqlite"]
 orm-tidb = ["orm-sqlx", "sqlx/mysql"]
 runtime-async-std = ["sqlx?/runtime-async-std"]
 runtime-tokio = ["sqlx?/runtime-tokio"]
+sentry = ["dep:sentry", "dep:sentry-tracing"]
 tls-native = [
     "opendal?/native-tls",
     "reqwest/native-tls",
+    "sentry?/native-tls",
     "sqlx?/tls-native-tls",
 ]
 tls-rustls = [
     "opendal?/rustls",
     "reqwest/rustls-tls",
+    "sentry?/rustls",
     "sqlx?/tls-rustls",
 ]
 tracing-log = ["dep:tracing-log", "tracing-subscriber/tracing-log"]
@@ -290,6 +293,14 @@ features = [
     "json",
     "multipart",
 ]
+
+[dependencies.sentry]
+version = "0.32.2"
+optional = true
+
+[dependencies.sentry-tracing]
+version = "0.32.2"
+optional = true
 
 [dependencies.serde]
 version = "1.0.197"

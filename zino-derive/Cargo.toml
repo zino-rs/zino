@@ -17,7 +17,7 @@ proc-macro = true
 convert_case = "0.6.0"
 proc-macro2 = "1.0.79"
 quote = "1.0.35"
-syn = "2.0.55"
+syn = "2.0.57"
 
 [dependencies.zino-core]
 path = "../zino-core"
