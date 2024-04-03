@@ -34,7 +34,6 @@ features = [
     "cookie",
     "env-filter",
     "orm-mysql",
-    "sentry",
     "validator-email",
     "view-tera",
 ]

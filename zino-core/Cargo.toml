@@ -93,9 +93,9 @@ all-connectors = [
 ]
 all-locales = [
     "locale",
+    "locale-de",
     "locale-en",
     "locale-es",
-    "locale-de",
     "locale-fr",
     "locale-zh",
 ]

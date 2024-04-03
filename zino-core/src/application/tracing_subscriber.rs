@@ -21,7 +21,7 @@ use tracing_subscriber::filter::EnvFilter;
 /// Initializes the tracing subscriber.
 pub(super) fn init<APP: Application + ?Sized>() {
     if TRACING_APPENDER_GUARD.get().is_some() {
-        tracing::warn!("the tracing subscriber has already been initialized");
+        tracing::warn!("tracing subscriber has already been initialized");
         return;
     }
 
@@ -50,6 +50,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let mut log_dir = "logs";
     let mut log_rotation = "hourly";
     let mut log_rolling_period = Duration::from_secs(3600 * 24 * 90); // 90 days
+    let mut ansi_terminal = true;
     let mut display_target = true;
     let mut display_filename = false;
     let mut display_line_number = false;
@@ -75,6 +76,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
         if let Some(filter) = config.get_str("filter") {
             env_filter = filter;
         }
+        ansi_terminal = config.get_bool("ansi").unwrap_or(true);
         display_target = config.get_bool("display-target").unwrap_or(true);
         display_filename = config.get_bool("display-filename").unwrap_or(in_dev_mode);
         display_line_number = config
@@ -117,19 +119,22 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .expect("fail to initialize the rolling file appender");
     let (non_blocking_appender, worker_guard) = tracing_appender::non_blocking(file_appender);
 
-    // Layers
+    // Format layer
     let stdout = if in_dev_mode {
         io::stdout.with_max_level(Level::DEBUG)
     } else {
         io::stdout.with_max_level(Level::WARN)
     };
     let fmt_layer = tracing_subscriber::fmt::layer()
+        .with_ansi(ansi_terminal)
         .with_target(display_target)
         .with_file(display_filename)
         .with_line_number(display_line_number)
         .with_thread_names(display_thread_names)
         .with_timer(local_offset_time)
         .with_writer(stdout.and(non_blocking_appender));
+
+    // Optional layers
     #[cfg(feature = "env-filter")]
     let env_filter_layer = EnvFilter::builder()
         .with_default_directive(level_filter.into())

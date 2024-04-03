@@ -6,7 +6,7 @@ use std::sync::OnceLock;
 /// Initializes the sentry client.
 pub(super) fn init<APP: Application + ?Sized>() {
     if SENTRY_CLIENT_GUARD.get().is_some() {
-        tracing::warn!("the sentry client has already been initialized");
+        tracing::warn!("sentry client has already been initialized");
         return;
     }
 
@@ -14,6 +14,8 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let in_dev_mode = app_env.is_dev();
     let mut client_options = ClientOptions {
         debug: in_dev_mode,
+        environment: Some(app_env.as_str().into()),
+        traces_sample_rate: 0.5,
         ..Default::default()
     };
     if let Some(config) = APP::config().get_table("sentry") {
