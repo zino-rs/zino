@@ -24,7 +24,7 @@ pub struct DioxusDesktop<R> {
 
 impl<R> DioxusDesktop<R>
 where
-    R: Routable + Clone,
+    R: Routable,
     <R as FromStr>::Err: Display,
 {
     /// Renders the app root.
@@ -35,7 +35,7 @@ where
 
 impl<R> Application for DioxusDesktop<R>
 where
-    R: Routable + Clone,
+    R: Routable,
     <R as FromStr>::Err: Display,
 {
     type Routes = R;

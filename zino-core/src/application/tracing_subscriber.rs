@@ -1,6 +1,6 @@
 use super::Application;
 use crate::extension::TomlTableExt;
-use std::{fs, io, path::Path, sync::OnceLock, time::Duration};
+use std::{fs, io, sync::OnceLock, time::Duration};
 use tracing::Level;
 use tracing_appender::{
     non_blocking::WorkerGuard,
@@ -86,19 +86,13 @@ pub(super) fn init<APP: Application + ?Sized>() {
         display_span_list = config.get_bool("display-span-list").unwrap_or(false);
     }
 
-    let log_dir = Path::new(log_dir);
-    let rolling_file_dir = if log_dir.exists() {
-        log_dir.to_path_buf()
-    } else {
-        let project_dir = APP::project_dir();
-        let log_dir = project_dir.join("logs");
-        if !log_dir.exists() {
-            fs::create_dir(log_dir.as_path()).unwrap_or_else(|err| {
-                let log_dir = log_dir.display();
-                panic!("fail to create the log directory `{log_dir}`: {err}");
-            });
-        }
-        log_dir
+    let project_dir = APP::project_dir();
+    let log_dir = project_dir.join(log_dir);
+    if !log_dir.exists() {
+        fs::create_dir(log_dir.as_path()).unwrap_or_else(|err| {
+            let log_dir = log_dir.display();
+            panic!("fail to create the log directory `{log_dir}`: {err}");
+        });
     };
 
     let rolling_period_minutes = log_rolling_period.as_secs().div_ceil(60);
@@ -115,7 +109,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .filename_prefix(format!("{app_name}.{app_env}"))
         .filename_suffix("log")
         .max_log_files(max_log_files.try_into().unwrap_or(1))
-        .build(rolling_file_dir)
+        .build(log_dir)
         .expect("fail to initialize the rolling file appender");
     let (non_blocking_appender, worker_guard) = tracing_appender::non_blocking(file_appender);
 

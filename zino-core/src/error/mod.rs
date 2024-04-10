@@ -82,17 +82,17 @@ impl<E: error::Error> From<E> for Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let message = &self.message;
+        let message = self.message();
         if let Some(source) = &self.source {
             let source = source.message();
             let root_source = self.root_source().map(|err| err.message());
             if root_source != Some(source) {
-                tracing::error!(root_source, source, "{message}");
+                tracing::error!(root_source, source, message);
             } else {
-                tracing::error!(root_source, "{message}");
+                tracing::error!(root_source, message);
             }
         } else {
-            tracing::error!("{message}");
+            tracing::error!(message);
         }
         write!(f, "{message}")
     }
