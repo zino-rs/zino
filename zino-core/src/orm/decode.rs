@@ -172,8 +172,11 @@ pub(super) fn decode_raw<'r, T>(
 where
     T: Decode<'r, DatabaseDriver>,
 {
-    T::decode(value).map_err(|source| sqlx::Error::ColumnDecode {
-        index: field.to_owned(),
-        source,
+    T::decode(value).map_err(|source| {
+        tracing::error!("fail to decode the `{}` field", field);
+        sqlx::Error::ColumnDecode {
+            index: field.to_owned(),
+            source,
+        }
     })
 }
