@@ -92,10 +92,6 @@ pub trait Application {
         #[cfg(feature = "dotenv")]
         dotenvy::dotenv().ok();
 
-        // Sentry client
-        #[cfg(feature = "sentry")]
-        self::sentry_client::init::<Self>();
-
         // Application setups
         tracing_subscriber::init::<Self>();
         secret_key::init::<Self>();

@@ -32,6 +32,10 @@ pub(super) fn init<APP: Application + ?Sized>() {
     // Initialize `OffsetTime` before forking threads
     let local_offset_time = OffsetTime::local_rfc_3339().expect("could not get local offset");
 
+    // Sentry client
+    #[cfg(feature = "sentry")]
+    super::sentry_client::init::<APP>();
+
     let app_env = APP::env();
     let in_dev_mode = app_env.is_dev();
     let mut event_format = if in_dev_mode { "pretty" } else { "json" };
