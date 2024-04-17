@@ -89,25 +89,25 @@ pub(super) trait QueryExt<DB> {
         }
 
         let mut expression = String::new();
-        let mut conditions = Vec::with_capacity(filters.len());
+        let mut logical_and_conditions = Vec::with_capacity(filters.len());
         for (key, value) in filters {
             match key.as_str() {
                 "$and" => {
                     if let Some(filters) = value.as_array() {
                         let condition = Self::format_logical_filters::<M>(filters, " AND ");
-                        conditions.push(condition);
+                        logical_and_conditions.push(condition);
                     }
                 }
                 "$not" => {
                     if let Some(filters) = value.as_array() {
                         let condition = Self::format_logical_filters::<M>(filters, " AND ");
-                        conditions.push(format!("(NOT {condition})"));
+                        logical_and_conditions.push(format!("(NOT {condition})"));
                     }
                 }
                 "$or" => {
                     if let Some(filters) = value.as_array() {
                         let condition = Self::format_logical_filters::<M>(filters, " OR ");
-                        conditions.push(condition);
+                        logical_and_conditions.push(condition);
                     }
                 }
                 "$rand" => {
@@ -124,12 +124,12 @@ pub(super) trait QueryExt<DB> {
                             let value = (value * i64::MAX as f64) as i64;
                             format!("abs(random()) < {value}")
                         };
-                        conditions.push(condition);
+                        logical_and_conditions.push(condition);
                     }
                 }
                 "$text" => {
                     if let Some(condition) = value.as_object().and_then(Self::parse_text_search) {
-                        conditions.push(condition);
+                        logical_and_conditions.push(condition);
                     }
                 }
                 "$ovlp" => {
@@ -157,7 +157,7 @@ pub(super) trait QueryExt<DB> {
                                     r#"({start_field} <= {end_value} AND {end_field} >= {start_value})"#
                                 )
                             };
-                            conditions.push(condition);
+                            logical_and_conditions.push(condition);
                         }
                     }
                 }
@@ -165,19 +165,19 @@ pub(super) trait QueryExt<DB> {
                     if let Some(col) = M::get_column(key) {
                         let condition = col.format_filter(key, value);
                         if !condition.is_empty() {
-                            conditions.push(condition);
+                            logical_and_conditions.push(condition);
                         }
                     } else if key.contains('.') {
                         let condition = Self::format_filter(key, value);
                         if !condition.is_empty() {
-                            conditions.push(condition);
+                            logical_and_conditions.push(condition);
                         }
                     }
                 }
             }
         }
-        if !conditions.is_empty() {
-            expression += &format!("WHERE {}", conditions.join(" AND "));
+        if !logical_and_conditions.is_empty() {
+            expression += &format!("WHERE {}", logical_and_conditions.join(" AND "));
         };
         if let Some(groups) = filters.parse_str_array("$group") {
             let groups = groups
@@ -199,30 +199,31 @@ pub(super) trait QueryExt<DB> {
         let mut conditions = Vec::with_capacity(filters.len());
         for filter in filters {
             if let JsonValue::Object(filter) = filter {
+                let mut logical_and_conditions = Vec::with_capacity(filter.len());
                 for (key, value) in filter {
                     match key.as_str() {
                         "$and" => {
                             if let Some(filters) = value.as_array() {
                                 let condition = Self::format_logical_filters::<M>(filters, " AND ");
-                                conditions.push(condition);
+                                logical_and_conditions.push(condition);
                             }
                         }
                         "$not" => {
                             if let Some(filters) = value.as_array() {
                                 let condition = Self::format_logical_filters::<M>(filters, " AND ");
-                                conditions.push(format!("(NOT {condition})"));
+                                logical_and_conditions.push(format!("(NOT {condition})"));
                             }
                         }
                         "$nor" => {
                             if let Some(filters) = value.as_array() {
                                 let condition = Self::format_logical_filters::<M>(filters, " OR ");
-                                conditions.push(format!("(NOT {condition})"));
+                                logical_and_conditions.push(format!("(NOT {condition})"));
                             }
                         }
                         "$or" => {
                             if let Some(filters) = value.as_array() {
                                 let condition = Self::format_logical_filters::<M>(filters, " OR ");
-                                conditions.push(condition);
+                                logical_and_conditions.push(condition);
                             }
                         }
                         "$ovlp" => {
@@ -251,7 +252,7 @@ pub(super) trait QueryExt<DB> {
                                             r#"({start_field} <= {end_value} AND {end_field} >= {start_value})"#
                                         )
                                     };
-                                    conditions.push(condition);
+                                    logical_and_conditions.push(condition);
                                 }
                             }
                         }
@@ -259,16 +260,20 @@ pub(super) trait QueryExt<DB> {
                             if let Some(col) = M::get_column(key) {
                                 let condition = col.format_filter(key, value);
                                 if !condition.is_empty() {
-                                    conditions.push(condition);
+                                    logical_and_conditions.push(condition);
                                 }
                             } else if key.contains('.') {
                                 let condition = Self::format_filter(key, value);
                                 if !condition.is_empty() {
-                                    conditions.push(condition);
+                                    logical_and_conditions.push(condition);
                                 }
                             }
                         }
                     }
+                }
+                if !logical_and_conditions.is_empty() {
+                    let condition = format!("({})", logical_and_conditions.join(" AND "));
+                    conditions.push(condition);
                 }
             }
         }
