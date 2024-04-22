@@ -228,7 +228,7 @@ version = "0.18.1"
 optional = true
 
 [dependencies.chrono]
-version = "0.4.37"
+version = "0.4.38"
 features = ["serde"]
 
 [dependencies.ctr]
@@ -295,7 +295,7 @@ features = [
 ]
 
 [dependencies.sentry]
-version = "0.32.2"
+version = "0.32.3"
 optional = true
 
 [dependencies.sentry-tracing]
@@ -303,11 +303,11 @@ version = "0.32.2"
 optional = true
 
 [dependencies.serde]
-version = "1.0.197"
+version = "1.0.198"
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1.0.115"
+version = "1.0.116"
 features = ["raw_value"]
 
 [dependencies.sm3]

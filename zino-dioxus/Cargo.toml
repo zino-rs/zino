@@ -24,7 +24,7 @@ version = "0.4.37"
 features = ["serde"]
 
 [dependencies.dioxus-free-icons]
-version = "0.8.3"
+version = "0.8.5"
 features = ["font-awesome-solid"]
 
 [dependencies.uuid]

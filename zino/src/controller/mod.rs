@@ -247,13 +247,17 @@ where
 
     async fn batch_delete(mut req: Self::Request) -> Self::Result {
         let data = req.parse_body::<JsonValue>().await?;
-        let filters = if let JsonValue::Object(map) = data {
-            map
+        let mut query = if let JsonValue::Object(map) = data {
+            Query::new(map)
         } else {
             let primary_key_values = Map::from_entry("$in", data);
-            Map::from_entry(Self::PRIMARY_KEY_NAME, primary_key_values)
+            Query::from_entry(Self::PRIMARY_KEY_NAME, primary_key_values)
         };
-        let query = Query::new(filters);
+        let extension = req.get_data::<<Self as ModelHooks>::Extension>();
+        Self::before_list(&mut query, extension.as_ref())
+            .await
+            .extract(&req)?;
+
         let ctx = Self::delete_many(&query).await.extract(&req)?;
         let data = Map::from_entry("rows_affected", ctx.rows_affected());
         let mut res = Response::default().context(&req);
@@ -269,7 +273,7 @@ where
         let mut rows_affected = 0;
         for mut map in data.into_iter() {
             if let Some(id) = map.remove(primary_key_name) {
-                let query = Query::new(Map::from_entry(primary_key_name, id));
+                let query = Query::from_entry(primary_key_name, id);
                 let mut mutation = Mutation::new(map);
                 let ctx = Self::update_one(&query, &mut mutation)
                     .await
