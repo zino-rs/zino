@@ -14,5 +14,10 @@ cfg_if::cfg_if! {
         pub(crate) mod dioxus_desktop;
 
         use plugin_loader::load_plugins;
+    } else if #[cfg(feature = "ntex")] {
+        mod plugin_loader;
+        pub(crate) mod ntex_cluster;
+
+        use plugin_loader::load_plugins;
     }
 }

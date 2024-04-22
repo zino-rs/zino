@@ -1,0 +1,22 @@
+name = "Authentication"
+
+[[endpoints]]
+path = "/auth/login"
+method = "POST"
+summary = "Logins the user account"
+securities = []
+
+[endpoints.body]
+type = "object"
+account = { type = "string", description = "User account" }
+password = { type = "string", format = "password", description = "User password" }
+
+[[endpoints]]
+path = "/auth/refresh"
+method = "GET"
+summary = "Refreshes the access token"
+
+[[endpoints]]
+path = "/auth/logout"
+method = "POST"
+summary = "Logouts the user account"

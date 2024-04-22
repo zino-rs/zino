@@ -95,9 +95,9 @@ impl RequestContext for ActixExtractor<HttpRequest> {
     }
 
     #[inline]
-    async fn read_body_bytes(&mut self) -> Result<Bytes, Error> {
+    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error> {
         let bytes = Bytes::from_request(&self.0, &mut self.1).await?;
-        Ok(bytes)
+        Ok(bytes.to_vec())
     }
 }
 

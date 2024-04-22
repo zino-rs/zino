@@ -5,6 +5,7 @@ members = [
     "axum-app",
     "dioxus-desktop",
     "minimal-app",
+    "ntex-app",
 ]
 
 [profile.release]

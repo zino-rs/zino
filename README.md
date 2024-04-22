@@ -18,11 +18,11 @@ which emphasizes **simplicity**, **extensibility** and **productivity**.
 - 📅 Lightweight scheduler for sync and async cron jobs.
 - 💠 Unified access to storage services, data sources and chatbots.
 - 📊 Built-in support for [`tracing`], [`metrics`] and logging.
-- 💖 Full integrations with [`actix-web`], [`axum`] and [`dioxus`].
+- 💖 Full integrations with [`actix-web`], [`axum`], [`dioxus`] and [`ntex`].
 
 ## Getting started
 
-You can start with the example [`actix-app`], [`axum-app`] or [`dioxus-desktop`].
+You can start with the example [`actix-app`], [`axum-app`], [`dioxus-desktop`] or [`ntex-app`].
 It requires **Rust 1.75+** to build the project.
 
 ```shell
@@ -38,7 +38,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-zino = { version = "0.20", features = ["axum"] }
+zino = { version = "0.21", features = ["axum"] }
 ```
 
 ```rust
@@ -94,8 +94,10 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [`actix-web`]: https://crates.io/crates/actix-web
 [`axum`]: https://crates.io/crates/axum
 [`dioxus`]: https://crates.io/crates/dioxus
+[`ntex`]: https://crates.io/crates/ntex
 [`actix-app`]: https://github.com/zino-rs/zino/tree/main/examples/actix-app
 [`axum-app`]: https://github.com/zino-rs/zino/tree/main/examples/axum-app
 [`dioxus-desktop`]: https://github.com/zino-rs/zino/tree/main/examples/dioxus-desktop
+[`ntex-app`]: https://github.com/zino-rs/zino/tree/main/examples/ntex-app
 [license]: https://github.com/zino-rs/zino/blob/main/LICENSE
 [zino-issue]: https://github.com/zino-rs/zino/issues/new

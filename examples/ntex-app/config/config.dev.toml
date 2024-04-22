@@ -1,0 +1,54 @@
+# --env=dev
+
+name = "data-cube"
+version = "0.6.4"
+
+[dirs]
+uploads = "local/uploads"
+
+[debug]
+host = "127.0.0.1"
+port = 6070
+
+[main]
+host = "127.0.0.1"
+port = 6080
+
+[[standby]]
+host = "127.0.0.1"
+port = 6081
+tag = "portal"
+
+[[standby]]
+host = "127.0.0.1"
+port = 6082
+tag = "admin"
+
+[database]
+namespace = "dc"
+max-rows = 10000
+
+[[postgres]]
+host = "127.0.0.1"
+port = 5432
+database = "data_cube"
+username = "postgres"
+password = "smcddNr2mrpwgYvO6ICRLPFfLFd27WySGN9a7a9JrsYP3tIP"
+
+[[sqlite]]
+database = "local/data/main.db"
+
+[tracing]
+filter = "info,sqlx=info,zino=trace,zino_core=trace"
+
+[metrics]
+exporter = "prometheus"
+host = "127.0.0.1"
+port = 9000
+
+[jwt]
+max-age = "20m"
+refresh-interval = "7d"
+
+[openapi]
+custom-html = "local/docs/rapidoc.html"

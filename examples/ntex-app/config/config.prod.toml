@@ -1,0 +1,51 @@
+# --env=prod
+
+name = "data-cube"
+version = "0.6.4"
+
+[dirs]
+uploads = "local/uploads"
+
+[debug]
+host = "127.0.0.1"
+port = 6070
+
+[main]
+host = "127.0.0.1"
+port = 6080
+
+[[standby]]
+host = "127.0.0.1"
+port = 6081
+tag = "portal"
+
+[[standby]]
+host = "127.0.0.1"
+port = 6082
+tag = "admin"
+
+[database]
+namespace = "dc"
+
+[[postgres]]
+host = "127.0.0.1"
+port = 5432
+database = "data_cube"
+username = "postgres"
+password = "uzU7eGgSw6HLp63qbjpMQMnl4Kk0SrDDp9bIXkRmcjqwRFRf"
+
+[[sqlite]]
+database = "local/data/main.db"
+
+[tracing]
+level = "warn"
+
+[metrics]
+exporter = "prometheus"
+host = "127.0.0.1"
+port = 9000
+
+[openapi]
+show-docs = true
+rapidoc-route = "/rapidoc"
+custom-html = "local/docs/rapidoc.html"

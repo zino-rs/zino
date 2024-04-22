@@ -20,11 +20,11 @@ which emphasizes **simplicity**, **extensibility** and **productivity**.
 - 📅 Lightweight scheduler for sync and async cron jobs.
 - 💠 Unified access to storage services, data sources and chatbots.
 - 📊 Built-in support for [`tracing`], [`metrics`] and logging.
-- 💖 Full integrations with [`actix-web`], [`axum`] and [`dioxus`].
+- 💖 Full integrations with [`actix-web`], [`axum`], [`dioxus`] and [`ntex`].
 
 ## Getting started
 
-You can start with the example [`actix-app`], [`axum-app`] or [`dioxus-desktop`].
+You can start with the example [`actix-app`], [`axum-app`], [`dioxus-desktop`] or [`ntex-app`].
 
 Here is the simplest application to run a server:
 ```toml
@@ -34,7 +34,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-zino = { version = "0.20", features = ["axum"] }
+zino = { version = "0.21", features = ["axum"] }
 ```
 
 ```rust,ignore
@@ -56,6 +56,7 @@ The following optional features are available:
 | `dioxus`     | Enables the integration with [`dioxus`].             | No       |
 | `i18n`       | Enables the support for internationalization.        | No       |
 | `jwt`        | Enables the support for JSON Web Token.              | No       |
+| `ntex`       | Enables the integration with [`ntex`].               | No       |
 | `orm`        | Enables the ORM for MySQL, PostgreSQL or **SQLite**. | No       |
 
 [`zino`]: https://github.com/zino-rs/zino
@@ -65,6 +66,8 @@ The following optional features are available:
 [`actix-web`]: https://crates.io/crates/actix-web
 [`axum`]: https://crates.io/crates/axum
 [`dioxus`]: https://crates.io/crates/dioxus
+[`ntex`]: https://crates.io/crates/ntex
 [`actix-app`]: https://github.com/zino-rs/zino/tree/main/examples/actix-app
 [`axum-app`]: https://github.com/zino-rs/zino/tree/main/examples/axum-app
 [`dioxus-desktop`]: https://github.com/zino-rs/zino/tree/main/examples/dioxus-desktop
+[`ntex-app`]: https://github.com/zino-rs/zino/tree/main/examples/ntex-app

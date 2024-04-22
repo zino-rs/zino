@@ -1,0 +1,46 @@
+[package]
+name = "ntex-app"
+description = "An example for ntex integration."
+version = "0.1.0"
+rust-version = "1.75"
+edition = "2021"
+publish = false
+
+[dependencies]
+tracing = "0.1.40"
+
+[dependencies.ntex]
+version = "1.2.1"
+default-features = false
+
+[dependencies.serde]
+version = "1.0.198"
+features = ["derive"]
+
+[dependencies.zino]
+path = "../../zino"
+version = "0.21.0"
+features = [
+    "ntex",
+    "i18n",
+    "jwt",
+    "orm",
+]
+
+[dependencies.zino-core]
+path = "../../zino-core"
+version = "0.22.0"
+features = [
+    "cookie",
+    "env-filter",
+    "orm-postgres",
+    "view-minijinja",
+]
+
+[dependencies.zino-derive]
+path = "../../zino-derive"
+version = "0.19.0"
+
+[dependencies.zino-model]
+path = "../../zino-model"
+version = "0.19.0"

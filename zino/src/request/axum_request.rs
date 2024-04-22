@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 use axum::{
-    body::Bytes,
     extract::{ConnectInfo, FromRequest, MatchedPath, OriginalUri, Request},
     http::{HeaderMap, Method},
 };
@@ -117,10 +116,10 @@ impl RequestContext for AxumExtractor<Request> {
     }
 
     #[inline]
-    async fn read_body_bytes(&mut self) -> Result<Bytes, Error> {
+    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error> {
         let body = mem::take(self.body_mut());
         let bytes = axum::body::to_bytes(body, usize::MAX).await?;
-        Ok(bytes)
+        Ok(bytes.to_vec())
     }
 }
 

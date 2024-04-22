@@ -56,5 +56,24 @@ cfg_if::cfg_if! {
 
         /// Desktop applications for `dioxus`.
         pub type Desktop<R> = DioxusDesktop<R>;
+    } else if #[cfg(feature = "ntex")] {
+        use crate::application::ntex_cluster::NtexCluster;
+        use crate::request::ntex_request::NtexExtractor;
+        use crate::response::ntex_response::{NtexRejection, NtexResponse};
+
+        /// HTTP server cluster for `ntex`.
+        pub type Cluster = NtexCluster;
+
+        /// Router configure for `ntex`.
+        pub type RouterConfigure = fn(cfg: &mut ntex::web::ServiceConfig);
+
+        /// A specialized request extractor for `ntex`.
+        pub type Request = NtexExtractor<ntex::web::HttpRequest>;
+
+        /// A specialized response for `ntex`.
+        pub type Response = zino_core::response::Response<ntex::http::StatusCode>;
+
+        /// A specialized `Result` type for `ntex`.
+        pub type Result<T = NtexResponse> = std::result::Result<T, NtexRejection>;
     }
 }

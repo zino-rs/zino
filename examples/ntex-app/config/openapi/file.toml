@@ -1,0 +1,22 @@
+name = "Files"
+
+[[endpoints]]
+path = "/file/upload"
+method = "POST"
+summary = "Uploads the file"
+
+[endpoints.body]
+content_type = "multipart/form-data"
+required = ["file"]
+file = { type = "string", format = "binary", description = "File content" }
+
+[[endpoints]]
+path = "/file/decrypt"
+method = "GET"
+summary = "Decrypts the file"
+
+[endpoints.query]
+required = ["file_name", "access_key_id", "security_token"]
+file_name = { type = "string", description = "File name" }
+access_key_id = { type = "string", description = "Access key ID" }
+security_token = { type = "string", description = "Security token" }

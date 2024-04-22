@@ -52,7 +52,7 @@ pub trait DefaultController<K, U> {
     async fn mock(req: Self::Request) -> Self::Result;
 }
 
-#[cfg(any(feature = "actix", feature = "axum"))]
+#[cfg(any(feature = "actix", feature = "axum", feature = "ntex"))]
 #[cfg(feature = "orm")]
 use zino_core::{
     extension::JsonObjectExt,
@@ -63,7 +63,7 @@ use zino_core::{
     JsonValue, Map,
 };
 
-#[cfg(any(feature = "actix", feature = "axum"))]
+#[cfg(any(feature = "actix", feature = "axum", feature = "ntex"))]
 #[cfg(feature = "orm")]
 impl<K, U, M> DefaultController<K, U> for M
 where
