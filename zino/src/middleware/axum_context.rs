@@ -1,8 +1,8 @@
-use axum::{body::Body, http, middleware::Next, response::Response};
+use axum::{http, middleware::Next, response::Response};
 use tracing::Span;
 use zino_core::request::RequestContext;
 
-pub(crate) async fn request_context(req: crate::Request, next: Next<Body>) -> Response {
+pub(crate) async fn request_context(req: crate::Request, next: Next) -> Response {
     let new_context = req.get_context().is_none().then(|| req.new_context());
 
     let mut req = http::Request::from(req);

@@ -5,6 +5,7 @@ use crate::{
     trace::TraceContext,
     warn, JsonValue, Map, Uuid,
 };
+use http::Extensions;
 use reqwest::{
     header::{self, HeaderMap, HeaderName},
     multipart::Form,
@@ -20,7 +21,6 @@ use std::{
     sync::OnceLock,
     time::{Duration, Instant},
 };
-use task_local_extensions::Extensions;
 use tracing::{field::Empty, Span};
 
 /// Initializes the HTTP client.

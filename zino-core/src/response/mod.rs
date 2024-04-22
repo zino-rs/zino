@@ -31,6 +31,9 @@ pub use response_code::ResponseCode;
 pub use webhook::WebHook;
 
 /// An HTTP status code.
+#[cfg(feature = "http02")]
+pub type StatusCode = http02::StatusCode;
+#[cfg(not(feature = "http02"))]
 pub type StatusCode = http::StatusCode;
 
 /// A function pointer of transforming the response data.

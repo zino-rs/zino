@@ -3,7 +3,7 @@ use axum::{body::Body, http::Request, middleware::Next, response::Response};
 // Corrects the uri path to achieve the following goals:
 //   /page -> ${page-dir}/index.html
 //   /page/login -> ${page-dir}/login.html
-pub(crate) async fn serve_static_pages(mut req: Request<Body>, next: Next<Body>) -> Response {
+pub(crate) async fn serve_static_pages(mut req: Request<Body>, next: Next) -> Response {
     let uri = req.uri();
     let path = uri.path();
     if let Some((_, name)) = path.rsplit_once('/') {

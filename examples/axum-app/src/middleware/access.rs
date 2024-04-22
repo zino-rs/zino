@@ -1,9 +1,9 @@
 use crate::model::User;
-use axum::{body::Body, middleware::Next, response::Response};
+use axum::{middleware::Next, response::Response};
 use zino::{prelude::*, Request, Result};
 use zino_model::user::JwtAuthService;
 
-pub async fn init_user_session(mut req: Request, next: Next<Body>) -> Result<Response> {
+pub async fn init_user_session(mut req: Request, next: Next) -> Result<Response> {
     let claims = req
         .parse_jwt_claims(JwtClaims::shared_key())
         .map_err(|rejection| rejection.context(&req))?;

@@ -1,17 +1,15 @@
 use async_trait::async_trait;
 use axum::{
-    body::{Body, HttpBody},
-    extract::{ConnectInfo, FromRequest, MatchedPath, OriginalUri},
-    http::{HeaderMap, Method, Request},
+    body::Bytes,
+    extract::{ConnectInfo, FromRequest, MatchedPath, OriginalUri, Request},
+    http::{HeaderMap, Method},
 };
-use bytes::{Buf, BufMut};
 use std::{
     borrow::Cow,
     convert::Infallible,
-    marker::Unpin,
+    mem,
     net::{IpAddr, SocketAddr},
     ops::{Deref, DerefMut},
-    pin::Pin,
 };
 use zino_core::{
     error::Error,
@@ -39,21 +37,21 @@ impl<T> DerefMut for AxumExtractor<T> {
     }
 }
 
-impl From<Request<Body>> for AxumExtractor<Request<Body>> {
+impl From<Request> for AxumExtractor<Request> {
     #[inline]
-    fn from(request: Request<Body>) -> Self {
+    fn from(request: Request) -> Self {
         Self(request)
     }
 }
 
-impl From<AxumExtractor<Request<Body>>> for Request<Body> {
+impl From<AxumExtractor<Request>> for Request {
     #[inline]
-    fn from(extractor: AxumExtractor<Request<Body>>) -> Self {
+    fn from(extractor: AxumExtractor<Request>) -> Self {
         extractor.0
     }
 }
 
-impl RequestContext for AxumExtractor<Request<Body>> {
+impl RequestContext for AxumExtractor<Request> {
     type Method = Method;
     type Headers = HeaderMap;
 
@@ -119,56 +117,19 @@ impl RequestContext for AxumExtractor<Request<Body>> {
     }
 
     #[inline]
-    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error> {
-        let bytes = to_bytes(self.body_mut()).await?;
+    async fn read_body_bytes(&mut self) -> Result<Bytes, Error> {
+        let body = mem::take(self.body_mut());
+        let bytes = axum::body::to_bytes(body, usize::MAX).await?;
         Ok(bytes)
     }
 }
 
 #[async_trait]
-impl FromRequest<(), Body> for AxumExtractor<Request<Body>> {
+impl FromRequest<()> for AxumExtractor<Request> {
     type Rejection = Infallible;
 
     #[inline]
-    async fn from_request(req: Request<Body>, _state: &()) -> Result<Self, Self::Rejection> {
+    async fn from_request(req: Request, _state: &()) -> Result<Self, Self::Rejection> {
         Ok(AxumExtractor(req))
     }
-}
-
-/// Concatenates the buffers from a body into a single `Bytes` asynchronously.
-///
-/// Copy from https://docs.rs/hyper/0.14.27/hyper/body/fn.to_bytes.html
-async fn to_bytes<T: HttpBody + Unpin>(mut body: T) -> Result<Vec<u8>, T::Error> {
-    let _ = Pin::new(&mut body);
-
-    // If there's only 1 chunk, we can just return Buf::to_bytes()
-    let mut first = if let Some(buf) = body.data().await {
-        buf?
-    } else {
-        return Ok(Vec::new());
-    };
-
-    let second = if let Some(buf) = body.data().await {
-        buf?
-    } else {
-        return Ok(first.copy_to_bytes(first.remaining()).into());
-    };
-
-    // Don't pre-emptively reserve *too* much.
-    let rest = (body.size_hint().lower() as usize).min(1024 * 16);
-    let cap = first
-        .remaining()
-        .saturating_add(second.remaining())
-        .saturating_add(rest);
-
-    // With more than 1 buf, we gotta flatten into a Vec first.
-    let mut vec = Vec::with_capacity(cap);
-    vec.put(first);
-    vec.put(second);
-
-    while let Some(buf) = body.data().await {
-        vec.put(buf?);
-    }
-
-    Ok(vec)
 }

@@ -15,6 +15,7 @@ use crate::{
     validation::Validation,
     warn, JsonValue, Map, SharedString, Uuid,
 };
+use bytes::Bytes;
 use multer::Multipart;
 use serde::de::DeserializeOwned;
 use std::{borrow::Cow, net::IpAddr, str::FromStr, time::Instant};
@@ -42,6 +43,9 @@ mod context;
 pub use context::Context;
 
 /// The URI component of a request.
+#[cfg(feature = "http02")]
+pub type Uri = http02::Uri;
+#[cfg(not(feature = "http02"))]
 pub type Uri = http::Uri;
 
 /// Request context.
@@ -80,7 +84,7 @@ pub trait RequestContext {
     fn client_ip(&self) -> Option<IpAddr>;
 
     /// Reads the entire request body into a byte buffer.
-    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error>;
+    async fn read_body_bytes(&mut self) -> Result<Bytes, Error>;
 
     /// Returns the request path regardless of nesting.
     #[inline]

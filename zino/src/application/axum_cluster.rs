@@ -4,12 +4,12 @@ use axum::{
     extract::{rejection::LengthLimitError, DefaultBodyLimit},
     http::StatusCode,
     middleware::from_fn,
-    BoxError, Router, Server,
+    BoxError, Router,
 };
 use std::{
     any::Any, borrow::Cow, convert::Infallible, fs, net::SocketAddr, path::PathBuf, time::Duration,
 };
-use tokio::{runtime::Builder, signal};
+use tokio::{net::TcpListener, runtime::Builder, signal};
 use tower::{
     timeout::{error::Elapsed, TimeoutLayer},
     ServiceBuilder,
@@ -253,9 +253,17 @@ impl Application for AxumCluster {
                             ))
                             .layer(TimeoutLayer::new(request_timeout)),
                     );
-                Server::bind(&addr)
-                    .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+                Box::pin(async move {
+                    let tcp_listener = TcpListener::bind(&addr)
+                        .await
+                        .unwrap_or_else(|err| panic!("fail to listen on {addr}: {err}"));
+                    axum::serve(
+                        tcp_listener,
+                        app.into_make_service_with_connect_info::<SocketAddr>(),
+                    )
                     .with_graceful_shutdown(Self::shutdown())
+                    .await
+                })
             });
             for result in futures::future::join_all(servers).await {
                 if let Err(err) = result {

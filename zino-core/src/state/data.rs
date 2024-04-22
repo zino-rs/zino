@@ -2,7 +2,7 @@ use parking_lot::RwLock;
 use std::mem;
 
 /// Data wrapper.
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Data<T>(T);
 
 impl<T> Data<T> {

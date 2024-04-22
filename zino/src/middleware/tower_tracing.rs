@@ -1,5 +1,5 @@
 use axum::{
-    body::{Body, BoxBody, Bytes},
+    body::{Body, Bytes},
     http::{HeaderMap, Request, Response},
 };
 use std::time::Duration;
@@ -15,7 +15,7 @@ use zino_core::{
 /// Type aliases.
 type CustomMakeSpan = fn(&Request<Body>) -> Span;
 type CustomOnRequest = fn(&Request<Body>, &Span);
-type CustomOnResponse = fn(&Response<BoxBody>, Duration, &Span);
+type CustomOnResponse = fn(&Response<Body>, Duration, &Span);
 type CustomOnBodyChunk = fn(&Bytes, Duration, &Span);
 type CustomOnEos = fn(Option<&HeaderMap>, Duration, &Span);
 type CustomOnFailure = fn(StatusInRangeFailureClass, Duration, &Span);
@@ -136,7 +136,7 @@ fn custom_on_request(request: &Request<Body>, span: &Span) {
     tracing::debug!("started processing request");
 }
 
-fn custom_on_response(response: &Response<BoxBody>, latency: Duration, span: &Span) {
+fn custom_on_response(response: &Response<Body>, latency: Duration, span: &Span) {
     let headers = response.headers();
     let traceparent = headers.get_str("traceparent");
     span.record(
