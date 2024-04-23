@@ -21,9 +21,9 @@ features = ["derive"]
 path = "../../zino"
 version = "0.21.0"
 features = [
-    "ntex",
     "i18n",
     "jwt",
+    "ntex",
     "orm",
 ]
 

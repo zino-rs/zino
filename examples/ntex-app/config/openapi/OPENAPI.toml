@@ -1,9 +1,9 @@
 [info]
 title = "DataCube API"
 description = """
-An example for [actix-web] integration.
+An example for [ntex] integration.
 
-[actix-web]: https://crates.io/crates/actix-web
+[ntex]: https://crates.io/crates/ntex
 """
 contact = { url = "https://github.com/zino-rs/zino" }
 license = "MIT"

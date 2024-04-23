@@ -17,7 +17,7 @@ pub fn job_scheduler() -> JobScheduler {
 pub fn async_job_scheduler() -> AsyncJobScheduler {
     let mut scheduler = AsyncJobScheduler::new();
 
-    let job = AsyncJob::new("0/25 * * * * *", job::every_hour as AsyncCronJob).immediate(true);
+    let job = AsyncJob::new("0 0 * * * *", job::every_hour as AsyncCronJob).immediate(true);
     scheduler.add(job);
 
     scheduler
