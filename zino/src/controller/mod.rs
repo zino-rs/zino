@@ -78,7 +78,11 @@ where
     async fn new(mut req: Self::Request) -> Self::Result {
         let mut model = Self::new();
         let mut res = req.model_validation(&mut model).await?;
-        model.before_check().await.extract(&req)?;
+        let extension = req.get_data::<<Self as ModelHooks>::Extension>();
+        model
+            .before_insert_check(extension.as_ref())
+            .await
+            .extract(&req)?;
 
         let validation = model.check_constraints().await.extract(&req)?;
         if !validation.is_success() {
@@ -97,7 +101,6 @@ where
             }
         }
 
-        let extension = req.get_data::<<Self as ModelHooks>::Extension>();
         Self::translate_model(&mut model_snapshot);
         Self::before_respond(&mut model_snapshot, extension.as_ref())
             .await
@@ -134,11 +137,16 @@ where
 
     async fn view(req: Self::Request) -> Self::Result {
         let id = req.parse_param::<K>("id")?;
-        let model = if req.get_query("fetch") == Some("false") {
+        let extension = req.get_data::<<Self as ModelHooks>::Extension>();
+        let mut model = if req.get_query("fetch") == Some("false") {
             Self::find_by_id(&id).await.extract(&req)?
         } else {
             Self::fetch_by_id(&id).await.extract(&req)?
         };
+        Self::before_respond(&mut model, extension.as_ref())
+            .await
+            .extract(&req)?;
+
         let mut res = Response::default().context(&req);
         res.set_json_data(Self::data_item(model));
         Ok(res.into())
@@ -214,7 +222,10 @@ where
             let mut model = Self::new();
             let mut validation = model.read_map(&map);
             if validation.is_success() {
-                model.before_check().await.extract(&req)?;
+                model
+                    .before_insert_check(extension.as_ref())
+                    .await
+                    .extract(&req)?;
                 validation = model.check_constraints().await.extract(&req)?;
             }
             if validation.is_success() {
@@ -332,7 +343,10 @@ where
             let mut model = Self::new();
             let mut validation = model.read_map(&map);
             if validation.is_success() && !no_check {
-                model.before_check().await.extract(&req)?;
+                model
+                    .before_insert_check(extension.as_ref())
+                    .await
+                    .extract(&req)?;
                 validation = model.check_constraints().await.extract(&req)?;
             }
             if validation.is_success() {

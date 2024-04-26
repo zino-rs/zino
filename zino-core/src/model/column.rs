@@ -2,7 +2,7 @@ use super::Reference;
 use crate::{
     datetime::{Date, DateTime, Time},
     extension::{JsonObjectExt, JsonValueExt},
-    mock, JsonValue, Map, Uuid,
+    mock, Decimal, JsonValue, Map, Uuid,
 };
 use apache_avro::schema::{Name, RecordField, RecordFieldOrder, Schema, UnionSchema};
 use rand::{
@@ -374,6 +374,13 @@ impl<'a> Column<'a> {
             "f64" => {
                 definition.upsert("type", "number");
                 definition.upsert("format", "double");
+            }
+            "Decimal" => {
+                definition.upsert("type", "number");
+                definition.upsert("format", "double");
+                if let Some(scale) = extra.get_u32("scale") {
+                    definition.upsert("multipleOf", Decimal::new(1, scale).to_string());
+                }
             }
             "String" | "Option<String>" => {
                 definition.upsert("type", "string");

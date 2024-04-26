@@ -146,6 +146,12 @@ impl<U, T> UserSession<U, String, T> {
         self.roles() == ["guest"]
     }
 
+    /// Returns `true` if the user has a role of `agent`.
+    #[inline]
+    pub fn is_agent(&self) -> bool {
+        self.roles() == ["agent"]
+    }
+
     /// Returns `true` if the user has a role of `admin`.
     pub fn is_admin(&self) -> bool {
         let role = "admin";
