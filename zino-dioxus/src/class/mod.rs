@@ -152,22 +152,3 @@ impl fmt::Display for Class {
         write!(f, "{format}")
     }
 }
-
-/// Formats the class with a default value.
-#[macro_export]
-macro_rules! format_class {
-    ($props:ident, $default_class:expr) => {
-        $props
-            .class
-            .as_ref()
-            .map(Class::format)
-            .unwrap_or_else(|| $default_class.into())
-    };
-    ($props:ident, $class_prop:ident, $default_class:expr) => {
-        $props
-            .$class_prop
-            .as_ref()
-            .map(Class::format)
-            .unwrap_or_else(|| $default_class.into())
-    };
-}

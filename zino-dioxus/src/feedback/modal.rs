@@ -1,16 +1,17 @@
-use crate::{class::Class, format_class};
+use crate::class::Class;
 use dioxus::prelude::*;
 use zino_core::SharedString;
 
 /// A classic modal with a header and a body.
 pub fn ModalCard(props: ModalCardProps) -> Element {
-    let class = format_class!(props, "modal");
-    let active_class = format_class!(props, active_class, "is-active");
-    let close_class = format_class!(props, close_class, "delete");
+    let class = props.class;
+    let active_class = props.active_class;
+    let title_class = props.title_class;
+    let close_class = props.close_class;
     let container_class = if props.visible {
-        format!("{class} {active_class}").into()
+        format!("{class} {active_class}")
     } else {
-        class
+        class.to_string()
     };
     rsx! {
         div {
@@ -21,7 +22,7 @@ pub fn ModalCard(props: ModalCardProps) -> Element {
                 header {
                     class: "modal-card-head",
                     div {
-                        class: "modal-card-title",
+                        class: "modal-card-title {title_class}",
                         "{props.title}"
                     }
                     button {
@@ -46,18 +47,21 @@ pub fn ModalCard(props: ModalCardProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct ModalCardProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "modal".into())]
+    pub class: Class,
     /// A class to apply when the modal is visible.
-    #[props(into)]
-    pub active_class: Option<Class>,
-    // A class to apply to the `close` button element.
-    #[props(into)]
-    pub close_class: Option<Class>,
+    #[props(into, default = "is-active".into())]
+    pub active_class: Class,
+    // A class to apply to the modal title.
+    #[props(into, default)]
+    pub title_class: Class,
+    /// A class to apply to the `close` button element.
+    #[props(into, default = "delete".into())]
+    pub close_class: Class,
     /// An event handler to be called when the `close` button is clicked.
     pub on_close: Option<EventHandler<MouseEvent>>,
     /// A flag to determine whether the modal is visible or not.
-    #[props(default = false)]
+    #[props(default)]
     pub visible: bool,
     /// The title in the modal header.
     #[props(into)]

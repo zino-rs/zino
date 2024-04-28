@@ -1,11 +1,11 @@
-use crate::{class::Class, extension::VNodeExt, format_class};
+use crate::{class::Class, extension::VNodeExt};
 use dioxus::prelude::*;
 use dioxus_router::components::{IntoRoutable, Link};
 
 /// A responsive navigation header.
 pub fn Navbar(props: NavbarProps) -> Element {
     let children = props.children.as_ref()?;
-    let class = format_class!(props, "navbar is-link");
+    let class = props.class;
     if children.has_component("NavbarBrand") {
         rsx! {
             nav {
@@ -29,15 +29,15 @@ pub fn Navbar(props: NavbarProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "navbar is-info".into())]
+    pub class: Class,
     /// The children to render within the component.
     children: Element,
 }
 
 /// A container for the logo and optionally some links or icons.
 pub fn NavbarBrand(props: NavbarBrandProps) -> Element {
-    let class = format_class!(props, "navbar-brand");
+    let class = props.class;
     rsx! {
         div {
             class: "{class}",
@@ -50,15 +50,15 @@ pub fn NavbarBrand(props: NavbarBrandProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarBrandProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "navbar-brand".into())]
+    pub class: Class,
     /// The children to render within the component.
     children: Element,
 }
 
 /// A horizontal menu used in the navigation header.
 pub fn NavbarMenu(props: NavbarMenuProps) -> Element {
-    let class = format_class!(props, "navbar-menu is-active");
+    let class = props.class;
     rsx! {
         div {
             class: "{class}",
@@ -71,15 +71,15 @@ pub fn NavbarMenu(props: NavbarMenuProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarMenuProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "navbar-menu is-active".into())]
+    pub class: Class,
     /// The children to render within the component.
     children: Element,
 }
 
 /// The left section of the navbar menu.
 pub fn NavbarStart(props: NavbarStartProps) -> Element {
-    let class = format_class!(props, "navbar-start");
+    let class = props.class;
     rsx! {
         div {
             class: "{class}",
@@ -92,15 +92,15 @@ pub fn NavbarStart(props: NavbarStartProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarStartProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "navbar-start".into())]
+    pub class: Class,
     /// The children to render within the component.
     children: Element,
 }
 
 /// The middle section of the navbar menu.
 pub fn NavbarCenter(props: NavbarCenterProps) -> Element {
-    let class = format_class!(props, "navbar-center");
+    let class = props.class;
     rsx! {
         div {
             class: "{class}",
@@ -113,15 +113,15 @@ pub fn NavbarCenter(props: NavbarCenterProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarCenterProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "navbar-center".into())]
+    pub class: Class,
     /// The children to render within the component.
     children: Element,
 }
 
 /// The right section of the navbar menu.
 pub fn NavbarEnd(props: NavbarEndProps) -> Element {
-    let class = format_class!(props, "navbar-end");
+    let class = props.class;
     rsx! {
         div {
             class: "{class}",
@@ -134,16 +134,16 @@ pub fn NavbarEnd(props: NavbarEndProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarEndProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "navbar-end".into())]
+    pub class: Class,
     /// The children to render within the component.
     children: Element,
 }
 
 /// A link to navigate to another route in the navigation header.
 pub fn NavbarLink(props: NavbarLinkProps) -> Element {
-    let class = format_class!(props, "navbar-item");
-    let active_class = format_class!(props, "is-active");
+    let class = props.class;
+    let active_class = props.active_class;
     rsx! {
         Link {
             class: "{class}",
@@ -158,11 +158,11 @@ pub fn NavbarLink(props: NavbarLinkProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarLinkProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "navbar-item".into())]
+    pub class: Class,
     /// A class to apply to the generate HTML anchor tag if the `target` route is active.
-    #[props(into)]
-    pub active_class: Option<Class>,
+    #[props(into, default = "is-active".into())]
+    pub active_class: Class,
     /// The navigation target. Roughly equivalent to the href attribute of an HTML anchor tag.
     #[props(into)]
     pub to: IntoRoutable,
@@ -172,7 +172,7 @@ pub struct NavbarLinkProps {
 
 /// A container for each single item of the navbar.
 pub fn NavbarItem(props: NavbarItemProps) -> Element {
-    let class = format_class!(props, "navbar-item");
+    let class = props.class;
     rsx! {
         div {
             class: "{class}",
@@ -185,8 +185,8 @@ pub fn NavbarItem(props: NavbarItemProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarItemProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "navbar-item".into())]
+    pub class: Class,
     /// The children to render within the component.
     children: Element,
 }

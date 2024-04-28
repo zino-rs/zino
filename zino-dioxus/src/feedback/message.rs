@@ -1,4 +1,4 @@
-use crate::{class::Class, format_class};
+use crate::class::Class;
 use dioxus::prelude::*;
 use zino_core::SharedString;
 
@@ -8,9 +8,9 @@ pub fn Message(props: MessageProps) -> Element {
         return None;
     }
 
-    let class = format_class!(props, "message");
-    let close_class = format_class!(props, close_class, "delete");
-    let title = props.title.as_deref().unwrap_or_default();
+    let class = props.class;
+    let close_class = props.close_class;
+    let title = props.title;
     rsx! {
         div {
             class: "{class}",
@@ -40,19 +40,19 @@ pub fn Message(props: MessageProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct MessageProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "message".into())]
+    pub class: Class,
     /// A class to apply to the `close` button element.
-    #[props(into)]
-    pub close_class: Option<Class>,
+    #[props(into, default = "delete".into())]
+    pub close_class: Class,
     /// An event handler to be called when the `close` button is clicked.
     pub on_close: Option<EventHandler<bool>>,
     /// A flag to determine whether the message is hidden or not.
-    #[props(default = false)]
+    #[props(default)]
     pub hidden: bool,
     /// The title in the message header.
-    #[props(into)]
-    pub title: Option<SharedString>,
+    #[props(into, default)]
+    pub title: SharedString,
     /// The children to render within the component.
     children: Element,
 }

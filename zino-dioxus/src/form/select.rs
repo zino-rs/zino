@@ -1,11 +1,11 @@
 use super::DataEntry;
-use crate::{class::Class, format_class};
+use crate::class::Class;
 use dioxus::prelude::*;
 use zino_core::SharedString;
 
 /// A control that provides a menu of data entries.
 pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -> Element {
-    let class = format_class!(props, "select");
+    let class = props.class;
     let fullwidth_class = Class::check("is-fullwidth", props.fullwidth);
     let default_choice = props.options.first().cloned();
     let entries = props.options.clone();
@@ -46,18 +46,18 @@ pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -
 #[derive(Clone, PartialEq, Props)]
 pub struct DataSelectProps<T: Clone + PartialEq + 'static> {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "select".into())]
+    pub class: Class,
     /// The data options.
     pub options: Vec<T>,
     /// The name of the control.
     #[props(into)]
     pub name: SharedString,
     /// A flag to determine whether the control is fullwidth or not.
-    #[props(default = false)]
+    #[props(default)]
     pub fullwidth: bool,
     /// A flag to determine whether the control is required or not.
-    #[props(default = false)]
+    #[props(default)]
     pub required: bool,
     /// An event handler to be called when the choice is selected.
     pub on_select: Option<EventHandler<T>>,

@@ -114,7 +114,9 @@ where
         let encrypted_password = user
             .get_str(Self::PASSWORD_FIELD)
             .ok_or_else(|| warn!("404 Not Found: the user password is absent"))?;
-        if Self::verify_password(passowrd, encrypted_password)? {
+        if Self::verify_password(passowrd, encrypted_password)
+            .map_err(|_| warn!("401 Unauthorized: invalid user account or password"))?
+        {
             // Cann't use `get_str` because the primary key may be an integer
             let user_id = user
                 .parse_string(Self::PRIMARY_KEY_NAME)

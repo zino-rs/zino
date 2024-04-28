@@ -1,9 +1,9 @@
-use crate::{class::Class, format_class};
+use crate::class::Class;
 use dioxus::prelude::*;
 
 /// A responsive, fixed-width container with the `max-width` changes at each breakpoint.
 pub fn Container(props: ContainerProps) -> Element {
-    let class = format_class!(props, "container");
+    let class = props.class;
     rsx! {
         main {
             class: "{class}",
@@ -16,15 +16,15 @@ pub fn Container(props: ContainerProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct ContainerProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "container".into())]
+    pub class: Class,
     /// The children to render within the component.
     children: Element,
 }
 
 /// A full width container spanning the entire width of the viewport.
 pub fn FluidContainer(props: FluidContainerProps) -> Element {
-    let class = format_class!(props, "container-fluid");
+    let class = props.class;
     rsx! {
         main {
             class: "{class}",
@@ -37,15 +37,15 @@ pub fn FluidContainer(props: FluidContainerProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct FluidContainerProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "container-fluid".into())]
+    pub class: Class,
     /// The children to render within the component.
     children: Element,
 }
 
 /// A container rendered as the `<main>` element.
 pub fn MainContainer(props: MainContainerProps) -> Element {
-    let class = format_class!(props, "container-fluid px-3 my-3");
+    let class = props.class;
     rsx! {
         main {
             class: "{class}",
@@ -58,8 +58,8 @@ pub fn MainContainer(props: MainContainerProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct MainContainerProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "container-fluid px-3 my-3".into())]
+    pub class: Class,
     /// The children to render within the component.
     children: Element,
 }

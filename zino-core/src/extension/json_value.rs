@@ -4,6 +4,7 @@ use crate::{
     helper, Decimal, JsonValue, Map, Uuid,
 };
 use csv::{ByteRecord, Writer};
+use serde::de::DeserializeOwned;
 use std::{
     borrow::Cow,
     io::{self, ErrorKind},
@@ -162,6 +163,9 @@ pub trait JsonValueExt {
 
     /// Attempts to convert the JSON value to the JSON Lines bytes.
     fn to_jsonlines(&self, buffer: Vec<u8>) -> Result<Vec<u8>, serde_json::Error>;
+
+    /// Attempts to deserialize the JSON value as an instance of type `T`.
+    fn deserialize<T: DeserializeOwned>(self) -> Result<T, serde_json::Error>;
 
     /// Converts `self` into a map array.
     fn into_map_array(self) -> Vec<Map>;
@@ -505,6 +509,11 @@ impl JsonValueExt for JsonValue {
                 Ok(buffer)
             }
         }
+    }
+
+    #[inline]
+    fn deserialize<T: DeserializeOwned>(self) -> Result<T, serde_json::Error> {
+        serde_json::from_value(self)
     }
 
     #[inline]

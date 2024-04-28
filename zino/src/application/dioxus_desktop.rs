@@ -83,18 +83,38 @@ where
         let mut window_title = app_name;
         let mut app_window = WindowBuilder::new()
             .with_title(app_name)
-            .with_maximized(true)
-            .with_decorations(true);
+            .with_maximized(true);
         if let Some(config) = app_state.get_config("window") {
             if let Some(title) = config.get_str("title") {
                 app_window = app_window.with_title(title);
                 window_title = title;
             }
+            if let Some(resizable) = config.get_bool("resizable") {
+                app_window = app_window.with_resizable(resizable);
+            }
+            if let Some(minimizable) = config.get_bool("maximizable") {
+                app_window = app_window.with_minimizable(minimizable);
+            }
             if let Some(maximizable) = config.get_bool("maximizable") {
                 app_window = app_window.with_maximizable(maximizable);
             }
+            if let Some(closable) = config.get_bool("closable") {
+                app_window = app_window.with_closable(closable);
+            }
+            if let Some(visible) = config.get_bool("visible") {
+                app_window = app_window.with_visible(visible);
+            }
+            if let Some(transparent) = config.get_bool("transparent") {
+                app_window = app_window.with_transparent(transparent);
+            }
             if let Some(decorations) = config.get_bool("decorations") {
                 app_window = app_window.with_decorations(decorations);
+            }
+            if let Some(always_on_bottom) = config.get_bool("always-on-bottom") {
+                app_window = app_window.with_always_on_bottom(always_on_bottom);
+            }
+            if let Some(always_on_top) = config.get_bool("always-on-top") {
+                app_window = app_window.with_always_on_top(always_on_top);
             }
             if let Some(theme) = config.get_str("theme") {
                 let theme = match theme {
@@ -103,9 +123,6 @@ where
                     _ => Theme::default(),
                 };
                 app_window = app_window.with_theme(Some(theme));
-            }
-            if let Some(transparent) = config.get_bool("transparent") {
-                app_window = app_window.with_transparent(transparent);
             }
         }
 

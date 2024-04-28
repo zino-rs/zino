@@ -1,19 +1,17 @@
-use crate::{class::Class, format_class};
+use crate::class::Class;
 use dioxus::prelude::*;
 use zino_core::{JsonValue, SharedString};
 
 /// A fixed-width span with the custom alignment.
 pub fn FixedWidthSpan(props: FixedWidthSpanProps) -> Element {
-    let class = format_class!(props, "is-inline-block");
+    let class = props.class;
     let mut style = match props.width {
         JsonValue::Number(value) => format!("width:{value}px;"),
         JsonValue::String(value) => format!("width:{value};"),
         _ => String::new(),
     };
-    if let Some(alignment) = props.align.as_deref() {
-        style.push_str("text-align:");
-        style.push_str(alignment);
-    }
+    style.push_str("text-align:");
+    style.push_str(props.align.as_ref());
     rsx! {
         span {
             class: "{class}",
@@ -27,14 +25,14 @@ pub fn FixedWidthSpan(props: FixedWidthSpanProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct FixedWidthSpanProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "is-inline-block".into())]
+    pub class: Class,
     /// The width of the span.
     #[props(into)]
     pub width: JsonValue,
     /// The `text-align` CSS property: `left` | `right` | `center` | `justify`.
-    #[props(into)]
-    pub align: Option<SharedString>,
+    #[props(into, default = "left".into())]
+    pub align: SharedString,
     /// The children to render within the component.
     children: Element,
 }

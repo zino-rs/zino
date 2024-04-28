@@ -1,10 +1,10 @@
-use crate::{class::Class, format_class};
+use crate::class::Class;
 use dioxus::prelude::*;
 
 /// A simple colored block meant to draw the attention to the user about something.
 pub fn Notification(props: NotificationProps) -> Element {
-    let class = format_class!(props, "notification");
-    let close_class = format_class!(props, close_class, "delete");
+    let class = props.class;
+    let close_class = props.close_class;
     let hidden_class = Class::check("is-hidden", !props.visible);
     rsx! {
         div {
@@ -26,15 +26,15 @@ pub fn Notification(props: NotificationProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NotificationProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "notification".into())]
+    pub class: Class,
     /// A class to apply to the `close` button element.
-    #[props(into)]
-    pub close_class: Option<Class>,
+    #[props(into, default = "delete".into())]
+    pub close_class: Class,
     /// An event handler to be called when the `close` button is clicked.
     pub on_close: Option<EventHandler<MouseEvent>>,
     /// A flag to determine whether the modal is visible or not.
-    #[props(default = false)]
+    #[props(default)]
     pub visible: bool,
     /// The children to render within the component.
     children: Element,

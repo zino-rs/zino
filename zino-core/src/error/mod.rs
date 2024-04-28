@@ -7,7 +7,7 @@ mod source;
 use source::Source;
 
 /// An error type backed by an allocation-optimized string.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Error {
     /// Error message.
     message: SharedString,

@@ -1,4 +1,4 @@
-use crate::{class::Class, format_class, icon::SvgIcon};
+use crate::{class::Class, icon::SvgIcon};
 use dioxus::prelude::*;
 use dioxus_free_icons::icons::fa_solid_icons::{FaArrowLeft, FaArrowRight};
 use zino_core::SharedString;
@@ -13,14 +13,14 @@ pub fn Pagination(props: PaginationProps) -> Element {
         return None;
     }
 
-    let class = format_class!(props, "pagination");
+    let class = props.class;
     let prev_invisible = Class::check("is-invisible", current_page == 1 || page_count <= 5);
     let next_invisible = Class::check(
         "is-invisible",
         total <= current_page * page_size || page_count <= 5,
     );
-    let prev_text = props.prev_text.unwrap_or("Previous".into());
-    let next_text = props.next_text.unwrap_or("Next".into());
+    let prev_text = props.prev_text;
+    let next_text = props.next_text;
     rsx! {
         nav {
             class: "{class} is-centered",
@@ -206,8 +206,8 @@ pub fn Pagination(props: PaginationProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct PaginationProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "pagination".into())]
+    pub class: Class,
     /// Total number of data items.
     pub total: usize,
     /// Number of data items per page.
@@ -216,11 +216,11 @@ pub struct PaginationProps {
     /// The current page number.
     pub current_page: usize,
     /// The element for the previous button.
-    #[props(into, default = "Previous")]
-    pub prev_text: Option<SharedString>,
+    #[props(into, default = "Previous".into())]
+    pub prev_text: SharedString,
     /// The text for the next button.
-    #[props(into, default = "Next")]
-    pub next_text: Option<SharedString>,
+    #[props(into, default = "Next".into())]
+    pub next_text: SharedString,
     /// The element for the previous button.
     pub prev: Option<VNode>,
     /// The element for the next button.

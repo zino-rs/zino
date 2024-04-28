@@ -233,6 +233,9 @@ pub trait JsonObjectExt {
     /// Attempts to read the map as an instance of the model `M`.
     fn read_as_model<M: Model>(&self) -> Result<M, Validation>;
 
+    /// Serializes the map into a string.
+    fn to_string(&self) -> String;
+
     /// Serializes the map into a query string.
     fn to_query_string(&self) -> String;
 
@@ -713,6 +716,11 @@ impl JsonObjectExt for Map {
         } else {
             Err(validation)
         }
+    }
+
+    #[inline]
+    fn to_string(&self) -> String {
+        serde_json::to_string(&self).unwrap_or_default()
     }
 
     #[inline]

@@ -1,9 +1,9 @@
-use crate::{class::Class, format_class};
+use crate::class::Class;
 use dioxus::prelude::*;
 
 /// A vertical menu used in the navigation aside.
 pub fn Sidebar(props: SidebarProps) -> Element {
-    let class = format_class!(props, "sidebar");
+    let class = props.class;
     rsx! {
         div {
             class: "{class}",
@@ -16,8 +16,8 @@ pub fn Sidebar(props: SidebarProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct SidebarProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "sidebar".into())]
+    pub class: Class,
     /// The children to render within the component.
     children: Element,
 }

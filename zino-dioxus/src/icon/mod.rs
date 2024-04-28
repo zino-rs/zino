@@ -1,27 +1,28 @@
 //! Icon fonts or SVG icon shapes.
 
-use crate::{class::Class, format_class};
+use crate::class::Class;
 use dioxus::prelude::*;
 use dioxus_free_icons::IconShape;
 
 /// A container for any type of icon fonts.
 pub fn Icon(props: IconProps) -> Element {
-    let class = format_class!(props, "icon");
-    if let Some(icon) = props.icon_class.as_ref() {
-        let icon_class = icon.format();
-        rsx! {
-            span {
-                class: "{class}",
-                i {
-                    class: "{icon_class}"
-                }
-            }
-        }
-    } else {
+    let class = props.class;
+    let icon_class = props.icon_class;
+    if icon_class.is_empty() {
         rsx! {
             span {
                 class: "{class}",
                 { props.children }
+            }
+        }
+    } else {
+        let icon = icon_class.format();
+        rsx! {
+            span {
+                class: "{class}",
+                i {
+                    class: "{icon}"
+                }
             }
         }
     }
@@ -31,18 +32,18 @@ pub fn Icon(props: IconProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct IconProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "icon".into())]
+    pub class: Class,
     /// The class to apply to the `<i>` element for a icon font.
-    #[props(into)]
-    pub icon_class: Option<Class>,
+    #[props(into, default)]
+    pub icon_class: Class,
     /// The children to render within the component.
     children: Element,
 }
 
 /// A container for a SVG icon.
 pub fn SvgIcon<T: IconShape + Clone + PartialEq + 'static>(props: SvgIconProps<T>) -> Element {
-    let class = format_class!(props, "icon");
+    let class = props.class;
     let width = props.width;
     let height = props.height.unwrap_or(width);
     let style = if props.intrinsic {
@@ -67,8 +68,8 @@ pub fn SvgIcon<T: IconShape + Clone + PartialEq + 'static>(props: SvgIconProps<T
 #[derive(Clone, PartialEq, Props)]
 pub struct SvgIconProps<T: IconShape + Clone + PartialEq + 'static> {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "icon".into())]
+    pub class: Class,
     /// The icon shape to use.
     pub shape: T,
     /// The width of the `<svg>` element. Defaults to 20.
@@ -84,7 +85,7 @@ pub struct SvgIconProps<T: IconShape + Clone + PartialEq + 'static> {
 
 /// A wrapper for combining an icon with text.
 pub fn IconText(props: IconTextProps) -> Element {
-    let class = format_class!(props, "icon-text");
+    let class = props.class;
     rsx! {
         span {
             class: "{class}",
@@ -97,8 +98,8 @@ pub fn IconText(props: IconTextProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct IconTextProps {
     /// The class attribute for the component.
-    #[props(into)]
-    pub class: Option<Class>,
+    #[props(into, default = "icon-text".into())]
+    pub class: Class,
     /// The children to render within the component.
     children: Element,
 }

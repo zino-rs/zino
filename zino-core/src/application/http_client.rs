@@ -30,7 +30,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let mut client_builder = Client::builder()
         .user_agent(format!("ZinoBot/1.0 {name}/{version}"))
         .gzip(true);
-    let mut max_retries = 3;
+    let mut max_retries = 0;
     if let Some(http_client) = APP::config().get_table("http-client") {
         if let Some(timeout) = http_client.get_duration("request-timeout") {
             client_builder = client_builder.timeout(timeout);
