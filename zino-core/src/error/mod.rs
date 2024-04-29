@@ -1,18 +1,38 @@
 //! Type-erased errors with tracing functionalities.
 use crate::SharedString;
-use std::{error, fmt};
+use std::{any::Any, error, fmt};
 
 mod source;
 
 use source::Source;
 
 /// An error type backed by an allocation-optimized string.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug)]
 pub struct Error {
     /// Error message.
     message: SharedString,
     /// Error source.
     source: Option<Box<Error>>,
+    /// Error context.
+    context: Option<Box<dyn Any + Send>>,
+}
+
+impl Clone for Error {
+    #[inline]
+    fn clone(&self) -> Self {
+        Self {
+            message: self.message.clone(),
+            source: self.source.clone(),
+            context: None,
+        }
+    }
+}
+
+impl PartialEq for Error {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.message == other.message && self.source == other.source
+    }
 }
 
 impl Error {
@@ -22,6 +42,7 @@ impl Error {
         Self {
             message: message.into(),
             source: None,
+            context: None,
         }
     }
 
@@ -31,16 +52,62 @@ impl Error {
         Self {
             message: message.into(),
             source: Some(Box::new(source.into())),
+            context: None,
+        }
+    }
+
+    /// Creates a new instance from [`std::error::Error`] by discarding the context.
+    #[inline]
+    pub fn from_error(err: impl error::Error) -> Self {
+        Self {
+            message: err.to_string().into(),
+            source: err.source().map(|err| Box::new(Self::new(err.to_string()))),
+            context: None,
         }
     }
 
     /// Wraps the error value with additional contextual message.
     #[inline]
-    pub fn context(self, message: impl Into<SharedString>) -> Self {
+    pub fn wrap(self, message: impl Into<SharedString>) -> Self {
         Self {
             message: message.into(),
             source: Some(Box::new(self)),
+            context: None,
         }
+    }
+
+    /// Sets a context for the error.
+    #[inline]
+    pub fn set_context<T: Send + 'static>(&mut self, context: T) {
+        self.context = Some(Box::new(context));
+    }
+
+    /// Gets a reference to the context of the error.
+    #[inline]
+    pub fn get_context<T: Send + 'static>(&self) -> Option<&T> {
+        self.context
+            .as_ref()
+            .and_then(|ctx| ctx.downcast_ref::<T>())
+    }
+
+    /// Gets a mutable reference to the context of the error.
+    #[inline]
+    pub fn get_context_mut<T: Send + 'static>(&mut self) -> Option<&mut T> {
+        self.context
+            .as_mut()
+            .and_then(|ctx| ctx.downcast_mut::<T>())
+    }
+
+    /// Takes the context out of the error.
+    #[inline]
+    pub fn take_context<T: Send + 'static>(&mut self) -> Option<Box<T>> {
+        self.context.take().and_then(|ctx| ctx.downcast::<T>().ok())
+    }
+
+    /// Returns `true` if the error has a context with type `T`.
+    #[inline]
+    pub fn has_context<T: Send + 'static>(&self) -> bool {
+        self.context.as_ref().is_some_and(|ctx| ctx.is::<T>())
     }
 
     /// Returns the error message.
@@ -70,12 +137,13 @@ impl Error {
     }
 }
 
-impl<E: error::Error> From<E> for Error {
+impl<E: error::Error + Send + 'static> From<E> for Error {
     #[inline]
     fn from(err: E) -> Self {
         Self {
             message: err.to_string().into(),
             source: err.source().map(|err| Box::new(Self::new(err.to_string()))),
+            context: Some(Box::new(err)),
         }
     }
 }

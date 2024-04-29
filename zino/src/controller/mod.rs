@@ -68,7 +68,7 @@ use zino_core::{
 impl<K, U, M> DefaultController<K, U> for M
 where
     K: Default + std::fmt::Display + PartialEq + std::str::FromStr,
-    <K as std::str::FromStr>::Err: std::error::Error,
+    <K as std::str::FromStr>::Err: std::error::Error + Send + 'static,
     U: Default + std::fmt::Display + PartialEq,
     M: ModelAccessor<K, U>,
 {

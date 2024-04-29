@@ -8,7 +8,7 @@ use zino_core::{
     Decimal, Map, Uuid,
 };
 
-/// Extension trait for [`FormData`].
+/// Extension trait for `FormData`.
 pub trait FormDataExt {
     /// Extracts the string value.
     fn get_string(&self) -> Option<String>;

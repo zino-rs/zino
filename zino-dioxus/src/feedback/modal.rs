@@ -13,9 +13,16 @@ pub fn ModalCard(props: ModalCardProps) -> Element {
     } else {
         class.to_string()
     };
+    let size = match props.size.as_ref() {
+        "small" => 25,
+        "medium" => 50,
+        "large" => 75,
+        _ => 40,
+    };
     rsx! {
         div {
             class: "{container_class}",
+            style: "--bulma-modal-content-width:{size}rem",
             div { class: "modal-background" }
             div {
                 class: "modal-card",
@@ -63,6 +70,9 @@ pub struct ModalCardProps {
     /// A flag to determine whether the modal is visible or not.
     #[props(default)]
     pub visible: bool,
+    /// The size of the modal: `small` | "normal" | `medium` | "large".
+    #[props(into, default = "normal".into())]
+    pub size: SharedString,
     /// The title in the modal header.
     #[props(into)]
     pub title: SharedString,

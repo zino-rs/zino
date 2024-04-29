@@ -97,7 +97,7 @@ where
     U: FromStr,
     R: FromStr,
     T: FromStr,
-    <U as FromStr>::Err: std::error::Error,
+    <U as FromStr>::Err: std::error::Error + Send + 'static,
 {
     /// Attempts to construct an instance from a `JwtClaims`.
     #[cfg(feature = "jwt")]

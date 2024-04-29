@@ -1,13 +1,13 @@
 [package]
 name = "dioxus-desktop"
 description = "An example for Dioxus desktop integration."
-version = "0.4.2"
+version = "0.4.3"
 rust-version = "1.75"
 edition = "2021"
 publish = false
 
 [dependencies]
-dioxus = "0.5.0"
+dioxus = "0.5.1"
 dioxus-router = "0.5.0"
 tracing = "0.1.40"
 

@@ -15,7 +15,7 @@ pub trait JwtAuthService<K = Uuid>
 where
     Self: ModelAccessor<K> + ModelHelper<K>,
     K: Default + Display + FromStr + PartialEq + serde::de::DeserializeOwned,
-    <K as FromStr>::Err: std::error::Error,
+    <K as FromStr>::Err: std::error::Error + Send + 'static,
 {
     /// Account field name.
     const ACCOUNT_FIELD: &'static str = "account";

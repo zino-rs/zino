@@ -1,9 +1,13 @@
 use crate::class::Class;
 use dioxus::prelude::*;
-use zino_core::{error::Error, SharedString};
+use zino_core::SharedString;
 
 /// Global messages as feedback in response to user operations.
-pub fn OperationResult<T: Clone + PartialEq + 'static>(props: OperationResultProps<T>) -> Element {
+pub fn OperationResult<T, E>(props: OperationResultProps<T, E>) -> Element
+where
+    T: Clone + PartialEq + 'static,
+    E: Clone + PartialEq + 'static,
+{
     if props.hidden {
         return None;
     }
@@ -118,7 +122,11 @@ pub fn OperationResult<T: Clone + PartialEq + 'static>(props: OperationResultPro
 
 /// The [`OperationResult`] properties struct for the configuration of the component.
 #[derive(Clone, PartialEq, Props)]
-pub struct OperationResultProps<T: Clone + PartialEq + 'static> {
+pub struct OperationResultProps<T, E>
+where
+    T: Clone + PartialEq + 'static,
+    E: Clone + PartialEq + 'static,
+{
     /// The class attribute for the component.
     #[props(into, default = "message".into())]
     pub class: Class,
@@ -126,7 +134,7 @@ pub struct OperationResultProps<T: Clone + PartialEq + 'static> {
     #[props(into, default = "delete".into())]
     pub close_class: Class,
     /// A future value which represents the user operations.
-    pub future: Option<Result<T, Error>>,
+    pub future: Option<Result<T, E>>,
     /// An event handler to be called when the `close` button is clicked.
     pub on_close: Option<EventHandler<bool>>,
     /// A flag to determine whether the message is hidden or not.
@@ -149,5 +157,5 @@ pub struct OperationResultProps<T: Clone + PartialEq + 'static> {
     /// An event handler to be called when the future value is resolved.
     pub on_success: Option<EventHandler<T>>,
     /// An event handler to be called when the future value is rejected.
-    pub on_error: Option<EventHandler<Error>>,
+    pub on_error: Option<EventHandler<E>>,
 }

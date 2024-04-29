@@ -151,7 +151,7 @@ where
 pub fn decode_array<'r, T>(row: &'r DatabaseRow, field: &str) -> Result<Vec<T>, Error>
 where
     T: Decode<'r, DatabaseDriver> + std::str::FromStr,
-    <T as std::str::FromStr>::Err: std::error::Error,
+    <T as std::str::FromStr>::Err: std::error::Error + Send + 'static,
 {
     use crate::{extension::JsonValueExt, JsonValue};
 

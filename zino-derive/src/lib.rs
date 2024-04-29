@@ -38,7 +38,7 @@ pub fn derive_decode_row(item: TokenStream) -> TokenStream {
 }
 
 #[doc = include_str!("../docs/model_hooks.md")]
-#[proc_macro_derive(ModelHooks)]
+#[proc_macro_derive(ModelHooks, attributes(schema))]
 pub fn derive_model_hooks(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
     let output = model_hooks::parse_token_stream(input);
@@ -46,7 +46,7 @@ pub fn derive_model_hooks(item: TokenStream) -> TokenStream {
 }
 
 #[doc = include_str!("../docs/model.md")]
-#[proc_macro_derive(Model)]
+#[proc_macro_derive(Model, attributes(schema))]
 pub fn derive_model(item: TokenStream) -> TokenStream {
     let input = parse_macro_input!(item as DeriveInput);
     let output = model::parse_token_stream(input);

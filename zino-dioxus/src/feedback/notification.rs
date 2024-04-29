@@ -9,11 +9,17 @@ pub fn Notification(props: NotificationProps) -> Element {
     rsx! {
         div {
             class: "{class} {hidden_class}",
-            button {
-                class: "{close_class}",
-                onclick: move |event| {
-                    if let Some(handler) = props.on_close.as_ref() {
-                        handler.call(event);
+            position: "fixed",
+            top: "4rem",
+            right: "0.75rem",
+            z_index: 9999,
+            if props.on_close.is_some() {
+                button {
+                    class: "{close_class}",
+                    onclick: move |event| {
+                        if let Some(handler) = props.on_close.as_ref() {
+                            handler.call(event);
+                        }
                     }
                 }
             }
