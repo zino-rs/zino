@@ -53,6 +53,8 @@ impl Application for NtexCluster {
             super::load_plugins(self.custom_plugins, app_env).await;
         });
         if scheduler.is_ready() {
+            // It should be fixed by pasing `System::current()` from `block_on`.
+            // https://github.com/ntex-rs/ntex/issues/335#issuecomment-2071498572
             System::new("scheduler")
                 .system()
                 .arbiter()

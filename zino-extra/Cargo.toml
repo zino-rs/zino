@@ -26,7 +26,7 @@ format-pdf = ["format", "dep:printpdf"]
 full = ["all-formats", "cache"]
 
 [dependencies]
-toml = "0.8.4"
+toml = "0.8.12"
 
 [dependencies.lru]
 version = "0.12.3"
@@ -42,4 +42,4 @@ optional = true
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.22.1"
+version = "0.22.2"
