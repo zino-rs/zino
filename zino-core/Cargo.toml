@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.22.2"
+version = "0.22.3"
 rust-version = "1.75"
 edition = "2021"
 license = "MIT"
@@ -179,7 +179,7 @@ view-tera = ["view", "dep:tera"]
 [dependencies]
 aes-gcm-siv = "0.11.1"
 apache-avro = "0.16.0"
-base64 = "0.22.0"
+base64 = "0.22.1"
 bytes = "1.6.0"
 cfg-if = "1.0"
 convert_case = "0.6.0"
@@ -194,7 +194,7 @@ http = "1.1.0"
 md-5 = "0.10.6"
 mime = "0.3.17"
 mime_guess = "2.0.4"
-multer = "3.0.0"
+multer = "3.1.0"
 once_cell = "1.19.0"
 parking_lot = "0.12.2"
 percent-encoding = "2.3.1"
@@ -311,7 +311,7 @@ version = "0.32.2"
 optional = true
 
 [dependencies.serde]
-version = "1.0.198"
+version = "1.0.200"
 features = ["derive"]
 
 [dependencies.serde_json]

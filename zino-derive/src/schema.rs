@@ -269,6 +269,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let schema_write_only_fields = format_ident!("{}_WRITE_ONLY_FIELDS", model_name_upper_snake);
     let schema_reader = format_ident!("{}_READER", model_name_upper_snake);
     let schema_writer = format_ident!("{}_WRITER", model_name_upper_snake);
+    let schema_table_name = format_ident!("{}_TABLE_NAME", model_name_upper_snake);
+    let schema_model_namespace = format_ident!("{}_MODEL_NAMESPACE", model_name_upper_snake);
     let avro_schema = format_ident!("{}_AVRO_SCHEMA", model_name_upper_snake);
     let num_columns = columns.len();
     let num_read_only_fields = read_only_fields.len();
@@ -315,6 +317,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             zino_core::LazyLock::new(|| [#(#write_only_fields),*]);
         static #schema_reader: std::sync::OnceLock<&ConnectionPool> = std::sync::OnceLock::new();
         static #schema_writer: std::sync::OnceLock<&ConnectionPool> = std::sync::OnceLock::new();
+        static #schema_table_name: std::sync::OnceLock<&str> = std::sync::OnceLock::new();
+        static #schema_model_namespace: std::sync::OnceLock<&str> = std::sync::OnceLock::new();
 
         impl Schema for #name {
             type PrimaryKey = #schema_primary_key_type;
@@ -462,6 +466,20 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                     })?;
                     Ok(connection_pool)
                 }
+            }
+
+            #[inline]
+            fn table_name() -> &'static str {
+                Self::TABLE_NAME.unwrap_or_else(|| {
+                    #schema_table_name
+                        .get_or_init(|| [Self::table_prefix(), Self::MODEL_NAME].concat().leak())
+                })
+            }
+
+            #[inline]
+            fn model_namespace() -> &'static str {
+                #schema_model_namespace
+                    .get_or_init(|| [Self::namespace_prefix(), Self::MODEL_NAME].concat().leak())
             }
         }
 

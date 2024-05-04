@@ -70,7 +70,7 @@ fn StargazerHistory() -> Element {
 fn StargazerListTable(num_stargazers: usize) -> Element {
     let mut current_page = use_signal(|| 1);
     let stargazers = use_resource(move || async move {
-        service::stargazer::list_stargazers(10, *current_page.read()).await
+        service::stargazer::list_stargazers(10, current_page()).await
     });
     match &*stargazers.value().read_unchecked() {
         Some(Ok(stargazers)) => {
@@ -97,7 +97,7 @@ fn StargazerListTable(num_stargazers: usize) -> Element {
                 }
                 Pagination {
                     total: num_stargazers,
-                    current_page: *current_page.read(),
+                    current_page: current_page(),
                     on_change: move |page| {
                         current_page.set(page);
                     }
