@@ -3,7 +3,7 @@
 pub use crate::{
     class::Class,
     extension::FormDataExt,
-    feedback::{Message, ModalCard, Notification, OperationResult},
+    feedback::{Message, ModalCard, ModalData, Notification, OperationResult},
     form::{DataEntry, DataSelect, FormAddons, FormField, FormFieldContainer, FormGroup},
     icon::{Icon, IconText, SvgIcon},
     layout::{Columns, Container, FluidContainer, MainContainer},
@@ -12,5 +12,5 @@ pub use crate::{
         NavbarStart, Pagination, Sidebar,
     },
     theme::Theme,
-    typography::FixedWidthSpan,
+    typography::{Card, FixedWidthSpan, Markdown},
 };

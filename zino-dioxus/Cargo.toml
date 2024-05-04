@@ -17,6 +17,7 @@ dioxus = "0.5.1"
 dioxus-core = "0.5.1"
 dioxus-hooks = "0.5.1"
 dioxus-router = "0.5.0"
+markdown = "1.0.0-alpha.17"
 rust_decimal = "1.35.0"
 smallvec = "1.13.2"
 

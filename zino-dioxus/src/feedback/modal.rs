@@ -76,6 +76,80 @@ pub struct ModalCardProps {
     /// The title in the modal header.
     #[props(into)]
     pub title: SharedString,
-    /// The model body to render within the component.
+    /// The modal body to render within the component.
     children: Element,
+}
+
+/// A dynamic data type for the modal.
+#[derive(Clone, Default, PartialEq)]
+pub struct ModalData<T> {
+    /// A optional ID.
+    id: Option<T>,
+    /// A optional name.
+    name: SharedString,
+    /// The title in the modal header.
+    title: SharedString,
+    /// A flag to determine whether the modal is visible or not.
+    visible: bool,
+}
+
+impl<T> ModalData<T> {
+    /// Creates a new instance.
+    #[inline]
+    pub fn new(title: impl Into<SharedString>) -> Self {
+        Self {
+            id: None,
+            name: "modal".into(),
+            title: title.into(),
+            visible: false,
+        }
+    }
+
+    /// Sets the id.
+    #[inline]
+    pub fn set_id(&mut self, id: T) {
+        self.id = Some(id);
+    }
+
+    /// Sets the name.
+    #[inline]
+    pub fn set_name(&mut self, name: impl Into<SharedString>) {
+        self.name = name.into();
+    }
+
+    /// Sets the `title` property.
+    #[inline]
+    pub fn set_title(&mut self, title: impl Into<SharedString>) {
+        self.title = title.into();
+    }
+
+    /// Sets the `visible` property.
+    #[inline]
+    pub fn set_visible(&mut self, visible: bool) {
+        self.visible = visible;
+    }
+
+    /// Returns a reference to the optional ID.
+    #[inline]
+    pub fn id(&self) -> Option<&T> {
+        self.id.as_ref()
+    }
+
+    /// Returns a reference to the name.
+    #[inline]
+    pub fn name(&self) -> &str {
+        self.name.as_ref()
+    }
+
+    /// Returns the `title` property.
+    #[inline]
+    pub fn title(&self) -> String {
+        self.title.as_ref().to_owned()
+    }
+
+    /// Returns the `visible` property.
+    #[inline]
+    pub fn visible(&self) -> bool {
+        self.visible
+    }
 }

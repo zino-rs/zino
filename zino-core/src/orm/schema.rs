@@ -60,16 +60,28 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         super::DRIVER_NAME
     }
 
+    /// Returns the prefix for the table name.
+    #[inline]
+    fn table_prefix() -> &'static str {
+        *super::TABLE_PREFIX
+    }
+
+    /// Returns the prefix for the model namespace.
+    #[inline]
+    fn namespace_prefix() -> &'static str {
+        *super::NAMESPACE_PREFIX
+    }
+
     /// Returns the table name.
     #[inline]
     fn table_name() -> &'static str {
-        Self::TABLE_NAME.unwrap_or_else(|| [*super::TABLE_PREFIX, Self::MODEL_NAME].concat().leak())
+        Self::TABLE_NAME.unwrap_or_else(|| [Self::table_prefix(), Self::MODEL_NAME].concat().leak())
     }
 
     /// Returns the model namespace.
     #[inline]
     fn model_namespace() -> &'static str {
-        [*super::NAMESPACE_PREFIX, Self::MODEL_NAME].concat().leak()
+        [Self::namespace_prefix(), Self::MODEL_NAME].concat().leak()
     }
 
     /// Returns the primary key as a JSON value.

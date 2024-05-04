@@ -69,6 +69,16 @@ impl Date {
             .unwrap_or_default()
     }
 
+    /// Counts the days from the `other` date.
+    #[inline]
+    pub fn num_days_from(&self, other: Date) -> i32 {
+        self.0
+            .signed_duration_since(other.0)
+            .num_days()
+            .try_into()
+            .unwrap_or_default()
+    }
+
     /// Formats the date with the specified format string.
     /// See [`format::strftime`](chrono::format::strftime) for the supported escape sequences.
     #[inline]
@@ -98,6 +108,14 @@ impl Date {
     #[inline]
     pub fn year(&self) -> i32 {
         self.0.year()
+    }
+
+    /// Returns the quarter number starting from 1.
+    ///
+    /// The return value ranges from 1 to 4.
+    #[inline]
+    pub fn quarter(&self) -> u32 {
+        self.0.month().div_ceil(3)
     }
 
     /// Returns the month number starting from 1.
@@ -201,6 +219,21 @@ impl Date {
         Self(NaiveDate::from_ymd_opt(year, 1, 1).unwrap_or_default())
     }
 
+    /// Returns the start of the current quarter.
+    pub fn start_of_current_quarter(&self) -> Self {
+        let year = self.year();
+        let month = 3 * self.quarter() - 2;
+        Self(NaiveDate::from_ymd_opt(year, month, 1).unwrap_or_default())
+    }
+
+    /// Returns the end of the current quarter.
+    pub fn end_of_current_quarter(&self) -> Self {
+        let year = self.year();
+        let month = 3 * self.quarter();
+        let day = Self::days_in_month(year, month);
+        Self(NaiveDate::from_ymd_opt(year, month, day).unwrap_or_default())
+    }
+
     /// Returns the start of the current month.
     pub fn start_of_current_month(&self) -> Self {
         let year = self.year();
@@ -258,6 +291,33 @@ impl Date {
         self.0
             .checked_sub_days(Days::new(u64::from(days)))
             .map(Self)
+    }
+
+    /// Returns the number of days in the year.
+    #[inline]
+    pub fn days_in_year(year: i32) -> u32 {
+        if year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) {
+            366
+        } else {
+            365
+        }
+    }
+
+    /// Returns the number of days in the month.
+    #[inline]
+    pub fn days_in_month(year: i32, month: u32) -> u32 {
+        match month {
+            1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+            4 | 6 | 9 | 11 => 30,
+            2 => {
+                if year % 4 == 0 && (year % 100 != 0 || year % 400 == 0) {
+                    29
+                } else {
+                    28
+                }
+            }
+            _ => panic!("invalid month: {month}"),
+        }
     }
 }
 

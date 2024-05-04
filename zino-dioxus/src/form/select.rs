@@ -7,8 +7,15 @@ use zino_core::SharedString;
 pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -> Element {
     let class = props.class;
     let fullwidth_class = Class::check("is-fullwidth", props.fullwidth);
-    let default_choice = props.options.first().cloned();
-    let entries = props.options.clone();
+    let options = props.options;
+    let selected_value = props.selected;
+    let selected_option = options
+        .iter()
+        .find(|entry| entry.value() == selected_value)
+        .or_else(|| options.first())
+        .cloned();
+    let selected_key = selected_option.as_ref().map(|entry| entry.key());
+    let entries = options.clone();
     rsx! {
         div {
             class: "{class} {fullwidth_class}",
@@ -17,7 +24,7 @@ pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -
                 required: props.required,
                 onmounted: move |_event| {
                     if let Some(handler) = props.on_select.as_ref() {
-                        if let Some(entry) = default_choice.as_ref() {
+                        if let Some(entry) = selected_option.as_ref() {
                             handler.call(entry.clone());
                         }
                     }
@@ -30,10 +37,11 @@ pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -
                         }
                     }
                 },
-                for entry in props.options {
+                for entry in options {
                     option {
                         key: "{entry.key()}",
                         value: "{entry.value()}",
+                        selected: selected_key.as_ref().is_some_and(|key| &entry.key() == key),
                         "{entry.label()}"
                     }
                 }
@@ -50,6 +58,9 @@ pub struct DataSelectProps<T: Clone + PartialEq + 'static> {
     pub class: Class,
     /// The data options.
     pub options: Vec<T>,
+    /// The selected option value.
+    #[props(into, default)]
+    pub selected: SharedString,
     /// The name of the control.
     #[props(into)]
     pub name: SharedString,

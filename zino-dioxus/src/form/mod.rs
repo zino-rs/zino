@@ -22,3 +22,37 @@ pub trait DataEntry {
     /// Returns the label.
     fn label(&self) -> Cow<'_, str>;
 }
+
+impl<'a> DataEntry for [&'a str; 2] {
+    #[inline]
+    fn key(&self) -> Cow<'_, str> {
+        self[0].into()
+    }
+
+    #[inline]
+    fn value(&self) -> Cow<'_, str> {
+        self[0].into()
+    }
+
+    #[inline]
+    fn label(&self) -> Cow<'_, str> {
+        self[1].into()
+    }
+}
+
+impl<T: ToString, U: ToString> DataEntry for (T, U) {
+    #[inline]
+    fn key(&self) -> Cow<'_, str> {
+        self.0.to_string().into()
+    }
+
+    #[inline]
+    fn value(&self) -> Cow<'_, str> {
+        self.0.to_string().into()
+    }
+
+    #[inline]
+    fn label(&self) -> Cow<'_, str> {
+        self.1.to_string().into()
+    }
+}

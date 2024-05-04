@@ -29,7 +29,7 @@ pub fn Navbar(props: NavbarProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarProps {
     /// The class attribute for the component.
-    #[props(into, default = "navbar is-info".into())]
+    #[props(into, default = "navbar is-link".into())]
     pub class: Class,
     /// The children to render within the component.
     children: Element,

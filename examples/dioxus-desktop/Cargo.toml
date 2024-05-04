@@ -12,7 +12,7 @@ dioxus-router = "0.5.0"
 tracing = "0.1.40"
 
 [dependencies.dioxus-free-icons]
-version = "0.8.3"
+version = "0.8.5"
 features = [
     "bootstrap",
     "font-awesome-brands",

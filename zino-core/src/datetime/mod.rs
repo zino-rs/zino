@@ -241,6 +241,14 @@ impl DateTime {
         self.0.year()
     }
 
+    /// Returns the quarter number starting from 1.
+    ///
+    /// The return value ranges from 1 to 4.
+    #[inline]
+    pub fn quarter(&self) -> u32 {
+        self.0.month().div_ceil(3)
+    }
+
     /// Returns the month number starting from 1.
     ///
     /// The return value ranges from 1 to 12.
@@ -376,6 +384,34 @@ impl DateTime {
     pub fn end_of_current_year(&self) -> Self {
         let year = self.year();
         let dt = NaiveDate::from_ymd_opt(year, 12, 31)
+            .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
+            .unwrap_or_default();
+        let offset = Local.offset_from_utc_datetime(&dt);
+        Self(LocalDateTime::from_naive_utc_and_offset(
+            dt - offset,
+            offset,
+        ))
+    }
+
+    /// Returns the start of the current quarter.
+    pub fn start_of_current_quarter(&self) -> Self {
+        let year = self.year();
+        let month = 3 * self.quarter() - 2;
+        let date = NaiveDate::from_ymd_opt(year, month, 1).unwrap_or_default();
+        let dt = NaiveDateTime::new(date, NaiveTime::default());
+        let offset = Local.offset_from_utc_datetime(&dt);
+        Self(LocalDateTime::from_naive_utc_and_offset(
+            dt - offset,
+            offset,
+        ))
+    }
+
+    /// Returns the end of the current quarter.
+    pub fn end_of_current_quarter(&self) -> Self {
+        let year = self.year();
+        let month = 3 * self.quarter();
+        let day = Date::days_in_month(year, month);
+        let dt = NaiveDate::from_ymd_opt(year, month, day)
             .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
