@@ -24,6 +24,12 @@ pub trait DefaultController<K, U> {
     /// Logically deletes a model.
     async fn soft_delete(req: Self::Request) -> Self::Result;
 
+    /// Locks a model.
+    async fn lock(req: Self::Request) -> Self::Result;
+
+    /// Archives a model.
+    async fn archive(req: Self::Request) -> Self::Result;
+
     /// Batch inserts multiple models.
     async fn batch_insert(req: Self::Request) -> Self::Result;
 
@@ -201,6 +207,22 @@ where
     async fn soft_delete(req: Self::Request) -> Self::Result {
         let id = req.parse_param::<K>("id")?;
         Self::soft_delete_by_id(&id).await.extract(&req)?;
+
+        let res = Response::default().context(&req);
+        Ok(res.into())
+    }
+
+    async fn lock(req: Self::Request) -> Self::Result {
+        let id = req.parse_param::<K>("id")?;
+        Self::lock_by_id(&id).await.extract(&req)?;
+
+        let res = Response::default().context(&req);
+        Ok(res.into())
+    }
+
+    async fn archive(req: Self::Request) -> Self::Result {
+        let id = req.parse_param::<K>("id")?;
+        Self::archive_by_id(&id).await.extract(&req)?;
 
         let res = Response::default().context(&req);
         Ok(res.into())
