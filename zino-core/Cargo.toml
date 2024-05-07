@@ -144,7 +144,11 @@ locale-es = ["locale", "random_word/es"]
 locale-de = ["locale", "random_word/de"]
 locale-fr = ["locale", "random_word/fr"]
 locale-zh = ["locale", "random_word/zh"]
-metrics = ["dep:metrics", "dep:metrics-exporter-prometheus"]
+metrics = [
+    "dep:metrics",
+    "dep:metrics-exporter-prometheus",
+    "opendal?/layers-metrics",
+]
 orm = ["orm-sqlx"]
 orm-mariadb = ["orm-sqlx", "sqlx/mysql"]
 orm-mysql = ["orm-sqlx", "sqlx/mysql"]
@@ -156,13 +160,11 @@ runtime-async-std = ["sqlx?/runtime-async-std"]
 runtime-tokio = ["sqlx?/runtime-tokio"]
 sentry = ["dep:sentry", "dep:sentry-tracing"]
 tls-native = [
-    "opendal?/native-tls",
     "reqwest/native-tls",
     "sentry?/native-tls",
     "sqlx?/tls-native-tls",
 ]
 tls-rustls = [
-    "opendal?/rustls",
     "reqwest/rustls-tls",
     "sentry?/rustls",
     "sqlx?/tls-rustls",
@@ -276,10 +278,10 @@ optional = true
 features = ["debug", "loader"]
 
 [dependencies.opendal]
-version = "0.45.1"
+version = "0.46.0"
 optional = true
 default-features = false
-features = ["layers-all"]
+features = ["layers-tracing"]
 
 [dependencies.phonenumber]
 version = "0.3.4"

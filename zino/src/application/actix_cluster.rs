@@ -193,7 +193,7 @@ impl Application for ActixCluster {
                                 if let Some(custom_html) = config.get_str("custom-html") {
                                     let custom_html_file = project_dir.join(custom_html);
                                     if let Ok(html) = fs::read_to_string(custom_html_file) {
-                                        rapidoc = rapidoc.custom_html(html.leak());
+                                        rapidoc = rapidoc.custom_html(html);
                                     }
                                 }
                                 app = app.service(rapidoc.path(path));

@@ -39,7 +39,7 @@
 
 use crate::{application::StaticRecord, extension::TomlTableExt, state::State, LazyLock};
 use opendal::{
-    layers::{MetricsLayer, RetryLayer, TracingLayer},
+    layers::{RetryLayer, TracingLayer},
     services, Error,
     ErrorKind::Unsupported,
     Operator,
@@ -575,9 +575,10 @@ impl GlobalAccessor {
             _ => Err(Error::new(Unsupported, "scheme is unsupported")),
         };
         operator.map(|op| {
-            op.layer(TracingLayer)
-                .layer(MetricsLayer)
-                .layer(RetryLayer::new())
+            let op = op.layer(RetryLayer::new()).layer(TracingLayer);
+            #[cfg(feature = "metrics")]
+            let op = op.layer(opendal::layers::MetricsLayer);
+            op
         })
     }
 

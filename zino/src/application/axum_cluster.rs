@@ -189,7 +189,7 @@ impl Application for AxumCluster {
                             if let Some(custom_html) = config.get_str("custom-html") {
                                 let custom_html_file = project_dir.join(custom_html);
                                 if let Ok(html) = fs::read_to_string(custom_html_file) {
-                                    app = app.merge(rapidoc.custom_html(html.as_str()).path(path));
+                                    app = app.merge(rapidoc.custom_html(html).path(path));
                                 } else {
                                     app = app.merge(rapidoc.path(path));
                                 }
