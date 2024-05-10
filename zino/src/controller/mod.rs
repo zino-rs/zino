@@ -21,6 +21,9 @@ pub trait DefaultController<K, U> {
     /// Lists models.
     async fn list(req: Self::Request) -> Self::Result;
 
+    /// Fetch models.
+    async fn fetch(req: Self::Request) -> Self::Result;
+
     /// Logically deletes a model.
     async fn soft_delete(req: Self::Request) -> Self::Result;
 
@@ -190,6 +193,37 @@ where
             }
             models
         };
+
+        let mut data = Self::data_items(models);
+        if let Some(page_size) = req.get_query("page_size").and_then(|s| s.parse().ok()) {
+            if req.get_query("total_rows").is_none() {
+                let total_rows = Self::count(&query).await.extract(&req)?;
+                let page_count = total_rows.div_ceil(page_size);
+                data.upsert("total_rows", total_rows);
+                data.upsert("page_count", page_count);
+            }
+        }
+        res.set_json_data(data);
+        Ok(res.into())
+    }
+
+    async fn fetch(mut req: Self::Request) -> Self::Result {
+        let mut query = Self::default_list_query();
+        let mut res = req.query_validation(&mut query)?;
+        let mut body = req.parse_body().await?;
+        query.append_filters(&mut body);
+
+        let extension = req.get_data::<<Self as ModelHooks>::Extension>();
+        Self::before_list(&mut query, extension.as_ref())
+            .await
+            .extract(&req)?;
+
+        let mut models = Self::fetch(&query).await.extract(&req)?;
+        for model in models.iter_mut() {
+            Self::before_respond(model, extension.as_ref())
+                .await
+                .extract(&req)?;
+        }
 
         let mut data = Self::data_items(models);
         if let Some(page_size) = req.get_query("page_size").and_then(|s| s.parse().ok()) {

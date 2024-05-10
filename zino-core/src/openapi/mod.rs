@@ -37,7 +37,7 @@ pub(crate) fn openapi_info(title: &str, version: &str) -> Info {
     let mut info = Info::new(title, version);
     if let Some(config) = OPENAPI_INFO.get() {
         if let Some(title) = config.get_str("title") {
-            info.title = title.to_owned();
+            title.clone_into(&mut info.title);
         }
         if let Some(description) = config.get_str("description") {
             info.description = Some(description.to_owned());
@@ -69,7 +69,7 @@ pub(crate) fn openapi_info(title: &str, version: &str) -> Info {
             info.license = Some(license);
         }
         if let Some(version) = config.get_str("version") {
-            info.version = version.to_owned();
+            version.clone_into(&mut info.version);
         }
     }
     info
