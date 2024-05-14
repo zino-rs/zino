@@ -8,8 +8,8 @@ pub use crate::{
     icon::{Icon, IconText, SvgIcon},
     layout::{Columns, Container, FluidContainer, MainContainer},
     navigation::{
-        Dropdown, Navbar, NavbarBrand, NavbarCenter, NavbarEnd, NavbarItem, NavbarLink, NavbarMenu,
-        NavbarStart, Pagination, Sidebar,
+        Dropdown, Navbar, NavbarBrand, NavbarCenter, NavbarDropdown, NavbarEnd, NavbarItem,
+        NavbarLink, NavbarMenu, NavbarStart, Pagination, Sidebar,
     },
     theme::Theme,
     typography::{Card, FixedWidthSpan, Markdown},

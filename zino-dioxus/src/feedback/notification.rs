@@ -12,7 +12,7 @@ pub fn Notification(props: NotificationProps) -> Element {
             position: "fixed",
             top: "4rem",
             right: "0.75rem",
-            z_index: 9999,
+            z_index: 99,
             if props.on_close.is_some() {
                 button {
                     class: "{close_class}",

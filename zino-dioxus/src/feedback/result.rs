@@ -94,7 +94,7 @@ where
                         position: "fixed",
                         top: "4rem",
                         right: "0.75rem",
-                        z_index: 9999,
+                        z_index: 99,
                         if !title.is_empty() {
                             div {
                                 class: "message-header",

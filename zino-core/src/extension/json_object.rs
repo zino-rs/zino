@@ -227,6 +227,12 @@ pub trait JsonObjectExt {
     /// otherwise `None` is returned.
     fn upsert(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) -> Option<JsonValue>;
 
+    /// Copies values from the populated data corresponding to the key into `self`.
+    fn clone_from_populated(&mut self, key: &str, fields: &[&str]);
+
+    /// Extracts values from the populated data corresponding to the key and moves them to `self`.
+    fn extract_from_populated(&mut self, key: &str, fields: &[&str]);
+
     /// Translates the map with the OpenAPI data.
     fn translate_with_openapi(&mut self, name: &str);
 
@@ -244,6 +250,10 @@ pub trait JsonObjectExt {
 
     /// Creates a new instance with the entry.
     fn from_entry(key: impl Into<String>, value: impl Into<JsonValue>) -> Self;
+
+    /// Creates a new instance from the entries.
+    /// If the JSON value is not an object, an empty map will be returned.
+    fn from_entries(entries: JsonValue) -> Self;
 
     /// Creates a new instance with a single key `entry`.
     fn data_entry(value: Map) -> Self;
@@ -703,6 +713,30 @@ impl JsonObjectExt for Map {
         self.insert(key.into(), value.into())
     }
 
+    fn clone_from_populated(&mut self, key: &str, fields: &[&str]) {
+        let mut object = Map::new();
+        if let Some(map) = self.get_populated(key) {
+            for &field in fields {
+                object.upsert(field, map.get(field).cloned());
+            }
+        }
+        self.append(&mut object);
+    }
+
+    fn extract_from_populated(&mut self, key: &str, fields: &[&str]) {
+        let mut object = Map::new();
+        let populated_field = [key, "_populated"].concat();
+        if let Some(&mut ref mut map) = self
+            .get_mut(&populated_field)
+            .and_then(|v| v.as_object_mut())
+        {
+            for &field in fields {
+                object.upsert(field, map.remove(field));
+            }
+        }
+        self.append(&mut object);
+    }
+
     #[inline]
     fn translate_with_openapi(&mut self, name: &str) {
         openapi::translate_model_entry(self, name);
@@ -741,6 +775,15 @@ impl JsonObjectExt for Map {
         let mut map = Map::with_capacity(1);
         map.insert(key.into(), value.into());
         map
+    }
+
+    #[inline]
+    fn from_entries(entries: JsonValue) -> Self {
+        if let JsonValue::Object(map) = entries {
+            map
+        } else {
+            Map::new()
+        }
     }
 
     #[inline]

@@ -140,6 +140,44 @@ pub struct NavbarEndProps {
     children: Element,
 }
 
+/// An interactive dropdown menu in the navbar.
+pub fn NavbarDropdown(props: NavbarDropdownProps) -> Element {
+    let class = props.class;
+    let button_class = props.button_class;
+    let arrow_class = Class::check("is-arrowless", props.arrowless);
+    rsx! {
+        div {
+            class: "navbar-item has-dropdown is-hoverable",
+            a {
+                class: "{button_class} {arrow_class}",
+                { props.button }
+            }
+            div {
+                class: "{class}",
+                { props.children }
+            }
+        }
+    }
+}
+
+/// The [`NavbarDropdown`] properties struct for the configuration of the component.
+#[derive(Clone, PartialEq, Props)]
+pub struct NavbarDropdownProps {
+    /// The class attribute for the component.
+    #[props(into, default = "navbar-dropdown".into())]
+    pub class: Class,
+    /// A class to apply to the trigger button element.
+    #[props(into, default = "navbar-link".into())]
+    pub button_class: Class,
+    /// A flag to indicate whether the trigger button has an arrow or not.
+    #[props(default)]
+    pub arrowless: bool,
+    /// The trigger button for the dropdown menu.
+    pub button: Element,
+    /// The children to render within the component.
+    children: Element,
+}
+
 /// A link to navigate to another route in the navigation header.
 pub fn NavbarLink(props: NavbarLinkProps) -> Element {
     let class = props.class;
