@@ -13,19 +13,13 @@ pub fn Pagination(props: PaginationProps) -> Element {
         return None;
     }
 
-    let class = props.class;
-    let prev_invisible = Class::check("is-invisible", current_page == 1 || page_count <= 5);
-    let next_invisible = Class::check(
-        "is-invisible",
-        total <= current_page * page_size || page_count <= 5,
-    );
-    let prev_text = props.prev_text;
-    let next_text = props.next_text;
     rsx! {
         nav {
-            class: "{class} is-centered",
+            class: props.class,
+            class: "is-centered",
             a {
-                class: "pagination-previous {prev_invisible}",
+                class: "pagination-previous",
+                class: if current_page == 1 || page_count <= 5 { "is-invisible" },
                 onclick: move |_| {
                     if let Some(handler) = props.on_change.as_ref() {
                         handler.call(current_page - 1);
@@ -40,7 +34,7 @@ pub fn Pagination(props: PaginationProps) -> Element {
                     }
                     span {
                         class: "ml-1",
-                        "{prev_text}"
+                        { props.prev_text }
                     }
                 }
             }
@@ -179,7 +173,8 @@ pub fn Pagination(props: PaginationProps) -> Element {
                 }
             }
             a {
-                class: "pagination-next {next_invisible}",
+                class: "pagination-next",
+                class: if total <= current_page * page_size || page_count <= 5 { "is-invisible" },
                 onclick: move |_| {
                     if let Some(handler) = props.on_change.as_ref() {
                         handler.call(current_page + 1);
@@ -190,7 +185,7 @@ pub fn Pagination(props: PaginationProps) -> Element {
                 } else {
                     span {
                         class: "mr-1",
-                        "{next_text}"
+                        { props.next_text }
                     }
                     SvgIcon {
                         shape: FaArrowRight,

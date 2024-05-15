@@ -4,15 +4,6 @@ use zino_core::SharedString;
 
 /// A classic modal with a header and a body.
 pub fn ModalCard(props: ModalCardProps) -> Element {
-    let class = props.class;
-    let active_class = props.active_class;
-    let title_class = props.title_class;
-    let close_class = props.close_class;
-    let container_class = if props.visible {
-        format!("{class} {active_class}")
-    } else {
-        class.to_string()
-    };
     let size = match props.size.as_ref() {
         "small" => 25,
         "medium" => 50,
@@ -21,7 +12,8 @@ pub fn ModalCard(props: ModalCardProps) -> Element {
     };
     rsx! {
         div {
-            class: "{container_class}",
+            class: props.class,
+            class: if props.visible { props.active_class },
             style: "--bulma-modal-content-width:{size}rem",
             div { class: "modal-background" }
             div {
@@ -29,11 +21,11 @@ pub fn ModalCard(props: ModalCardProps) -> Element {
                 header {
                     class: "modal-card-head",
                     div {
-                        class: "modal-card-title {title_class}",
-                        "{props.title}"
+                        class: "modal-card-title {props.title_class}",
+                        { props.title }
                     }
                     button {
-                        class: "{close_class}",
+                        class: props.close_class,
                         onclick: move |event| {
                             if let Some(handler) = props.on_close.as_ref() {
                                 handler.call(event);
@@ -70,8 +62,8 @@ pub struct ModalCardProps {
     /// A flag to determine whether the modal is visible or not.
     #[props(default)]
     pub visible: bool,
-    /// The size of the modal: `small` | "normal" | `medium` | "large".
-    #[props(into, default = "normal".into())]
+    /// The size of the modal: `small` | `normal` | `medium` | `large`.
+    #[props(into, default)]
     pub size: SharedString,
     /// The title in the modal header.
     #[props(into)]

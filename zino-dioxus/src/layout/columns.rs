@@ -3,30 +3,16 @@ use dioxus::prelude::*;
 
 /// Responsive columns powered by flexbox.
 pub fn Columns(props: ColumnsProps) -> Element {
-    let class = props.class;
-    let column_class = props.column_class;
-    let size_class = if let Some(size) = props.size {
-        format!("is-{size}")
-    } else {
-        String::new()
-    };
-    let offset_class = if let Some(offset) = props.offset {
-        format!("is-offset-{offset}")
-    } else {
-        String::new()
-    };
-    let gap_class = if let Some(gap) = props.gap {
-        format!("is-variable is-{gap}")
-    } else {
-        String::new()
-    };
-    let multiline_class = Class::check("is-multiline", props.multiline);
     rsx! {
         div {
-            class: "{class} {gap_class} {multiline_class}",
+            class: props.class,
+            class: if props.multiline { "is-multiline" },
+            class: if let Some(gap) = props.gap { "is-variable is-{gap}" },
             for column in props.columns.iter() {
                 div {
-                    class: "{column_class} {size_class} {offset_class}",
+                    class: props.column_class.clone(),
+                    class: if let Some(size) = props.size { "is-{size}" },
+                    class: if let Some(offset) = props.offset { "is-offset-{offset}" },
                     { column }
                 }
             }

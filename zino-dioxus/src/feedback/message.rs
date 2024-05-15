@@ -7,19 +7,15 @@ pub fn Message(props: MessageProps) -> Element {
     if props.hidden {
         return None;
     }
-
-    let class = props.class;
-    let close_class = props.close_class;
-    let title = props.title;
     rsx! {
         div {
-            class: "{class}",
-            if !title.is_empty() {
+            class: props.class,
+            if !props.title.is_empty() {
                 div {
                     class: "message-header",
-                    span { "{title}" }
+                    span { { props.title } }
                     button {
-                        class: "{close_class}",
+                        class: props.close_class,
                         onclick: move |_event| {
                             if let Some(handler) = props.on_close.as_ref() {
                                 handler.call(false);

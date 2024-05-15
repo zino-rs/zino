@@ -5,13 +5,12 @@ use zino_core::SharedString;
 
 /// A markdown-to-html converter.
 pub fn Markdown(props: MarkdownProps) -> Element {
-    let class = props.class;
     let text = props.content.as_ref();
     let html = to_html_with_options(text, &Options::gfm()).unwrap_or_else(|_| text.to_owned());
     rsx! {
         div {
-            class: "{class}",
-            dangerous_inner_html: "{html}",
+            class: props.class,
+            dangerous_inner_html: html,
         }
     }
 }

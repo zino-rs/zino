@@ -5,18 +5,17 @@ use dioxus_router::components::{IntoRoutable, Link};
 /// A responsive navigation header.
 pub fn Navbar(props: NavbarProps) -> Element {
     let children = props.children.as_ref()?;
-    let class = props.class;
     if children.has_component("NavbarBrand") {
         rsx! {
             nav {
-                class: "{class}",
+                class: props.class,
                 { children }
             }
         }
     } else {
         rsx! {
             nav {
-                class: "{class}",
+                class: props.class,
                 NavbarMenu {
                     { children }
                 }
@@ -37,10 +36,9 @@ pub struct NavbarProps {
 
 /// A container for the logo and optionally some links or icons.
 pub fn NavbarBrand(props: NavbarBrandProps) -> Element {
-    let class = props.class;
     rsx! {
         div {
-            class: "{class}",
+            class: props.class,
             { props.children }
         }
     }
@@ -58,10 +56,9 @@ pub struct NavbarBrandProps {
 
 /// A horizontal menu used in the navigation header.
 pub fn NavbarMenu(props: NavbarMenuProps) -> Element {
-    let class = props.class;
     rsx! {
         div {
-            class: "{class}",
+            class: props.class,
             { props.children }
         }
     }
@@ -79,10 +76,9 @@ pub struct NavbarMenuProps {
 
 /// The left section of the navbar menu.
 pub fn NavbarStart(props: NavbarStartProps) -> Element {
-    let class = props.class;
     rsx! {
         div {
-            class: "{class}",
+            class: props.class,
             { props.children }
         }
     }
@@ -100,10 +96,9 @@ pub struct NavbarStartProps {
 
 /// The middle section of the navbar menu.
 pub fn NavbarCenter(props: NavbarCenterProps) -> Element {
-    let class = props.class;
     rsx! {
         div {
-            class: "{class}",
+            class: props.class,
             { props.children }
         }
     }
@@ -121,10 +116,9 @@ pub struct NavbarCenterProps {
 
 /// The right section of the navbar menu.
 pub fn NavbarEnd(props: NavbarEndProps) -> Element {
-    let class = props.class;
     rsx! {
         div {
-            class: "{class}",
+            class: props.class,
             { props.children }
         }
     }
@@ -142,18 +136,16 @@ pub struct NavbarEndProps {
 
 /// An interactive dropdown menu in the navbar.
 pub fn NavbarDropdown(props: NavbarDropdownProps) -> Element {
-    let class = props.class;
-    let button_class = props.button_class;
-    let arrow_class = Class::check("is-arrowless", props.arrowless);
     rsx! {
         div {
             class: "navbar-item has-dropdown is-hoverable",
             a {
-                class: "{button_class} {arrow_class}",
+                class: props.button_class,
+                class: if props.arrowless { "is-arrowless" },
                 { props.button }
             }
             div {
-                class: "{class}",
+                class: props.class,
                 { props.children }
             }
         }
@@ -180,13 +172,11 @@ pub struct NavbarDropdownProps {
 
 /// A link to navigate to another route in the navigation header.
 pub fn NavbarLink(props: NavbarLinkProps) -> Element {
-    let class = props.class;
-    let active_class = props.active_class;
     rsx! {
         Link {
-            class: "{class}",
-            active_class: "{active_class}",
-            to: props.to.clone(),
+            class: props.class.to_string(),
+            active_class: props.active_class.to_string(),
+            to: props.to,
             { props.children }
         }
     }
@@ -210,10 +200,9 @@ pub struct NavbarLinkProps {
 
 /// A container for each single item of the navbar.
 pub fn NavbarItem(props: NavbarItemProps) -> Element {
-    let class = props.class;
     rsx! {
         div {
-            class: "{class}",
+            class: props.class,
             { props.children }
         }
     }

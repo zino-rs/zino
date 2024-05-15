@@ -11,10 +11,6 @@ where
     if props.hidden {
         return None;
     }
-
-    let class = props.class;
-    let close_class = props.close_class;
-    let title = props.title;
     match props.future {
         Some(Ok(data)) => {
             if let Some(handler) = props.on_success.as_ref() {
@@ -22,17 +18,18 @@ where
             }
             rsx! {
                 div {
-                    class: "{class} is-success",
+                    class: props.class,
+                    class: "is-success",
                     position: "fixed",
                     top: "4rem",
                     right: "0.75rem",
                     z_index: 9999,
-                    if !title.is_empty() {
+                    if !props.title.is_empty() {
                         div {
                             class: "message-header",
-                            span { "{title}" }
+                            span { { props.title } }
                             button {
-                                class: "{close_class}",
+                                class: props.close_class,
                                 onclick: move |_event| {
                                     if let Some(handler) = props.on_close.as_ref() {
                                         handler.call(false);
@@ -54,17 +51,18 @@ where
             }
             rsx! {
                 div {
-                    class: "{class} is-danger",
+                    class: props.class,
+                    class: "is-danger",
                     position: "fixed",
                     top: "4rem",
                     right: "0.75rem",
                     z_index: 9999,
-                    if !title.is_empty() {
+                    if !props.title.is_empty() {
                         div {
                             class: "message-header",
-                            span { "{title}" }
+                            span { { props.title } }
                             button {
-                                class: "{close_class}",
+                                class: props.close_class,
                                 onclick: move |_event| {
                                     if let Some(handler) = props.on_close.as_ref() {
                                         handler.call(false);
@@ -81,26 +79,26 @@ where
             }
         }
         None => {
-            let loading = props.loading;
             if let Some(handler) = props.on_loading.as_ref() {
                 handler.call(());
             }
-            if loading.is_empty() {
+            if props.loading.is_empty() {
                 None
             } else {
                 rsx! {
                     div {
-                        class: "{class} is-warning",
+                        class: props.class,
+                        class: "is-warning",
                         position: "fixed",
                         top: "4rem",
                         right: "0.75rem",
                         z_index: 99,
-                        if !title.is_empty() {
+                        if !props.title.is_empty() {
                             div {
                                 class: "message-header",
-                                span { "{title}" }
+                                span { { props.title } }
                                 button {
-                                    class: "{close_class}",
+                                    class: props.close_class,
                                     onclick: move |_event| {
                                         if let Some(handler) = props.on_close.as_ref() {
                                             handler.call(false);
@@ -111,7 +109,7 @@ where
                         }
                         div {
                             class: "message-body",
-                            span { "{loading}" }
+                            span { { props.loading } }
                         }
                     }
                 }

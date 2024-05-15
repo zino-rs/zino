@@ -3,10 +3,9 @@ use dioxus::prelude::*;
 
 /// A responsive, fixed-width container with the `max-width` changes at each breakpoint.
 pub fn Container(props: ContainerProps) -> Element {
-    let class = props.class;
     rsx! {
         main {
-            class: "{class}",
+            class: props.class,
             { props.children }
         }
     }
@@ -24,10 +23,9 @@ pub struct ContainerProps {
 
 /// A full width container spanning the entire width of the viewport.
 pub fn FluidContainer(props: FluidContainerProps) -> Element {
-    let class = props.class;
     rsx! {
         main {
-            class: "{class}",
+            class: props.class,
             { props.children }
         }
     }
@@ -45,10 +43,9 @@ pub struct FluidContainerProps {
 
 /// A container rendered as the `<main>` element.
 pub fn MainContainer(props: MainContainerProps) -> Element {
-    let class = props.class;
     rsx! {
         main {
-            class: "{class}",
+            class: props.class,
             { props.children }
         }
     }

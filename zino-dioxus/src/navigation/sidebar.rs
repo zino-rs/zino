@@ -3,10 +3,9 @@ use dioxus::prelude::*;
 
 /// A vertical menu used in the navigation aside.
 pub fn Sidebar(props: SidebarProps) -> Element {
-    let class = props.class;
     rsx! {
         div {
-            class: "{class}",
+            class: props.class,
             { props.children }
         }
     }

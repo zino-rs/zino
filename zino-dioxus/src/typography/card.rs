@@ -3,10 +3,9 @@ use dioxus::prelude::*;
 
 /// A fixed-width span with the custom alignment.
 pub fn Card(props: CardProps) -> Element {
-    let class = props.class;
     rsx! {
         div {
-            class: "{class}",
+            class: props.class,
             header {
                 class: "card-header",
                 div {

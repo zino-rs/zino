@@ -6,22 +6,19 @@ use dioxus_free_icons::IconShape;
 
 /// A container for any type of icon fonts.
 pub fn Icon(props: IconProps) -> Element {
-    let class = props.class;
-    let icon_class = props.icon_class;
-    if icon_class.is_empty() {
+    if props.icon_class.is_empty() {
         rsx! {
             span {
-                class: "{class}",
+                class: props.class,
                 { props.children }
             }
         }
     } else {
-        let icon = icon_class.format();
         rsx! {
             span {
-                class: "{class}",
+                class: props.class,
                 i {
-                    class: "{icon}"
+                    class: props.icon_class,
                 }
             }
         }
@@ -43,7 +40,6 @@ pub struct IconProps {
 
 /// A container for a SVG icon.
 pub fn SvgIcon<T: IconShape + Clone + PartialEq + 'static>(props: SvgIconProps<T>) -> Element {
-    let class = props.class;
     let width = props.width;
     let height = props.height.unwrap_or(width);
     let style = if props.intrinsic {
@@ -53,7 +49,7 @@ pub fn SvgIcon<T: IconShape + Clone + PartialEq + 'static>(props: SvgIconProps<T
     };
     rsx! {
         span {
-            class: "{class}",
+            class: props.class,
             style: "{style}",
             dioxus_free_icons::Icon {
                 icon: props.shape,

@@ -4,7 +4,6 @@ use zino_core::{JsonValue, SharedString};
 
 /// A fixed-width span with the custom alignment.
 pub fn FixedWidthSpan(props: FixedWidthSpanProps) -> Element {
-    let class = props.class;
     let mut style = match props.width {
         JsonValue::Number(value) => format!("width:{value}px;"),
         JsonValue::String(value) => format!("width:{value};"),
@@ -14,8 +13,8 @@ pub fn FixedWidthSpan(props: FixedWidthSpanProps) -> Element {
     style.push_str(props.align.as_ref());
     rsx! {
         span {
-            class: "{class}",
-            style: "{style}",
+            class: props.class,
+            style: style,
             { props.children }
         }
     }

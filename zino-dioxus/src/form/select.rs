@@ -5,8 +5,6 @@ use zino_core::SharedString;
 
 /// A control that provides a menu of data entries.
 pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -> Element {
-    let class = props.class;
-    let fullwidth_class = Class::check("is-fullwidth", props.fullwidth);
     let options = props.options;
     let selected_value = props.selected;
     let selected_option = options
@@ -18,9 +16,10 @@ pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -
     let entries = options.clone();
     rsx! {
         div {
-            class: "{class} {fullwidth_class}",
+            class: props.class,
+            class: if props.fullwidth { "is-fullwidth" },
             select {
-                name: "{props.name}",
+                name: props.name.into_owned(),
                 required: props.required,
                 onmounted: move |_event| {
                     if let Some(handler) = props.on_select.as_ref() {
@@ -40,9 +39,9 @@ pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -
                 for entry in options {
                     option {
                         key: "{entry.key()}",
-                        value: "{entry.value()}",
+                        value: entry.value().into_owned(),
                         selected: selected_key.as_ref().is_some_and(|key| &entry.key() == key),
-                        "{entry.label()}"
+                        { entry.label() }
                     }
                 }
             }

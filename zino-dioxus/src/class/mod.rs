@@ -1,5 +1,6 @@
 //! CSS classes for components.
 
+use dioxus_core::{prelude::*, AttributeValue};
 use smallvec::SmallVec;
 use std::{borrow::Cow, fmt};
 
@@ -28,16 +29,6 @@ impl Class {
         Self {
             namespace: (!namespace.is_empty()).then_some(namespace),
             classes: class.split_whitespace().collect(),
-        }
-    }
-
-    /// Creates a new instance when the condition holds, otherwise returns a empty class.
-    #[inline]
-    pub fn check(class: &'static str, condition: bool) -> Self {
-        if condition {
-            Self::new(class)
-        } else {
-            Self::default()
         }
     }
 
@@ -150,5 +141,12 @@ impl fmt::Display for Class {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let format = self.format();
         write!(f, "{format}")
+    }
+}
+
+impl IntoAttributeValue for Class {
+    #[inline]
+    fn into_value(self) -> AttributeValue {
+        AttributeValue::Text(self.format().into_owned())
     }
 }

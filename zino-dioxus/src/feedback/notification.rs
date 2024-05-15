@@ -3,19 +3,17 @@ use dioxus::prelude::*;
 
 /// A simple colored block meant to draw the attention to the user about something.
 pub fn Notification(props: NotificationProps) -> Element {
-    let class = props.class;
-    let close_class = props.close_class;
-    let hidden_class = Class::check("is-hidden", !props.visible);
     rsx! {
         div {
-            class: "{class} {hidden_class}",
+            class: props.class,
+            class: if !props.visible { "is-hidden" },
             position: "fixed",
             top: "4rem",
             right: "0.75rem",
             z_index: 99,
             if props.on_close.is_some() {
                 button {
-                    class: "{close_class}",
+                    class: props.close_class,
                     onclick: move |event| {
                         if let Some(handler) = props.on_close.as_ref() {
                             handler.call(event);

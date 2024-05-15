@@ -2,14 +2,20 @@
 
 use std::borrow::Cow;
 
+mod button;
 mod field;
+mod input;
 mod select;
+mod textarea;
 
+pub use button::{Button, ButtonProps};
 pub use field::{
     FormAddons, FormAddonsProps, FormField, FormFieldContainer, FormFieldContainerProps,
     FormFieldProps, FormGroup, FormGroupProps,
 };
+pub use input::{Input, InputProps};
 pub use select::{DataSelect, DataSelectProps};
+pub use textarea::{Textarea, TextareaProps};
 
 /// An interface for the data entries.
 pub trait DataEntry {

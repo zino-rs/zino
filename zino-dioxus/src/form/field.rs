@@ -4,22 +4,18 @@ use zino_core::SharedString;
 
 /// A container for the form field with a label.
 pub fn FormFieldContainer(props: FormFieldContainerProps) -> Element {
-    let class = props.class;
-    let field_label_class = props.field_label_class;
-    let field_body_class = props.field_body_class;
-    let label_class = props.label_class;
     rsx! {
         div {
-            class: "{class}",
+            class: props.class,
             div {
-                class: "{field_label_class}",
+                class: props.field_label_class,
                 label {
-                    class: "{label_class}",
-                    "{props.label}"
+                    class: props.label_class,
+                    { props.label }
                 }
             }
             div {
-                class: "{field_body_class}",
+                class: props.field_body_class,
                 { props.children }
             }
         }
@@ -50,14 +46,12 @@ pub struct FormFieldContainerProps {
 
 /// A single field with the form control.
 pub fn FormField(props: FormFieldProps) -> Element {
-    let class = props.class;
-    let control_class = props.control_class;
-    let expanded_class = Class::check("is-expanded", props.expanded);
     rsx! {
         div {
-            class: "{class}",
+            class: props.class,
             div {
-                class: "{control_class} {expanded_class}",
+                class: props.control_class,
+                class: if props.expanded { "is-expanded" },
                 { props.children }
             }
         }
@@ -82,19 +76,14 @@ pub struct FormFieldProps {
 
 /// Grouped fields with the form control.
 pub fn FormGroup(props: FormGroupProps) -> Element {
-    let class = props.class;
-    let container_class = match props.align.as_ref() {
-        "center" => format!("{class} is-grouped-centered"),
-        "right" => format!("{class} is-grouped-right"),
-        _ => class.to_string(),
-    };
-    let control_class = props.control_class;
     rsx! {
         div {
-            class: "{container_class}",
+            class: props.class,
+            class: if props.align == "center" { "is-grouped-centered" },
+            class: if props.align == "right" { "is-grouped-right" },
             for item in props.items.iter() {
                 div {
-                    class: "{control_class}",
+                    class: props.control_class.clone(),
                     { item }
                 }
             }
@@ -111,8 +100,8 @@ pub struct FormGroupProps {
     /// A class to apply custom styles.
     #[props(into, default = "control".into())]
     pub control_class: Class,
-    /// The alignment of the group: `left` | "center" | `right`.
-    #[props(into, default = "left".into())]
+    /// The alignment of the group: `left` | `center` | `right`.
+    #[props(into, default)]
     pub align: SharedString,
     /// The items to be grouped.
     #[props(into)]
@@ -121,19 +110,13 @@ pub struct FormGroupProps {
 
 /// Attaches inputs, buttons, and dropdowns together with the form control.
 pub fn FormAddons(props: FormAddonsProps) -> Element {
-    let class = props.class;
-    let control_class = props.control_class;
-    let expand = props.expand;
-    let items = props.items.iter().enumerate().map(|(index, item)| {
-        let expand_class = Class::check("is-expanded", expand == index + 1);
-        (expand_class, item)
-    });
     rsx! {
         div {
-            class: "{class}",
-            for (expand_class, item) in items {
+            class: props.class,
+            for (index, item) in props.items.iter().enumerate() {
                 div {
-                    class: "{control_class} {expand_class}",
+                    class: props.control_class.clone(),
+                    class: if props.expand == index + 1 { "is-expanded" },
                     { item }
                 }
             }
