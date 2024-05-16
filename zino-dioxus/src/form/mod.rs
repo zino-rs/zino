@@ -5,6 +5,7 @@ use std::borrow::Cow;
 mod button;
 mod field;
 mod input;
+mod radio;
 mod select;
 mod textarea;
 
@@ -14,6 +15,7 @@ pub use field::{
     FormFieldProps, FormGroup, FormGroupProps,
 };
 pub use input::{Input, InputProps};
+pub use radio::{Radio, RadioProps};
 pub use select::{DataSelect, DataSelectProps};
 pub use textarea::{Textarea, TextareaProps};
 

@@ -44,11 +44,16 @@ pub(super) fn init<APP: Application + ?Sized>() {
     } else {
         LevelFilter::WARN
     };
+    let mut stdout_max_level = if in_dev_mode {
+        Level::DEBUG
+    } else {
+        Level::WARN
+    };
     #[cfg(feature = "env-filter")]
     let mut env_filter = if in_dev_mode {
         "info,zino=trace,zino_core=trace"
     } else {
-        "warn"
+        "warn,zino=info,zino_core=info"
     };
 
     let mut log_dir = "logs";
@@ -58,8 +63,10 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let mut display_target = true;
     let mut display_filename = false;
     let mut display_line_number = false;
+    let mut display_thread_ids = false;
     let mut display_thread_names = false;
     let mut display_span_list = false;
+    let mut flatten_event = false;
     if let Some(config) = APP::config().get_table("tracing") {
         if let Some(dir) = config.get_str("log-dir") {
             log_dir = dir;
@@ -74,6 +81,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
             event_format = format;
         }
         if let Some(level) = config.get_str("level") {
+            stdout_max_level = level.parse().expect("fail to parse the level");
             level_filter = level.parse().expect("fail to parse the level filter");
         }
         #[cfg(feature = "env-filter")]
@@ -86,8 +94,10 @@ pub(super) fn init<APP: Application + ?Sized>() {
         display_line_number = config
             .get_bool("display-line-number")
             .unwrap_or(in_dev_mode);
+        display_thread_ids = config.get_bool("display-thread-ids").unwrap_or(false);
         display_thread_names = config.get_bool("display-thread-names").unwrap_or(false);
         display_span_list = config.get_bool("display-span-list").unwrap_or(false);
+        flatten_event = config.get_bool("flatten-event").unwrap_or(false);
     }
 
     let project_dir = APP::project_dir();
@@ -118,16 +128,13 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let (non_blocking_appender, worker_guard) = tracing_appender::non_blocking(file_appender);
 
     // Format layer
-    let stdout = if in_dev_mode {
-        io::stdout.with_max_level(Level::DEBUG)
-    } else {
-        io::stdout.with_max_level(Level::WARN)
-    };
+    let stdout = io::stdout.with_max_level(stdout_max_level);
     let fmt_layer = tracing_subscriber::fmt::layer()
         .with_ansi(ansi_terminal)
         .with_target(display_target)
         .with_file(display_filename)
         .with_line_number(display_line_number)
+        .with_thread_ids(display_thread_ids)
         .with_thread_names(display_thread_names)
         .with_timer(local_offset_time)
         .with_writer(stdout.and(non_blocking_appender));
@@ -164,6 +171,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
         "json" => {
             let json_fmt_layer = fmt_layer
                 .json()
+                .flatten_event(flatten_event)
                 .with_current_span(true)
                 .with_span_list(display_span_list);
             let subscriber = subscriber.with(json_fmt_layer);

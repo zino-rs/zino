@@ -284,7 +284,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                         column_type,
                         data_type,
                         column_default,
-                        "column type of the column `{column_name}` should be updated",
+                        "data type of `{column_name}` should be altered as `{column_type}`",
                     );
                 } else if col.is_not_null() != is_not_null && column_name != primary_key_name {
                     tracing::warn!(
@@ -295,7 +295,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                         data_type,
                         column_default,
                         is_not_null,
-                        "`NOT NULL` constraint of the column `{column_name}` should be updated",
+                        "`NOT NULL` constraint of `{column_name}` should be consistent",
                     );
                 }
             } else {

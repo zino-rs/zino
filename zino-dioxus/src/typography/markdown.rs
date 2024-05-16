@@ -19,7 +19,7 @@ pub fn Markdown(props: MarkdownProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct MarkdownProps {
     /// The class attribute for the component.
-    #[props(into, default = "markdown content".into())]
+    #[props(into, default = "content markdown".into())]
     pub class: Class,
     /// The children to render within the component.
     #[props(into)]

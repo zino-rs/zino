@@ -1,11 +1,14 @@
 use crate::class::Class;
 use dioxus::prelude::*;
+use zino_core::SharedString;
 
 /// A simple colored block meant to draw the attention to the user about something.
 pub fn Notification(props: NotificationProps) -> Element {
     rsx! {
         div {
             class: props.class,
+            class: if !props.color.is_empty() { "is-{props.color}" },
+            class: if !props.theme.is_empty() { "is-{props.theme}" },
             class: if !props.visible { "is-hidden" },
             position: "fixed",
             top: "4rem",
@@ -35,6 +38,12 @@ pub struct NotificationProps {
     /// A class to apply to the `close` button element.
     #[props(into, default = "delete".into())]
     pub close_class: Class,
+    /// The color of the notification: `primary` | `link` | `info` | `success` | `warning` | `danger`.
+    #[props(into, default)]
+    pub color: SharedString,
+    /// The theme of the notification: `light`.
+    #[props(into, default)]
+    pub theme: SharedString,
     /// An event handler to be called when the `close` button is clicked.
     pub on_close: Option<EventHandler<MouseEvent>>,
     /// A flag to determine whether the modal is visible or not.

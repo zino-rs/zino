@@ -32,11 +32,14 @@ impl<'a> ColumnExt for Column<'a> {
             "SMALLINT UNSIGNED" => data_type == "SMALLINT",
             "INT UNSIGNED" => data_type == "INT",
             "BIGINT UNSIGNED" => data_type == "BIGINT",
+            "TEXT" => data_type == "VARCHAR",
             _ => {
                 if cfg!(feature = "orm-postgres") && column_type.ends_with("[]") {
                     data_type == "ARRAY"
                 } else if column_type.starts_with("TIMESTAMP") {
                     data_type.starts_with("TIMESTAMP")
+                } else if column_type.starts_with("VARCHAR") {
+                    data_type == "VARCHAR" || data_type == "TEXT"
                 } else {
                     false
                 }

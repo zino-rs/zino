@@ -38,7 +38,7 @@ password = "uzU7eGgSw6HLp63qbjpMQMnl4Kk0SrDDp9bIXkRmcjqwRFRf"
 database = "local/data/main.db"
 
 [tracing]
-level = "warn"
+filter = "warn,zino=info,zino_core=info"
 
 [metrics]
 exporter = "prometheus"
