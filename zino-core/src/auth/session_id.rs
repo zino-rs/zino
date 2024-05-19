@@ -1,10 +1,11 @@
 use crate::{encoding::base64, error::Error, validation::Validation, SharedString};
 use hmac::digest::{Digest, FixedOutput, HashMarker, Update};
+use serde::{Deserialize, Serialize};
 use std::{error, fmt};
 
 /// Session Identification URI.
 /// See [the spec](https://www.w3.org/TR/WD-session-id).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SessionId {
     /// Specifies the realm within which linkage of the identifier is possible.
     /// Realms have the same format as DNS names.

@@ -3,7 +3,7 @@ use crate::{
     bail,
     error::Error,
     extension::{HeaderMapExt, JsonObjectExt, JsonValueExt, TomlTableExt, TomlValueExt},
-    helper, openapi,
+    helper,
     trace::TraceContext,
     JsonValue, Map,
 };
@@ -74,9 +74,10 @@ impl WebHook {
     }
 
     /// Gets a webhook with the specific name from the OpenAPI docs.
+    #[cfg(feature = "openapi")]
     #[inline]
     pub fn get_from_openapi(name: &str) -> Option<&'static WebHook> {
-        openapi::get_webhook(name)
+        crate::openapi::get_webhook(name)
     }
 
     /// Inserts a key/value pair into the webhook request headers.

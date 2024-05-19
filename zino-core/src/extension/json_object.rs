@@ -3,7 +3,6 @@ use crate::{
     datetime::{self, Date, DateTime, Time},
     helper,
     model::Model,
-    openapi,
     validation::Validation,
     JsonValue, Map, Record, Uuid,
 };
@@ -234,6 +233,7 @@ pub trait JsonObjectExt {
     fn extract_from_populated(&mut self, key: &str, fields: &[&str]);
 
     /// Translates the map with the OpenAPI data.
+    #[cfg(feature = "openapi")]
     fn translate_with_openapi(&mut self, name: &str);
 
     /// Attempts to read the map as an instance of the model `M`.
@@ -737,9 +737,10 @@ impl JsonObjectExt for Map {
         self.append(&mut object);
     }
 
+    #[cfg(feature = "openapi")]
     #[inline]
     fn translate_with_openapi(&mut self, name: &str) {
-        openapi::translate_model_entry(self, name);
+        crate::openapi::translate_model_entry(self, name);
     }
 
     fn read_as_model<M: Model>(&self) -> Result<M, Validation> {

@@ -57,12 +57,14 @@ The following optional features are available:
 | `i18n`       | Enables the support for internationalization.        | No       |
 | `jwt`        | Enables the support for JSON Web Token.              | No       |
 | `ntex`       | Enables the integration with [`ntex`].               | No       |
+| `opa`        | Enables the support for OPA via [`regorus`].         | No       |
 | `orm`        | Enables the ORM for MySQL, PostgreSQL or **SQLite**. | No       |
 
 [`zino`]: https://github.com/zino-rs/zino
 [`sqlx`]: https://crates.io/crates/sqlx
 [`tracing`]: https://crates.io/crates/tracing
 [`metrics`]: https://crates.io/crates/metrics
+[`regorus`]: https://crates.io/crates/regorus
 [`actix-web`]: https://crates.io/crates/actix-web
 [`axum`]: https://crates.io/crates/axum
 [`dioxus`]: https://crates.io/crates/dioxus

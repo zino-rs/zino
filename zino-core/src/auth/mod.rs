@@ -20,9 +20,14 @@ pub use user_session::UserSession;
 
 #[cfg(feature = "jwt")]
 mod jwt_claims;
+#[cfg(feature = "opa")]
+mod rego_engine;
 
 #[cfg(feature = "jwt")]
 pub(crate) use jwt_claims::{default_time_tolerance, default_verification_options};
 
 #[cfg(feature = "jwt")]
 pub use jwt_claims::{JwtClaims, JwtHmacKey};
+
+#[cfg(feature = "opa")]
+pub use rego_engine::RegoEngine;

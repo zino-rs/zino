@@ -40,7 +40,6 @@ use crate::{
     datetime::DateTime,
     error::Error,
     extension::{HeaderMapExt, JsonObjectExt, TomlTableExt},
-    openapi,
     schedule::{AsyncJobScheduler, AsyncScheduler, Scheduler},
     state::{Env, State},
     trace::TraceContext,
@@ -50,6 +49,8 @@ use reqwest::Response;
 use serde::de::DeserializeOwned;
 use std::{env, fs, path::PathBuf, thread};
 use toml::value::Table;
+
+#[cfg(feature = "openapi")]
 use utoipa::openapi::{OpenApi, OpenApiBuilder};
 
 mod plugin;
@@ -172,8 +173,10 @@ pub trait Application {
     }
 
     /// Gets the [OpenAPI](https://spec.openapis.org/oas/latest.html) document.
+    #[cfg(feature = "openapi")]
     #[inline]
     fn openapi() -> OpenApi {
+        use crate::openapi;
         OpenApiBuilder::new()
             .paths(openapi::default_paths()) // should come first to load OpenAPI files
             .components(Some(openapi::default_components()))

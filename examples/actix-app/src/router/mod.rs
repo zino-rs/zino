@@ -44,13 +44,17 @@ fn file_router(cfg: &mut ServiceConfig) {
 }
 
 fn user_router(cfg: &mut ServiceConfig) {
-    cfg.route("/user/new", post().to(user::new))
-        .route("/user/{id}/delete", post().to(User::soft_delete))
-        .route("/user/{id}/update", post().to(User::update))
-        .route("/user/{id}/view", get().to(user::view))
-        .route("/user/list", get().to(User::list))
-        .route("/user/import", post().to(User::import))
-        .route("/user/export", get().to(User::export));
+    cfg.service(
+        scope("/user")
+            .route("/new", post().to(user::new))
+            .route("/{id}/delete", post().to(User::soft_delete))
+            .route("/{id}/update", post().to(User::update))
+            .route("/{id}/view", get().to(user::view))
+            .route("/list", get().to(User::list))
+            .route("/import", post().to(User::import))
+            .route("/export", get().to(User::export))
+            .wrap(middleware::UserSessionInitializer),
+    );
 }
 
 fn tag_router(cfg: &mut ServiceConfig) {

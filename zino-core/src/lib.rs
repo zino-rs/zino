@@ -9,6 +9,7 @@ mod crypto;
 mod encoding;
 mod helper;
 mod mock;
+#[cfg(feature = "openapi")]
 mod openapi;
 
 #[cfg(feature = "accessor")]

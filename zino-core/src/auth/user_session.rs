@@ -1,12 +1,13 @@
 use super::{AccessKeyId, SessionId};
 use crate::{application::APP_DOMAIN, crypto::Digest};
+use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 #[cfg(feature = "jwt")]
 use crate::{auth::JwtClaims, error::Error, extension::JsonObjectExt, warn};
 
 /// Role-based user sessions.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserSession<U, R = String, T = U> {
     /// User ID.
     user_id: U,

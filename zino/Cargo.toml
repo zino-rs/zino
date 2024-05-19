@@ -26,6 +26,7 @@ actix = [
     "dep:tracing-actix-web",
     "utoipa-rapidoc/actix-web",
     "zino-core/http02",
+    "zino-core/openapi",
     "zino-core/runtime-tokio",
 ]
 axum = [
@@ -36,6 +37,7 @@ axum = [
     "dep:tower",
     "dep:tower-http",
     "utoipa-rapidoc/axum",
+    "zino-core/openapi",
     "zino-core/runtime-tokio",
 ]
 dioxus = [
@@ -58,6 +60,7 @@ ntex = [
     "dep:ntex-files",
     "zino-core/runtime-tokio",
 ]
+opa = ["zino-core/opa"]
 orm = ["zino-core/orm"]
 
 [dependencies]
@@ -156,10 +159,6 @@ features = [
 version = "0.7.10"
 optional = true
 features = ["opentelemetry_0_22"]
-
-[dependencies.utoipa]
-version = "4.2.3"
-optional = true
 
 [dependencies.utoipa-rapidoc]
 version = "4.0.0"

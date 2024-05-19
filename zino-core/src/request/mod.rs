@@ -91,6 +91,12 @@ pub trait RequestContext {
         self.original_uri().path()
     }
 
+    /// Returns the request path segments.
+    #[inline]
+    fn path_segments(&self) -> Vec<&str> {
+        self.request_path().trim_matches('/').split('/').collect()
+    }
+
     /// Creates a new request context.
     fn new_context(&self) -> Context {
         // Emit metrics.

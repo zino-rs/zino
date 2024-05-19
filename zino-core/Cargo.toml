@@ -130,6 +130,8 @@ full = [
     "i18n",
     "jwt",
     "metrics",
+    "opa",
+    "openapi",
     "orm",
     "sqids",
     "tracing-log",
@@ -137,7 +139,7 @@ full = [
 ]
 http02 = ["dep:http02"]
 i18n = ["dep:fluent", "dep:intl-memoizer", "dep:unic-langid"]
-jwt = ["dep:jwt-simple"]
+jwt = ["dep:jwt-simple", "regorus?/jwt"]
 locale = ["random_word"]
 locale-en = ["locale", "random_word/en"]
 locale-es = ["locale", "random_word/es"]
@@ -149,6 +151,8 @@ metrics = [
     "dep:metrics-exporter-prometheus",
     "opendal?/layers-metrics",
 ]
+opa = ["regorus"]
+openapi = ["dep:utoipa"]
 orm = ["orm-sqlx"]
 orm-mariadb = ["orm-sqlx", "sqlx/mysql"]
 orm-mysql = ["orm-sqlx", "sqlx/mysql"]
@@ -292,6 +296,26 @@ optional = true
 version = "0.4.3"
 optional = true
 
+[dependencies.regorus]
+version = "0.1.5"
+optional = true
+default-features = false
+features = [
+    "arc",
+    "base64",
+    "base64url",
+    "crypto",
+    "glob",
+    "hex",
+    "http",
+    "jsonschema",
+    "regex",
+    "semver",
+    "time",
+    "uuid",
+    "urlquery",
+]
+
 [dependencies.reqwest]
 version = "0.12.4"
 default-features = false
@@ -378,6 +402,7 @@ optional = true
 
 [dependencies.utoipa]
 version = "4.2.3"
+optional = true
 features = ["non_strict_integers", "url", "uuid"]
 
 [dependencies.uuid]

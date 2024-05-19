@@ -24,6 +24,7 @@ features = [
     "actix",
     "i18n",
     "jwt",
+    "opa",
     "orm",
 ]
 

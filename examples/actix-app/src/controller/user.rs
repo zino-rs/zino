@@ -36,7 +36,15 @@ pub async fn view(req: Request) -> Result {
     let user = User::fetch_by_id(&user_id).await.extract(&req)?;
     let db_query_duration = db_query_start_time.elapsed();
 
-    let data = Map::data_entry(user);
+    let mut data = Map::data_entry(user);
+    let rego = RegoEngine::shared();
+    rego.set_input(json!({
+        "method": req.request_method().as_str(),
+        "path": req.path_segments(),
+        "user_session": req.get_data::<UserSession<Uuid>>(),
+    }));
+    data.upsert("authorized", rego.eval_allow_query("data.app.user.allow"));
+
     let mut res = Response::default().context(&req);
     res.record_server_timing("db", None, Some(db_query_duration));
     res.set_json_data(data);

@@ -10,10 +10,11 @@ use hmac::{
     Hmac, Mac,
 };
 use rand::{distributions::Alphanumeric, Rng};
+use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, fmt, iter};
 
 /// Access key ID.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AccessKeyId(String);
 
 impl AccessKeyId {

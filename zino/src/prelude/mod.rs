@@ -30,6 +30,10 @@ pub use zino_core::fluent_args;
 #[doc(no_inline)]
 pub use zino_core::auth::JwtClaims;
 
+#[cfg(feature = "opa")]
+#[doc(no_inline)]
+pub use zino_core::auth::RegoEngine;
+
 #[cfg(feature = "orm")]
 #[doc(no_inline)]
 pub use zino_core::orm::{ModelAccessor, ModelHelper, ScalarQuery, Schema, Transaction};
