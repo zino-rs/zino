@@ -1,5 +1,4 @@
 name = "Tags"
-securities = []
 
 [[endpoints]]
 path = "/tag/new"

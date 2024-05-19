@@ -505,7 +505,6 @@ where
             .filter_map(|model| model.get(primary_key_name).cloned())
             .collect::<Vec<_>>();
         let mut query = Self::default_snapshot_query();
-        query.allow_fields(&["parent_id"]);
         query.add_filter("parent_id", Map::from_entry("$in", values));
         query.add_filter("status", Map::from_entry("$ne", "Deleted"));
         query.order_desc("parent_id");

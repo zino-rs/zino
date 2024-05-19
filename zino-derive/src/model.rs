@@ -120,6 +120,25 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             };
                             field_setters.push(setter);
                         }
+                        "default_value" => {
+                            if let Some(value) = value {
+                                if let Some((type_name, type_fn)) = value.split_once("::") {
+                                    let type_name_ident = format_ident!("{}", type_name);
+                                    let type_fn_ident = format_ident!("{}", type_fn);
+                                    field_constructors.push(quote! {
+                                        model.#ident = <#type_name_ident>::#type_fn_ident().into();
+                                    });
+                                } else if type_name == "String" {
+                                    field_constructors.push(quote! {
+                                        model.#ident = #value.to_owned();
+                                    });
+                                } else if let Ok(value) = value.parse::<u8>() {
+                                    field_constructors.push(quote! {
+                                        model.#ident = #value.into();
+                                    });
+                                }
+                            }
+                        }
                         "ignore" | "read_only" | "generated" | "reserved" => {
                             enable_setter = false;
                         }

@@ -47,7 +47,9 @@ pub fn routes() -> Vec<Router> {
         .route("/tag/:id/update", post(Tag::update))
         .route("/tag/:id/view", get(Tag::view))
         .route("/tag/list", get(Tag::list))
-        .route("/tag/tree", get(Tag::tree));
+        .route("/tag/tree", get(Tag::tree))
+        .layer(from_fn(middleware::check_admin_role))
+        .layer(from_fn(middleware::init_user_session));
     routes.push(router);
 
     routes

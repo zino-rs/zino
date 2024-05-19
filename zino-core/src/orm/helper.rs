@@ -1,7 +1,12 @@
 use super::Schema;
 use crate::{
-    crypto, encoding::base64, error::Error, extension::TomlTableExt, openapi, state::State, warn,
-    LazyLock, Map,
+    crypto,
+    encoding::base64,
+    error::Error,
+    extension::{JsonObjectExt, TomlTableExt},
+    openapi,
+    state::State,
+    warn, LazyLock, Map,
 };
 use std::fmt::Display;
 
@@ -49,9 +54,16 @@ where
     }
 
     /// Translates the model data.
-    #[inline]
     fn translate_model(model: &mut Map) {
         openapi::translate_model_entry(model, Self::model_name());
+        for col in Self::columns() {
+            if let Some(translated_field) = col.extra().get_str("translate_as") {
+                let field = [col.name(), "_translated"].concat();
+                if let Some(value) = model.remove(&field) {
+                    model.upsert(translated_field, value);
+                }
+            }
+        }
     }
 }
 

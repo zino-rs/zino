@@ -48,8 +48,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let mut field_constraints = Vec::new();
     let mut ignored_list_fields = Vec::new();
     let mut list_query_methods = Vec::new();
-    let mut populated_queries = Vec::new();
-    let mut populated_one_queries = Vec::new();
+    let mut fetched_queries = Vec::new();
+    let mut fetched_one_queries = Vec::new();
     let mut sample_queries = Vec::new();
     let mut soft_delete_updates = Vec::new();
     let mut lock_updates = Vec::new();
@@ -716,14 +716,14 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             }
         }
     }
-    populated_queries.push(quote! {
+    fetched_queries.push(quote! {
         let mut models = Self::find::<Map>(query).await?;
         for model in models.iter_mut() {
             Self::after_decode(model).await?;
             translate_enabled.then(|| Self::translate_model(model));
         }
     });
-    populated_one_queries.push(quote! {
+    fetched_one_queries.push(quote! {
         let mut model = Self::find_by_id::<Map>(id)
             .await?
             .ok_or_else(|| zino_core::warn!("404 Not Found: cannot find the model `{}`", id))?;
@@ -743,8 +743,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 query.set_extra_flag("translate", true);
                 #model_ident::populate_one(&mut query, &mut model, &[#(#ref_fields),*]).await?;
             };
-            populated_queries.push(populated_query);
-            populated_one_queries.push(populated_one_query);
+            fetched_queries.push(populated_query);
+            fetched_one_queries.push(populated_one_query);
         }
     }
     if !populated_field_mappings.is_empty() {
@@ -761,12 +761,12 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                     model.upsert(#new_key, value);
                 }
             };
-            populated_queries.push(populated_query);
-            populated_one_queries.push(populated_one_query);
+            fetched_queries.push(populated_query);
+            fetched_one_queries.push(populated_one_query);
         }
     }
-    populated_queries.push(quote! { Ok(models) });
-    populated_one_queries.push(quote! { Ok(model) });
+    fetched_queries.push(quote! { Ok(models) });
+    fetched_one_queries.push(quote! { Ok(model) });
     if user_id_type.is_empty() {
         user_id_type.clone_from(&primary_key_type);
     }
@@ -854,11 +854,11 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
 
             async fn fetch(query: &Query) -> Result<Vec<ZinoMap>, ZinoError> {
                 let translate_enabled = query.translate_enabled();
-                #(#populated_queries)*
+                #(#fetched_queries)*
             }
 
             async fn fetch_by_id(id: &#model_primary_key_type) -> Result<ZinoMap, ZinoError> {
-                #(#populated_one_queries)*
+                #(#fetched_one_queries)*
             }
 
             async fn random_associations() -> Result<ZinoMap, Error> {

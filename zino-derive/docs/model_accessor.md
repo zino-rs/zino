@@ -24,6 +24,9 @@ Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
 - **`#[schema(fetch_as = "field")]`**: The `fetch_as` attribute specifies
   the field name when fetching data of the referenced model.
 
+- **`#[schema(translate_as = "field")]`**: The `translate_as` attribute specifies
+  the field name when translating the model data.
+
 - **`#[schema(unique)]`**: The `unique` annotation is used to indicate that
   the column value should be unique in the table.
 
@@ -67,6 +70,9 @@ Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
 
 - **`#[schema(min_items = N)]`**: The `max_items` attribute specifies
   the minimum number of items for a `Vec<T>` value.
+
+- **`#[schema(scale = N)]`**: The `scale` attribute specifies
+  the scale for a `Decimal` value.
 
 - **`#[schema(unique_items)]`**: The `unique_items` annotation is used to indicate that
   the array items should be unique.

@@ -70,7 +70,6 @@ pub struct User {
     email: String,
     location: String,
     locale: String,
-    #[schema(format = "phone-number")]
     mobile: String,
     #[schema(snapshot, nonempty, unique_items, index_type = "gin")]
     roles: Vec<String>,

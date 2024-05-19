@@ -1,11 +1,11 @@
 use crate::{extension::JsonObjectExt, model::Translation, LazyLock, Map};
+use ahash::{HashMap, HashMapExt};
 use convert_case::{Case, Casing};
-use std::collections::HashMap;
 
 /// Translates the model data.
 pub(crate) fn translate_model_entry(model: &mut Map, model_name: &str) {
     let mut data = Map::new();
-    let model_name_prefix = format!("{model_name}.");
+    let model_name_prefix = [model_name, "."].concat();
     for (key, translation) in MODEL_TRANSLATIONS.iter() {
         if let Some(field) = key.strip_prefix(&model_name_prefix) {
             if let Some(value) = model.get(field) {

@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.22.5"
+version = "0.23.0"
 rust-version = "1.75"
 edition = "2021"
 license = "MIT"
@@ -181,6 +181,7 @@ view-tera = ["view", "dep:tera"]
 
 [dependencies]
 aes-gcm-siv = "0.11.1"
+ahash = "0.8.11"
 apache-avro = "0.16.0"
 base64 = "0.22.1"
 bytes = "1.6.0"
@@ -376,7 +377,7 @@ version = "0.9.5"
 optional = true
 
 [dependencies.utoipa]
-version = "4.2.0"
+version = "4.2.3"
 features = ["non_strict_integers", "url", "uuid"]
 
 [dependencies.uuid]
@@ -389,7 +390,7 @@ features = [
 ]
 
 [dev-dependencies]
-anyhow = "1.0.83"
+anyhow = "1.0.86"
 arrayvec = "0.7.4"
 base64-simd = "0.8.0"
 criterion = "0.5.1"

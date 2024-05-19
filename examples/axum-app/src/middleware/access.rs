@@ -24,3 +24,14 @@ pub async fn init_user_session(mut req: Request, next: Next) -> Result<Response>
     }
     Ok(next.run(req.into()).await)
 }
+
+pub async fn check_admin_role(req: Request, next: Next) -> Result<Response> {
+    if req.request_method() == "POST" {
+        if let Some(user_session) = req.get_data::<UserSession<i64>>() {
+            if !user_session.has_role("admin") {
+                reject!(req, unauthorized, "a role of `admin` is required");
+            }
+        }
+    }
+    Ok(next.run(req.into()).await)
+}

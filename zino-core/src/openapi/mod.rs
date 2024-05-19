@@ -1,14 +1,10 @@
 //! OpenAPI specification and API documentation.
 
 use crate::{application, extension::TomlTableExt, response::WebHook, LazyLock, Uuid};
+use ahash::{HashMap, HashMapExt};
 use convert_case::{Case, Casing};
 use serde_json::json;
-use std::{
-    collections::{BTreeMap, HashMap},
-    fs,
-    io::ErrorKind,
-    sync::OnceLock,
-};
+use std::{collections::BTreeMap, fs, io::ErrorKind, sync::OnceLock};
 use toml::Table;
 use utoipa::openapi::{
     content::ContentBuilder,
