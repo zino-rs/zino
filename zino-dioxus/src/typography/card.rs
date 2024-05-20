@@ -20,9 +20,11 @@ pub fn Card(props: CardProps) -> Element {
                     { props.content }
                 }
             }
-            footer {
-                class: "card-footer",
-                { props.footer }
+            if props.footer.is_some() {
+                footer {
+                    class: "card-footer",
+                    { props.footer }
+                }
             }
         }
     }
@@ -39,5 +41,5 @@ pub struct CardProps {
     /// The modal content to render within the component.
     pub content: Element,
     /// The modal footer to render within the component.
-    pub footer: Element,
+    pub footer: Option<VNode>,
 }

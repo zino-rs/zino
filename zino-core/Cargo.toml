@@ -312,8 +312,8 @@ features = [
     "regex",
     "semver",
     "time",
-    "uuid",
     "urlquery",
+    "uuid",
 ]
 
 [dependencies.reqwest]

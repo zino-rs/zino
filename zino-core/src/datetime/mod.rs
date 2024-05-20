@@ -12,6 +12,7 @@ use std::{
     str::FromStr,
     time::Duration,
 };
+use uuid::{NoContext, Timestamp};
 
 mod date;
 mod duration;
@@ -53,6 +54,12 @@ impl DateTime {
         Utc::now().timestamp_micros()
     }
 
+    /// Returns the number of non-leap nanoseconds since the midnight UTC on January 1, 1970.
+    #[inline]
+    pub fn current_timestamp_nanos() -> i64 {
+        Utc::now().timestamp_nanos_opt().unwrap_or_default()
+    }
+
     /// Returns a new instance corresponding to a UTC date and time,
     /// from the number of non-leap seconds since the midnight UTC on January 1, 1970.
     #[inline]
@@ -77,6 +84,22 @@ impl DateTime {
         Self(dt.with_timezone(&Local))
     }
 
+    /// Returns a new instance corresponding to a UTC date and time,
+    /// from the number of non-leap nanoseconds since the midnight UTC on January 1, 1970.
+    #[inline]
+    pub fn from_timestamp_nanos(nanos: i64) -> Self {
+        let dt = chrono::DateTime::from_timestamp_nanos(nanos);
+        Self(dt.with_timezone(&Local))
+    }
+
+    /// Returns a new instance corresponding to a UTC date and time from a UUID timestamp.
+    #[inline]
+    pub fn from_uuid_timestamp(ts: Timestamp) -> Self {
+        let (secs, nanos) = ts.to_unix();
+        let nanos = secs * 1_000_000_000 + u64::from(nanos);
+        Self::from_timestamp_nanos(nanos.try_into().unwrap_or_default())
+    }
+
     /// Returns the number of non-leap seconds since the midnight UTC on January 1, 1970.
     #[inline]
     pub fn timestamp(&self) -> i64 {
@@ -93,6 +116,19 @@ impl DateTime {
     #[inline]
     pub fn timestamp_micros(&self) -> i64 {
         self.0.timestamp_micros()
+    }
+
+    /// Returns the number of non-leap nanoseconds since the midnight UTC on January 1, 1970.
+    #[inline]
+    pub fn timestamp_nanos(&self) -> i64 {
+        self.0.timestamp_nanos_opt().unwrap_or_default()
+    }
+
+    /// Returns a timestamp that can be encoded into a UUID.
+    pub fn uuid_timestamp(&self) -> Timestamp {
+        let secs = self.timestamp().try_into().unwrap_or_default();
+        let nanos = self.0.nanosecond();
+        Timestamp::from_unix(NoContext, secs, nanos)
     }
 
     /// Returns the difference in seconds between `self` and

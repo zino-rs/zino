@@ -47,14 +47,36 @@ impl AccessKeyId {
     /// Attempts to construct an instance by generating a [sqid](https://sqids.org/)
     /// from a slice of numbers.
     #[cfg(feature = "sqids")]
+    #[inline]
     pub fn encode_sqids(numbers: &[u64]) -> Result<Self, sqids::Error> {
         SQIDS_GENERATOR.encode(numbers).map(AccessKeyId)
     }
 
     /// Decodes `self` as a [sqid](https://sqids.org/) into a vector of numbers.
     #[cfg(feature = "sqids")]
+    #[inline]
     pub fn decode_sqids(&self) -> Vec<u64> {
         SQIDS_GENERATOR.decode(self.as_str())
+    }
+
+    /// Attempts to construct an instance by generating a [sqid](https://sqids.org/)
+    /// from a UUID.
+    #[cfg(feature = "sqids")]
+    #[inline]
+    pub fn encode_uuid(id: &uuid::Uuid) -> Result<Self, sqids::Error> {
+        let (hi, lo) = id.as_u64_pair();
+        SQIDS_GENERATOR.encode(&[hi, lo]).map(AccessKeyId)
+    }
+
+    /// Decodes `self` as a [sqid](https://sqids.org/) into a UUID.
+    #[cfg(feature = "sqids")]
+    #[inline]
+    pub fn decode_uuid(&self) -> Option<uuid::Uuid> {
+        if let [hi, lo] = SQIDS_GENERATOR.decode(self.as_str()).as_slice() {
+            Some(uuid::Uuid::from_u64_pair(*hi, *lo))
+        } else {
+            None
+        }
     }
 
     /// Returns a string slice.
@@ -99,6 +121,13 @@ impl<'a> From<Cow<'a, str>> for AccessKeyId {
     }
 }
 
+impl From<AccessKeyId> for String {
+    #[inline]
+    fn from(id: AccessKeyId) -> String {
+        id.0
+    }
+}
+
 /// Secrect access key.
 #[derive(Debug, Clone)]
 pub struct SecretAccessKey(Vec<u8>);
@@ -138,6 +167,13 @@ impl AsRef<[u8]> for SecretAccessKey {
     #[inline]
     fn as_ref(&self) -> &[u8] {
         self.0.as_ref()
+    }
+}
+
+impl From<SecretAccessKey> for Vec<u8> {
+    #[inline]
+    fn from(s: SecretAccessKey) -> Vec<u8> {
+        s.0
     }
 }
 

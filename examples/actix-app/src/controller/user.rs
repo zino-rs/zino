@@ -41,7 +41,7 @@ pub async fn view(req: Request) -> Result {
     rego.set_input(json!({
         "method": req.request_method().as_str(),
         "path": req.path_segments(),
-        "user_session": req.get_data::<UserSession<Uuid>>(),
+        "session": req.get_data::<UserSession<Uuid>>(),
     }));
     data.upsert("authorized", rego.eval_allow_query("data.app.user.allow"));
 

@@ -47,7 +47,7 @@ host = "127.0.0.1"
 port = 9000
 
 [jwt]
-max-age = "20m"
+max-age = "1h"
 refresh-interval = "7d"
 
 [openapi]

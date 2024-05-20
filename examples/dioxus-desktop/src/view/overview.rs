@@ -25,21 +25,15 @@ pub fn Overview() -> Element {
             class: "columns is-6",
             div {
                 class: "column",
-                div {
-                    class: "card",
-                    header {
-                        class: "card-header",
-                        div {
-                            class: "card-header-title",
-                            SvgIcon { shape: GoMarkGithub, width: 14, intrinsic: true }
-                            span {
-                                class: "ml-1",
-                                "GitHub status"
-                            }
+                Card {
+                    title: rsx! {
+                        SvgIcon { shape: GoMarkGithub, width: 14, intrinsic: true }
+                        span {
+                            class: "ml-1",
+                            "GitHub status"
                         }
-                    }
-                    div {
-                        class: "card-content",
+                    },
+                    content: rsx! {
                         img {
                             class: "mr-2",
                             src: "https://img.shields.io/github/languages/top/photino/zino",
@@ -119,7 +113,7 @@ pub fn Overview() -> Element {
                                 src: "https://img.shields.io/github/license/photino/zino",
                             }
                         }
-                    }
+                    },
                 }
             }
         }
@@ -127,21 +121,15 @@ pub fn Overview() -> Element {
             class: "columns is-6",
             div {
                 class: "column",
-                div {
-                    class: "card",
-                    header {
-                        class: "card-header",
-                        div {
-                            class: "card-header-title",
-                            SvgIcon { shape: GoIssueOpened, width: 14, intrinsic: true }
-                            span {
-                                class: "ml-1",
-                                "GitHub issues"
-                            }
+                Card {
+                    title: rsx! {
+                        SvgIcon { shape: GoIssueOpened, width: 14, intrinsic: true }
+                        span {
+                            class: "ml-1",
+                            "GitHub issues"
                         }
-                    }
-                    div {
-                        class: "card-content",
+                    },
+                    content: rsx! {
                         a {
                             class: "mr-2",
                             href: "https://github.com/zino-rs/zino/issues",
@@ -158,26 +146,20 @@ pub fn Overview() -> Element {
                                 }
                             }
                         }
-                    }
+                    },
                 }
             }
             div {
                 class: "column",
-                div {
-                    class: "card",
-                    header {
-                        class: "card-header",
-                        div {
-                            class: "card-header-title",
-                            SvgIcon { shape: GoHistory, width: 14, intrinsic: true }
-                            span {
-                                class: "ml-1",
-                                "GitHub commits"
-                            }
+                Card {
+                    title: rsx! {
+                        SvgIcon { shape: GoHistory, width: 14, intrinsic: true }
+                        span {
+                            class: "ml-1",
+                            "GitHub commits"
                         }
-                    }
-                    div {
-                        class: "card-content",
+                    },
+                    content: rsx! {
                         img {
                             class: "mr-2",
                             src: "https://img.shields.io/github/commit-activity/t/photino/zino",
@@ -194,7 +176,7 @@ pub fn Overview() -> Element {
                             class: "mr-2",
                             src: "https://img.shields.io/github/commit-activity/w/photino/zino",
                         }
-                    }
+                    },
                 }
             }
         }
@@ -233,21 +215,15 @@ fn CrateListing(name: String, description: String) -> Element {
     rsx! {
         div {
             class: "column is-one-quarter",
-            div {
-                class: "card",
-                header {
-                    class: "card-header",
-                    div {
-                        class: "card-header-title",
-                        span {
-                            class: "tag is-warning is-light mr-1",
-                            "{name}"
-                        }
-                        span { "{description}" }
+            Card {
+                title: rsx! {
+                    span {
+                        class: "tag is-warning is-light mr-1",
+                        "{name}"
                     }
-                }
-                div {
-                    class: "card-content",
+                    span { "{description}" }
+                },
+                content: rsx! {
                     a {
                         class: "mr-2",
                         href: "https://crates.io/crates/{name}",
@@ -274,7 +250,7 @@ fn CrateListing(name: String, description: String) -> Element {
                         class: "mr-2",
                         src: "https://img.shields.io/crates/dr/{name}"
                     }
-                }
+                },
             }
         }
     }
