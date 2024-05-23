@@ -286,14 +286,14 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         format!(r#"({field} = '') IS FALSE"#)
                     } else if self.fuzzy_search() {
                         if value.contains(',') {
-                            value
+                            let exprs = value
                                 .split(',')
                                 .map(|s| {
                                     let value = Query::escape_string(s);
                                     format!(r#"{field} RLIKE {value}"#)
                                 })
-                                .collect::<Vec<_>>()
-                                .join(" OR ")
+                                .collect::<Vec<_>>();
+                            format!("({})", exprs.join(" OR "))
                         } else {
                             let value = Query::escape_string(value);
                             format!(r#"{field} RLIKE {value}"#)
@@ -385,15 +385,15 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     if value == "nonempty" {
                         format!(r#"json_length({field}) > 0"#)
                     } else if value.contains(';') {
-                        value
+                        let exprs = value
                             .split(',')
                             .map(|v| {
                                 let s = v.replace(';', ",");
                                 let value = self.format_value(&s);
                                 format!(r#"json_contains({field}, {value})"#)
                             })
-                            .collect::<Vec<_>>()
-                            .join(" OR ")
+                            .collect::<Vec<_>>();
+                        format!("({})", exprs.join(" OR "))
                     } else {
                         let value = self.format_value(value);
                         format!(r#"json_overlaps({field}, {value})"#)

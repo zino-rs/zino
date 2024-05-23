@@ -297,14 +297,14 @@ pub trait Application {
         crate::orm::GlobalPool::close_all().await;
     }
 
-    /// Makes an HTTP request to the provided resource.
-    async fn fetch(resource: &str, options: Option<&Map>) -> Result<Response, Error> {
+    /// Makes an HTTP request to the provided URL.
+    async fn fetch(url: &str, options: Option<&Map>) -> Result<Response, Error> {
         let mut trace_context = TraceContext::new();
         let span_id = trace_context.span_id();
         trace_context
             .trace_state_mut()
             .push("zino", format!("{span_id:x}"));
-        http_client::request_builder(resource, options)?
+        http_client::request_builder(url, options)?
             .header("traceparent", trace_context.traceparent())
             .header("tracestate", trace_context.tracestate())
             .send()
@@ -312,13 +312,10 @@ pub trait Application {
             .map_err(Error::from)
     }
 
-    /// Makes an HTTP request to the provided resource and
+    /// Makes an HTTP request to the provided URL and
     /// deserializes the response body via JSON.
-    async fn fetch_json<T: DeserializeOwned>(
-        resource: &str,
-        options: Option<&Map>,
-    ) -> Result<T, Error> {
-        let response = Self::fetch(resource, options).await?.error_for_status()?;
+    async fn fetch_json<T: DeserializeOwned>(url: &str, options: Option<&Map>) -> Result<T, Error> {
+        let response = Self::fetch(url, options).await?.error_for_status()?;
         let data = if response.headers().has_json_content_type() {
             response.json().await?
         } else {

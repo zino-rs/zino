@@ -77,15 +77,12 @@ pub(super) fn init<APP: Application + ?Sized>() {
 }
 
 /// Constructs a request builder.
-pub(crate) fn request_builder(
-    resource: &str,
-    options: Option<&Map>,
-) -> Result<RequestBuilder, Error> {
+pub(crate) fn request_builder(url: &str, options: Option<&Map>) -> Result<RequestBuilder, Error> {
     if options.is_none() || options.is_some_and(|map| map.is_empty()) {
         let request_builder = SHARED_HTTP_CLIENT_WITH_MIDDLEWARE
             .get()
             .ok_or_else(|| warn!("fail to get the global HTTP client"))?
-            .request(Method::GET, resource);
+            .request(Method::GET, url);
         return Ok(request_builder);
     }
 
@@ -97,7 +94,7 @@ pub(crate) fn request_builder(
     let mut request_builder = SHARED_HTTP_CLIENT_WITH_MIDDLEWARE
         .get()
         .ok_or_else(|| warn!("fail to get the global HTTP client"))?
-        .request(method, resource);
+        .request(method, url);
     let mut headers = HeaderMap::new();
     if let Some(query) = options.get("query") {
         request_builder = request_builder.query(query);

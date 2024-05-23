@@ -146,7 +146,7 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 if conditions.is_empty() {
                     return String::new();
                 } else {
-                    return conditions.join(" OR ");
+                    return format!("({})", conditions.join(" OR "));
                 }
             } else {
                 for (name, value) in filter {
@@ -270,14 +270,14 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         format!(r#"({field} = '') IS FALSE"#)
                     } else if self.fuzzy_search() {
                         if value.contains(',') {
-                            value
+                            let exprs = value
                                 .split(',')
                                 .map(|s| {
                                     let value = Query::escape_string(format!("%{s}%"));
                                     format!(r#"{field} LIKE {value}"#)
                                 })
-                                .collect::<Vec<_>>()
-                                .join(" OR ")
+                                .collect::<Vec<_>>();
+                            format!("({})", exprs.join(" OR "))
                         } else {
                             let value = Query::escape_string(format!("%{value}%"));
                             format!(r#"{field} LIKE {value}"#)
@@ -369,24 +369,24 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                     if value == "nonempty" {
                         format!(r#"json_array_length({field}) > 0"#)
                     } else {
-                        value
+                        let exprs = value
                             .split(',')
                             .map(|v| {
                                 let value = Query::escape_string(v);
                                 format!(r#"json_each.value = {value}"#)
                             })
-                            .collect::<Vec<_>>()
-                            .join(" OR ")
+                            .collect::<Vec<_>>();
+                        format!("({})", exprs.join(" OR "))
                     }
                 } else if let Some(values) = value.as_array() {
-                    values
+                    let exprs = values
                         .iter()
                         .map(|v| {
                             let value = self.encode_value(Some(v));
                             format!(r#"json_each.value = {value}"#)
                         })
-                        .collect::<Vec<_>>()
-                        .join(" OR ")
+                        .collect::<Vec<_>>();
+                    format!("({})", exprs.join(" OR "))
                 } else {
                     let value = self.encode_value(Some(value));
                     format!(r#"{field} = {value}"#)

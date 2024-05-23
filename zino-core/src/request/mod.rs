@@ -749,14 +749,10 @@ pub trait RequestContext {
         }
     }
 
-    /// Makes an HTTP request to the provided resource.
-    async fn fetch(
-        &self,
-        resource: &str,
-        options: Option<&Map>,
-    ) -> Result<reqwest::Response, Error> {
+    /// Makes an HTTP request to the provided URL.
+    async fn fetch(&self, url: &str, options: Option<&Map>) -> Result<reqwest::Response, Error> {
         let trace_context = self.new_trace_context();
-        http_client::request_builder(resource, options)?
+        http_client::request_builder(url, options)?
             .header("traceparent", trace_context.traceparent())
             .header("tracestate", trace_context.tracestate())
             .send()
@@ -764,14 +760,14 @@ pub trait RequestContext {
             .map_err(Error::from)
     }
 
-    /// Makes an HTTP request to the provided resource and
+    /// Makes an HTTP request to the provided URL and
     /// deserializes the response body via JSON.
     async fn fetch_json<T: DeserializeOwned>(
         &self,
-        resource: &str,
+        url: &str,
         options: Option<&Map>,
     ) -> Result<T, Error> {
-        let response = self.fetch(resource, options).await?.error_for_status()?;
+        let response = self.fetch(url, options).await?.error_for_status()?;
         let data = if response.headers().has_json_content_type() {
             response.json().await?
         } else {

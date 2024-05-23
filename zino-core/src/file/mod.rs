@@ -1,16 +1,24 @@
 //! HTTP file uploading and downloading.
 
 use crate::{
+    application::http_client,
     crypto,
     encoding::{base64, hex},
     error::Error,
+    trace::TraceContext,
+    Map,
 };
 use bytes::Bytes;
 use etag::EntityTag;
 use md5::{Digest, Md5};
 use mime::Mime;
 use multer::{Field, Multipart};
+use reqwest::{
+    multipart::{Form, Part},
+    Response,
+};
 use std::{
+    borrow::Cow,
     fs::{self, OpenOptions},
     io::{self, Write},
     path::Path,
@@ -104,7 +112,7 @@ impl NamedFile {
     /// you can use the `LowerHex` or `UpperHex` implementations for `Bytes`.
     #[inline]
     pub fn checksum(&self) -> Bytes {
-        let checksum = crypto::digest(self.as_ref());
+        let checksum = crypto::checksum(self.as_ref());
         Vec::from(checksum).into()
     }
 
@@ -273,6 +281,66 @@ impl NamedFile {
             }
         }
         Ok(files)
+    }
+
+    /// Downloads a file from the URL.
+    pub async fn download_from(url: &str, options: Option<&Map>) -> Result<Self, Error> {
+        let mut trace_context = TraceContext::new();
+        let span_id = trace_context.span_id();
+        trace_context
+            .trace_state_mut()
+            .push("zino", format!("{span_id:x}"));
+
+        let response = http_client::request_builder(url, options)?
+            .header("traceparent", trace_context.traceparent())
+            .header("tracestate", trace_context.tracestate())
+            .send()
+            .await?
+            .error_for_status()?;
+        let content_type = response
+            .headers()
+            .get("content-type")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|s| s.parse().ok());
+        let bytes = response.bytes().await?;
+        Ok(Self {
+            field_name: None,
+            file_name: None,
+            content_type,
+            bytes,
+        })
+    }
+
+    /// Uploads the file to the URL.
+    pub async fn upload_to(&self, url: &str, options: Option<&Map>) -> Result<Response, Error> {
+        let mut trace_context = TraceContext::new();
+        let span_id = trace_context.span_id();
+        trace_context
+            .trace_state_mut()
+            .push("zino", format!("{span_id:x}"));
+
+        let field_name = self
+            .field_name()
+            .map(|s| Cow::Owned(s.to_owned()))
+            .unwrap_or_else(|| Cow::Borrowed("file"));
+        let mut part = Part::bytes(self.as_ref().to_vec());
+        if let Some(file_name) = self.file_name() {
+            part = part.file_name(file_name.to_owned());
+        }
+        if let Some(content_type) = self.content_type() {
+            part = part.mime_str(content_type.essence_str())?;
+        }
+
+        let form = Form::new().part(field_name, part).percent_encode_noop();
+        http_client::request_builder(url, options)?
+            .header("traceparent", trace_context.traceparent())
+            .header("tracestate", trace_context.tracestate())
+            .header("content-length", self.file_size())
+            .header("content-md5", self.content_md5())
+            .multipart(form)
+            .send()
+            .await
+            .map_err(Error::from)
     }
 }
 

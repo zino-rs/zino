@@ -27,3 +27,7 @@ cfg_if::cfg_if! {
         pub(crate) type Digest = ::sha2::Sha256;
     }
 }
+
+mod sha1;
+
+pub(crate) use sha1::checksum;
