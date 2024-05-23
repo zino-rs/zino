@@ -1,15 +1,25 @@
 use crate::class::Class;
 use dioxus::prelude::*;
+use std::time::Duration;
 use zino_core::SharedString;
 
 /// A simple colored block meant to draw the attention to the user about something.
 pub fn Notification(props: NotificationProps) -> Element {
+    let mut hidden = use_signal(|| props.hidden);
+    if props.duration > 0 {
+        spawn(async move {
+            tokio::time::sleep(Duration::from_millis(props.duration)).await;
+            hidden.set(true);
+        });
+    }
+    if hidden() {
+        return None;
+    }
     rsx! {
         div {
             class: props.class,
             class: if !props.color.is_empty() { "is-{props.color}" },
             class: if !props.theme.is_empty() { "is-{props.theme}" },
-            class: if !props.visible { "is-hidden" },
             position: "fixed",
             top: "4rem",
             right: "0.75rem",
@@ -46,9 +56,12 @@ pub struct NotificationProps {
     pub theme: SharedString,
     /// An event handler to be called when the `close` button is clicked.
     pub on_close: Option<EventHandler<MouseEvent>>,
-    /// A flag to determine whether the modal is visible or not.
+    /// A flag to determine whether the notification is hidden or not.
     #[props(default)]
-    pub visible: bool,
+    pub hidden: bool,
+    /// A duration in milliseconds.
+    #[props(default = 3000)]
+    pub duration: u64,
     /// The children to render within the component.
     children: Element,
 }

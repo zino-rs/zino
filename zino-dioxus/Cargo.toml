@@ -29,6 +29,10 @@ features = ["serde"]
 version = "0.8.5"
 features = ["font-awesome-solid"]
 
+[dependencies.tokio]
+version = "1.37.0"
+features = ["time"]
+
 [dependencies.uuid]
 version = "1.8.0"
 features = [

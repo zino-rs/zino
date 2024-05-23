@@ -21,6 +21,7 @@ pub fn Button(props: ButtonProps) -> Element {
                     handler.call(event);
                 }
             },
+            disabled: "{props.disabled}",
             ..props.attributes,
             { props.children }
         }
@@ -43,7 +44,7 @@ pub struct ButtonProps {
     /// The size of the button: `small` | `normal` | `medium` | `large`.
     #[props(into, default)]
     pub size: SharedString,
-    /// The state of the button: `hover` | `focus` | `active` | `loading` | `static` | `disabled`.
+    /// The state of the button: `hover` | `focus` | `active` | `loading` | `static`.
     #[props(into, default)]
     pub state: SharedString,
     /// A flag to determine whether the button size is responsive or not.
@@ -61,6 +62,9 @@ pub struct ButtonProps {
     /// A flag to determine whether the button is rounded or not.
     #[props(default)]
     pub rounded: bool,
+    /// A flag to determine whether the button is disabled or not.
+    #[props(default)]
+    pub disabled: bool,
     /// An event handler to be called when the button is clicked.
     pub on_click: Option<EventHandler<MouseEvent>>,
     /// Spreading the props of the `button` element.

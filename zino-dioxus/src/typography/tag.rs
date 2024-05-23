@@ -52,9 +52,11 @@ pub struct TagProps {
 
 /// A list of tags.
 pub fn Tags(props: TagsProps) -> Element {
+    let justify = props.justify;
     rsx! {
         div {
             class: props.class,
+            class: if !justify.is_empty() { format!("is-justify-content-{justify}") },
             class: if props.addons { "has-addons" },
             { props.children }
         }
@@ -67,6 +69,10 @@ pub struct TagsProps {
     /// The class attribute for the component.
     #[props(into, default = "tags".into())]
     pub class: Class,
+    /// The `justify-content` value: `flex-start` | `flex-end` | `center` | `space-between`
+    /// | `space-around` | `space-evenly` | `start` | `end` | `left` | `right`.
+    #[props(into, default)]
+    pub justify: SharedString,
     /// A flag to determine whether the tags are attached together or not.
     #[props(default)]
     pub addons: bool,

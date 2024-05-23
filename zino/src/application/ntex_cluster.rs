@@ -84,6 +84,7 @@ impl Application for NtexCluster {
                     app_env = app_env.as_str(),
                     app_name,
                     app_version,
+                    zino_version = env!("CARGO_PKG_VERSION"),
                     "listen on `{addr}`",
                 );
 

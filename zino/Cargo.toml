@@ -13,7 +13,13 @@ documentation = "https://docs.rs/zino"
 readme = "README.md"
 
 [package.metadata.docs.rs]
-features = ["axum", "i18n", "jwt", "orm"]
+features = [
+    "axum",
+    "i18n",
+    "jwt",
+    "opa",
+    "orm",
+]
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 

@@ -8,7 +8,7 @@ where
     T: Clone + PartialEq + 'static,
     E: Clone + PartialEq + 'static,
 {
-    if props.hidden {
+    if !props.visible {
         return None;
     }
     match props.future {
@@ -135,9 +135,9 @@ where
     pub future: Option<Result<T, E>>,
     /// An event handler to be called when the `close` button is clicked.
     pub on_close: Option<EventHandler<bool>>,
-    /// A flag to determine whether the message is hidden or not.
+    /// A flag to determine whether the message is visible or not.
     #[props(default)]
-    pub hidden: bool,
+    pub visible: bool,
     /// The title in the message header.
     #[props(into, default)]
     pub title: SharedString,
@@ -151,7 +151,7 @@ where
     #[props(into, default)]
     pub error: SharedString,
     /// An event handler to be called when the future value is not ready.
-    pub on_loading: Option<EventHandler<()>>,
+    pub on_loading: Option<EventHandler>,
     /// An event handler to be called when the future value is resolved.
     pub on_success: Option<EventHandler<T>>,
     /// An event handler to be called when the future value is rejected.

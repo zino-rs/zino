@@ -31,12 +31,13 @@ pub struct NamedFile {
 
 impl NamedFile {
     /// Creates a new instance with the specific file name.
-    #[inline]
     pub fn new(file_name: impl Into<String>) -> Self {
+        let file_name = file_name.into();
+        let content_type = mime_guess::from_path(&file_name).first();
         Self {
             field_name: None,
-            file_name: Some(file_name.into()),
-            content_type: None,
+            file_name: Some(file_name),
+            content_type,
             bytes: Bytes::new(),
         }
     }
@@ -293,5 +294,21 @@ impl<'a> From<&'a NamedFile> for Bytes {
     #[inline]
     fn from(file: &'a NamedFile) -> Self {
         file.bytes()
+    }
+}
+
+#[cfg(feature = "accessor")]
+impl From<NamedFile> for opendal::Buffer {
+    #[inline]
+    fn from(file: NamedFile) -> Self {
+        file.bytes.into()
+    }
+}
+
+#[cfg(feature = "accessor")]
+impl<'a> From<&'a NamedFile> for opendal::Buffer {
+    #[inline]
+    fn from(file: &'a NamedFile) -> Self {
+        file.bytes().into()
     }
 }

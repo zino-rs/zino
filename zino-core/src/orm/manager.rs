@@ -114,7 +114,7 @@ impl PoolManager for ConnectionPool<DatabasePool> {
 cfg_if::cfg_if! {
     if #[cfg(any(feature = "orm-mariadb", feature = "orm-mysql", feature = "orm-tidb"))] {
         use crate::state::State;
-        use sqlx::mysql::MySqlConnectOptions;
+        use sqlx::mysql::{MySqlConnectOptions, MySqlSslMode};
 
         /// Options and flags which can be used to configure a MySQL connection.
         fn new_connect_options(database: &'static str, config: &'static Table) -> MySqlConnectOptions {
@@ -134,11 +134,16 @@ cfg_if::cfg_if! {
             if let Some(port) = config.get_u16("port") {
                 connect_options = connect_options.port(port);
             }
+            if let Some(ssl_mode) = config.get_str("ssl-mode").and_then(|s| s.parse().ok()) {
+                connect_options = connect_options.ssl_mode(ssl_mode);
+            } else {
+                connect_options = connect_options.ssl_mode(MySqlSslMode::Disabled);
+            }
             connect_options
         }
     } else if #[cfg(feature = "orm-postgres")] {
         use crate::state::State;
-        use sqlx::postgres::PgConnectOptions;
+        use sqlx::postgres::{PgConnectOptions, PgSslMode};
 
         /// Options and flags which can be used to configure a PostgreSQL connection.
         fn new_connect_options(database: &'static str, config: &'static Table) -> PgConnectOptions {
@@ -157,6 +162,11 @@ cfg_if::cfg_if! {
             }
             if let Some(port) = config.get_u16("port") {
                 connect_options = connect_options.port(port);
+            }
+            if let Some(ssl_mode) = config.get_str("ssl-mode").and_then(|s| s.parse().ok()) {
+                connect_options = connect_options.ssl_mode(ssl_mode);
+            } else {
+                connect_options = connect_options.ssl_mode(PgSslMode::Disable);
             }
             connect_options
         }

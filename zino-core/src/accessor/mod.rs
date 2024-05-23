@@ -36,6 +36,36 @@
 //! | `webdav`      | WebDAV services.                         | `accessor-webdav`     |
 //! | `webhdfs`     | WebHDFS services.                        | `accessor-webhdfs`    |
 //!
+//! # Examples
+//!
+//! ```toml
+//! # config/config.dev.toml
+//!
+//! [[accessor]]
+//! scheme = "oss"
+//! name = "aliyun"
+//! bucket = "test"
+//! endpoint = "https://oss-cn-hangzhou.aliyuncs.com"
+//! access-key-id = "LTAI8t7BtpEvPPcN9oy56CiS"
+//! access-key-secret = "L0fQXrptbHgivJ6reF7gSkruS89I4n"
+//!
+//! ```
+//!
+//! ```rust,ignore
+//! use zino_core::{accessor::GloabalAccessor, error::Error, file::NamedFile};
+//!
+//! async fn upload_file(file: NamedFile) -> Result<(), Error> {
+//!     let Some(operator) = GlobalAccessor::get("aliyun") else {
+//!         bail!("Aliyun OSS accessor is not available");
+//!     };
+//!     let Some(file_name) = file.file_name() else {
+//!         bail!("file name should be specified");
+//!     };
+//!     let oss_path = format!("examples/{file_name}");
+//!     operator.write(&oss_path, file).await?;
+//!     Ok(())
+//! }
+//! ```
 
 use crate::{application::StaticRecord, extension::TomlTableExt, state::State, LazyLock};
 use opendal::{

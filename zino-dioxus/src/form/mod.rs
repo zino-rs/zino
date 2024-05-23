@@ -3,17 +3,21 @@
 use std::borrow::Cow;
 
 mod button;
+mod checkbox;
 mod field;
+mod file;
 mod input;
 mod radio;
 mod select;
 mod textarea;
 
 pub use button::{Button, ButtonProps};
+pub use checkbox::{Checkbox, CheckboxProps};
 pub use field::{
     FormAddons, FormAddonsProps, FormField, FormFieldContainer, FormFieldContainerProps,
     FormFieldProps, FormGroup, FormGroupProps,
 };
+pub use file::{FileUpload, FileUploadProps};
 pub use input::{Input, InputProps};
 pub use radio::{Radio, RadioProps};
 pub use select::{DataSelect, DataSelectProps};
