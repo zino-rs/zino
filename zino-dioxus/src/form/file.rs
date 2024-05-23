@@ -6,7 +6,8 @@ use zino_core::{file::NamedFile, SharedString};
 
 /// A custom file upload input.
 pub fn FileUpload(props: FileUploadProps) -> Element {
-    let has_name = props.children.is_some();
+    let mut file_names = use_signal(Vec::new);
+    let has_name = props.children.is_some() || !file_names().is_empty();
     rsx! {
         div {
             class: props.class,
@@ -24,6 +25,7 @@ pub fn FileUpload(props: FileUploadProps) -> Element {
                         if let Some(handler) = props.on_change.as_ref() {
                             if let Some(file_engine) = event.files() {
                                 let mut files = Vec::new();
+                                file_names.write().clear();
                                 for file in file_engine.files() {
                                     if let Some(bytes) = file_engine.read_file(&file).await {
                                         let file_path = Path::new(&file);
@@ -32,6 +34,9 @@ pub fn FileUpload(props: FileUploadProps) -> Element {
                                             .map(|f| f.to_string_lossy())
                                         {
                                             let mut file = NamedFile::new(file_name);
+                                            if let Some(file_name) = file.file_name() {
+                                                file_names.write().push(file_name.to_owned());
+                                            }
                                             file.set_bytes(bytes);
                                             files.push(file);
                                         }
@@ -60,10 +65,15 @@ pub fn FileUpload(props: FileUploadProps) -> Element {
                         { props.label }
                     }
                 }
-                if has_name {
+                if props.children.is_some() {
                     span {
                         class: "file-name",
                         { props.children }
+                    }
+                } else if !file_names().is_empty() {
+                    span {
+                        class: "file-name",
+                        { file_names().join(", ") }
                     }
                 }
             }

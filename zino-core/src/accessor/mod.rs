@@ -38,20 +38,7 @@
 //!
 //! # Examples
 //!
-//! ```toml
-//! # config/config.dev.toml
-//!
-//! [[accessor]]
-//! scheme = "oss"
-//! name = "aliyun"
-//! bucket = "test"
-//! endpoint = "https://oss-cn-hangzhou.aliyuncs.com"
-//! access-key-id = "LTAI8t7BtpEvPPcN9oy56CiS"
-//! access-key-secret = "L0fQXrptbHgivJ6reF7gSkruS89I4n"
-//!
-//! ```
-//!
-//! ```rust,ignore
+//! ```rust
 //! use zino_core::{accessor::GloabalAccessor, error::Error, file::NamedFile};
 //!
 //! async fn upload_file(file: NamedFile) -> Result<(), Error> {
