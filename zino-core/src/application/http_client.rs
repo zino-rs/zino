@@ -12,7 +12,6 @@ use reqwest::{
     Client, Method, Request, Response, Url,
 };
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, RequestBuilder};
-use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use reqwest_tracing::{ReqwestOtelSpanBackend, TracingMiddleware};
 use std::{
     borrow::Cow,
@@ -30,7 +29,6 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let mut client_builder = Client::builder()
         .user_agent(format!("ZinoBot/1.0 {name}/{version}"))
         .gzip(true);
-    let mut max_retries = 0;
     if let Some(http_client) = APP::config().get_table("http-client") {
         if let Some(timeout) = http_client.get_duration("request-timeout") {
             client_builder = client_builder.timeout(timeout);
@@ -50,9 +48,6 @@ pub(super) fn init<APP: Application + ?Sized>() {
         if let Some(tcp_keepalive) = http_client.get_duration("tcp-keepalive") {
             client_builder = client_builder.tcp_keepalive(tcp_keepalive);
         }
-        if let Some(retries) = http_client.get_u32("max-retries") {
-            max_retries = retries;
-        }
     }
     #[cfg(feature = "cookie")]
     {
@@ -66,10 +61,8 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .set(reqwest_client.clone())
         .expect("fail to set an HTTP client for the application");
 
-    let retry_policy = ExponentialBackoff::builder().build_with_max_retries(max_retries);
     let client = ClientBuilder::new(reqwest_client)
         .with(TracingMiddleware::<RequestTiming>::new())
-        .with(RetryTransientMiddleware::new_with_policy(retry_policy))
         .build();
     SHARED_HTTP_CLIENT_WITH_MIDDLEWARE
         .set(client)

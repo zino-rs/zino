@@ -599,10 +599,13 @@ pub trait RequestContext {
     /// The value is extracted from the `x-session-id` or `session-id` header.
     fn parse_session_id(&self) -> Result<SessionId, Rejection> {
         self.get_header("x-session-id")
-            .or_else(|| self.get_header("session_id"))
+            .or_else(|| self.get_header("session-id"))
             .ok_or_else(|| {
-                Rejection::from_validation_entry("session-id", warn!("should be nonempty"))
-                    .context(self)
+                Rejection::from_validation_entry(
+                    "session-id",
+                    warn!("a `session-id` header is required"),
+                )
+                .context(self)
             })
             .and_then(|session_id| {
                 SessionId::parse(session_id).map_err(|err| {
@@ -631,7 +634,7 @@ pub trait RequestContext {
         }
         if token.is_empty() {
             let mut validation = Validation::new();
-            validation.record(param, "the JWT token is absent");
+            validation.record(param, "JWT token is absent");
             return Err(Rejection::bad_request(validation).context(self));
         }
 

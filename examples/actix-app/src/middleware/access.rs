@@ -46,11 +46,8 @@ where
         let mut req = Request::from(req);
         match req.parse_jwt_claims(JwtClaims::shared_key()) {
             Ok(claims) => {
-                if let Ok(mut user_session) = UserSession::<Uuid>::try_from_jwt_claims(claims) {
-                    if let Ok(session_id) = req.parse_session_id() {
-                        user_session.set_session_id(session_id);
-                    }
-                    req.set_data(user_session);
+                if let Ok(session) = UserSession::<Uuid>::try_from_jwt_claims(claims) {
+                    req.set_data(session);
                 } else {
                     return Box::pin(async move {
                         let message = "401 Unauthorized: invalid JWT claims";

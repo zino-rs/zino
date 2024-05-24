@@ -94,8 +94,8 @@ impl NamedFile {
 
     /// Returns the file size.
     #[inline]
-    pub fn file_size(&self) -> usize {
-        self.bytes.len()
+    pub fn file_size(&self) -> u64 {
+        self.bytes.len().try_into().unwrap_or_default()
     }
 
     /// Returns the bytes.
@@ -323,7 +323,7 @@ impl NamedFile {
             .field_name()
             .map(|s| Cow::Owned(s.to_owned()))
             .unwrap_or_else(|| Cow::Borrowed("file"));
-        let mut part = Part::bytes(self.as_ref().to_vec());
+        let mut part = Part::stream_with_length(self.bytes(), self.file_size());
         if let Some(file_name) = self.file_name() {
             part = part.file_name(file_name.to_owned());
         }
@@ -335,8 +335,6 @@ impl NamedFile {
         http_client::request_builder(url, options)?
             .header("traceparent", trace_context.traceparent())
             .header("tracestate", trace_context.tracestate())
-            .header("content-length", self.file_size())
-            .header("content-md5", self.content_md5())
             .multipart(form)
             .send()
             .await

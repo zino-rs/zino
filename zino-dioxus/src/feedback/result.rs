@@ -131,7 +131,7 @@ where
     /// A class to apply to the `close` button element.
     #[props(into, default = "delete".into())]
     pub close_class: Class,
-    /// A future value which represents the user operations.
+    /// A future value which represents the result of user operations.
     pub future: Option<Result<T, E>>,
     /// An event handler to be called when the `close` button is clicked.
     pub on_close: Option<EventHandler<bool>>,
