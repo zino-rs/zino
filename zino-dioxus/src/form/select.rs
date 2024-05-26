@@ -7,10 +7,11 @@ use zino_core::SharedString;
 pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -> Element {
     let options = props.options;
     let selected_value = props.selected;
+    let required = props.required;
     let selected_option = options
         .iter()
         .find(|entry| entry.value() == selected_value)
-        .or_else(|| options.first())
+        .or_else(|| if required { options.first() } else { None })
         .cloned();
     let selected_key = selected_option.as_ref().map(|entry| entry.key());
     let entries = options.clone();
@@ -20,7 +21,7 @@ pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -
             class: if props.fullwidth { "is-fullwidth" },
             select {
                 name: props.name.into_owned(),
-                required: props.required,
+                required: required,
                 onmounted: move |_event| {
                     if let Some(handler) = props.on_select.as_ref() {
                         if let Some(entry) = selected_option.as_ref() {
@@ -36,6 +37,12 @@ pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -
                         }
                     }
                 },
+                if !required && !props.empty.as_ref().is_empty() {
+                    option {
+                        value: "",
+                        { props.empty }
+                    }
+                }
                 for entry in options {
                     option {
                         key: "{entry.key()}",
@@ -69,6 +76,9 @@ pub struct DataSelectProps<T: Clone + PartialEq + 'static> {
     /// A flag to determine whether the control is required or not.
     #[props(default)]
     pub required: bool,
+    /// The label text for the empty value.
+    #[props(into, default)]
+    pub empty: SharedString,
     /// An event handler to be called when the choice is selected.
     pub on_select: Option<EventHandler<T>>,
 }

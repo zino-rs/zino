@@ -204,7 +204,7 @@ mime = "0.3.17"
 mime_guess = "2.0.4"
 multer = "3.1.0"
 once_cell = "1.19.0"
-parking_lot = "0.12.2"
+parking_lot = "0.12.3"
 percent-encoding = "2.3.1"
 rand = "0.8.5"
 regex = "1.10.4"
@@ -339,7 +339,7 @@ version = "0.32.3"
 optional = true
 
 [dependencies.serde]
-version = "1.0.202"
+version = "1.0.203"
 features = ["derive"]
 
 [dependencies.serde_json]

@@ -41,9 +41,11 @@ mod context;
 
 pub use context::Context;
 
-/// The URI component of a request.
+/// The URI component of a request for http v0.2.
 #[cfg(feature = "http02")]
 pub type Uri = http02::Uri;
+
+/// The URI component of a request.
 #[cfg(not(feature = "http02"))]
 pub type Uri = http::Uri;
 
@@ -602,14 +604,14 @@ pub trait RequestContext {
             .or_else(|| self.get_header("session-id"))
             .ok_or_else(|| {
                 Rejection::from_validation_entry(
-                    "session-id",
-                    warn!("a `session-id` header is required"),
+                    "session_id",
+                    warn!("a `session-id` or `x-session-id` header is required"),
                 )
                 .context(self)
             })
             .and_then(|session_id| {
                 SessionId::parse(session_id).map_err(|err| {
-                    Rejection::from_validation_entry("session-id", err).context(self)
+                    Rejection::from_validation_entry("session_id", err).context(self)
                 })
             })
     }

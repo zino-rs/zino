@@ -33,7 +33,7 @@ version = "0.12.3"
 optional = true
 
 [dependencies.parking_lot]
-version = "0.12.2"
+version = "0.12.3"
 optional = true
 
 [dependencies.printpdf]

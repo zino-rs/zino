@@ -59,7 +59,7 @@ impl AccessKeyId {
         SQIDS_GENERATOR.decode(self.as_str())
     }
 
-    /// Attempts to construct an instance by generating a [sqid](https://sqids.org/)
+    /// Attempts to construct an instance by generating  [Sqids](https://sqids.org/)
     /// from a UUID.
     #[cfg(feature = "sqids")]
     #[inline]
@@ -68,7 +68,7 @@ impl AccessKeyId {
         SQIDS_GENERATOR.encode(&[hi, lo]).map(AccessKeyId)
     }
 
-    /// Decodes `self` as a [sqid](https://sqids.org/) into a UUID.
+    /// Decodes `self` as [Sqids](https://sqids.org/) into a UUID.
     #[cfg(feature = "sqids")]
     #[inline]
     pub fn decode_uuid(&self) -> Option<uuid::Uuid> {

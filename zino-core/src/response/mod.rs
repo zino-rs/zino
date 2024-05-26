@@ -30,9 +30,11 @@ pub use rejection::{ExtractRejection, Rejection};
 pub use response_code::ResponseCode;
 pub use webhook::WebHook;
 
-/// An HTTP status code.
+/// An HTTP status code for http v0.2.
 #[cfg(feature = "http02")]
 pub type StatusCode = http02::StatusCode;
+
+/// An HTTP status code.
 #[cfg(not(feature = "http02"))]
 pub type StatusCode = http::StatusCode;
 

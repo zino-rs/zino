@@ -4,7 +4,7 @@ use zino_core::{
     bail,
     datetime::DateTime,
     error::Error,
-    extension::JsonObjectExt,
+    extension::{JsonObjectExt, JsonValueExt},
     model::Query,
     orm::{ModelAccessor, ModelHelper},
     warn, Map, Uuid,
@@ -30,9 +30,21 @@ where
     /// Login-IP field name.
     const LOGIN_IP_FIELD: Option<&'static str> = None;
 
-    /// Returns the standard claims parsed from the `content` field.
+    /// Consumes the user into standard claims without a `sub` field,
+    /// which can be used to create a [`JwtClaims`] and generate an ID token.
     /// See [the spec](https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims).
-    fn standard_claims(&self) -> Map {
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use zino_core::{auth::JwtClaims, model::Model, orm::ModelAccessor};
+    /// use zino_model::user::{JwtAuthService, User};
+    ///
+    /// let user = User::new();
+    /// let claims = JwtClaims::with_data(user.id(), user.into_standard_claims());
+    /// let id_token = claims.sign_with(JwtClaims::shared_key());
+    /// ```
+    fn into_standard_claims(self) -> Map {
         let standard_fields = [
             "name",
             "given_name",
@@ -61,7 +73,9 @@ where
             "postal_code",
             "country",
         ];
+
         let mut claims = Map::new();
+        claims.upsert("updated_at", self.updated_at().timestamp());
         if let Some(map) = self.extra() {
             for (key, value) in map {
                 if key == "address" {
@@ -79,6 +93,21 @@ where
                 }
             }
         }
+        for (key, value) in self.into_map() {
+            if key == "address" {
+                if let Some(map) = value.into_map_opt() {
+                    let mut address = Map::new();
+                    for (key, value) in map {
+                        if address_fields.contains(&key.as_str()) {
+                            address.upsert(key, value);
+                        }
+                    }
+                    claims.upsert(key, address);
+                }
+            } else if standard_fields.contains(&key.as_str()) {
+                claims.upsert(key, value);
+            }
+        }
         claims
     }
 
@@ -86,10 +115,10 @@ where
     async fn generate_token(body: Map) -> Result<(K, Map), Error> {
         let account = body
             .get_str("account")
-            .ok_or_else(|| warn!("401 Unauthorized: the user `account` should be specified"))?;
+            .ok_or_else(|| warn!("401 Unauthorized: user `account` should be specified"))?;
         let passowrd = body
             .get_str("password")
-            .ok_or_else(|| warn!("401 Unauthorized: the user `password` should be specified"))?;
+            .ok_or_else(|| warn!("401 Unauthorized: user `password` should be specified"))?;
         let mut query = Query::default();
         let mut fields = vec![Self::PRIMARY_KEY_NAME, Self::PASSWORD_FIELD];
         if let Some(role_field) = Self::ROLE_FIELD {
@@ -113,14 +142,14 @@ where
             .ok_or_else(|| warn!("404 Not Found: invalid user account or password"))?;
         let encrypted_password = user
             .get_str(Self::PASSWORD_FIELD)
-            .ok_or_else(|| warn!("404 Not Found: the user password is absent"))?;
+            .ok_or_else(|| warn!("404 Not Found: user password is absent"))?;
         if Self::verify_password(passowrd, encrypted_password)
             .map_err(|_| warn!("401 Unauthorized: invalid user account or password"))?
         {
             // Cann't use `get_str` because the primary key may be an integer
             let user_id = user
                 .parse_string(Self::PRIMARY_KEY_NAME)
-                .ok_or_else(|| warn!("404 Not Found: the user id is absent"))?;
+                .ok_or_else(|| warn!("404 Not Found: user id is absent"))?;
             let mut claims = JwtClaims::new(user_id.as_ref());
 
             let user_id = user_id.parse()?;
@@ -152,11 +181,11 @@ where
     /// Refreshes the access token.
     async fn refresh_token(claims: &JwtClaims) -> Result<Map, Error> {
         if !claims.data().is_empty() {
-            bail!("401 Unauthorized: the JWT token is not a refresh token");
+            bail!("401 Unauthorized: JWT token is not a refresh token");
         }
 
         let Some(user_id) = claims.subject() else {
-            bail!("401 Unauthorized: the JWT token does not have a subject");
+            bail!("401 Unauthorized: JWT token does not have a subject");
         };
 
         let mut query = Query::default();
@@ -196,7 +225,7 @@ where
     /// Verfifies the JWT claims.
     async fn verify_jwt_claims(claims: &JwtClaims) -> Result<bool, Error> {
         let Some(user_id) = claims.subject() else {
-            bail!("401 Unauthorized: the JWT token does not have a subject");
+            bail!("401 Unauthorized: JWT token does not have a subject");
         };
 
         let mut query = Query::default();

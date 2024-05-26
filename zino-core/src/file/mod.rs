@@ -5,8 +5,9 @@ use crate::{
     crypto,
     encoding::{base64, hex},
     error::Error,
+    extension::JsonObjectExt,
     trace::TraceContext,
-    Map,
+    JsonValue, Map,
 };
 use bytes::Bytes;
 use etag::EntityTag;
@@ -35,6 +36,8 @@ pub struct NamedFile {
     content_type: Option<Mime>,
     /// Bytes.
     bytes: Bytes,
+    /// Extra attributes.
+    extra: Map,
 }
 
 impl NamedFile {
@@ -47,6 +50,7 @@ impl NamedFile {
             file_name: Some(file_name),
             content_type,
             bytes: Bytes::new(),
+            extra: Map::new(),
         }
     }
 
@@ -72,6 +76,12 @@ impl NamedFile {
     #[inline]
     pub fn set_bytes(&mut self, bytes: impl Into<Bytes>) {
         self.bytes = bytes.into();
+    }
+
+    /// Sets the extra attribute.
+    #[inline]
+    pub fn set_extra_attribute(&mut self, key: &str, value: impl Into<JsonValue>) {
+        self.extra.upsert(key, value);
     }
 
     /// Returns the field name corresponding to the file.
@@ -102,6 +112,12 @@ impl NamedFile {
     #[inline]
     pub fn bytes(&self) -> Bytes {
         self.bytes.clone()
+    }
+
+    /// Returns a reference to the extra attributes.
+    #[inline]
+    pub fn extra(&self) -> &Map {
+        &self.extra
     }
 
     /// Returns the checksum for the file.
@@ -237,6 +253,7 @@ impl NamedFile {
             file_name,
             content_type,
             bytes: bytes.into(),
+            extra: Map::new(),
         })
     }
 
@@ -255,6 +272,7 @@ impl NamedFile {
             file_name,
             content_type,
             bytes,
+            extra: Map::new(),
         })
     }
 
@@ -300,14 +318,17 @@ impl NamedFile {
         let content_type = response
             .headers()
             .get("content-type")
-            .and_then(|v| v.to_str().ok())
-            .and_then(|s| s.parse().ok());
+            .map(|v| v.to_str())
+            .transpose()?
+            .map(|s| s.parse())
+            .transpose()?;
         let bytes = response.bytes().await?;
         Ok(Self {
             field_name: None,
             file_name: None,
             content_type,
             bytes,
+            extra: Map::new(),
         })
     }
 
@@ -331,7 +352,10 @@ impl NamedFile {
             part = part.mime_str(content_type.essence_str())?;
         }
 
-        let form = Form::new().part(field_name, part).percent_encode_noop();
+        let mut form = Form::new().part(field_name, part).percent_encode_noop();
+        for (key, value) in self.extra() {
+            form = form.text(key.to_owned(), value.to_string());
+        }
         http_client::request_builder(url, options)?
             .header("traceparent", trace_context.traceparent())
             .header("tracestate", trace_context.tracestate())

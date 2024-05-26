@@ -248,45 +248,6 @@ impl User {
         user_session.set_roles(self.roles());
         user_session
     }
-
-    /// Returns the user info as standard claims defined in the
-    /// [OpenID Connect](https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims).
-    pub fn user_info(&self) -> Map {
-        let mut claims = self.standard_claims();
-        claims.upsert("sub", self.id.to_string());
-        claims.upsert("updated_at", self.updated_at.timestamp());
-        if !claims.get_str("name").is_some_and(|s| !s.is_empty()) {
-            claims.upsert("name", self.name.as_str());
-        }
-        if !claims.get_str("nickname").is_some_and(|s| !s.is_empty()) {
-            claims.upsert("nickname", self.nickname.as_str());
-        }
-        if !claims.get_str("picture").is_some_and(|s| !s.is_empty()) {
-            claims.upsert("picture", self.avatar.as_str());
-        }
-        if !claims.get_str("website").is_some_and(|s| !s.is_empty()) {
-            claims.upsert("website", self.website.as_str());
-        }
-        if !claims.get_str("email").is_some_and(|s| !s.is_empty()) {
-            claims.upsert("email", self.email.as_str());
-        }
-        if !claims.get_object("address").is_some_and(|o| !o.is_empty()) {
-            claims.upsert(
-                "address",
-                Map::from_entry("locality", self.location.as_str()),
-            );
-        }
-        if !claims.get_str("locale").is_some_and(|s| !s.is_empty()) {
-            claims.upsert("locale", self.locale.as_str());
-        }
-        if !claims
-            .get_str("phone_number")
-            .is_some_and(|s| !s.is_empty())
-        {
-            claims.upsert("phone_number", self.mobile.as_str());
-        }
-        claims
-    }
 }
 
 #[cfg(test)]

@@ -8,7 +8,7 @@ use crate::{
 };
 use jwt_simple::{
     algorithms::MACLike,
-    claims::{self, Claims, JWTClaims},
+    claims::{self, Audiences, Claims, JWTClaims},
     common::VerificationOptions,
 };
 use serde::{de::DeserializeOwned, Serialize};
@@ -22,6 +22,14 @@ impl<T: Default + Serialize + DeserializeOwned> JwtClaims<T> {
     /// Creates a new instance.
     pub fn new(subject: impl ToString) -> Self {
         let mut claims = Claims::with_custom_claims(T::default(), (*DEFAULT_MAX_AGE).into());
+        claims.invalid_before = None;
+        claims.subject = Some(subject.to_string());
+        Self(claims)
+    }
+
+    /// Creates a new instance with the custom data.
+    pub fn with_data(subject: impl ToString, data: T) -> Self {
+        let mut claims = Claims::with_custom_claims(data, (*DEFAULT_MAX_AGE).into());
         claims.invalid_before = None;
         claims.subject = Some(subject.to_string());
         Self(claims)
@@ -63,10 +71,34 @@ impl<T: Default + Serialize + DeserializeOwned> JwtClaims<T> {
 }
 
 impl<T> JwtClaims<T> {
+    /// Sets the issuer.
+    #[inline]
+    pub fn set_issuer(&mut self, issuer: impl ToString) {
+        self.0.issuer = Some(issuer.to_string());
+    }
+
+    /// Sets the audience.
+    #[inline]
+    pub fn set_audience(&mut self, audience: impl ToString) {
+        self.0.audiences = Some(Audiences::AsString(audience.to_string()));
+    }
+
+    /// Sets the JWT identifier.
+    #[inline]
+    pub fn set_jwt_id(&mut self, jwt_id: impl ToString) {
+        self.0.jwt_id = Some(jwt_id.to_string());
+    }
+
     /// Sets the nonce.
     #[inline]
     pub fn set_nonce(&mut self, nonce: impl ToString) {
         self.0.nonce = Some(nonce.to_string());
+    }
+
+    /// Sets the custom data.
+    #[inline]
+    pub fn set_data(&mut self, data: T) {
+        self.0.custom = data;
     }
 
     /// Returns the time the claims were created at.
