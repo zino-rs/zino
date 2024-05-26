@@ -49,7 +49,8 @@ pub trait Model: Default + Serialize + DeserializeOwned {
     fn read_map(&mut self, data: &Map) -> Validation {
         let mut validation = Validation::new();
         if data.is_empty() {
-            validation.record("data", "should be nonempty");
+            let message = format!("the `{}` model data should be nonempty", Self::MODEL_NAME);
+            validation.record("data", message);
         }
         validation
     }
@@ -75,7 +76,10 @@ pub trait Model: Default + Serialize + DeserializeOwned {
     fn into_map(self) -> Map {
         match serde_json::to_value(self) {
             Ok(JsonValue::Object(map)) => map,
-            _ => panic!("the model cann't be converted to a json object"),
+            _ => panic!(
+                "the `{}` model cann't be converted to a json object",
+                Self::MODEL_NAME
+            ),
         }
     }
 
@@ -88,7 +92,10 @@ pub trait Model: Default + Serialize + DeserializeOwned {
     fn into_avro_record(self) -> Record {
         match apache_avro::to_value(self) {
             Ok(AvroValue::Record(record)) => record,
-            _ => panic!("the model cann't be converted to an Avro record"),
+            _ => panic!(
+                "the `{}` model cann't be converted to an Avro record",
+                Self::MODEL_NAME
+            ),
         }
     }
 

@@ -21,6 +21,7 @@ The following optional features are available:
 | `crypto-sm`         | Enables China's Standards of Encryption Algorithms.    | No       |
 | `dotenv`            | Enables the configuration loader for a `.env` file.    | No       |
 | `env-filter`        | Enables the `env-filter` for [`tracing-subscriber`].   | No       |
+| `flume`             | Enables the message channel via [`flume`].             | No       |
 | `i18n`              | Enables the support for internationalization.          | No       |
 | `jwt`               | Enables the support for JSON Web Token.                | No       |
 | `locale`            | Enables the support for locale related utilities.      | No       |
@@ -41,6 +42,7 @@ The following optional features are available:
 [`zino`]: https://github.com/zino-rs/zino
 [`opendal`]: https://crates.io/crates/opendal
 [`tracing-subscriber`]: https://crates.io/crates/tracing-subscriber
+[`flume`]: https://crates.io/crates/flume
 [`metrics`]: https://crates.io/crates/metrics
 [`async-std`]: https://crates.io/crates/async-std
 [`tokio`]: https://crates.io/crates/tokio

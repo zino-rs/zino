@@ -84,6 +84,12 @@ impl<'a> Column<'a> {
         self.extra.upsert(key, value);
     }
 
+    /// Appends the extra attributes.
+    #[inline]
+    pub fn append_extra_attributes(&mut self, attrs: &mut Map) {
+        self.extra.append(attrs);
+    }
+
     /// Returns the name.
     #[inline]
     pub fn name(&self) -> &'a str {

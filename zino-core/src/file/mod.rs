@@ -21,8 +21,8 @@ use reqwest::{
 };
 use std::{
     borrow::Cow,
-    fs::{self, OpenOptions},
-    io::{self, Write},
+    fs::{self, File, OpenOptions},
+    io::{self, ErrorKind, Read, Write},
     path::Path,
 };
 
@@ -80,9 +80,20 @@ impl NamedFile {
     }
 
     /// Sets the extra attribute.
+    ///
+    /// # Note
+    ///
+    /// Currently, we support the following built-in attributes:
+    /// `checksum` | `chunk_number` | `chunk_size` | `total_chunks`.
     #[inline]
     pub fn set_extra_attribute(&mut self, key: &str, value: impl Into<JsonValue>) {
         self.extra.upsert(key, value);
+    }
+
+    /// Appends the extra attributes.
+    #[inline]
+    pub fn append_extra_attributes(&mut self, attrs: &mut Map) {
+        self.extra.append(attrs);
     }
 
     /// Returns the field name corresponding to the file.
@@ -119,6 +130,24 @@ impl NamedFile {
     #[inline]
     pub fn extra(&self) -> &Map {
         &self.extra
+    }
+
+    /// Returns the chunk number for the file.
+    #[inline]
+    pub fn chunk_number(&self) -> Option<usize> {
+        self.extra.parse_usize("chunk_number")?.ok()
+    }
+
+    /// Returns the chunk size for the file.
+    #[inline]
+    pub fn chunk_size(&self) -> Option<usize> {
+        self.extra.parse_usize("chunk_size")?.ok()
+    }
+
+    /// Returns the total number of file chunks.
+    #[inline]
+    pub fn total_chunks(&self) -> Option<usize> {
+        self.extra.parse_usize("total_chunks")?.ok()
     }
 
     /// Returns the checksum for the file.
@@ -158,6 +187,13 @@ impl NamedFile {
         base64::encode(self.as_ref())
     }
 
+    /// Reads the string and sets the bytes.
+    #[inline]
+    pub fn read_string(&mut self, data: String) -> Result<(), Error> {
+        self.bytes = data.into();
+        Ok(())
+    }
+
     /// Reads the hex string and sets the bytes.
     #[inline]
     pub fn read_hex_string(&mut self, data: &str) -> Result<(), Error> {
@@ -183,9 +219,17 @@ impl NamedFile {
     }
 
     /// Writes the bytes into a file at the path.
-    #[inline]
+    /// If the extra attributes contain a `chunk_number` value,
+    /// a `.{chunk_number}.part` suffix will be adjoined to the path.
     pub fn write(&self, path: impl AsRef<Path>) -> Result<(), io::Error> {
-        fs::write(path, self.as_ref())
+        let bytes = self.as_ref();
+        let path = path.as_ref();
+        if let Some(chunk_number) = self.chunk_number() {
+            let chunk_path = path.join(format!(".{chunk_number}.part"));
+            fs::write(chunk_path, bytes)
+        } else {
+            fs::write(path, bytes)
+        }
     }
 
     /// Appends the bytes into a file at the path.
@@ -240,6 +284,64 @@ impl NamedFile {
         Ok(())
     }
 
+    /// Splits the file into chunks with the `chunk_size`.
+    /// The file name of chunks will end with `.{chunk_number}.part`
+    /// and the extra attributes will contain the `chunk_number` and `total_chunks`.
+    pub fn split_chunks(&self, chunk_size: usize) -> Vec<Self> {
+        let file_name = self.file_name().unwrap_or_default();
+        let chunks = self.bytes.chunks(chunk_size);
+        let total_chunks = chunks.len();
+        chunks
+            .enumerate()
+            .map(|(index, chunk)| {
+                let mut file = Self::default();
+                file.set_file_name(format!("{file_name}.{index}.part"));
+                file.set_bytes(chunk.to_vec());
+                file.set_extra_attribute("chunk_number", index);
+                file.set_extra_attribute("chunk_size", file.file_size());
+                file.set_extra_attribute("total_chunks", total_chunks);
+                file
+            })
+            .collect()
+    }
+
+    /// Attempts to concat the file chunks into a whole.
+    /// The path should not contain the `.{chunk_number}.part` suffix.
+    pub fn try_concat_chunks(
+        path: impl AsRef<Path>,
+        total_chunks: usize,
+    ) -> Result<Self, io::Error> {
+        let path = path.as_ref();
+        let file_name = path.file_name().map(|s| s.to_string_lossy().into_owned());
+        let mut chunk_paths = Vec::with_capacity(total_chunks);
+        for index in 0..total_chunks {
+            let chunk_path = path.join(format!(".{index}.part"));
+            if chunk_path.try_exists()? {
+                chunk_paths.push(chunk_path);
+            } else {
+                let file_name = file_name.unwrap_or_default();
+                let message = format!("chunk file `{file_name}.{index}.part` does not exist");
+                return Err(io::Error::new(ErrorKind::NotFound, message));
+            }
+        }
+
+        let content_type = file_name.as_ref().and_then(|s| {
+            let file_name = s.strip_suffix(".encrypted").unwrap_or(s);
+            mime_guess::from_path(file_name).first()
+        });
+        let mut buffer = Vec::new();
+        for chunk_path in chunk_paths {
+            File::open(chunk_path)?.read_to_end(&mut buffer)?;
+        }
+        Ok(Self {
+            field_name: None,
+            file_name,
+            content_type,
+            bytes: buffer.into(),
+            extra: Map::new(),
+        })
+    }
+
     /// Attempts to create an instance from reading a local file.
     pub fn try_from_local(path: impl AsRef<Path>) -> Result<Self, io::Error> {
         let path = path.as_ref();
@@ -278,14 +380,38 @@ impl NamedFile {
     }
 
     /// Attempts to create a file in a multipart stream.
+    /// If the extra attributes contain a `chunk_size` or `checksum` value,
+    /// the file integrity will be checked.
     pub async fn try_from_multipart(mut multipart: Multipart<'_>) -> Result<Self, multer::Error> {
+        let mut multipart_field = None;
+        let mut extra = Map::new();
         while let Some(field) = multipart.next_field().await? {
-            if field.file_name().is_some() {
-                let file = NamedFile::try_from_multipart_field(field).await?;
-                return Ok(file);
+            if field.file_name().is_some() && multipart_field.is_none() {
+                multipart_field = Some(field);
+            } else if let Some(name) = field.name() {
+                let key = name.to_owned();
+                let value = field.text().await?;
+                extra.upsert(key, value);
             }
         }
-        Err(multer::Error::IncompleteFieldData { field_name: None })
+        if let Some(field) = multipart_field {
+            let mut file = NamedFile::try_from_multipart_field(field).await?;
+            if let Some(Ok(chunk_size)) = extra.parse_u64("chunk_size") {
+                if file.file_size() != chunk_size {
+                    return Err(multer::Error::IncompleteStream);
+                }
+            }
+            if let Some(checksum) = extra.get_str("checksum") {
+                let integrity = format!("{:x}", file.checksum());
+                if !integrity.eq_ignore_ascii_case(checksum) {
+                    return Err(multer::Error::IncompleteStream);
+                }
+            }
+            file.append_extra_attributes(&mut extra);
+            Ok(file)
+        } else {
+            Err(multer::Error::IncompleteFieldData { field_name: None })
+        }
     }
 
     /// Attempts to create a list of files in a multipart stream.

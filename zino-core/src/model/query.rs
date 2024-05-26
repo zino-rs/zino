@@ -210,6 +210,12 @@ impl Query {
         self.extra.upsert(key, value);
     }
 
+    /// Appends the extra flags.
+    #[inline]
+    pub fn append_extra_flags(&mut self, flags: &mut Map) {
+        self.extra.append(flags);
+    }
+
     /// Sets the sort order.
     #[inline]
     pub fn order_by(&mut self, field: impl Into<SharedString>, descending: bool) {
