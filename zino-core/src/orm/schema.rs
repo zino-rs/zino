@@ -54,7 +54,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Returns the driver name.
     ///
-    /// Supported drivers: **`mariadb`** | **`mysql`** | **`postgres`** | **`sqlite`** | **`tidb`**.
+    /// Supported drivers: `mariadb` | `mysql` | `postgres` | `sqlite` | `tidb`.
     #[inline]
     fn driver_name() -> &'static str {
         super::DRIVER_NAME

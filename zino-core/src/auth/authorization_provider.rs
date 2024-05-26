@@ -11,6 +11,7 @@ use crate::error::Error;
 ///     connector::HttpConnector,
 ///     error::Error,
 ///     extension::JsonObjectExt,
+///     json,
 ///     state::State,
 ///     LazyLock, Map,
 /// };

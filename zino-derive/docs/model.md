@@ -34,8 +34,8 @@ Derives the [`Model`](zino_core::model::Model) trait.
 
 - **`#[schema(reserved)]`**: The `generated` annotation is used to mark a special column.
   It will not been seen in the model definition. Built-in reserved fields:
-  **`created_at`** | **`updated_at`** | **`deleted_at`** | **`is_deleted`** | **`is_locked`**
-  | **`is_archived`** | **`version`** | **`edition`**.
+  `created_at` | `updated_at` | `deleted_at` | `is_deleted` | `is_locked` | `is_archived`
+  | `version` | `edition`.
 
 - **`#[schema(auto_initialized)]`**: The `auto_initialized` annotation indicates that
   the column has an automatically initialized value. Different to the `generated` column,

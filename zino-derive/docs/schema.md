@@ -53,8 +53,8 @@ Derives the [`Schema`](zino_core::orm::Schema) trait.
   The feature is only supported by TiDB.
 
 - **`#[schema(index_type = "type")]`**: The `index_type` attribute is used to
-  create an index for the database column. Supported values: **`btree`** | **`hash`**
-  | **`gin`** | **`spatial`** | **`text`** | **`unique`**.
+  create an index for the database column. Supported values: `btree` | `hash`
+  | `gin` | `spatial` | `text` | `unique`.
 
 - **`#[schema(reference = "Model")]`**: The `reference` attribute specifies
   the referenced model to define a relation between two models.
@@ -80,8 +80,8 @@ Derives the [`Schema`](zino_core::orm::Schema) trait.
 
 - **`#[schema(on_delete = "action")]`**: The `on_delete` attribute sepcifies
   the referential action for a foreign key when the parent table has a `DELETE` operation.
-  Supported values: **`cascade`** | **`restrict`**.
+  Supported values: `cascade` | `restrict`.
 
 - **`#[schema(on_update = "action")]`**: The `on_update` attribute sepcifies
   the referential action for a foreign key when the parent table has an `UPDATE` operation.
-  Supported values: **`cascade`** | **`restrict`**.
+  Supported values: `cascade` | `restrict`.

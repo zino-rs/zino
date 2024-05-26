@@ -30,7 +30,6 @@ pub(crate) fn get_data_type(content_type: &str) -> &str {
         "application/json" | "application/problem+json" => "json",
         "application/jsonlines" | "application/x-ndjson" => "ndjson",
         "application/octet-stream" => "bytes",
-        "application/pdf" => "pdf",
         "application/x-www-form-urlencoded" => "form",
         "multipart/form-data" => "multipart",
         "text/csv" => "csv",

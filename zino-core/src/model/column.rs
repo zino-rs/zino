@@ -192,8 +192,8 @@ impl<'a> Column<'a> {
 
     /// Returns `true` if the column is an option type.
     ///
-    /// Only supports **`Option<Uuid>`** | **`Option<String>`**
-    /// | **`Option<i64>`** | **`Option<u64>`** | **`Vec<i32>`** | **`Vec<u32>`**.
+    /// Only supports `Option<Uuid>` | `Option<String>` | `Option<i64>` | `Option<u64>`
+    /// | `Vec<i32>` | `Vec<u32>`.
     #[inline]
     pub fn is_option_type(&self) -> bool {
         matches!(
@@ -209,8 +209,8 @@ impl<'a> Column<'a> {
 
     /// Returns `true` if the column is an array type.
     ///
-    /// Only supports **`Vec<Uuid>`** | **`Vec<String>`** | **`Vec<i64>`** | **`Vec<u64>`**
-    /// | **`Vec<i32>`** | **`Vec<u32>`**.
+    /// Only supports `Vec<Uuid>` | `Vec<String>` | `Vec<i64>` | `Vec<u64>`
+    /// | `Vec<i32>` | `Vec<u32>`.
     #[inline]
     pub fn is_array_type(&self) -> bool {
         matches!(

@@ -15,7 +15,7 @@ Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
 
 - **`#[schema(snapshot)]`**: The `snapshot` annotation is used to indicate that
   the column should be included in a query population. Built-in snapshot fields:
-  **`id`** | **`name`** | **`status`** | **`updated_at`** | **`version`**.
+  `id` | `name` | `status` | `updated_at` | `version`.
 
 - **`#[schema(reference = "Model")]`**: The `reference` attribute specifies
   the referenced model to define a relation between two models.
@@ -42,16 +42,16 @@ Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
   If the value is a function, it must be callable as `fn() -> T`.
 
 - **`#[schema(format = "format")]`**: The `format` attribute specifies
-  the format of a `String` value. Supported values: **`alphabetic`** | **`alphanumeric`**
-  | **`ascii`** | **`ascii-alphabetic`** | **`ascii-alphanumeric`** | **`ascii-digit`**
-  | **`ascii-hexdigit`** | **`ascii-lowercase`** | **`ascii-uppercase`** | **`credit-card`**
-  | **`date`** | **`date-time`** | **`email`** | **`host`** | **`hostname`** | **`ip`**
-  | **`ipv4`** | **`ipv6`** | **`lowercase`** | **`numeric`** | **`phone-number`**
-  | **`regex`** | **`time`** | **`uppercase`** | **`uri`** | **`uuid`**.
+  the format of a `String` value. Supported values: `alphabetic` | `alphanumeric`
+  | `ascii` | `ascii-alphabetic` | `ascii-alphanumeric` | `ascii-digit`
+  | `ascii-hexdigit` | `ascii-lowercase` | `ascii-uppercase` | `credit-card`
+  | `date` | `date-time` | `email` | `host` | `hostname` | `ip` | `ipv4` | `ipv6`
+  | `lowercase` | `numeric` | `phone-number` | `regex` | `time` | `uppercase`
+  | `uri` | `uuid`.
 
 - **`#[schema(locale = "lang")]`**: The `locale` attribute specifies
   the language for the column value. It will be used in data mocking.
-  Supported values: **`en`** | **`es`** | **`de`** | **`fr`** | **`zh`**.
+  Supported values: `en` | `es` | `de` | `fr` | `zh`.
 
 - **`#[schema(enum_values = "value1 | value2 | ...")]`**: The `enum_values` attribute specifies
   the enumerated values for a `String` or `Vec<String>` value.

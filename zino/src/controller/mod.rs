@@ -509,7 +509,7 @@ where
         query.add_filter("status", Map::from_entry("$ne", "Deleted"));
         query.order_desc("parent_id");
         query.order_desc("created_at");
-        query.set_limit(0);
+        query.disable_limit();
 
         let mut children = Self::find::<Map>(&query).await.extract(&req)?;
         let total_rows = children.len();

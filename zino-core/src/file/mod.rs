@@ -6,6 +6,7 @@ use crate::{
     encoding::{base64, hex},
     error::Error,
     extension::JsonObjectExt,
+    json,
     trace::TraceContext,
     JsonValue, Map,
 };
@@ -356,7 +357,17 @@ impl NamedFile {
         for (key, value) in self.extra() {
             form = form.text(key.to_owned(), value.to_string());
         }
-        http_client::request_builder(url, options)?
+
+        let request_builder = if options.is_some() {
+            http_client::request_builder(url, options)?
+        } else {
+            let options = json!({
+                "method": "POST",
+                "data_type": "multipart",
+            });
+            http_client::request_builder(url, options.as_object())?
+        };
+        request_builder
             .header("traceparent", trace_context.traceparent())
             .header("tracestate", trace_context.tracestate())
             .multipart(form)

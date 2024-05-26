@@ -257,6 +257,11 @@ pub trait RequestContext {
     }
 
     /// Gets the data type by parsing the `content-type` header.
+    ///
+    /// # Note
+    ///
+    /// Currently, we support the following values: `bytes` | `csv` | `form` | `json` | `multipart`
+    /// | `ndjson` | `text`.
     fn data_type(&self) -> Option<&str> {
         self.get_header("content-type")
             .map(|content_type| {

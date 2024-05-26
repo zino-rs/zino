@@ -41,7 +41,9 @@ where
     /// use zino_model::user::{JwtAuthService, User};
     ///
     /// let user = User::new();
-    /// let claims = JwtClaims::with_data(user.id(), user.into_standard_claims());
+    /// let subject = user.id().to_string();
+    /// let custom_data = user.into_standard_claims();
+    /// let claims = JwtClaims::with_data(subject, custom_data);
     /// let id_token = claims.sign_with(JwtClaims::shared_key());
     /// ```
     fn into_standard_claims(self) -> Map {

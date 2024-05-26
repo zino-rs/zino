@@ -246,6 +246,12 @@ impl Query {
         self.limit = limit;
     }
 
+    /// Disables the query limit.
+    #[inline]
+    pub fn disable_limit(&mut self) {
+        self.limit = 0;
+    }
+
     /// Returns a reference to the projection fields.
     #[inline]
     pub fn fields(&self) -> &[String] {
