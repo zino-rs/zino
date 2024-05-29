@@ -27,7 +27,7 @@ where
     type Response = WebResponse;
     type Error = Error;
 
-    ntex::forward_poll_ready!(service);
+    ntex::forward_ready!(service);
 
     async fn call(
         &self,

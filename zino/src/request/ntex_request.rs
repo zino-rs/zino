@@ -81,10 +81,9 @@ impl RequestContext for NtexExtractor<HttpRequest> {
 
     #[inline]
     fn set_data<T: Clone + Send + Sync + 'static>(&mut self, value: T) -> Option<T> {
-        let mut ext = self.extensions_mut();
-        let old_data = ext.remove::<Data<T>>().map(|data| data.into_inner());
-        ext.insert(Data::new(value));
-        old_data
+        self.extensions_mut()
+            .insert(Data::new(value))
+            .map(|data| data.into_inner())
     }
 
     #[inline]

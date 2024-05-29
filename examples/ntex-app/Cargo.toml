@@ -1,7 +1,7 @@
 [package]
 name = "ntex-app"
 description = "An example for ntex integration."
-version = "0.1.3"
+version = "0.2.0"
 rust-version = "1.75"
 edition = "2021"
 publish = false
@@ -10,7 +10,7 @@ publish = false
 tracing = "0.1.40"
 
 [dependencies.ntex]
-version = "1.2.1"
+version = "2.0.0"
 default-features = false
 
 [dependencies.serde]

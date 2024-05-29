@@ -8,7 +8,7 @@ use crate::{
     extension::JsonObjectExt,
     json,
     trace::TraceContext,
-    JsonValue, Map,
+    warn, JsonValue, Map,
 };
 use bytes::Bytes;
 use etag::EntityTag;
@@ -330,8 +330,13 @@ impl NamedFile {
             mime_guess::from_path(file_name).first()
         });
         let mut buffer = Vec::new();
-        for chunk_path in chunk_paths {
+        for chunk_path in &chunk_paths {
             File::open(chunk_path)?.read_to_end(&mut buffer)?;
+        }
+        for chunk_path in chunk_paths {
+            if let Err(err) = fs::remove_file(chunk_path) {
+                warn!("fail to remove the file chunk: {}", err);
+            }
         }
         Ok(Self {
             field_name: None,
