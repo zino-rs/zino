@@ -2,7 +2,7 @@
 name = "ntex-app"
 description = "An example for ntex integration."
 version = "0.2.0"
-rust-version = "1.75"
+rust-version = "1.76"
 edition = "2021"
 publish = false
 

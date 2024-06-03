@@ -24,9 +24,13 @@ impl TraceState {
             .replace(' ', "")
             .split(',')
             .filter_map(|state| {
-                state
-                    .split_once('=')
-                    .map(|(key, value)| (key.to_owned().into(), value.to_owned()))
+                state.split_once('=').and_then(|(key, value)| {
+                    if key.is_empty() || value.is_empty() {
+                        None
+                    } else {
+                        Some((key.to_owned().into(), value.to_owned()))
+                    }
+                })
             })
             .collect();
         Self { states }

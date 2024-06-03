@@ -24,7 +24,7 @@ impl RegoEngine {
         &self,
         path: impl Into<String>,
         rego: impl Into<String>,
-    ) -> Result<(), Error> {
+    ) -> Result<String, Error> {
         self.engine
             .lock()
             .add_policy(path.into(), rego.into())

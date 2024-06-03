@@ -41,7 +41,8 @@ impl Mutation {
                         if fields.is_empty() {
                             validation.record("fields", "must be nonempty");
                         } else {
-                            self.fields = fields.into_iter().map(|s| s.to_owned()).collect();
+                            self.fields.clear();
+                            self.fields.extend(fields.into_iter().map(|s| s.to_owned()));
                         }
                     }
                 }
@@ -60,7 +61,7 @@ impl Mutation {
     #[inline]
     pub fn allow_fields(&mut self, fields: &[&str]) {
         if self.fields.is_empty() {
-            self.fields = fields.iter().map(|&key| key.to_owned()).collect::<Vec<_>>();
+            self.fields.extend(fields.iter().map(|&key| key.to_owned()));
         } else {
             self.fields
                 .retain(|field| fields.iter().any(|key| field == key))

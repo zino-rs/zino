@@ -53,23 +53,22 @@ impl Query {
             match key.as_str() {
                 "fields" | "columns" => {
                     if let Some(fields) = value.parse_str_array() {
-                        self.fields = fields.into_iter().map(|s| s.to_owned()).collect();
+                        self.fields.clear();
+                        self.fields.extend(fields.into_iter().map(|s| s.to_owned()));
                     }
                 }
                 "order_by" | "sort_by" => {
                     if let Some(sort_order) = value.parse_str_array() {
-                        self.sort_order = sort_order
-                            .into_iter()
-                            .map(|s| {
-                                if let Some(sort) = s.strip_suffix("|asc") {
-                                    (sort.to_owned().into(), false)
-                                } else if let Some(sort) = s.strip_suffix("|desc") {
-                                    (sort.to_owned().into(), true)
-                                } else {
-                                    (s.to_owned().into(), true)
-                                }
-                            })
-                            .collect();
+                        self.sort_order.clear();
+                        self.sort_order.extend(sort_order.into_iter().map(|s| {
+                            if let Some(sort) = s.strip_suffix("|asc") {
+                                (sort.to_owned().into(), false)
+                            } else if let Some(sort) = s.strip_suffix("|desc") {
+                                (sort.to_owned().into(), true)
+                            } else {
+                                (s.to_owned().into(), true)
+                            }
+                        }));
                     }
                 }
                 "offset" | "skip" => {
@@ -167,7 +166,7 @@ impl Query {
     #[inline]
     pub fn allow_fields(&mut self, fields: &[&str]) {
         if self.fields.is_empty() {
-            self.fields = fields.iter().map(|&key| key.to_owned()).collect::<Vec<_>>();
+            self.fields.extend(fields.iter().map(|&key| key.to_owned()));
         } else {
             self.fields.retain(|field| fields.contains(&field.as_str()))
         }

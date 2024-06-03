@@ -534,25 +534,22 @@ impl DecodeRow<DatabaseRow> for Record {
                     "BYTEA" => decode_raw::<Vec<u8>>(field, raw_value)?.into(),
                     "INT4[]" => {
                         let values = decode_raw::<Vec<i32>>(field, raw_value)?;
-                        let vec = values.into_iter().map(AvroValue::Int).collect::<Vec<_>>();
+                        let vec = values.into_iter().map(AvroValue::Int).collect();
                         AvroValue::Array(vec)
                     }
                     "INT8[]" => {
                         let values = decode_raw::<Vec<i64>>(field, raw_value)?;
-                        let vec = values.into_iter().map(AvroValue::Long).collect::<Vec<_>>();
+                        let vec = values.into_iter().map(AvroValue::Long).collect();
                         AvroValue::Array(vec)
                     }
                     "TEXT[]" => {
                         let values = decode_raw::<Vec<String>>(field, raw_value)?;
-                        let vec = values
-                            .into_iter()
-                            .map(AvroValue::String)
-                            .collect::<Vec<_>>();
+                        let vec = values.into_iter().map(AvroValue::String).collect();
                         AvroValue::Array(vec)
                     }
                     "UUID[]" => {
                         let values = decode_raw::<Vec<Uuid>>(field, raw_value)?;
-                        let vec = values.into_iter().map(AvroValue::Uuid).collect::<Vec<_>>();
+                        let vec = values.into_iter().map(AvroValue::Uuid).collect();
                         AvroValue::Array(vec)
                     }
                     "JSONB" | "JSON" => decode_raw::<JsonValue>(field, raw_value)?.into(),

@@ -90,6 +90,15 @@ impl RequestContext for AxumExtractor<Request> {
     }
 
     #[inline]
+    fn client_ip(&self) -> Option<IpAddr> {
+        self.headers().get_client_ip().or_else(|| {
+            self.extensions()
+                .get::<ConnectInfo<SocketAddr>>()
+                .map(|socket| socket.ip())
+        })
+    }
+
+    #[inline]
     fn get_context(&self) -> Option<Context> {
         self.extensions().get::<Context>().cloned()
     }
@@ -104,15 +113,6 @@ impl RequestContext for AxumExtractor<Request> {
         self.extensions_mut()
             .insert(Data::new(value))
             .map(|data| data.into_inner())
-    }
-
-    #[inline]
-    fn client_ip(&self) -> Option<IpAddr> {
-        self.header_map().get_client_ip().or_else(|| {
-            self.extensions()
-                .get::<ConnectInfo<SocketAddr>>()
-                .map(|socket| socket.ip())
-        })
     }
 
     #[inline]

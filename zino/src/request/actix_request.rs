@@ -70,6 +70,13 @@ impl RequestContext for ActixExtractor<HttpRequest> {
     }
 
     #[inline]
+    fn client_ip(&self) -> Option<IpAddr> {
+        self.connection_info()
+            .realip_remote_addr()
+            .and_then(|s| s.parse().ok())
+    }
+
+    #[inline]
     fn get_context(&self) -> Option<Context> {
         let extensions = self.extensions();
         extensions.get::<Context>().cloned()
@@ -85,13 +92,6 @@ impl RequestContext for ActixExtractor<HttpRequest> {
         self.extensions_mut()
             .insert(Data::new(value))
             .map(|data| data.into_inner())
-    }
-
-    #[inline]
-    fn client_ip(&self) -> Option<IpAddr> {
-        self.connection_info()
-            .realip_remote_addr()
-            .and_then(|s| s.parse().ok())
     }
 
     #[inline]
