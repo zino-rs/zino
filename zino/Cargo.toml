@@ -17,6 +17,7 @@ features = [
     "axum",
     "i18n",
     "jwt",
+    "oidc",
     "opa",
     "orm",
 ]
@@ -66,6 +67,7 @@ ntex = [
     "dep:ntex-files",
     "zino-core/runtime-tokio",
 ]
+oidc = ["zino-core/oidc"]
 opa = ["zino-core/opa"]
 orm = ["zino-core/orm"]
 

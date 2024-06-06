@@ -132,6 +132,7 @@ full = [
     "i18n",
     "jwt",
     "metrics",
+    "oidc",
     "opa",
     "openapi",
     "orm",
@@ -153,6 +154,7 @@ metrics = [
     "dep:metrics-exporter-prometheus",
     "opendal?/layers-metrics",
 ]
+oidc = ["dep:rauthy-client"]
 opa = ["regorus"]
 openapi = ["dep:utoipa"]
 orm = ["orm-sqlx"]
@@ -302,6 +304,10 @@ optional = true
 version = "0.4.3"
 optional = true
 
+[dependencies.rauthy-client]
+version = "0.4.0"
+optional = true
+
 [dependencies.regorus]
 version = "0.2.0"
 optional = true
@@ -337,11 +343,11 @@ version = "0.3.1"
 features = ["json", "multipart"]
 
 [dependencies.sentry]
-version = "0.33.0"
+version = "0.34.0"
 optional = true
 
 [dependencies.sentry-tracing]
-version = "0.33.0"
+version = "0.34.0"
 optional = true
 
 [dependencies.serde]

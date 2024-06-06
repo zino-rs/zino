@@ -128,14 +128,71 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     field_constructors.push(quote! {
                                         model.#ident = <#type_name_ident>::#type_fn_ident().into();
                                     });
-                                } else if type_name == "String" {
-                                    field_constructors.push(quote! {
-                                        model.#ident = #value.to_owned();
-                                    });
-                                } else if let Ok(value) = value.parse::<u8>() {
-                                    field_constructors.push(quote! {
-                                        model.#ident = #value.into();
-                                    });
+                                } else {
+                                    match type_name.as_str() {
+                                        "String" => {
+                                            field_constructors.push(quote! {
+                                                model.#ident = #value.to_owned();
+                                            });
+                                        }
+                                        "u64" => {
+                                            if let Ok(value) = value.parse::<u64>() {
+                                                field_constructors.push(quote! {
+                                                    model.#ident = #value;
+                                                });
+                                            }
+                                        }
+                                        "i64" => {
+                                            if let Ok(value) = value.parse::<i64>() {
+                                                field_constructors.push(quote! {
+                                                    model.#ident = #value;
+                                                });
+                                            }
+                                        }
+                                        "u32" => {
+                                            if let Ok(value) = value.parse::<u32>() {
+                                                field_constructors.push(quote! {
+                                                    model.#ident = #value;
+                                                });
+                                            }
+                                        }
+                                        "i32" => {
+                                            if let Ok(value) = value.parse::<i32>() {
+                                                field_constructors.push(quote! {
+                                                    model.#ident = #value;
+                                                });
+                                            }
+                                        }
+                                        "u16" => {
+                                            if let Ok(value) = value.parse::<u16>() {
+                                                field_constructors.push(quote! {
+                                                    model.#ident = #value;
+                                                });
+                                            }
+                                        }
+                                        "i16" => {
+                                            if let Ok(value) = value.parse::<i16>() {
+                                                field_constructors.push(quote! {
+                                                    model.#ident = #value;
+                                                });
+                                            }
+                                        }
+                                        "u8" => {
+                                            if let Ok(value) = value.parse::<u8>() {
+                                                field_constructors.push(quote! {
+                                                    model.#ident = #value;
+                                                });
+                                            }
+                                        }
+                                        "i8" => {
+                                            if let Ok(value) = value.parse::<i8>() {
+                                                field_constructors.push(quote! {
+                                                    model.#ident = #value;
+                                                });
+                                            }
+                                        }
+                                        _ => (),
+                                    }
                                 }
                             }
                         }

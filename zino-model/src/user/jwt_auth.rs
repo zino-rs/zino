@@ -165,6 +165,7 @@ where
             }
 
             let mut data = Map::new();
+            data.upsert("token_type", "Bearer");
             data.upsert("expires_in", claims.expires_in().as_secs());
             data.upsert("refresh_token", claims.refresh_token()?);
             data.upsert("access_token", claims.access_token()?);
@@ -219,6 +220,7 @@ where
         }
 
         let mut data = Map::new();
+        data.upsert("token_type", "Bearer");
         data.upsert("expires_in", claims.expires_in().as_secs());
         data.upsert("access_token", claims.access_token()?);
         Ok(data)

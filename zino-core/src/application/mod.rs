@@ -62,6 +62,9 @@ mod tracing_subscriber;
 #[cfg(feature = "metrics")]
 mod metrics_exporter;
 
+#[cfg(feature = "oidc")]
+mod rauthy_client;
+
 #[cfg(feature = "sentry")]
 mod sentry_client;
 
@@ -99,7 +102,7 @@ pub trait Application {
 
         // Metrics exporter
         #[cfg(feature = "metrics")]
-        self::metrics_exporter::init::<Self>();
+        metrics_exporter::init::<Self>();
 
         // HTTP client
         http_client::init::<Self>();
@@ -286,6 +289,8 @@ pub trait Application {
     /// Loads resources after booting the application.
     #[inline]
     async fn load() {
+        #[cfg(feature = "oidc")]
+        rauthy_client::setup::<Self>().await;
         #[cfg(feature = "orm")]
         crate::orm::GlobalPool::connect_all().await;
     }

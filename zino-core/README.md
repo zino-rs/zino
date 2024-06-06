@@ -26,6 +26,7 @@ The following optional features are available:
 | `jwt`               | Enables the support for JSON Web Token.                | No       |
 | `locale`            | Enables the support for locale related utilities.      | No       |
 | `metrics`           | Enables the [`metrics`] exporter.                      | No       |
+| `oidc`              | Enables the support for OIDC via [`rauthy`].           | No       |
 | `opa`               | Enables the support for OPA via [`regorus`].           | No       |
 | `openapi`           | Enables the support for OpenAPI docs via [`utoipa`].   | No       |
 | `orm`               | Enables the ORM for MySQL, PostgreSQL or **SQLite**.   | No       |
@@ -47,6 +48,7 @@ The following optional features are available:
 [`async-std`]: https://crates.io/crates/async-std
 [`tokio`]: https://crates.io/crates/tokio
 [`native-tls`]: https://crates.io/crates/native-tls
+[`rauthy`]: https://crates.io/crates/rauthy-client
 [`regorus`]: https://crates.io/crates/regorus
 [`utoipa`]: https://crates.io/crates/utoipa
 [`rustls`]: https://crates.io/crates/rustls
