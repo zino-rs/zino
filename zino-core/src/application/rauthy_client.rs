@@ -30,10 +30,13 @@ pub(super) async fn setup<APP: Application + ?Sized>() {
         HashSet::from([client_id.to_owned()])
     };
     let group_claim = if let Some(groups) = config.get_str_array("groups") {
-        let claims = groups.into_iter().map(|group| JwtClaim {
-            typ: JwtClaimTyp::Groups,
-            value: group.to_owned(),
-        }).collect();
+        let claims = groups
+            .into_iter()
+            .map(|group| JwtClaim {
+                typ: JwtClaimTyp::Groups,
+                value: group.to_owned(),
+            })
+            .collect();
         ClaimMapping::Or(claims)
     } else {
         ClaimMapping::Any
