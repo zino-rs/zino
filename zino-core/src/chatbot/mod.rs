@@ -16,12 +16,12 @@ mod client;
 
 /// Supported chatbot services.
 #[cfg(feature = "chatbot-openai")]
-mod chatbot_openai;
+mod openai;
 
 pub use client::Chatbot;
 
 #[cfg(feature = "chatbot-openai")]
-use chatbot_openai::OpenAiChatCompletion;
+use openai::OpenAiChatCompletion;
 
 /// Underlying trait of all chatbot services for implementors.
 pub trait ChatbotService {

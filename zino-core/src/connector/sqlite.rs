@@ -1,4 +1,4 @@
-use super::{sqlx_common::SerializeRow, Connector, DataSource, DataSourceConnector::Sqlite};
+use super::{sqlx_row::SerializeRow, Connector, DataSource, DataSourceConnector::Sqlite};
 use crate::{error::Error, extension::TomlTableExt, helper, AvroValue, Map, Record};
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;

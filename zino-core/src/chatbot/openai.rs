@@ -9,7 +9,7 @@ use async_openai::{
     config::{Config, OpenAIConfig},
     types::{
         ChatCompletionRequestMessage, ChatCompletionRequestUserMessageArgs,
-        CreateChatCompletionRequestArgs, Role,
+        CreateChatCompletionRequestArgs,
     },
     Chat, Client,
 };
@@ -77,7 +77,6 @@ impl ChatbotService for OpenAiChatCompletion<OpenAIConfig> {
     async fn try_send(&self, message: String, options: Option<Map>) -> Result<Vec<String>, Error> {
         let request_user_message = ChatCompletionRequestUserMessageArgs::default()
             .content(message)
-            .role(Role::User)
             .build()?;
         let request_message = ChatCompletionRequestMessage::User(request_user_message);
 

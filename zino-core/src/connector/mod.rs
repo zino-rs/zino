@@ -38,26 +38,26 @@ use data_source::DataSourceConnector;
 
 /// Supported connectors.
 #[cfg(feature = "connector-arrow")]
-mod connector_arrow;
+mod arrow;
 #[cfg(feature = "connector-http")]
-mod connector_http;
+mod http;
 #[cfg(feature = "connector-mysql")]
-mod connector_mysql;
+mod mysql;
 #[cfg(feature = "connector-postgres")]
-mod connector_postgres;
+mod postgres;
 #[cfg(feature = "connector-sqlite")]
-mod connector_sqlite;
+mod sqlite;
 #[cfg(any(
     feature = "connector-mysql",
     feature = "connector-postgres",
     feature = "connector-sqlite"
 ))]
-mod sqlx_common;
+mod sqlx_row;
 
 #[cfg(feature = "connector-arrow")]
-pub use connector_arrow::{ArrowConnector, DataFrameExecutor};
+pub use arrow::{ArrowConnector, DataFrameExecutor};
 #[cfg(feature = "connector-http")]
-pub use connector_http::HttpConnector;
+pub use http::HttpConnector;
 
 /// Underlying trait of all data sources for implementors.
 pub trait Connector {
