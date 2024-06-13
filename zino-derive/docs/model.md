@@ -14,7 +14,7 @@ Derives the [`Model`](zino_core::model::Model) trait.
 # Attributes on struct fields
 
 - **`#[schema(ignore)]`**: The `ignore` annotation is used to skip a particular field
-  such that it maps to no database column.
+  such that it disables the derived setter.
 
 - **`#[schema(constructor = "path")]`**: The `constructor` attribute is used to
   create a new instance of the column type in `Model::new()`.
