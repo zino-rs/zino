@@ -56,7 +56,6 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let mut archive_updates = Vec::new();
     let mut primary_key_type = String::from("Uuid");
     let mut primary_key_name = String::from("id");
-    let mut user_id_type = String::new();
     let mut model_references: HashMap<String, Vec<String>> = HashMap::new();
     let mut populated_field_mappings: HashMap<String, String> = HashMap::new();
     for field in parser::parse_struct_fields(input.data) {
@@ -567,33 +566,6 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                         column_methods.push(method);
                         ignored_list_fields.push(field_name.to_owned());
                     }
-                    "owner_id" | "maintainer_id" => {
-                        let user_type_opt = type_name.strip_prefix("Option");
-                        let user_type = if let Some(user_type) = user_type_opt {
-                            user_type.trim_matches(|c| c == '<' || c == '>').to_owned()
-                        } else {
-                            type_name.clone()
-                        };
-                        let user_type_ident = format_ident!("{}", user_type);
-                        let method = if user_type_opt.is_some() {
-                            quote! {
-                                #[inline]
-                                fn #field_ident(&self) -> Option<&#user_type_ident> {
-                                    self.#field_ident.as_ref()
-                                }
-                            }
-                        } else {
-                            quote! {
-                                #[inline]
-                                fn #field_ident(&self) -> Option<&#user_type_ident> {
-                                    let id = &self.#field_ident;
-                                    (id != &#user_type_ident::default()).then_some(id)
-                                }
-                            }
-                        };
-                        column_methods.push(method);
-                        user_id_type = user_type;
-                    }
                     "created_at" if type_name == "DateTime" => {
                         let method = quote! {
                             #[inline]
@@ -767,14 +739,10 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     }
     fetched_queries.push(quote! { Ok(models) });
     fetched_one_queries.push(quote! { Ok(model) });
-    if user_id_type.is_empty() {
-        user_id_type.clone_from(&primary_key_type);
-    }
 
     // Output
     let model_primary_key_type = format_ident!("{}", primary_key_type);
     let model_primary_key = format_ident!("{}", primary_key_name);
-    let model_user_id_type = format_ident!("{}", user_id_type);
     quote! {
         use zino_core::{
             model::{Mutation, Query},
@@ -783,7 +751,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             Map as ZinoMap,
         };
 
-        impl ModelAccessor<#model_primary_key_type, #model_user_id_type> for #name {
+        impl ModelAccessor<#model_primary_key_type> for #name {
             #[inline]
             fn id(&self) -> &#model_primary_key_type {
                 &self.#model_primary_key

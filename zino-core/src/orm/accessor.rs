@@ -13,10 +13,9 @@ use std::fmt::Display;
 /// Access model fields.
 ///
 /// This trait can be derived by `zino_derive::ModelAccessor`.
-pub trait ModelAccessor<K, U = K>: Schema<PrimaryKey = K>
+pub trait ModelAccessor<K>: Schema<PrimaryKey = K>
 where
     K: Default + Display + PartialEq,
-    U: Default + Display + PartialEq,
 {
     /// Returns the `id` field, i.e. the primary key.
     fn id(&self) -> &K;
@@ -54,18 +53,6 @@ where
     /// Returns the `extra` field.
     #[inline]
     fn extra(&self) -> Option<&Map> {
-        None
-    }
-
-    /// Returns the `owner_id` field.
-    #[inline]
-    fn owner_id(&self) -> Option<&U> {
-        None
-    }
-
-    /// Returns the `maintainer_id` field.
-    #[inline]
-    fn maintainer_id(&self) -> Option<&U> {
         None
     }
 
@@ -208,20 +195,6 @@ where
     #[inline]
     fn get_extra_value(&self, key: &str) -> Option<&JsonValue> {
         self.extra()?.get(key)
-    }
-
-    /// Returns `true` if the `owner_id` is not the default.
-    #[inline]
-    fn has_owner(&self) -> bool {
-        self.owner_id()
-            .is_some_and(|owner_id| owner_id != &U::default())
-    }
-
-    /// Returns `true` if the `maintainer_id` is not the default.
-    #[inline]
-    fn has_maintainer(&self) -> bool {
-        self.maintainer_id()
-            .is_some_and(|maintainer_id| maintainer_id != &U::default())
     }
 
     /// Returns the next version for the model.

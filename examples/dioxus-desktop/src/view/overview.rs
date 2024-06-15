@@ -36,7 +36,7 @@ pub fn Overview() -> Element {
                     content: rsx! {
                         img {
                             class: "mr-2",
-                            src: "https://img.shields.io/github/languages/top/photino/zino",
+                            src: "https://img.shields.io/github/languages/top/zino-rs/zino",
                         }
                         img {
                             class: "mr-2",
@@ -46,71 +46,71 @@ pub fn Overview() -> Element {
                             class: "mr-2",
                             href: "https://github.com/zino-rs/zino/tags",
                             img {
-                                src: "https://img.shields.io/github/v/tag/photino/zino",
+                                src: "https://img.shields.io/github/v/tag/zino-rs/zino",
                             }
                         }
                         img {
                             class: "mr-2",
-                            src: "https://img.shields.io/github/repo-size/photino/zino",
+                            src: "https://img.shields.io/github/repo-size/zino-rs/zino",
                         }
                         img {
                             class: "mr-2",
-                            src: "https://img.shields.io/github/languages/code-size/photino/zino",
+                            src: "https://img.shields.io/github/languages/code-size/zino-rs/zino",
                         }
                         a {
                             class: "mr-2",
                             href: "https://github.com/zino-rs/zino/stargazers",
                             img {
-                                src: "https://img.shields.io/github/stars/photino/zino?style=flat",
+                                src: "https://img.shields.io/github/stars/zino-rs/zino?style=flat",
                             }
                         }
                         a {
                             class: "mr-2",
                             href: "https://github.com/zino-rs/zino/watchers",
                             img {
-                                src: "https://img.shields.io/github/watchers/photino/zino?style=flat",
+                                src: "https://img.shields.io/github/watchers/zino-rs/zino?style=flat",
                             }
                         }
                         a {
                             class: "mr-2",
                             href: "https://github.com/zino-rs/zino/forks",
                             img {
-                                src: "https://img.shields.io/github/forks/photino/zino?style=flat",
+                                src: "https://img.shields.io/github/forks/zino-rs/zino?style=flat",
                             }
                         }
                         a {
                             class: "mr-2",
                             href: "https://github.com/zino-rs/zino/graphs/contributors",
                             img {
-                                src: "https://img.shields.io/github/contributors/photino/zino",
+                                src: "https://img.shields.io/github/contributors/zino-rs/zino",
                             }
                         }
                         a {
                             class: "mr-2",
                             href: "https://github.com/zino-rs/zino/commits/main",
                             img {
-                                src: "https://img.shields.io/github/last-commit/photino/zino/main",
+                                src: "https://img.shields.io/github/last-commit/zino-rs/zino/main",
                             }
                         }
                         a {
                             class: "mr-2",
                             href: "https://github.com/zino-rs/zino/pulls",
                             img {
-                                src: "https://img.shields.io/github/issues-pr/photino/zino"
+                                src: "https://img.shields.io/github/issues-pr/zino-rs/zino"
                             }
                         }
                         a {
                             class: "mr-2",
                             href: "https://github.com/zino-rs/zino/actions/workflows/rust.yml",
                             img {
-                                src: "https://img.shields.io/github/actions/workflow/status/photino/zino/rust.yml",
+                                src: "https://img.shields.io/github/actions/workflow/status/zino-rs/zino/rust.yml",
                             }
                         }
                         a {
                             class: "mr-2",
                             href: "https://github.com/zino-rs/zino/blob/main/LICENSE",
                             img {
-                                src: "https://img.shields.io/github/license/photino/zino",
+                                src: "https://img.shields.io/github/license/zino-rs/zino",
                             }
                         }
                     },
@@ -134,7 +134,7 @@ pub fn Overview() -> Element {
                             class: "mr-2",
                             href: "https://github.com/zino-rs/zino/issues",
                             img {
-                                src: "https://img.shields.io/github/issues/photino/zino",
+                                src: "https://img.shields.io/github/issues/zino-rs/zino",
                             }
                         }
                         for label in ["bug", "enhancement", "dependencies"] {
@@ -142,7 +142,7 @@ pub fn Overview() -> Element {
                                 class: "mr-2",
                                 href: "https://github.com/zino-rs/zino/labels/{label}",
                                 img {
-                                    src: "https://img.shields.io/github/issues/photino/zino/{label}",
+                                    src: "https://img.shields.io/github/issues/zino-rs/zino/{label}",
                                 }
                             }
                         }
@@ -162,19 +162,19 @@ pub fn Overview() -> Element {
                     content: rsx! {
                         img {
                             class: "mr-2",
-                            src: "https://img.shields.io/github/commit-activity/t/photino/zino",
+                            src: "https://img.shields.io/github/commit-activity/t/zino-rs/zino",
                         }
                         img {
                             class: "mr-2",
-                            src: "https://img.shields.io/github/commit-activity/y/photino/zino",
+                            src: "https://img.shields.io/github/commit-activity/y/zino-rs/zino",
                         }
                         img {
                             class: "mr-2",
-                            src: "https://img.shields.io/github/commit-activity/m/photino/zino",
+                            src: "https://img.shields.io/github/commit-activity/m/zino-rs/zino",
                         }
                         img {
                             class: "mr-2",
-                            src: "https://img.shields.io/github/commit-activity/w/photino/zino",
+                            src: "https://img.shields.io/github/commit-activity/w/zino-rs/zino",
                         }
                     },
                 }

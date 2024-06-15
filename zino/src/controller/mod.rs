@@ -1,5 +1,5 @@
 /// Default controller for the `Model`.
-pub trait DefaultController<K, U> {
+pub trait DefaultController<K> {
     /// A type for the request extractor.
     type Request;
 
@@ -74,12 +74,11 @@ use zino_core::{
 
 #[cfg(any(feature = "actix", feature = "axum", feature = "ntex"))]
 #[cfg(feature = "orm")]
-impl<K, U, M> DefaultController<K, U> for M
+impl<K, M> DefaultController<K> for M
 where
     K: Default + std::fmt::Display + PartialEq + std::str::FromStr,
     <K as std::str::FromStr>::Err: std::error::Error + Send + 'static,
-    U: Default + std::fmt::Display + PartialEq,
-    M: ModelAccessor<K, U>,
+    M: ModelAccessor<K>,
 {
     type Request = crate::Request;
     type Result = crate::Result;
