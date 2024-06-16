@@ -1,6 +1,6 @@
 use crate::response::ntex_response::NtexRejection;
 use ntex::{
-    http::{header::HeaderMap, Method, Payload},
+    http::Payload,
     util::Bytes,
     web::{
         error::{DefaultError, ErrorRenderer},
@@ -40,12 +40,9 @@ impl<T> DerefMut for NtexExtractor<T> {
 }
 
 impl RequestContext for NtexExtractor<HttpRequest> {
-    type Method = Method;
-    type Headers = HeaderMap;
-
     #[inline]
-    fn request_method(&self) -> &Self::Method {
-        self.method()
+    fn request_method(&self) -> &str {
+        self.method().as_str()
     }
 
     #[inline]
@@ -56,11 +53,6 @@ impl RequestContext for NtexExtractor<HttpRequest> {
     #[inline]
     fn matched_route(&self) -> Cow<'_, str> {
         self.match_info().path().into()
-    }
-
-    #[inline]
-    fn header_map(&self) -> &Self::Headers {
-        self.headers()
     }
 
     #[inline]

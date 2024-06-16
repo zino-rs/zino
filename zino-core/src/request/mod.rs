@@ -51,22 +51,14 @@ pub type Uri = http::Uri;
 
 /// Request context.
 pub trait RequestContext {
-    /// HTTP request method.
-    type Method: AsRef<str>;
-    /// A set of HTTP headers.
-    type Headers;
-
-    /// Returns the request method.
-    fn request_method(&self) -> &Self::Method;
+    /// Returns the request method as `str`.
+    fn request_method(&self) -> &str;
 
     /// Returns the original request URI regardless of nesting.
     fn original_uri(&self) -> &Uri;
 
     /// Returns the route that matches the request.
     fn matched_route(&self) -> Cow<'_, str>;
-
-    /// Returns a reference to the request headers.
-    fn header_map(&self) -> &Self::Headers;
 
     /// Gets an HTTP header value with the given name.
     fn get_header(&self, name: &str) -> Option<&str>;
@@ -107,7 +99,7 @@ pub trait RequestContext {
             metrics::gauge!("zino_http_requests_in_flight").increment(1.0);
             metrics::counter!(
                 "zino_http_requests_total",
-                "method" => self.request_method().as_ref().to_owned(),
+                "method" => self.request_method().to_owned(),
                 "route" => self.matched_route().into_owned(),
             )
             .increment(1);
@@ -470,7 +462,7 @@ pub trait RequestContext {
     /// You should always manually set canonicalized headers by calling
     /// `Authentication`'s method [`set_headers()`](Authentication::set_headers).
     fn parse_authentication(&self) -> Result<Authentication, Rejection> {
-        let method = self.request_method().as_ref();
+        let method = self.request_method();
         let query = self.parse_query::<Map>().unwrap_or_default();
         let mut authentication = Authentication::new(method);
         let mut validation = Validation::new();

@@ -1,6 +1,5 @@
 use actix_web::{
     dev::{Payload, ServiceRequest},
-    http::{header::HeaderMap, Method},
     web::Bytes,
     FromRequest, HttpMessage, HttpRequest,
 };
@@ -37,12 +36,9 @@ impl<T> DerefMut for ActixExtractor<T> {
 }
 
 impl RequestContext for ActixExtractor<HttpRequest> {
-    type Method = Method;
-    type Headers = HeaderMap;
-
     #[inline]
-    fn request_method(&self) -> &Self::Method {
-        self.method()
+    fn request_method(&self) -> &str {
+        self.method().as_str()
     }
 
     #[inline]
@@ -57,11 +53,6 @@ impl RequestContext for ActixExtractor<HttpRequest> {
         } else {
             self.uri().path().into()
         }
-    }
-
-    #[inline]
-    fn header_map(&self) -> &Self::Headers {
-        self.headers()
     }
 
     #[inline]

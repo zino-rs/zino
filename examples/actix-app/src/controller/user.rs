@@ -18,7 +18,7 @@ pub async fn new(mut req: Request) -> Result {
     ];
     let user_intro = req.translate("user-intro", Some(args)).extract(&req)?;
     let data = json!({
-        "method": req.request_method().as_ref(),
+        "method": req.request_method(),
         "path": req.request_path(),
         "user_intro": user_intro,
     });
@@ -39,7 +39,7 @@ pub async fn view(req: Request) -> Result {
     let mut data = Map::data_entry(user);
     let rego = RegoEngine::shared();
     rego.set_input(json!({
-        "method": req.request_method().as_str(),
+        "method": req.request_method(),
         "path": req.path_segments(),
         "session": req.get_data::<UserSession<Uuid>>(),
     }));

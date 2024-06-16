@@ -1,8 +1,5 @@
 use async_trait::async_trait;
-use axum::{
-    extract::{ConnectInfo, FromRequest, MatchedPath, OriginalUri, Request},
-    http::{HeaderMap, Method},
-};
+use axum::extract::{ConnectInfo, FromRequest, MatchedPath, OriginalUri, Request};
 use std::{
     borrow::Cow,
     convert::Infallible,
@@ -51,12 +48,9 @@ impl From<AxumExtractor<Request>> for Request {
 }
 
 impl RequestContext for AxumExtractor<Request> {
-    type Method = Method;
-    type Headers = HeaderMap;
-
     #[inline]
-    fn request_method(&self) -> &Self::Method {
-        self.method()
+    fn request_method(&self) -> &str {
+        self.method().as_str()
     }
 
     #[inline]
@@ -68,11 +62,6 @@ impl RequestContext for AxumExtractor<Request> {
         } else {
             self.uri()
         }
-    }
-
-    #[inline]
-    fn header_map(&self) -> &Self::Headers {
-        self.headers()
     }
 
     #[inline]
