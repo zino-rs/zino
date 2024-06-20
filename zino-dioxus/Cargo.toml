@@ -1,7 +1,7 @@
 [package]
 name = "zino-dioxus"
 description = "Dioxus components for zino."
-version = "0.6.2"
+version = "0.6.3"
 rust-version = "1.75"
 edition = "2021"
 license = "MIT"
@@ -26,7 +26,7 @@ version = "0.4.38"
 features = ["serde"]
 
 [dependencies.dioxus-free-icons]
-version = "0.8.5"
+version = "0.8.6"
 features = ["font-awesome-solid"]
 
 [dependencies.tokio]
@@ -44,4 +44,4 @@ features = [
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.23.3"
+version = "0.24.0"

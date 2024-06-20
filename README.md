@@ -38,7 +38,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-zino = { version = "0.22", features = ["axum"] }
+zino = { version = "0.23", features = ["axum"] }
 ```
 
 ```rust

@@ -1,10 +1,11 @@
 //! Scheduler for sync and async cron jobs.
 
 use super::Scheduler;
-use crate::{datetime::DateTime, Map, Uuid};
+use crate::{datetime::DateTime, extension::TomlTableExt, Map, Uuid};
 use chrono::Local;
 use cron::Schedule;
 use std::{str::FromStr, time::Duration};
+use toml::Table;
 
 /// A function pointer of the cron job.
 pub type CronJob = fn(id: Uuid, data: &mut Map, last_tick: DateTime);
@@ -31,6 +32,10 @@ pub struct Job {
 
 impl Job {
     /// Creates a new instance.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the cron expression is invalid.
     #[inline]
     pub fn new(cron_expr: &str, exec: CronJob) -> Self {
         let schedule = Schedule::from_str(cron_expr)
@@ -41,6 +46,37 @@ impl Job {
             disabled: false,
             immediate: false,
             remaining_ticks: None,
+            schedule,
+            run: exec,
+            last_tick: None,
+        }
+    }
+
+    /// Creates a new instance with the configuration.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the `cron` expression is invalid.
+    pub fn with_config(config: &Table, exec: CronJob) -> Self {
+        let cron_expr = config.get_str("cron").unwrap_or_default();
+        let schedule = Schedule::from_str(cron_expr)
+            .unwrap_or_else(|err| panic!("invalid cron expression `{cron_expr}`: {err}"));
+        let data = config
+            .get_table("data")
+            .map(|t| t.to_map())
+            .unwrap_or_default();
+        let disabled = config.get_bool("disable").unwrap_or_default();
+        let immediate = config.get_bool("immediate").unwrap_or_default();
+        let remaining_ticks = config
+            .get_bool("once")
+            .and_then(|b| b.then_some(1))
+            .or_else(|| config.get_usize("max-ticks"));
+        Self {
+            id: Uuid::now_v7(),
+            data,
+            disabled,
+            immediate,
+            remaining_ticks,
             schedule,
             run: exec,
             last_tick: None,
