@@ -26,6 +26,7 @@ pub fn FluidContainer(props: FluidContainerProps) -> Element {
     rsx! {
         main {
             class: props.class,
+            width: "100%",
             { props.children }
         }
     }

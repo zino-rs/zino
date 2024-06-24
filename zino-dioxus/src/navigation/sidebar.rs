@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 /// A vertical menu used in the navigation aside.
 pub fn Sidebar(props: SidebarProps) -> Element {
     rsx! {
-        div {
+        aside {
             class: props.class,
             { props.children }
         }

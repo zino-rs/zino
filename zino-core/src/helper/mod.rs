@@ -12,7 +12,6 @@ pub(crate) use query::format_query;
 pub(crate) use str_array::parse_str_array;
 
 #[cfg(any(
-    feature = "connector-mssql",
     feature = "connector-mysql",
     feature = "connector-sqlite",
     feature = "connector-postgres",
@@ -23,7 +22,6 @@ pub(crate) use str_array::parse_str_array;
 mod sql_query;
 
 #[cfg(any(
-    feature = "connector-mssql",
     feature = "connector-mysql",
     feature = "connector-sqlite",
     feature = "connector-postgres",
