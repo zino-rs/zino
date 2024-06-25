@@ -20,6 +20,8 @@ pub struct QueryContext {
     rows_affected: Option<u64>,
     /// Indicates the query execution is successful or not.
     success: bool,
+    /// Indicates the query execution is cancelled or not.
+    cancelled: bool,
 }
 
 impl QueryContext {
@@ -35,13 +37,20 @@ impl QueryContext {
             last_insert_id: None,
             rows_affected: None,
             success: false,
+            cancelled: false,
         }
+    }
+
+    /// Cancells the query.
+    #[inline]
+    pub fn cancel(&mut self) {
+        self.cancelled = true;
     }
 
     /// Sets the query.
     #[inline]
-    pub fn set_query(&mut self, query: impl ToString) {
-        self.query = query.to_string();
+    pub fn set_query(&mut self, query: impl Into<String>) {
+        self.query = query.into();
     }
 
     /// Adds an argument to the list of query arguments.
@@ -64,9 +73,10 @@ impl QueryContext {
 
     /// Sets the query result.
     #[inline]
-    pub fn set_query_result(&mut self, rows_affected: Option<u64>, success: bool) {
-        self.rows_affected = rows_affected;
+    pub fn set_query_result(&mut self, rows_affected: impl Into<Option<u64>>, success: bool) {
+        self.rows_affected = rows_affected.into();
         self.success = success;
+        self.cancelled = false;
     }
 
     /// Returns the model name.
@@ -111,6 +121,12 @@ impl QueryContext {
         self.rows_affected
     }
 
+    /// Returns `true` if the query execution is cancelled.
+    #[inline]
+    pub fn is_cancelled(&self) -> bool {
+        self.cancelled
+    }
+
     /// Returns `true` if the query execution is success.
     #[inline]
     pub fn is_success(&self) -> bool {
@@ -130,13 +146,24 @@ impl QueryContext {
         let query_id = self.query_id().to_string();
         let query = self.query();
         let arguments = self.format_arguments();
-        tracing::error!(
-            model_name,
-            query_id,
-            query,
-            arguments,
-            message = message.as_ref()
-        );
+        if self.is_cancelled() {
+            tracing::warn!(
+                cancelled = true,
+                model_name,
+                query_id,
+                query,
+                arguments,
+                message = message.as_ref()
+            );
+        } else {
+            tracing::error!(
+                model_name,
+                query_id,
+                query,
+                arguments,
+                message = message.as_ref()
+            );
+        }
     }
 
     /// Emits the metrics for the query.

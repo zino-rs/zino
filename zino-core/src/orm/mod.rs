@@ -264,6 +264,15 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
             .set(time_zone)
             .expect("fail to set time zone for the database session");
     }
+    if let Some(max_rows) = database_config.get_usize("max-rows") {
+        MAX_ROWS.store(max_rows, Relaxed);
+    }
+    if let Some(auto_migration) = database_config.get_bool("auto-migration") {
+        AUTO_MIGRATION.store(auto_migration, Relaxed);
+    }
+    if let Some(debug_only) = database_config.get_bool("debug-only") {
+        DEBUG_ONLY.store(debug_only, Relaxed);
+    }
 
     // Database connection pools.
     let driver = DRIVER_NAME;
@@ -308,12 +317,6 @@ static TABLE_PREFIX: LazyLock<&'static str> = LazyLock::new(|| {
     State::shared()
         .get_config("database")
         .and_then(|config| {
-            if let Some(max_rows) = config.get_usize("max-rows") {
-                MAX_ROWS.store(max_rows, Relaxed);
-            }
-            if let Some(auto_migration) = config.get_bool("auto-migration") {
-                AUTO_MIGRATION.store(auto_migration, Relaxed);
-            }
             config
                 .get_str("namespace")
                 .filter(|s| !s.is_empty())
@@ -330,3 +333,6 @@ static MAX_ROWS: AtomicUsize = AtomicUsize::new(10000);
 
 /// Auto migration.
 static AUTO_MIGRATION: AtomicBool = AtomicBool::new(true);
+
+/// Debug-only mode.
+static DEBUG_ONLY: AtomicBool = AtomicBool::new(false);

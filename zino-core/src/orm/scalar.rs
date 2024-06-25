@@ -15,7 +15,6 @@ where
     where
         T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
     {
-        let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
         let table_name = query.format_table_name::<Self>();
@@ -23,11 +22,12 @@ where
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} LIMIT 1;");
-
         let mut ctx = Self::before_scan(&sql).await?;
-        let scalar = sqlx::query_scalar(&sql).fetch_one(pool).await?;
         ctx.set_query(sql);
-        ctx.set_query_result(Some(1), true);
+
+        let pool = Self::acquire_reader().await?.pool();
+        let scalar = sqlx::query_scalar(ctx.query()).fetch_one(pool).await?;
+        ctx.set_query_result(1, true);
         Self::after_scan(&ctx).await?;
         Self::after_query(&ctx).await?;
         Ok(scalar)
@@ -39,7 +39,6 @@ where
     where
         T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
     {
-        let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
         let table_name = query.format_table_name::<Self>();
@@ -48,8 +47,10 @@ where
         let sort = query.format_sort();
         let pagination = query.format_pagination();
         let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} {pagination};");
-
         let mut ctx = Self::before_scan(&sql).await?;
+        ctx.set_query(&sql);
+
+        let pool = Self::acquire_reader().await?.pool();
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
@@ -61,8 +62,7 @@ where
                 break;
             }
         }
-        ctx.set_query(&sql);
-        ctx.set_query_result(Some(u64::try_from(data.len())?), true);
+        ctx.set_query_result(u64::try_from(data.len())?, true);
         Self::after_scan(&ctx).await?;
         Self::after_query(&ctx).await?;
         Ok(data)
@@ -73,20 +73,21 @@ where
     where
         T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
     {
-        let pool = Self::acquire_reader().await?.pool();
         let (sql, values) = Query::prepare_query(query, params);
-        let mut query = sqlx::query_scalar(&sql);
+        let mut ctx = Self::before_scan(&sql).await?;
+        ctx.set_query(sql);
+
+        let mut query = sqlx::query_scalar(ctx.query());
         let mut arguments = Vec::with_capacity(values.len());
         for value in values {
             query = query.bind(value.to_string_unquoted());
             arguments.push(value.to_string_unquoted());
         }
 
-        let mut ctx = Self::before_scan(&sql).await?;
+        let pool = Self::acquire_reader().await?.pool();
         let scalar = query.fetch_one(pool).await?;
-        ctx.set_query(sql);
         ctx.append_arguments(&mut arguments);
-        ctx.set_query_result(Some(1), true);
+        ctx.set_query_result(1, true);
         Self::after_scan(&ctx).await?;
         Ok(scalar)
     }
@@ -96,8 +97,10 @@ where
     where
         T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
     {
-        let pool = Self::acquire_reader().await?.pool();
         let (sql, values) = Query::prepare_query(query, params);
+        let mut ctx = Self::before_scan(&sql).await?;
+        ctx.set_query(sql.as_ref());
+
         let mut query = sqlx::query(&sql);
         let mut arguments = Vec::with_capacity(values.len());
         for value in values {
@@ -105,8 +108,7 @@ where
             arguments.push(value.to_string_unquoted());
         }
 
-        let mut ctx = Self::before_scan(&sql).await?;
-        let mut rows = query.fetch(pool);
+        let mut rows = query.fetch(Self::acquire_reader().await?.pool());
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
         while let Some(row) = rows.try_next().await? {
@@ -117,9 +119,8 @@ where
                 break;
             }
         }
-        ctx.set_query(sql.as_ref());
         ctx.append_arguments(&mut arguments);
-        ctx.set_query_result(Some(u64::try_from(data.len())?), true);
+        ctx.set_query_result(u64::try_from(data.len())?, true);
         Self::after_scan(&ctx).await?;
         Ok(data)
     }
@@ -130,8 +131,6 @@ where
     where
         T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
     {
-        let pool = Self::acquire_reader().await?.pool();
-
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let table_name = Query::table_name_escaped::<Self>();
         let projection = Query::format_field(column);
@@ -147,12 +146,13 @@ where
                 "SELECT {projection} FROM {table_name} WHERE {primary_key_name} = {placeholder};"
             )
         };
-
         let mut ctx = Self::before_scan(&sql).await?;
-        let query = sqlx::query_scalar(&sql).bind(primary_key.to_string());
-        let scalar = query.fetch_one(pool).await?;
         ctx.set_query(sql);
-        ctx.set_query_result(Some(1), true);
+
+        let pool = Self::acquire_reader().await?.pool();
+        let query = sqlx::query_scalar(ctx.query()).bind(primary_key.to_string());
+        let scalar = query.fetch_one(pool).await?;
+        ctx.set_query_result(1, true);
         Self::after_scan(&ctx).await?;
         Self::after_query(&ctx).await?;
         Ok(scalar)
@@ -163,7 +163,6 @@ where
     where
         K: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
     {
-        let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
         let projection = Self::PRIMARY_KEY_NAME;
@@ -171,11 +170,12 @@ where
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} LIMIT 1;");
-
         let mut ctx = Self::before_scan(&sql).await?;
-        let scalar = sqlx::query_scalar(&sql).fetch_one(pool).await?;
         ctx.set_query(sql);
-        ctx.set_query_result(Some(1), true);
+
+        let pool = Self::acquire_reader().await?.pool();
+        let scalar = sqlx::query_scalar(ctx.query()).fetch_one(pool).await?;
+        ctx.set_query_result(1, true);
         Self::after_scan(&ctx).await?;
         Self::after_query(&ctx).await?;
         Ok(scalar)
@@ -186,7 +186,6 @@ where
     where
         K: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
     {
-        let pool = Self::acquire_reader().await?.pool();
         Self::before_query(query).await?;
 
         let projection = Self::PRIMARY_KEY_NAME;
@@ -195,8 +194,10 @@ where
         let sort = query.format_sort();
         let pagination = query.format_pagination();
         let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} {pagination};");
-
         let mut ctx = Self::before_scan(&sql).await?;
+        ctx.set_query(&sql);
+
+        let pool = Self::acquire_reader().await?.pool();
         let mut rows = sqlx::query(&sql).fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
@@ -208,8 +209,7 @@ where
                 break;
             }
         }
-        ctx.set_query(&sql);
-        ctx.set_query_result(Some(u64::try_from(data.len())?), true);
+        ctx.set_query_result(u64::try_from(data.len())?, true);
         Self::after_scan(&ctx).await?;
         Self::after_query(&ctx).await?;
         Ok(data)

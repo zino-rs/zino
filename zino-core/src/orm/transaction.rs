@@ -67,28 +67,27 @@ where
         let mut total_rows = 0;
         for query in queries {
             let (sql, values) = Query::prepare_query(query, params);
-
             let mut ctx = Self::before_scan(&sql).await?;
+            ctx.set_query(sql);
+
             let mut arguments = values
                 .iter()
                 .map(|v| v.to_string_unquoted())
                 .collect::<Vec<_>>();
-
             let rows_affected = connection
-                .execute_with(&sql, &arguments)
+                .execute_with(ctx.query(), &arguments)
                 .await?
                 .rows_affected();
             total_rows += rows_affected;
-            ctx.set_query(sql);
             ctx.append_arguments(&mut arguments);
-            ctx.set_query_result(Some(rows_affected), true);
+            ctx.set_query_result(rows_affected, true);
             Self::after_scan(&ctx).await?;
         }
         transaction.commit().await?;
         Ok(total_rows)
     }
 
-    async fn transactional_insert<S: Schema>(mut self, models: Vec<S>) -> Result<u64, Error> {
+    async fn transactional_insert<S: Schema>(mut self, associations: Vec<S>) -> Result<u64, Error> {
         let mut transaction = Self::acquire_writer().await?.pool().begin().await?;
         let connection = transaction.acquire().await?;
 
@@ -115,27 +114,26 @@ where
         let table_name = Query::table_name_escaped::<Self>();
         let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({values});");
         let mut ctx = Self::before_scan(&sql).await?;
+        ctx.set_query(sql);
 
         let mut total_rows = 0;
-        let query_result = connection.execute(&sql).await?;
+        let query_result = connection.execute(ctx.query()).await?;
         let (last_insert_id, rows_affected) = Query::parse_query_result(query_result);
         let success = rows_affected == 1;
         if let Some(last_insert_id) = last_insert_id {
             ctx.set_last_insert_id(last_insert_id);
         }
         total_rows += rows_affected;
-        ctx.set_query(sql);
-        ctx.set_query_result(Some(rows_affected), success);
+        ctx.set_query_result(rows_affected, success);
         Self::after_scan(&ctx).await?;
         Self::after_insert(&ctx, model_data).await?;
 
         // Inserts associations
         let columns = S::columns();
-        let mut values = Vec::with_capacity(models.len());
-        for mut model in models.into_iter() {
-            let _model_data = model.before_insert().await?;
-
-            let map = model.into_map();
+        let mut values = Vec::with_capacity(associations.len());
+        for mut association in associations.into_iter() {
+            let _association_data = association.before_insert().await?;
+            let map = association.into_map();
             let entries = columns
                 .iter()
                 .map(|col| col.encode_value(map.get(col.name())))
@@ -149,11 +147,11 @@ where
         let values = values.join(", ");
         let sql = format!("INSERT INTO {table_name} ({fields}) VALUES {values};");
         let mut ctx = S::before_scan(&sql).await?;
-
-        let rows_affected = connection.execute(&sql).await?.rows_affected();
-        total_rows += rows_affected;
         ctx.set_query(sql);
-        ctx.set_query_result(Some(rows_affected), true);
+
+        let rows_affected = connection.execute(ctx.query()).await?.rows_affected();
+        total_rows += rows_affected;
+        ctx.set_query_result(rows_affected, true);
         S::after_scan(&ctx).await?;
 
         // Commits the transaction
@@ -177,12 +175,12 @@ where
         let updates = mutation.format_updates::<Self>();
         let sql = format!("UPDATE {table_name} SET {updates} {filters};");
         let mut ctx = Self::before_scan(&sql).await?;
+        ctx.set_query(sql);
 
         let mut total_rows = 0;
-        let rows_affected = connection.execute(&sql).await?.rows_affected();
+        let rows_affected = connection.execute(ctx.query()).await?.rows_affected();
         total_rows += rows_affected;
-        ctx.set_query(sql);
-        ctx.set_query_result(Some(rows_affected), true);
+        ctx.set_query_result(rows_affected, true);
         Self::after_scan(&ctx).await?;
         Self::after_mutation(&ctx).await?;
 
@@ -195,11 +193,11 @@ where
         let updates = mutation.format_updates::<S>();
         let sql = format!("UPDATE {table_name} SET {updates} {filters};");
         let mut ctx = S::before_scan(&sql).await?;
-
-        let rows_affected = connection.execute(&sql).await?.rows_affected();
-        total_rows += rows_affected;
         ctx.set_query(sql);
-        ctx.set_query_result(Some(rows_affected), true);
+
+        let rows_affected = connection.execute(ctx.query()).await?.rows_affected();
+        total_rows += rows_affected;
+        ctx.set_query_result(rows_affected, true);
         S::after_scan(&ctx).await?;
         S::after_mutation(&ctx).await?;
 
@@ -219,12 +217,12 @@ where
         let filters = query.format_filters::<Self>();
         let sql = format!("DELETE FROM {table_name} {filters};");
         let mut ctx = Self::before_scan(&sql).await?;
+        ctx.set_query(sql);
 
         let mut total_rows = 0;
-        let rows_affected = connection.execute(&sql).await?.rows_affected();
+        let rows_affected = connection.execute(ctx.query()).await?.rows_affected();
         total_rows += rows_affected;
-        ctx.set_query(sql);
-        ctx.set_query_result(Some(rows_affected), true);
+        ctx.set_query_result(rows_affected, true);
         Self::after_scan(&ctx).await?;
         Self::after_query(&ctx).await?;
 
@@ -235,11 +233,11 @@ where
         let filters = query.format_filters::<S>();
         let sql = format!("DELETE FROM {table_name} {filters};");
         let mut ctx = S::before_scan(&sql).await?;
-
-        let rows_affected = connection.execute(&sql).await?.rows_affected();
-        total_rows += rows_affected;
         ctx.set_query(sql);
-        ctx.set_query_result(Some(rows_affected), true);
+
+        let rows_affected = connection.execute(ctx.query()).await?.rows_affected();
+        total_rows += rows_affected;
+        ctx.set_query_result(rows_affected, true);
         S::after_scan(&ctx).await?;
         S::after_query(&ctx).await?;
 
