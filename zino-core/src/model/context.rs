@@ -41,12 +41,6 @@ impl QueryContext {
         }
     }
 
-    /// Cancells the query.
-    #[inline]
-    pub fn cancel(&mut self) {
-        self.cancelled = true;
-    }
-
     /// Sets the query.
     #[inline]
     pub fn set_query(&mut self, query: impl Into<String>) {
@@ -77,6 +71,12 @@ impl QueryContext {
         self.rows_affected = rows_affected.into();
         self.success = success;
         self.cancelled = false;
+    }
+
+    /// Cancells the query execution.
+    #[inline]
+    pub fn cancel(&mut self) {
+        self.cancelled = true;
     }
 
     /// Returns the model name.

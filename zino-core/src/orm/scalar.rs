@@ -108,7 +108,8 @@ where
             arguments.push(value.to_string_unquoted());
         }
 
-        let mut rows = query.fetch(Self::acquire_reader().await?.pool());
+        let pool = Self::acquire_reader().await?.pool();
+        let mut rows = query.fetch(pool);
         let mut data = Vec::new();
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
         while let Some(row) = rows.try_next().await? {

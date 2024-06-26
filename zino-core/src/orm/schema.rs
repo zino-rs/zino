@@ -200,7 +200,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let definitions = definitions.join(",\n  ");
         let sql = format!("CREATE TABLE IF NOT EXISTS {table_name_escaped} (\n  {definitions}\n);");
-        if let Err(err) = Self::init_writer()?.pool().execute(&sql).await {
+        let pool = Self::init_writer()?.pool();
+        if let Err(err) = pool.execute(&sql).await {
             tracing::error!(table_name, "fail to execute `{sql}`");
             return Err(err);
         }
@@ -215,7 +216,6 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         }
 
         let connection_pool = Self::init_writer()?;
-        let pool = connection_pool.pool();
         let model_name = Self::model_name();
         let table_name = Self::table_name();
         let table_name_escaped = Query::table_name_escaped::<Self>();
@@ -244,6 +244,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                         ON m.name <> p.name WHERE m.name = '{table_name}';"
             )
         };
+        let pool = connection_pool.pool();
         let rows = pool.fetch(&sql).await?;
         let mut data = Vec::with_capacity(rows.len());
         for row in rows {
@@ -1506,10 +1507,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.add_argument(primary_key);
 
         let pool = Self::acquire_reader().await?.pool();
-        if let Some(row) = pool
+        let optional_row = pool
             .fetch_optional_with(ctx.query(), &[primary_key])
-            .await?
-        {
+            .await?;
+        if let Some(row) = optional_row {
             ctx.set_query_result(1, true);
             Self::after_scan(&ctx).await?;
             Self::after_query(&ctx).await?;

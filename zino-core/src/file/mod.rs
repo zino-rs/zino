@@ -388,19 +388,19 @@ impl NamedFile {
     /// If the extra attributes contain a `chunk_size` or `checksum` value,
     /// the file integrity will be checked.
     pub async fn try_from_multipart(mut multipart: Multipart<'_>) -> Result<Self, multer::Error> {
-        let mut multipart_field = None;
+        let mut extracted_file = None;
         let mut extra = Map::new();
         while let Some(field) = multipart.next_field().await? {
-            if field.file_name().is_some() && multipart_field.is_none() {
-                multipart_field = Some(field);
+            if field.file_name().is_some() && extracted_file.is_none() {
+                let file = NamedFile::try_from_multipart_field(field).await?;
+                extracted_file = Some(file);
             } else if let Some(name) = field.name() {
                 let key = name.to_owned();
                 let value = field.text().await?;
                 extra.upsert(key, value);
             }
         }
-        if let Some(field) = multipart_field {
-            let mut file = NamedFile::try_from_multipart_field(field).await?;
+        if let Some(mut file) = extracted_file {
             if let Some(Ok(chunk_size)) = extra.parse_u64("chunk_size") {
                 if file.file_size() != chunk_size {
                     return Err(multer::Error::IncompleteStream);

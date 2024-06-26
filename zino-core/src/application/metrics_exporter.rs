@@ -1,31 +1,20 @@
 use super::Application;
-use crate::{extension::TomlTableExt, state::State};
+use crate::extension::TomlTableExt;
 use metrics_exporter_prometheus::{Matcher, PrometheusBuilder};
-use std::{net::IpAddr, time::Duration};
+use std::net::IpAddr;
 
 /// Initializes the metrics exporters.
 pub(super) fn init<APP: Application + ?Sized>() {
     if let Some(metrics) = APP::config().get_table("metrics") {
         let exporter = metrics.get_str("exporter").unwrap_or("prometheus");
         if exporter == "prometheus" {
-            let mut builder = if let Some(endpoint) = metrics.get_str("push-gateway") {
-                let interval = metrics
-                    .get_duration("interval")
-                    .unwrap_or_else(|| Duration::from_secs(60));
-                let username = metrics.get_str("username").map(|s| s.to_owned());
-                let password = State::decrypt_password(metrics).map(|s| s.into_owned());
-                PrometheusBuilder::new()
-                    .with_push_gateway(endpoint, interval, username, password)
-                    .expect("fail to configure the exporter to run in push gateway mode")
-            } else {
-                let host = metrics.get_str("host").unwrap_or("127.0.0.1");
-                let port = metrics.get_u16("port").unwrap_or(9000);
-                let host_addr = host
-                    .parse::<IpAddr>()
-                    .unwrap_or_else(|err| panic!("invalid host address `{host}`: {err}"));
-                tracing::warn!(exporter, "listen on `{host_addr}:{port}`");
-                PrometheusBuilder::new().with_http_listener((host_addr, port))
-            };
+            let host = metrics.get_str("host").unwrap_or("127.0.0.1");
+            let port = metrics.get_u16("port").unwrap_or(9000);
+            let host_addr = host
+                .parse::<IpAddr>()
+                .unwrap_or_else(|err| panic!("invalid host address `{host}`: {err}"));
+            let mut builder = PrometheusBuilder::new().with_http_listener((host_addr, port));
+            tracing::warn!(exporter, "listen on `{host_addr}:{port}`");
             if let Some(quantiles) = metrics.get_array("quantiles") {
                 let quantiles = quantiles
                     .iter()
