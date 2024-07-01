@@ -420,35 +420,35 @@ impl<'a> Column<'a> {
                 definition.upsert("items", items);
             }
             "Vec<Uuid>" => {
-                let mut items = Map::with_capacity(2);
+                let mut items = Map::new();
                 items.upsert("type", "string");
                 items.upsert("format", "uuid");
                 definition.upsert("type", "array");
                 definition.upsert("items", items);
             }
             "Vec<i64>" => {
-                let mut items = Map::with_capacity(2);
+                let mut items = Map::new();
                 items.upsert("type", "integer");
                 items.upsert("format", "int64");
                 definition.upsert("type", "array");
                 definition.upsert("items", items);
             }
             "Vec<u64>" => {
-                let mut items = Map::with_capacity(2);
+                let mut items = Map::new();
                 items.upsert("type", "integer");
                 items.upsert("format", "uint64");
                 definition.upsert("type", "array");
                 definition.upsert("items", items);
             }
             "Vec<i32>" => {
-                let mut items = Map::with_capacity(2);
+                let mut items = Map::new();
                 items.upsert("type", "integer");
                 items.upsert("format", "int32");
                 definition.upsert("type", "array");
                 definition.upsert("items", items);
             }
             "Vec<u32>" => {
-                let mut items = Map::with_capacity(2);
+                let mut items = Map::new();
                 items.upsert("type", "integer");
                 items.upsert("format", "uint32");
                 definition.upsert("type", "array");
@@ -512,7 +512,7 @@ impl<'a> Column<'a> {
         }
         if let Some(values) = extra.parse_enum_values("enum_values") {
             if type_name == "Vec<String>" {
-                let mut items = Map::with_capacity(2);
+                let mut items = Map::new();
                 items.upsert("type", "string");
                 items.upsert("enum", values);
                 definition.upsert("items", items);

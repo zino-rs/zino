@@ -773,7 +773,7 @@ impl JsonObjectExt for Map {
 
     #[inline]
     fn from_entry(key: impl Into<String>, value: impl Into<JsonValue>) -> Self {
-        let mut map = Map::with_capacity(1);
+        let mut map = Map::new();
         map.insert(key.into(), value.into());
         map
     }
@@ -789,14 +789,14 @@ impl JsonObjectExt for Map {
 
     #[inline]
     fn data_entry(value: Map) -> Self {
-        let mut map = Map::with_capacity(1);
+        let mut map = Map::new();
         map.insert("entry".to_owned(), value.into());
         map
     }
 
     #[inline]
     fn data_entries(values: Vec<Map>) -> Self {
-        let mut map = Map::with_capacity(2);
+        let mut map = Map::new();
         map.insert("num_entries".to_owned(), values.len().into());
         map.insert("entries".to_owned(), values.into());
         map
@@ -804,14 +804,14 @@ impl JsonObjectExt for Map {
 
     #[inline]
     fn data_item(value: impl Into<JsonValue>) -> Self {
-        let mut map = Map::with_capacity(1);
+        let mut map = Map::new();
         map.insert("item".to_owned(), value.into());
         map
     }
 
     #[inline]
     fn data_items<T: Into<JsonValue>>(values: Vec<T>) -> Self {
-        let mut map = Map::with_capacity(2);
+        let mut map = Map::new();
         map.insert("num_items".to_owned(), values.len().into());
         map.insert("items".to_owned(), values.into());
         map

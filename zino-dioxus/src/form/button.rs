@@ -18,6 +18,7 @@ pub fn Button(props: ButtonProps) -> Element {
             class: if props.rounded { "is-rounded" },
             onclick: move |event| {
                 if let Some(handler) = props.on_click.as_ref() {
+                    event.stop_propagation();
                     handler.call(event);
                 }
             },

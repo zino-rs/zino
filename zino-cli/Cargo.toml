@@ -17,10 +17,10 @@ name = "zli"
 path = "src/main.rs"
 
 [dependencies]
-log = "0.4.21"
+log = "0.4.22"
 
 [dependencies.clap]
-version = "4.5.7"
+version = "4.5.8"
 features = ["color", "derive"]
 
 [dependencies.zino-core]

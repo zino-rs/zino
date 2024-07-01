@@ -5,7 +5,7 @@ use zino_core::{
     extension::JsonObjectExt,
     model::Model,
     validation::Validation,
-    Decimal, Map, Uuid,
+    Decimal, JsonValue, Map, Uuid,
 };
 
 /// Extension trait for `FormData`.
@@ -93,7 +93,13 @@ impl FormDataExt for FormData {
         for (key, value) in values.into_iter() {
             let mut vec = value.to_vec();
             if vec.len() == 1 {
-                map.upsert(key, vec.pop());
+                if let Some(value) = vec.pop() {
+                    if value == "null" {
+                        map.upsert(key, JsonValue::Null);
+                    } else {
+                        map.upsert(key, value);
+                    }
+                }
             } else {
                 map.upsert(key, vec);
             }

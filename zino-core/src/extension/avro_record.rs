@@ -232,7 +232,7 @@ impl AvroRecordExt for Record {
     }
 
     fn try_into_map(self) -> Result<Map, Error> {
-        let mut map = Map::with_capacity(self.len());
+        let mut map = Map::new();
         for (key, value) in self.into_iter() {
             map.insert(key, value.try_into()?);
         }

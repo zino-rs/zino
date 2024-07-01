@@ -39,7 +39,7 @@ pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -
                 },
                 if !required && !props.empty.as_ref().is_empty() {
                     option {
-                        value: "",
+                        value: "null",
                         { props.empty }
                     }
                 }

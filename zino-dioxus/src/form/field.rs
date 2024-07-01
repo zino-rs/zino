@@ -134,6 +134,7 @@ pub struct FormAddonsProps {
     #[props(into, default = "control".into())]
     pub control_class: Class,
     /// A modifier to expand the `n`th element to fill up the remaining space.
+    #[props(default = 0)]
     pub expand: usize,
     /// The items to be grouped.
     #[props(into)]

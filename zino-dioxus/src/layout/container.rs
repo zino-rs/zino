@@ -36,7 +36,7 @@ pub fn FluidContainer(props: FluidContainerProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct FluidContainerProps {
     /// The class attribute for the component.
-    #[props(into, default = "container-fluid".into())]
+    #[props(into, default = "container is-fluid".into())]
     pub class: Class,
     /// The children to render within the component.
     children: Element,
@@ -56,7 +56,7 @@ pub fn MainContainer(props: MainContainerProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct MainContainerProps {
     /// The class attribute for the component.
-    #[props(into, default = "container-fluid px-3 py-3".into())]
+    #[props(into, default = "main-container px-3 py-3".into())]
     pub class: Class,
     /// The children to render within the component.
     children: Element,

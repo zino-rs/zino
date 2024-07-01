@@ -247,7 +247,7 @@ impl TomlTableExt for Table {
     }
 
     fn to_map(&self) -> Map {
-        let mut map = Map::with_capacity(self.len());
+        let mut map = Map::new();
         for (key, value) in self.iter() {
             map.insert(key.to_owned(), value.to_json_value());
         }

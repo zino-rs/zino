@@ -374,9 +374,8 @@ impl ArrowArrayExt for dyn Array {
                 let map_array = array::as_map_array(self);
                 let keys = map_array.keys();
                 let values = map_array.value(index);
-                let num_keys = keys.len();
-                let mut map = Map::with_capacity(num_keys);
-                for i in 0..num_keys {
+                let mut map = Map::new();
+                for i in 0..keys.len() {
                     if let JsonValue::String(key) = keys.parse_json_value(i)? {
                         let value = values.column(i).parse_json_value(index)?;
                         map.insert(key, value);
@@ -391,9 +390,8 @@ impl ArrowArrayExt for dyn Array {
                 let struct_array = array::as_struct_array(self);
                 let column_names = struct_array.column_names();
                 let columns = struct_array.columns();
-                let num_columns = struct_array.num_columns();
-                let mut map = Map::with_capacity(num_columns);
-                for i in 0..num_columns {
+                let mut map = Map::new();
+                for i in 0..columns.len() {
                     let key = column_names[i].to_owned();
                     let value = columns[i].parse_json_value(index)?;
                     map.insert(key, value);

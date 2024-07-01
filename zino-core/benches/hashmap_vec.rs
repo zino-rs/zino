@@ -1,6 +1,15 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 pub fn bench(c: &mut criterion::Criterion) {
+    c.bench_function("btreemap_lookup", |b| {
+        b.iter(|| {
+            let mut map = BTreeMap::new();
+            map.insert("en-US", "Welcome!");
+            map.insert("zh-CN", "欢迎！");
+            map.insert("zh-HK", "歡迎！");
+            map.get("zh-CN").is_some()
+        })
+    });
     c.bench_function("hashmap_lookup", |b| {
         b.iter(|| {
             let mut map = HashMap::new();

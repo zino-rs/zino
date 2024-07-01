@@ -450,9 +450,8 @@ impl DecodeRow<DatabaseRow> for Map {
     type Error = Error;
 
     fn decode_row(row: &DatabaseRow) -> Result<Self, Self::Error> {
-        let columns = row.columns();
-        let mut map = Map::with_capacity(columns.len());
-        for col in columns {
+        let mut map = Map::new();
+        for col in row.columns() {
             let field = col.name();
             let index = col.ordinal();
             let raw_value = row.try_get_raw(index)?;

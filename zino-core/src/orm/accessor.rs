@@ -88,7 +88,7 @@ where
 
     /// Returns a snapshot of the model.
     fn snapshot(&self) -> Map {
-        let mut snapshot = Map::with_capacity(5);
+        let mut snapshot = Map::new();
         snapshot.upsert(Self::PRIMARY_KEY_NAME, self.primary_key_value());
         snapshot.upsert("name", self.name());
         snapshot.upsert("status", self.status());
@@ -205,7 +205,7 @@ where
 
     /// Constructs the query filters for the model of the current version.
     fn current_version_filters(&self) -> Map {
-        let mut filters = Map::with_capacity(2);
+        let mut filters = Map::new();
         filters.upsert(Self::PRIMARY_KEY_NAME, self.id().to_string());
         filters.upsert("version", self.version());
         filters
@@ -220,7 +220,7 @@ where
 
     /// Constructs the query filters for the model of the next version.
     fn next_version_filters(&self) -> Map {
-        let mut filters = Map::with_capacity(2);
+        let mut filters = Map::new();
         filters.upsert(Self::PRIMARY_KEY_NAME, self.id().to_string());
         filters.upsert("version", self.next_version());
         filters
@@ -228,7 +228,7 @@ where
 
     /// Constructs the mutation updates for the model of the next version.
     fn next_version_updates(&self) -> Map {
-        let mut updates = Map::with_capacity(2);
+        let mut updates = Map::new();
         updates.upsert("updated_at", DateTime::now().to_utc_timestamp());
         updates.upsert("version", self.next_version());
         updates
@@ -250,7 +250,7 @@ where
 
     /// Constructs the query filters for the model of the current edition.
     fn current_edition_filters(&self) -> Map {
-        let mut filters = Map::with_capacity(2);
+        let mut filters = Map::new();
         filters.upsert(Self::PRIMARY_KEY_NAME, self.id().to_string());
         filters.upsert("edition", self.edition());
         filters
@@ -265,7 +265,7 @@ where
 
     /// Constructs the query filters for the model of the next edition.
     fn next_edition_filters(&self) -> Map {
-        let mut filters = Map::with_capacity(2);
+        let mut filters = Map::new();
         filters.upsert(Self::PRIMARY_KEY_NAME, self.id().to_string());
         filters.upsert("edition", self.next_edition());
         filters
@@ -273,7 +273,7 @@ where
 
     /// Constructs the mutation updates for the model of the next edition.
     fn next_edition_updates(&self) -> Map {
-        let mut updates = Map::with_capacity(2);
+        let mut updates = Map::new();
         updates.upsert("updated_at", DateTime::now().to_utc_timestamp());
         updates.upsert("version", self.next_version());
         updates.upsert("edition", self.next_edition());

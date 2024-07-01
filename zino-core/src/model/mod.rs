@@ -103,7 +103,7 @@ pub trait Model: Default + Serialize + DeserializeOwned {
     #[inline]
     fn data_item(value: impl Into<JsonValue>) -> Map {
         let item_name = Self::ITEM_NAME.0;
-        let mut map = Map::with_capacity(1);
+        let mut map = Map::new();
         map.insert(item_name.to_owned(), value.into());
         map
     }
@@ -112,7 +112,7 @@ pub trait Model: Default + Serialize + DeserializeOwned {
     #[inline]
     fn data_items<T: Into<JsonValue>>(values: Vec<T>) -> Map {
         let item_name = Self::ITEM_NAME.1;
-        let mut map = Map::with_capacity(2);
+        let mut map = Map::new();
         map.insert(["num", item_name].join("_"), values.len().into());
         map.insert(item_name.to_owned(), values.into());
         map

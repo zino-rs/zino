@@ -133,14 +133,14 @@ impl QueryContext {
         self.success
     }
 
-    /// Formats the query arguments.
+    /// Formats the query arguments as a `String` if they exist.
     #[inline]
-    pub fn format_arguments(&self) -> String {
-        self.arguments().join(", ")
+    pub fn format_arguments(&self) -> Option<String> {
+        let arguments = self.arguments();
+        (!arguments.is_empty()).then(|| arguments.join(", "))
     }
 
     /// Records an error message for the query.
-    #[inline]
     pub fn record_error(&self, message: impl AsRef<str>) {
         let model_name = self.model_name();
         let query_id = self.query_id().to_string();
