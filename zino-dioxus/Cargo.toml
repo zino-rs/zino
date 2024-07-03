@@ -17,7 +17,7 @@ dioxus = "0.5.1"
 dioxus-core = "0.5.1"
 dioxus-hooks = "0.5.1"
 dioxus-router = "0.5.0"
-markdown = "1.0.0-alpha.17"
+markdown = "1.0.0-alpha.18"
 rust_decimal = "1.35.0"
 smallvec = "1.13.2"
 
@@ -28,6 +28,10 @@ features = ["serde"]
 [dependencies.dioxus-free-icons]
 version = "0.8.6"
 features = ["font-awesome-solid"]
+
+[dependencies.dioxus-std]
+version = "0.5.0"
+features = ["clipboard"]
 
 [dependencies.tokio]
 version = "1.38.0"

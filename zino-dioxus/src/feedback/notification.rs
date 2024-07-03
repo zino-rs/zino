@@ -26,6 +26,7 @@ pub fn Notification(props: NotificationProps) -> Element {
             z_index: 99,
             if props.on_close.is_some() {
                 button {
+                    r#type: "button",
                     class: props.close_class,
                     onclick: move |event| {
                         if let Some(handler) = props.on_close.as_ref() {

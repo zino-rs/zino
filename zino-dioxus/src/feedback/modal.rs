@@ -25,6 +25,7 @@ pub fn ModalCard(props: ModalCardProps) -> Element {
                         { props.title }
                     }
                     button {
+                        r#type: "button",
                         class: props.close_class,
                         onclick: move |event| {
                             if let Some(handler) = props.on_close.as_ref() {

@@ -4,6 +4,7 @@ use std::borrow::Cow;
 
 mod button;
 mod checkbox;
+mod clipboard;
 mod field;
 mod file;
 mod input;
@@ -13,6 +14,7 @@ mod textarea;
 
 pub use button::{Button, ButtonProps};
 pub use checkbox::{Checkbox, CheckboxProps};
+pub use clipboard::{CopyToClipboard, CopyToClipboardProps};
 pub use field::{
     FormAddons, FormAddonsProps, FormField, FormFieldContainer, FormFieldContainerProps,
     FormFieldProps, FormGroup, FormGroupProps,

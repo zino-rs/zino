@@ -29,6 +29,7 @@ where
                             class: "message-header",
                             span { { props.title } }
                             button {
+                                r#type: "button",
                                 class: props.close_class,
                                 onclick: move |_event| {
                                     if let Some(handler) = props.on_close.as_ref() {
@@ -62,6 +63,7 @@ where
                             class: "message-header",
                             span { { props.title } }
                             button {
+                                r#type: "button",
                                 class: props.close_class,
                                 onclick: move |_event| {
                                     if let Some(handler) = props.on_close.as_ref() {
@@ -98,6 +100,7 @@ where
                                 class: "message-header",
                                 span { { props.title } }
                                 button {
+                                    r#type: "button",
                                     class: props.close_class,
                                     onclick: move |_event| {
                                         if let Some(handler) = props.on_close.as_ref() {

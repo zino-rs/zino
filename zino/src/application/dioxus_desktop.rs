@@ -132,6 +132,7 @@ where
             .with_disable_context_menu(in_prod_mode);
         if let Some(config) = app_state.get_config("desktop") {
             let mut custom_heads = Vec::new();
+            custom_heads.push(r#"<meta charset="UTF-8">"#.to_owned());
             if let Some(icon) = config.get_str("icon") {
                 let icon_file = project_dir.join(icon);
                 match Reader::open(&icon_file)
@@ -172,9 +173,8 @@ where
                     custom_heads.push(head);
                 }
             }
-            if !custom_heads.is_empty() {
-                desktop_config = desktop_config.with_custom_head(custom_heads.join("\n"));
-            }
+            desktop_config = desktop_config.with_custom_head(custom_heads.join("\n"));
+
             if let Some(dir) = config.get_str("resource-dir") {
                 desktop_config = desktop_config.with_resource_directory(project_dir.join(dir));
             }
