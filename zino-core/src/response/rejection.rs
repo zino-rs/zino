@@ -131,23 +131,25 @@ impl Rejection {
 
     /// Creates a new instance from an error classified by the error message.
     pub fn from_error(err: impl Into<Error>) -> Self {
-        let err = err.into();
-        let message = err.message();
-        if message.starts_with("401 Unauthorized") {
-            Self::unauthorized(err)
-        } else if message.starts_with("403 Forbidden") {
-            Self::forbidden(err)
-        } else if message.starts_with("404 Not Found") {
-            Self::not_found(err)
-        } else if message.starts_with("405 Method Not Allowed") {
-            Self::method_not_allowed(err)
-        } else if message.starts_with("409 Conflict") {
-            Self::conflict(err)
-        } else if message.starts_with("503 Service Unavailable") {
-            Self::service_unavailable(err)
-        } else {
-            Self::internal_server_error(err)
+        fn inner(err: Error) -> Rejection {
+            let message = err.message();
+            if message.starts_with("401 Unauthorized") {
+                Rejection::unauthorized(err)
+            } else if message.starts_with("403 Forbidden") {
+                Rejection::forbidden(err)
+            } else if message.starts_with("404 Not Found") {
+                Rejection::not_found(err)
+            } else if message.starts_with("405 Method Not Allowed") {
+                Rejection::method_not_allowed(err)
+            } else if message.starts_with("409 Conflict") {
+                Rejection::conflict(err)
+            } else if message.starts_with("503 Service Unavailable") {
+                Rejection::service_unavailable(err)
+            } else {
+                Rejection::internal_server_error(err)
+            }
         }
+        inner(err.into())
     }
 
     /// Creates a new instance with the error message.

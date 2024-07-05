@@ -143,9 +143,15 @@ impl SecretAccessKey {
     where
         H: FixedOutput + KeyInit + MacMarker + Update,
     {
-        let mut mac = H::new_from_slice(key.as_ref()).expect("HMAC can take key of any size");
-        mac.update(access_key_id.as_ref());
-        Self(mac.finalize().into_bytes().to_vec())
+        fn inner<H>(access_key_id: &AccessKeyId, key: &[u8]) -> SecretAccessKey
+        where
+            H: FixedOutput + KeyInit + MacMarker + Update,
+        {
+            let mut mac = H::new_from_slice(key).expect("HMAC can take key of any size");
+            mac.update(access_key_id.as_ref());
+            SecretAccessKey(mac.finalize().into_bytes().to_vec())
+        }
+        inner::<H>(access_key_id, key.as_ref())
     }
 
     /// Returns a byte slice.

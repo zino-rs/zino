@@ -213,58 +213,72 @@ impl NamedFile {
     /// Reads the entire contents of a local file and sets the bytes.
     #[inline]
     pub fn read_from_local(&mut self, path: impl AsRef<Path>) -> Result<(), io::Error> {
-        let bytes = fs::read(path)?;
-        self.bytes = bytes.into();
-        Ok(())
+        fn inner(file: &mut NamedFile, path: &Path) -> Result<(), io::Error> {
+            let bytes = fs::read(path)?;
+            file.bytes = bytes.into();
+            Ok(())
+        }
+        inner(self, path.as_ref())
     }
 
     /// Writes the bytes into a file at the path.
     /// If the extra attributes contain a `chunk_number` value,
     /// a `.{chunk_number}.part` suffix will be adjoined to the path.
     pub fn write(&self, path: impl AsRef<Path>) -> Result<(), io::Error> {
-        let bytes = self.as_ref();
-        let path = path.as_ref();
-        if let Some(chunk_number) = self.chunk_number() {
-            let chunk_path = path.join(format!(".{chunk_number}.part"));
-            fs::write(chunk_path, bytes)
-        } else {
-            fs::write(path, bytes)
+        fn inner(file: &NamedFile, path: &Path) -> Result<(), io::Error> {
+            let bytes = file.as_ref();
+            if let Some(chunk_number) = file.chunk_number() {
+                let chunk_path = path.join(format!(".{chunk_number}.part"));
+                fs::write(chunk_path, bytes)
+            } else {
+                fs::write(path, bytes)
+            }
         }
+        inner(self, path.as_ref())
     }
 
     /// Appends the bytes into a file at the path.
     #[inline]
     pub fn append(&self, path: impl AsRef<Path>) -> Result<(), io::Error> {
-        let mut file = OpenOptions::new().append(true).open(path)?;
-        file.write_all(self.as_ref())
+        fn inner(file: &NamedFile, path: &Path) -> Result<(), io::Error> {
+            OpenOptions::new()
+                .append(true)
+                .open(path)?
+                .write_all(file.as_ref())
+        }
+        inner(self, path.as_ref())
     }
 
     /// Encrypts the file with a key.
-    #[inline]
     pub fn encrypt_with(&mut self, key: impl AsRef<[u8]>) -> Result<(), Error> {
-        let suffix = ".encrypted";
-        let bytes = crypto::encrypt(self.as_ref(), key.as_ref())?;
-        if let Some(ref mut file_name) = self.file_name {
-            if !file_name.ends_with(suffix) {
-                file_name.push_str(suffix);
+        fn inner(file: &mut NamedFile, key: &[u8]) -> Result<(), Error> {
+            let suffix = ".encrypted";
+            let bytes = crypto::encrypt(file.as_ref(), key)?;
+            if let Some(ref mut file_name) = file.file_name {
+                if !file_name.ends_with(suffix) {
+                    file_name.push_str(suffix);
+                }
             }
+            file.bytes = bytes.into();
+            Ok(())
         }
-        self.bytes = bytes.into();
-        Ok(())
+        inner(self, key.as_ref())
     }
 
     /// Decrypts the file with a key.
-    #[inline]
     pub fn decrypt_with(&mut self, key: impl AsRef<[u8]>) -> Result<(), Error> {
-        let suffix = ".encrypted";
-        let bytes = crypto::decrypt(self.as_ref(), key.as_ref())?;
-        if let Some(ref mut file_name) = self.file_name {
-            if file_name.ends_with(suffix) {
-                file_name.truncate(file_name.len() - suffix.len());
+        fn inner(file: &mut NamedFile, key: &[u8]) -> Result<(), Error> {
+            let suffix = ".encrypted";
+            let bytes = crypto::decrypt(file.as_ref(), key)?;
+            if let Some(ref mut file_name) = file.file_name {
+                if file_name.ends_with(suffix) {
+                    file_name.truncate(file_name.len() - suffix.len());
+                }
             }
+            file.bytes = bytes.into();
+            Ok(())
         }
-        self.bytes = bytes.into();
-        Ok(())
+        inner(self, key.as_ref())
     }
 
     /// Renames the stem portion of the file name.
@@ -311,58 +325,62 @@ impl NamedFile {
         path: impl AsRef<Path>,
         total_chunks: usize,
     ) -> Result<Self, io::Error> {
-        let path = path.as_ref();
-        let file_name = path.file_name().map(|s| s.to_string_lossy().into_owned());
-        let mut chunk_paths = Vec::with_capacity(total_chunks);
-        for index in 0..total_chunks {
-            let chunk_path = path.join(format!(".{index}.part"));
-            if chunk_path.try_exists()? {
-                chunk_paths.push(chunk_path);
-            } else {
-                let file_name = file_name.unwrap_or_default();
-                let message = format!("chunk file `{file_name}.{index}.part` does not exist");
-                return Err(io::Error::new(ErrorKind::NotFound, message));
+        fn inner(path: &Path, total_chunks: usize) -> Result<NamedFile, io::Error> {
+            let file_name = path.file_name().map(|s| s.to_string_lossy().into_owned());
+            let mut chunk_paths = Vec::with_capacity(total_chunks);
+            for index in 0..total_chunks {
+                let chunk_path = path.join(format!(".{index}.part"));
+                if chunk_path.try_exists()? {
+                    chunk_paths.push(chunk_path);
+                } else {
+                    let file_name = file_name.unwrap_or_default();
+                    let message = format!("chunk file `{file_name}.{index}.part` does not exist");
+                    return Err(io::Error::new(ErrorKind::NotFound, message));
+                }
             }
-        }
 
-        let content_type = file_name.as_ref().and_then(|s| {
-            let file_name = s.strip_suffix(".encrypted").unwrap_or(s);
-            mime_guess::from_path(file_name).first()
-        });
-        let mut buffer = Vec::new();
-        for chunk_path in &chunk_paths {
-            File::open(chunk_path)?.read_to_end(&mut buffer)?;
-        }
-        for chunk_path in chunk_paths {
-            if let Err(err) = fs::remove_file(chunk_path) {
-                warn!("fail to remove the file chunk: {}", err);
+            let content_type = file_name.as_ref().and_then(|s| {
+                let file_name = s.strip_suffix(".encrypted").unwrap_or(s);
+                mime_guess::from_path(file_name).first()
+            });
+            let mut buffer = Vec::new();
+            for chunk_path in &chunk_paths {
+                File::open(chunk_path)?.read_to_end(&mut buffer)?;
             }
+            for chunk_path in chunk_paths {
+                if let Err(err) = fs::remove_file(chunk_path) {
+                    warn!("fail to remove the file chunk: {}", err);
+                }
+            }
+            Ok(NamedFile {
+                field_name: None,
+                file_name,
+                content_type,
+                bytes: buffer.into(),
+                extra: Map::new(),
+            })
         }
-        Ok(Self {
-            field_name: None,
-            file_name,
-            content_type,
-            bytes: buffer.into(),
-            extra: Map::new(),
-        })
+        inner(path.as_ref(), total_chunks)
     }
 
     /// Attempts to create an instance from reading a local file.
     pub fn try_from_local(path: impl AsRef<Path>) -> Result<Self, io::Error> {
-        let path = path.as_ref();
-        let bytes = fs::read(path)?;
-        let file_name = path.file_name().map(|s| s.to_string_lossy().into_owned());
-        let content_type = file_name.as_ref().and_then(|s| {
-            let file_name = s.strip_suffix(".encrypted").unwrap_or(s);
-            mime_guess::from_path(file_name).first()
-        });
-        Ok(Self {
-            field_name: None,
-            file_name,
-            content_type,
-            bytes: bytes.into(),
-            extra: Map::new(),
-        })
+        fn inner(path: &Path) -> Result<NamedFile, io::Error> {
+            let bytes = fs::read(path)?;
+            let file_name = path.file_name().map(|s| s.to_string_lossy().into_owned());
+            let content_type = file_name.as_ref().and_then(|s| {
+                let file_name = s.strip_suffix(".encrypted").unwrap_or(s);
+                mime_guess::from_path(file_name).first()
+            });
+            Ok(NamedFile {
+                field_name: None,
+                file_name,
+                content_type,
+                bytes: bytes.into(),
+                extra: Map::new(),
+            })
+        }
+        inner(path.as_ref())
     }
 
     /// Attempts to create an instance from a field in a multipart stream.

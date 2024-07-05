@@ -142,39 +142,39 @@ impl QueryContext {
 
     /// Records an error message for the query.
     pub fn record_error(&self, message: impl AsRef<str>) {
-        let model_name = self.model_name();
-        let query_id = self.query_id().to_string();
-        let query = self.query();
-        let arguments = self.format_arguments();
-        if self.is_cancelled() {
-            tracing::warn!(
-                cancelled = true,
-                model_name,
-                query_id,
-                query,
-                arguments,
-                message = message.as_ref()
-            );
-        } else {
-            tracing::error!(
-                model_name,
-                query_id,
-                query,
-                arguments,
-                message = message.as_ref()
-            );
+        fn inner(ctx: &QueryContext, message: &str) {
+            let model_name = ctx.model_name();
+            let query_id = ctx.query_id().to_string();
+            let query = ctx.query();
+            let arguments = ctx.format_arguments();
+            if ctx.is_cancelled() {
+                tracing::warn!(
+                    cancelled = true,
+                    model_name,
+                    query_id,
+                    query,
+                    arguments,
+                    message,
+                );
+            } else {
+                tracing::error!(model_name, query_id, query, arguments, message);
+            }
         }
+        inner(self, message.as_ref())
     }
 
     /// Emits the metrics for the query.
     #[cfg(feature = "metrics")]
     #[inline]
     pub fn emit_metrics(&self, action: impl Into<crate::SharedString>) {
-        metrics::histogram!(
-            "zino_model_query_duration_seconds",
-            "model_name" => self.model_name(),
-            "action" => action.into(),
-        )
-        .record(self.start_time().elapsed().as_secs_f64());
+        fn inner(ctx: &QueryContext, action: crate::SharedString) {
+            metrics::histogram!(
+                "zino_model_query_duration_seconds",
+                "model_name" => ctx.model_name(),
+                "action" => action,
+            )
+            .record(ctx.start_time().elapsed().as_secs_f64());
+        }
+        inner(self, action.into())
     }
 }

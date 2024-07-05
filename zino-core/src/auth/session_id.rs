@@ -28,18 +28,23 @@ impl SessionId {
     where
         D: Default + FixedOutput + HashMarker + Update,
     {
-        let realm = realm.into();
-        let data = [realm.as_ref().as_bytes(), key.as_ref()].concat();
-        let mut hasher = D::new();
-        hasher.update(data.as_ref());
+        fn inner<D>(realm: SharedString, key: &[u8]) -> SessionId
+        where
+            D: Default + FixedOutput + HashMarker + Update,
+        {
+            let data = [realm.as_ref().as_bytes(), key].concat();
+            let mut hasher = D::new();
+            hasher.update(data.as_ref());
 
-        let identifier = base64::encode(hasher.finalize().as_slice());
-        Self {
-            realm,
-            identifier,
-            thread: 0,
-            count: 0,
+            let identifier = base64::encode(hasher.finalize().as_slice());
+            SessionId {
+                realm,
+                identifier,
+                thread: 0,
+                count: 0,
+            }
         }
+        inner::<D>(realm.into(), key.as_ref())
     }
 
     /// Validates the session identifier using the realm and the key.
@@ -47,23 +52,29 @@ impl SessionId {
     where
         D: Default + FixedOutput + HashMarker + Update,
     {
-        let mut validation = Validation::new();
-        let identifier = &self.identifier;
-        match base64::decode(identifier) {
-            Ok(hash) => {
-                let data = [realm.as_bytes(), key.as_ref()].concat();
-                let mut hasher = D::new();
-                hasher.update(data.as_ref());
+        fn inner<D>(session_id: &SessionId, realm: &str, key: &[u8]) -> Validation
+        where
+            D: Default + FixedOutput + HashMarker + Update,
+        {
+            let mut validation = Validation::new();
+            let identifier = &session_id.identifier;
+            match base64::decode(identifier) {
+                Ok(hash) => {
+                    let data = [realm.as_bytes(), key].concat();
+                    let mut hasher = D::new();
+                    hasher.update(data.as_ref());
 
-                if hasher.finalize().as_slice() != hash {
-                    validation.record("identifier", "invalid session identifier");
+                    if hasher.finalize().as_slice() != hash {
+                        validation.record("identifier", "invalid session identifier");
+                    }
+                }
+                Err(err) => {
+                    validation.record_fail("identifier", err);
                 }
             }
-            Err(err) => {
-                validation.record_fail("identifier", err);
-            }
+            validation
         }
-        validation
+        inner::<D>(self, realm, key.as_ref())
     }
 
     /// Returns `true` if the given `SessionId` can be accepted by `self`.

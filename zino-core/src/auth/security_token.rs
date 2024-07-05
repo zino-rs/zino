@@ -21,15 +21,21 @@ impl SecurityToken {
         expires_at: DateTime,
         key: impl AsRef<[u8]>,
     ) -> Result<Self, Error> {
-        let key = key.as_ref();
-        let signature = format!("{}:{}", &access_key_id, expires_at.timestamp());
-        let authorization = crypto::encrypt(signature.as_bytes(), key)?;
-        let token = base64::encode(authorization);
-        Ok(Self {
-            access_key_id,
-            expires_at,
-            token,
-        })
+        fn inner(
+            access_key_id: AccessKeyId,
+            expires_at: DateTime,
+            key: &[u8],
+        ) -> Result<SecurityToken, Error> {
+            let signature = format!("{}:{}", &access_key_id, expires_at.timestamp());
+            let authorization = crypto::encrypt(signature.as_bytes(), key)?;
+            let token = base64::encode(authorization);
+            Ok(SecurityToken {
+                access_key_id,
+                expires_at,
+                token,
+            })
+        }
+        inner(access_key_id, expires_at, key.as_ref())
     }
 
     /// Returns the access key ID.

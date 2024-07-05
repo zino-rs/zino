@@ -20,27 +20,28 @@ pub struct JwtClaims<T = Map>(pub(crate) JWTClaims<T>);
 
 impl<T: Default + Serialize + DeserializeOwned> JwtClaims<T> {
     /// Creates a new instance.
-    pub fn new(subject: impl ToString) -> Self {
-        let mut claims = Claims::with_custom_claims(T::default(), (*DEFAULT_MAX_AGE).into());
+    fn constructor(subject: String, data: T, max_age: Duration) -> Self {
+        let mut claims = Claims::with_custom_claims(data, max_age.into());
         claims.invalid_before = None;
-        claims.subject = Some(subject.to_string());
+        claims.subject = Some(subject);
         Self(claims)
     }
 
+    /// Creates a new instance with the default data and `max-age`.
+    #[inline]
+    pub fn new(subject: impl ToString) -> Self {
+        Self::constructor(subject.to_string(), T::default(), *DEFAULT_MAX_AGE)
+    }
+
     /// Creates a new instance with the custom data.
+    #[inline]
     pub fn with_data(subject: impl ToString, data: T) -> Self {
-        let mut claims = Claims::with_custom_claims(data, (*DEFAULT_MAX_AGE).into());
-        claims.invalid_before = None;
-        claims.subject = Some(subject.to_string());
-        Self(claims)
+        Self::constructor(subject.to_string(), data, *DEFAULT_MAX_AGE)
     }
 
     /// Creates a new instance, expiring in `max-age`.
     pub fn with_max_age(subject: impl ToString, max_age: Duration) -> Self {
-        let mut claims = Claims::with_custom_claims(T::default(), max_age.into());
-        claims.invalid_before = None;
-        claims.subject = Some(subject.to_string());
-        Self(claims)
+        Self::constructor(subject.to_string(), T::default(), max_age)
     }
 
     /// Generates an access token signed with the shared secret access key.

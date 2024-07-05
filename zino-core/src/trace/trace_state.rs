@@ -40,14 +40,15 @@ impl TraceState {
     /// the value will be updated.
     #[inline]
     pub fn push(&mut self, key: impl Into<SharedString>, value: impl ToString) {
-        let states = &mut self.states;
-        let key = key.into();
-        let value = value.to_string();
-        if let Some(index) = states.iter().position(|(k, _)| k.as_ref() == key.as_ref()) {
-            states[index] = (key, value);
-        } else {
-            states.push((key, value));
+        fn inner(trace: &mut TraceState, key: SharedString, value: String) {
+            let states = &mut trace.states;
+            if let Some(index) = states.iter().position(|(k, _)| k.as_ref() == key.as_ref()) {
+                states[index] = (key, value);
+            } else {
+                states.push((key, value));
+            }
         }
+        inner(self, key.into(), value.to_string())
     }
 }
 

@@ -267,26 +267,31 @@ impl<S: ResponseCode> Response<S> {
     /// Sets the message. If the response is not successful,
     /// it should be a human-readable explanation specific to this occurrence of the problem.
     pub fn set_message(&mut self, message: impl Into<SharedString>) {
-        let message = message.into();
-        if self.is_success() {
-            self.detail = None;
-            self.message = Some(message);
-        } else {
-            self.detail = Some(message);
-            self.message = None;
+        fn inner<S: ResponseCode>(res: &mut Response<S>, message: SharedString) {
+            if res.is_success() {
+                res.detail = None;
+                res.message = Some(message);
+            } else {
+                res.detail = Some(message);
+                res.message = None;
+            }
         }
+        inner::<S>(self, message.into())
     }
 
     /// Sets the error message.
     pub fn set_error_message(&mut self, error: impl Into<Error>) {
-        let message = error.into().to_string().into();
-        if self.is_success() {
-            self.detail = None;
-            self.message = Some(message);
-        } else {
-            self.detail = Some(message);
-            self.message = None;
+        fn inner<S: ResponseCode>(res: &mut Response<S>, error: Error) {
+            let message = error.to_string().into();
+            if res.is_success() {
+                res.detail = None;
+                res.message = Some(message);
+            } else {
+                res.detail = Some(message);
+                res.message = None;
+            }
         }
+        inner::<S>(self, error.into())
     }
 
     /// Sets the response data.
@@ -350,36 +355,48 @@ impl<S: ResponseCode> Response<S> {
     /// Sets the form data as the response body.
     #[inline]
     pub fn set_form_response(&mut self, data: impl Into<JsonValue>) {
-        self.set_json_data(data);
-        self.set_content_type("application/x-www-form-urlencoded");
-        self.set_data_transformer(|data| {
-            let mut bytes = Vec::new();
-            serde_qs::to_writer(&data, &mut bytes)?;
-            Ok(bytes.into())
-        });
+        fn inner<S: ResponseCode>(res: &mut Response<S>, data: JsonValue) {
+            res.set_json_data(data);
+            res.set_content_type("application/x-www-form-urlencoded");
+            res.set_data_transformer(|data| {
+                let mut bytes = Vec::new();
+                serde_qs::to_writer(&data, &mut bytes)?;
+                Ok(bytes.into())
+            });
+        }
+        inner::<S>(self, data.into())
     }
 
     /// Sets the JSON data as the response body.
     #[inline]
     pub fn set_json_response(&mut self, data: impl Into<JsonValue>) {
-        self.set_json_data(data);
-        self.set_data_transformer(|data| Ok(serde_json::to_vec(&data)?.into()));
+        fn inner<S: ResponseCode>(res: &mut Response<S>, data: JsonValue) {
+            res.set_json_data(data);
+            res.set_data_transformer(|data| Ok(serde_json::to_vec(&data)?.into()));
+        }
+        inner::<S>(self, data.into())
     }
 
     /// Sets the JSON Lines data as the response body.
     #[inline]
     pub fn set_jsonlines_response(&mut self, data: impl Into<JsonValue>) {
-        self.set_json_data(data);
-        self.set_content_type("application/jsonlines; charset=utf-8");
-        self.set_data_transformer(|data| Ok(data.to_jsonlines(Vec::new())?.into()));
+        fn inner<S: ResponseCode>(res: &mut Response<S>, data: JsonValue) {
+            res.set_json_data(data);
+            res.set_content_type("application/jsonlines; charset=utf-8");
+            res.set_data_transformer(|data| Ok(data.to_jsonlines(Vec::new())?.into()));
+        }
+        inner::<S>(self, data.into())
     }
 
     /// Sets the CSV data as the response body.
     #[inline]
     pub fn set_csv_response(&mut self, data: impl Into<JsonValue>) {
-        self.set_json_data(data);
-        self.set_content_type("text/csv; charset=utf-8");
-        self.set_data_transformer(|data| Ok(data.to_csv(Vec::new())?.into()));
+        fn inner<S: ResponseCode>(res: &mut Response<S>, data: JsonValue) {
+            res.set_json_data(data);
+            res.set_content_type("text/csv; charset=utf-8");
+            res.set_data_transformer(|data| Ok(data.to_csv(Vec::new())?.into()));
+        }
+        inner::<S>(self, data.into())
     }
 
     /// Sets the plain text as the response body.
@@ -422,15 +439,22 @@ impl<S: ResponseCode> Response<S> {
     }
 
     /// Records a server timing metric entry.
-    #[inline]
     pub fn record_server_timing(
         &mut self,
         name: impl Into<SharedString>,
-        description: Option<SharedString>,
-        duration: Option<Duration>,
+        description: impl Into<Option<SharedString>>,
+        duration: impl Into<Option<Duration>>,
     ) {
-        let metric = TimingMetric::new(name.into(), description, duration);
-        self.server_timing.push(metric);
+        fn inner<S: ResponseCode>(
+            res: &mut Response<S>,
+            name: SharedString,
+            description: Option<SharedString>,
+            duration: Option<Duration>,
+        ) {
+            let metric = TimingMetric::new(name, description, duration);
+            res.server_timing.push(metric);
+        }
+        inner::<S>(self, name.into(), description.into(), duration.into())
     }
 
     /// Inserts a custom header.
