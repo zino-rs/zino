@@ -3,10 +3,8 @@
 use clap::Parser;
 use include_dir::{include_dir, Dir};
 
-
 mod init;
 mod new;
-
 
 static TEMPLATE_ROOT: Dir<'_> = include_dir!("zino-cli/template/");
 

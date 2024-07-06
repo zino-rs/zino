@@ -18,18 +18,24 @@ pub struct New {
 impl New {
     /// Runs the `new` subcommand.
     pub fn run(self) -> Result<(), Error> {
+        let path = Path::new(&self.project_name);
+
         // Check if the directory already exists
-        if Path::new(&self.project_name).exists() {
-            return Err(Error::new(format!(
-                "Directory {} already exists\n\
+        if path.exists() {
+            // Check if the directory is empty
+            let mut entries = fs::read_dir(path)?;
+            if entries.next().is_some() {
+                return Err(Error::new(format!(
+                    "Directory {} already exists and is not empty\n\
                 use a different name to create a new project\n\
                 or cd into the directory and run `zli init` to initialize the project",
-                self.project_name
-            )));
+                    self.project_name
+                )));
+            }
+        } else {
+            // Create a new directory
+            fs::create_dir_all(&self.project_name)?;
         }
-
-        // Create a new directory
-        fs::create_dir_all(&self.project_name)?;
 
         // Iterate over all files in the template directory
         self.copy_template_files(&TEMPLATE_ROOT)
