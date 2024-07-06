@@ -1,8 +1,14 @@
 //! CLI arguments and subcommands.
 
 use clap::Parser;
+use include_dir::{include_dir, Dir};
+
 
 mod init;
+mod new;
+
+
+static TEMPLATE_ROOT: Dir<'_> = include_dir!("zino-cli/template/");
 
 /// CLI tool for developing Zino applications.
 #[derive(Parser)]
@@ -11,7 +17,7 @@ pub struct Cli {
     /// Specify the bin target.
     #[clap(global = true, long)]
     bin: Option<String>,
-    /// Subcomands.
+    /// Subcommands.
     #[clap(subcommand)]
     action: Subcommands,
     /// Enable verbose logging.
@@ -32,4 +38,6 @@ impl Cli {
 pub enum Subcommands {
     /// Initialize the project for Zino.
     Init(init::Init),
+    /// Create a new project for Zino.
+    New(new::New),
 }
