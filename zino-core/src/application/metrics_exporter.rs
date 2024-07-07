@@ -46,14 +46,18 @@ pub(super) fn init<APP: Application + ?Sized>() {
             }
             if let Some(labels) = metrics.get_table("global-labels") {
                 for (key, value) in labels {
-                    builder = builder.add_global_label(key, value.to_string());
+                    if let Some(label) = value.as_str() {
+                        builder = builder.add_global_label(key, label);
+                    }
                 }
             }
             if let Some(addresses) = metrics.get_array("allowed-addresses") {
                 for addr in addresses {
-                    builder = builder
-                        .add_allowed_address(addr.as_str().unwrap_or_default())
-                        .unwrap_or_else(|err| panic!("invalid IP address `{addr}`: {err}"));
+                    if let Some(addr) = addr.as_str() {
+                        builder = builder.add_allowed_address(addr).unwrap_or_else(|err| {
+                            panic!("invalid IP network address `{addr}`: {err}");
+                        });
+                    }
                 }
             }
             builder
