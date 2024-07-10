@@ -1,13 +1,12 @@
-use std::fs::File;
-use std::io::Write;
-use std::{env, fs};
+use std::env;
+use std::fs::remove_dir_all;
+use std::path::Path;
 
 use clap::Parser;
-use include_dir::Dir;
 
 use zino_core::error::Error;
 
-use crate::cli::TEMPLATE_ROOT;
+use crate::cli::{process_template, DEFAULT_TEMPLATE_URL, TEMPORARY_TEMPLATE_PATH};
 
 /// Initialize the project for Zino.
 #[derive(Parser)]
@@ -25,20 +24,28 @@ pub struct Init {
 impl Init {
     /// Runs the `init` subcommand.
     pub fn run(self) -> Result<(), Error> {
-        match self.template {
-            Some(template) => Self::init_with_template(template),
-            None => self.init_default(),
+        if Path::new("./Cargo.toml").is_file() {
+            return Err(Error::new(
+                "The current directory is already a Rust project.",
+            ));
+        }
+
+        let init_res = self.init_with_template();
+
+        remove_dir_all(TEMPORARY_TEMPLATE_PATH)?;
+
+        match init_res {
+            Ok(_) => {
+                println!("Project initialized successfully.",);
+                Ok(())
+            }
+            Err(e) => Err(e),
         }
     }
 
-    fn init_with_template(_template: String) -> Result<(), Error> {
-        todo!("Implement the `init` subcommand with a template");
-    }
-
-    fn init_default(self) -> Result<(), Error> {
-        // Determine the project name
-        let project_name = match self.project_name {
-            Some(ref name) => name,
+    fn init_with_template(&self) -> Result<(), Error> {
+        let project_name = match &self.project_name {
+            Some(project_name) => project_name,
             None => &env::current_dir()?
                 .file_name()
                 .unwrap()
@@ -47,29 +54,11 @@ impl Init {
                 .to_string(),
         };
 
-        // Iterate over all files in the template directory
-        self.copy_template_files(&TEMPLATE_ROOT, &project_name)?;
+        let template_url = match self.template {
+            Some(ref template) => template.as_ref(),
+            None => DEFAULT_TEMPLATE_URL,
+        };
 
-        Ok(())
-    }
-
-    fn copy_template_files(&self, dir: &Dir, project_name: &str) -> Result<(), Error> {
-        for file in dir.files() {
-            let content = file.contents_utf8().unwrap();
-            let replaced_content =
-                content.replace("{project-name}", &format!("\"{}\"", project_name));
-
-            let path = file.path().strip_prefix("default").unwrap();
-            let mut file = File::create(path)?;
-            file.write_all(replaced_content.as_bytes())?;
-        }
-
-        for subdir in dir.dirs() {
-            let path = subdir.path().strip_prefix("default").unwrap();
-            fs::create_dir_all(path)?;
-            self.copy_template_files(subdir, project_name)?;
-        }
-
-        Ok(())
+        process_template(template_url, "", project_name)
     }
 }

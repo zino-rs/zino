@@ -1,11 +1,11 @@
-use crate::cli::TEMPLATE_ROOT;
-use clap::Parser;
-use fs::File;
-use include_dir::Dir;
 use std::fs;
-use std::io::Write;
 use std::path::Path;
+
+use clap::Parser;
+
 use zino_core::error::Error;
+
+use crate::cli::{process_template, DEFAULT_TEMPLATE_URL, TEMPORARY_TEMPLATE_PATH};
 
 //Creat a project for Zino.
 #[derive(Parser)]
@@ -13,53 +13,60 @@ use zino_core::error::Error;
 pub struct New {
     /// Project Name
     project_name: String,
+
+    /// Template path
+    #[clap(long)]
+    template: Option<String>,
 }
 
 impl New {
     /// Runs the `new` subcommand.
     pub fn run(self) -> Result<(), Error> {
-        let path = Path::new(&self.project_name);
+        // Check if the project directory already exists and is not empty.
+        let project_dir_already_exists = self.check_project_dir_status()?;
 
-        // Check if the directory already exists
-        if path.exists() {
-            // Check if the directory is empty
-            let mut entries = fs::read_dir(path)?;
-            if entries.next().is_some() {
-                return Err(Error::new(format!(
-                    "Directory {} already exists and is not empty\n\
-                use a different name to create a new project\n\
-                or cd into the directory and run `zli init` to initialize the project",
-                    self.project_name
-                )));
+        let new_res = self.new_with_template();
+
+        // Remove the temporary template directory.
+        fs::remove_dir_all(TEMPORARY_TEMPLATE_PATH)?;
+
+        // Process result of the creation.
+        match new_res {
+            Ok(_) => {
+                println!("Project `{}` created successfully.", self.project_name);
+                Ok(())
             }
-        } else {
-            // Create a new directory
-            fs::create_dir_all(&self.project_name)?;
+            // clean up the project directory if the project directory was created but the creation failed
+            // will not be executed if the Project directory already existed and was not empty
+            Err(e) if !project_dir_already_exists => {
+                fs::remove_dir_all(&self.project_name)?;
+                Err(e)
+            }
+            Err(e) => Err(e),
         }
-
-        // Iterate over all files in the template directory
-        self.copy_template_files(&TEMPLATE_ROOT)
     }
 
-    fn copy_template_files(&self, dir: &Dir) -> Result<(), Error> {
-        for file in dir.files() {
-            let content = file.contents_utf8().unwrap();
-            let replaced_content =
-                content.replace("{project-name}", &format!("\"{}\"", &self.project_name));
+    fn check_project_dir_status(&self) -> Result<bool, Error> {
+        let path = Path::new(self.project_name.as_str());
+        let project_dir_already_exists = path.exists() && path.is_dir();
 
-            let path =
-                Path::new(&self.project_name).join(file.path().strip_prefix("default").unwrap());
-            let mut file = File::create(path)?;
-            file.write_all(replaced_content.as_bytes())?;
+        if project_dir_already_exists && fs::read_dir(&self.project_name)?.next().is_some() {
+            return Err(Error::new(format!(
+                "The directory `{}` already exists and is not empty.",
+                self.project_name
+            )));
         }
 
-        for subdir in dir.dirs() {
-            let path =
-                Path::new(&self.project_name).join(subdir.path().strip_prefix("default").unwrap());
-            fs::create_dir_all(path)?;
-            self.copy_template_files(subdir)?;
-        }
+        Ok(project_dir_already_exists)
+    }
 
-        Ok(())
+    fn new_with_template(&self) -> Result<(), Error> {
+        let template_url = match self.template {
+            Some(ref template) => template.as_ref(),
+            None => DEFAULT_TEMPLATE_URL,
+        };
+        let project_root = &format!("/{}", self.project_name);
+
+        process_template(template_url, project_root, &self.project_name)
     }
 }
