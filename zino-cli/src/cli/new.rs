@@ -28,7 +28,9 @@ impl New {
         let new_res = self.new_with_template();
 
         // Remove the temporary template directory.
-        fs::remove_dir_all(TEMPORARY_TEMPLATE_PATH)?;
+        if let Err(e) = fs::remove_dir_all(TEMPORARY_TEMPLATE_PATH) {
+            println!("Failed to remove the temporary template directory: {}", e);
+        }
 
         // Process result of the creation.
         match new_res {
@@ -39,7 +41,9 @@ impl New {
             // clean up the project directory if the project directory was created but the creation failed
             // will not be executed if the Project directory already existed and was not empty
             Err(e) if !project_dir_already_exists => {
-                fs::remove_dir_all(&self.project_name)?;
+                if let Err(e) = fs::remove_dir_all(&self.project_name) {
+                    eprintln!("Warning: Failed to remove project directory: {e}");
+                }
                 Err(e)
             }
             Err(e) => Err(e),
