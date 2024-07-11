@@ -1,12 +1,11 @@
 use std::env;
-use std::fs::remove_dir_all;
 use std::path::Path;
 
 use clap::Parser;
 
 use zino_core::error::Error;
 
-use crate::cli::{process_template, DEFAULT_TEMPLATE_URL, TEMPORARY_TEMPLATE_PATH};
+use crate::cli::{clean_template_dir, DEFAULT_TEMPLATE_URL, process_template, TEMPORARY_TEMPLATE_PATH};
 
 /// Initialize the project for Zino.
 #[derive(Parser)]
@@ -32,11 +31,11 @@ impl Init {
 
         let init_res = self.init_with_template();
 
-        remove_dir_all(TEMPORARY_TEMPLATE_PATH)?;
+        clean_template_dir(TEMPORARY_TEMPLATE_PATH);
 
         match init_res {
             Ok(_) => {
-                println!("Project initialized successfully.",);
+                println!("Project initialized successfully.", );
                 Ok(())
             }
             Err(e) => Err(e),

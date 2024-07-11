@@ -5,7 +5,7 @@ use clap::Parser;
 
 use zino_core::error::Error;
 
-use crate::cli::{process_template, DEFAULT_TEMPLATE_URL, TEMPORARY_TEMPLATE_PATH};
+use crate::cli::{process_template, DEFAULT_TEMPLATE_URL, TEMPORARY_TEMPLATE_PATH, clean_template_dir};
 
 //Creat a project for Zino.
 #[derive(Parser)]
@@ -28,9 +28,7 @@ impl New {
         let new_res = self.new_with_template();
 
         // Remove the temporary template directory.
-        if let Err(e) = fs::remove_dir_all(TEMPORARY_TEMPLATE_PATH) {
-            println!("Failed to remove the temporary template directory: {}", e);
-        }
+        clean_template_dir(TEMPORARY_TEMPLATE_PATH);
 
         // Process result of the creation.
         match new_res {

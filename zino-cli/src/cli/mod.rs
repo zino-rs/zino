@@ -3,6 +3,7 @@
 use clap::Parser;
 use git2::Repository;
 use std::fs;
+use std::fs::remove_dir_all;
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
 use zino_core::error::Error;
@@ -87,4 +88,10 @@ fn is_ignored(entry: &DirEntry) -> bool {
     entry.file_name().to_str().map_or(false, |s| {
         s.starts_with(".") || s == "LICENSE" || s == "README.md"
     })
+}
+
+fn clean_template_dir(path: &str) {
+    if let Err(e) = remove_dir_all(path) {
+        println!("Failed to remove the temporary template directory: {}", e)
+    }
 }
