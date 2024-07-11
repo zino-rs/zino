@@ -40,13 +40,14 @@ impl New {
             }
             // clean up the project directory if the project directory was created but the creation failed
             // will not be executed if the Project directory already existed and was not empty
-            Err(e) if !project_dir_already_exists => {
-                if let Err(e) = fs::remove_dir_all(&self.project_name) {
-                    eprintln!("Warning: Failed to remove project directory: {e}");
+            Err(e) => {
+                if !project_dir_already_exists {
+                    if let Err(e) = fs::remove_dir_all(&self.project_name) {
+                        eprintln!("Warning: Failed to remove project directory: {e}");
+                    }
                 }
                 Err(e)
             }
-            Err(e) => Err(e),
         }
     }
 

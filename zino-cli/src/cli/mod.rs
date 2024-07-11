@@ -4,7 +4,7 @@ use clap::Parser;
 use git2::Repository;
 use std::fs;
 use std::path::Path;
-use walkdir::WalkDir;
+use walkdir::{DirEntry, WalkDir};
 use zino_core::error::Error;
 
 mod init;
@@ -57,11 +57,7 @@ pub(crate) fn process_template(
     // process the template
     for entry in WalkDir::new(TEMPORARY_TEMPLATE_PATH)
         .into_iter()
-        .filter_entry(|e| {
-            !e.file_name().to_str().map_or(false, |s| {
-                s.starts_with(".") || s == "LICENSE" || s == "README.md"
-            })
-        })
+        .filter_entry(|e| !is_ignored(e))
     {
         let entry = entry?;
         if entry.file_type().is_file() {
@@ -84,4 +80,11 @@ pub(crate) fn process_template(
     }
 
     Ok(())
+}
+
+// Helper function to determine ignored files
+fn is_ignored(entry: &DirEntry) -> bool {
+    entry.file_name().to_str().map_or(false, |s| {
+        s.starts_with(".") || s == "LICENSE" || s == "README.md"
+    })
 }

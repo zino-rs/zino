@@ -44,14 +44,16 @@ impl Init {
     }
 
     fn init_with_template(&self) -> Result<(), Error> {
+        let binding = env::current_dir()?
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
         let project_name = match &self.project_name {
             Some(project_name) => project_name,
-            None => &env::current_dir()?
-                .file_name()
-                .unwrap()
-                .to_str()
-                .unwrap()
-                .to_string(),
+            None => &binding,
         };
 
         let template_url = match self.template {
