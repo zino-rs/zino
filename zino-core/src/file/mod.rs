@@ -5,7 +5,7 @@ use crate::{
     crypto,
     encoding::{base64, hex},
     error::Error,
-    extension::JsonObjectExt,
+    extension::{JsonObjectExt, JsonValueExt},
     json,
     trace::TraceContext,
     warn, JsonValue, Map,
@@ -490,6 +490,11 @@ impl NamedFile {
             .trace_state_mut()
             .push("zino", format!("{span_id:x}"));
 
+        let mut form = Form::new();
+        for (key, value) in self.extra() {
+            form = form.text(key.to_owned(), value.to_string_unquoted());
+        }
+
         let field_name = self
             .field_name()
             .map(|s| Cow::Owned(s.to_owned()))
@@ -501,11 +506,7 @@ impl NamedFile {
         if let Some(content_type) = self.content_type() {
             part = part.mime_str(content_type.essence_str())?;
         }
-
-        let mut form = Form::new().part(field_name, part).percent_encode_noop();
-        for (key, value) in self.extra() {
-            form = form.text(key.to_owned(), value.to_string());
-        }
+        form = form.part(field_name, part).percent_encode_noop();
 
         let request_builder = if options.is_some() {
             http_client::request_builder(url, options)?

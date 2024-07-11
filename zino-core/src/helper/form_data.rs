@@ -9,15 +9,13 @@ pub(crate) async fn parse_form_data<T: DeserializeOwned>(
     let mut data = Map::new();
     let mut files = Vec::new();
     while let Some(field) = multipart.next_field().await? {
-        if let Some(name) = field.name() {
-            if field.file_name().is_some() {
-                let file = NamedFile::try_from_multipart_field(field).await?;
-                files.push(file);
-            } else {
-                let key = name.to_owned();
-                let value = field.text().await?;
-                data.upsert(key, value);
-            }
+        if field.file_name().is_some() {
+            let file = NamedFile::try_from_multipart_field(field).await?;
+            files.push(file);
+        } else if let Some(name) = field.name() {
+            let key = name.to_owned();
+            let value = field.text().await?;
+            data.upsert(key, value);
         }
     }
     let data = serde_json::from_value::<T>(data.into())?;

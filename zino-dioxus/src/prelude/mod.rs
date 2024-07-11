@@ -6,7 +6,7 @@ pub use crate::{
     feedback::{Message, ModalCard, ModalData, Notification, OperationResult},
     form::{
         Button, Checkbox, CopyToClipboard, DataEntry, DataSelect, FileUpload, FormAddons,
-        FormField, FormFieldContainer, FormGroup, Input, Radio, Textarea,
+        FormField, FormFieldContainer, FormGroup, Input, Progress, Radio, Textarea,
     },
     icon::{Icon, IconText, SvgIcon},
     layout::{Columns, Container, FluidContainer, MainContainer},

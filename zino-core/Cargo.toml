@@ -227,7 +227,7 @@ version = "0.5.3"
 features = ["std"]
 
 [dependencies.async-openai]
-version = "0.23.3"
+version = "0.23.4"
 optional = true
 
 [dependencies.card-validate]
@@ -420,7 +420,7 @@ optional = true
 features = ["non_strict_integers", "url", "uuid"]
 
 [dependencies.uuid]
-version = "1.9.1"
+version = "1.10.0"
 features = [
     "fast-rng",
     "serde",
@@ -437,7 +437,7 @@ data-encoding = "2.5.0"
 libsm = "0.6.0"
 sm3 = "0.4.2"
 sonic-rs = "0.3.8"
-tinyvec = { version = "1.7.0", features = ["alloc"] }
+tinyvec = { version = "1.8.0", features = ["alloc"] }
 uuid-simd = "0.8.0"
 
 [[bench]]

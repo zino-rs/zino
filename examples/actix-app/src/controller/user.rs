@@ -46,7 +46,7 @@ pub async fn view(req: Request) -> Result {
     data.upsert("authorized", rego.eval_allow_query("data.app.user.allow"));
 
     let mut res = Response::default().context(&req);
-    res.record_server_timing("db", None, Some(db_query_duration));
+    res.record_server_timing("db", None, db_query_duration);
     res.set_json_data(data);
     Ok(res.into())
 }

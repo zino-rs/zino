@@ -8,6 +8,7 @@ mod clipboard;
 mod field;
 mod file;
 mod input;
+mod progress;
 mod radio;
 mod select;
 mod textarea;
@@ -21,6 +22,7 @@ pub use field::{
 };
 pub use file::{FileUpload, FileUploadProps};
 pub use input::{Input, InputProps};
+pub use progress::{Progress, ProgressProps};
 pub use radio::{Radio, RadioProps};
 pub use select::{DataSelect, DataSelectProps};
 pub use textarea::{Textarea, TextareaProps};
