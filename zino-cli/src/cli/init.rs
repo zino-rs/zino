@@ -43,16 +43,16 @@ impl Init {
     }
 
     fn init_with_template(&self) -> Result<(), Error> {
-        let binding = env::current_dir()?
+        let current_dir = env::current_dir()?
             .file_name()
-            .unwrap()
+            .expect("Failed to get the current directory name")
             .to_str()
-            .unwrap()
+            .expect("Failed to convert the directory name to string")
             .to_string();
 
         let project_name = match &self.project_name {
             Some(project_name) => project_name,
-            None => &binding,
+            None => &current_dir
         };
 
         let template_url = match self.template {
