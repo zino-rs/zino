@@ -7,6 +7,6 @@ fn main() {
         New(opts) => opts.run(),
     };
     if let Err(err) = result {
-        println!("Failed to run the command: {err}");
+        log::error!("fail to run the command: {err}");
     }
 }

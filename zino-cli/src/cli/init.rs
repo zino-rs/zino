@@ -1,23 +1,18 @@
-use std::env;
-use std::path::Path;
-
-use clap::Parser;
-
-use zino_core::error::Error;
-
 use crate::cli::{
     clean_template_dir, process_template, DEFAULT_TEMPLATE_URL, TEMPORARY_TEMPLATE_PATH,
 };
+use clap::Parser;
+use std::{env, path::Path};
+use zino_core::error::Error;
 
-/// Initialize the project for Zino.
+/// Initializes the project.
 #[derive(Parser)]
 #[clap(name = "init")]
 pub struct Init {
-    /// Template path.
+    /// The template path.
     #[clap(long)]
     template: Option<String>,
-
-    /// Project Name(directory name if not specified).
+    /// The project name (the directory name if not specified).
     #[clap(long)]
     project_name: Option<String>,
 }
@@ -26,42 +21,34 @@ impl Init {
     /// Runs the `init` subcommand.
     pub fn run(self) -> Result<(), Error> {
         if Path::new("./Cargo.toml").is_file() {
-            return Err(Error::new(
-                "The current directory is already a Rust project.",
-            ));
+            return Err(Error::new("current directory is already a Rust project"));
         }
-
-        let init_res = self.init_with_template();
-
         clean_template_dir(TEMPORARY_TEMPLATE_PATH);
-
-        match init_res {
+        match self.init_with_template() {
             Ok(_) => {
-                println!("Project initialized successfully.",);
+                log::info!("project initialized successfully");
                 Ok(())
             }
             Err(e) => Err(e),
         }
     }
 
+    /// Needs documentation.
     fn init_with_template(&self) -> Result<(), Error> {
         let current_dir = env::current_dir()?
             .file_name()
-            .expect("Failed to get the current directory name")
+            .expect("fail to get the current directory name")
             .to_str()
-            .expect("Failed to convert the directory name to string")
+            .expect("fail to convert the directory name to string")
             .to_string();
-
         let project_name = match &self.project_name {
             Some(project_name) => project_name,
             None => &current_dir,
         };
-
         let template_url = match self.template {
             Some(ref template) => template.as_ref(),
             None => DEFAULT_TEMPLATE_URL,
         };
-
         process_template(template_url, "", project_name)
     }
 }

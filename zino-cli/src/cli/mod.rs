@@ -37,25 +37,26 @@ impl Cli {
 /// CLI subcommands.
 #[derive(Parser)]
 pub enum Subcommands {
-    /// Initialize the project for Zino.
+    /// Initialize the project.
     Init(init::Init),
-    /// Create a new project for Zino.
+    /// Create a new project.
     New(new::New),
 }
 
+/// Needs documentation.
 pub(crate) static TEMPORARY_TEMPLATE_PATH: &str = "./temporary_zino_template";
+/// Needs documentation.
 pub(crate) static DEFAULT_TEMPLATE_URL: &str =
     "https://github.com/zino-rs/zino-template-default.git";
 
+/// Needs documentation.
 pub(crate) fn process_template(
     template_url: &str,
     target_path_prefix: &str,
     project_name: &str,
 ) -> Result<(), Error> {
-    // Clone the template repository.
     Repository::clone(template_url, TEMPORARY_TEMPLATE_PATH)?;
 
-    // process the template
     for entry in WalkDir::new(TEMPORARY_TEMPLATE_PATH)
         .into_iter()
         .filter_entry(|e| !is_ignored(e))
@@ -71,11 +72,10 @@ pub(crate) fn process_template(
                     .to_str()
                     .unwrap()
             );
-
             fs::create_dir_all(Path::new(&target_path).parent().unwrap())?;
 
             let content =
-                fs::read_to_string(template_file_path)?.replace("{project-name}", &project_name);
+                fs::read_to_string(template_file_path)?.replace("{project-name}", project_name);
             fs::write(&target_path, content)?;
         }
     }
@@ -83,15 +83,16 @@ pub(crate) fn process_template(
     Ok(())
 }
 
-// Helper function to determine ignored files
+/// Helper function to determine ignored files.
 fn is_ignored(entry: &DirEntry) -> bool {
     entry.file_name().to_str().map_or(false, |s| {
-        s.starts_with(".") || s == "LICENSE" || s == "README.md"
+        s.starts_with('.') || s == "LICENSE" || s == "README.md"
     })
 }
 
+/// Needs documentation.
 fn clean_template_dir(path: &str) {
-    if let Err(e) = remove_dir_all(path) {
-        println!("Failed to remove the temporary template directory: {}", e)
+    if let Err(err) = remove_dir_all(path) {
+        log::error!("fail to remove the temporary template directory: {}", err)
     }
 }
