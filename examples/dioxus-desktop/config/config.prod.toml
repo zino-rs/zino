@@ -3,9 +3,6 @@
 name = "data-cube"
 version = "0.2.0"
 
-[dirs]
-uploads = "local/uploads"
-
 [window]
 title = "DataCube"
 theme = "Dark"
@@ -19,12 +16,6 @@ stylesheets = [
     "public/css/bulma.min.css",
     "public/css/custom.css",
 ]
-
-[database]
-namespace = "dc"
-
-[[sqlite]]
-database = "local/data/main.db"
 
 [tracing]
 filter = "warn,zino=info,zino_core=info"

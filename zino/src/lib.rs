@@ -56,6 +56,11 @@ cfg_if::cfg_if! {
 
         /// Desktop applications for `dioxus`.
         pub type Desktop<R> = DioxusDesktop<R>;
+    } else if #[cfg(feature = "dioxus-ssr")] {
+        use crate::application::dioxus_ssr::DioxusSsr;
+
+        /// Server-side rendering for `dioxus`.
+        pub type Ssr<R> = DioxusSsr<R>;
     } else if #[cfg(feature = "ntex")] {
         use crate::application::ntex_cluster::NtexCluster;
         use crate::request::ntex_request::NtexExtractor;

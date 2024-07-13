@@ -1,0 +1,11 @@
+# --env=prod
+
+name = "data-cube"
+version = "0.2.0"
+
+[main]
+host = "127.0.0.1"
+port = 6080
+
+[tracing]
+filter = "warn,zino=info,zino_core=info"

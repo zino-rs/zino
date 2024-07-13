@@ -1,11 +1,9 @@
-use std::fs;
-use std::path::Path;
-
+use crate::cli::{
+    clean_template_dir, process_template, DEFAULT_TEMPLATE_URL, TEMPORARY_TEMPLATE_PATH,
+};
 use clap::Parser;
-
+use std::{fs, path::Path};
 use zino_core::error::Error;
-
-use crate::cli::{process_template, DEFAULT_TEMPLATE_URL, TEMPORARY_TEMPLATE_PATH, clean_template_dir};
 
 //Creat a project for Zino.
 #[derive(Parser)]
@@ -13,7 +11,6 @@ use crate::cli::{process_template, DEFAULT_TEMPLATE_URL, TEMPORARY_TEMPLATE_PATH
 pub struct New {
     /// Project Name
     project_name: String,
-
     /// Template path
     #[clap(long)]
     template: Option<String>,
