@@ -137,7 +137,7 @@ pub(crate) fn default_components() -> Components {
         .responses
         .insert("default".to_owned(), default_response.into());
 
-    // Error response
+    // 4XX error response
     let model_id_example = Uuid::now_v7();
     let detail_example = format!("404 Not Found: cannot find the model `{model_id_example}`");
     let instance_example = format!("/model/{model_id_example}/view");
@@ -320,9 +320,18 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
                 if let Some(schemas) = openapi_config.get_table("schemas") {
                     for (key, value) in schemas.iter() {
                         if let Some(config) = value.as_table() {
-                            let schema_name = key.to_case(Case::Camel);
+                            let name = key.to_case(Case::Camel);
                             let schema = parser::parse_schema(config);
-                            components_builder = components_builder.schema(schema_name, schema);
+                            components_builder = components_builder.schema(name, schema);
+                        }
+                    }
+                }
+                if let Some(responses) = openapi_config.get_table("responses") {
+                    for (key, value) in responses.iter() {
+                        if let Some(config) = value.as_table() {
+                            let name = key.to_case(Case::Camel);
+                            let response = parser::parse_response(config);
+                            components_builder = components_builder.response(name, response);
                         }
                     }
                 }

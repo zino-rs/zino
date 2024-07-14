@@ -36,6 +36,21 @@ summary = "Finds a list of users"
 roles = { type = "string", description = "User roles" }
 tags = { type = "string", description = "User tags" }
 
+[endpoints.responses.200.headers]
+server-timing = "string"
+x-request-id = { type = "string", format = "uuid", description = "Request ID" }
+
+[endpoints.responses.200.content]
+status = "integer"
+success = "boolean"
+message = "string"
+request_id = { type = "string", format = "uuid" }
+
+[endpoints.responses.200.content.data]
+type = "object"
+entries = { type = "array", items = { schema = "/user/definition?action=list" } }
+num_entries = { type = "integer", default = 10 }
+
 [[endpoints]]
 path = "/user/import"
 method = "POST"

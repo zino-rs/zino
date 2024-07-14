@@ -565,7 +565,9 @@ where
         };
         let mut properties = Map::new();
         for col in columns {
-            if !col.has_any_attributes(&exclusive_attributes) && col.comment().is_some() {
+            if !col.has_any_attributes(&exclusive_attributes) && col.comment().is_some()
+                || matches!(action, "list" | "view" | "export" | "tree")
+            {
                 properties.upsert(col.name(), col.definition());
             }
         }

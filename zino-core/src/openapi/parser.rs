@@ -6,10 +6,12 @@ use convert_case::{Case, Casing};
 use std::collections::BTreeMap;
 use toml::Table;
 use utoipa::openapi::{
-    content::Content,
+    content::{Content, ContentBuilder},
     external_docs::ExternalDocs,
+    header::Header,
     path::{Operation, OperationBuilder, Parameter, ParameterBuilder, ParameterIn, PathItemType},
     request_body::{RequestBody, RequestBodyBuilder},
+    response::{Response, ResponseBuilder},
     schema::{
         Array, ArrayBuilder, KnownFormat, Object, ObjectBuilder, Ref, Schema, SchemaFormat,
         SchemaType,
@@ -47,6 +49,19 @@ pub(super) fn parse_operation(
         .tag(name)
         .response("default", Ref::from_response_name("default"))
         .response("error", Ref::from_response_name("4XX"));
+    if let Some(responses) = config.get_table("responses") {
+        for (key, value) in responses.iter() {
+            if let Some(config) = value.as_table() {
+                let name = key.to_case(Case::Camel);
+                let response = parse_response(config);
+                operation_builder = operation_builder.response(name, response);
+            } else if let Some(response_name) = value.as_str() {
+                let name = key.to_case(Case::Camel);
+                let response_ref = Ref::from_response_name(response_name);
+                operation_builder = operation_builder.response(name, response_ref);
+            }
+        }
+    }
     if let Some(tags) = config.get_str_array("tags") {
         let tags = tags.into_iter().map(|s| s.to_owned()).collect::<Vec<_>>();
         operation_builder = operation_builder.tags(Some(tags));
@@ -119,6 +134,45 @@ pub(super) fn parse_operation(
         operation_builder = operation_builder.request_body(Some(request_body));
     }
     operation_builder.build()
+}
+
+/// Parses the response.
+pub(super) fn parse_response(config: &Table) -> Response {
+    let mut response_builder = ResponseBuilder::new();
+    if let Some(description) = config.get_str("description") {
+        response_builder = response_builder.description(description);
+    }
+    if let Some(content) = config.get_table("content") {
+        let content_type = config.get_str("content_type").unwrap_or("application/json");
+        let content_schema = if let Some(schema) = content.get_str("schema") {
+            parse_schema_reference(schema)
+        } else {
+            parse_schema(content).into()
+        };
+        let mut content_builder = ContentBuilder::new().schema(content_schema);
+        if let Some(example) = config.get("example") {
+            content_builder = content_builder.example(Some(example.to_json_value()));
+        }
+        response_builder = response_builder.content(content_type, content_builder.build());
+    }
+    if let Some(headers) = config.get_table("headers") {
+        for (key, value) in headers.iter() {
+            if let Some(config) = value.as_table() {
+                let name = key.to_case(Case::Kebab);
+                let mut header = Header::new(parse_schema(config));
+                if let Some(description) = config.get_str("description") {
+                    header.description = Some(description.to_owned());
+                }
+                response_builder = response_builder.header(name, header);
+            } else if let Some(schema_type) = value.as_str() {
+                let name = key.to_case(Case::Kebab);
+                let schema = Object::with_type(parse_schema_type(schema_type));
+                let header = Header::new(schema);
+                response_builder = response_builder.header(name, header);
+            }
+        }
+    }
+    response_builder.build()
 }
 
 /// Parses the schema.
@@ -259,7 +313,11 @@ pub(super) fn parse_schema(config: &Table) -> Schema {
 /// Parses the Array schema.
 fn parse_array_schema(config: &Table) -> Array {
     let item_schema = if let Some(items) = config.get_table("items") {
-        parse_schema(items)
+        if let Some(schema) = items.get_str("schema") {
+            parse_schema_reference(schema)
+        } else {
+            parse_schema(items).into()
+        }
     } else {
         let items = config.get_str("items").unwrap_or("string");
         Object::with_type(parse_schema_type(items)).into()
