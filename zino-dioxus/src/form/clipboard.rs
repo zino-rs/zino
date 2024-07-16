@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use dioxus_std::clipboard::use_clipboard;
+use dioxus_sdk::clipboard::use_clipboard;
 use zino_core::SharedString;
 
 /// A button to copy the content to clipboard when clicked.

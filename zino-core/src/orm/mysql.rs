@@ -41,7 +41,13 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
             "Time" | "NaiveTime" => "TIME",
             "DateTime" => "TIMESTAMP(6)",
             "NaiveDateTime" => "DATETIME(6)",
-            "Uuid" | "Option<Uuid>" => "CHAR(36)",
+            "Uuid" | "Option<Uuid>" => {
+                if cfg!(feature = "orm-mariadb") {
+                    "UUID"
+                } else {
+                    "CHAR(36)"
+                }
+            }
             "Vec<u8>" => "BLOB",
             "Vec<String>" | "Vec<Uuid>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>"
             | "Map" => "JSON",
@@ -139,6 +145,8 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                 "midnight" => "'00:00:00'".into(),
                 _ => Query::escape_string(value).into(),
             },
+            #[cfg(feature = "orm-mariadb")]
+            "Uuid" | "Option<Uuid>" => format!("'{value}'").into(),
             "Vec<u8>" => format!("'{value}'").into(),
             "Vec<String>" | "Vec<Uuid>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>" => {
                 if value.contains(',') {

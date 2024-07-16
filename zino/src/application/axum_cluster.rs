@@ -2,7 +2,7 @@ use crate::{middleware, AxumExtractor, AxumResponse};
 use axum::{
     error_handling::HandleErrorLayer,
     extract::{rejection::LengthLimitError, DefaultBodyLimit},
-    http::StatusCode,
+    http::{HeaderName, HeaderValue, StatusCode},
     middleware::from_fn,
     BoxError, Router,
 };
@@ -19,6 +19,7 @@ use tower_http::{
     compression::{predicate::DefaultPredicate, CompressionLayer},
     decompression::DecompressionLayer,
     services::{ServeDir, ServeFile},
+    set_header::SetResponseHeaderLayer,
 };
 use utoipa_rapidoc::RapiDoc;
 use zino_core::{
@@ -109,6 +110,7 @@ impl Application for AxumCluster {
                 let mut public_dir = PathBuf::new();
                 let mut body_limit = 128 * 1024 * 1024; // 128MB
                 let mut request_timeout = Duration::from_secs(60); // 60 seconds
+                let mut keep_alive_timeout = 75; // 75 seconds
                 if let Some(config) = app_state.get_config("server") {
                     if let Some(dir) = config.get_str("page-dir") {
                         public_route_prefix = "/page";
@@ -126,6 +128,9 @@ impl Application for AxumCluster {
                     }
                     if let Some(timeout) = config.get_duration("request-timeout") {
                         request_timeout = timeout;
+                    }
+                    if let Some(timeout) = config.get_duration("keep-alive-timeout") {
+                        keep_alive_timeout = timeout.as_secs();
                     }
                 } else {
                     public_dir = default_public_dir;
@@ -216,6 +221,15 @@ impl Application for AxumCluster {
                     }))
                     .layer(
                         ServiceBuilder::new()
+                            .layer(SetResponseHeaderLayer::if_not_present(
+                                HeaderName::from_static("connection"),
+                                HeaderValue::from_static("keep-alive"),
+                            ))
+                            .layer(SetResponseHeaderLayer::if_not_present(
+                                HeaderName::from_static("keep-alive"),
+                                HeaderValue::from_str(&format!("timeout={keep_alive_timeout}"))
+                                    .expect("fail to set the `keep-alive` header value"),
+                            ))
                             .layer(DefaultBodyLimit::max(body_limit))
                             .layer(
                                 CompressionLayer::new()

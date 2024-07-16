@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.24.2"
+version = "0.24.3"
 rust-version = "1.75"
 edition = "2021"
 license = "MIT"
@@ -192,7 +192,7 @@ aes-gcm-siv = "0.11.1"
 ahash = "0.8.11"
 apache-avro = "0.16.0"
 base64 = "0.22.1"
-bytes = "1.6.0"
+bytes = "1.6.1"
 cfg-if = "1.0"
 convert_case = "0.6.0"
 cron = "0.12.1"
@@ -212,7 +212,7 @@ parking_lot = "0.12.3"
 percent-encoding = "2.3.1"
 rand = "0.8.5"
 regex = "1.10.5"
-reqwest-tracing = "0.5.1"
+reqwest-tracing = "0.5.2"
 rust_decimal = "1.35.0"
 ryu = "1.0.18"
 serde_qs = "0.13.0"
@@ -282,7 +282,7 @@ version = "0.23.0"
 optional = true
 
 [dependencies.metrics-exporter-prometheus]
-version = "0.15.1"
+version = "0.15.3"
 optional = true
 default-features = false
 features = ["http-listener"]
