@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>new-project</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .top-bar {
+            background-color: #007bff;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 61.8%;
+            box-sizing: border-box;
+            font-size: 18px;
+        }
+
+        input[type="text"]:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        #cargoTomlTextArea {
+            font-family: Consolas, monospace;
+            width: 61.8%;
+            white-space: pre;
+            background-color: #f3f4f6;
+            color: #333;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+            border-radius: 8px;
+            box-sizing: border-box;
+            overflow-x: auto;
+            font-size: 18px;
+        }
+
+        .project-config-form {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            width: 38.2%;
+        }
+
+        .project-config-form form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+
+        .project-config-form button:hover {
+            background-color: #0056b3;
+        }
+
+        .closet {
+            display: block;
+            margin-bottom: 20px;
+        }
+
+        .closet .option-title {
+            font-size: 24px;
+            color: black;
+        }
+
+        .option-group {
+            font-size: 24px;
+            color: #8d8f91;
+            border-color: #0056b3;
+            display: flex;
+            gap: 10px;
+            margin-left: 25%;
+        }
+
+        .option-group div {
+            cursor: pointer;
+            border-bottom: 2px solid grey;
+        }
+
+        .option-group div.checked {
+            font-size: 25px;
+            color: #14161a;
+            border-color: #0056b3;
+            border-bottom: 2px solid #007bff;
+        }
+
+        #configForm #save-config {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 18px;
+            cursor: pointer;
+            width: 61.8%;
+            margin-left: 19.1%;
+            margin-top: 20%;
+        }
+    </style>
+</head>
+<body>
+<div class="top-bar">
+    <h1 id="project_name">current project: None</h1>
+    <input type="text" id="currentDir">
+</div>
+<div class="main-content">
+    <div class="project-config-form">
+        <form id="configForm">
+            <div class="closet">
+                <div class="option-title">Framework</div>
+                <div class="option-group">
+                    <div class="unchecked">Axum</div>
+                    <div class="unchecked">Actix</div>
+                </div>
+            </div>
+            <div class="closet">
+                <div class="option-title">Database</div>
+                <div class="option-group">
+                    <div class="unchecked">MySQL</div>
+                    <div class="unchecked">PostgreSQL</div>
+                </div>
+            </div>
+            <div class="closet">
+                <div class="option-title">Other Options</div>
+                <div class="option-group">
+                    <div class="unchecked">Option 1</div>
+                    <div class="unchecked">Option 2</div>
+                </div>
+            </div>
+            <button id="save-config">save config</button>
+        </form>
+    </div>
+    <textarea id="cargoTomlTextArea" readonly></textarea>
+</div>
+</body>
+<script>
+    // fetch the current directory and Cargo.toml content
+    document.getElementById('currentDir').addEventListener('blur', async function () {
+        const currentDir = this.value;
+
+        try {
+            const response = await fetch(`/update_current_dir/${encodeURIComponent(currentDir)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain',
+                },
+            });
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+        } catch (err) {
+            console.error('Failed to update directory:', err);
+            await fetchCurrentDir();
+        }
+
+        await fetchCargoToml()
+    });
+
+    // ask the server to sync the current directory
+    async function fetchCurrentDir() {
+        try {
+            const response = await fetch('/current_dir');
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+            document.getElementById('currentDir').value = await response.text();
+        } catch (error) {
+            console.error('Failed to fetch current directory:', error);
+        }
+    }
+
+    // fetch the content of Cargo.toml
+    async function fetchCargoToml() {
+        try {
+            const response = await fetch('/get_current_cargo_toml');
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+            const content = await response.text();
+            document.getElementById('cargoTomlTextArea').value = content;
+
+
+            const packageNameLine = content.split('\n').find(line => line.startsWith('name ='))
+            if (packageNameLine) {
+                let packageName = packageNameLine.split('=')[1].trim().replace(/"/g, '');
+                document.getElementById("project_name").textContent = "current project: " + packageName;
+            } else {
+                document.getElementById("project_name").textContent = "current project: new-project";
+            }
+        } catch (error) {
+            console.error('Failed to fetch Cargo.toml:', error);
+            this.value = 'Failed to fetch Cargo.toml, make sure you entered a valid project directory';
+        }
+    }
+
+    // init the options of each group
+    function init_options() {
+        const optionsDivs = document.querySelectorAll('.option-group');
+
+        optionsDivs.forEach(div => {
+            const firstUnchecked = div.querySelector('.unchecked');
+
+            if (firstUnchecked) {
+                firstUnchecked.classList.remove('unchecked');
+                firstUnchecked.classList.add('checked');
+            }
+        });
+    }
+
+    // make the options clickable
+    document.querySelectorAll('.option-group div').forEach(option => {
+        option.addEventListener('click', function () {
+            const parentOptions = this.closest('.option-group');
+
+            parentOptions.querySelectorAll('.checked').forEach(checkedOption => {
+                checkedOption.classList.remove('checked');
+                checkedOption.classList.add('unchecked');
+            });
+
+            this.classList.remove('unchecked');
+            this.classList.add('checked');
+        });
+    });
+
+    window.onload = () => {
+        fetchCurrentDir();
+        fetchCargoToml();
+        init_options();
+    };
+</script>
+
+</html>

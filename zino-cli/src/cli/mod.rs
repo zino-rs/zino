@@ -11,6 +11,8 @@ use zino_core::error::Error;
 mod init;
 mod new;
 
+mod serve;
+
 /// CLI tool for developing Zino applications.
 #[derive(Parser)]
 #[clap(name = "zino", version)]
@@ -41,6 +43,8 @@ pub enum Subcommands {
     Init(init::Init),
     /// Create a new project.
     New(new::New),
+    /// Start the server.
+    Serve(serve::Serve),
 }
 
 /// Needs documentation.
