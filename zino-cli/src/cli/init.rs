@@ -33,7 +33,7 @@ impl Init {
         }
     }
 
-    /// Needs documentation.
+    /// initializes the project with the template.
     fn init_with_template(&self) -> Result<(), Error> {
         let current_dir = env::current_dir()?
             .file_name()
