@@ -199,19 +199,15 @@
             const content = await response.text();
             document.getElementById('cargoTomlTextArea').value = content;
 
-
-            const packageNameLine = content.split('\n').find(line => line.startsWith('name ='))
-            if (packageNameLine) {
-                let packageName = packageNameLine.split('=')[1].trim().replace(/"/g, '');
-                document.getElementById("project_name").textContent = "current project: " + packageName;
-            } else {
-                document.getElementById("project_name").textContent = "current project: new-project";
-            }
+            const packageNameLine = content.split('\n').find(line => line.startsWith('name ='));
+            const projectName = packageNameLine ? packageNameLine.split('=')[1].trim().replace(/"/g, '') : 'new-project';
+            document.getElementById("project_name").textContent = `current project: ${projectName}`;
         } catch (error) {
             console.error('Failed to fetch Cargo.toml:', error);
-            this.value = 'Failed to fetch Cargo.toml, make sure you entered a valid project directory';
+            document.getElementById('cargoTomlTextArea').value = 'Failed to fetch Cargo.toml, make sure you entered a valid project directory';
         }
     }
+
 
     // init the options of each group
     function init_options() {
@@ -221,8 +217,7 @@
             const firstUnchecked = div.querySelector('.unchecked');
 
             if (firstUnchecked) {
-                firstUnchecked.classList.remove('unchecked');
-                firstUnchecked.classList.add('checked');
+                firstUnchecked.classList.replace('unchecked', 'checked')
             }
         });
     }
@@ -231,14 +226,10 @@
     document.querySelectorAll('.option-group div').forEach(option => {
         option.addEventListener('click', function () {
             const parentOptions = this.closest('.option-group');
-
             parentOptions.querySelectorAll('.checked').forEach(checkedOption => {
-                checkedOption.classList.remove('checked');
-                checkedOption.classList.add('unchecked');
+                checkedOption.classList.replace('checked', 'unchecked');
             });
-
-            this.classList.remove('unchecked');
-            this.classList.add('checked');
+            this.classList.replace('unchecked', 'checked');
         });
     });
 
