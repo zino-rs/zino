@@ -17,12 +17,10 @@ pub struct Serve {}
 /// Resource directory.
 static RESOURCE: Dir = include_dir::include_dir!("zino-cli/public");
 
-/// Set configuration of the project
+/// Set configuration of the project.
 impl Serve {
     /// Runs the `serve` subcommand.
     pub fn run(self) -> Result<(), Error> {
-        println!("Starting the server...");
-
         env::set_var("CARGO_PKG_NAME", env!("CARGO_PKG_NAME"));
         env::set_var("CARGO_PKG_VERSION", env!("CARGO_PKG_VERSION"));
 
@@ -38,7 +36,7 @@ impl Serve {
     }
 }
 
-/// Returns the content of `Cargo.toml` file in current_dir
+/// Returns the content of `Cargo.toml` file in the current directory.
 async fn get_current_cargo_toml() -> impl IntoResponse {
     fs::read_to_string("./Cargo.toml")
         .map(|content| content.into_response())
@@ -51,7 +49,7 @@ async fn get_current_cargo_toml() -> impl IntoResponse {
         })
 }
 
-/// Returns Html page.
+/// Returns the HTML page.
 async fn get_page(Path(file_name): Path<String>) -> impl IntoResponse {
     match RESOURCE.get_file(file_name) {
         Some(file) => {
@@ -78,7 +76,7 @@ async fn get_page(Path(file_name): Path<String>) -> impl IntoResponse {
     }
 }
 
-/// Returns current directory.
+/// Returns the current directory.
 async fn get_current_dir() -> impl IntoResponse {
     env::current_dir()
         .map(|current_dir| {
@@ -101,7 +99,7 @@ async fn get_current_dir() -> impl IntoResponse {
 async fn update_current_dir(Path(path): Path<String>) -> impl IntoResponse {
     env::set_current_dir(&path)
         .map(|_| {
-            log::info!("Directory updated to: {}", path);
+            log::info!("directory updated to: {}", path);
             axum::http::StatusCode::OK.into_response()
         })
         .unwrap_or_else(|err| {

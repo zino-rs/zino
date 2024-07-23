@@ -1,5 +1,5 @@
 use super::parser;
-use convert_case::{Case, Casing};
+use convert_case::{Boundary::UpperLower, Case, Casing};
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::DeriveInput;
@@ -209,7 +209,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             if enable_setter && !RESERVED_FIELDS.contains(&name.as_str()) {
                 let setter = if type_name == "String" {
                     if is_inherent {
-                        let parser_ident = format_ident!("parse_{}", name.to_case(Case::Snake));
+                        let name_snake = name.with_boundaries(&[UpperLower]).to_case(Case::Snake);
+                        let parser_ident = format_ident!("parse_{}", name_snake);
                         quote! {
                             if let Some(value) = data.parse_string(#name) {
                                 match Self::#parser_ident(&value) {
@@ -263,7 +264,10 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                         }
                     }
                 } else if let Some(type_generics) = parser::parse_option_type(&type_name) {
-                    let parser_ident = format_ident!("parse_{}", type_generics.to_lowercase());
+                    let type_generics_snake = type_generics
+                        .with_boundaries(&[UpperLower])
+                        .to_case(Case::Snake);
+                    let parser_ident = format_ident!("parse_{}", type_generics_snake);
                     quote! {
                         if let Some(result) = data.#parser_ident(#name) {
                             match result {
@@ -280,7 +284,10 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                         }
                     }
                 } else {
-                    let parser_ident = format_ident!("parse_{}", type_name.to_lowercase());
+                    let type_name_snake = type_name
+                        .with_boundaries(&[UpperLower])
+                        .to_case(Case::Snake);
+                    let parser_ident = format_ident!("parse_{}", type_name_snake);
                     quote! {
                         if let Some(result) = data.#parser_ident(#name) {
                             match result {

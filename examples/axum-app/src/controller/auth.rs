@@ -9,7 +9,7 @@ pub async fn login(mut req: Request) -> Result {
 
     let user_updates = json!({
         "status": "Active",
-        "last_login_at": data.remove("current_login_at").and_then(|v| v.as_datetime()),
+        "last_login_at": data.remove("current_login_at").and_then(|v| v.as_date_time()),
         "last_login_ip": data.remove("current_login_ip"),
         "current_login_at": current_time,
         "current_login_ip": req.client_ip(),

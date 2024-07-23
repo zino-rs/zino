@@ -1517,7 +1517,13 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
             let mut map = Map::decode_row(&row)?;
             Self::after_decode(&mut map).await?;
-            Self::try_from_map(map).map_err(Error::from)
+            Self::try_from_map(map).map_err(|err| {
+                warn!(
+                    "fail to decode the value as a model `{}`: {}",
+                    Self::MODEL_NAME,
+                    err
+                )
+            })
         } else {
             ctx.set_query_result(0, true);
             Self::after_scan(&ctx).await?;

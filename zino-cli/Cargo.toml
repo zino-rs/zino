@@ -18,11 +18,14 @@ name = "zli"
 path = "src/main.rs"
 
 [dependencies]
-log = "0.4.22"
 git2 = "0.19.0"
-walkdir = "2.5.0"
+log = "0.4.22"
 include_dir = "0.7.4"
-axum = { version = "0.7.5", default-features = false }
+walkdir = "2.5.0"
+
+[dependencies.axum]
+version = "0.7.5"
+default-features = false
 
 [dependencies.clap]
 version = "4.5.9"
