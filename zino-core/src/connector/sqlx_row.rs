@@ -1,5 +1,5 @@
 use serde::ser::{self, Serialize, SerializeMap, Serializer};
-use sqlx::{database::HasValueRef, Column, ColumnIndex, Database, Decode, Row, TypeInfo, ValueRef};
+use sqlx::{Column, ColumnIndex, Database, Decode, Row, TypeInfo, ValueRef};
 use std::borrow::Cow;
 
 /// A generic struct for the row.
@@ -41,7 +41,7 @@ where
 fn map_serialize<'r, M: SerializeMap, DB: Database, T: Decode<'r, DB> + Serialize>(
     map: &mut M,
     key: &str,
-    raw_value: <DB as HasValueRef<'r>>::ValueRef,
+    raw_value: <DB as Database>::ValueRef<'r>,
 ) -> Result<(), M::Error> {
     let value = T::decode(raw_value).map_err(ser::Error::custom)?;
     map.serialize_entry(key, &value)

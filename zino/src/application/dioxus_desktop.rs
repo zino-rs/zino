@@ -4,7 +4,7 @@ use dioxus_desktop::{
     Config, WindowBuilder,
 };
 use dioxus_router::{components::Router, routable::Routable};
-use image::{error::ImageError, io::Reader};
+use image::{error::ImageError, ImageReader};
 use std::{fmt::Display, fs, marker::PhantomData, str::FromStr, time::Duration};
 use tokio::runtime::Builder;
 use zino_core::{
@@ -135,7 +135,7 @@ where
             custom_heads.push(r#"<meta charset="UTF-8">"#.to_owned());
             if let Some(icon) = config.get_str("icon") {
                 let icon_file = project_dir.join(icon);
-                match Reader::open(&icon_file)
+                match ImageReader::open(&icon_file)
                     .map_err(ImageError::IoError)
                     .and_then(|reader| reader.decode())
                 {

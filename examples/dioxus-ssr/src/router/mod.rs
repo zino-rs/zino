@@ -10,9 +10,9 @@ pub enum Route {
     #[layout(Wrapper)]
         #[route("/")]
         Overview {},
-        #[route("/#stargazers")]
+        #[route("/stargazers")]
         StargazerList {},
-        #[route("/#dependencies")]
+        #[route("/dependencies")]
         DependencyList {},
     #[end_layout]
     #[route("/:..segments")]
