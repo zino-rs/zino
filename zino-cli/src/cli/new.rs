@@ -37,7 +37,7 @@ impl New {
         }
     }
 
-    /// Needs documentation.
+    /// Checks if the project directory already exists and if it's empty.
     fn check_project_dir_status(&self) -> Result<bool, Error> {
         let path = Path::new(self.project_name.as_str());
         let project_dir_already_exists = path.exists() && path.is_dir();
@@ -50,7 +50,7 @@ impl New {
         Ok(project_dir_already_exists)
     }
 
-    /// Needs documentation.
+    /// Creates a new project with the template.
     fn new_with_template(&self) -> Result<(), Error> {
         let template_url = match self.template {
             Some(ref template) => template.as_ref(),

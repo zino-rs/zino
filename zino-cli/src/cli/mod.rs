@@ -11,6 +11,8 @@ use zino_core::error::Error;
 mod init;
 mod new;
 
+mod serve;
+
 /// CLI tool for developing Zino applications.
 #[derive(Parser)]
 #[clap(name = "zino", version)]
@@ -41,15 +43,17 @@ pub enum Subcommands {
     Init(init::Init),
     /// Create a new project.
     New(new::New),
+    /// Start the server.
+    Serve(serve::Serve),
 }
 
-/// Needs documentation.
+/// Default path for temporary template.
 pub(crate) static TEMPORARY_TEMPLATE_PATH: &str = "./temporary_zino_template";
-/// Needs documentation.
+/// Default template URL.
 pub(crate) static DEFAULT_TEMPLATE_URL: &str =
     "https://github.com/zino-rs/zino-template-default.git";
 
-/// Needs documentation.
+/// Clone the template repository, do replacements, and create the project.
 pub(crate) fn process_template(
     template_url: &str,
     target_path_prefix: &str,
@@ -90,7 +94,7 @@ fn is_ignored(entry: &DirEntry) -> bool {
     })
 }
 
-/// Needs documentation.
+/// Clean the temporary template directory.
 fn clean_template_dir(path: &str) {
     if let Err(err) = remove_dir_all(path) {
         log::error!("fail to remove the temporary template directory: {}", err)
