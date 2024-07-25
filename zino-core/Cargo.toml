@@ -166,7 +166,7 @@ orm-sqlx = ["orm", "sqlx", "sqlx/sqlite"]
 orm-tidb = ["orm-sqlx", "sqlx/mysql"]
 runtime-async-std = ["sqlx?/runtime-async-std"]
 runtime-tokio = ["sqlx?/runtime-tokio"]
-sentry = ["dep:sentry", "dep:sentry-tracing"]
+sentry = ["dep:sentry", "dep:sentry-tracing", "tracing-subscriber"]
 tls-native = [
     "reqwest/native-tls",
     "sentry?/native-tls",
@@ -178,6 +178,7 @@ tls-rustls = [
     "sqlx?/tls-rustls",
 ]
 tracing-log = ["dep:tracing-log", "tracing-subscriber/tracing-log"]
+tracing-subscriber = ["dep:tracing-appender", "dep:tracing-subscriber"]
 validator = []
 validator-credit-card = ["validator", "dep:card-validate"]
 validator-email = ["validator"]
@@ -204,7 +205,6 @@ hkdf = "0.12.4"
 hmac = "0.12.1"
 http = "1.1.0"
 md-5 = "0.10.6"
-mime = "0.3.17"
 mime_guess = "2.0.5"
 multer = "3.1.0"
 once_cell = "1.19.0"
@@ -394,6 +394,7 @@ features = ["parse"]
 
 [dependencies.tracing-appender]
 version = "0.2.3"
+optional = true
 features = ["parking_lot"]
 
 [dependencies.tracing-log]
@@ -402,6 +403,7 @@ optional = true
 
 [dependencies.tracing-subscriber]
 version = "0.3.18"
+optional = true
 default-features = false
 features = [
     "ansi",

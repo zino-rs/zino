@@ -231,7 +231,7 @@ impl Validation {
         let mut map = Map::new();
         for (key, err) in self.failed_entries {
             let message = err.message();
-            tracing::warn!("invalid value for `{key}` ({message})");
+            tracing::warn!("invalid value for `{key}`: {message}");
             map.upsert(key, message);
         }
         map
@@ -244,7 +244,7 @@ impl fmt::Display for Validation {
         let failed_entries = &self.failed_entries;
         let mut errors = Vec::with_capacity(failed_entries.len());
         for (key, err) in failed_entries {
-            let message = format!("invalid value for `{key}` ({})", err.message());
+            let message = format!("invalid value for `{key}`: {}", err.message());
             errors.push(message);
         }
         write!(f, "{}", errors.join(","))

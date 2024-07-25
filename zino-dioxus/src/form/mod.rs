@@ -4,7 +4,6 @@ use std::borrow::Cow;
 
 mod button;
 mod checkbox;
-mod clipboard;
 mod field;
 mod file;
 mod input;
@@ -13,9 +12,11 @@ mod radio;
 mod select;
 mod textarea;
 
-pub use button::{Button, ButtonProps};
+#[cfg(feature = "clipboard")]
+mod clipboard;
+
+pub use button::{Button, ButtonProps, Buttons, ButtonsProps};
 pub use checkbox::{Checkbox, CheckboxProps};
-pub use clipboard::{CopyToClipboard, CopyToClipboardProps};
 pub use field::{
     FormAddons, FormAddonsProps, FormField, FormFieldContainer, FormFieldContainerProps,
     FormFieldProps, FormGroup, FormGroupProps,
@@ -26,6 +27,9 @@ pub use progress::{Progress, ProgressProps};
 pub use radio::{Radio, RadioProps};
 pub use select::{DataSelect, DataSelectProps};
 pub use textarea::{Textarea, TextareaProps};
+
+#[cfg(feature = "clipboard")]
+pub use clipboard::{CopyToClipboard, CopyToClipboardProps};
 
 /// An interface for the data entries.
 pub trait DataEntry {

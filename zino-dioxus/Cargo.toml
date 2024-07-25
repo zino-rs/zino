@@ -12,6 +12,10 @@ repository = "https://github.com/zino-rs/zino"
 documentation = "https://docs.rs/zino-dioxus"
 readme = "README.md"
 
+[features]
+default = []
+clipboard = ["dep:dioxus-sdk", "dioxus-sdk/clipboard"]
+
 [dependencies]
 dioxus = "0.5.6"
 dioxus-core = "0.5.6"
@@ -31,10 +35,10 @@ features = ["font-awesome-solid"]
 
 [dependencies.dioxus-sdk]
 version = "0.5.0"
-features = ["clipboard", "storage"]
+optional = true
 
 [dependencies.tokio]
-version = "1.38.1"
+version = "1.39.1"
 features = ["time"]
 
 [dependencies.uuid]

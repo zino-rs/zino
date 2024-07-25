@@ -12,33 +12,34 @@ Core types and traits for [`zino`].
 
 The following optional features are available:
 
-| Name                | Description                                            | Default? |
-|---------------------|--------------------------------------------------------|----------|
-| `accessor`          | Enables the data access layer built with [`opendal`].  | No       |
-| `chatbot`           | Enables the chatbot services.                          | No       |
-| `connector`         | Enables the data source connectors.                    | No       |
-| `cookie`            | Enables the support for cookies.                       | No       |
-| `crypto-sm`         | Enables China's Standards of Encryption Algorithms.    | No       |
-| `dotenv`            | Enables the configuration loader for a `.env` file.    | No       |
-| `env-filter`        | Enables the `env-filter` for [`tracing-subscriber`].   | No       |
-| `flume`             | Enables the message channel via [`flume`].             | No       |
-| `i18n`              | Enables the support for internationalization.          | No       |
-| `jwt`               | Enables the support for JSON Web Token.                | No       |
-| `locale`            | Enables the support for locale related utilities.      | No       |
-| `metrics`           | Enables the [`metrics`] exporter.                      | No       |
-| `oidc`              | Enables the support for OIDC via [`rauthy`].           | No       |
-| `opa`               | Enables the support for OPA via [`regorus`].           | No       |
-| `openapi`           | Enables the support for OpenAPI docs via [`utoipa`].   | No       |
-| `orm`               | Enables the ORM for MySQL, PostgreSQL or **SQLite**.   | No       |
-| `runtime-async-std` | Enables the [`async-std`] runtime.                     | No       |
-| `runtime-tokio`     | Enables the [`tokio`] runtime.                         | No       |
-| `sentry`            | Enables the integration with [`sentry`].               | No       |
-| `sqids`             | Enables the support for [`sqids`].                     | No       |
-| `tls-native`        | Enables the [`native-tls`] TLS backend.                | No       |
-| `tls-rustls`        | Enables the [`rustls`] TLS backend.                    | No       |
-| `tracing-log`       | Enables the `tracing-log` for [`tracing-subscriber`].  | No       |
-| `validator`         | Enables the common validation rules.                   | No       |
-| `view`              | Enables the HTML template rendering.                   | No       |
+| Name                 | Description                                            | Default? |
+|----------------------|--------------------------------------------------------|----------|
+| `accessor`           | Enables the data access layer built with [`opendal`].  | No       |
+| `chatbot`            | Enables the chatbot services.                          | No       |
+| `connector`          | Enables the data source connectors.                    | No       |
+| `cookie`             | Enables the support for cookies.                       | No       |
+| `crypto-sm`          | Enables China's Standards of Encryption Algorithms.    | No       |
+| `dotenv`             | Enables the configuration loader for a `.env` file.    | No       |
+| `env-filter`         | Enables the `env-filter` for [`tracing-subscriber`].   | No       |
+| `flume`              | Enables the message channel via [`flume`].             | No       |
+| `i18n`               | Enables the support for internationalization.          | No       |
+| `jwt`                | Enables the support for JSON Web Token.                | No       |
+| `locale`             | Enables the support for locale related utilities.      | No       |
+| `metrics`            | Enables the [`metrics`] exporter.                      | No       |
+| `oidc`               | Enables the support for OIDC via [`rauthy`].           | No       |
+| `opa`                | Enables the support for OPA via [`regorus`].           | No       |
+| `openapi`            | Enables the support for OpenAPI docs via [`utoipa`].   | No       |
+| `orm`                | Enables the ORM for MySQL, PostgreSQL or **SQLite**.   | No       |
+| `runtime-async-std`  | Enables the [`async-std`] runtime.                     | No       |
+| `runtime-tokio`      | Enables the [`tokio`] runtime.                         | No       |
+| `sentry`             | Enables the integration with [`sentry`].               | No       |
+| `sqids`              | Enables the support for [`sqids`].                     | No       |
+| `tls-native`         | Enables the [`native-tls`] TLS backend.                | No       |
+| `tls-rustls`         | Enables the [`rustls`] TLS backend.                    | No       |
+| `tracing-log`        | Enables the `tracing-log` for [`tracing-subscriber`].  | No       |
+| `tracing-subscriber` | Enables the integration with [`tracing-subscriber`].   | No       |
+| `validator`          | Enables the common validation rules.                   | No       |
+| `view`               | Enables the HTML template rendering.                   | No       |
 
 [`zino`]: https://github.com/zino-rs/zino
 [`opendal`]: https://crates.io/crates/opendal

@@ -56,6 +56,7 @@ The following optional features are available:
 | `dioxus`     | Enables the integration with [`dioxus`].             | No       |
 | `i18n`       | Enables the support for internationalization.        | No       |
 | `jwt`        | Enables the support for JSON Web Token.              | No       |
+| `logger`     | Enables the default logger.                          | Yes      |
 | `ntex`       | Enables the integration with [`ntex`].               | No       |
 | `oidc`       | Enables the support for OIDC via [`rauthy`].         | No       |
 | `opa`        | Enables the support for OPA via [`regorus`].         | No       |

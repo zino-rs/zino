@@ -57,7 +57,6 @@ mod plugin;
 mod secret_key;
 mod server_tag;
 mod static_record;
-mod tracing_subscriber;
 
 #[cfg(feature = "metrics")]
 mod metrics_exporter;
@@ -67,6 +66,9 @@ mod rauthy_client;
 
 #[cfg(feature = "sentry")]
 mod sentry_client;
+
+#[cfg(feature = "tracing-subscriber")]
+mod tracing_subscriber;
 
 pub(crate) mod http_client;
 
@@ -96,8 +98,11 @@ pub trait Application {
         #[cfg(feature = "dotenv")]
         dotenvy::dotenv().ok();
 
-        // Application setups
+        // Tracing subscriber
+        #[cfg(feature = "tracing-subscriber")]
         tracing_subscriber::init::<Self>();
+
+        // Secret keys
         secret_key::init::<Self>();
 
         // Metrics exporter

@@ -129,7 +129,8 @@ where
         // Desktop configuration
         let mut desktop_config = Config::new()
             .with_window(app_window)
-            .with_disable_context_menu(in_prod_mode);
+            .with_disable_context_menu(in_prod_mode)
+            .with_menu(None);
         if let Some(config) = app_state.get_config("desktop") {
             let mut custom_heads = Vec::new();
             custom_heads.push(r#"<meta charset="UTF-8">"#.to_owned());
@@ -192,12 +193,6 @@ where
                         tracing::error!("fail to read the index html file `{index_file}`: {err}");
                     }
                 }
-            }
-            if let Some(disable) = config.get_bool("disable-context-menu") {
-                desktop_config = desktop_config.with_disable_context_menu(disable);
-            }
-            if config.get_bool("disable-default-menu") == Some(true) {
-                desktop_config = desktop_config.with_menu(None);
             }
             if let Some(name) = config.get_str("root-name") {
                 desktop_config = desktop_config.with_root_name(name);
