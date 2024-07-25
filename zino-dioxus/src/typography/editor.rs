@@ -1,9 +1,10 @@
 use dioxus::prelude::*;
-use zino_core::{json, SharedString};
+use zino_core::{json, JsonValue, SharedString};
 
 /// A ToastUI Editor.
 pub fn TuiEditor(props: TuiEditorProps) -> Element {
-    let eval_in = eval(
+    let mut markdown = use_signal(String::new);
+    let eval_editor = eval(
         r#"
         const { Editor } = toastui;
         const { codeSyntaxHighlight } = Editor.plugin;
@@ -11,45 +12,39 @@ pub fn TuiEditor(props: TuiEditorProps) -> Element {
         let options = await dioxus.recv();
         options.el = document.getElementById(options.id);
         options.plugins = [codeSyntaxHighlight];
-        const tuiEditor = new Editor({
-            ...options,
-            events:{
-                change: function(){
-                    document.getElementById("TuiEditorRecv").value = tuiEditor.getMarkdown();
-                }
-            }
-        });
+        options.events = {
+            change: function() {
+                document.getElementById("tui-editor-input").value = tuiEditor.getMarkdown();
+            },
+        };
+        const tuiEditor = new Editor(options);
         tuiEditor.show();
         "#,
     );
-    let mut markdown = use_signal(||String::new());
-    spawn(async move{
-        loop{
-            let mut e = eval(r#"
-              const text = document.getElementById("TuiEditorRecv").value;
-              dioxus.send(text);
-            "#);
-            match e.recv().await{
-                Ok(p) => {
-                    match p {
-                        Value::String(r) => {
-                            if markdown() != r.clone() {
-                                markdown.set(r);
-                            }
-                        }
-                        _=>{}
+    spawn(async move {
+        loop {
+            let mut eval = eval(
+                r#"
+                const value = document.getElementById("tui-editor-input").value;
+                dioxus.send(value);
+                "#,
+            );
+            if let Ok(JsonValue::String(s)) = eval.recv().await {
+                if markdown() != s {
+                    if let Some(handler) = props.on_change.as_ref() {
+                        handler.call(s.clone());
                     }
+                    markdown.set(s);
                 }
-                Err(_) => {}
             }
         }
     });
     rsx! {
+        input {
+            id: "tui-editor-input",
+            r#type: "hidden",
+        }
         div {
-            input{
-                id:"TuiEditorRecv",
-                style:"display:hidden",
-            }
             id: "{props.id}",
             onmounted: move |_event| {
                 let options = json!({
@@ -64,8 +59,8 @@ pub fn TuiEditor(props: TuiEditorProps) -> Element {
                     "referenceDefinition": true,
                     "usageStatistics": false,
                 });
-                eval_in.send(options).ok();
-            },
+                eval_editor.send(options).ok();
+            }
         }
     }
 }
@@ -97,4 +92,6 @@ pub struct TuiEditorProps {
     /// The i18n locale.
     #[props(into, default = "en-US".into())]
     pub locale: SharedString,
+    /// An event handler to be called when the input value is changed.
+    pub on_change: Option<EventHandler<String>>,
 }

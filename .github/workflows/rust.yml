@@ -16,10 +16,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Install 1.79
-      run: rustup install 1.79
+    - name: Install 1.80
+      run: rustup install 1.80
     - name: Set default toolchain
-      run: rustup default 1.79
+      run: rustup default 1.80
     - name: Build
       run: cargo build --features axum,full --verbose
     - name: Run tests
