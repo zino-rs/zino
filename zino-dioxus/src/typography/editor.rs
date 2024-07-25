@@ -3,16 +3,53 @@ use zino_core::{json, SharedString};
 
 /// A ToastUI Editor.
 pub fn TuiEditor(props: TuiEditorProps) -> Element {
-    let eval = eval(
+    let eval_in = eval(
         r#"
+        const { Editor } = toastui;
+        const { codeSyntaxHighlight } = Editor.plugin;
+
         let options = await dioxus.recv();
         options.el = document.getElementById(options.id);
-        options.plugins = [toastui.Editor.plugin.codeSyntaxHighlight];
-        const tuiEditor = new toastui.Editor(options);
+        options.plugins = [codeSyntaxHighlight];
+        const tuiEditor = new Editor({
+            ...options,
+            events:{
+                change: function(){
+                    document.getElementById("TuiEditorRecv").value = tuiEditor.getMarkdown();
+                }
+            }
+        });
+        tuiEditor.show();
         "#,
     );
+    let mut markdown = use_signal(||String::new());
+    spawn(async move{
+        loop{
+            let mut e = eval(r#"
+              const text = document.getElementById("TuiEditorRecv").value;
+              dioxus.send(text);
+            "#);
+            match e.recv().await{
+                Ok(p) => {
+                    match p {
+                        Value::String(r) => {
+                            if markdown() != r.clone() {
+                                markdown.set(r);
+                            }
+                        }
+                        _=>{}
+                    }
+                }
+                Err(_) => {}
+            }
+        }
+    });
     rsx! {
         div {
+            input{
+                id:"TuiEditorRecv",
+                style:"display:hidden",
+            }
             id: "{props.id}",
             onmounted: move |_event| {
                 let options = json!({
@@ -27,7 +64,7 @@ pub fn TuiEditor(props: TuiEditorProps) -> Element {
                     "referenceDefinition": true,
                     "usageStatistics": false,
                 });
-                eval.send(options).ok();
+                eval_in.send(options).ok();
             },
         }
     }
