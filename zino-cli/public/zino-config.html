@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <title>new-project</title>
     <style>
-        body {
+        body, html {
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
             display: flex;
             flex-direction: column;
             height: 100vh;
+            overflow: hidden;
         }
 
         .top-bar {
@@ -18,11 +19,18 @@
             color: white;
             padding: 20px;
             text-align: center;
+            height: 18%;
+        }
+
+        .top-bar h1 {
+            margin-top: 1%;
+            font-size: 32px;
         }
 
         .main-content {
             display: flex;
             flex: 1;
+            overflow: hidden;
         }
 
         input[type="text"] {
@@ -40,47 +48,107 @@
             outline: none;
         }
 
-        #cargoTomlTextArea {
+        .cargoTomlBlock {
+            display: flex;
+            flex-direction: column;
+            width: 30.9%;
+        }
+
+        .cargoTomlDescription {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 10%;
+            background-color: #f0f0f0;
+            color: #333;
+            font-size: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+
+        .textarea-container {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .textarea-container .lineNumber {
+            white-space: pre;
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            left: 0;
+            width: 20px;
+            height: 100%;
+            padding: 2px;
+            text-align: center;
+            color: #007bff;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            pointer-events: none;
+        }
+
+        .cargoTomlTextArea {
+            height: 100%;
+            width: 100%;
             font-family: Consolas, monospace;
-            width: 61.8%;
             white-space: pre;
             background-color: #f3f4f6;
             color: #333;
-            padding: 15px;
+            padding-left: 30px;
+            line-height: 1.5;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             border: none;
             border-radius: 8px;
             box-sizing: border-box;
             overflow-x: auto;
-            font-size: 18px;
+            overflow-y: scroll;
+            font-size: 14px;
         }
 
-        .project-config-form {
+        #config-form-block {
             display: flex;
             flex-direction: column;
             padding: 20px;
             width: 38.2%;
+            height: auto;
+            overflow-y: auto;
         }
 
-        .project-config-form form {
+        .config-form {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            border-top: #007bff 2px solid;
+        }
+
+        .config-form form {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
 
+        .config-form .form-description {
+            font-size: 32px;
+            color: #007bff;
+            margin-bottom: 20px;
+        }
 
-        .project-config-form button:hover {
+        .config-form button:hover {
             background-color: #0056b3;
         }
 
         .closet {
-            display: block;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .closet .option-title {
             font-size: 24px;
             color: black;
+            margin-bottom: 8px;
         }
 
         .option-group {
@@ -88,8 +156,9 @@
             color: #8d8f91;
             border-color: #0056b3;
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
-            margin-left: 25%;
+            margin-left: 15%;
         }
 
         .option-group div {
@@ -104,7 +173,7 @@
             border-bottom: 2px solid #007bff;
         }
 
-        #configForm #save-config {
+        #save-config {
             padding: 10px 15px;
             background-color: #007bff;
             color: white;
@@ -114,8 +183,9 @@
             cursor: pointer;
             width: 61.8%;
             margin-left: 19.1%;
-            margin-top: 20%;
         }
+
+
     </style>
 </head>
 <body>
@@ -124,33 +194,171 @@
     <input type="text" id="currentDir">
 </div>
 <div class="main-content">
-    <div class="project-config-form">
-        <form id="configForm">
-            <div class="closet">
-                <div class="option-title">Framework</div>
-                <div class="option-group">
-                    <div class="unchecked">Axum</div>
-                    <div class="unchecked">Actix</div>
-                </div>
-            </div>
-            <div class="closet">
-                <div class="option-title">Database</div>
-                <div class="option-group">
-                    <div class="unchecked">MySQL</div>
-                    <div class="unchecked">PostgreSQL</div>
-                </div>
-            </div>
-            <div class="closet">
-                <div class="option-title">Other Options</div>
-                <div class="option-group">
-                    <div class="unchecked">Option 1</div>
-                    <div class="unchecked">Option 2</div>
-                </div>
-            </div>
-            <button id="save-config">save config</button>
-        </form>
+    <div class="cargoTomlBlock">
+        <div id="currentCargoTomlDescription" class="cargoTomlDescription">current Cargo.toml:</div>
+        <div class="textarea-container">
+            <div class="lineNumber"></div>
+            <textarea id="currentCargoTomlTextArea" class="cargoTomlTextArea" readonly></textarea>
+        </div>
     </div>
-    <textarea id="cargoTomlTextArea" readonly></textarea>
+
+
+    <div id="config-form-block">
+        <div class="config-form" id="zino-config-form">
+            <div class="form-description">zino config</div>
+            <form class="config-details">
+                <div class="closet">
+                    <div class=" option-title">Framework</div>
+                    <div class="option-group exclusive">
+                        <div class="unchecked">Axum</div>
+                        <div class="unchecked">Actix</div>
+                        <div class="unchecked">dioxus</div>
+                        <div class="unchecked">Ntex</div>
+                    </div>
+                </div>
+
+                <div class="closet">
+                    <div class="option-title">Framework</div>
+                    <div class="option-group non-exclusive ">
+                        <div class="unchecked">i18n</div>
+                        <div class="unchecked">jwt</div>
+                        <div class="unchecked">oidc</div>
+                        <div class="unchecked">opa</div>
+                        <div class="unchecked">orm</div>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+
+
+        <div class="config-form" id="core-config-form">
+            <div class="form-description">Core config</div>
+            <form class="config-details">
+                <div class="closet">
+                    <div class="option-title">Database</div>
+
+                    <div class="option-group exclusive">
+                        <div class="unchecked">Sqlx</div>
+                        <div class="unchecked">MySQL</div>
+                        <div class="unchecked">PostgreSQL</div>
+                        <div class="unchecked">SQLite</div>
+                        <div class="unchecked">MariaDB</div>
+                        <div class="unchecked">TiDB</div>
+                    </div>
+                </div>
+
+
+<!--                <div class="closet">-->
+<!--                    <div class="option-title">Runtime</div>-->
+<!--                    <div class="option-group exclusive">-->
+<!--                        <div class="unchecked">Tokio</div>-->
+<!--                        <div class="unchecked">async-std</div>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+
+                <div class="closet">
+                    <div class="option-title">Accessor</div>
+
+                    <div class="option-group non-exclusive">
+                        <div class="unchecked">azblob</div>
+                        <div class="unchecked">azdls</div>
+                        <div class="unchecked">cacache</div>
+                        <div class="unchecked">cos</div>
+                        <div class="unchecked">dashmap</div>
+                        <div class="unchecked">dropbox</div>
+                        <div class="unchecked">fs</div>
+                        <div class="unchecked">gcs</div>
+                        <div class="unchecked">gdrive</div>
+                        <div class="unchecked">ghac</div>
+                        <div class="unchecked">http</div>
+                        <div class="unchecked">ipfs</div>
+                        <div class="unchecked">ipmfs</div>
+                        <div class="unchecked">memcached</div>
+                        <div class="unchecked">memory</div>
+                        <div class="unchecked">mini-moka</div>
+                        <div class="unchecked">moka</div>
+                        <div class="unchecked">mysql</div>
+                        <div class="unchecked">obs</div>
+                        <div class="unchecked">onedrive</div>
+                        <div class="unchecked">oss</div>
+                        <div class="unchecked">persy</div>
+                        <div class="unchecked">postgresql</div>
+                        <div class="unchecked">redb</div>
+                        <div class="unchecked">redis</div>
+                        <div class="unchecked">s3</div>
+                        <div class="unchecked">sled</div>
+                        <div class="unchecked">supabase</div>
+                        <div class="unchecked">webdav</div>
+                        <div class="unchecked">webhdfs</div>
+                        <div class="unchecked">all</div>
+                    </div>
+                </div>
+
+                <div class="closet">
+                    <div class="option-title">Connector</div>
+
+                    <div class="option-group non-exclusive">
+                        <div class="unchecked">default</div>
+                        <div class="unchecked">arrow</div>
+                        <div class="unchecked">http</div>
+                        <div class="unchecked">mysql</div>
+                        <div class="unchecked">postgres</div>
+                        <div class="unchecked">Sqlite</div>
+                        <div class="unchecked">all</div>
+                    </div>
+                </div>
+
+
+                <div class="closet">
+                    <div class="option-title">locale</div>
+
+                    <div class="option-group non-exclusive">
+                        <div class="unchecked">locale</div>
+                        <div class="unchecked">locale-en</div>
+                        <div class="unchecked">locale-es</div>
+                        <div class="unchecked">locale-de</div>
+                        <div class="unchecked">locale-fr</div>
+                        <div class="unchecked">locale-zh</div>
+                    </div>
+                </div>
+
+                <div class="closet">
+                    <div class="option-title">Others</div>
+
+                    <div class="option-group non-exclusive">
+                        <div class="unchecked">cookie</div>
+                        <div class="unchecked">crypto-sm</div>
+                        <div class="unchecked">dotenv</div>
+                        <div class="unchecked">env-filter</div>
+                        <div class="unchecked">flume</div>
+                        <div class="unchecked">metrics</div>
+                        <div class="unchecked">openapi</div>
+                        <div class="unchecked">sentry</div>
+                        <div class="unchecked">sqids</div>
+                        <div class="unchecked">tls-native</div>
+                        <div class="unchecked">tls-rustls</div>
+                        <div class="unchecked">validator</div>
+                        <div class="unchecked">tracing-log</div>
+                        <div class="unchecked">view</div>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+
+        <button id="save-config">save config</button>
+    </div>
+
+
+    <div class="cargoTomlBlock">
+        <div id="aimCargoTomlDescription" class="cargoTomlDescription">your Cargo.toml will update to:</div>
+        <div class="textarea-container">
+            <div class="lineNumber"></div>
+            <textarea id="aimCargoTomlTextArea" class="cargoTomlTextArea"></textarea>
+        </div>
+    </div>
 </div>
 </body>
 <script>
@@ -197,14 +405,15 @@
                 throw new Error(await response.text());
             }
             const content = await response.text();
-            document.getElementById('cargoTomlTextArea').value = content;
+            document.getElementById('currentCargoTomlTextArea').value = content;
 
             const packageNameLine = content.split('\n').find(line => line.startsWith('name ='));
-            const projectName = packageNameLine ? packageNameLine.split('=')[1].trim().replace(/"/g, '') : 'new-project';
+            const projectName = packageNameLine ? packageNameLine.split('=')[1].trim().replace(/"/g, '') : 'Not Found';
             document.getElementById("project_name").textContent = `current project: ${projectName}`;
+            updateLineNumbers(document.getElementById('currentCargoTomlTextArea'));
         } catch (error) {
             console.error('Failed to fetch Cargo.toml:', error);
-            document.getElementById('cargoTomlTextArea').value = 'Failed to fetch Cargo.toml, make sure you entered a valid project directory';
+            document.getElementById('currentCargoTomlDescription').value = 'Failed to fetch Cargo.toml, make sure you entered a valid project directory';
         }
     }
 
@@ -222,14 +431,50 @@
         });
     }
 
-    // make the options clickable
-    document.querySelectorAll('.option-group div').forEach(option => {
-        option.addEventListener('click', function () {
-            const parentOptions = this.closest('.option-group');
-            parentOptions.querySelectorAll('.checked').forEach(checkedOption => {
-                checkedOption.classList.replace('checked', 'unchecked');
-            });
-            this.classList.replace('unchecked', 'checked');
+    document.querySelectorAll('.option-group').forEach(group => {
+        group.addEventListener('click', function (event) {
+            // Ensure the clicked element is one of the options
+            if (event.target.closest('div')) {
+                const option = event.target;
+                const isExclusive = this.classList.contains('exclusive');
+
+                if (isExclusive) {
+                    // For exclusive groups, only one option can be 'checked'
+                    this.querySelectorAll('.checked').forEach(checkedOption => {
+                        checkedOption.classList.replace('checked', 'unchecked');
+                    });
+                    option.classList.replace('unchecked', 'checked');
+                } else {
+                    // For inclusive groups, toggle the clicked option
+                    option.classList.toggle('checked');
+                    option.classList.toggle('unchecked');
+                }
+            }
+        });
+    });
+
+    const textAreas = document.getElementsByClassName('cargoTomlTextArea');
+
+    function updateLineNumbers(textArea) {
+        const lineCount = textArea.value.split('\n').length;
+        let lineNumberHtml = '';
+        for (let i = 1; i <= lineCount; i++) {
+            lineNumberHtml += `${i}\n`;
+        }
+
+        const lineNumberElement = textArea.previousElementSibling;
+        lineNumberElement.textContent = lineNumberHtml;
+    }
+
+    Array.from(textAreas).forEach(textArea => {
+        textArea.addEventListener('blur', function () {
+            updateLineNumbers(this);
+        });
+        textArea.addEventListener('input', function () {
+            updateLineNumbers(this);
+        });
+        textArea.addEventListener('scroll', function () {
+            this.previousElementSibling.style.marginTop = `-${this.scrollTop}px`;
         });
     });
 

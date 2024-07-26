@@ -21,7 +21,7 @@ static RESOURCE: Dir = include_dir::include_dir!("zino-cli/public");
 impl Serve {
     /// Runs the `serve` subcommand.
     pub fn run(self) -> Result<(), Error> {
-        println!("Starting the server...");
+        log::info!("Starting server at: 127.0.0.1:6080/zino-config.html");
 
         env::set_var("CARGO_PKG_NAME", env!("CARGO_PKG_NAME"));
         env::set_var("CARGO_PKG_VERSION", env!("CARGO_PKG_VERSION"));
@@ -33,7 +33,6 @@ impl Serve {
                 .route("/update_current_dir/:path", post(update_current_dir))
                 .route("/get_current_cargo_toml", get(get_current_cargo_toml))])
             .run();
-
         Ok(())
     }
 }
@@ -50,6 +49,7 @@ async fn get_current_cargo_toml() -> impl IntoResponse {
                 .into_response()
         })
 }
+
 
 /// Returns Html page.
 async fn get_page(Path(file_name): Path<String>) -> impl IntoResponse {
@@ -96,6 +96,7 @@ async fn get_current_dir() -> impl IntoResponse {
                 .into_response()
         })
 }
+
 
 /// Updates current directory.
 async fn update_current_dir(Path(path): Path<String>) -> impl IntoResponse {
