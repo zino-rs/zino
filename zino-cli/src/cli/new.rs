@@ -20,8 +20,9 @@ impl New {
     /// Runs the `new` subcommand.
     pub fn run(self) -> Result<(), Error> {
         let project_dir_already_exists = self.check_project_dir_status()?;
+        let new_res = self.new_with_template();
         clean_template_dir(TEMPORARY_TEMPLATE_PATH);
-        match self.new_with_template() {
+        match new_res {
             Ok(_) => {
                 log::info!("project `{}` created successfully", self.project_name);
                 Ok(())

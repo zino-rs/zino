@@ -49,6 +49,8 @@ impl Init {
             Some(ref template) => template.as_ref(),
             None => DEFAULT_TEMPLATE_URL,
         };
-        process_template(template_url, "", project_name)
+        let res = process_template(template_url, "", project_name);
+        clean_template_dir(TEMPORARY_TEMPLATE_PATH);
+        res
     }
 }
