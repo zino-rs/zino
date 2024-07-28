@@ -23,8 +23,9 @@ impl Init {
         if Path::new("./Cargo.toml").is_file() {
             return Err(Error::new("current directory is already a Rust project"));
         }
+        let init_res = self.init_with_template();
         clean_template_dir(TEMPORARY_TEMPLATE_PATH);
-        match self.init_with_template() {
+        match init_res {
             Ok(_) => {
                 log::info!("project initialized successfully");
                 Ok(())
