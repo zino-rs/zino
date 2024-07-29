@@ -134,8 +134,10 @@ where
         if let Some(config) = app_state.get_config("desktop") {
             let mut custom_heads = Vec::new();
             custom_heads.push(r#"<meta charset="UTF-8">"#.to_owned());
-            if let Some(icon) = config.get_str("icon") {
-                let icon_file = project_dir.join(icon);
+
+            let icon = config.get_str("icon").unwrap_or("public/favicon.ico");
+            let icon_file = project_dir.join(icon);
+            if icon_file.exists() {
                 match ImageReader::open(&icon_file)
                     .map_err(ImageError::IoError)
                     .and_then(|reader| reader.decode())

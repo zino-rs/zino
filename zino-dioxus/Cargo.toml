@@ -14,7 +14,7 @@ readme = "README.md"
 
 [features]
 default = []
-clipboard = ["dep:dioxus-sdk", "dioxus-sdk/clipboard"]
+clipboard = ["dioxus-sdk/clipboard"]
 
 [dependencies]
 dioxus = "0.5.6"
@@ -38,7 +38,7 @@ version = "0.5.0"
 optional = true
 
 [dependencies.tokio]
-version = "1.39.1"
+version = "1.39.2"
 features = ["time"]
 
 [dependencies.uuid]

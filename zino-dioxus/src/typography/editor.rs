@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use std::time::Duration;
 use zino_core::{json, JsonValue, SharedString};
 
 /// A ToastUI Editor.
@@ -37,6 +38,8 @@ pub fn TuiEditor(props: TuiEditorProps) -> Element {
                     markdown.set(s);
                 }
             }
+            // Sleep for 100 milliseconds to avoid blocking the thread.
+            tokio::time::sleep(Duration::from_millis(100)).await;
         }
     });
     rsx! {
@@ -51,7 +54,7 @@ pub fn TuiEditor(props: TuiEditorProps) -> Element {
                     "id": props.id,
                     "height": props.height,
                     "minHeight": props.min_height,
-                    "initialValue": props.content,
+                    "initialValue": props.initial_value,
                     "initialEditType": props.edit_type,
                     "previewStyle": props.preview_style,
                     "language": props.locale,
@@ -71,15 +74,15 @@ pub struct TuiEditorProps {
     /// The editor ID.
     #[props(into, default = "editor".into())]
     pub id: SharedString,
-    /// The initial value of Markdown string.
-    #[props(into)]
-    pub content: SharedString,
     /// The height of the container.
     #[props(into, default = "auto".into())]
     pub height: SharedString,
     /// The min-height of the container.
     #[props(into, default = "300px".into())]
     pub min_height: SharedString,
+    /// The initial value of Markdown string.
+    #[props(into)]
+    pub initial_value: SharedString,
     /// The initial type to show: `markdown` | `wysiwyg`.
     #[props(into, default = "markdown".into())]
     pub edit_type: SharedString,

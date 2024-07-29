@@ -1,7 +1,7 @@
 [package]
 name = "zino-cli"
 description = "CLI tools for zino."
-version = "0.3.3"
+version = "0.4.0"
 rust-version = "1.75"
 edition = "2021"
 license = "MIT"
@@ -28,7 +28,7 @@ version = "0.7.5"
 default-features = false
 
 [dependencies.clap]
-version = "4.5.10"
+version = "4.5.11"
 features = ["color", "derive"]
 
 [dependencies.zino]
