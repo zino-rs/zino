@@ -7,6 +7,8 @@ use axum::{
 use clap::Parser;
 use include_dir::Dir;
 use std::{env, fs};
+use toml_edit::Array;
+use toml_edit::DocumentMut as Document;
 use zino::prelude::*;
 use zino_core::error::Error;
 
@@ -31,7 +33,8 @@ impl Serve {
                 .route("/:file_name", get(get_page))
                 .route("/current_dir", get(get_current_dir))
                 .route("/update_current_dir/:path", post(update_current_dir))
-                .route("/get_current_cargo_toml", get(get_current_cargo_toml))])
+                .route("/get_current_cargo_toml", get(get_current_cargo_toml))
+                .route("/generate_cargo_toml", post(generate_cargo_toml))])
             .run();
         Ok(())
     }
@@ -50,10 +53,9 @@ async fn get_current_cargo_toml() -> impl IntoResponse {
         })
 }
 
-
 /// Returns Html page.
 async fn get_page(Path(file_name): Path<String>) -> impl IntoResponse {
-    match RESOURCE.get_file(file_name) {
+    match RESOURCE.get_file(&file_name) {
         Some(file) => {
             let content = file.contents_utf8().unwrap_or_default();
             Html(content).into_response()
@@ -97,7 +99,6 @@ async fn get_current_dir() -> impl IntoResponse {
         })
 }
 
-
 /// Updates current directory.
 async fn update_current_dir(Path(path): Path<String>) -> impl IntoResponse {
     env::set_current_dir(&path)
@@ -112,4 +113,99 @@ async fn update_current_dir(Path(path): Path<String>) -> impl IntoResponse {
             )
                 .into_response()
         })
+}
+
+
+/// Generates dependencies in `Cargo.toml` file.
+async fn generate_cargo_toml(mut req: zino::Request) -> zino::Result {
+    let mut res = zino::Response::default().context(&req);
+    let body = req.parse_body::<Map>().await?;
+
+    let current_cargo_toml_content = fs::read_to_string("./Cargo.toml");
+    if let Err(err) = current_cargo_toml_content {
+        res.set_code(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+        res.set_data(&err.to_string());
+        return Ok(res.into());
+    }
+
+    let current_cargo_toml = current_cargo_toml_content.unwrap().parse::<Document>();
+    if let Err(err) = current_cargo_toml {
+        res.set_code(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+        res.set_data(&err.to_string());
+        return Ok(res.into());
+    }
+    let mut cargo_toml = current_cargo_toml.unwrap();
+
+    if cargo_toml.get("dependencies").is_none() {
+        cargo_toml["dependencies"] = toml_edit::table();
+    }
+
+    if let Some(dependencies) = cargo_toml.get_mut("dependencies") {
+        let mut zino_table = toml_edit::table();
+        zino_table["version"] = toml_edit::value("0.23.3");
+        zino_table["features"] = toml_edit::value(Array::new());
+
+        zino_table["features"] = toml_edit::value(Array::new());
+        zino_table["features"].as_array_mut().unwrap().push(
+            body["Framework"][0]
+                .to_string()
+                .to_lowercase()
+                .trim_matches('"'),
+        );
+        for feature in body["zino-features"].as_array().unwrap() {
+            zino_table["features"]
+                .as_array_mut()
+                .unwrap()
+                .push(feature.to_string().trim_matches('"'));
+        }
+
+        dependencies["zino"] = zino_table;
+
+        let mut zino_core_table = toml_edit::table();
+        zino_core_table["version"] = toml_edit::value("0.24.3");
+        zino_core_table["features"] = toml_edit::value(Array::new());
+        zino_core_table["features"]
+            .as_array_mut()
+            .unwrap()
+            .push(body["Database"][0].to_string().trim_matches('"'));
+        for accessor_feature in body["Accessor"].as_array().unwrap() {
+            zino_core_table["features"]
+                .as_array_mut()
+                .unwrap()
+                .push(accessor_feature.to_string().trim_matches('"'));
+        }
+        for core_feature in body["Connector"].as_array().unwrap() {
+            zino_core_table["features"]
+                .as_array_mut()
+                .unwrap()
+                .push(core_feature.to_string().trim_matches('"'));
+        }
+        for core_feature in body["locale"].as_array().unwrap() {
+            zino_core_table["features"]
+                .as_array_mut()
+                .unwrap()
+                .push(core_feature.to_string().trim_matches('"'));
+        }
+        for core_feature in body["core-features"].as_array().unwrap() {
+            zino_core_table["features"]
+                .as_array_mut()
+                .unwrap()
+                .push(core_feature.to_string().trim_matches('"'));
+        }
+
+        dependencies["zino-core"] = zino_core_table;
+    }
+
+    let options = taplo::formatter::Options {
+        compact_arrays: false,
+        compact_inline_tables: false,
+        column_width: 50,
+        ..Default::default()
+    };
+
+    let formatted_toml = taplo::formatter::format(&cargo_toml.to_string(), options);
+
+    res.set_content_type("application/json");
+    res.set_data(&formatted_toml);
+    Ok(res.into())
 }
