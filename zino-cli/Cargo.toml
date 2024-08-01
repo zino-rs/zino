@@ -26,7 +26,6 @@ taplo = "0.13.0"
 walkdir = "2.5.0"
 
 
-
 [dependencies.axum]
 version = "0.7.5"
 default-features = false
@@ -34,6 +33,10 @@ default-features = false
 [dependencies.clap]
 version = "4.5.9"
 features = ["color", "derive"]
+
+[dependencies.serde]
+version = "1.0.204"
+features = ["derive"]
 
 [dependencies.zino-core]
 path = "../zino-core"
