@@ -11,7 +11,7 @@ homepage = "https://github.com/zino-rs/zino"
 repository = "https://github.com/zino-rs/zino"
 documentation = "https://docs.rs/zino-cli"
 readme = "README.md"
-include = ["public/**/*"]
+include = ["public/**/*", "src/**/*", "Cargo.toml"]
 
 [[bin]]
 name = "zli"

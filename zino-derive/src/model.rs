@@ -320,8 +320,6 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
         }
     };
     quote! {
-        use zino_core::validation::Validation;
-
         impl zino_core::model::Model for #name {
             const MODEL_NAME: &'static str = #model_name_snake;
             const ITEM_NAME: (&'static str, &'static str) = (#item_name, #item_name_plural);
@@ -332,8 +330,10 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             }
 
             #[must_use]
-            fn read_map(&mut self, data: &Map) -> Validation {
-                let mut validation = Validation::new();
+            fn read_map(&mut self, data: &zino_core::Map) -> zino_core::validation::Validation {
+                use zino_core::extension::JsonObjectExt;
+
+                let mut validation = zino_core::validation::Validation::new();
                 if data.is_empty() {
                     validation.record("data", "should be nonempty");
                 } else {

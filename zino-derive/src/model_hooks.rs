@@ -8,9 +8,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let name = input.ident;
 
     quote! {
-        use zino_core::model::ModelHooks;
-
-        impl ModelHooks for #name {
+        impl zino_core::model::ModelHooks for #name {
             type Data = ();
             type Extension = ();
         }
