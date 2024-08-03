@@ -746,12 +746,12 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     quote! {
         use zino_core::{
             model::{Mutation, Query},
-            orm::{ModelAccessor, ModelHelper as _},
+            orm::ModelHelper as _,
             validation::Validation as ZinoValidation,
             Map as ZinoMap,
         };
 
-        impl ModelAccessor<#model_primary_key_type> for #name {
+        impl zino_core::orm::ModelAccessor<#model_primary_key_type> for #name {
             #[inline]
             fn id(&self) -> &#model_primary_key_type {
                 &self.#model_primary_key
@@ -759,8 +759,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
 
             #(#column_methods)*
 
-            fn snapshot(&self) -> Map {
-                let mut snapshot = Map::new();
+            fn snapshot(&self) -> ZinoMap {
+                let mut snapshot = ZinoMap::new();
                 snapshot.upsert(Self::PRIMARY_KEY_NAME, self.primary_key_value());
                 #(#snapshot_entries)*
                 snapshot
@@ -829,7 +829,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 #(#fetched_one_queries)*
             }
 
-            async fn random_associations() -> Result<ZinoMap, Error> {
+            async fn random_associations() -> Result<ZinoMap, ZinoError> {
                 let mut associations = ZinoMap::new();
                 #(#sample_queries)*
                 Ok(associations)

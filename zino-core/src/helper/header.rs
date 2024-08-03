@@ -1,4 +1,7 @@
-use mime::{Mime, APPLICATION, AUDIO, IMAGE, JAVASCRIPT, JSON, PDF, TEXT, VIDEO};
+use mime_guess::{
+    mime::{APPLICATION, AUDIO, IMAGE, JAVASCRIPT, JSON, PDF, TEXT, VIDEO},
+    Mime,
+};
 
 /// Returns `ture` if the content can be displayed inline in the browser.
 pub(crate) fn displayed_inline(content_type: &Mime) -> bool {

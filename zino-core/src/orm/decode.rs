@@ -1,7 +1,7 @@
 use super::{DatabaseDriver, DatabaseRow};
 use crate::{error::Error, BoxError, Decimal, Uuid};
 use chrono::{DateTime, Local, NaiveDate, NaiveTime};
-use sqlx::{database::HasValueRef, Database, Decode, Row, Type};
+use sqlx::{Database, Decode, Row, Type};
 
 impl<DB> Type<DB> for crate::datetime::Date
 where
@@ -42,7 +42,7 @@ where
     NaiveDate: Decode<'r, DB>,
 {
     #[inline]
-    fn decode(value: <DB as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxError> {
+    fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, BoxError> {
         <NaiveDate as Decode<'r, DB>>::decode(value).map(|dt| dt.into())
     }
 }
@@ -53,7 +53,7 @@ where
     NaiveTime: Decode<'r, DB>,
 {
     #[inline]
-    fn decode(value: <DB as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxError> {
+    fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, BoxError> {
         <NaiveTime as Decode<'r, DB>>::decode(value).map(|dt| dt.into())
     }
 }
@@ -64,7 +64,7 @@ where
     DateTime<Local>: Decode<'r, DB>,
 {
     #[inline]
-    fn decode(value: <DB as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxError> {
+    fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, BoxError> {
         <DateTime<Local> as Decode<'r, DB>>::decode(value).map(|dt| dt.into())
     }
 }
@@ -167,7 +167,7 @@ where
 #[inline]
 pub(super) fn decode_raw<'r, T>(
     field: &str,
-    value: <DatabaseDriver as HasValueRef<'r>>::ValueRef,
+    value: <DatabaseDriver as Database>::ValueRef<'r>,
 ) -> Result<T, sqlx::Error>
 where
     T: Decode<'r, DatabaseDriver>,

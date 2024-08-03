@@ -3,6 +3,7 @@ use crate::{
     extension::JsonObjectExt,
     helper, Decimal, JsonValue, Map, Uuid,
 };
+use chrono::NaiveDateTime;
 use csv::{ByteRecord, Writer};
 use serde::de::DeserializeOwned;
 use std::{
@@ -76,7 +77,11 @@ pub trait JsonValueExt {
 
     /// If the `Value` is a String, represent it as `DateTime` if possible.
     /// Returns `None` otherwise.
-    fn as_datetime(&self) -> Option<DateTime>;
+    fn as_date_time(&self) -> Option<DateTime>;
+
+    /// If the `Value` is a String, represent it as `NaiveDateTime` if possible.
+    /// Returns `None` otherwise.
+    fn as_naive_date_time(&self) -> Option<NaiveDateTime>;
 
     /// If the `Value` is a String, represent it as `Duration` if possible.
     /// Returns `None` otherwise.
@@ -147,7 +152,10 @@ pub trait JsonValueExt {
     fn parse_time(&self) -> Option<Result<Time, chrono::format::ParseError>>;
 
     /// Parses the JSON value as `DateTime`.
-    fn parse_datetime(&self) -> Option<Result<DateTime, chrono::format::ParseError>>;
+    fn parse_date_time(&self) -> Option<Result<DateTime, chrono::format::ParseError>>;
+
+    /// Parses the JSON value as `NaiveDateTime`.
+    fn parse_naive_date_time(&self) -> Option<Result<NaiveDateTime, chrono::format::ParseError>>;
 
     /// Parses the JSON value as `Duration`.
     fn parse_duration(&self) -> Option<Result<Duration, datetime::ParseDurationError>>;
@@ -263,7 +271,12 @@ impl JsonValueExt for JsonValue {
     }
 
     #[inline]
-    fn as_datetime(&self) -> Option<DateTime> {
+    fn as_date_time(&self) -> Option<DateTime> {
+        self.as_str().and_then(|s| s.parse().ok())
+    }
+
+    #[inline]
+    fn as_naive_date_time(&self) -> Option<NaiveDateTime> {
         self.as_str().and_then(|s| s.parse().ok())
     }
 
@@ -421,7 +434,12 @@ impl JsonValueExt for JsonValue {
     }
 
     #[inline]
-    fn parse_datetime(&self) -> Option<Result<DateTime, chrono::format::ParseError>> {
+    fn parse_date_time(&self) -> Option<Result<DateTime, chrono::format::ParseError>> {
+        self.as_str().map(|s| s.parse())
+    }
+
+    #[inline]
+    fn parse_naive_date_time(&self) -> Option<Result<NaiveDateTime, chrono::format::ParseError>> {
         self.as_str().map(|s| s.parse())
     }
 

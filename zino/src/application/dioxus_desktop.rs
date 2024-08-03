@@ -4,7 +4,7 @@ use dioxus_desktop::{
     Config, WindowBuilder,
 };
 use dioxus_router::{components::Router, routable::Routable};
-use image::{error::ImageError, io::Reader};
+use image::{error::ImageError, ImageReader};
 use std::{fmt::Display, fs, marker::PhantomData, str::FromStr, time::Duration};
 use tokio::runtime::Builder;
 use zino_core::{
@@ -129,13 +129,16 @@ where
         // Desktop configuration
         let mut desktop_config = Config::new()
             .with_window(app_window)
-            .with_disable_context_menu(in_prod_mode);
+            .with_disable_context_menu(in_prod_mode)
+            .with_menu(None);
         if let Some(config) = app_state.get_config("desktop") {
             let mut custom_heads = Vec::new();
             custom_heads.push(r#"<meta charset="UTF-8">"#.to_owned());
-            if let Some(icon) = config.get_str("icon") {
-                let icon_file = project_dir.join(icon);
-                match Reader::open(&icon_file)
+
+            let icon = config.get_str("icon").unwrap_or("public/favicon.ico");
+            let icon_file = project_dir.join(icon);
+            if icon_file.exists() {
+                match ImageReader::open(&icon_file)
                     .map_err(ImageError::IoError)
                     .and_then(|reader| reader.decode())
                 {
@@ -192,12 +195,6 @@ where
                         tracing::error!("fail to read the index html file `{index_file}`: {err}");
                     }
                 }
-            }
-            if let Some(disable) = config.get_bool("disable-context-menu") {
-                desktop_config = desktop_config.with_disable_context_menu(disable);
-            }
-            if config.get_bool("disable-default-menu") == Some(true) {
-                desktop_config = desktop_config.with_menu(None);
             }
             if let Some(name) = config.get_str("root-name") {
                 desktop_config = desktop_config.with_root_name(name);

@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.24.3"
+version = "0.25.0"
 rust-version = "1.75"
 edition = "2021"
 license = "MIT"
@@ -166,7 +166,7 @@ orm-sqlx = ["orm", "sqlx", "sqlx/sqlite"]
 orm-tidb = ["orm-sqlx", "sqlx/mysql"]
 runtime-async-std = ["sqlx?/runtime-async-std"]
 runtime-tokio = ["sqlx?/runtime-tokio"]
-sentry = ["dep:sentry", "dep:sentry-tracing"]
+sentry = ["dep:sentry", "dep:sentry-tracing", "tracing-subscriber"]
 tls-native = [
     "reqwest/native-tls",
     "sentry?/native-tls",
@@ -178,6 +178,7 @@ tls-rustls = [
     "sqlx?/tls-rustls",
 ]
 tracing-log = ["dep:tracing-log", "tracing-subscriber/tracing-log"]
+tracing-subscriber = ["dep:tracing-appender", "dep:tracing-subscriber"]
 validator = []
 validator-credit-card = ["validator", "dep:card-validate"]
 validator-email = ["validator"]
@@ -204,7 +205,6 @@ hkdf = "0.12.4"
 hmac = "0.12.1"
 http = "1.1.0"
 md-5 = "0.10.6"
-mime = "0.3.17"
 mime_guess = "2.0.5"
 multer = "3.1.0"
 once_cell = "1.19.0"
@@ -288,7 +288,7 @@ default-features = false
 features = ["http-listener"]
 
 [dependencies.minijinja]
-version = "2.0.3"
+version = "2.1.0"
 optional = true
 features = ["debug", "loader"]
 
@@ -311,7 +311,7 @@ version = "0.4.0"
 optional = true
 
 [dependencies.regorus]
-version = "0.2.1"
+version = "0.2.2"
 optional = true
 default-features = false
 features = [
@@ -357,7 +357,7 @@ version = "1.0.204"
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1.0.120"
+version = "1.0.121"
 features = ["raw_value"]
 
 [dependencies.sm3]
@@ -373,7 +373,7 @@ version = "0.4.1"
 optional = true
 
 [dependencies.sqlx]
-version = "0.7.4"
+version = "0.8.0"
 optional = true
 default-features = false
 features = [
@@ -388,12 +388,13 @@ version = "1.20.0"
 optional = true
 
 [dependencies.toml]
-version = "0.8.14"
+version = "0.8.16"
 default-features = false
 features = ["parse"]
 
 [dependencies.tracing-appender]
 version = "0.2.3"
+optional = true
 features = ["parking_lot"]
 
 [dependencies.tracing-log]
@@ -402,6 +403,7 @@ optional = true
 
 [dependencies.tracing-subscriber]
 version = "0.3.18"
+optional = true
 default-features = false
 features = [
     "ansi",
@@ -436,7 +438,7 @@ criterion = "0.5.1"
 data-encoding = "2.5.0"
 libsm = "0.6.0"
 sm3 = "0.4.2"
-sonic-rs = "0.3.8"
+sonic-rs = "0.3.9"
 tinyvec = { version = "1.8.0", features = ["alloc"] }
 uuid-simd = "0.8.0"
 

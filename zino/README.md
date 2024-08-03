@@ -34,7 +34,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-zino = { version = "0.23", features = ["axum"] }
+zino = { version = "0.24", features = ["axum"] }
 ```
 
 ```rust,ignore
@@ -56,6 +56,7 @@ The following optional features are available:
 | `dioxus`     | Enables the integration with [`dioxus`].             | No       |
 | `i18n`       | Enables the support for internationalization.        | No       |
 | `jwt`        | Enables the support for JSON Web Token.              | No       |
+| `logger`     | Enables the default logger.                          | Yes      |
 | `ntex`       | Enables the integration with [`ntex`].               | No       |
 | `oidc`       | Enables the support for OIDC via [`rauthy`].         | No       |
 | `opa`        | Enables the support for OPA via [`regorus`].         | No       |

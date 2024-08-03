@@ -174,7 +174,7 @@ impl Application for ActixCluster {
                         }
                     }
 
-                    // Render OpenAPI docs.
+                    // OpenAPI docs
                     let is_docs_server = if has_debug_server {
                         server_tag.is_debug()
                     } else {

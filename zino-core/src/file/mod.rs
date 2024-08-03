@@ -13,7 +13,7 @@ use crate::{
 use bytes::Bytes;
 use etag::EntityTag;
 use md5::{Digest, Md5};
-use mime::Mime;
+use mime_guess::Mime;
 use multer::{Field, Multipart};
 use reqwest::{
     multipart::{Form, Part},

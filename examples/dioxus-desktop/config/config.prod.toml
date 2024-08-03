@@ -10,7 +10,7 @@ transparent = false
 
 [desktop]
 disable-default-menu = true
-resource_dir = "public"
+resource-dir = "public"
 icon = "public/favicon.ico"
 stylesheets = [
     "public/css/bulma.min.css",

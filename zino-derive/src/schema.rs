@@ -369,7 +369,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             }
 
             async fn acquire_reader() -> Result<&'static ConnectionPool, ZinoError> {
-                use zino_core::{bail, orm::PoolManager, warn};
+                use zino_core::{bail, error::Error, orm::PoolManager, warn};
 
                 if let Some(reader) = #schema_reader.get() {
                     if reader.is_available()
@@ -420,7 +420,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             }
 
             async fn acquire_writer() -> Result<&'static ConnectionPool, ZinoError> {
-                use zino_core::{bail, orm::PoolManager, warn};
+                use zino_core::{bail, error::Error, orm::PoolManager, warn};
 
                 if let Some(writer) = #schema_writer.get() {
                     if writer.is_available()

@@ -15,7 +15,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let mut client_options = ClientOptions {
         debug: in_dev_mode,
         environment: Some(app_env.as_str().into()),
-        traces_sample_rate: 0.5,
+        traces_sample_rate: 1.0,
         ..Default::default()
     };
     if let Some(config) = APP::config().get_table("sentry") {

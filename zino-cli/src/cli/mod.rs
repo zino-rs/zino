@@ -49,11 +49,12 @@ pub enum Subcommands {
 
 /// Default path for temporary template.
 pub(crate) static TEMPORARY_TEMPLATE_PATH: &str = "./temporary_zino_template";
+
 /// Default template URL.
 pub(crate) static DEFAULT_TEMPLATE_URL: &str =
     "https://github.com/zino-rs/zino-template-default.git";
 
-/// Clone the template repository, do replacements, and create the project.
+/// Clones the template repository, do replacements, and create the project.
 pub(crate) fn process_template(
     template_url: &str,
     target_path_prefix: &str,

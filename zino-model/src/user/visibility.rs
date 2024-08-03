@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{database::HasValueRef, Database, Decode, Type};
+use sqlx::{Database, Decode, Type};
 use strum::{AsRefStr, Display, EnumString, IntoStaticStr};
 use zino_core::{BoxError, JsonValue};
 
@@ -57,7 +57,7 @@ where
     &'r str: Decode<'r, DB>,
 {
     #[inline]
-    fn decode(value: <DB as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxError> {
+    fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, BoxError> {
         let value = <&'r str as Decode<'r, DB>>::decode(value)?;
         Ok(value.parse()?)
     }

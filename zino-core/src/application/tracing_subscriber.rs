@@ -25,14 +25,14 @@ pub(super) fn init<APP: Application + ?Sized>() {
         return;
     }
 
-    // Convert log records to tracing events
+    // Converts log records to tracing events
     #[cfg(feature = "tracing-log")]
     tracing_log::LogTracer::init().expect("fail to initialize the log tracer");
 
-    // Initialize `OffsetTime` before forking threads
+    // Initializes `OffsetTime` before forking threads
     let local_offset_time = OffsetTime::local_rfc_3339().expect("could not get local offset");
 
-    // Sentry client
+    // Initializes the sentry client
     #[cfg(feature = "sentry")]
     super::sentry_client::init::<APP>();
 
@@ -146,10 +146,13 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .parse(env_filter)
         .expect("fail to parse the env filter");
     #[cfg(feature = "sentry")]
-    let sentry_layer = sentry_tracing::layer().event_filter(|md| match md.level() {
-        &Level::ERROR => EventFilter::Event,
-        _ => EventFilter::Ignore,
-    });
+    let sentry_layer = sentry_tracing::layer()
+        .enable_span_attributes()
+        .event_filter(|md| match *md.level() {
+            Level::ERROR => EventFilter::Exception,
+            Level::WARN | Level::INFO => EventFilter::Breadcrumb,
+            _ => EventFilter::Ignore,
+        });
 
     let subscriber = tracing_subscriber::registry();
     #[cfg(feature = "env-filter")]
