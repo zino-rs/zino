@@ -127,19 +127,22 @@ async fn generate_cargo_toml(mut req: zino::Request) -> zino::Result {
     let mut res = zino::Response::default().context(&req);
     let body = req.parse_body::<Features>().await?;
 
-    let current_cargo_toml_content = fs::read_to_string("./Cargo.toml")?;
-    if let Err(err) = current_cargo_toml_content {
-        res.set_code(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
-        res.set_data(&err.to_string());
-        return Ok(res.into());
-    }
-    let current_cargo_toml = current_cargo_toml_content.unwrap().parse::<Document>();
-    if let Err(err) = current_cargo_toml {
-        res.set_code(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
-        res.set_data(&err.to_string());
-        return Ok(res.into());
-    }
-    let mut cargo_toml = current_cargo_toml.unwrap();
+    let current_cargo_toml_content = match fs::read_to_string("./Cargo.toml") {
+        Ok(content) => content,
+        Err(err) => {
+            res.set_code(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+            res.set_data(&err.to_string());
+            return Ok(res.into());
+        }
+    };
+    let mut cargo_toml = match current_cargo_toml_content.parse::<Document>(){
+        Ok(doc) => doc,
+        Err(err) => {
+            res.set_code(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+            res.set_data(&err.to_string());
+            return Ok(res.into());
+        }
+    };
 
     if cargo_toml.get("dependencies").is_none() {
         cargo_toml["dependencies"] = toml_edit::table();
