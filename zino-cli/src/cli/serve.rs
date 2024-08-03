@@ -6,11 +6,8 @@ use axum::{
 };
 use clap::Parser;
 use include_dir::Dir;
-use serde::{
-    de::{MapAccess, Visitor},
-    Deserialize, Deserializer,
-};
-use std::{env, fmt, fs};
+use serde::Deserialize;
+use std::{env, fs};
 use toml_edit::{Array, DocumentMut as Document};
 use zino::prelude::*;
 use zino_core::error::Error;
@@ -118,49 +115,11 @@ async fn update_current_dir(Path(path): Path<String>) -> impl IntoResponse {
         })
 }
 
-#[derive(Debug)]
+/// Features struct.
+#[derive(Debug, Deserialize)]
 struct Features {
     zino_feature: Vec<String>,
     core_feature: Vec<String>,
-}
-
-impl<'de> Deserialize<'de> for Features {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct FeaturesVisitor;
-
-        impl<'de> Visitor<'de> for FeaturesVisitor {
-            type Value = Features;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("a map with keys and values")
-            }
-
-            fn visit_map<M>(self, mut map: M) -> Result<Self::Value, M::Error>
-            where
-                M: MapAccess<'de>,
-            {
-                let mut zino_feature = Vec::new();
-                let mut core_feature = Vec::new();
-
-                while let Some((key, value)) = map.next_entry::<String, Vec<String>>()? {
-                    match key.as_str() {
-                        "Framework" | "zino-features" => zino_feature.extend(value),
-                        _ => core_feature.extend(value),
-                    }
-                }
-
-                Ok(Features {
-                    zino_feature,
-                    core_feature,
-                })
-            }
-        }
-
-        deserializer.deserialize_map(FeaturesVisitor)
-    }
 }
 
 /// Generates dependencies in `Cargo.toml` file.
@@ -185,32 +144,36 @@ async fn generate_cargo_toml(mut req: zino::Request) -> zino::Result {
     if cargo_toml.get("dependencies").is_none() {
         cargo_toml["dependencies"] = toml_edit::table();
     }
-    if let Some(dependencies) = cargo_toml.get_mut("dependencies") {
-        let mut zino_feature = Array::default();
-        for feature in body.zino_feature {
-            zino_feature.push(feature);
-        }
-        if let Some(zino) = dependencies.get_mut("zino") {
-            zino["features"] = toml_edit::value(zino_feature);
-        } else {
+
+    {
+        // let mut zino_feature = Array::default();
+        // for feature in body.zino_feature {
+        //     zino_feature.push(feature);
+        // }
+
+        let zino_feature: Array = body.zino_feature.into_iter().collect();
+        if cargo_toml["dependencies"].get("zino").is_none() {
             let mut zino_table = toml_edit::table();
-            zino_table["version"] = toml_edit::value("0.23.3");
+            zino_table["version"] = toml_edit::value("0.24.3");
             zino_table["features"] = toml_edit::value(zino_feature);
-            dependencies["zino"] = zino_table;
+            cargo_toml["dependencies"]["zino"] = zino_table;
+        } else {
+            cargo_toml["dependencies"]["zino"]["features"] = toml_edit::value(zino_feature);
         }
 
-        let mut core_feature = Array::default();
-        for feature in body.core_feature {
-            core_feature.push(feature);
-        }
+        // let mut core_feature = Array::default();
+        // for feature in body.core_feature {
+        //     core_feature.push(feature);
+        // }
 
-        if dependencies.get("zino-core").is_none() {
+        let core_feature: Array = body.core_feature.into_iter().collect();
+        if cargo_toml["dependencies"].get("zino-core").is_none() {
             let mut core_table = toml_edit::table();
             core_table["version"] = toml_edit::value("0.24.3");
             core_table["features"] = toml_edit::value(core_feature);
-            dependencies["zino-core"] = core_table;
+            cargo_toml["dependencies"]["zino-core"] = core_table;
         } else {
-            dependencies["zino-core"]["features"] = toml_edit::value(core_feature);
+            cargo_toml["dependencies"]["zino-core"]["features"] = toml_edit::value(core_feature);
         }
     }
 

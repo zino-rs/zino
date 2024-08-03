@@ -428,22 +428,33 @@
     }
 
     function checkedOptions() {
-        const options = {};
+        let option_groups = {};
         document.querySelectorAll('.closet').forEach(closet => {
             const groupName = closet.querySelector('.option-title').textContent;
-            options[groupName] = [];
+            option_groups[groupName] = [];
             closet.querySelectorAll('.checked').forEach(option => {
                 if (!option.classList.contains('all-options')) {
-                    options[groupName].push(option.getAttribute('data-feature'));
+                    option_groups[groupName].push(option.getAttribute('data-feature'));
                 } else {
                     let all_flag = option.getAttribute('data-feature')
                     if (all_flag != null) {
-                        options[groupName] = [option.getAttribute('data-feature')]
+                        option_groups[groupName] = [option.getAttribute('data-feature')]
                     }
                 }
             });
         });
-        return options;
+        let option = {
+            zino_feature: option_groups['Framework']
+                .concat(option_groups['zino-features'])
+                .sort(),
+            core_feature: option_groups['core-features']
+                .concat(option_groups['Database'])
+                .concat(option_groups['Accessor'])
+                .concat(option_groups['Connector'])
+                .concat(option_groups['locale'])
+                .sort()
+        }
+        return option;
     }
 
     async function generateCargoToml() {
