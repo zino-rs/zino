@@ -127,7 +127,7 @@ async fn generate_cargo_toml(mut req: zino::Request) -> zino::Result {
     let mut res = zino::Response::default().context(&req);
     let body = req.parse_body::<Features>().await?;
 
-    let current_cargo_toml_content = fs::read_to_string("./Cargo.toml");
+    let current_cargo_toml_content = fs::read_to_string("./Cargo.toml")?;
     if let Err(err) = current_cargo_toml_content {
         res.set_code(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
         res.set_data(&err.to_string());
@@ -145,37 +145,26 @@ async fn generate_cargo_toml(mut req: zino::Request) -> zino::Result {
         cargo_toml["dependencies"] = toml_edit::table();
     }
 
-    {
-        // let mut zino_feature = Array::default();
-        // for feature in body.zino_feature {
-        //     zino_feature.push(feature);
-        // }
-
-        let zino_feature: Array = body.zino_feature.into_iter().collect();
-        if cargo_toml["dependencies"].get("zino").is_none() {
-            let mut zino_table = toml_edit::table();
-            zino_table["version"] = toml_edit::value("0.24.3");
-            zino_table["features"] = toml_edit::value(zino_feature);
-            cargo_toml["dependencies"]["zino"] = zino_table;
-        } else {
-            cargo_toml["dependencies"]["zino"]["features"] = toml_edit::value(zino_feature);
-        }
-
-        // let mut core_feature = Array::default();
-        // for feature in body.core_feature {
-        //     core_feature.push(feature);
-        // }
-
-        let core_feature: Array = body.core_feature.into_iter().collect();
-        if cargo_toml["dependencies"].get("zino-core").is_none() {
-            let mut core_table = toml_edit::table();
-            core_table["version"] = toml_edit::value("0.24.3");
-            core_table["features"] = toml_edit::value(core_feature);
-            cargo_toml["dependencies"]["zino-core"] = core_table;
-        } else {
-            cargo_toml["dependencies"]["zino-core"]["features"] = toml_edit::value(core_feature);
-        }
+    let zino_feature: Array = body.zino_feature.into_iter().collect();
+    if cargo_toml["dependencies"].get("zino").is_none() {
+        let mut zino_table = toml_edit::table();
+        zino_table["version"] = toml_edit::value("0.24.3");
+        zino_table["features"] = toml_edit::value(zino_feature);
+        cargo_toml["dependencies"]["zino"] = zino_table;
+    } else {
+        cargo_toml["dependencies"]["zino"]["features"] = toml_edit::value(zino_feature);
     }
+
+    let core_feature: Array = body.core_feature.into_iter().collect();
+    if cargo_toml["dependencies"].get("zino-core").is_none() {
+        let mut core_table = toml_edit::table();
+        core_table["version"] = toml_edit::value("0.24.3");
+        core_table["features"] = toml_edit::value(core_feature);
+        cargo_toml["dependencies"]["zino-core"] = core_table;
+    } else {
+        cargo_toml["dependencies"]["zino-core"]["features"] = toml_edit::value(core_feature);
+    }
+
 
     let options = taplo::formatter::Options {
         compact_arrays: false,
