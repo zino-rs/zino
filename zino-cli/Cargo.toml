@@ -21,6 +21,8 @@ path = "src/main.rs"
 git2 = "0.19.0"
 include_dir = "0.7.4"
 log = "0.4.22"
+toml_edit = "0.22.17"
+taplo = "0.13.0"
 walkdir = "2.5.0"
 
 [dependencies.axum]
@@ -30,6 +32,10 @@ default-features = false
 [dependencies.clap]
 version = "4.5.11"
 features = ["color", "derive"]
+
+[dependencies.serde]
+version = "1.0.204"
+features = ["derive"]
 
 [dependencies.zino]
 path = "../zino"
