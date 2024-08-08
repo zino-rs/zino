@@ -5,8 +5,9 @@ use axum::{
     Router,
 };
 use clap::Parser;
+use colored::Colorize;
 use include_dir::Dir;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{env, fs};
 use toml_edit::{Array, DocumentMut as Document};
 use zino::prelude::*;
@@ -34,7 +35,9 @@ impl Serve {
                 .route("/current_dir", get(get_current_dir))
                 .route("/update_current_dir/:path", post(update_current_dir))
                 .route("/get_current_cargo_toml", get(get_current_cargo_toml))
-                .route("/generate_cargo_toml", post(generate_cargo_toml))])
+                .route("/generate_cargo_toml", post(generate_cargo_toml))
+                .route("/save_cargo_toml", post(save_cargo_toml))
+                .route("/get_current_features", get(get_current_features))])
             .run();
         Ok(())
     }
@@ -116,13 +119,58 @@ async fn update_current_dir(Path(path): Path<String>) -> impl IntoResponse {
 }
 
 /// Features struct.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 struct Features {
     zino_feature: Vec<String>,
     core_feature: Vec<String>,
 }
 
-/// Generates dependencies in `Cargo.toml` file.
+impl Features {
+
+    /// Get zino-features and zino-core-features from path to Cargo.toml
+    fn from_path(path: &str) -> Self {
+        let cargo_toml = fs::read_to_string(path)
+            .unwrap_or_default()
+            .parse::<Document>()
+            .unwrap_or_default();
+
+        if cargo_toml.get("dependencies").is_none() {
+            return Self::default();
+        }
+
+        let zino_features = if cargo_toml["dependencies"].get("zino").is_none() {
+            vec![]
+        } else if cargo_toml["dependencies"]["zino"].get("features").is_none() {
+            vec![]
+        } else {
+            match cargo_toml["dependencies"]["zino"]["features"].as_array() {
+                Some(features) => features.iter().map(|f| f.as_str().unwrap_or_default().to_string()).collect(),
+                None => vec![]
+            }
+        };
+
+        let core_features = if cargo_toml["dependencies"].get("zino-core").is_none() {
+            vec![]
+        } else if cargo_toml["dependencies"]["zino-core"]
+            .get("features")
+            .is_none()
+        {
+            vec![]
+        } else {
+            match cargo_toml["dependencies"]["zino-core"]["features"].as_array() {
+                Some(features) => features.iter().map(|f| f.as_str().unwrap_or_default().to_string()).collect(),
+                None => vec![]
+            }
+        };
+
+        Self {
+            zino_feature: zino_features,
+            core_feature: core_features,
+        }
+    }
+}
+
+/// Generates zino-features and zino-core-features from user select options
 async fn generate_cargo_toml(mut req: zino::Request) -> zino::Result {
     let mut res = zino::Response::default().context(&req);
     let body = req.parse_body::<Features>().await?;
@@ -135,7 +183,7 @@ async fn generate_cargo_toml(mut req: zino::Request) -> zino::Result {
             return Ok(res.into());
         }
     };
-    let mut cargo_toml = match current_cargo_toml_content.parse::<Document>(){
+    let mut cargo_toml = match current_cargo_toml_content.parse::<Document>() {
         Ok(doc) => doc,
         Err(err) => {
             res.set_code(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
@@ -168,7 +216,6 @@ async fn generate_cargo_toml(mut req: zino::Request) -> zino::Result {
         cargo_toml["dependencies"]["zino-core"]["features"] = toml_edit::value(core_feature);
     }
 
-
     let options = taplo::formatter::Options {
         compact_arrays: false,
         compact_inline_tables: false,
@@ -180,5 +227,36 @@ async fn generate_cargo_toml(mut req: zino::Request) -> zino::Result {
 
     res.set_content_type("application/json");
     res.set_data(&formatted_toml);
+    Ok(res.into())
+}
+
+/// Returns a `Features` struct from current_dir/Cargo.toml
+async fn get_current_features(req: zino::Request) -> zino::Result {
+    let mut res = zino::Response::default().context(&req);
+
+    let features = Features::from_path("./Cargo.toml");
+
+    println!("{}", format!("{:#?}", features).red());
+
+    res.set_content_type("application/json");
+    res.set_data(&features);
+    Ok(res.into())
+}
+
+/// saves the content of `Cargo.toml` file.
+async fn save_cargo_toml(mut req: zino::Request) -> zino::Result {
+    let mut res = zino::Response::default().context(&req);
+
+    let body = req.parse_body::<String>().await?;
+
+    match fs::write("./Cargo.toml", body) {
+        Ok(_) => {
+            res.set_code(axum::http::StatusCode::OK);
+        }
+        Err(err) => {
+            res.set_code(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+            res.set_data(&err.to_string());
+        }
+    }
     Ok(res.into())
 }

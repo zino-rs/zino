@@ -376,6 +376,7 @@
         }
 
         await fetchCargoToml()
+        await fetchFeatures()
     });
 
     // ask the server to change the current directory
@@ -413,18 +414,26 @@
 
 
     // init the options of each group
-    function init_options() {
-        const optionsDivs = document.querySelectorAll('.option-group');
-
-        optionsDivs.forEach(div => {
-            if (div.classList.contains('exclusive')) {
-                const firstUnchecked = div.querySelector('.unchecked');
-
-                if (firstUnchecked) {
-                    firstUnchecked.classList.replace('unchecked', 'checked')
-                }
+    async function fetchFeatures() {
+        try {
+            const response = fetch('/get_current_features');
+            let features = await (await response).json();
+            document.querySelectorAll('.checked').forEach(option => {
+                option.classList.replace('checked', 'unchecked')
+            })
+            for (let feature of features.data.zino_feature) {
+                Array.from(document.querySelectorAll('#zino-config-form [data-feature]')).filter(option => option.getAttribute('data-feature') === feature).forEach(option => {
+                    option.click()
+                })
             }
-        });
+            for (let feature of features.data.core_feature) {
+                Array.from(document.querySelectorAll('#core-config-form [data-feate]')).filter(option => option.getAttribute('data-feature') === feature).forEach(option => {
+                    option.click()
+                })
+            }
+        } catch (error) {
+            console.error('Failed to init options:', error);
+        }
     }
 
     function checkedOptions() {
@@ -537,10 +546,30 @@
         });
     });
 
-    window.onload = () => {
-        fetchCurrentDir();
-        fetchCargoToml();
-        init_options();
+    // save the generated Cargo.toml
+    document.getElementById('save-config').addEventListener('click', async () => {
+        const aimCargoToml = document.getElementById('aimCargoTomlTextArea').value;
+        try {
+            const response = await fetch('/save_cargo_toml', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(aimCargoToml),
+            });
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+            await fetchCargoToml();
+        } catch (error) {
+            console.error('Failed to save Cargo.toml:', error);
+        }
+    });
+
+    window.onload = async () => {
+        await fetchCurrentDir();
+        await fetchCargoToml();
+        await fetchFeatures();
     };
 </script>
 
