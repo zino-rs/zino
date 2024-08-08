@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <title>new-project</title>
     <style>
-        body {
+        body, html {
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
             display: flex;
             flex-direction: column;
             height: 100vh;
+            overflow: hidden;
         }
 
         .top-bar {
@@ -18,11 +19,18 @@
             color: white;
             padding: 20px;
             text-align: center;
+            height: 18%;
+        }
+
+        .top-bar h1 {
+            margin-top: 1%;
+            font-size: 32px;
         }
 
         .main-content {
             display: flex;
             flex: 1;
+            overflow: hidden;
         }
 
         input[type="text"] {
@@ -40,47 +48,107 @@
             outline: none;
         }
 
-        #cargoTomlTextArea {
+        .cargoTomlBlock {
+            display: flex;
+            flex-direction: column;
+            width: 30.9%;
+        }
+
+        .cargoTomlDescription {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 10%;
+            background-color: #f0f0f0;
+            color: #333;
+            font-size: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+
+        .textarea-container {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .textarea-container .lineNumber {
+            white-space: pre;
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            left: 0;
+            width: 20px;
+            height: 100%;
+            padding: 2px;
+            text-align: center;
+            color: #007bff;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            pointer-events: none;
+        }
+
+        .cargoTomlTextArea {
+            height: 100%;
+            width: 100%;
             font-family: Consolas, monospace;
-            width: 61.8%;
             white-space: pre;
             background-color: #f3f4f6;
             color: #333;
-            padding: 15px;
+            padding-left: 30px;
+            line-height: 1.5;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             border: none;
             border-radius: 8px;
             box-sizing: border-box;
             overflow-x: auto;
-            font-size: 18px;
+            overflow-y: scroll;
+            font-size: 14px;
         }
 
-        .project-config-form {
+        #config-form-block {
             display: flex;
             flex-direction: column;
             padding: 20px;
             width: 38.2%;
+            height: auto;
+            overflow-y: auto;
         }
 
-        .project-config-form form {
+        .config-form {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            border-top: #007bff 2px solid;
+        }
+
+        .config-form form {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
 
+        .config-form .form-description {
+            font-size: 32px;
+            color: #007bff;
+            margin-bottom: 20px;
+        }
 
-        .project-config-form button:hover {
+        .config-form button:hover {
             background-color: #0056b3;
         }
 
         .closet {
-            display: block;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .closet .option-title {
             font-size: 24px;
             color: black;
+            margin-bottom: 8px;
         }
 
         .option-group {
@@ -88,8 +156,9 @@
             color: #8d8f91;
             border-color: #0056b3;
             display: flex;
+            flex-wrap: wrap;
             gap: 10px;
-            margin-left: 25%;
+            margin-left: 15%;
         }
 
         .option-group div {
@@ -104,7 +173,7 @@
             border-bottom: 2px solid #007bff;
         }
 
-        #configForm #save-config {
+        #save-config {
             padding: 10px 15px;
             background-color: #007bff;
             color: white;
@@ -114,8 +183,9 @@
             cursor: pointer;
             width: 61.8%;
             margin-left: 19.1%;
-            margin-top: 20%;
         }
+
+
     </style>
 </head>
 <body>
@@ -124,33 +194,165 @@
     <input type="text" id="currentDir">
 </div>
 <div class="main-content">
-    <div class="project-config-form">
-        <form id="configForm">
-            <div class="closet">
-                <div class="option-title">Framework</div>
-                <div class="option-group">
-                    <div class="unchecked">Axum</div>
-                    <div class="unchecked">Actix</div>
-                </div>
-            </div>
-            <div class="closet">
-                <div class="option-title">Database</div>
-                <div class="option-group">
-                    <div class="unchecked">MySQL</div>
-                    <div class="unchecked">PostgreSQL</div>
-                </div>
-            </div>
-            <div class="closet">
-                <div class="option-title">Other Options</div>
-                <div class="option-group">
-                    <div class="unchecked">Option 1</div>
-                    <div class="unchecked">Option 2</div>
-                </div>
-            </div>
-            <button id="save-config">save config</button>
-        </form>
+    <div class="cargoTomlBlock">
+        <div id="currentCargoTomlDescription" class="cargoTomlDescription">current Cargo.toml:</div>
+        <div class="textarea-container">
+            <div class="lineNumber"></div>
+            <textarea id="currentCargoTomlTextArea" class="cargoTomlTextArea" readonly></textarea>
+        </div>
     </div>
-    <textarea id="cargoTomlTextArea" readonly></textarea>
+
+
+    <div id="config-form-block">
+        <div class="config-form" id="zino-config-form">
+            <div class="form-description">zino config</div>
+            <form class="config-details">
+                <div class="closet">
+                    <div class="option-title">Framework</div>
+                    <div class="option-group exclusive">
+                        <div class="unchecked" data-feature="axum">Axum</div>
+                        <div class="unchecked" data-feature="actix">Actix</div>
+                        <div class="unchecked" data-feature="dioxus">dioxus</div>
+                        <div class="unchecked" data-feature="ntex">Ntex</div>
+                    </div>
+                </div>
+
+                <div class="closet">
+                    <div class="option-title">zino-features</div>
+                    <div class="option-group non-exclusive">
+                        <div class="unchecked" data-feature="i18n">i18n</div>
+                        <div class="unchecked" data-feature="jwt">jwt</div>
+                        <div class="unchecked" data-feature="oidc">oidc</div>
+                        <div class="unchecked" data-feature="opa">opa</div>
+                        <div class="unchecked" data-feature="orm">orm</div>
+                        <div class="unchecked all-options">all</div>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+
+
+        <div class="config-form" id="core-config-form">
+            <div class="form-description">Core config</div>
+            <form class="config-details">
+                <div class="closet">
+                    <div class="option-title">Database</div>
+
+                    <div class="option-group exclusive">
+                        <div class="unchecked" data-feature="orm">Sqlx</div>
+                        <div class="unchecked" data-feature="orm-mysql">MySQL</div>
+                        <div class="unchecked" data-feature="orm-postgresql">PostgreSQL</div>
+                        <div class="unchecked" data-feature="orm-sqlite">SQLite</div>
+                        <div class="unchecked" data-feature="orm-mariadb">MariaDB</div>
+                        <div class="unchecked" data-feature="orm-tidb">TiDB</div>
+                    </div>
+                </div>
+
+
+                <div class="closet">
+                    <div class="option-title">Accessor</div>
+
+                    <div class="option-group">
+                        <div class="unchecked" data-feature="accessor">default</div>
+                        <div class="unchecked" data-feature="accessor-azblobs">azblob</div>
+                        <div class="unchecked" data-feature="accessor-azdls">azdls</div>
+                        <div class="unchecked" data-feature="accessor-cacache">cacache</div>
+                        <div class="unchecked" data-feature="accessor-cos">cos</div>
+                        <div class="unchecked" data-feature="accessor-dashmap">dashmap</div>
+                        <div class="unchecked" data-feature="accessor-dropbox">dropbox</div>
+                        <div class="unchecked" data-feature="accessor-fs">fs</div>
+                        <div class="unchecked" data-feature="accessor-gcs">gcs</div>
+                        <div class="unchecked" data-feature="accessor-gdrive">gdrive</div>
+                        <div class="unchecked" data-feature="accessor-ghac">ghac</div>
+                        <div class="unchecked" data-feature="accessor-http">http</div>
+                        <div class="unchecked" data-feature="accessor-ipfs">ipfs</div>
+                        <div class="unchecked" data-feature="accessor-ipmfs">ipmfs</div>
+                        <div class="unchecked" data-feature="accessor-memcached">memcached</div>
+                        <div class="unchecked" data-feature="accessor-memory">memory</div>
+                        <div class="unchecked" data-feature="accessor-mini-moka">mini-moka</div>
+                        <div class="unchecked" data-feature="accessor-moka">moka</div>
+                        <div class="unchecked" data-feature="accessor-mysql">mysql</div>
+                        <div class="unchecked" data-feature="accessor-obs">obs</div>
+                        <div class="unchecked" data-feature="accessor-onedrive">onedrive</div>
+                        <div class="unchecked" data-feature="accessor-oss">oss</div>
+                        <div class="unchecked" data-feature="accessor-persy">persy</div>
+                        <div class="unchecked" data-feature="accessor-postgresql">postgresql</div>
+                        <div class="unchecked" data-feature="accessor-redb">redb</div>
+                        <div class="unchecked" data-feature="accessor-redis">redis</div>
+                        <div class="unchecked" data-feature="accessor-s3">s3</div>
+                        <div class="unchecked" data-feature="accessor-sled">sled</div>
+                        <div class="unchecked" data-feature="accessor-supabase">supabase</div>
+                        <div class="unchecked" data-feature="accessor-webdav">webdav</div>
+                        <div class="unchecked" data-feature="accessor-webhdfs">webhdfs</div>
+                        <div class="unchecked all-options" data-feature="all-accessors">all</div>
+                    </div>
+                </div>
+
+                <div class="closet">
+                    <div class="option-title">Connector</div>
+
+                    <div class="option-group">
+                        <div class="unchecked" data-feature="connector-arrow">arrow</div>
+                        <div class="unchecked" data-feature="connector-http">http</div>
+                        <div class="unchecked" data-feature="connector-mysql">mysql</div>
+                        <div class="unchecked" data-feature="connector-postgres">postgres</div>
+                        <div class="unchecked" data-feature="connector-sqlite">Sqlite</div>
+                        <div class="unchecked all-options" data-feature="all-connectors">all</div>
+                    </div>
+                </div>
+
+
+                <div class="closet">
+                    <div class="option-title">locale</div>
+
+                    <div class="option-group">
+                        <div class="unchecked" data-feature="locale">locale</div>
+                        <div class="unchecked" data-feature="locale-en">locale-en</div>
+                        <div class="unchecked" data-feature="locale-es">locale-es</div>
+                        <div class="unchecked" data-feature="locale-de">locale-de</div>
+                        <div class="unchecked" data-feature="locale-fr">locale-fr</div>
+                        <div class="unchecked" data-feature="locale-zh">locale-zh</div>
+                        <div class="unchecked all-options" data-feature="all-locales">all</div>
+                    </div>
+                </div>
+
+                <div class="closet">
+                    <div class="option-title">core-features</div>
+
+                    <div class="option-group">
+                        <div class="unchecked" data-feature="cookie">cookie</div>
+                        <div class="unchecked" data-feature="crypto-sm">crypto-sm</div>
+                        <div class="unchecked" data-feature="dotenv">dotenv</div>
+                        <div class="unchecked" data-feature="env-filter">env-filter</div>
+                        <div class="unchecked" data-feature="flume">flume</div>
+                        <div class="unchecked" data-feature="metrics">metrics</div>
+                        <div class="unchecked" data-feature="openapi">openapi</div>
+                        <div class="unchecked" data-feature="sentry">sentry</div>
+                        <div class="unchecked" data-feature="tls-native">tls-native</div>
+                        <div class="unchecked" data-feature="tls-rustls">tls-rustls</div>
+                        <div class="unchecked" data-feature="validator">validator</div>
+                        <div class="unchecked" data-feature="tracing-log">tracing-log</div>
+                        <div class="unchecked" data-feature="http02">http02</div>
+                        <div class="unchecked" data-feature="view">view</div>
+                        <div class="unchecked all-options">all</div>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+
+        <button id="save-config">save config</button>
+    </div>
+
+
+    <div class="cargoTomlBlock">
+        <div id="aimCargoTomlDescription" class="cargoTomlDescription">update your Cargo.toml to:</div>
+        <div class="textarea-container">
+            <div class="lineNumber"></div>
+            <textarea id="aimCargoTomlTextArea" class="cargoTomlTextArea"></textarea>
+        </div>
+    </div>
 </div>
 </body>
 <script>
@@ -176,7 +378,7 @@
         await fetchCargoToml()
     });
 
-    // ask the server to sync the current directory
+    // ask the server to change the current directory
     async function fetchCurrentDir() {
         try {
             const response = await fetch('/current_dir');
@@ -189,7 +391,7 @@
         }
     }
 
-    // fetch the content of Cargo.toml
+    // get the content of current_dir/Cargo.toml
     async function fetchCargoToml() {
         try {
             const response = await fetch('/get_current_cargo_toml');
@@ -197,14 +399,15 @@
                 throw new Error(await response.text());
             }
             const content = await response.text();
-            document.getElementById('cargoTomlTextArea').value = content;
+            document.getElementById('currentCargoTomlTextArea').value = content;
 
             const packageNameLine = content.split('\n').find(line => line.startsWith('name ='));
-            const projectName = packageNameLine ? packageNameLine.split('=')[1].trim().replace(/"/g, '') : 'new-project';
+            const projectName = packageNameLine ? packageNameLine.split('=')[1].trim().replace(/"/g, '') : 'Not Found';
             document.getElementById("project_name").textContent = `current project: ${projectName}`;
+            updateLineNumbers(document.getElementById('currentCargoTomlTextArea'));
         } catch (error) {
             console.error('Failed to fetch Cargo.toml:', error);
-            document.getElementById('cargoTomlTextArea').value = 'Failed to fetch Cargo.toml, make sure you entered a valid project directory';
+            document.getElementById('currentCargoTomlDescription').value = 'Failed to fetch Cargo.toml, make sure you entered a valid project directory';
         }
     }
 
@@ -214,22 +417,123 @@
         const optionsDivs = document.querySelectorAll('.option-group');
 
         optionsDivs.forEach(div => {
-            const firstUnchecked = div.querySelector('.unchecked');
+            if (div.classList.contains('exclusive')) {
+                const firstUnchecked = div.querySelector('.unchecked');
 
-            if (firstUnchecked) {
-                firstUnchecked.classList.replace('unchecked', 'checked')
+                if (firstUnchecked) {
+                    firstUnchecked.classList.replace('unchecked', 'checked')
+                }
             }
         });
     }
 
-    // make the options clickable
-    document.querySelectorAll('.option-group div').forEach(option => {
-        option.addEventListener('click', function () {
-            const parentOptions = this.closest('.option-group');
-            parentOptions.querySelectorAll('.checked').forEach(checkedOption => {
-                checkedOption.classList.replace('checked', 'unchecked');
+    function checkedOptions() {
+        let option_groups = {};
+        document.querySelectorAll('.closet').forEach(closet => {
+            const groupName = closet.querySelector('.option-title').textContent;
+            option_groups[groupName] = [];
+            closet.querySelectorAll('.checked').forEach(option => {
+                if (!option.classList.contains('all-options')) {
+                    option_groups[groupName].push(option.getAttribute('data-feature'));
+                } else {
+                    let all_flag = option.getAttribute('data-feature')
+                    if (all_flag != null) {
+                        option_groups[groupName] = [option.getAttribute('data-feature')]
+                    }
+                }
             });
-            this.classList.replace('unchecked', 'checked');
+        });
+        let option = {
+            zino_feature: option_groups['Framework']
+                .concat(option_groups['zino-features'])
+                .sort(),
+            core_feature: option_groups['core-features']
+                .concat(option_groups['Database'])
+                .concat(option_groups['Accessor'])
+                .concat(option_groups['Connector'])
+                .concat(option_groups['locale'])
+                .sort()
+        }
+        return option;
+    }
+
+    async function generateCargoToml() {
+        const res = await fetch('/generate_cargo_toml', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(checkedOptions())
+        });
+
+
+        document.querySelector('#aimCargoTomlTextArea').value = (await res.json()).data;
+    }
+
+    function change_option_state() {
+        let group = this.parentElement;
+        if (group.classList.contains('exclusive')) {
+            group.querySelectorAll('.checked').forEach(option => {
+                option.classList.toggle('checked')
+                option.classList.toggle('unchecked')
+            })
+        }
+
+        this.classList.toggle('unchecked');
+        this.classList.toggle('checked');
+
+        let state = this.classList.contains('checked')
+
+
+        if (this.classList.contains('all-options')) {
+            if (state) {
+                group.querySelectorAll('.unchecked').forEach(option => {
+                    option.classList.replace('unchecked', 'checked')
+                })
+            } else {
+                group.querySelectorAll('.checked').forEach(option => {
+                    option.classList.replace('checked', 'unchecked')
+                })
+            }
+        } else {
+            if (state) {
+                if (group.querySelectorAll('.unchecked').length === 1) {
+                    group.querySelectorAll('.all-options').forEach(option => {
+                        option.classList.replace('unchecked', 'checked')
+                    })
+                }
+            } else {
+                group.querySelectorAll('.all-options').forEach(option => {
+                    option.classList.replace('checked', 'unchecked')
+                })
+            }
+        }
+
+        generateCargoToml();
+    }
+
+    document.querySelectorAll('.unchecked').forEach(option => {
+        option.addEventListener('click', change_option_state);
+    });
+
+
+    function updateLineNumbers(textArea) {
+        const lineCount = textArea.value.split('\n').length;
+        let lineNumberHtml = '';
+        for (let i = 1; i <= lineCount; i++) {
+            lineNumberHtml += `${i}\n`;
+        }
+
+        const lineNumberElement = textArea.previousElementSibling;
+        lineNumberElement.textContent = lineNumberHtml;
+    }
+
+    document.querySelectorAll('.cargoTomlTextArea').forEach(textArea => {
+        textArea.addEventListener('input', function () {
+            updateLineNumbers(this);
+        });
+        textArea.addEventListener('scroll', function () {
+            this.previousElementSibling.style.marginTop = `-${this.scrollTop}px`;
         });
     });
 

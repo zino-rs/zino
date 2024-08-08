@@ -6,7 +6,9 @@ use axum::{
 };
 use clap::Parser;
 use include_dir::Dir;
+use serde::Deserialize;
 use std::{env, fs};
+use toml_edit::{Array, DocumentMut as Document};
 use zino::prelude::*;
 use zino_core::error::Error;
 
@@ -21,6 +23,8 @@ static RESOURCE: Dir = include_dir::include_dir!("zino-cli/public");
 impl Serve {
     /// Runs the `serve` subcommand.
     pub fn run(self) -> Result<(), Error> {
+        log::info!("Starting server at: 127.0.0.1:6080/zino-config.html");
+
         env::set_var("CARGO_PKG_NAME", env!("CARGO_PKG_NAME"));
         env::set_var("CARGO_PKG_VERSION", env!("CARGO_PKG_VERSION"));
 
@@ -29,9 +33,9 @@ impl Serve {
                 .route("/:file_name", get(get_page))
                 .route("/current_dir", get(get_current_dir))
                 .route("/update_current_dir/:path", post(update_current_dir))
-                .route("/get_current_cargo_toml", get(get_current_cargo_toml))])
+                .route("/get_current_cargo_toml", get(get_current_cargo_toml))
+                .route("/generate_cargo_toml", post(generate_cargo_toml))])
             .run();
-
         Ok(())
     }
 }
@@ -51,7 +55,7 @@ async fn get_current_cargo_toml() -> impl IntoResponse {
 
 /// Returns the HTML page.
 async fn get_page(Path(file_name): Path<String>) -> impl IntoResponse {
-    match RESOURCE.get_file(file_name) {
+    match RESOURCE.get_file(&file_name) {
         Some(file) => {
             let content = file.contents_utf8().unwrap_or_default();
             Html(content).into_response()
@@ -109,4 +113,72 @@ async fn update_current_dir(Path(path): Path<String>) -> impl IntoResponse {
             )
                 .into_response()
         })
+}
+
+/// Features struct.
+#[derive(Debug, Deserialize)]
+struct Features {
+    zino_feature: Vec<String>,
+    core_feature: Vec<String>,
+}
+
+/// Generates dependencies in `Cargo.toml` file.
+async fn generate_cargo_toml(mut req: zino::Request) -> zino::Result {
+    let mut res = zino::Response::default().context(&req);
+    let body = req.parse_body::<Features>().await?;
+
+    let current_cargo_toml_content = match fs::read_to_string("./Cargo.toml") {
+        Ok(content) => content,
+        Err(err) => {
+            res.set_code(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+            res.set_data(&err.to_string());
+            return Ok(res.into());
+        }
+    };
+    let mut cargo_toml = match current_cargo_toml_content.parse::<Document>(){
+        Ok(doc) => doc,
+        Err(err) => {
+            res.set_code(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+            res.set_data(&err.to_string());
+            return Ok(res.into());
+        }
+    };
+
+    if cargo_toml.get("dependencies").is_none() {
+        cargo_toml["dependencies"] = toml_edit::table();
+    }
+
+    let zino_feature: Array = body.zino_feature.into_iter().collect();
+    if cargo_toml["dependencies"].get("zino").is_none() {
+        let mut zino_table = toml_edit::table();
+        zino_table["version"] = toml_edit::value("0.24.3");
+        zino_table["features"] = toml_edit::value(zino_feature);
+        cargo_toml["dependencies"]["zino"] = zino_table;
+    } else {
+        cargo_toml["dependencies"]["zino"]["features"] = toml_edit::value(zino_feature);
+    }
+
+    let core_feature: Array = body.core_feature.into_iter().collect();
+    if cargo_toml["dependencies"].get("zino-core").is_none() {
+        let mut core_table = toml_edit::table();
+        core_table["version"] = toml_edit::value("0.24.3");
+        core_table["features"] = toml_edit::value(core_feature);
+        cargo_toml["dependencies"]["zino-core"] = core_table;
+    } else {
+        cargo_toml["dependencies"]["zino-core"]["features"] = toml_edit::value(core_feature);
+    }
+
+
+    let options = taplo::formatter::Options {
+        compact_arrays: false,
+        compact_inline_tables: false,
+        column_width: 50,
+        ..Default::default()
+    };
+
+    let formatted_toml = taplo::formatter::format(&cargo_toml.to_string(), options);
+
+    res.set_content_type("application/json");
+    res.set_data(&formatted_toml);
+    Ok(res.into())
 }
