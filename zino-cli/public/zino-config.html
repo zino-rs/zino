@@ -480,22 +480,21 @@
     }
 
     function change_option_state() {
+        this.classList.toggle('unchecked');
+        this.classList.toggle('checked');
+        let self_checked = this.classList.contains('checked');
+
         let group = this.parentElement;
+
         if (group.classList.contains('exclusive')) {
-            group.querySelectorAll('.checked').forEach(option => {
+            [...group.querySelectorAll('.checked')].filter(o => o !== this).forEach(option => {
                 option.classList.toggle('checked')
                 option.classList.toggle('unchecked')
             })
         }
 
-        this.classList.toggle('unchecked');
-        this.classList.toggle('checked');
-
-        let state = this.classList.contains('checked')
-
-
         if (this.classList.contains('all-options')) {
-            if (state) {
+            if (self_checked) {
                 group.querySelectorAll('.unchecked').forEach(option => {
                     option.classList.replace('unchecked', 'checked')
                 })
@@ -505,7 +504,7 @@
                 })
             }
         } else {
-            if (state) {
+            if (self_checked) {
                 if (group.querySelectorAll('.unchecked').length === 1) {
                     group.querySelectorAll('.all-options').forEach(option => {
                         option.classList.replace('unchecked', 'checked')
