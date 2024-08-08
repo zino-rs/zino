@@ -10,11 +10,11 @@ publish = false
 tracing = "0.1.40"
 
 [dependencies.ntex]
-version = "2.0.3"
+version = "2.1.0"
 default-features = false
 
 [dependencies.serde]
-version = "1.0.204"
+version = "1.0.205"
 features = ["derive"]
 
 [dependencies.zino]

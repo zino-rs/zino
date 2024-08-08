@@ -76,34 +76,34 @@ impl GlobalAccessor {
             "azblob" => {
                 let mut builder = services::Azblob::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(container) = config.get_str("container") {
-                    builder.container(container);
+                    builder = builder.container(container);
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
+                    builder = builder.endpoint(endpoint);
                 }
                 if let Some(account_name) = config.get_str("account-name") {
-                    builder.account_name(account_name);
+                    builder = builder.account_name(account_name);
                 }
                 if let Some(account_key) = config.get_str("account-key") {
-                    builder.account_key(account_key);
+                    builder = builder.account_key(account_key);
                 }
                 if let Some(encryption_key) = config.get_str("encryption-key") {
-                    builder.encryption_key(encryption_key);
+                    builder = builder.encryption_key(encryption_key);
                 }
                 if let Some(encryption_key_sha256) = config.get_str("encryption-key-sha256") {
-                    builder.encryption_key_sha256(encryption_key_sha256);
+                    builder = builder.encryption_key_sha256(encryption_key_sha256);
                 }
                 if let Some(encryption_algorithm) = config.get_str("encryption-algorithm") {
-                    builder.encryption_algorithm(encryption_algorithm);
+                    builder = builder.encryption_algorithm(encryption_algorithm);
                 }
                 if let Some(sas_token) = config.get_str("sas-token") {
-                    builder.sas_token(sas_token);
+                    builder = builder.sas_token(sas_token);
                 }
                 if let Some(batch_max_operations) = config.get_usize("batch-max-operations") {
-                    builder.batch_max_operations(batch_max_operations);
+                    builder = builder.batch_max_operations(batch_max_operations);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -111,19 +111,19 @@ impl GlobalAccessor {
             "azdls" => {
                 let mut builder = services::Azdls::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(filesystem) = config.get_str("filesystem") {
-                    builder.filesystem(filesystem);
+                    builder = builder.filesystem(filesystem);
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
+                    builder = builder.endpoint(endpoint);
                 }
                 if let Some(account_name) = config.get_str("account-name") {
-                    builder.account_name(account_name);
+                    builder = builder.account_name(account_name);
                 }
                 if let Some(account_key) = config.get_str("account-key") {
-                    builder.account_key(account_key);
+                    builder = builder.account_key(account_key);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -131,7 +131,7 @@ impl GlobalAccessor {
             "cacache" => {
                 let mut builder = services::Cacache::default();
                 if let Some(dir) = config.get_str("data-dir") {
-                    builder.datadir(dir);
+                    builder = builder.datadir(dir);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -139,19 +139,19 @@ impl GlobalAccessor {
             "cos" => {
                 let mut builder = services::Cos::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(bucket) = config.get_str("bucket") {
-                    builder.bucket(bucket);
+                    builder = builder.bucket(bucket);
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
+                    builder = builder.endpoint(endpoint);
                 }
                 if let Some(secret_id) = config.get_str("secret-id") {
-                    builder.secret_id(secret_id);
+                    builder = builder.secret_id(secret_id);
                 }
                 if let Some(secret_key) = config.get_str("secret-key") {
-                    builder.secret_key(secret_key);
+                    builder = builder.secret_key(secret_key);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -159,7 +159,7 @@ impl GlobalAccessor {
             "dashmap" => {
                 let mut builder = services::Dashmap::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -167,19 +167,19 @@ impl GlobalAccessor {
             "dropbox" => {
                 let mut builder = services::Dropbox::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(access_token) = config.get_str("access-token") {
-                    builder.access_token(access_token);
+                    builder = builder.access_token(access_token);
                 }
                 if let Some(refresh_token) = config.get_str("refresh-token") {
-                    builder.refresh_token(refresh_token);
+                    builder = builder.refresh_token(refresh_token);
                 }
                 if let Some(client_id) = config.get_str("client-id") {
-                    builder.client_id(client_id);
+                    builder = builder.client_id(client_id);
                 }
                 if let Some(client_secret) = config.get_str("client-secret") {
-                    builder.client_secret(client_secret);
+                    builder = builder.client_secret(client_secret);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -187,10 +187,10 @@ impl GlobalAccessor {
             "fs" => {
                 let mut builder = services::Fs::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(atomic_write_dir) = config.get_str("atomic-write-dir") {
-                    builder.atomic_write_dir(atomic_write_dir);
+                    builder = builder.atomic_write_dir(atomic_write_dir);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -198,22 +198,22 @@ impl GlobalAccessor {
             "gcs" => {
                 let mut builder = services::Gcs::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(bucket) = config.get_str("bucket") {
-                    builder.bucket(bucket);
+                    builder = builder.bucket(bucket);
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
+                    builder = builder.endpoint(endpoint);
                 }
                 if let Some(service_account) = config.get_str("service-account") {
-                    builder.service_account(service_account);
+                    builder = builder.service_account(service_account);
                 }
                 if let Some(credential) = config.get_str("credential") {
-                    builder.credential(credential);
+                    builder = builder.credential(credential);
                 }
                 if let Some(credential_path) = config.get_str("credential-path") {
-                    builder.credential_path(credential_path);
+                    builder = builder.credential_path(credential_path);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -221,10 +221,10 @@ impl GlobalAccessor {
             "gdrive" => {
                 let mut builder = services::Gdrive::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(access_token) = config.get_str("access-token") {
-                    builder.access_token(access_token);
+                    builder = builder.access_token(access_token);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -232,10 +232,10 @@ impl GlobalAccessor {
             "ghac" => {
                 let mut builder = services::Ghac::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(version) = config.get_str("version") {
-                    builder.version(version);
+                    builder = builder.version(version);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -243,19 +243,19 @@ impl GlobalAccessor {
             "http" => {
                 let mut builder = services::Http::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
+                    builder = builder.endpoint(endpoint);
                 }
                 if let Some(username) = config.get_str("username") {
-                    builder.username(username);
+                    builder = builder.username(username);
                 }
                 if let Some(password) = config.get_str("password") {
-                    builder.password(password);
+                    builder = builder.password(password);
                 }
                 if let Some(token) = config.get_str("token") {
-                    builder.token(token);
+                    builder = builder.token(token);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -263,10 +263,10 @@ impl GlobalAccessor {
             "ipfs" => {
                 let mut builder = services::Ipfs::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
+                    builder = builder.endpoint(endpoint);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -274,10 +274,10 @@ impl GlobalAccessor {
             "ipmfs" => {
                 let mut builder = services::Ipmfs::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
+                    builder = builder.endpoint(endpoint);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -285,13 +285,13 @@ impl GlobalAccessor {
             "memcached" => {
                 let mut builder = services::Memcached::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
+                    builder = builder.endpoint(endpoint);
                 }
                 if let Some(default_ttl) = config.get_duration("default-ttl") {
-                    builder.default_ttl(default_ttl);
+                    builder = builder.default_ttl(default_ttl);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -304,13 +304,13 @@ impl GlobalAccessor {
             "minimoka" => {
                 let mut builder = services::MiniMoka::default();
                 if let Some(max_capacity) = config.get_u64("max-capacity") {
-                    builder.max_capacity(max_capacity);
+                    builder = builder.max_capacity(max_capacity);
                 }
                 if let Some(time_to_live) = config.get_duration("time-to-live") {
-                    builder.time_to_live(time_to_live);
+                    builder = builder.time_to_live(time_to_live);
                 }
                 if let Some(time_to_idle) = config.get_duration("time-to-idle") {
-                    builder.time_to_idle(time_to_idle);
+                    builder = builder.time_to_idle(time_to_idle);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -318,19 +318,19 @@ impl GlobalAccessor {
             "moka" => {
                 let mut builder = services::Moka::default();
                 if let Some(name) = config.get_str("name") {
-                    builder.name(name);
+                    builder = builder.name(name);
                 }
                 if let Some(max_capacity) = config.get_u64("max-capacity") {
-                    builder.max_capacity(max_capacity);
+                    builder = builder.max_capacity(max_capacity);
                 }
                 if let Some(time_to_live) = config.get_duration("time-to-live") {
-                    builder.time_to_live(time_to_live);
+                    builder = builder.time_to_live(time_to_live);
                 }
                 if let Some(time_to_idle) = config.get_duration("time-to-idle") {
-                    builder.time_to_idle(time_to_idle);
+                    builder = builder.time_to_idle(time_to_idle);
                 }
                 if let Some(segments) = config.get_usize("segments") {
-                    builder.segments(segments);
+                    builder = builder.segments(segments);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -340,19 +340,19 @@ impl GlobalAccessor {
                 if let Some(database) = config.get_str("database") {
                     let authority = State::format_authority(config, Some(3306));
                     let dsn = format!("mysql://{authority}/{database}");
-                    builder.connection_string(dsn.as_str());
+                    builder = builder.connection_string(dsn.as_str());
                 }
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(table) = config.get_str("table") {
-                    builder.table(table);
+                    builder = builder.table(table);
                 }
                 if let Some(key_field) = config.get_str("key-field") {
-                    builder.key_field(key_field);
+                    builder = builder.key_field(key_field);
                 }
                 if let Some(value_field) = config.get_str("value-field") {
-                    builder.value_field(value_field);
+                    builder = builder.value_field(value_field);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -360,19 +360,19 @@ impl GlobalAccessor {
             "obs" => {
                 let mut builder = services::Obs::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(bucket) = config.get_str("bucket") {
-                    builder.bucket(bucket);
+                    builder = builder.bucket(bucket);
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
+                    builder = builder.endpoint(endpoint);
                 }
                 if let Some(access_key_id) = config.get_str("access-key-id") {
-                    builder.access_key_id(access_key_id);
+                    builder = builder.access_key_id(access_key_id);
                 }
                 if let Some(secret_access_key) = config.get_str("secret_access_key") {
-                    builder.secret_access_key(secret_access_key);
+                    builder = builder.secret_access_key(secret_access_key);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -380,10 +380,10 @@ impl GlobalAccessor {
             "onedrive" => {
                 let mut builder = services::Onedrive::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(access_token) = config.get_str("access-token") {
-                    builder.access_token(access_token);
+                    builder = builder.access_token(access_token);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -391,31 +391,31 @@ impl GlobalAccessor {
             "oss" => {
                 let mut builder = services::Oss::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(bucket) = config.get_str("bucket") {
-                    builder.bucket(bucket);
+                    builder = builder.bucket(bucket);
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
+                    builder = builder.endpoint(endpoint);
                 }
                 if let Some(presign_endpoint) = config.get_str("presign-endpoint") {
-                    builder.presign_endpoint(presign_endpoint);
+                    builder = builder.presign_endpoint(presign_endpoint);
                 }
                 if let Some(access_key_id) = config.get_str("access-key-id") {
-                    builder.access_key_id(access_key_id);
+                    builder = builder.access_key_id(access_key_id);
                 }
                 if let Some(access_key_secret) = config.get_str("access-key-secret") {
-                    builder.access_key_secret(access_key_secret);
+                    builder = builder.access_key_secret(access_key_secret);
                 }
                 if let Some(server_side_encryption) = config.get_str("server-side-encryption") {
-                    builder.server_side_encryption(server_side_encryption);
+                    builder = builder.server_side_encryption(server_side_encryption);
                 }
                 if let Some(encryption_key_id) = config.get_str("server-side-encryption-key-id") {
-                    builder.server_side_encryption_key_id(encryption_key_id);
+                    builder = builder.server_side_encryption_key_id(encryption_key_id);
                 }
                 if let Some(batch_max_operations) = config.get_usize("batch-max-operations") {
-                    builder.batch_max_operations(batch_max_operations);
+                    builder = builder.batch_max_operations(batch_max_operations);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -423,13 +423,13 @@ impl GlobalAccessor {
             "persy" => {
                 let mut builder = services::Persy::default();
                 if let Some(data_file) = config.get_str("data-file") {
-                    builder.datafile(data_file);
+                    builder = builder.datafile(data_file);
                 }
                 if let Some(segment) = config.get_str("segment") {
-                    builder.segment(segment);
+                    builder = builder.segment(segment);
                 }
                 if let Some(index) = config.get_str("index") {
-                    builder.index(index);
+                    builder = builder.index(index);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -439,19 +439,19 @@ impl GlobalAccessor {
                 if let Some(database) = config.get_str("database") {
                     let authority = State::format_authority(config, Some(5432));
                     let dsn = format!("postgres://{authority}/{database}");
-                    builder.connection_string(dsn.as_str());
+                    builder = builder.connection_string(dsn.as_str());
                 }
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(table) = config.get_str("table") {
-                    builder.table(table);
+                    builder = builder.table(table);
                 }
                 if let Some(key_field) = config.get_str("key-field") {
-                    builder.key_field(key_field);
+                    builder = builder.key_field(key_field);
                 }
                 if let Some(value_field) = config.get_str("value-field") {
-                    builder.value_field(value_field);
+                    builder = builder.value_field(value_field);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -459,22 +459,22 @@ impl GlobalAccessor {
             "redis" => {
                 let mut builder = services::Redis::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
+                    builder = builder.endpoint(endpoint);
                 }
                 if let Some(username) = config.get_str("username") {
-                    builder.username(username);
+                    builder = builder.username(username);
                 }
                 if let Some(password) = State::decrypt_password(config) {
-                    builder.password(password.as_ref());
+                    builder = builder.password(password.as_ref());
                 }
                 if let Some(db) = config.get_i64("db") {
-                    builder.db(db);
+                    builder = builder.db(db);
                 }
                 if let Some(default_ttl) = config.get_duration("default-ttl") {
-                    builder.default_ttl(default_ttl);
+                    builder = builder.default_ttl(default_ttl);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -482,13 +482,13 @@ impl GlobalAccessor {
             "redb" => {
                 let mut builder = services::Redb::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(data_dir) = config.get_str("data-dir") {
-                    builder.datadir(data_dir);
+                    builder = builder.datadir(data_dir);
                 }
                 if let Some(table) = config.get_str("table") {
-                    builder.table(table);
+                    builder = builder.table(table);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -496,31 +496,31 @@ impl GlobalAccessor {
             "s3" | "minio" => {
                 let mut builder = services::S3::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(bucket) = config.get_str("bucket") {
-                    builder.bucket(bucket);
+                    builder = builder.bucket(bucket);
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
+                    builder = builder.endpoint(endpoint);
                 }
                 if let Some(region) = config.get_str("region") {
-                    builder.region(region);
+                    builder = builder.region(region);
                 }
                 if let Some(access_key_id) = config.get_str("access-key-id") {
-                    builder.access_key_id(access_key_id);
+                    builder = builder.access_key_id(access_key_id);
                 }
                 if let Some(secret_access_key) = config.get_str("secret-access-key") {
-                    builder.secret_access_key(secret_access_key);
+                    builder = builder.secret_access_key(secret_access_key);
                 }
                 if let Some(role_arn) = config.get_str("role-arn") {
-                    builder.role_arn(role_arn);
+                    builder = builder.role_arn(role_arn);
                 }
                 if let Some(external_id) = config.get_str("external-id") {
-                    builder.external_id(external_id);
+                    builder = builder.external_id(external_id);
                 }
                 if let Some(batch_max_operations) = config.get_usize("batch-max-operations") {
-                    builder.batch_max_operations(batch_max_operations);
+                    builder = builder.batch_max_operations(batch_max_operations);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -528,13 +528,13 @@ impl GlobalAccessor {
             "sled" => {
                 let mut builder = services::Sled::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(dir) = config.get_str("data-dir") {
-                    builder.datadir(dir);
+                    builder = builder.datadir(dir);
                 }
                 if let Some(tree) = config.get_str("tree") {
-                    builder.tree(tree);
+                    builder = builder.tree(tree);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -542,16 +542,16 @@ impl GlobalAccessor {
             "supabase" => {
                 let mut builder = services::Supabase::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(bucket) = config.get_str("bucket") {
-                    builder.bucket(bucket);
+                    builder = builder.bucket(bucket);
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
+                    builder = builder.endpoint(endpoint);
                 }
                 if let Some(key) = config.get_str("key") {
-                    builder.key(key);
+                    builder = builder.key(key);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -559,19 +559,19 @@ impl GlobalAccessor {
             "webdav" => {
                 let mut builder = services::Webdav::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
+                    builder = builder.endpoint(endpoint);
                 }
                 if let Some(username) = config.get_str("username") {
-                    builder.username(username);
+                    builder = builder.username(username);
                 }
                 if let Some(password) = State::decrypt_password(config) {
-                    builder.password(password.as_ref());
+                    builder = builder.password(password.as_ref());
                 }
                 if let Some(token) = config.get_str("token") {
-                    builder.token(token);
+                    builder = builder.token(token);
                 }
                 Ok(Operator::new(builder)?.finish())
             }
@@ -579,13 +579,13 @@ impl GlobalAccessor {
             "webhdfs" => {
                 let mut builder = services::Webhdfs::default();
                 if let Some(root) = config.get_str("root") {
-                    builder.root(root);
+                    builder = builder.root(root);
                 }
                 if let Some(endpoint) = config.get_str("endpoint") {
-                    builder.endpoint(endpoint);
+                    builder = builder.endpoint(endpoint);
                 }
                 if let Some(delegation) = config.get_str("delegation") {
-                    builder.delegation(delegation);
+                    builder = builder.delegation(delegation);
                 }
                 Ok(Operator::new(builder)?.finish())
             }

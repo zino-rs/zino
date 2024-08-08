@@ -21,13 +21,17 @@ dioxus = "0.5.6"
 dioxus-core = "0.5.6"
 dioxus-hooks = "0.5.6"
 dioxus-router = "0.5.6"
-markdown = "1.0.0-alpha.18"
 rust_decimal = "1.35.0"
 smallvec = "1.13.2"
 
 [dependencies.chrono]
 version = "0.4.38"
 features = ["serde"]
+
+[dependencies.comrak]
+version = "0.26.0"
+default-features = false
+features = ["shortcodes", "syntect"]
 
 [dependencies.dioxus-free-icons]
 version = "0.8.6"

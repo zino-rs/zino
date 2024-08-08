@@ -127,7 +127,7 @@ impl QueryContext {
         self.cancelled
     }
 
-    /// Returns `true` if the query execution is success.
+    /// Returns `true` if the query execution is successful.
     #[inline]
     pub fn is_success(&self) -> bool {
         self.success

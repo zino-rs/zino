@@ -26,7 +26,7 @@ format-pdf = ["format", "dep:printpdf"]
 full = ["all-formats", "cache"]
 
 [dependencies.lru]
-version = "0.12.3"
+version = "0.12.4"
 optional = true
 
 [dependencies.parking_lot]

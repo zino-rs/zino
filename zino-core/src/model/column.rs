@@ -4,7 +4,9 @@ use crate::{
     extension::{JsonObjectExt, JsonValueExt},
     mock, Decimal, JsonValue, Map, Uuid,
 };
-use apache_avro::schema::{Name, RecordField, RecordFieldOrder, Schema, UnionSchema};
+use apache_avro::schema::{
+    ArraySchema, MapSchema, Name, RecordField, RecordFieldOrder, Schema, UnionSchema,
+};
 use rand::{
     distributions::{Alphanumeric, DistString, Distribution, Standard},
     random,
@@ -261,10 +263,22 @@ impl<'a> Column<'a> {
             "DateTime" => Schema::TimestampMicros,
             "Uuid" => Schema::Uuid,
             "Vec<u8>" => Schema::Bytes,
-            "Vec<String>" => Schema::Array(Box::new(Schema::String)),
-            "Vec<Uuid>" => Schema::Array(Box::new(Schema::Uuid)),
-            "Vec<i64>" | "Vec<u64>" => Schema::Array(Box::new(Schema::Long)),
-            "Vec<i32>" | "Vec<u32>" => Schema::Array(Box::new(Schema::Int)),
+            "Vec<String>" => Schema::Array(ArraySchema {
+                items: Box::new(Schema::String),
+                attributes: BTreeMap::new(),
+            }),
+            "Vec<Uuid>" => Schema::Array(ArraySchema {
+                items: Box::new(Schema::Uuid),
+                attributes: BTreeMap::new(),
+            }),
+            "Vec<i64>" | "Vec<u64>" => Schema::Array(ArraySchema {
+                items: Box::new(Schema::Long),
+                attributes: BTreeMap::new(),
+            }),
+            "Vec<i32>" | "Vec<u32>" => Schema::Array(ArraySchema {
+                items: Box::new(Schema::Int),
+                attributes: BTreeMap::new(),
+            }),
             "Option<String>" => {
                 if let Ok(union_schema) = UnionSchema::new(vec![Schema::Null, Schema::String]) {
                     Schema::Union(union_schema)
@@ -293,12 +307,15 @@ impl<'a> Column<'a> {
                     Schema::Int
                 }
             }
-            "Map" => Schema::Map(Box::new(Schema::Ref {
-                name: Name {
-                    name: "Json".to_owned(),
-                    namespace: None,
-                },
-            })),
+            "Map" => Schema::Map(MapSchema {
+                types: Box::new(Schema::Ref {
+                    name: Name {
+                        name: "Json".to_owned(),
+                        namespace: None,
+                    },
+                }),
+                attributes: BTreeMap::new(),
+            }),
             _ => Schema::Ref {
                 name: Name {
                     name: type_name.to_owned(),

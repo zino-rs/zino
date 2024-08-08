@@ -12,6 +12,11 @@ pub fn Textarea(props: TextareaProps) -> Element {
                 if let Some(handler) = props.on_change.as_ref() {
                     handler.call(event.value());
                 }
+            },
+            oninput: move |event| async move {
+                if let Some(handler) = props.on_input.as_ref() {
+                    handler.call(event.value());
+                }
             }
         }
     }
@@ -28,6 +33,8 @@ pub struct TextareaProps {
     pub initial_value: String,
     /// An event handler to be called when the textarea state is changed.
     pub on_change: Option<EventHandler<String>>,
+    /// An event handler to be called when inputing.
+    pub on_input: Option<EventHandler<String>>,
     /// Spreading the props of the `textarea` element.
     #[props(extends = textarea)]
     attributes: Vec<Attribute>,
