@@ -5,7 +5,6 @@ use axum::{
     Router,
 };
 use clap::Parser;
-use colored::Colorize;
 use include_dir::Dir;
 use serde::{Deserialize, Serialize};
 use std::{env, fs};
@@ -233,11 +232,7 @@ async fn generate_cargo_toml(mut req: zino::Request) -> zino::Result {
 /// Returns a `Features` struct from current_dir/Cargo.toml
 async fn get_current_features(req: zino::Request) -> zino::Result {
     let mut res = zino::Response::default().context(&req);
-
     let features = Features::from_path("./Cargo.toml");
-
-    println!("{}", format!("{:#?}", features).red());
-
     res.set_content_type("application/json");
     res.set_data(&features);
     Ok(res.into())
