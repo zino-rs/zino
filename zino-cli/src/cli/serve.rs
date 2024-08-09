@@ -136,9 +136,9 @@ impl Features {
             return Self::default();
         }
 
-        let zino_features = if cargo_toml["dependencies"].get("zino").is_none() {
-            vec![]
-        } else if cargo_toml["dependencies"]["zino"].get("features").is_none() {
+        let zino_features = if cargo_toml["dependencies"].get("zino").is_none()
+            || cargo_toml["dependencies"]["zino"].get("features").is_none()
+        {
             vec![]
         } else {
             match cargo_toml["dependencies"]["zino"]["features"].as_array() {
@@ -150,11 +150,10 @@ impl Features {
             }
         };
 
-        let core_features = if cargo_toml["dependencies"].get("zino-core").is_none() {
-            vec![]
-        } else if cargo_toml["dependencies"]["zino-core"]
-            .get("features")
-            .is_none()
+        let core_features = if cargo_toml["dependencies"].get("zino-core").is_none()
+            || cargo_toml["dependencies"]["zino-core"]
+                .get("features")
+                .is_none()
         {
             vec![]
         } else {
