@@ -185,7 +185,9 @@
             margin-left: 19.1%;
         }
 
-
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -236,11 +238,10 @@
         <div class="config-form" id="core-config-form">
             <div class="form-description">Core config</div>
             <form class="config-details">
-                <div class="closet">
-                    <div class="option-title">Database</div>
+                <div class="closet hidden" id="orm-form">
+                    <div class="option-title" >Database</div>
 
                     <div class="option-group exclusive">
-                        <div class="unchecked" data-feature="orm">Sqlx</div>
                         <div class="unchecked" data-feature="orm-mysql">MySQL</div>
                         <div class="unchecked" data-feature="orm-postgresql">PostgreSQL</div>
                         <div class="unchecked" data-feature="orm-sqlite">SQLite</div>
@@ -479,6 +480,7 @@
         document.querySelector('#aimCargoTomlTextArea').value = (await res.json()).data;
     }
 
+
     function change_option_state() {
         this.classList.toggle('unchecked');
         this.classList.toggle('checked');
@@ -515,6 +517,17 @@
                     option.classList.replace('checked', 'unchecked')
                 })
             }
+        }
+
+        const ormOption = document.querySelector('#zino-config-form [data-feature="orm"]');
+        const ormForm = document.getElementById('orm-form');
+        if (ormOption && ormOption.classList.contains('checked')) {
+            ormForm.classList.remove('hidden');
+        } else {
+            ormForm.classList.add('hidden');
+            ormForm.querySelectorAll('.option-group div').forEach(option => {
+                option.classList.replace('checked', 'unchecked');
+            });
         }
 
         generateCargoToml();

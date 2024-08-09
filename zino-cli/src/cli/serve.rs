@@ -125,7 +125,6 @@ struct Features {
 }
 
 impl Features {
-
     /// Get zino-features and zino-core-features from path to Cargo.toml
     fn from_path(path: &str) -> Self {
         let cargo_toml = fs::read_to_string(path)
@@ -143,8 +142,11 @@ impl Features {
             vec![]
         } else {
             match cargo_toml["dependencies"]["zino"]["features"].as_array() {
-                Some(features) => features.iter().map(|f| f.as_str().unwrap_or_default().to_string()).collect(),
-                None => vec![]
+                Some(features) => features
+                    .iter()
+                    .map(|f| f.as_str().unwrap_or_default().to_string())
+                    .collect(),
+                None => vec![],
             }
         };
 
@@ -157,8 +159,11 @@ impl Features {
             vec![]
         } else {
             match cargo_toml["dependencies"]["zino-core"]["features"].as_array() {
-                Some(features) => features.iter().map(|f| f.as_str().unwrap_or_default().to_string()).collect(),
-                None => vec![]
+                Some(features) => features
+                    .iter()
+                    .map(|f| f.as_str().unwrap_or_default().to_string())
+                    .collect(),
+                None => vec![],
             }
         };
 
@@ -229,7 +234,7 @@ async fn generate_cargo_toml(mut req: zino::Request) -> zino::Result {
     Ok(res.into())
 }
 
-/// Returns a `Features` struct from current_dir/Cargo.toml
+/// Returns a `Features` struct from current_dir/Cargo.toml.
 async fn get_current_features(req: zino::Request) -> zino::Result {
     let mut res = zino::Response::default().context(&req);
     let features = Features::from_path("./Cargo.toml");
@@ -238,7 +243,7 @@ async fn get_current_features(req: zino::Request) -> zino::Result {
     Ok(res.into())
 }
 
-/// saves the content of `Cargo.toml` file.
+/// Saves the content of `Cargo.toml` file.
 async fn save_cargo_toml(mut req: zino::Request) -> zino::Result {
     let mut res = zino::Response::default().context(&req);
 
