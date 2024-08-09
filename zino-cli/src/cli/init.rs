@@ -24,6 +24,7 @@ impl Init {
             return Err(Error::new("current directory is already a Rust project"));
         }
         let init_res = self.init_with_template();
+        // must clean the temporary template directory after the initialization
         clean_template_dir(TEMPORARY_TEMPLATE_PATH);
         match init_res {
             Ok(_) => {

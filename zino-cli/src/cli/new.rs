@@ -21,6 +21,7 @@ impl New {
     pub fn run(self) -> Result<(), Error> {
         let project_dir_already_exists = self.check_project_dir_status()?;
         let new_res = self.new_with_template();
+        // must clean the temporary template directory after the initialization
         clean_template_dir(TEMPORARY_TEMPLATE_PATH);
         match new_res {
             Ok(_) => {
