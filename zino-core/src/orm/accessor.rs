@@ -416,10 +416,8 @@ where
         Self::before_extract().await?;
 
         let mut model = Self::try_get_model(id).await?;
-        if data
-            .get_u64("version")
-            .is_some_and(|version| model.version() != version)
-        {
+        let version = model.version();
+        if data.get_u64("version").is_some_and(|v| version != v) {
             bail!(
                 "409 Conflict: there is a version conflict for the model `{}`",
                 id
@@ -453,6 +451,13 @@ where
 
         let model_data = model.before_update().await?;
         let ctx = Self::update_one(&query, &mut mutation).await?;
+        if ctx.rows_affected() != Some(1) {
+            bail!(
+                "404 Not Found: there is no version `{}` for the model `{}`",
+                version,
+                id,
+            );
+        }
         Self::after_update(&ctx, model_data).await?;
         Ok((validation, model))
     }

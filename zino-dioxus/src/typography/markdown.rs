@@ -10,6 +10,7 @@ use zino_core::{LazyLock, SharedString};
 pub fn Markdown(props: MarkdownProps) -> Element {
     let mut options = Options::default();
     options.extension.strikethrough = true;
+    options.extension.tagfilter = true;
     options.extension.table = true;
     options.extension.autolink = true;
     options.extension.tasklist = true;

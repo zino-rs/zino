@@ -212,7 +212,7 @@ parking_lot = "0.12.3"
 percent-encoding = "2.3.1"
 rand = "0.8.5"
 regex = "1.10.6"
-reqwest-tracing = "0.5.2"
+reqwest-tracing = "0.5.3"
 rust_decimal = "1.35.0"
 ryu = "1.0.18"
 serde_qs = "0.13.0"
@@ -247,7 +247,7 @@ version = "0.9.2"
 optional = true
 
 [dependencies.datafusion]
-version = "40.0.0"
+version = "41.0.0"
 optional = true
 
 [dependencies.dotenvy]
@@ -341,7 +341,7 @@ features = [
 ]
 
 [dependencies.reqwest-middleware]
-version = "0.3.2"
+version = "0.3.3"
 features = ["json", "multipart"]
 
 [dependencies.sentry]
@@ -353,11 +353,11 @@ version = "0.34.0"
 optional = true
 
 [dependencies.serde]
-version = "1.0.205"
+version = "1.0.206"
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1.0.122"
+version = "1.0.124"
 features = ["raw_value"]
 
 [dependencies.sm3]
@@ -438,7 +438,7 @@ criterion = "0.5.1"
 data-encoding = "2.5.0"
 libsm = "0.6.0"
 sm3 = "0.4.2"
-sonic-rs = "0.3.9"
+sonic-rs = "0.3.10"
 tinyvec = { version = "1.8.0", features = ["alloc"] }
 uuid-simd = "0.8.0"
 

@@ -22,7 +22,7 @@ git2 = "0.19.0"
 include_dir = "0.7.4"
 log = "0.4.22"
 taplo = "0.13.0"
-toml_edit = "0.22.17"
+toml_edit = "0.22.20"
 walkdir = "2.5.0"
 
 [dependencies.axum]
@@ -30,7 +30,7 @@ version = "0.7.5"
 default-features = false
 
 [dependencies.clap]
-version = "4.5.13"
+version = "4.5.15"
 features = ["color", "derive"]
 
 [dependencies.serde]

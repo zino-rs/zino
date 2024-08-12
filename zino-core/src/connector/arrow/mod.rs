@@ -13,9 +13,10 @@ use datafusion::{
     dataframe::DataFrame,
     datasource::file_format::file_compression_type::FileCompressionType,
     execution::{
-        context::{SessionConfig, SessionContext, SessionState},
+        context::{SessionConfig, SessionContext},
         options::{AvroReadOptions, CsvReadOptions, NdJsonReadOptions, ParquetReadOptions},
         runtime_env::RuntimeEnv,
+        session_state::{SessionState, SessionStateBuilder},
     },
     variable::VarType,
 };
@@ -287,7 +288,9 @@ impl Connector for ArrowConnector {
 
 /// Shared session state for DataFusion.
 static SHARED_SESSION_STATE: LazyLock<SessionState> = LazyLock::new(|| {
-    let config = SessionConfig::new();
-    let runtime = Arc::new(RuntimeEnv::default());
-    SessionState::new_with_config_rt(config, runtime)
+    SessionStateBuilder::new()
+        .with_config(SessionConfig::new())
+        .with_runtime_env(Arc::new(RuntimeEnv::default()))
+        .with_default_features()
+        .build()
 });

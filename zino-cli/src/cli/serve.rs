@@ -135,7 +135,7 @@ async fn generate_cargo_toml(mut req: zino::Request) -> zino::Result {
             return Ok(res.into());
         }
     };
-    let mut cargo_toml = match current_cargo_toml_content.parse::<Document>(){
+    let mut cargo_toml = match current_cargo_toml_content.parse::<Document>() {
         Ok(doc) => doc,
         Err(err) => {
             res.set_code(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
@@ -167,7 +167,6 @@ async fn generate_cargo_toml(mut req: zino::Request) -> zino::Result {
     } else {
         cargo_toml["dependencies"]["zino-core"]["features"] = toml_edit::value(core_feature);
     }
-
 
     let options = taplo::formatter::Options {
         compact_arrays: false,
