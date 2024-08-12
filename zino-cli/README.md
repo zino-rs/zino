@@ -34,7 +34,7 @@ zli init
 ```
 options:
 - `--template <template_url>`: Use a custom template for the project.
-- `--project-name <project_name>`: Name of the project.
+- `--project-name <project_name>`: Name of the project (current_dir by default).
 
 ### Manage dependencies
-run `zli serve` and access `http://localhost:6080/zino-config.html` in your browser.
+run `zli serve` and access http://localhost:6080/zino-config.html in your browser.
