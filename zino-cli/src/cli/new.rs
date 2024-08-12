@@ -1,5 +1,6 @@
 use crate::cli::{
-    clean_template_dir, process_template, DEFAULT_TEMPLATE_URL, TEMPORARY_TEMPLATE_PATH,
+    clean_template_dir, check_package_name_validation, process_template, DEFAULT_TEMPLATE_URL,
+    TEMPORARY_TEMPLATE_PATH,
 };
 use clap::Parser;
 use std::{fs, path::Path};
@@ -23,20 +24,18 @@ impl New {
         let new_res = self.new_with_template();
         // must clean the temporary template directory after the initialization
         clean_template_dir(TEMPORARY_TEMPLATE_PATH);
-        match new_res {
-            Ok(_) => {
+        new_res
+            .map(|_| {
                 log::info!("project `{}` created successfully", self.project_name);
-                Ok(())
-            }
-            Err(err) => {
+            })
+            .or_else(|err| {
                 if !project_dir_already_exists {
                     if let Err(err) = fs::remove_dir_all(&self.project_name) {
                         log::warn!("fail to remove project directory: {err}");
                     }
                 }
                 Err(err)
-            }
-        }
+            })
     }
 
     /// Checks if the project directory already exists and if it's empty.
@@ -54,11 +53,9 @@ impl New {
 
     /// Creates a new project with the template.
     fn new_with_template(&self) -> Result<(), Error> {
-        let template_url = match self.template {
-            Some(ref template) => template.as_ref(),
-            None => DEFAULT_TEMPLATE_URL,
-        };
-        let project_root = &format!("/{}", self.project_name);
+        let template_url = self.template.as_deref().unwrap_or(DEFAULT_TEMPLATE_URL);
+        check_package_name_validation(&self.project_name)?;
+        let project_root = &format!("/{}", &self.project_name);
         process_template(template_url, project_root, &self.project_name)
     }
 }

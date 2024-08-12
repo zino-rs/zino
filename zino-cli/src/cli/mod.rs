@@ -2,6 +2,7 @@
 
 use clap::Parser;
 use git2::Repository;
+use regex::Regex;
 use std::fs;
 use std::fs::remove_dir_all;
 use std::path::Path;
@@ -75,7 +76,7 @@ pub(crate) fn process_template(
                 template_file_path
                     .strip_prefix(TEMPORARY_TEMPLATE_PATH)?
                     .to_str()
-                    .unwrap()
+                    .ok_or_else(|| Error::new("fail to convert the template file path to string"))?
             );
             fs::create_dir_all(Path::new(&target_path).parent().unwrap())?;
 
@@ -100,4 +101,13 @@ fn clean_template_dir(path: &str) {
     if let Err(err) = remove_dir_all(path) {
         log::error!("fail to remove the temporary template directory: {}", err)
     }
+}
+
+/// Check name validity.
+pub(crate) fn check_package_name_validation(name: &str) -> Result<(), Error> {
+    Regex::new(r"^[a-zA-Z][a-zA-Z0-9_-]*$")
+        .map_err(|e| Error::new(e.to_string()))?
+        .is_match(name)
+        .then(|| ())
+        .ok_or_else(|| Error::new(format!("invalid package name: `{}`", name)))
 }
