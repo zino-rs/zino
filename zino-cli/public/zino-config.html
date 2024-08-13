@@ -385,9 +385,9 @@
         try {
             const response = await fetch('/current_dir');
             if (!response.ok) {
-                throw new Error(await response.text());
+                throw new Error((await response.json()).data);
             }
-            document.getElementById('currentDir').value = await response.text();
+            document.getElementById('currentDir').value = (await response.json()).data;
         } catch (error) {
             console.error('Failed to fetch current directory:', error);
         }
@@ -398,9 +398,9 @@
         try {
             const response = await fetch('/get_current_cargo_toml');
             if (!response.ok) {
-                throw new Error(await response.text());
+                throw new Error((await response.json()).data);
             }
-            const content = await response.text();
+            const content = (await response.json()).data;
             document.getElementById('currentCargoTomlTextArea').value = content;
 
             const packageNameLine = content.split('\n').find(line => line.startsWith('name ='));

@@ -56,7 +56,7 @@ pub(crate) static DEFAULT_TEMPLATE_URL: &str =
     "https://github.com/zino-rs/zino-template-default.git";
 
 /// Clones the template repository, do replacements, and create the project.
-pub(crate) fn process_template(
+pub(crate) fn clone_and_process_template(
     template_url: &str,
     target_path_prefix: &str,
     project_name: &str,
@@ -76,7 +76,9 @@ pub(crate) fn process_template(
                 template_file_path
                     .strip_prefix(TEMPORARY_TEMPLATE_PATH)?
                     .to_str()
-                    .ok_or_else(|| Error::new("fail to convert the template file path to string"))?
+                    .ok_or_else(|| Error::new(
+                        "fail to convert the template file path to string"
+                    ))?
             );
             fs::create_dir_all(Path::new(&target_path).parent().unwrap())?;
 
@@ -98,9 +100,7 @@ fn is_ignored(entry: &DirEntry) -> bool {
 
 /// Clean the temporary template directory.
 fn clean_template_dir(path: &str) {
-    if let Err(err) = remove_dir_all(path) {
-        log::error!("fail to remove the temporary template directory: {}", err)
-    }
+    let _ = remove_dir_all(path);
 }
 
 /// Check name validity.
@@ -108,6 +108,6 @@ pub(crate) fn check_package_name_validation(name: &str) -> Result<(), Error> {
     Regex::new(r"^[a-zA-Z][a-zA-Z0-9_-]*$")
         .map_err(|e| Error::new(e.to_string()))?
         .is_match(name)
-        .then(|| ())
+        .then_some(())
         .ok_or_else(|| Error::new(format!("invalid package name: `{}`", name)))
 }

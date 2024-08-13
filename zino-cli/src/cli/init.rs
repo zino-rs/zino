@@ -1,5 +1,5 @@
 use crate::cli::{
-    clean_template_dir, check_package_name_validation, process_template, DEFAULT_TEMPLATE_URL,
+    check_package_name_validation, clean_template_dir, clone_and_process_template, DEFAULT_TEMPLATE_URL,
     TEMPORARY_TEMPLATE_PATH,
 };
 use clap::Parser;
@@ -45,6 +45,6 @@ impl Init {
         };
         check_package_name_validation(project_name)?;
         let template_url = self.template.as_deref().unwrap_or(DEFAULT_TEMPLATE_URL);
-        process_template(template_url, "", project_name)
+        clone_and_process_template(template_url, "", project_name)
     }
 }
