@@ -29,7 +29,7 @@ impl New {
                 log::info!("project `{}` created successfully", self.project_name);
             })
             .map_err(|err| {
-                if !project_dir_already_exists {
+                if !project_dir_already_exists && Path::new("./Cargo.toml").is_dir() {
                     if let Err(err) = fs::remove_dir_all(&self.project_name) {
                         log::warn!("fail to remove project directory:{}, {err}", self.project_name);
                     }
