@@ -1,6 +1,6 @@
 use crate::cli::{
-    check_package_name_validation, clean_template_dir, clone_and_process_template, DEFAULT_TEMPLATE_URL,
-    TEMPORARY_TEMPLATE_PATH,
+    check_package_name_validation, clean_template_dir, clone_and_process_template,
+    DEFAULT_TEMPLATE_URL, TEMPORARY_TEMPLATE_PATH,
 };
 use clap::Parser;
 use std::{fs, path::Path};
@@ -31,7 +31,10 @@ impl New {
             .map_err(|err| {
                 if !project_dir_already_exists && Path::new("./Cargo.toml").is_dir() {
                     if let Err(err) = fs::remove_dir_all(&self.project_name) {
-                        log::warn!("fail to remove project directory:{}, {err}", self.project_name);
+                        log::warn!(
+                            "fail to remove project directory:{}, {err}",
+                            self.project_name
+                        );
                     }
                 }
                 err

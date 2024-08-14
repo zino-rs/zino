@@ -1,6 +1,6 @@
 use crate::cli::{
-    check_package_name_validation, clean_template_dir, clone_and_process_template, DEFAULT_TEMPLATE_URL,
-    TEMPORARY_TEMPLATE_PATH,
+    check_package_name_validation, clean_template_dir, clone_and_process_template,
+    DEFAULT_TEMPLATE_URL, TEMPORARY_TEMPLATE_PATH,
 };
 use clap::Parser;
 use std::{env, path::Path};
