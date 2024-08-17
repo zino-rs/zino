@@ -40,10 +40,21 @@ impl Init {
             .map(|s| s.to_string())
             .ok_or_else(|| Error::new("fail to get or convert the current directory name"))?;
         let project_name = match &self.project_name {
-            Some(project_name) => project_name,
-            None => &current_dir,
+            Some(project_name) => {
+                check_package_name_validation(project_name)?;
+                project_name
+            }
+            None => {
+                check_package_name_validation(&current_dir).map_err(|_| {
+                    Error::new(format!(
+                        "current directory's name:{} is not a valid Rust package name,\
+                        try to specify the project name with `--project-name`",
+                        &current_dir
+                    ))
+                })?;
+                &current_dir
+            }
         };
-        check_package_name_validation(project_name)?;
         let template_url = self.template.as_deref().unwrap_or(DEFAULT_TEMPLATE_URL);
         clone_and_process_template(template_url, "", project_name)
     }
