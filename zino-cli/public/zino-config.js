@@ -103,6 +103,8 @@ function checkedOptions() {
             .concat(option_groups['Accessor'])
             .concat(option_groups['Connector'])
             .concat(option_groups['locale'])
+            .concat(option_groups['validator'])
+            .concat(option_groups['view'])
             .sort()
     }
     return option;
