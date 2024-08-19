@@ -1,6 +1,17 @@
 // fetch the current directory and Cargo.toml content
-document.getElementById('currentDir').addEventListener('blur', async function () {
-    const currentDir = this.value;
+const currentDirInput = document.getElementById('currentDir');
+
+currentDirInput.addEventListener('blur', updateCurrentDir);
+
+currentDirInput.addEventListener('keyup', async function (event) {
+    if (event.key === 'Enter') {
+        event.preventDefault(); // 防止默认的回车行为（如提交表单）
+        await updateCurrentDir();
+    }
+});
+
+async function updateCurrentDir() {
+    const currentDir = currentDirInput.value;
 
     try {
         const response = await fetch(`/update_current_dir/${encodeURIComponent(currentDir)}`, {
@@ -19,7 +30,7 @@ document.getElementById('currentDir').addEventListener('blur', async function ()
 
     await fetchCargoToml()
     await fetchFeatures()
-});
+}
 
 // ask the server to change the current directory
 async function fetchCurrentDir() {
