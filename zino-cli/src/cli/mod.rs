@@ -44,7 +44,7 @@ pub enum Subcommands {
     Init(init::Init),
     /// Create a new project.
     New(new::New),
-    /// Start the server.
+    /// Start the server at localhost:6080/zino-config.html.
     Serve(serve::Serve),
 }
 

@@ -64,7 +64,12 @@ async fn get_page(req: zino::Request) -> zino::Result {
         .get_file(&file_name)
         .map(|file| {
             let content = file.contents_utf8().unwrap_or_default();
-            res.set_content_type("text/html");
+            res.set_content_type(match file_name.split('.').last().unwrap_or("html") {
+                "html" => "text/html",
+                "css" => "text/css",
+                "js" => "application/javascript",
+                _ => "text/plain",
+            });
             res.set_data(&content);
         })
         .or_else(|| {
