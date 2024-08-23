@@ -3,192 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>new-project</title>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .top-bar {
-            background-color: #007bff;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            height: 18%;
-        }
-
-        .top-bar h1 {
-            margin-top: 1%;
-            font-size: 32px;
-        }
-
-        .main-content {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        input[type="text"] {
-            padding: 10px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            width: 61.8%;
-            box-sizing: border-box;
-            font-size: 18px;
-        }
-
-        input[type="text"]:focus {
-            border-color: #007bff;
-            outline: none;
-        }
-
-        .cargoTomlBlock {
-            display: flex;
-            flex-direction: column;
-            width: 30.9%;
-        }
-
-        .cargoTomlDescription {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 10%;
-            background-color: #f0f0f0;
-            color: #333;
-            font-size: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border-radius: 5px;
-        }
-
-        .textarea-container {
-            display: flex;
-            height: 100%;
-            width: 100%;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .textarea-container .lineNumber {
-            white-space: pre;
-            display: flex;
-            flex-direction: column;
-            position: absolute;
-            left: 0;
-            width: 20px;
-            height: 100%;
-            padding: 2px;
-            text-align: center;
-            color: #007bff;
-            font-family: monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            pointer-events: none;
-        }
-
-        .cargoTomlTextArea {
-            height: 100%;
-            width: 100%;
-            font-family: Consolas, monospace;
-            white-space: pre;
-            background-color: #f3f4f6;
-            color: #333;
-            padding-left: 30px;
-            line-height: 1.5;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border: none;
-            border-radius: 8px;
-            box-sizing: border-box;
-            overflow-x: auto;
-            overflow-y: scroll;
-            font-size: 14px;
-        }
-
-        #config-form-block {
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            width: 38.2%;
-            height: auto;
-            overflow-y: auto;
-        }
-
-        .config-form {
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            border-top: #007bff 2px solid;
-        }
-
-        .config-form form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .config-form .form-description {
-            font-size: 32px;
-            color: #007bff;
-            margin-bottom: 20px;
-        }
-
-        .config-form button:hover {
-            background-color: #0056b3;
-        }
-
-        .closet {
-            margin-bottom: 10px;
-        }
-
-        .closet .option-title {
-            font-size: 24px;
-            color: black;
-            margin-bottom: 8px;
-        }
-
-        .option-group {
-            font-size: 24px;
-            color: #8d8f91;
-            border-color: #0056b3;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-left: 15%;
-        }
-
-        .option-group div {
-            cursor: pointer;
-            border-bottom: 2px solid grey;
-        }
-
-        .option-group div.checked {
-            font-size: 25px;
-            color: #14161a;
-            border-color: #0056b3;
-            border-bottom: 2px solid #007bff;
-        }
-
-        #save-config {
-            padding: 10px 15px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 18px;
-            cursor: pointer;
-            width: 61.8%;
-            margin-left: 19.1%;
-        }
-
-        .hidden {
-            display: none;
-        }
-    </style>
+    <link rel="stylesheet" href="zino-config.css">
 </head>
 <body>
 <div class="top-bar">
@@ -319,6 +134,30 @@
                 </div>
 
                 <div class="closet">
+                    <div class="option-title">validator</div>
+
+                    <div class="option-group">
+                        <div class="unchecked" data-feature="validator">validator</div>
+                        <div class="unchecked" data-feature="validator-credit-card">validator-credit-card</div>
+                        <div class="unchecked" data-feature="validator-email">validator-email</div>
+                        <div class="unchecked" data-feature="validator-phone-number">validator-phone-number</div>
+                        <div class="unchecked" data-feature="validator-regex">validator-regex</div>
+                        <div class="unchecked all-options" data-feature="all-validators">all</div>
+                    </div>
+                </div>
+
+                <div class="closet">
+                    <div class="option-title">view</div>
+
+                    <div class="option-group">
+                        <div class="unchecked" data-feature="view">view</div>
+                        <div class="unchecked" data-feature="view-minijinja">view-minijinja</div>
+                        <div class="unchecked" data-feature="view-tera">view-tera</div>
+                        <div class="unchecked all-options">all</div>
+                    </div>
+                </div>
+
+                <div class="closet">
                     <div class="option-title">core-features</div>
 
                     <div class="option-group">
@@ -332,10 +171,8 @@
                         <div class="unchecked" data-feature="sentry">sentry</div>
                         <div class="unchecked" data-feature="tls-native">tls-native</div>
                         <div class="unchecked" data-feature="tls-rustls">tls-rustls</div>
-                        <div class="unchecked" data-feature="validator">validator</div>
                         <div class="unchecked" data-feature="tracing-log">tracing-log</div>
                         <div class="unchecked" data-feature="http02">http02</div>
-                        <div class="unchecked" data-feature="view">view</div>
                         <div class="unchecked all-options">all</div>
                     </div>
                 </div>
@@ -356,233 +193,6 @@
     </div>
 </div>
 </body>
-<script>
-    // fetch the current directory and Cargo.toml content
-    document.getElementById('currentDir').addEventListener('blur', async function () {
-        const currentDir = this.value;
-
-        try {
-            const response = await fetch(`/update_current_dir/${encodeURIComponent(currentDir)}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'text/plain',
-                },
-            });
-            if (!response.ok) {
-                throw new Error(await response.text());
-            }
-        } catch (err) {
-            console.error('Failed to update directory:', err);
-            await fetchCurrentDir();
-        }
-
-        await fetchCargoToml()
-        await fetchFeatures()
-    });
-
-    // ask the server to change the current directory
-    async function fetchCurrentDir() {
-        try {
-            const response = await fetch('/current_dir');
-            if (!response.ok) {
-                throw new Error(await response.text());
-            }
-            document.getElementById('currentDir').value = await response.text();
-        } catch (error) {
-            console.error('Failed to fetch current directory:', error);
-        }
-    }
-
-    // get the content of current_dir/Cargo.toml
-    async function fetchCargoToml() {
-        try {
-            const response = await fetch('/get_current_cargo_toml');
-            if (!response.ok) {
-                throw new Error(await response.text());
-            }
-            const content = await response.text();
-            document.getElementById('currentCargoTomlTextArea').value = content;
-
-            const packageNameLine = content.split('\n').find(line => line.startsWith('name ='));
-            const projectName = packageNameLine ? packageNameLine.split('=')[1].trim().replace(/"/g, '') : 'Not Found';
-            document.getElementById("project_name").textContent = `current project: ${projectName}`;
-            updateLineNumbers(document.getElementById('currentCargoTomlTextArea'));
-        } catch (error) {
-            console.error('Failed to fetch Cargo.toml:', error);
-            document.getElementById('currentCargoTomlDescription').value = 'Failed to fetch Cargo.toml, make sure you entered a valid project directory';
-        }
-    }
-
-
-    // init the options of each group
-    async function fetchFeatures() {
-        try {
-            const response = fetch('/get_current_features');
-            let features = await (await response).json();
-            document.querySelectorAll('.checked').forEach(option => {
-                option.classList.replace('checked', 'unchecked')
-            })
-            for (let feature of features.data.zino_feature) {
-                Array.from(document.querySelectorAll('#zino-config-form [data-feature]')).filter(option => option.getAttribute('data-feature') === feature).forEach(option => {
-                    option.click()
-                })
-            }
-            for (let feature of features.data.core_feature) {
-                Array.from(document.querySelectorAll('#core-config-form [data-feate]')).filter(option => option.getAttribute('data-feature') === feature).forEach(option => {
-                    option.click()
-                })
-            }
-        } catch (error) {
-            console.error('Failed to init options:', error);
-        }
-    }
-
-    function checkedOptions() {
-        let option_groups = {};
-        document.querySelectorAll('.closet').forEach(closet => {
-            const groupName = closet.querySelector('.option-title').textContent;
-            option_groups[groupName] = [];
-            closet.querySelectorAll('.checked').forEach(option => {
-                if (!option.classList.contains('all-options')) {
-                    option_groups[groupName].push(option.getAttribute('data-feature'));
-                } else {
-                    let all_flag = option.getAttribute('data-feature')
-                    if (all_flag != null) {
-                        option_groups[groupName] = [option.getAttribute('data-feature')]
-                    }
-                }
-            });
-        });
-        let option = {
-            zino_feature: option_groups['Framework']
-                .concat(option_groups['zino-features'])
-                .sort(),
-            core_feature: option_groups['core-features']
-                .concat(option_groups['Database'])
-                .concat(option_groups['Accessor'])
-                .concat(option_groups['Connector'])
-                .concat(option_groups['locale'])
-                .sort()
-        }
-        return option;
-    }
-
-    async function generateCargoToml() {
-        const res = await fetch('/generate_cargo_toml', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(checkedOptions())
-        });
-
-
-        document.querySelector('#aimCargoTomlTextArea').value = (await res.json()).data;
-    }
-
-
-    function change_option_state() {
-        this.classList.toggle('unchecked');
-        this.classList.toggle('checked');
-        let self_checked = this.classList.contains('checked');
-
-        let group = this.parentElement;
-
-        if (group.classList.contains('exclusive')) {
-            [...group.querySelectorAll('.checked')].filter(o => o !== this).forEach(option => {
-                option.classList.toggle('checked')
-                option.classList.toggle('unchecked')
-            })
-        }
-
-        if (this.classList.contains('all-options')) {
-            if (self_checked) {
-                group.querySelectorAll('.unchecked').forEach(option => {
-                    option.classList.replace('unchecked', 'checked')
-                })
-            } else {
-                group.querySelectorAll('.checked').forEach(option => {
-                    option.classList.replace('checked', 'unchecked')
-                })
-            }
-        } else {
-            if (self_checked) {
-                if (group.querySelectorAll('.unchecked').length === 1) {
-                    group.querySelectorAll('.all-options').forEach(option => {
-                        option.classList.replace('unchecked', 'checked')
-                    })
-                }
-            } else {
-                group.querySelectorAll('.all-options').forEach(option => {
-                    option.classList.replace('checked', 'unchecked')
-                })
-            }
-        }
-
-        const ormOption = document.querySelector('#zino-config-form [data-feature="orm"]');
-        const ormForm = document.getElementById('orm-form');
-        if (ormOption && ormOption.classList.contains('checked')) {
-            ormForm.classList.remove('hidden');
-        } else {
-            ormForm.classList.add('hidden');
-            ormForm.querySelectorAll('.option-group div').forEach(option => {
-                option.classList.replace('checked', 'unchecked');
-            });
-        }
-
-        generateCargoToml();
-    }
-
-    document.querySelectorAll('.unchecked').forEach(option => {
-        option.addEventListener('click', change_option_state);
-    });
-
-
-    function updateLineNumbers(textArea) {
-        const lineCount = textArea.value.split('\n').length;
-        let lineNumberHtml = '';
-        for (let i = 1; i <= lineCount; i++) {
-            lineNumberHtml += `${i}\n`;
-        }
-
-        const lineNumberElement = textArea.previousElementSibling;
-        lineNumberElement.textContent = lineNumberHtml;
-    }
-
-    document.querySelectorAll('.cargoTomlTextArea').forEach(textArea => {
-        textArea.addEventListener('input', function () {
-            updateLineNumbers(this);
-        });
-        textArea.addEventListener('scroll', function () {
-            this.previousElementSibling.style.marginTop = `-${this.scrollTop}px`;
-        });
-    });
-
-    // save the generated Cargo.toml
-    document.getElementById('save-config').addEventListener('click', async () => {
-        const aimCargoToml = document.getElementById('aimCargoTomlTextArea').value;
-        try {
-            const response = await fetch('/save_cargo_toml', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(aimCargoToml),
-            });
-            if (!response.ok) {
-                throw new Error(await response.text());
-            }
-            await fetchCargoToml();
-        } catch (error) {
-            console.error('Failed to save Cargo.toml:', error);
-        }
-    });
-
-    window.onload = async () => {
-        await fetchCurrentDir();
-        await fetchCargoToml();
-        await fetchFeatures();
-    };
-</script>
+<script src="zino-config.js"></script>
 
 </html>

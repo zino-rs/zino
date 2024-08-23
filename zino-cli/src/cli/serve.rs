@@ -1,6 +1,4 @@
 use axum::{
-    extract::Path,
-    response::{Html, IntoResponse},
     routing::{get, post},
     Router,
 };
@@ -43,78 +41,82 @@ impl Serve {
 }
 
 /// Returns the content of `Cargo.toml` file in the current directory.
-async fn get_current_cargo_toml() -> impl IntoResponse {
+async fn get_current_cargo_toml(req: zino::Request) -> zino::Result {
+    let mut res = zino::Response::default().context(&req);
     fs::read_to_string("./Cargo.toml")
-        .map(|content| content.into_response())
-        .unwrap_or_else(|err| {
-            (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                format!("fail to read 'Cargo.toml' file: {err}"),
-            )
-                .into_response()
+        .map(|content| {
+            res.set_content_type("application/json");
+            res.set_data(&content);
         })
+        .map_err(|err| {
+            res.set_code(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+            res.set_data(&err.to_string());
+        })
+        .ok();
+    Ok(res.into())
 }
 
 /// Returns the HTML page.
-async fn get_page(Path(file_name): Path<String>) -> impl IntoResponse {
-    match RESOURCE.get_file(&file_name) {
-        Some(file) => {
+async fn get_page(req: zino::Request) -> zino::Result {
+    let mut res = zino::Response::default();
+    let file_name: String = req.parse_param("file_name").unwrap_or_default();
+    RESOURCE
+        .get_file(&file_name)
+        .map(|file| {
             let content = file.contents_utf8().unwrap_or_default();
-            Html(content).into_response()
-        }
-        None => RESOURCE
-            .get_file("404.html")
-            .map(|not_found_page| {
-                let not_found_page_content = not_found_page.contents_utf8().unwrap_or_default();
-                (
-                    axum::http::StatusCode::NOT_FOUND,
-                    Html(not_found_page_content),
-                )
-                    .into_response()
+            res.set_content_type(match file_name.split('.').last().unwrap_or("html") {
+                "html" => "text/html",
+                "css" => "text/css",
+                "js" => "application/javascript",
+                _ => "text/plain",
+            });
+            res.set_data(&content);
+        })
+        .or_else(|| {
+            RESOURCE.get_file("404.html").map(|not_found_page| {
+                let not_found_page_content = not_found_page
+                    .contents_utf8()
+                    .unwrap_or("404.html not found, include_dir is corrupted. Try reinstall zli");
+                res.set_content_type("text/html");
+                res.set_data(&not_found_page_content);
             })
-            .unwrap_or_else(|| {
-                (
-                    axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                    "404.html not found, include_dir is corrupted. Try reinstall zli",
-                )
-                    .into_response()
-            }),
-    }
+        });
+    Ok(res.into())
 }
 
 /// Returns the current directory.
-async fn get_current_dir() -> impl IntoResponse {
+async fn get_current_dir(req: zino::Request) -> zino::Result {
+    let mut res = zino::Response::default().context(&req);
     env::current_dir()
         .map(|current_dir| {
-            current_dir
-                .to_str()
-                .unwrap_or("fail to convert current_path to utf-8 string")
-                .to_string()
-                .into_response()
+            res.set_code(axum::http::StatusCode::OK);
+            res.set_data(
+                &current_dir
+                    .to_str()
+                    .unwrap_or("fail to convert current_path to utf-8 string"),
+            );
         })
         .unwrap_or_else(|err| {
-            (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                format!("fail to get current_dir: {err}"),
-            )
-                .into_response()
-        })
+            res.set_code(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+            res.set_data(&format!("fail to get current_dir: {}", err));
+        });
+    Ok(res.into())
 }
 
 /// Updates current directory.
-async fn update_current_dir(Path(path): Path<String>) -> impl IntoResponse {
+async fn update_current_dir(req: zino::Request) -> zino::Result {
+    let mut res = zino::Response::default().context(&req);
+    let path: String = req.parse_param("path").unwrap_or_default();
     env::set_current_dir(&path)
         .map(|_| {
-            log::info!("directory updated to: {}", path);
-            axum::http::StatusCode::OK.into_response()
+            res.set_code(axum::http::StatusCode::OK);
+            res.set_data(&format!("directory updated to: {}", path));
         })
         .unwrap_or_else(|err| {
-            (
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                format!("fail to update current_dir: {err}"),
-            )
-                .into_response()
-        })
+            res.set_code(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+            res.set_data(&format!("fail to update current_dir: {}", err));
+        });
+    Ok(res.into())
 }
 
 /// Features struct.
