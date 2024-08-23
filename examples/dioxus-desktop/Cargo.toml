@@ -1,7 +1,7 @@
 [package]
 name = "dioxus-desktop"
 description = "An example for Dioxus desktop integration."
-version = "0.5.3"
+version = "0.5.4"
 rust-version = "1.75"
 edition = "2021"
 publish = false
@@ -22,14 +22,14 @@ features = [
 
 [dependencies.zino]
 path = "../../zino"
-version = "0.24.1"
+version = "0.24.2"
 features = ["dioxus-desktop"]
 
 [dependencies.zino-core]
 path = "../../zino-core"
-version = "0.25.1"
+version = "0.25.2"
 features = ["env-filter", "tls-native"]
 
 [dependencies.zino-dioxus]
 path = "../../zino-dioxus"
-version = "0.7.1"
+version = "0.7.2"

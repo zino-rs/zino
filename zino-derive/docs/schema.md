@@ -3,11 +3,11 @@ Derives the [`Schema`](zino_core::orm::Schema) trait.
 # Attributes on structs
 
 - **`#[schema(reader_name = "name")]`**: The `reader_name` attribute specifies
-  the model reader name of database services. The names are defined in the database cofiguration.
+  the model reader name of database services. The names are defined in the database configuration.
   Default value: **`main`**.
 
 - **`#[schema(writer_name = "name")]`**: The `writer_name` attribute specifies
-  the model writer name of database services. The names are defined in the database cofiguration.
+  the model writer name of database services. The names are defined in the database configuration.
   Default value: **`main`**.
 
 - **`#[schema(table_name = "name")]`**: The `table_name` attribute specifies
@@ -78,10 +78,10 @@ Derives the [`Schema`](zino_core::orm::Schema) trait.
 - **`#[schema(fuzzy_search)]`**: The `fuzzy_search` annotation is used to indicate that
   the column supports fuzzy search.
 
-- **`#[schema(on_delete = "action")]`**: The `on_delete` attribute sepcifies
+- **`#[schema(on_delete = "action")]`**: The `on_delete` attribute specifies
   the referential action for a foreign key when the parent table has a `DELETE` operation.
   Supported values: `cascade` | `restrict`.
 
-- **`#[schema(on_update = "action")]`**: The `on_update` attribute sepcifies
+- **`#[schema(on_update = "action")]`**: The `on_update` attribute specifies
   the referential action for a foreign key when the parent table has an `UPDATE` operation.
   Supported values: `cascade` | `restrict`.

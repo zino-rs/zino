@@ -1,7 +1,7 @@
 [package]
 name = "axum-app"
 description = "An example for axum integration."
-version = "0.14.1"
+version = "0.14.2"
 rust-version = "1.75"
 edition = "2021"
 publish = false
@@ -14,12 +14,12 @@ version = "0.7.5"
 default-features = false
 
 [dependencies.serde]
-version = "1.0.206"
+version = "1.0.208"
 features = ["derive"]
 
 [dependencies.zino]
 path = "../../zino"
-version = "0.24.1"
+version = "0.24.2"
 features = [
     "axum",
     "i18n",
@@ -29,7 +29,7 @@ features = [
 
 [dependencies.zino-core]
 path = "../../zino-core"
-version = "0.25.1"
+version = "0.25.2"
 features = [
     "cookie",
     "env-filter",
@@ -40,8 +40,8 @@ features = [
 
 [dependencies.zino-derive]
 path = "../../zino-derive"
-version = "0.22.1"
+version = "0.22.2"
 
 [dependencies.zino-model]
 path = "../../zino-model"
-version = "0.22.1"
+version = "0.22.2"

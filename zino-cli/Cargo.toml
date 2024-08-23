@@ -30,18 +30,18 @@ version = "0.7.5"
 default-features = false
 
 [dependencies.clap]
-version = "4.5.15"
+version = "4.5.16"
 features = ["color", "derive"]
 
 [dependencies.serde]
-version = "1.0.205"
+version = "1.0.208"
 features = ["derive"]
 
 [dependencies.zino]
 path = "../zino"
-version = "0.24.1"
+version = "0.24.2"
 features = ["axum"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.25.1"
+version = "0.25.2"

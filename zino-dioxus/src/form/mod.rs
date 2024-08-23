@@ -21,7 +21,7 @@ pub use field::{
     FormAddons, FormAddonsProps, FormField, FormFieldContainer, FormFieldContainerProps,
     FormFieldProps, FormGroup, FormGroupProps,
 };
-pub use file::{FileUpload, FileUploadProps};
+pub use file::{FileIcon, FileIconProps, FileTree, FileTreeProps, FileUpload, FileUploadProps};
 pub use input::{Input, InputProps};
 pub use progress::{Progress, ProgressProps};
 pub use radio::{Radio, RadioProps};

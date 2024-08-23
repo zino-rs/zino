@@ -282,7 +282,7 @@ impl JobScheduler {
     }
 
     /// Executes all the job manually.
-    pub async fn execute(&mut self) {
+    pub fn execute(&mut self) {
         for job in &mut self.jobs {
             job.execute();
         }

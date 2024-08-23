@@ -606,7 +606,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             query.add_filter(#field_name, "null");
                         });
                         soft_delete_updates.push(quote! {
-                            updates.upsert(#field_name, DateTime::now().to_utc_timestamp());
+                            updates.upsert(#field_name, DateTime::now().format_timestamp());
                         });
                     }
                     "version" if type_name == "u64" => {

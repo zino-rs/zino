@@ -213,6 +213,16 @@ impl DateTime {
         format!("{}", datetime.format("%Y-%m-%d %H:%M:%S"))
     }
 
+    /// Returns a date-time string which can be used as a `TIMESTAMP` value in SQL.
+    #[inline]
+    pub fn format_timestamp(&self) -> String {
+        if cfg!(any(feature = "orm-mariadb", feature = "orm-sqlite")) {
+            self.to_utc_timestamp()
+        } else {
+            self.to_string()
+        }
+    }
+
     /// Returns the amount of time elapsed from another datetime to this one,
     /// or zero duration if that datetime is later than this one.
     #[inline]
@@ -632,7 +642,7 @@ impl fmt::Display for DateTime {
 impl Serialize for DateTime {
     #[inline]
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&self.to_utc_timestamp())
+        serializer.serialize_str(&self.format_timestamp())
     }
 }
 

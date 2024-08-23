@@ -68,6 +68,44 @@ where
         Ok(data)
     }
 
+    /// Finds a list of distinct scalar values selected by the query in the table,
+    /// and decodes it as a `Vec<T>`.
+    async fn find_distinct_scalars<T>(query: &Query) -> Result<Vec<T>, Error>
+    where
+        T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
+    {
+        Self::before_query(query).await?;
+
+        let table_name = query.format_table_name::<Self>();
+        let projection = query.format_projection();
+        let filters = query.format_filters::<Self>();
+        let sort = query.format_sort();
+        let pagination = query.format_pagination();
+        let sql = format!(
+            "SELECT DISTINCT {projection} FROM {table_name} \
+                {filters} {sort} {pagination};"
+        );
+        let mut ctx = Self::before_scan(&sql).await?;
+        ctx.set_query(&sql);
+
+        let pool = Self::acquire_reader().await?.pool();
+        let mut rows = sqlx::query(&sql).fetch(pool);
+        let mut data = Vec::new();
+        let mut max_rows = super::MAX_ROWS.load(Relaxed);
+        while let Some(row) = rows.try_next().await? {
+            if max_rows > 0 {
+                data.push(row.try_get_unchecked(0)?);
+                max_rows -= 1;
+            } else {
+                break;
+            }
+        }
+        ctx.set_query_result(u64::try_from(data.len())?, true);
+        Self::after_scan(&ctx).await?;
+        Self::after_query(&ctx).await?;
+        Ok(data)
+    }
+
     /// Executes the query in the table, and decodes it as a single concrete type `T`.
     async fn query_scalar<T>(query: &str, params: Option<&Map>) -> Result<T, Error>
     where

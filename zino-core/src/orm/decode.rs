@@ -1,5 +1,5 @@
 use super::{DatabaseDriver, DatabaseRow};
-use crate::{error::Error, BoxError, Decimal, Uuid};
+use crate::{error::Error, warn, BoxError, Decimal, Uuid};
 use chrono::{DateTime, Local, NaiveDate, NaiveTime};
 use sqlx::{Database, Decode, Row, Type};
 
@@ -75,7 +75,8 @@ pub fn decode<'r, T>(row: &'r DatabaseRow, field: &str) -> Result<T, Error>
 where
     T: Decode<'r, DatabaseDriver>,
 {
-    row.try_get_unchecked(field).map_err(Error::from)
+    row.try_get_unchecked(field)
+        .map_err(|err| warn!("fail to decode the `{}` field: {}", field, err))
 }
 
 /// Decodes a single value as `Decimal` for the field in a row.
