@@ -21,7 +21,7 @@ dioxus = "0.5.6"
 dioxus-core = "0.5.6"
 dioxus-hooks = "0.5.6"
 dioxus-router = "0.5.6"
-rust_decimal = "1.35.0"
+rust_decimal = "1.36.0"
 smallvec = "1.13.2"
 
 [dependencies.chrono]

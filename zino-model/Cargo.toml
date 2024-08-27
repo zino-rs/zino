@@ -36,11 +36,11 @@ edition = []
 tracing = "0.1.40"
 
 [dependencies.serde]
-version = "1.0.208"
+version = "1.0.209"
 features = ["derive"]
 
 [dependencies.sqlx]
-version = "0.8.0"
+version = "0.8.1"
 default-features = false
 
 [dependencies.strum]

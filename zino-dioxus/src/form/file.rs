@@ -239,24 +239,50 @@ pub fn FileIcon(props: FileIconProps) -> Element {
     let icon_size = props.icon_size;
     let extension = props.extension.unwrap_or_default();
     match extension.as_str() {
-        "js" | "py" | "sql" | "rs" | "wino" => rsx!(SvgIcon {
-            shape: BsFileCode,
+        "md" => rsx!(SvgIcon {
+            shape: BsFileEarmarkText,
+            width: icon_size,
+        }),
+        "ipynb" | "wino" => rsx!(SvgIcon {
+            shape: BsFileEarmarkRichtext,
+            width: icon_size,
+        }),
+        "js" | "py" | "sql" => rsx!(SvgIcon {
+            shape: BsFileEarmarkCode,
             width: icon_size,
         }),
         "xls" | "xlsx" => rsx!(SvgIcon {
             shape: BsFileExcel,
             width: icon_size,
         }),
-        "ico" | "gif" | "jpg" | "jpeg" | "png" | "svg" | "webp" => rsx!(SvgIcon {
-            shape: BsFileImage,
+        "avif" | "ico" | "gif" | "jpg" | "jpeg" | "png" | "svg" | "tiff" | "webp" => {
+            rsx!(SvgIcon {
+                shape: BsFileImage,
+                width: icon_size,
+            })
+        }
+        "aac" | "flac" | "m4a" | "mp3" | "oga" | "opus" | "wav" => rsx!(SvgIcon {
+            shape: BsFileMusic,
             width: icon_size,
         }),
         "pdf" => rsx!(SvgIcon {
             shape: BsFilePdf,
             width: icon_size,
         }),
+        "avi" | "mkv" | "mov" | "mp4" | "mpeg" | "mpg" | "ogg" | "webm" => rsx!(SvgIcon {
+            shape: BsFilePlay,
+            width: icon_size,
+        }),
+        "ppt" | "pptx" => rsx!(SvgIcon {
+            shape: BsFilePpt,
+            width: icon_size,
+        }),
         "doc" | "docx" => rsx!(SvgIcon {
             shape: BsFileWord,
+            width: icon_size,
+        }),
+        "7z" | "gz" | "rar" | "tar" | "zip" => rsx!(SvgIcon {
+            shape: BsFileZip,
             width: icon_size,
         }),
         _ => rsx!(SvgIcon {
