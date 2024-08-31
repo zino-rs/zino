@@ -18,7 +18,6 @@ name = "zli"
 path = "src/main.rs"
 
 [dependencies]
-env_logger = "0.11.5"
 git2 = "0.19.0"
 include_dir = "0.7.4"
 log = "0.4.22"

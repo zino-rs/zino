@@ -226,7 +226,7 @@ version = "0.5.3"
 features = ["std"]
 
 [dependencies.async-openai]
-version = "0.23.4"
+version = "0.24.0"
 optional = true
 
 [dependencies.card-validate]
@@ -271,7 +271,7 @@ version = "0.5.2"
 optional = true
 
 [dependencies.jwt-simple]
-version = "0.12.9"
+version = "0.12.10"
 optional = true
 default-features = false
 features = ["pure-rust"]
@@ -292,7 +292,7 @@ optional = true
 features = ["debug", "loader"]
 
 [dependencies.opendal]
-version = "0.49.1"
+version = "0.49.2"
 optional = true
 default-features = false
 features = ["layers-tracing"]
@@ -437,7 +437,7 @@ criterion = "0.5.1"
 data-encoding = "2.6.0"
 libsm = "0.6.0"
 sm3 = "0.4.2"
-sonic-rs = "0.3.11"
+sonic-rs = "0.3.12"
 tinyvec = { version = "1.8.0", features = ["alloc"] }
 uuid-simd = "0.8.0"
 

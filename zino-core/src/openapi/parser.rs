@@ -197,7 +197,10 @@ pub(super) fn parse_schema(config: &Table) -> Schema {
     let mut object_builder = ObjectBuilder::new().schema_type(schema_type);
     for (key, value) in config {
         if key == "default" {
-            object_builder = object_builder.default(Some(value.to_json_value()));
+            let default_value = value.to_json_value();
+            object_builder = object_builder
+                .default(Some(default_value.clone()))
+                .example(Some(default_value));
         } else if key == "example" {
             object_builder = object_builder.example(Some(value.to_json_value()));
         } else {
@@ -325,7 +328,10 @@ fn parse_array_schema(config: &Table) -> Array {
     let mut array_builder = ArrayBuilder::new().items(item_schema);
     for (key, value) in config {
         if key == "default" {
-            array_builder = array_builder.default(Some(value.to_json_value()));
+            let default_value = value.to_json_value();
+            array_builder = array_builder
+                .default(Some(default_value.clone()))
+                .example(Some(default_value));
         } else if key == "example" {
             array_builder = array_builder.example(Some(value.to_json_value()));
         } else {
@@ -466,7 +472,11 @@ fn parse_query_parameters(query: &Table) -> Vec<Parameter> {
             } else {
                 parse_schema(config).into()
             };
-            parameter_builder = parameter_builder.schema(Some(schema));
+            parameter_builder = parameter_builder
+                .schema(Some(schema))
+                .description(config.get_str("description"))
+                .explode(config.get_bool("explode"))
+                .allow_reserved(config.get_bool("allow_reserved"));
         } else if let Some(basic_type) = value.as_str() {
             let object = Object::with_type(parse_schema_type(basic_type));
             parameter_builder = parameter_builder.schema(Some(object));
@@ -489,7 +499,11 @@ fn parse_header_parameters(headers: &Table) -> Vec<Parameter> {
             } else {
                 parse_schema(config).into()
             };
-            parameter_builder = parameter_builder.schema(Some(schema));
+            parameter_builder = parameter_builder
+                .schema(Some(schema))
+                .description(config.get_str("description"))
+                .explode(config.get_bool("explode"))
+                .allow_reserved(config.get_bool("allow_reserved"));
         } else if let Some(basic_type) = value.as_str() {
             let object = Object::with_type(parse_schema_type(basic_type));
             parameter_builder = parameter_builder.schema(Some(object));
@@ -512,7 +526,11 @@ fn parse_cookie_parameters(cookies: &Table) -> Vec<Parameter> {
             } else {
                 parse_schema(config).into()
             };
-            parameter_builder = parameter_builder.schema(Some(schema));
+            parameter_builder = parameter_builder
+                .schema(Some(schema))
+                .description(config.get_str("description"))
+                .explode(config.get_bool("explode"))
+                .allow_reserved(config.get_bool("allow_reserved"));
         } else if let Some(basic_type) = value.as_str() {
             let object = Object::with_type(parse_schema_type(basic_type));
             parameter_builder = parameter_builder.schema(Some(object));
