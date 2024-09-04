@@ -216,10 +216,10 @@ impl DateTime {
     /// Returns a date-time string which can be used as a `TIMESTAMP` value in SQL.
     #[inline]
     pub fn format_timestamp(&self) -> String {
-        if cfg!(any(feature = "orm-mariadb", feature = "orm-sqlite")) {
-            self.to_utc_timestamp()
-        } else {
+        if cfg!(feature = "orm-postgres") {
             self.to_string()
+        } else {
+            self.to_utc_timestamp()
         }
     }
 

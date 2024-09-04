@@ -10,7 +10,7 @@ pub fn Radio(props: RadioProps) -> Element {
                 class: props.class,
                 r#type: "radio",
                 ..props.attributes,
-                onchange: move |event| async move {
+                onchange: move |event| {
                     if let Some(handler) = props.on_change.as_ref() {
                         handler.call(event.value());
                     }

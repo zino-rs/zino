@@ -100,7 +100,7 @@ default-features = false
 features = ["compress-gzip"]
 
 [dependencies.async-trait]
-version = "0.1.81"
+version = "0.1.82"
 optional = true
 
 [dependencies.axum]

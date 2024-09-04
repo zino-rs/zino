@@ -8,12 +8,12 @@ pub fn Textarea(props: TextareaProps) -> Element {
             class: props.class,
             value: props.initial_value,
             ..props.attributes,
-            onchange: move |event| async move {
+            onchange: move |event| {
                 if let Some(handler) = props.on_change.as_ref() {
                     handler.call(event.value());
                 }
             },
-            oninput: move |event| async move {
+            oninput: move |event| {
                 if let Some(handler) = props.on_input.as_ref() {
                     handler.call(event.value());
                 }

@@ -10,7 +10,7 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
                 class: props.class,
                 r#type: "checkbox",
                 ..props.attributes,
-                onchange: move |event| async move {
+                onchange: move |event| {
                     if let Some(handler) = props.on_change.as_ref() {
                         handler.call(event.value());
                     }
