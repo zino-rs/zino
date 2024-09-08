@@ -180,13 +180,8 @@ cfg_if::cfg_if! {
                 connect_options = connect_options.read_only(read_only);
             }
 
-            let database_path = std::path::Path::new(database);
-            let database_file = if database_path.is_relative() {
-                crate::application::PROJECT_DIR.join(database_path)
-            } else {
-                database_path.to_path_buf()
-            };
-            connect_options.filename(database_file)
+            let database_path = crate::application::parse_path(database);
+            connect_options.filename(database_path)
         }
     }
 }

@@ -118,13 +118,8 @@ pub trait Application {
 
         // Initializes the directories to ensure that they are ready for use
         if let Some(dirs) = SHARED_APP_STATE.get_config("dirs") {
-            let project_dir = Self::project_dir();
             for dir in dirs.values().filter_map(|v| v.as_str()) {
-                let path = if dir.starts_with('/') {
-                    PathBuf::from(dir)
-                } else {
-                    project_dir.join(dir)
-                };
+                let path = parse_path(dir);
                 if !path.exists() {
                     if let Err(err) = fs::create_dir_all(&path) {
                         let path = path.display();
@@ -333,6 +328,21 @@ pub trait Application {
             serde_json::from_str(&text)?
         };
         Ok(data)
+    }
+}
+
+/// Parses a path relative to the project dir.
+pub(crate) fn parse_path(path: &str) -> PathBuf {
+    if path.starts_with('/') {
+        path.into()
+    } else if let Some(path) = path.strip_prefix("~/") {
+        if let Some(home_dir) = dirs::home_dir() {
+            home_dir.join(path)
+        } else {
+            PROJECT_DIR.join(path)
+        }
+    } else {
+        PROJECT_DIR.join(path)
     }
 }
 
