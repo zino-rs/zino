@@ -29,7 +29,7 @@ version = "0.4.38"
 features = ["serde"]
 
 [dependencies.comrak]
-version = "0.27.0"
+version = "0.28.0"
 default-features = false
 features = ["shortcodes", "syntect"]
 
