@@ -234,7 +234,7 @@ impl State {
     /// Returns a reference to the shared state.
     #[inline]
     pub fn shared() -> &'static Self {
-        LazyLock::force(&SHARED_STATE)
+        &SHARED_STATE
     }
 
     /// Encrypts the password in the config.

@@ -82,7 +82,7 @@ impl MessageChannel {
     /// Returns a reference to the shared message channel.
     #[inline]
     pub fn shared() -> &'static Self {
-        LazyLock::force(&SHARED_CHANNEL)
+        &SHARED_CHANNEL
     }
 
     /// Get the number of subscribers that currently exist.

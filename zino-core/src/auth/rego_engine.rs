@@ -103,7 +103,7 @@ impl RegoEngine {
     /// Returns a reference to the shared Rego engine.
     #[inline]
     pub fn shared() -> &'static Self {
-        LazyLock::force(&SHARED_REGO_ENGINE)
+        &SHARED_REGO_ENGINE
     }
 }
 

@@ -2,7 +2,7 @@
 name = "zino-chart"
 description = "Data visualizations for zino."
 version = "0.0.1"
-rust-version = "1.75"
+rust-version = "1.80"
 edition = "2021"
 license = "MIT"
 categories = ["visualization"]

@@ -40,7 +40,10 @@ impl<'a> ColumnExt for Column<'a> {
                 } else if column_type.starts_with("TIMESTAMP") {
                     data_type.starts_with("TIMESTAMP")
                 } else if column_type.starts_with("VARCHAR") {
-                    matches!(data_type.as_str(), "TEXT" | "VARCHAR" | "CHARACTER VARYING")
+                    matches!(
+                        data_type.as_str(),
+                        "TEXT" | "VARCHAR" | "CHARACTER VARYING" | "ENUM"
+                    )
                 } else {
                     false
                 }

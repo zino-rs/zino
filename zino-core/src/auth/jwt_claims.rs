@@ -166,7 +166,7 @@ impl JwtClaims<()> {
     /// Returns the shared secret access key for the HMAC algorithm.
     #[inline]
     pub fn shared_key() -> &'static JwtHmacKey {
-        LazyLock::force(&SECRET_KEY)
+        &SECRET_KEY
     }
 }
 

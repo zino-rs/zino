@@ -125,7 +125,7 @@ pub trait Application {
         // Initializes the directories to ensure that they are ready for use
         for path in SHARED_DIRS.values() {
             if !path.exists() {
-                if let Err(err) = fs::create_dir_all(&path) {
+                if let Err(err) = fs::create_dir_all(path) {
                     let path = path.display();
                     tracing::error!("fail to create the directory {path}: {err}");
                 }
@@ -197,7 +197,7 @@ pub trait Application {
     /// Returns a reference to the shared application state.
     #[inline]
     fn shared_state() -> &'static State<Map> {
-        LazyLock::force(&SHARED_APP_STATE)
+        &SHARED_APP_STATE
     }
 
     /// Returns the application env.
@@ -250,7 +250,7 @@ pub trait Application {
     /// Returns the project directory for the application.
     #[inline]
     fn project_dir() -> &'static PathBuf {
-        LazyLock::force(&PROJECT_DIR)
+        &PROJECT_DIR
     }
 
     /// Returns the config directory for the application.
@@ -261,7 +261,7 @@ pub trait Application {
     /// It can also be specified by the environment variable `ZINO_APP_CONFIG_DIR`.
     #[inline]
     fn config_dir() -> &'static PathBuf {
-        LazyLock::force(&CONFIG_DIR)
+        &CONFIG_DIR
     }
 
     /// Returns the shared directory with a specific name,
@@ -279,7 +279,7 @@ pub trait Application {
     fn shared_dir(name: &str) -> Cow<'_, PathBuf> {
         SHARED_DIRS
             .get(name)
-            .map(|path| Cow::Borrowed(path))
+            .map(Cow::Borrowed)
             .unwrap_or_else(|| Cow::Owned(Self::parse_path(name)))
     }
 

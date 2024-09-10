@@ -69,7 +69,7 @@ pub type Uuid = uuid::Uuid;
 pub type Decimal = rust_decimal::Decimal;
 
 /// A value which is initialized on the first access.
-pub type LazyLock<T> = once_cell::sync::Lazy<T>;
+pub type LazyLock<T> = std::sync::LazyLock<T>;
 
 /// An allocation-optimized string.
 pub type SharedString = std::borrow::Cow<'static, str>;

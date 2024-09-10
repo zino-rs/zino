@@ -28,7 +28,7 @@ impl New {
             .map(|_| {
                 log::info!("project `{}` created successfully", self.project_name);
             })
-            .map_err(|err| {
+            .inspect_err(|_err| {
                 if !project_dir_already_exists && Path::new("./Cargo.toml").is_dir() {
                     if let Err(err) = fs::remove_dir_all(&self.project_name) {
                         log::warn!(
@@ -37,7 +37,6 @@ impl New {
                         );
                     }
                 }
-                err
             })
     }
 

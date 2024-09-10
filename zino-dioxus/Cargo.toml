@@ -1,8 +1,8 @@
 [package]
 name = "zino-dioxus"
 description = "Dioxus components for zino."
-version = "0.7.3"
-rust-version = "1.75"
+version = "0.8.0"
+rust-version = "1.80"
 edition = "2021"
 license = "MIT"
 categories = ["gui", "network-programming", "web-programming"]
@@ -56,4 +56,4 @@ features = [
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.25.3"
+version = "0.26.0"
