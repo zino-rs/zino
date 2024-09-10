@@ -66,7 +66,7 @@ type Translation = FluentBundle<FluentResource, IntlLangMemoizer>;
 /// Localization.
 static LOCALIZATION: LazyLock<Vec<(LanguageIdentifier, Translation)>> = LazyLock::new(|| {
     let mut locales = Vec::new();
-    let locale_dir = application::PROJECT_DIR.join("./config/locale");
+    let locale_dir = application::CONFIG_DIR.join("locale");
     match fs::read_dir(locale_dir) {
         Ok(entries) => {
             let files = entries.filter_map(|entry| entry.ok());

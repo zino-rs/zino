@@ -1,7 +1,7 @@
 use crate::{error::Error, state::State, warn, Map};
 use convert_case::{Case, Casing};
 use minijinja::Environment;
-use std::sync::OnceLock;
+use std::{path::PathBuf, sync::OnceLock};
 
 /// Renders a template with the given data using [`minijinja`](https://crates.io/crates/minijinja).
 pub fn render(template_name: &str, data: Map) -> Result<String, Error> {
@@ -13,7 +13,7 @@ pub fn render(template_name: &str, data: Map) -> Result<String, Error> {
 }
 
 /// Loads templates.
-pub(crate) fn load_templates(app_state: &'static State<Map>, template_dir: String) {
+pub(crate) fn load_templates(app_state: &'static State<Map>, template_dir: PathBuf) {
     let mut view_engine = Environment::new();
     let app_env = app_state.env();
     view_engine.set_debug(app_env.is_dev());

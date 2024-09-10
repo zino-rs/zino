@@ -100,6 +100,8 @@ impl<T> State<T> {
 
     /// Loads the config according to the specific env.
     ///
+    /// # Note
+    ///
     /// It supports the `json` or `toml` format of configuration source data,
     /// which can be specified by the environment variable `ZINO_APP_CONFIG_FORMAT`.
     /// By default, it reads the config from a local file. If `ZINO_APP_CONFIG_URL` is set,
@@ -115,10 +117,10 @@ impl<T> State<T> {
             let format = std::env::var("ZINO_APP_CONFIG_FORMAT")
                 .map(|s| s.to_ascii_lowercase())
                 .unwrap_or_else(|_| "toml".to_owned());
-            let config_file_dir = application::PROJECT_DIR.join("config");
-            if config_file_dir.exists() {
+            let config_dir = &application::CONFIG_DIR;
+            if config_dir.exists() {
                 let config_file = format!("config.{env}.{format}");
-                let config_file_path = config_file_dir.join(&config_file);
+                let config_file_path = config_dir.join(&config_file);
                 config::read_config_file(&config_file_path, env).unwrap_or_else(|err| {
                     tracing::error!("fail to read the config file `{config_file}`: {err}");
                     Table::new()

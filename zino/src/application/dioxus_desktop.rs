@@ -76,7 +76,6 @@ where
         let app_name = Self::name();
         let app_version = Self::version();
         let app_state = Self::shared_state();
-        let project_dir = Self::project_dir();
         let in_prod_mode = app_env.is_prod();
 
         // Window configuration
@@ -136,7 +135,7 @@ where
             custom_heads.push(r#"<meta charset="UTF-8">"#.to_owned());
 
             let icon = config.get_str("icon").unwrap_or("public/favicon.ico");
-            let icon_file = project_dir.join(icon);
+            let icon_file = Self::parse_path(icon);
             if icon_file.exists() {
                 match ImageReader::open(&icon_file)
                     .map_err(ImageError::IoError)
@@ -179,13 +178,13 @@ where
             desktop_config = desktop_config.with_custom_head(custom_heads.join("\n"));
 
             if let Some(dir) = config.get_str("resource-dir") {
-                desktop_config = desktop_config.with_resource_directory(project_dir.join(dir));
+                desktop_config = desktop_config.with_resource_directory(Self::parse_path(dir));
             }
             if let Some(dir) = config.get_str("data-dir") {
-                desktop_config = desktop_config.with_data_directory(project_dir.join(dir));
+                desktop_config = desktop_config.with_data_directory(Self::parse_path(dir));
             }
             if let Some(custom_index) = config.get_str("custom-index") {
-                let index_file = project_dir.join(custom_index);
+                let index_file = Self::parse_path(custom_index);
                 match fs::read_to_string(&index_file) {
                     Ok(custom_index) => {
                         desktop_config = desktop_config.with_custom_index(custom_index);

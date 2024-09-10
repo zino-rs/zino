@@ -6,9 +6,7 @@ use axum::{
     middleware::from_fn,
     BoxError, Router,
 };
-use std::{
-    any::Any, borrow::Cow, convert::Infallible, fs, net::SocketAddr, path::PathBuf, time::Duration,
-};
+use std::{any::Any, borrow::Cow, convert::Infallible, fs, net::SocketAddr, time::Duration};
 use tokio::{net::TcpListener, runtime::Builder, signal};
 use tower::{
     timeout::{error::Elapsed, TimeoutLayer},
@@ -104,21 +102,17 @@ impl Application for AxumCluster {
                 );
 
                 // Server config
-                let project_dir = Self::project_dir();
-                let default_public_dir = project_dir.join("public");
+                let mut public_dir = "public";
                 let mut public_route_prefix = "/public";
-                let mut public_dir = PathBuf::new();
                 let mut body_limit = 128 * 1024 * 1024; // 128MB
                 let mut request_timeout = Duration::from_secs(60); // 60 seconds
                 let mut keep_alive_timeout = 75; // 75 seconds
                 if let Some(config) = app_state.get_config("server") {
                     if let Some(dir) = config.get_str("page-dir") {
+                        public_dir = dir;
                         public_route_prefix = "/page";
-                        public_dir.push(dir);
                     } else if let Some(dir) = config.get_str("public-dir") {
-                        public_dir.push(dir);
-                    } else {
-                        public_dir = default_public_dir;
+                        public_dir = dir;
                     }
                     if let Some(route_prefix) = config.get_str("public-route-prefix") {
                         public_route_prefix = route_prefix;
@@ -132,11 +126,10 @@ impl Application for AxumCluster {
                     if let Some(timeout) = config.get_duration("keep-alive-timeout") {
                         keep_alive_timeout = timeout.as_secs();
                     }
-                } else {
-                    public_dir = default_public_dir;
                 }
 
                 let mut app = Router::new();
+                let public_dir = Self::parse_path(public_dir);
                 if public_dir.exists() {
                     let index_file = public_dir.join("index.html");
                     let favicon_file = public_dir.join("favicon.ico");
@@ -193,7 +186,7 @@ impl Application for AxumCluster {
                                 RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
                             };
                             if let Some(custom_html) = config.get_str("custom-html") {
-                                let custom_html_file = project_dir.join(custom_html);
+                                let custom_html_file = Self::parse_path(custom_html);
                                 if let Ok(html) = fs::read_to_string(custom_html_file) {
                                     app = app.merge(rapidoc.custom_html(html).path(path));
                                 } else {

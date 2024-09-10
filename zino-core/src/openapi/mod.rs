@@ -226,7 +226,7 @@ pub(crate) fn default_external_docs() -> Option<ExternalDocs> {
 /// OpenAPI paths.
 static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
     let mut paths: BTreeMap<String, PathItem> = BTreeMap::new();
-    let openapi_dir = application::PROJECT_DIR.join("./config/openapi");
+    let openapi_dir = application::CONFIG_DIR.join("openapi");
     match fs::read_dir(openapi_dir) {
         Ok(entries) => {
             let mut openapi_tags = Vec::new();

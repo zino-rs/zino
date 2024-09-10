@@ -10,7 +10,6 @@ use ntex::{
     },
 };
 use ntex_files::{Files, NamedFile};
-use std::path::PathBuf;
 use zino_core::{
     application::{Application, Plugin, ServerTag},
     extension::TomlTableExt,
@@ -89,22 +88,18 @@ impl Application for NtexCluster {
                 );
 
                 // Server config
-                let project_dir = Self::project_dir();
-                let default_public_dir = project_dir.join("public");
+                let mut public_dir = "public";
                 let mut public_route_prefix = "/public";
-                let mut public_dir = PathBuf::new();
                 let mut backlog = 2048; // Maximum number of pending connections
                 let mut max_connections = 25000; // Maximum number of concurrent connections
                 let mut body_limit = 128 * 1024 * 1024; // 128MB
                 let mut request_timeout = 60; // 60 seconds
                 if let Some(config) = app_state.get_config("server") {
                     if let Some(dir) = config.get_str("page-dir") {
+                        public_dir = dir;
                         public_route_prefix = "/page";
-                        public_dir.push(dir);
                     } else if let Some(dir) = config.get_str("public-dir") {
-                        public_dir.push(dir);
-                    } else {
-                        public_dir = default_public_dir;
+                        public_dir = dir;
                     }
                     if let Some(route_prefix) = config.get_str("public-route-prefix") {
                         public_route_prefix = route_prefix;
@@ -124,10 +119,9 @@ impl Application for NtexCluster {
                     {
                         request_timeout = timeout;
                     }
-                } else {
-                    public_dir = default_public_dir;
                 }
 
+                let public_dir = Self::parse_path(public_dir);
                 HttpServer::new(move || {
                     let mut app = App::new();
                     if public_dir.exists() {

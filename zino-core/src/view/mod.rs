@@ -10,7 +10,6 @@
 //! | `view-tera`      | Enables the `tera` template engine.                  | No       |
 
 use crate::{application::Application, extension::TomlTableExt};
-use std::path::Path;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "view-tera")] {
@@ -35,14 +34,5 @@ pub(crate) fn init<APP: Application + ?Sized>() {
             template_dir = dir;
         }
     }
-
-    let template_dir = if Path::new(template_dir).exists() {
-        template_dir.to_owned()
-    } else {
-        APP::project_dir()
-            .join("templates")
-            .to_string_lossy()
-            .into()
-    };
-    load_templates(app_state, template_dir);
+    load_templates(app_state, APP::parse_path(template_dir));
 }

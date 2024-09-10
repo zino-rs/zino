@@ -1,5 +1,5 @@
 use crate::{error::Error, state::State, warn, Map};
-use std::sync::OnceLock;
+use std::{path::PathBuf, sync::OnceLock};
 use tera::{Context, Tera};
 
 /// Renders a template with the given data using [`tera`](https://crates.io/crates/tera).
@@ -14,10 +14,9 @@ pub fn render(template_name: &str, data: Map) -> Result<String, Error> {
 }
 
 /// Loads templates.
-pub(crate) fn load_templates(app_state: &'static State<Map>, template_dir: String) {
-    let template_dir_glob = template_dir + "/**/*";
-    let mut view_engine =
-        Tera::new(template_dir_glob.as_str()).expect("fail to parse html templates");
+pub(crate) fn load_templates(app_state: &'static State<Map>, template_dir: PathBuf) {
+    let dir_glob = template_dir.to_string_lossy().into_owned() + "/**/*";
+    let mut view_engine = Tera::new(dir_glob.as_str()).expect("fail to parse html templates");
     view_engine.autoescape_on(vec![".html", ".html.tera", ".tera"]);
     if app_state.env().is_dev() {
         view_engine

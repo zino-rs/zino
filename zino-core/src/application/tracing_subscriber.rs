@@ -100,7 +100,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
         flatten_event = config.get_bool("flatten-event").unwrap_or(false);
     }
 
-    let log_dir = super::parse_path(log_dir);
+    let log_dir = APP::parse_path(log_dir);
     if !log_dir.exists() {
         fs::create_dir(log_dir.as_path()).unwrap_or_else(|err| {
             let log_dir = log_dir.display();

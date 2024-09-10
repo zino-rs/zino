@@ -2,7 +2,7 @@
 
 use super::{Connector, DataSource, DataSourceConnector::Arrow};
 use crate::{
-    application::{http_client, PROJECT_DIR},
+    application::{self, http_client, PROJECT_DIR},
     bail,
     error::Error,
     extension::TomlTableExt,
@@ -64,7 +64,7 @@ impl ArrowConnector {
     pub fn new() -> Self {
         Self {
             context: OnceLock::new(),
-            root: PROJECT_DIR.join("local/data/"),
+            root: PROJECT_DIR.to_owned(),
             tables: None,
             system_variables: ScalarValueProvider::default(),
             user_defined_variables: ScalarValueProvider::default(),
@@ -73,14 +73,14 @@ impl ArrowConnector {
 
     /// Creates a new instance with the configuration.
     pub fn with_config(config: &Table) -> Self {
-        let root = config.get_str("root").unwrap_or("local/data/");
+        let root = config.get_str("root").unwrap_or_default();
         let mut system_variables = ScalarValueProvider::default();
         if let Some(variables) = config.get_table("variables") {
             system_variables.read_toml_table(variables);
         }
         Self {
             context: OnceLock::new(),
-            root: PROJECT_DIR.join(root),
+            root: application::join_path(&PROJECT_DIR, root),
             tables: config.get_array("tables").cloned(),
             system_variables,
             user_defined_variables: ScalarValueProvider::default(),
