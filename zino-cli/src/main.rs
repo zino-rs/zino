@@ -6,6 +6,7 @@ fn main() {
         Init(opts) => opts.run(),
         New(opts) => opts.run(),
         Serve(opts) => opts.run(),
+        Deploy(opts) => opts.run(),
     };
     if let Err(err) = result {
         log::error!("fail to run the command: {err}");

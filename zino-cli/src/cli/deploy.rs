@@ -27,11 +27,11 @@ pub struct Deploy {
 /// about Deploy
 impl Deploy {
     /// Run the `deploy` command.
-    pub async fn run(mut self) -> Result<(), Error> {
+    pub fn run(mut self) -> Result<(), Error> {
         log::info!("deploying zino project");
 
         loop {
-            match self.main_loop().await {
+            match self.main_loop() {
                 Ok(_) => match self.local_head_oid() {
                     Ok(oid) => log::info!("current commit_id: {}", oid),
                     Err(err) => log::error!("failed to get current commit_id: {}", err),
@@ -64,7 +64,7 @@ impl Deploy {
     }
 
     /// The main loop of the deploy command.
-    async fn main_loop(&mut self) -> Result<(), Error> {
+    fn main_loop(&mut self) -> Result<(), Error> {
         self.init_zino_toml()?;
 
         let local_oid = self.local_head_oid()?;
@@ -93,8 +93,6 @@ impl Deploy {
         } else {
             log::info!("local repository is up-to-date");
         }
-
-        // self.temp_func_name().await?;
 
         Ok(())
     }
@@ -249,47 +247,3 @@ impl Deploy {
         }
     }
 }
-
-// /// about ACME
-// impl Deploy {
-//     async fn temp_func_name(&self) -> Result<(), Error> {
-//         let tcp_listener = tokio::net::TcpListener::bind((Ipv6Addr::UNSPECIFIED, self.zino_toml.https.as_ref().unwrap().port))
-//             .await
-//             .unwrap();
-//         let tcp_incoming = tokio_stream::wrappers::TcpListenerStream::new(tcp_listener);
-//
-//         let mut tls_incoming = AcmeConfig::new(self.zino_toml.https.as_ref().unwrap().domain.as_vec())
-//             .contact(self.zino_toml.https.as_ref().unwrap().email.iter().map(|e| format!("mailto:{}", e)))
-//             .cache_option(Some(self.zino_toml.https.as_ref().unwrap().cache.clone()).map(DirCache::new))
-//             .directory_lets_encrypt(self.zino_toml.https.as_ref().unwrap().product_mode)
-//             .tokio_incoming(tcp_incoming, Vec::new());
-//
-//         while let Some(tls) = tls_incoming.next().await {
-//             let tls = tls?;
-//
-//             tokio::spawn(async move {
-//                 if let Err(err) = Self::handle_tls_connection(tls).await {
-//                     log::error!("failed to handle TLS connection: {}", err);
-//                 }
-//             });
-//         }
-//         Ok(())
-//     }
-//
-//     async fn handle_tls_connection<T>(mut tls: T) -> Result<(), Error>
-//     where
-//         T: AsyncRead + AsyncWrite + Unpin + Send + 'static,
-//     {
-//         // 连接到本机的 6080 端口
-//         let mut target_stream = tokio::net::TcpStream::connect("127.0.0.1:6080")
-//             .await
-//             .map_err(|err| Error::new(format!("failed to connect to target server: {}", err)))?;
-//
-//         // 将 TLS 连接直接转发给目标应用
-//         tokio::io::copy_bidirectional(&mut tls, &mut target_stream)
-//             .await
-//             .map_err(|err| Error::new(format!("failed to forward connection: {}", err)))?;
-//
-//         Ok(())
-//     }
-// }
