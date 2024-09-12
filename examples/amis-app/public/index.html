@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>amis app</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="stylesheet" href="css/sdk.css">
+  <link rel="stylesheet" href="css/helper.css">
+  <link rel="stylesheet" href="css/iconfont.css">
+  <style>
+    html,
+    body,
+    .app-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="root" class="app-wrapper"></div>
+  <script src="js/sdk.js"></script>
+  <script>
+    fetch('amis/index.json')
+      .then(response => response.json())
+      .then(data => {
+        const { schema, props, options } = data;
+        const amisScoped = amisRequire('amis/embed').embed('#root', schema, props, options);
+      });
+  </script>
+</body>
+</html>

@@ -30,16 +30,19 @@ pub struct NtexCluster {
 impl Application for NtexCluster {
     type Routes = Vec<RouterConfigure>;
 
+    #[inline]
     fn register(mut self, routes: Self::Routes) -> Self {
         self.default_routes = routes;
         self
     }
 
+    #[inline]
     fn register_with(mut self, server_tag: ServerTag, routes: Self::Routes) -> Self {
         self.tagged_routes.push((server_tag, routes));
         self
     }
 
+    #[inline]
     fn add_plugin(mut self, plugin: Plugin) -> Self {
         self.custom_plugins.push(plugin);
         self

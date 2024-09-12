@@ -56,10 +56,12 @@ where
 {
     type Routes = R;
 
+    #[inline]
     fn register(self, _routes: Self::Routes) -> Self {
         self
     }
 
+    #[inline]
     fn add_plugin(mut self, plugin: Plugin) -> Self {
         self.custom_plugins.push(plugin);
         self

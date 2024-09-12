@@ -121,13 +121,12 @@ pub struct FileUploadProps {
 
 /// A list of files and folders in a hierarchical tree structure.
 pub fn FileTree(props: FileTreeProps) -> Element {
-    let mut opened = use_signal(|| props.opened);
     let tree_id = props.tree_id;
     let icon_size = props.icon_size;
-    let show_file_icons = props.show_file_icons;
     let on_click = props.on_click;
     let current_dir = props.current_dir.as_ref()?;
     let current_dir_name = current_dir.file_name().and_then(|s| s.to_str())?;
+    let mut opened = use_signal(|| props.opened);
     let mut folders = Vec::new();
     let mut files = Vec::new();
     if opened() {
@@ -143,11 +142,7 @@ pub fn FileTree(props: FileTreeProps) -> Element {
                         .and_then(|name| name.to_str())
                         .map(|s| s.to_owned())
                     {
-                        let extension = path
-                            .extension()
-                            .and_then(|ext| ext.to_str())
-                            .map(|s| s.to_ascii_lowercase());
-                        files.push((name, extension, path));
+                        files.push((name, path));
                     }
                 }
             }
@@ -182,12 +177,11 @@ pub fn FileTree(props: FileTreeProps) -> Element {
                     current_dir: Some(path),
                     tree_id: tree_id.clone(),
                     icon_size: icon_size,
-                    show_file_icons: show_file_icons,
                     opened: false,
                     on_click: on_click,
                 }
             }
-            for (name, extension, path) in files {
+            for (name, path) in files {
                 div {
                     class: "{props.file_class}",
                     onclick: move |_event| {
@@ -195,12 +189,6 @@ pub fn FileTree(props: FileTreeProps) -> Element {
                             handler.call(path.clone());
                         }
                     },
-                    if show_file_icons {
-                        FileIcon {
-                            extension: extension,
-                            icon_size: icon_size,
-                        }
-                    }
                     span { "{name}" }
                 }
             }
@@ -224,80 +212,9 @@ pub struct FileTreeProps {
     /// The size of the icon.
     #[props(default = 16)]
     pub icon_size: u32,
-    /// A flag to indicate whether the file icons are shown.
-    #[props(default)]
-    pub show_file_icons: bool,
     /// A flag to indicate whether the directory is opened or not.
     #[props(default)]
     pub opened: bool,
     /// An event handler to be called when a file is clicked.
     pub on_click: Option<EventHandler<PathBuf>>,
-}
-
-/// An icon for different file extensions.
-pub fn FileIcon(props: FileIconProps) -> Element {
-    let icon_size = props.icon_size;
-    let extension = props.extension.unwrap_or_default();
-    match extension.as_str() {
-        "md" => rsx!(SvgIcon {
-            shape: BsFileEarmarkText,
-            width: icon_size,
-        }),
-        "ipynb" | "wino" => rsx!(SvgIcon {
-            shape: BsFileEarmarkRichtext,
-            width: icon_size,
-        }),
-        "js" | "py" | "sql" => rsx!(SvgIcon {
-            shape: BsFileEarmarkCode,
-            width: icon_size,
-        }),
-        "xls" | "xlsx" => rsx!(SvgIcon {
-            shape: BsFileExcel,
-            width: icon_size,
-        }),
-        "avif" | "ico" | "gif" | "jpg" | "jpeg" | "png" | "svg" | "tiff" | "webp" => {
-            rsx!(SvgIcon {
-                shape: BsFileImage,
-                width: icon_size,
-            })
-        }
-        "aac" | "flac" | "m4a" | "mp3" | "oga" | "opus" | "wav" => rsx!(SvgIcon {
-            shape: BsFileMusic,
-            width: icon_size,
-        }),
-        "pdf" => rsx!(SvgIcon {
-            shape: BsFilePdf,
-            width: icon_size,
-        }),
-        "avi" | "mkv" | "mov" | "mp4" | "mpeg" | "mpg" | "ogg" | "webm" => rsx!(SvgIcon {
-            shape: BsFilePlay,
-            width: icon_size,
-        }),
-        "ppt" | "pptx" => rsx!(SvgIcon {
-            shape: BsFilePpt,
-            width: icon_size,
-        }),
-        "doc" | "docx" => rsx!(SvgIcon {
-            shape: BsFileWord,
-            width: icon_size,
-        }),
-        "7z" | "gz" | "rar" | "tar" | "zip" => rsx!(SvgIcon {
-            shape: BsFileZip,
-            width: icon_size,
-        }),
-        _ => rsx!(SvgIcon {
-            shape: BsFileText,
-            width: icon_size,
-        }),
-    }
-}
-
-/// The [`FileIcon`] properties struct for the configuration of the component.
-#[derive(Clone, PartialEq, Props)]
-pub struct FileIconProps {
-    /// The file extension.
-    pub extension: Option<String>,
-    /// The size of the icon.
-    #[props(default = 16)]
-    pub icon_size: u32,
 }

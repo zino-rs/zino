@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "actix-app",
+    "amis-app",
     "axum-app",
     "dioxus-desktop",
     "dioxus-ssr",

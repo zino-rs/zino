@@ -1,0 +1,19 @@
+[package]
+name = "amis-app"
+description = "An example for amis UI generator."
+version = "0.0.1"
+rust-version = "1.80"
+edition = "2021"
+publish = false
+
+[dependencies.phf]
+version = "0.11.2"
+features = ["macros"]
+
+[dependencies.zino-amis]
+path = "../../zino-amis"
+version = "0.0.1"
+
+[dependencies.zino-core]
+path = "../../zino-core"
+version = "0.26.0"

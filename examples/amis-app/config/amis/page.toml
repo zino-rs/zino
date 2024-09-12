@@ -1,0 +1,5 @@
+title = "zino-rs"
+
+[body]
+type = "tpl"
+tpl = "Hello, Zino!"

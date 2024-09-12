@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "zino",
+    "zino-amis",
     "zino-chart",
     "zino-cli",
     "zino-core",

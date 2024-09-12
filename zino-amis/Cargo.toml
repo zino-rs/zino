@@ -1,0 +1,41 @@
+[package]
+name = "zino-amis"
+description = "A UI generator for amis."
+version = "0.0.1"
+rust-version = "1.80"
+edition = "2021"
+license = "MIT"
+categories = ["asynchronous", "network-programming", "web-programming"]
+keywords = ["http", "web", "framework"]
+homepage = "https://github.com/zino-rs/zino"
+repository = "https://github.com/zino-rs/zino"
+documentation = "https://docs.rs/zino-amis"
+readme = "README.md"
+
+[dependencies]
+hyper-staticfile = "0.10.1"
+phf = "0.11.2"
+serde_json = "1.0.128"
+tracing = "0.1.40"
+
+[dependencies.hyper]
+version = "1.4.1"
+features = ["http1", "server"]
+
+[dependencies.hyper-util]
+version = "0.1.8"
+features = ["http1"]
+
+[dependencies.tokio]
+version = "1.40.0"
+features = ["rt-multi-thread"]
+
+[dependencies.toml]
+version = "0.8.19"
+default-features = false
+features = ["parse"]
+
+[dependencies.zino-core]
+path = "../zino-core"
+version = "0.26.0"
+features = ["tracing-subscriber"]

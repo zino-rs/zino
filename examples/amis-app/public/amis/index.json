@@ -1,0 +1,11 @@
+{
+  "props": {},
+  "schema": {
+    "body": {
+      "tpl": "Hello, Zino!",
+      "type": "tpl"
+    },
+    "title": "zino-rs",
+    "type": "page"
+  }
+}

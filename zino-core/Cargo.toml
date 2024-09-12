@@ -172,7 +172,7 @@ tls-native = [
     "sqlx?/tls-native-tls",
 ]
 tls-rustls = [
-    "reqwest/rustls-tls",
+    "reqwest/rustls-tls-native-roots",
     "sentry?/rustls",
     "sqlx?/tls-rustls",
 ]

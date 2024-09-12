@@ -12,6 +12,14 @@ impl<T> StaticRecord<T> {
         Self { inner: Vec::new() }
     }
 
+    /// Creates a new instance with the capacity.
+    #[inline]
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            inner: Vec::with_capacity(capacity),
+        }
+    }
+
     /// Appends an entry to the back of a collection.
     #[inline]
     pub fn add(&mut self, key: &'static str, value: T) {
@@ -24,6 +32,12 @@ impl<T> StaticRecord<T> {
         self.inner
             .iter()
             .find_map(|(field, value)| (field == &key).then_some(value))
+    }
+
+    /// Consumes `self` and returning a static reference.
+    #[inline]
+    pub fn leak(self) -> &'static [(&'static str, T)] {
+        self.inner.leak()
     }
 }
 
