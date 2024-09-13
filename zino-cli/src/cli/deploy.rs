@@ -5,6 +5,8 @@ use std::{
     fs,
     process::{Child, Command},
 };
+use humantime_serde::re::humantime::format_duration;
+use tracing::{error, info, warn};
 
 use zino_core::error::Error;
 
@@ -19,38 +21,54 @@ pub struct Deploy {
     #[clap(skip)]
     active_project: Option<Child>,
     #[clap(skip)]
+    ///
     last_checked_commit_oid: Option<git2::Oid>,
-    #[clap(skip)]
-    last_active_commit_oid: Option<git2::Oid>,
+    // #[clap(skip)]
+    // /// Rollback to this commit if the new commit don't work.
+    // last_active_commit_oid: Option<git2::Oid>,
 }
 
 /// about Deploy
 impl Deploy {
     /// Run the `deploy` command.
     pub fn run(mut self) -> Result<(), Error> {
-        log::info!("deploying zino project");
+        tracing_subscriber::fmt::init();
+
+        info!("deploying zino project");
 
         loop {
             match self.main_loop() {
                 Ok(_) => match self.local_head_oid() {
-                    Ok(oid) => log::info!("current commit_id: {}", oid),
-                    Err(err) => log::error!("failed to get current commit_id: {}", err),
+                    Ok(oid) => info!("current commit_id: {}", oid),
+                    Err(err) => error!("failed to get current commit_id: {}", err),
                 },
                 Err(err) => {
-                    log::error!("deploy failed: {}", err);
+                    error!("deploy failed: {}", err);
                     match self.rollback_to_latest_checked_commit() {
-                        Ok(_) => log::info!("rolled back to last commit"),
-                        Err(err) => log::error!("failed to rollback to last commit: {}", err),
+                        Ok(_) => info!("rolled back to last commit: {}", self.last_checked_commit_oid.ok_or(Error::new("no last checked commit"))?.to_string()),
+                        Err(err) => error!("failed to rollback to last commit: {}", err),
                     }
                 }
             }
-            sleep(std::time::Duration::from_secs(5));
+            sleep(self.zino_toml.zli_config.refresh_interval);
         }
     }
 
     /// Initialize the zino.toml file.
     fn init_zino_toml(&mut self) -> Result<(), Error> {
-        self.zino_toml = self.parse_zino_toml().unwrap_or_default();
+        self.zino_toml = match self.parse_zino_toml() {
+            Ok(zino_toml) => {
+                info!("zino.toml file found");
+                zino_toml
+            }
+            Err(err) => {
+                warn!("failed to parse zino.toml file: {}\n  using default config",err);
+                ZinoToml::default()
+            }
+        };
+
+        info!("zli will check for updates after {} ", format_duration(self.zino_toml.zli_config.refresh_interval));
+
         Ok(())
     }
 
@@ -67,19 +85,39 @@ impl Deploy {
     fn main_loop(&mut self) -> Result<(), Error> {
         self.init_zino_toml()?;
 
-        let local_oid = self.local_head_oid()?;
-        let remote_oid = self.remote_head_oid()?;
+        let local_oid = match self.local_head_oid() {
+            Ok(local_oid) => {
+                info!("local commit_id: {}", local_oid);
+                local_oid
+            }
+            Err(err) => {
+                error!("failed to get local commit_id: {}",err);
+                error!("zli now cannot update the project, but will keep running the application witch is alive now until the problem is fixed.");
+                error!("zli will be able to update the project again after the problem is fixed.");
+                return Ok(());
+            }
+        };
 
-        log::info!("local commit_id: {}", local_oid);
-        log::info!("remote commit_id: {}", remote_oid);
+
+        let remote_oid = match self.remote_head_oid() {
+            Ok(remote_oid) => {
+                info!("remote commit_id: {}", remote_oid);
+                remote_oid
+            }
+            Err(err) => {
+                warn!("failed to get remote commit_id: {}", err);
+                warn!("Give up update this time. The running application is not affected.");
+                return Ok(());
+            }
+        };
 
         if self
             .last_checked_commit_oid
-            .unwrap_or(self.local_head_oid()?)
+            .unwrap_or(local_oid)
             != remote_oid
             || self.active_project.is_none()
         {
-            log::info!("updating local repository");
+            info!("updating local repository");
 
             self.pull_remote()?;
 
@@ -88,10 +126,10 @@ impl Deploy {
             self.kill_active_project();
             self.run_project()?;
 
-            log::info!("project updated to commit: {}", remote_oid);
-            log::info!("project deployed");
+            info!("project updated to commit: {}", remote_oid);
+            info!("project deployed");
         } else {
-            log::info!("local repository is up-to-date");
+            info!("local repository is up-to-date");
         }
 
         Ok(())
@@ -105,7 +143,7 @@ impl Deploy {
                 .map_err(|_| Error::new("failed to kill active project"))
             {
                 Ok(_) => self.active_project = None,
-                Err(err) => log::error!("failed to kill active project: {}", err),
+                Err(err) => error!("failed to kill active project: {}", err),
             }
         }
     }
@@ -126,7 +164,7 @@ impl Deploy {
             .output()
             .map_err(|_| Error::new("failed to execute git pull"))?;
 
-        log::info!("local repository updated");
+        info!("local repository updated");
         Ok(())
     }
 
@@ -136,14 +174,13 @@ impl Deploy {
             .arg("reset")
             .arg("--hard")
             .arg(
-                self.last_active_commit_oid
+                self.last_checked_commit_oid
                     .ok_or(Error::new("no last active commit"))?
                     .to_string(),
             )
             .output()
             .map_err(|_| Error::new("failed to execute git reset"))?;
 
-        log::info!("rolled back to last commit");
         Ok(())
     }
 
@@ -210,7 +247,7 @@ impl Deploy {
             );
         }
 
-        log::info!("deploying new version of the project");
+        info!("deploying new version of the project");
 
         Ok(())
     }
@@ -218,12 +255,13 @@ impl Deploy {
     /// Check and test the project.
     fn check_and_test(&mut self) -> Result<(), Error> {
         let oid = self.local_head_oid()?;
-        self.last_checked_commit_oid = Some(oid);
 
         self.run_cargo_command("check")?;
         self.run_cargo_command("test")?;
-        self.last_active_commit_oid = Some(oid);
-        log::info!("project check and test passed: newest commit_id: {}", oid);
+
+        self.last_checked_commit_oid = Some(oid);
+
+        info!("project check and test passed: newest commit_id: {}", oid);
         Ok(())
     }
 
@@ -236,7 +274,7 @@ impl Deploy {
             .map_err(|_| Error::new("failed to execute cargo command"))?;
 
         if status.success() {
-            log::info!("{} succeeded", command);
+            info!("{} succeeded", command);
             Ok(())
         } else {
             Err(Error::new(format!(
