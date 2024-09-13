@@ -1,6 +1,6 @@
 [package]
 name = "zino-amis"
-description = "A UI generator for amis."
+description = "UI generator for amis."
 version = "0.0.1"
 rust-version = "1.80"
 edition = "2021"

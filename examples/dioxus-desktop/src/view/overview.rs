@@ -18,6 +18,7 @@ pub fn Overview() -> Element {
     let extra_crates = [
         ("zino-extra", "Extra utilities"),
         ("zino-dioxus", "Dioxus components"),
+        ("zino-amis", "UI generator for amis"),
         ("zino-cli", "CLI tools"),
     ];
     rsx! {

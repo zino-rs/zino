@@ -10,6 +10,7 @@ data = [
     { name = "zino-rpc", description = "RPC support" },
     { name = "zino-extra", description = "Extra utilities" },
     { name = "zino-dioxus", description = "Dioxus components" },
+    { name = "zino-amis", description = "UI generator for amis" },
     { name = "zino-cli", description = "CLI tools" },
 ]
 
