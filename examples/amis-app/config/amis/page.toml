@@ -1,5 +1,10 @@
-title = "zino-rs"
+asideResizor = true
 
-[body]
-type = "tpl"
-tpl = "Hello, Zino!"
+[aside]
+include = "aside"
+
+[toolbar]
+include = "toolbar"
+
+[[body]]
+include = "overview"

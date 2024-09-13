@@ -1,0 +1,19 @@
+type = "nav"
+
+[[links]]
+icon = "fa fa-github"
+label = "github"
+to = "https://github.com/zino-rs/zino"
+target = "_blank"
+
+[[links]]
+icon = "fa fa-cube"
+label = "crates.io"
+to = "https://crates.io/crates/zino"
+target = "_blank"
+
+[[links]]
+icon = "fa fa-cubes"
+label = "docs.rs"
+to = "https://docs.rs/zino"
+target = "_blank"

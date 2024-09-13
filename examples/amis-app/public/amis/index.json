@@ -1,11 +1,114 @@
 {
   "props": {},
   "schema": {
-    "body": {
-      "tpl": "Hello, Zino!",
-      "type": "tpl"
+    "aside": {
+      "links": [
+        {
+          "icon": "fa fa-tachometer",
+          "label": "Overview"
+        },
+        {
+          "icon": "fa fa-star",
+          "label": "Stargazers"
+        },
+        {
+          "icon": "fa fa-code-branch",
+          "label": "Dependencies"
+        }
+      ],
+      "stacked": true,
+      "type": "nav"
     },
-    "title": "zino-rs",
+    "asideResizor": true,
+    "body": [
+      {
+        "body": {
+          "card": {
+            "header": {
+              "description": "${description}",
+              "title": "${name}",
+              "titleClassName": "font-bold"
+            },
+            "itemAction": {
+              "actionType": "url",
+              "blank": true,
+              "url": "https://crates.io/crates/${name}"
+            }
+          },
+          "type": "cards"
+        },
+        "data": [
+          {
+            "description": "Framework integrations",
+            "name": "zino"
+          },
+          {
+            "description": "Core types and traits",
+            "name": "zino-core"
+          },
+          {
+            "description": "Derived traits",
+            "name": "zino-derive"
+          },
+          {
+            "description": "Domain models",
+            "name": "zino-core"
+          },
+          {
+            "description": "A HTTP server",
+            "name": "zino-server"
+          },
+          {
+            "description": "A flexible router",
+            "name": "zino-router"
+          },
+          {
+            "description": "Middlewares",
+            "name": "zino-middleware"
+          },
+          {
+            "description": "RPC support",
+            "name": "zino-rpc"
+          },
+          {
+            "description": "Extra utilities",
+            "name": "zino-extra"
+          },
+          {
+            "description": "Dioxus components",
+            "name": "zino-dioxus"
+          },
+          {
+            "description": "CLI tools",
+            "name": "zino-cli"
+          }
+        ],
+        "type": "service"
+      }
+    ],
+    "toolbar": {
+      "links": [
+        {
+          "icon": "fa fa-github",
+          "label": "github",
+          "target": "_blank",
+          "to": "https://github.com/zino-rs/zino"
+        },
+        {
+          "icon": "fa fa-cube",
+          "label": "crates.io",
+          "target": "_blank",
+          "to": "https://crates.io/crates/zino"
+        },
+        {
+          "icon": "fa fa-cubes",
+          "label": "docs.rs",
+          "target": "_blank",
+          "to": "https://docs.rs/zino"
+        }
+      ],
+      "type": "nav"
+    },
     "type": "page"
   }
 }

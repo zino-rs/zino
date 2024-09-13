@@ -1,0 +1,27 @@
+type = "service"
+data = [
+    { name = "zino", description = "Framework integrations" },
+    { name = "zino-core", description = "Core types and traits" },
+    { name = "zino-derive", description = "Derived traits" },
+    { name = "zino-core", description = "Domain models" },
+    { name = "zino-server", description = "A HTTP server" },
+    { name = "zino-router", description = "A flexible router" },
+    { name = "zino-middleware", description = "Middlewares" },
+    { name = "zino-rpc", description = "RPC support" },
+    { name = "zino-extra", description = "Extra utilities" },
+    { name = "zino-dioxus", description = "Dioxus components" },
+    { name = "zino-cli", description = "CLI tools" },
+]
+
+[body]
+type = "cards"
+
+[body.card.header]
+title = "${name}"
+titleClassName = "font-bold"
+description = "${description}"
+
+[body.card.itemAction]
+actionType = "url"
+url = "https://crates.io/crates/${name}"
+blank = true

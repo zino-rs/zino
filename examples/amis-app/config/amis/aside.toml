@@ -1,0 +1,14 @@
+type = "nav"
+stacked = true
+
+[[links]]
+icon = "fa fa-tachometer"
+label = "Overview"
+
+[[links]]
+icon = "fa fa-star"
+label = "Stargazers"
+
+[[links]]
+icon = "fa fa-code-branch"
+label = "Dependencies"

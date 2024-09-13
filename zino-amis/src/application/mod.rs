@@ -99,7 +99,7 @@ impl Application for Amis {
                     tracing::error!("fail to create amis output dir: {err}");
                 }
             }
-            if let Err(err) = crate::amis::generate_schema(&config_dir, &output_dir, None) {
+            if let Err(err) = crate::amis::compile(&config_dir, &output_dir) {
                 tracing::error!("fail to generate amis schemas: {err}");
             }
 
