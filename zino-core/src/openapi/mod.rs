@@ -233,7 +233,9 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
             let mut model_definitions = HashMap::new();
             let mut webhook_definitions = HashMap::new();
             let mut components_builder = ComponentsBuilder::new();
-            let files = entries.filter_map(|entry| entry.ok());
+            let files = entries
+                .filter_map(|entry| entry.ok())
+                .filter(|entry| entry.file_type().is_ok_and(|f| f.is_file()));
             for file in files {
                 let openapi_file = file.path();
                 let openapi_config = fs::read_to_string(&openapi_file)

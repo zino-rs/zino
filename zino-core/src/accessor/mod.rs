@@ -594,7 +594,7 @@ impl GlobalAccessor {
         operator.map(|op| {
             let op = op.layer(RetryLayer::new()).layer(TracingLayer);
             #[cfg(feature = "metrics")]
-            let op = op.layer(opendal::layers::MetricsLayer);
+            let op = op.layer(opendal::layers::MetricsLayer::default());
             op
         })
     }
