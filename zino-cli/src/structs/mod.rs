@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use std::path::PathBuf;
 
 #[derive(Debug, Default, Deserialize)]
 pub(crate) struct ZinoToml {
@@ -6,6 +7,8 @@ pub(crate) struct ZinoToml {
     pub(crate) zli_config: ZliConfig,
     #[serde(default)]
     pub(crate) remote: Remote,
+    #[serde(default)]
+    pub(crate) acme: Acme,
 }
 
 #[derive(Debug, Deserialize)]
@@ -44,4 +47,27 @@ fn default_remote_name() -> String {
 
 fn default_remote_branch() -> String {
     "main".to_string()
+}
+
+#[derive(Debug, Deserialize,Default)]
+pub(crate) struct Acme {
+    pub(crate) domain: Vec<String>,
+    pub(crate) email: Vec<String>,
+    #[serde(default = "default_cache_path")]
+    pub(crate) cache: PathBuf,
+    #[serde(default = "default_product_mode", rename = "product-mode")]
+    pub(crate) product_mode: bool,
+    #[serde(default = "default_port")]
+    pub(crate) port: u16,
+}
+fn default_cache_path() -> PathBuf {
+    PathBuf::from("default/cache/path")
+}
+
+fn default_product_mode() -> bool {
+    false
+}
+
+fn default_port() -> u16 {
+    443
 }
