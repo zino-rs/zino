@@ -326,7 +326,6 @@ impl Deploy {
             .tokio_incoming(tcp_incoming, Vec::new());
         info!("ACME configuration set up");
 
-
         while let Some(tls) = tls_incoming.next().await {
             info!("Waiting for a new TLS connection");
             let tls = tls.map_err(|err| {
@@ -335,8 +334,10 @@ impl Deploy {
             })?;
             info!("Received a new TLS connection: {:?}", tls);
 
+            let port = self.zino_toml.acme.port;
+
             tokio::spawn(async move {
-                if let Err(e) = Self::handle_tls_connection(tls).await {
+                if let Err(e) = Self::handle_tls_connection(tls,port).await {
                     error!("failed to handle tls connection: {}", e);
                 } else {
                     info!("TLS connection handled successfully");
@@ -347,13 +348,14 @@ impl Deploy {
         Ok(())
     }
 
-    async fn handle_tls_connection<T>(mut tls: T) -> Result<(), Error>
+    async fn handle_tls_connection<T>(mut tls: T,port:u16) -> Result<(), Error>
     where
         T: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin + Send + 'static,
     {
-        info!("Handling TLS connection at 127.0.0.1:6080");
+
+        info!("Handling TLS connection at 127.0.0.1:{}",port);
         // 连接到本机的 6080 端口
-        let mut target_stream = tokio::net::TcpStream::connect("127.0.0.1:6080")
+        let mut target_stream = tokio::net::TcpStream::connect(("127.0.0.1", port))
             .await
             .map_err(|err| {
                 error!("Failed to connect to target server: {}", err);

@@ -49,7 +49,7 @@ fn default_remote_branch() -> String {
     "main".to_string()
 }
 
-#[derive(Debug, Deserialize,Default)]
+#[derive(Debug, Deserialize, Default)]
 pub(crate) struct Acme {
     pub(crate) domain: Vec<String>,
     pub(crate) email: Vec<String>,
