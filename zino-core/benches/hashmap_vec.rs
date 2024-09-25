@@ -19,6 +19,15 @@ pub fn bench(c: &mut criterion::Criterion) {
             map.get("zh-CN").is_some()
         })
     });
+    c.bench_function("indexmap_lookup", |b| {
+        b.iter(|| {
+            let mut map = indexmap::IndexMap::new();
+            map.insert("en-US", "Welcome!");
+            map.insert("zh-CN", "欢迎！");
+            map.insert("zh-HK", "歡迎！");
+            map.get("zh-CN").is_some()
+        })
+    });
     c.bench_function("vec_lookup", |b| {
         b.iter(|| {
             let vec = vec![

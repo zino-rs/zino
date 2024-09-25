@@ -16,4 +16,4 @@ version = "0.0.1"
 
 [dependencies.zino-core]
 path = "../../zino-core"
-version = "0.26.0"
+version = "0.26.1"
