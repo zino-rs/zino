@@ -10,7 +10,7 @@ publish = false
 tracing = "0.1.40"
 
 [dependencies.axum]
-version = "0.7.5"
+version = "0.7.6"
 default-features = false
 
 [dependencies.serde]

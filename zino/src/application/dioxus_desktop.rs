@@ -1,7 +1,8 @@
 use dioxus::prelude::*;
 use dioxus_desktop::{
-    tao::window::{Icon, Theme},
+    tao::window::{Fullscreen, Icon, Theme},
     Config, WindowBuilder,
+    WindowCloseBehaviour::*,
 };
 use dioxus_router::{components::Router, routable::Routable};
 use image::{error::ImageError, ImageReader};
@@ -90,6 +91,9 @@ where
                 app_window = app_window.with_title(title);
                 window_title = title;
             }
+            if config.get_bool("fullscreen").is_some_and(|b| b) {
+                app_window = app_window.with_fullscreen(Some(Fullscreen::Borderless(None)));
+            }
             if let Some(resizable) = config.get_bool("resizable") {
                 app_window = app_window.with_resizable(resizable);
             }
@@ -116,6 +120,12 @@ where
             }
             if let Some(always_on_top) = config.get_bool("always-on-top") {
                 app_window = app_window.with_always_on_top(always_on_top);
+            }
+            if let Some(protected) = config.get_bool("content-protection") {
+                app_window = app_window.with_content_protection(protected);
+            }
+            if let Some(visible) = config.get_bool("visible-on-all-workspaces") {
+                app_window = app_window.with_visible_on_all_workspaces(visible);
             }
             if let Some(theme) = config.get_str("theme") {
                 let theme = match theme {
@@ -199,6 +209,17 @@ where
             }
             if let Some(name) = config.get_str("root-name") {
                 desktop_config = desktop_config.with_root_name(name);
+            }
+            if let Some(disable) = config.get_bool("disable-context-menu") {
+                desktop_config = desktop_config.with_disable_context_menu(disable);
+            }
+            if let Some(behaviour) = config.get_str("close-behaviour") {
+                let behaviour = match behaviour {
+                    "CloseWindow" => CloseWindow,
+                    "LastWindowHides" => LastWindowHides,
+                    _ => LastWindowExitsApp,
+                };
+                desktop_config = desktop_config.with_close_behaviour(behaviour);
             }
         }
 

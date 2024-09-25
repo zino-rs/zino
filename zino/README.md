@@ -53,6 +53,7 @@ The following optional features are available:
 |--------------|------------------------------------------------------|----------|
 | `actix`      | Enables the integration with [`actix-web`].          | No       |
 | `axum`       | Enables the integration with [`axum`].               | No       |
+| `debug`      | Enables the features for ease of debugging.          | No       |
 | `dioxus`     | Enables the integration with [`dioxus`].             | No       |
 | `i18n`       | Enables the support for internationalization.        | No       |
 | `jwt`        | Enables the support for JSON Web Token.              | No       |

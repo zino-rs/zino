@@ -19,6 +19,7 @@ The following optional features are available:
 | `connector`          | Enables the data source connectors.                    | No       |
 | `cookie`             | Enables the support for cookies.                       | No       |
 | `crypto-sm`          | Enables China's Standards of Encryption Algorithms.    | No       |
+| `debug`              | Enables the features for ease of debugging.            | No       |
 | `dotenv`             | Enables the configuration loader for a `.env` file.    | No       |
 | `env-filter`         | Enables the `env-filter` for [`tracing-subscriber`].   | No       |
 | `flume`              | Enables the message channel via [`flume`].             | No       |
