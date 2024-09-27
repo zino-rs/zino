@@ -299,10 +299,10 @@ impl Deploy {
     async fn do_acme_work_and_forward_connections(&self) -> Result<(), Error> {
         info!(
             "Starting to bind TCP listener on port {}",
-            self.zino_toml.acme.port
+            443
         );
         let tcp_listener =
-            tokio::net::TcpListener::bind((Ipv4Addr::UNSPECIFIED, self.zino_toml.acme.port))
+            tokio::net::TcpListener::bind((Ipv4Addr::UNSPECIFIED, 443))
                 .await
                 .map_err(|err| Error::new(format!("failed to bind TCP listener: {}", err)))?;
         info!("TCP listener bound successfully");
