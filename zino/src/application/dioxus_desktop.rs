@@ -30,6 +30,15 @@ where
 {
     /// Renders the app root.
     fn app_root() -> Element {
+        let desktop_context = dioxus_desktop::window();
+        if let Some(config) = Self::shared_state().get_config("webview") {
+            if let Some(zoom) = config.get_f64("zoom") {
+                desktop_context.webview.zoom(zoom);
+            }
+            if let Some(url) = config.get_str("url") {
+                desktop_context.webview.load_url(url);
+            }
+        }
         rsx! { Router::<R> {} }
     }
 }
@@ -137,9 +146,10 @@ where
         }
 
         // Desktop configuration
+        let in_debug = if cfg!(debug_assertions) { true } else { false };
         let mut desktop_config = Config::new()
             .with_window(app_window)
-            .with_disable_context_menu(if cfg!(debug_assertions) { false } else { true })
+            .with_disable_context_menu(!in_debug)
             .with_menu(None);
         if let Some(config) = app_state.get_config("desktop") {
             let mut custom_heads = Vec::new();
