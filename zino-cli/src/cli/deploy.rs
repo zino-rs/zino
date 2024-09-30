@@ -1,12 +1,12 @@
 use clap::Parser;
 use git2::{FetchOptions, Remote, Repository, ResetType};
 use humantime_serde::re::humantime::format_duration;
+use rustls_acme::caches::DirCache;
+use rustls_acme::AcmeConfig;
 use std::{
     net::Ipv4Addr,
     process::{Child, Command},
 };
-use rustls_acme::AcmeConfig;
-use rustls_acme::caches::DirCache;
 use tracing::{error, info, warn};
 
 use tokio_stream::StreamExt;
@@ -34,11 +34,14 @@ impl Deploy {
             zino_toml: ZinoToml::default(),
         };
 
-        tokio::join!( async {
-            if let Err(err) = acme_manager.do_acme_work_and_forward_connections().await {
-                error!("failed to do acme work and forward connections: {}", err);
-            }
-        },repository_manager.main_loop());
+        tokio::join!(
+            async {
+                if let Err(err) = acme_manager.do_acme_work_and_forward_connections().await {
+                    error!("failed to do acme work and forward connections: {}", err);
+                }
+            },
+            repository_manager.main_loop()
+        );
     }
 }
 
@@ -50,7 +53,7 @@ pub struct RepositoryManager {
 
 impl RepositoryManager {
     async fn main_loop(mut self) {
-        if let Err(err) = self.run_project(){
+        if let Err(err) = self.run_project() {
             error!("failed to run project: {}", err);
         }
         loop {
@@ -297,8 +300,6 @@ struct AcmeManager {
 /// about ACME
 impl AcmeManager {
     async fn do_acme_work_and_forward_connections(&self) -> Result<(), Error> {
-        println!("{:#?}", self.zino_toml);
-
         info!(
             "Starting to bind TCP listener on port {}",
             self.zino_toml.acme.listening_at
@@ -311,9 +312,6 @@ impl AcmeManager {
         .map_err(|err| Error::new(format!("failed to bind TCP listener: {}", err)))?;
         info!("TCP listener bound successfully");
 
-        // let mut tls_incoming = tokio_stream::wrappers::TcpListenerStream::new(tcp_listener);
-        // info!("TCP incoming stream created");
-
         let tcp_incoming = tokio_stream::wrappers::TcpListenerStream::new(tcp_listener);
 
         let mut tls_incoming = AcmeConfig::new(self.zino_toml.acme.domain.clone())
@@ -324,7 +322,7 @@ impl AcmeManager {
                     .iter()
                     .map(|e| format!("mailto:{}", e)),
             )
-            .cache_option(Some(self.zino_toml.acme.cache.clone()).map(DirCache::new))
+            .cache_option(Some(DirCache::new(self.zino_toml.acme.cache.clone())))
             .directory_lets_encrypt(self.zino_toml.acme.product_mode)
             .tokio_incoming(tcp_incoming, Vec::new());
         info!("ACME configuration set up");
