@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::path::PathBuf;
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub(crate) struct ZinoToml {
     #[serde(rename = "zli-config", default)]
     pub(crate) zli_config: ZliConfig,
@@ -11,7 +11,23 @@ pub(crate) struct ZinoToml {
     pub(crate) acme: Acme,
 }
 
-#[derive(Debug, Deserialize)]
+impl Default for ZinoToml {
+    fn default() -> Self {
+        let toml_str = match std::fs::read_to_string("./zino.toml") {
+            Ok(toml_str) => toml_str,
+            Err(err) => {
+                log::warn!("Failed to read config file: {}, using default config", err);
+                "".to_string()
+            }
+        };
+        toml::from_str(&toml_str).unwrap_or_else(|e| {
+            log::error!("Failed to parse config file: {}, using default config", e);
+            Self::default()
+        })
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
 pub(crate) struct ZliConfig {
     #[serde(
         rename = "refresh-interval",
@@ -33,7 +49,7 @@ impl Default for ZliConfig {
     }
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize, Default, Clone)]
 pub(crate) struct Remote {
     #[serde(default = "default_remote_name")]
     pub(crate) name: String,
@@ -49,7 +65,7 @@ fn default_remote_branch() -> String {
     "main".to_string()
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize, Default, Clone)]
 pub(crate) struct Acme {
     pub(crate) domain: Vec<String>,
     pub(crate) email: Vec<String>,
@@ -57,8 +73,10 @@ pub(crate) struct Acme {
     pub(crate) cache: PathBuf,
     #[serde(default = "default_product_mode", rename = "product-mode")]
     pub(crate) product_mode: bool,
-    #[serde(default = "default_port")]
-    pub(crate) port: u16,
+    #[serde(default = "default_listening_at", rename = "listening-at")]
+    pub(crate) listening_at: u16,
+    #[serde(default = "default_forward_to", rename = "forward-to")]
+    pub(crate) forward_to: u16,
 }
 fn default_cache_path() -> PathBuf {
     PathBuf::from("default/cache/path")
@@ -68,6 +86,9 @@ fn default_product_mode() -> bool {
     false
 }
 
-fn default_port() -> u16 {
+fn default_listening_at() -> u16 {
     443
+}
+fn default_forward_to() -> u16 {
+    6080
 }
