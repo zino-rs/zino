@@ -192,7 +192,7 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
         .unwrap_or_else(|| {
             let secret = config.get_str("secret").unwrap_or_else(|| {
                 tracing::warn!("auto-generated `secret` is used for deriving a secret key");
-                crate::application::APP_NMAE.as_ref()
+                crate::application::APP_NAME.as_ref()
             });
             crypto::digest(secret.as_bytes())
         });
