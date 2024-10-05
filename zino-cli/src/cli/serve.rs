@@ -15,7 +15,7 @@ use zino_core::error::Error;
 pub struct Serve {}
 
 /// Resource directory.
-static RESOURCE: Dir = include_dir::include_dir!("zino-cli/public");
+static RESOURCE: Dir = include_dir::include_dir!("public");
 
 /// Set configuration of the project.
 impl Serve {

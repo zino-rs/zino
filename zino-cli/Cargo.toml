@@ -19,10 +19,15 @@ path = "src/main.rs"
 
 [dependencies]
 git2 = "0.19.0"
+humantime = "2.1.0"
+humantime-serde = "1.1.1"
 include_dir = "0.7.4"
 log = "0.4.22"
 taplo = "0.13.0"
+toml = "0.8.19"
 toml_edit = "0.22.20"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
 regex = "1.10.6"
 walkdir = "2.5.0"
 
@@ -34,9 +39,22 @@ default-features = false
 version = "4.5.17"
 features = ["color", "derive"]
 
+[dependencies.rustls-acme]
+version = "0.11.1"
+default-features = false
+features = ["tokio","ring"]
+
 [dependencies.serde]
 version = "1.0.210"
 features = ["derive"]
+
+[dependencies.tokio]
+version = "1.40.0"
+features = ["full"]
+
+[dependencies.tokio-stream]
+version = "0.1.16"
+features = ["net"]
 
 [dependencies.zino]
 path = "../zino"
@@ -46,3 +64,5 @@ features = ["axum"]
 [dependencies.zino-core]
 path = "../zino-core"
 version = "0.26.1"
+
+[workspace]

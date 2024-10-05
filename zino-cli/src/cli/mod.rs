@@ -9,9 +9,9 @@ use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
 use zino_core::error::Error;
 
+mod deploy;
 mod init;
 mod new;
-
 mod serve;
 
 /// CLI tool for developing Zino applications.
@@ -46,6 +46,8 @@ pub enum Subcommands {
     New(new::New),
     /// Start the server at localhost:6080/zino-config.html.
     Serve(serve::Serve),
+    /// Deploy the project.
+    Deploy(deploy::Deploy),
 }
 
 /// Default path for temporary template.

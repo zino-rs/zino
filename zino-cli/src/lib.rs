@@ -6,3 +6,5 @@
 mod cli;
 
 pub use cli::{Cli, Subcommands};
+
+mod structs;
