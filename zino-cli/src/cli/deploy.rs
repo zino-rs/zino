@@ -16,12 +16,12 @@ use zino_core::error::Error;
 use crate::structs::ZinoToml;
 
 /// Deploy a zino project.
-#[derive(Parser, Debug)]
+#[derive(Parser)]
 #[clap(name = "deploy")]
 pub struct Deploy {}
 
 impl Deploy {
-    /// Run the `deploy` command.
+    /// Run the `deploy` command(initialize zino.toml run managers).
     pub async fn run(self) {
         tracing_subscriber::fmt::init();
         info!("deploying zino project");
@@ -45,6 +45,7 @@ impl Deploy {
     }
 }
 
+/// RepositoryManager is responsible for managing the local repository and running the project.
 pub struct RepositoryManager {
     zino_toml: ZinoToml,
     active_project: Option<Child>,
@@ -52,12 +53,13 @@ pub struct RepositoryManager {
 }
 
 impl RepositoryManager {
+    /// The main loop of the RepositoryManager command.
     async fn main_loop(mut self) {
         if let Err(err) = self.run_project() {
             error!("failed to run project: {}", err);
         }
         loop {
-            match self.main_loop_body() {
+            match self.try_update_and_run_project() {
                 Ok(_) => match self.local_head_oid() {
                     Ok(oid) => info!("current commit_id: {}", oid),
                     Err(err) => error!("failed to get current commit_id: {}", err),
@@ -89,8 +91,8 @@ impl RepositoryManager {
         );
     }
 
-    /// The main loop body of the deploy command.
-    fn main_loop_body(&mut self) -> Result<(), Error> {
+    /// try to update and run the project.
+    fn try_update_and_run_project(&mut self) -> Result<(), Error> {
         self.flush_zino_toml();
 
         let local_oid = match self.local_head_oid() {
@@ -293,12 +295,13 @@ impl RepositoryManager {
     }
 }
 
+/// AcmeManager is responsible for handling ACME related tasks.
 struct AcmeManager {
     zino_toml: ZinoToml,
 }
 
-/// about ACME
 impl AcmeManager {
+    /// Get ACME certificate and forward incoming TLS connections to the target server.
     async fn do_acme_work_and_forward_connections(&self) -> Result<(), Error> {
         info!(
             "Starting to bind TCP listener on port {}",
@@ -350,11 +353,11 @@ impl AcmeManager {
         unreachable!()
     }
 
+    /// Handle a TLS connection.
     async fn handle_tls_connection<T>(mut tls: T, forward_to: u16) -> Result<(), Error>
     where
         T: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin + Send + 'static,
     {
-        // 连接到本机的 6080 端口
         let mut target_stream = tokio::net::TcpStream::connect(("127.0.0.1", forward_to))
             .await
             .map_err(|err| {
