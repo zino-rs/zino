@@ -1,3 +1,4 @@
+use crate::structs::ZinoToml;
 use clap::Parser;
 use git2::{FetchOptions, Remote, Repository, ResetType};
 use humantime_serde::re::humantime::format_duration;
@@ -7,13 +8,10 @@ use std::{
     net::Ipv4Addr,
     process::{Child, Command},
 };
-use tracing::{error, info, warn};
-
+use tokio::io::AsyncWriteExt;
 use tokio_stream::StreamExt;
-
+use tracing::{error, info, warn};
 use zino_core::error::Error;
-
-use crate::structs::ZinoToml;
 
 /// Deploy a zino project.
 #[derive(Parser)]
@@ -371,6 +369,11 @@ impl AcmeManager {
                 error!("Failed to forward connection: {}", err);
                 Error::new(format!("failed to forward connection: {}", err))
             })?;
+
+        tls.shutdown().await.map_err(|err| {
+            error!("Failed to close TLS connection: {}", err);
+            Error::new(format!("failed to close TLS connection: {}", err))
+        })?;
 
         Ok(())
     }
