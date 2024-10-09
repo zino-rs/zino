@@ -7,6 +7,7 @@ use std::{
     net::Ipv4Addr,
     process::{Child, Command},
 };
+use tokio::io::AsyncWriteExt;
 use tracing::{error, info, warn};
 
 use tokio_stream::StreamExt;
@@ -371,6 +372,11 @@ impl AcmeManager {
                 error!("Failed to forward connection: {}", err);
                 Error::new(format!("failed to forward connection: {}", err))
             })?;
+
+        tls.shutdown().await.map_err(|err| {
+            error!("Failed to close TLS connection: {}", err);
+            Error::new(format!("failed to close TLS connection: {}", err))
+        })?;
 
         Ok(())
     }
