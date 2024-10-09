@@ -1,3 +1,4 @@
+use crate::structs::ZinoToml;
 use clap::Parser;
 use git2::{FetchOptions, Remote, Repository, ResetType};
 use humantime_serde::re::humantime::format_duration;
@@ -8,13 +9,9 @@ use std::{
     process::{Child, Command},
 };
 use tokio::io::AsyncWriteExt;
-use tracing::{error, info, warn};
-
 use tokio_stream::StreamExt;
-
+use tracing::{error, info, warn};
 use zino_core::error::Error;
-
-use crate::structs::ZinoToml;
 
 /// Deploy a zino project.
 #[derive(Parser)]
