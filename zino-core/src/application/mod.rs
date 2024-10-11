@@ -221,7 +221,7 @@ pub trait Application {
     /// Returns the application name.
     #[inline]
     fn name() -> &'static str {
-        APP_NMAE.as_ref()
+        APP_NAME.as_ref()
     }
 
     /// Returns the application version.
@@ -387,7 +387,7 @@ pub(crate) fn join_path(dir: &Path, path: &str) -> PathBuf {
 }
 
 /// App name.
-pub(crate) static APP_NMAE: LazyLock<&'static str> = LazyLock::new(|| {
+pub(crate) static APP_NAME: LazyLock<&'static str> = LazyLock::new(|| {
     SHARED_APP_STATE
         .config()
         .get_str("name")

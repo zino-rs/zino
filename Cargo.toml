@@ -4,7 +4,6 @@ members = [
     "zino",
     "zino-amis",
     "zino-chart",
-    "zino-cli",
     "zino-core",
     "zino-derive",
     "zino-dioxus",
