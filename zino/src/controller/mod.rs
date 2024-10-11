@@ -323,6 +323,9 @@ where
         Self::before_list(&mut query, extension.as_ref())
             .await
             .extract(&req)?;
+        Self::before_batch_delete(&mut query, extension.as_ref())
+            .await
+            .extract(&req)?;
 
         let ctx = Self::delete_many(&query).await.extract(&req)?;
         let data = Map::from_entry("rows_affected", ctx.rows_affected());

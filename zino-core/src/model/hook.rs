@@ -286,6 +286,15 @@ pub trait ModelHooks: Model {
         Ok(())
     }
 
+    /// A hook running before batch deleting the models with a `Query` from the table.
+    #[inline]
+    async fn before_batch_delete(
+        _query: &mut Query,
+        _extension: Option<&Self::Extension>,
+    ) -> Result<(), Error> {
+        Ok(())
+    }
+
     /// A hook running after decoding the model as a `Map`.
     #[inline]
     async fn after_decode(_model: &mut Map) -> Result<(), Error> {

@@ -51,7 +51,7 @@ use serde::de::DeserializeOwned;
 use std::{
     borrow::Cow,
     env, fs,
-    path::{Path, PathBuf},
+    path::{Component, Path, PathBuf},
     thread,
 };
 use toml::value::Table;
@@ -358,16 +358,31 @@ pub trait Application {
 
 /// Joins a path to the specific dir.
 pub(crate) fn join_path(dir: &Path, path: &str) -> PathBuf {
+    fn join_path_components(mut full_path: PathBuf, path: &str) -> PathBuf {
+        for component in Path::new(path).components() {
+            match component {
+                Component::CurDir => (),
+                Component::ParentDir => {
+                    full_path.pop();
+                }
+                _ => {
+                    full_path.push(component);
+                }
+            }
+        }
+        full_path
+    }
+
     if path.starts_with('/') {
         path.into()
     } else if let Some(path) = path.strip_prefix("~/") {
         if let Some(home_dir) = dirs::home_dir() {
-            home_dir.join(path)
+            join_path_components(home_dir, path)
         } else {
-            dir.join(path)
+            join_path_components(dir.to_path_buf(), path)
         }
     } else {
-        dir.join(path)
+        join_path_components(dir.to_path_buf(), path)
     }
 }
 

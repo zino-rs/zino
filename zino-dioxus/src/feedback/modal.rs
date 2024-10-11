@@ -4,17 +4,24 @@ use zino_core::SharedString;
 
 /// A classic modal with a header and a body.
 pub fn ModalCard(props: ModalCardProps) -> Element {
-    let size = match props.size.as_ref() {
-        "small" => 25,
-        "medium" => 50,
-        "large" => 75,
-        _ => 40,
+    let size = props.size.as_ref();
+    let width = match size {
+        "small" => "25rem",
+        "medium" => "50rem",
+        "large" => "75rem",
+        _ => {
+            if matches!(size, "default" | "") {
+                "40rem"
+            } else {
+                size
+            }
+        }
     };
     rsx! {
         div {
             class: props.class,
             class: if props.visible { props.active_class },
-            style: "--bulma-modal-content-width:{size}rem",
+            style: "--bulma-modal-content-width:{width}",
             div { class: "modal-background" }
             div {
                 class: "modal-card",

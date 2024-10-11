@@ -105,7 +105,7 @@ version = "0.1.83"
 optional = true
 
 [dependencies.axum]
-version = "0.7.6"
+version = "0.7.7"
 optional = true
 default-features = false
 features = [
@@ -133,7 +133,7 @@ optional = true
 features = ["incremental"]
 
 [dependencies.futures]
-version = "0.3.30"
+version = "0.3.31"
 optional = true
 
 [dependencies.image]

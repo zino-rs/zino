@@ -27,7 +27,7 @@ regex = "1.10.6"
 walkdir = "2.5.0"
 
 [dependencies.axum]
-version = "0.7.5"
+version = "0.7.7"
 default-features = false
 
 [dependencies.clap]
