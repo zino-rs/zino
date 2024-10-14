@@ -79,6 +79,25 @@ where
         .map_err(|err| warn!("fail to decode the `{}` field: {}", field, err))
 }
 
+/// Decodes a single value as `T` for the field in a row,
+/// returning `None` if it was not found.
+#[inline]
+pub fn decode_optional<'r, T>(row: &'r DatabaseRow, field: &str) -> Result<Option<T>, Error>
+where
+    T: Decode<'r, DatabaseDriver>,
+{
+    match row.try_get_unchecked(field) {
+        Ok(value) => Ok(Some(value)),
+        Err(err) => {
+            if let sqlx::Error::ColumnNotFound(_) = err {
+                Ok(None)
+            } else {
+                Err(warn!("fail to decode the `{}` field: {}", field, err))
+            }
+        }
+    }
+}
+
 /// Decodes a single value as `Decimal` for the field in a row.
 #[cfg(any(
     feature = "orm-mariadb",
@@ -88,7 +107,16 @@ where
 ))]
 #[inline]
 pub fn decode_decimal(row: &DatabaseRow, field: &str) -> Result<Decimal, Error> {
-    row.try_get_unchecked(field).map_err(Error::from)
+    match row.try_get_unchecked(field) {
+        Ok(value) => Ok(value),
+        Err(err) => {
+            if let sqlx::Error::ColumnNotFound(_) = err {
+                Ok(Decimal::ZERO)
+            } else {
+                Err(warn!("fail to decode the `{}` field: {}", field, err))
+            }
+        }
+    }
 }
 
 /// Decodes a single value as `Decimal` for the field in a row.
@@ -100,25 +128,40 @@ pub fn decode_decimal(row: &DatabaseRow, field: &str) -> Result<Decimal, Error> 
 )))]
 #[inline]
 pub fn decode_decimal(row: &DatabaseRow, field: &str) -> Result<Decimal, Error> {
-    decode::<String>(row, field)
-        .and_then(|value| value.parse().map_err(Error::from))
-        .map_err(Error::from)
+    let Some(value) = decode_optional::<String>(row, field)? else {
+        return Ok(Decimal::ZERO);
+    };
+    value
+        .parse()
+        .map_err(|err| warn!("fail to decode the `{}` field: {}", field, err))
 }
 
 /// Decodes a single value as `Uuid` for the field in a row.
 #[cfg(feature = "orm-postgres")]
 #[inline]
 pub fn decode_uuid(row: &DatabaseRow, field: &str) -> Result<Uuid, Error> {
-    row.try_get_unchecked(field).map_err(Error::from)
+    match row.try_get_unchecked(field) {
+        Ok(id) => Ok(id),
+        Err(err) => {
+            if let sqlx::Error::ColumnNotFound(_) = err {
+                Ok(Uuid::nil())
+            } else {
+                Err(warn!("fail to decode the `{}` field: {}", field, err))
+            }
+        }
+    }
 }
 
 /// Decodes a single value as `Uuid` for the field in a row.
 #[cfg(not(feature = "orm-postgres"))]
 #[inline]
 pub fn decode_uuid(row: &DatabaseRow, field: &str) -> Result<Uuid, Error> {
-    decode::<String>(row, field)
-        .and_then(|value| value.parse().map_err(Error::from))
-        .map_err(Error::from)
+    let Some(value) = decode_optional::<String>(row, field)? else {
+        return Ok(Uuid::nil());
+    };
+    value
+        .parse()
+        .map_err(|err| warn!("fail to decode the `{}` field: {}", field, err))
 }
 
 /// Decodes a single value as `Vec<T>` for the field in a row.
@@ -128,7 +171,16 @@ pub fn decode_array<'r, T>(row: &'r DatabaseRow, field: &str) -> Result<Vec<T>, 
 where
     T: for<'a> Decode<'a, DatabaseDriver> + sqlx::Type<DatabaseDriver>,
 {
-    row.try_get_unchecked(field).map_err(Error::from)
+    match row.try_get_unchecked(field) {
+        Ok(vec) => Ok(vec),
+        Err(err) => {
+            if let sqlx::Error::ColumnNotFound(_) = err {
+                Ok(Vec::new())
+            } else {
+                Err(warn!("fail to decode the `{}` field: {}", field, err))
+            }
+        }
+    }
 }
 
 /// Decodes a single value as `Vec<T>` for the field in a row.
@@ -138,9 +190,12 @@ pub fn decode_array<'r, T>(row: &'r DatabaseRow, field: &str) -> Result<Vec<T>, 
 where
     T: Decode<'r, DatabaseDriver> + serde::de::DeserializeOwned,
 {
-    let value = decode::<String>(row, field)?;
+    let Some(value) = decode_optional::<String>(row, field)? else {
+        return Ok(Vec::new());
+    };
     if value.starts_with('[') && value.ends_with(']') {
-        serde_json::from_str(&value).map_err(Error::from)
+        serde_json::from_str(&value)
+            .map_err(|err| warn!("fail to decode the `{}` field: {}", field, err))
     } else {
         crate::bail!("invalid array data for the `{}` field", field);
     }
@@ -156,9 +211,11 @@ where
 {
     use crate::{extension::JsonValueExt, JsonValue};
 
-    let value = decode::<JsonValue>(row, field)?;
+    let Some(value) = decode_optional::<JsonValue>(row, field)? else {
+        return Ok(Vec::new());
+    };
     if let Some(result) = value.parse_array() {
-        result.map_err(Error::from)
+        result.map_err(|err| warn!("fail to decode the `{}` field: {}", field, err))
     } else {
         Ok(Vec::new())
     }

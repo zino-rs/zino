@@ -36,7 +36,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 });
             } else if type_name == "Option<Uuid>" {
                 decode_model_fields.push(quote! {
-                    model.#ident = orm::decode_uuid(row, #name).ok();
+                    model.#ident = orm::decode_uuid(row, #name).ok().filter(|id| !id.is_nil());
                 });
             } else if type_name == "Decimal" {
                 decode_model_fields.push(quote! {
@@ -44,9 +44,13 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 });
             } else if type_name == "Map" {
                 decode_model_fields.push(quote! {
-                    if let JsonValue::Object(map) = orm::decode(row, #name)? {
+                    if let Some(JsonValue::Object(map)) = orm::decode_optional(row, #name)? {
                         model.#ident = map;
                     }
+                });
+            } else if parser::check_option_type(&type_name) {
+                decode_model_fields.push(quote! {
+                    model.#ident = orm::decode_optional(row, #name)?;
                 });
             } else if parser::check_vec_type(&type_name) {
                 decode_model_fields.push(quote! {
@@ -55,12 +59,15 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             } else if UNSIGNED_INTEGER_TYPES.contains(&type_name.as_str()) {
                 let integer_type_ident = format_ident!("{}", type_name.replace('u', "i"));
                 decode_model_fields.push(quote! {
-                    let value = orm::decode::<#integer_type_ident>(row, #name)?;
-                    model.#ident = value.try_into()?;
+                    if let Some(value) = orm::decode_optional::<#integer_type_ident>(row, #name)? {
+                        model.#ident = value.try_into()?;
+                    }
                 });
             } else {
                 decode_model_fields.push(quote! {
-                    model.#ident = orm::decode(row, #name)?;
+                    if let Some(value) = orm::decode_optional(row, #name)? {
+                        model.#ident = value;
+                    }
                 });
             }
         }

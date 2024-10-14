@@ -140,7 +140,7 @@ mod decode;
 mod scalar;
 
 #[cfg(feature = "orm-sqlx")]
-pub use decode::{decode, decode_array, decode_decimal, decode_uuid};
+pub use decode::{decode, decode_array, decode_decimal, decode_optional, decode_uuid};
 #[cfg(feature = "orm-sqlx")]
 pub use scalar::ScalarQuery;
 
