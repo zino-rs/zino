@@ -48,10 +48,6 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                         model.#ident = map;
                     }
                 });
-            } else if parser::check_option_type(&type_name) {
-                decode_model_fields.push(quote! {
-                    model.#ident = orm::decode_optional(row, #name)?;
-                });
             } else if parser::check_vec_type(&type_name) {
                 decode_model_fields.push(quote! {
                     model.#ident = orm::decode_array(row, #name)?;
