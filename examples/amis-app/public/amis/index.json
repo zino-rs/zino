@@ -79,6 +79,10 @@
             "name": "zino-dioxus"
           },
           {
+            "description": "UI generator for amis",
+            "name": "zino-amis"
+          },
+          {
             "description": "CLI tools",
             "name": "zino-cli"
           }
