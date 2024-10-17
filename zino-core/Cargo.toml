@@ -431,7 +431,7 @@ optional = true
 features = ["non_strict_integers", "url", "uuid"]
 
 [dependencies.uuid]
-version = "1.10.0"
+version = "1.11.0"
 features = [
     "fast-rng",
     "serde",

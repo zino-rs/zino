@@ -654,17 +654,32 @@ impl QueryExt<DatabaseDriver> for Query {
         }
     }
 
-    #[inline]
     fn format_table_name<M: Schema>(&self) -> String {
         let table_name = M::table_name();
         let model_name = M::model_name();
-        format!(r#"`{table_name}` AS `{model_name}`"#)
+        if table_name.contains('.') {
+            let table_name = table_name
+                .split('.')
+                .map(|s| format!("`{s}`"))
+                .collect::<Vec<_>>()
+                .join(".");
+            format!(r#"{table_name} AS `{model_name}`"#)
+        } else {
+            format!(r#"`{table_name}` AS `{model_name}`"#)
+        }
     }
 
-    #[inline]
     fn table_name_escaped<M: Schema>() -> String {
         let table_name = M::table_name();
-        format!(r#"`{table_name}`"#)
+        if table_name.contains('.') {
+            table_name
+                .split('.')
+                .map(|s| format!("`{s}`"))
+                .collect::<Vec<_>>()
+                .join(".")
+        } else {
+            format!(r#"`{table_name}`"#)
+        }
     }
 
     fn parse_text_search(filter: &Map) -> Option<String> {

@@ -217,7 +217,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let connection_pool = Self::init_writer()?;
         let model_name = Self::model_name();
-        let table_name = Self::table_name();
+        let mut table_name = Self::table_name();
+        if let Some((_, suffix)) = table_name.rsplit_once('.') {
+            table_name = suffix;
+        }
+
         let table_name_escaped = Query::table_name_escaped::<Self>();
         let sql = if cfg!(any(
             feature = "orm-mariadb",
@@ -323,7 +327,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let pool = Self::init_writer()?.pool();
         let columns = Self::columns();
-        let table_name = Self::table_name();
+        let mut table_name = Self::table_name();
+        if let Some((_, suffix)) = table_name.rsplit_once('.') {
+            table_name = suffix;
+        }
+
         let table_name_escaped = Query::table_name_escaped::<Self>();
         let mut rows = 0;
         if cfg!(any(
@@ -562,6 +570,61 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     async fn update(mut self) -> Result<QueryContext, Error> {
         let model_data = self.before_update().await?;
         let mut ctx = self.prepare_update().await?;
+        if ctx.is_cancelled() {
+            return Ok(ctx);
+        }
+
+        let pool = Self::acquire_writer().await?.pool();
+        let query_result = pool.execute(ctx.query()).await?;
+        let rows_affected = query_result.rows_affected();
+        let success = rows_affected == 1;
+        ctx.set_query_result(rows_affected, success);
+        Self::after_scan(&ctx).await?;
+        Self::after_update(&ctx, model_data).await?;
+        if success {
+            Ok(ctx)
+        } else {
+            bail!(
+                "{} rows are affected while it is expected to affect 1 row",
+                rows_affected
+            );
+        }
+    }
+
+    /// Prepares the SQL to update the model for partial columns in the table.
+    async fn prepare_update_partial(self, columns: &[&str]) -> Result<QueryContext, Error> {
+        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let table_name = Query::table_name_escaped::<Self>();
+        let primary_key = Query::escape_string(self.primary_key());
+        let map = self.into_map();
+        let read_only_fields = Self::read_only_fields();
+        let mut mutations = Vec::with_capacity(columns.len());
+        for &field in columns {
+            if !read_only_fields.contains(&field) {
+                if let Some(col) = Self::columns().iter().find(|col| col.name() == field) {
+                    let value = col.encode_value(map.get(field));
+                    let field = Query::format_field(field);
+                    mutations.push(format!("{field} = {value}"));
+                }
+            }
+        }
+
+        let mutations = mutations.join(", ");
+        let sql = format!(
+            "UPDATE {table_name} SET {mutations} WHERE {primary_key_name} = {primary_key};"
+        );
+        let mut ctx = Self::before_scan(&sql).await?;
+        ctx.set_query(sql);
+        if cfg!(debug_assertions) && super::DEBUG_ONLY.load(Relaxed) {
+            ctx.cancel();
+        }
+        Ok(ctx)
+    }
+
+    /// Updates the model for partial columns in the table.
+    async fn update_partial(mut self, columns: &[&str]) -> Result<QueryContext, Error> {
+        let model_data = self.before_update().await?;
+        let mut ctx = self.prepare_update_partial(columns).await?;
         if ctx.is_cancelled() {
             return Ok(ctx);
         }

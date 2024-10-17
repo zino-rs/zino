@@ -619,20 +619,37 @@ impl QueryExt<DatabaseDriver> for Query {
                 }
             }
         }
+
+        let table_name = if table_name.contains('.') {
+            table_name
+                .split('.')
+                .map(|s| format!("`{s}`"))
+                .collect::<Vec<_>>()
+                .join(".")
+        } else {
+            format!(r#"`{table_name}`"#)
+        };
         if virtual_tables.is_empty() {
-            format!(r#"`{table_name}` AS `{model_name}`"#)
+            format!(r#"{table_name} AS `{model_name}`"#)
         } else {
             format!(
-                r#"`{table_name}` AS `{model_name}`, {}"#,
+                r#"{table_name} AS `{model_name}`, {}"#,
                 virtual_tables.join(", ")
             )
         }
     }
 
-    #[inline]
     fn table_name_escaped<M: Schema>() -> String {
         let table_name = M::table_name();
-        format!(r#"`{table_name}`"#)
+        if table_name.contains('.') {
+            table_name
+                .split('.')
+                .map(|s| format!("`{s}`"))
+                .collect::<Vec<_>>()
+                .join(".")
+        } else {
+            format!(r#"`{table_name}`"#)
+        }
     }
 
     fn parse_text_search(filter: &Map) -> Option<String> {
