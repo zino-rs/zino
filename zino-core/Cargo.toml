@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.26.2"
+version = "0.26.3"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
