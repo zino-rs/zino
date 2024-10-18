@@ -13,8 +13,7 @@ use utoipa::openapi::{
     path::{PathItem, Paths, PathsBuilder},
     response::ResponseBuilder,
     schema::{
-        Components, ComponentsBuilder, KnownFormat, Object, ObjectBuilder, Ref, SchemaFormat,
-        SchemaType,
+        Components, ComponentsBuilder, KnownFormat, Object, ObjectBuilder, Ref, SchemaFormat, Type,
     },
     security::SecurityRequirement,
     server::Server,
@@ -87,25 +86,25 @@ pub(crate) fn default_components() -> Components {
     // Request ID
     let request_id_example = Uuid::now_v7();
     let request_id_schema = ObjectBuilder::new()
-        .schema_type(SchemaType::String)
+        .schema_type(Type::String)
         .format(Some(SchemaFormat::KnownFormat(KnownFormat::Uuid)))
         .build();
 
     // Default response
     let status_schema = ObjectBuilder::new()
-        .schema_type(SchemaType::Integer)
-        .example(Some(200.into()))
+        .schema_type(Type::Integer)
+        .examples(Some(200))
         .build();
     let success_schema = ObjectBuilder::new()
-        .schema_type(SchemaType::Boolean)
-        .example(Some(true.into()))
+        .schema_type(Type::Boolean)
+        .examples(Some(true))
         .build();
     let message_schema = ObjectBuilder::new()
-        .schema_type(SchemaType::String)
-        .example(Some("OK".into()))
+        .schema_type(Type::String)
+        .examples(Some("OK"))
         .build();
     let default_response_schema = ObjectBuilder::new()
-        .schema_type(SchemaType::Object)
+        .schema_type(Type::Object)
         .property("status", status_schema)
         .property("success", success_schema)
         .property("message", message_schema)
@@ -124,7 +123,7 @@ pub(crate) fn default_components() -> Components {
         "data": {},
     });
     let default_response_content = ContentBuilder::new()
-        .schema(Ref::from_schema_name("defaultResponse"))
+        .schema(Some(Ref::from_schema_name("defaultResponse")))
         .example(Some(default_response_example))
         .build();
     let default_response = ResponseBuilder::new()
@@ -142,27 +141,27 @@ pub(crate) fn default_components() -> Components {
     let detail_example = format!("404 Not Found: cannot find the model `{model_id_example}`");
     let instance_example = format!("/model/{model_id_example}/view");
     let status_schema = ObjectBuilder::new()
-        .schema_type(SchemaType::Integer)
-        .example(Some(404.into()))
+        .schema_type(Type::Integer)
+        .examples(Some(404))
         .build();
     let success_schema = ObjectBuilder::new()
-        .schema_type(SchemaType::Boolean)
-        .example(Some(false.into()))
+        .schema_type(Type::Boolean)
+        .examples(Some(false))
         .build();
     let title_schema = ObjectBuilder::new()
-        .schema_type(SchemaType::String)
-        .example(Some("NotFound".into()))
+        .schema_type(Type::String)
+        .examples(Some("NotFound"))
         .build();
     let detail_schema = ObjectBuilder::new()
-        .schema_type(SchemaType::String)
-        .example(Some(detail_example.as_str().into()))
+        .schema_type(Type::String)
+        .examples(Some(detail_example.as_str()))
         .build();
     let instance_schema = ObjectBuilder::new()
-        .schema_type(SchemaType::String)
-        .example(Some(instance_example.as_str().into()))
+        .schema_type(Type::String)
+        .examples(Some(instance_example.as_str()))
         .build();
     let error_response_schema = ObjectBuilder::new()
-        .schema_type(SchemaType::Object)
+        .schema_type(Type::Object)
         .property("status", status_schema)
         .property("success", success_schema)
         .property("title", title_schema)
@@ -185,7 +184,7 @@ pub(crate) fn default_components() -> Components {
         "request_id": request_id_example,
     });
     let error_response_content = ContentBuilder::new()
-        .schema(Ref::from_schema_name("errorResponse"))
+        .schema(Some(Ref::from_schema_name("errorResponse")))
         .example(Some(error_response_example))
         .build();
     let error_response = ResponseBuilder::new()
@@ -308,13 +307,13 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
                             .get_str("method")
                             .unwrap_or_default()
                             .to_ascii_uppercase();
-                        let path_item_type = parser::parse_path_item_type(&method);
+                        let http_method = parser::parse_http_method(&method);
                         let operation =
                             parser::parse_operation(&name, path, endpoint, ignore_securities);
+                        let path_item = PathItem::new(http_method, operation);
                         if let Some(item) = paths.get_mut(path) {
-                            item.operations.insert(path_item_type, operation);
+                            item.merge_operations(path_item);
                         } else {
-                            let path_item = PathItem::new(path_item_type, operation);
                             paths.insert(path.to_owned(), path_item);
                         }
                     }

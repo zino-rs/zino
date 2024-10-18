@@ -9,14 +9,17 @@ use utoipa::openapi::{
     content::{Content, ContentBuilder},
     external_docs::ExternalDocs,
     header::Header,
-    path::{Operation, OperationBuilder, Parameter, ParameterBuilder, ParameterIn, PathItemType},
+    path::{HttpMethod, Operation, OperationBuilder, Parameter, ParameterBuilder, ParameterIn},
     request_body::{RequestBody, RequestBodyBuilder},
     response::{Response, ResponseBuilder},
     schema::{
-        Array, ArrayBuilder, KnownFormat, Object, ObjectBuilder, Ref, Schema, SchemaFormat,
-        SchemaType,
+        Array, ArrayBuilder, KnownFormat, Object, ObjectBuilder, Ref, Schema, SchemaFormat, Type,
     },
-    security::{HttpAuthScheme, HttpBuilder, SecurityRequirement, SecurityScheme},
+    security::{
+        ApiKey, ApiKeyValue, AuthorizationCode, ClientCredentials, Flow, HttpAuthScheme,
+        HttpBuilder, Implicit, OAuth2, OpenIdConnect, Password, Scopes, SecurityRequirement,
+        SecurityScheme,
+    },
     server::{Server, ServerVariableBuilder},
     tag::{Tag, TagBuilder},
     Deprecated, RefOr, Required,
@@ -149,7 +152,7 @@ pub(super) fn parse_response(config: &Table) -> Response {
         } else {
             parse_schema(content).into()
         };
-        let mut content_builder = ContentBuilder::new().schema(content_schema);
+        let mut content_builder = ContentBuilder::new().schema(Some(content_schema));
         if let Some(example) = config.get("example") {
             content_builder = content_builder.example(Some(example.to_json_value()));
         }
@@ -190,7 +193,7 @@ pub(super) fn parse_schema(config: &Table) -> Schema {
     }
 
     let schema_type = if is_array_object {
-        SchemaType::Object
+        Type::Object
     } else {
         parse_schema_type(schema_type_name)
     };
@@ -200,9 +203,9 @@ pub(super) fn parse_schema(config: &Table) -> Schema {
             let default_value = value.to_json_value();
             object_builder = object_builder
                 .default(Some(default_value.clone()))
-                .example(Some(default_value));
+                .examples(Some(default_value));
         } else if key == "example" {
-            object_builder = object_builder.example(Some(value.to_json_value()));
+            object_builder = object_builder.examples(Some(value.to_json_value()));
         } else {
             match value {
                 TomlValue::String(value) => match key.as_str() {
@@ -268,9 +271,6 @@ pub(super) fn parse_schema(config: &Table) -> Schema {
                     "read_only" => {
                         object_builder = object_builder.read_only(Some(*value));
                     }
-                    "nullable" => {
-                        object_builder = object_builder.nullable(*value);
-                    }
                     "deprecated" => {
                         let deprecated = if *value {
                             Deprecated::True
@@ -293,7 +293,7 @@ pub(super) fn parse_schema(config: &Table) -> Schema {
                     }
                     "examples" => {
                         for example in vec.iter() {
-                            object_builder = object_builder.example(Some(example.to_json_value()));
+                            object_builder = object_builder.examples(Some(example.to_json_value()));
                         }
                     }
                     _ => (),
@@ -331,9 +331,9 @@ fn parse_array_schema(config: &Table) -> Array {
             let default_value = value.to_json_value();
             array_builder = array_builder
                 .default(Some(default_value.clone()))
-                .example(Some(default_value));
+                .examples(Some(default_value));
         } else if key == "example" {
-            array_builder = array_builder.example(Some(value.to_json_value()));
+            array_builder = array_builder.examples(Some(value.to_json_value()));
         } else {
             match value {
                 TomlValue::String(value) => match key.as_str() {
@@ -357,9 +357,6 @@ fn parse_array_schema(config: &Table) -> Array {
                 TomlValue::Boolean(value) => match key.as_str() {
                     "unique_items" => {
                         array_builder = array_builder.unique_items(*value);
-                    }
-                    "nullable" => {
-                        array_builder = array_builder.nullable(*value);
                     }
                     "deprecated" => {
                         let deprecated = if *value {
@@ -389,31 +386,30 @@ fn parse_schema_reference(schema: &str) -> RefOr<Schema> {
     RefOr::Ref(schema_ref)
 }
 
-/// Parses the path item type.
-pub(super) fn parse_path_item_type(method: &str) -> PathItemType {
+/// Parses the HTTP method.
+pub(super) fn parse_http_method(method: &str) -> HttpMethod {
     match method {
-        "POST" => PathItemType::Post,
-        "PUT" => PathItemType::Put,
-        "DELETE" => PathItemType::Delete,
-        "OPTIONS" => PathItemType::Options,
-        "HEAD" => PathItemType::Head,
-        "PATCH" => PathItemType::Patch,
-        "TRACE" => PathItemType::Trace,
-        "CONNECT" => PathItemType::Connect,
-        _ => PathItemType::Get,
+        "POST" => HttpMethod::Post,
+        "PUT" => HttpMethod::Put,
+        "DELETE" => HttpMethod::Delete,
+        "OPTIONS" => HttpMethod::Options,
+        "HEAD" => HttpMethod::Head,
+        "PATCH" => HttpMethod::Patch,
+        "TRACE" => HttpMethod::Trace,
+        _ => HttpMethod::Get,
     }
 }
 
 /// Parses the schema type.
-fn parse_schema_type(basic_type: &str) -> SchemaType {
+fn parse_schema_type(basic_type: &str) -> Type {
     match basic_type {
-        "boolean" => SchemaType::Boolean,
-        "integer" => SchemaType::Integer,
-        "number" => SchemaType::Number,
-        "string" => SchemaType::String,
-        "array" => SchemaType::Array,
-        "object" => SchemaType::Object,
-        _ => SchemaType::Value,
+        "boolean" => Type::Boolean,
+        "integer" => Type::Integer,
+        "number" => Type::Number,
+        "string" => Type::String,
+        "array" => Type::Array,
+        "object" => Type::Object,
+        _ => Type::Null,
     }
 }
 
@@ -432,11 +428,25 @@ fn parse_schema_format(format: &str) -> SchemaFormat {
         "double" => SchemaFormat::KnownFormat(KnownFormat::Double),
         "byte" => SchemaFormat::KnownFormat(KnownFormat::Byte),
         "binary" => SchemaFormat::KnownFormat(KnownFormat::Binary),
+        "time" => SchemaFormat::KnownFormat(KnownFormat::Time),
         "date" => SchemaFormat::KnownFormat(KnownFormat::Date),
         "date-time" => SchemaFormat::KnownFormat(KnownFormat::DateTime),
+        "duration" => SchemaFormat::KnownFormat(KnownFormat::Duration),
         "password" => SchemaFormat::KnownFormat(KnownFormat::Password),
-        "uri" => SchemaFormat::KnownFormat(KnownFormat::Uri),
         "uuid" => SchemaFormat::KnownFormat(KnownFormat::Uuid),
+        "ulid" => SchemaFormat::KnownFormat(KnownFormat::Ulid),
+        "uri" => SchemaFormat::KnownFormat(KnownFormat::Uri),
+        "uri-reference" => SchemaFormat::KnownFormat(KnownFormat::UriReference),
+        "email" => SchemaFormat::KnownFormat(KnownFormat::Email),
+        "idn-email" => SchemaFormat::KnownFormat(KnownFormat::IdnEmail),
+        "hostname" => SchemaFormat::KnownFormat(KnownFormat::Hostname),
+        "idn-hostname" => SchemaFormat::KnownFormat(KnownFormat::IdnHostname),
+        "ipv4" => SchemaFormat::KnownFormat(KnownFormat::Ipv4),
+        "ipv6" => SchemaFormat::KnownFormat(KnownFormat::Ipv6),
+        "uri-template" => SchemaFormat::KnownFormat(KnownFormat::UriTemplate),
+        "json-pointer" => SchemaFormat::KnownFormat(KnownFormat::JsonPointer),
+        "relative-json-pointer" => SchemaFormat::KnownFormat(KnownFormat::RelativeJsonPointer),
+        "regex" => SchemaFormat::KnownFormat(KnownFormat::Regex),
         _ => SchemaFormat::Custom(format.to_owned()),
     }
 }
@@ -556,7 +566,7 @@ fn parse_request_body(config: &Table) -> RequestBody {
     RequestBodyBuilder::new()
         .description(config.get_str("description"))
         .required(Some(required))
-        .content(content_type, Content::new(schema))
+        .content(content_type, Content::new(Some(schema)))
         .build()
 }
 
@@ -564,6 +574,95 @@ fn parse_request_body(config: &Table) -> RequestBody {
 pub(super) fn parse_security_scheme(config: &Table) -> SecurityScheme {
     let schema_type = config.get_str("type").unwrap_or("unkown");
     match schema_type {
+        "oauth2" => {
+            let mut flows = Vec::new();
+            if let Some(config) = config.get_table("flows") {
+                for (key, value) in config {
+                    let Some(config) = value.as_table() else {
+                        continue;
+                    };
+                    let scopes = if let Some(scopes) = config.get_table("scopes") {
+                        let scopes_list = scopes
+                            .iter()
+                            .filter_map(|(key, value)| value.as_str().map(|s| (key.as_str(), s)));
+                        Scopes::from_iter(scopes_list)
+                    } else {
+                        Scopes::new()
+                    };
+                    let flow = match key.as_str() {
+                        "password" => {
+                            let token_url = config.get_str("token_url").unwrap_or("/oauth2/token");
+                            let flow = if let Some(refresh_url) = config.get_str("refresh_url") {
+                                Password::with_refresh_url(token_url, scopes, refresh_url)
+                            } else {
+                                Password::new(token_url, scopes)
+                            };
+                            Flow::Password(flow)
+                        }
+                        "clientCredentials" => {
+                            let token_url = config.get_str("token_url").unwrap_or("/oauth2/token");
+                            let flow = if let Some(refresh_url) = config.get_str("refresh_url") {
+                                ClientCredentials::with_refresh_url(token_url, scopes, refresh_url)
+                            } else {
+                                ClientCredentials::new(token_url, scopes)
+                            };
+                            Flow::ClientCredentials(flow)
+                        }
+                        "authorizationCode" => {
+                            let authorization_url = config
+                                .get_str("authorization_url")
+                                .unwrap_or("/oauth2/auth");
+                            let token_url = config.get_str("token_url").unwrap_or("/oauth2/token");
+                            let flow = if let Some(refresh_url) = config.get_str("refresh_url") {
+                                AuthorizationCode::with_refresh_url(
+                                    authorization_url,
+                                    token_url,
+                                    scopes,
+                                    refresh_url,
+                                )
+                            } else {
+                                AuthorizationCode::new(authorization_url, token_url, scopes)
+                            };
+                            Flow::AuthorizationCode(flow)
+                        }
+                        _ => {
+                            let authorization_url = config
+                                .get_str("authorization_url")
+                                .unwrap_or("/oauth2/auth");
+                            let flow = if let Some(refresh_url) = config.get_str("refresh_url") {
+                                Implicit::with_refresh_url(authorization_url, scopes, refresh_url)
+                            } else {
+                                Implicit::new(authorization_url, scopes)
+                            };
+                            Flow::Implicit(flow)
+                        }
+                    };
+                    flows.push(flow);
+                }
+            }
+
+            let oauth2 = if let Some(description) = config.get_str("description") {
+                OAuth2::with_description(flows, description)
+            } else {
+                OAuth2::new(flows)
+            };
+            SecurityScheme::OAuth2(oauth2)
+        }
+        "apiKey" => {
+            let name = config.get_str("name").unwrap_or("api_key");
+            let location = config.get_str("in").unwrap_or("query");
+            let api_key_value = if let Some(description) = config.get_str("description") {
+                ApiKeyValue::with_description(name, description)
+            } else {
+                ApiKeyValue::new(name)
+            };
+            let api_key = match location {
+                "header" => ApiKey::Header(api_key_value),
+                "cookie" => ApiKey::Cookie(api_key_value),
+                _ => ApiKey::Query(api_key_value),
+            };
+            SecurityScheme::ApiKey(api_key)
+        }
         "http" => {
             let mut http_builder = HttpBuilder::new();
             if let Some(scheme) = config.get_str("scheme") {
@@ -589,8 +688,18 @@ pub(super) fn parse_security_scheme(config: &Table) -> SecurityScheme {
             }
             SecurityScheme::Http(http_builder.build())
         }
+        "openIdConnect" => {
+            let open_id_connect_url = config.get_str("open_id_connect_url").unwrap_or("/openid");
+            let open_id_connect = if let Some(description) = config.get_str("description") {
+                OpenIdConnect::with_description(open_id_connect_url, description)
+            } else {
+                OpenIdConnect::new(open_id_connect_url)
+            };
+            SecurityScheme::OpenIdConnect(open_id_connect)
+        }
         _ => SecurityScheme::MutualTls {
             description: config.get_str("description").map(|s| s.to_owned()),
+            extensions: None,
         },
     }
 }

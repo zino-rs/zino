@@ -185,7 +185,7 @@ optional = true
 features = ["opentelemetry_0_25", "uuid_v7"]
 
 [dependencies.utoipa-rapidoc]
-version = "4.0.0"
+version = "5.0.0"
 optional = true
 
 [dependencies.zino-core]
