@@ -182,6 +182,12 @@ impl DateTime {
         datetime.to_rfc3339_opts(SecondsFormat::Millis, true)
     }
 
+    /// Returns a date-time string with the `Local` time zone.
+    #[inline]
+    pub fn to_local_string(&self) -> String {
+        format!("{}", self.0.format("%Y-%m-%d %H:%M:%S %:z"))
+    }
+
     /// Formats the combined date and time with the specified format string.
     /// See [`format::strftime`](chrono::format::strftime) for the supported escape sequences.
     #[inline]

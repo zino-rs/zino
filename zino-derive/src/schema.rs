@@ -309,12 +309,9 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             zino_core::LazyLock::new(|| #primary_key_column);
         static #schema_columns: zino_core::LazyLock<[Column; #num_columns]> =
             zino_core::LazyLock::new(|| [#(#columns),*]);
-        static #schema_fields: zino_core::LazyLock<[&str; #num_columns]> =
-            zino_core::LazyLock::new(|| [#(#column_fields),*]);
-        static #schema_read_only_fields: zino_core::LazyLock<[&str; #num_read_only_fields]> =
-            zino_core::LazyLock::new(|| [#(#read_only_fields),*]);
-        static #schema_write_only_fields: zino_core::LazyLock<[&str; #num_write_only_fields]> =
-            zino_core::LazyLock::new(|| [#(#write_only_fields),*]);
+        static #schema_fields: [&str; #num_columns] = [#(#column_fields),*];
+        static #schema_read_only_fields: [&str; #num_read_only_fields] = [#(#read_only_fields),*];
+        static #schema_write_only_fields: [&str; #num_write_only_fields] = [#(#write_only_fields),*];
         static #schema_reader: std::sync::OnceLock<&ConnectionPool> = std::sync::OnceLock::new();
         static #schema_writer: std::sync::OnceLock<&ConnectionPool> = std::sync::OnceLock::new();
         static #schema_table_name: std::sync::OnceLock<&str> = std::sync::OnceLock::new();
