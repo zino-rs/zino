@@ -23,11 +23,11 @@ version = "1.5.0"
 features = ["http1", "server"]
 
 [dependencies.hyper-util]
-version = "0.1.9"
+version = "0.1.10"
 features = ["http1"]
 
 [dependencies.tokio]
-version = "1.40.0"
+version = "1.41.0"
 features = ["rt-multi-thread"]
 
 [dependencies.toml]

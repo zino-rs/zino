@@ -1,11 +1,15 @@
 use crate::class::Class;
 use dioxus::prelude::*;
+use zino_core::SharedString;
 
 /// The text input and its variations.
 pub fn Input(props: InputProps) -> Element {
     rsx! {
        input {
             class: props.class,
+            class: if !props.color.is_empty() { "is-{props.color}" },
+            class: if !props.size.is_empty() { "is-{props.size}" },
+            class: if !props.state.is_empty() { "is-{props.state}" },
             r#type: "text",
             value: props.initial_value,
             ..props.attributes,
@@ -29,6 +33,15 @@ pub struct InputProps {
     /// The class attribute for the component.
     #[props(into, default = "input".into())]
     pub class: Class,
+    /// The color of the input: `primary` | `link` | `info` | `success` | `warning` | `danger`.
+    #[props(into, default)]
+    pub color: SharedString,
+    /// The size of the input: `small` | `normal` | `medium` | `large`.
+    #[props(into, default)]
+    pub size: SharedString,
+    /// The state of the input: `hovered` | `focused` | `loading` | `static`.
+    #[props(into, default)]
+    pub state: SharedString,
     /// The initial value of the textarea.
     #[props(into, default)]
     pub initial_value: String,

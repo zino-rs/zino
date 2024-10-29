@@ -28,7 +28,7 @@ toml = "0.8.19"
 toml_edit = "0.22.22"
 tracing = "0.1.40"
 tracing-subscriber = "0.3.18"
-regex = "1.10.6"
+regex = "1.11.1"
 walkdir = "2.5.0"
 
 [dependencies.axum]
@@ -45,11 +45,11 @@ default-features = false
 features = ["tokio","ring"]
 
 [dependencies.serde]
-version = "1.0.210"
+version = "1.0.214"
 features = ["derive"]
 
 [dependencies.tokio]
-version = "1.40.0"
+version = "1.41.0"
 features = ["full"]
 
 [dependencies.tokio-stream]

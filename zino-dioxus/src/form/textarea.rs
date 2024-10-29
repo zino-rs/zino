@@ -1,11 +1,15 @@
 use crate::class::Class;
 use dioxus::prelude::*;
+use zino_core::SharedString;
 
 /// The multiline textarea and its variations.
 pub fn Textarea(props: TextareaProps) -> Element {
     rsx! {
         textarea {
             class: props.class,
+            class: if !props.color.is_empty() { "is-{props.color}" },
+            class: if !props.size.is_empty() { "is-{props.size}" },
+            class: if !props.state.is_empty() { "is-{props.state}" },
             value: props.initial_value,
             ..props.attributes,
             onchange: move |event| {
@@ -28,6 +32,15 @@ pub struct TextareaProps {
     /// The class attribute for the component.
     #[props(into, default = "textarea".into())]
     pub class: Class,
+    /// The color of the input: `primary` | `link` | `info` | `success` | `warning` | `danger`.
+    #[props(into, default)]
+    pub color: SharedString,
+    /// The size of the input: `small` | `normal` | `medium` | `large`.
+    #[props(into, default)]
+    pub size: SharedString,
+    /// The state of the input: `hovered` | `focused` | `loading`.
+    #[props(into, default)]
+    pub state: SharedString,
     /// The initial value of the textarea.
     #[props(into, default)]
     pub initial_value: String,

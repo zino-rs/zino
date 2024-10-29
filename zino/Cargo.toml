@@ -83,7 +83,7 @@ orm = ["zino-core/orm"]
 
 [dependencies]
 cfg-if = "1.0"
-serde_json = "1.0.128"
+serde_json = "1.0.132"
 tracing = "0.1.40"
 
 [dependencies.actix-cors]
@@ -137,7 +137,7 @@ version = "0.3.31"
 optional = true
 
 [dependencies.image]
-version = "0.25.2"
+version = "0.25.4"
 optional = true
 
 [dependencies.ntex]
@@ -151,7 +151,7 @@ version = "2.0.0"
 optional = true
 
 [dependencies.tokio]
-version = "1.40.0"
+version = "1.41.0"
 optional = true
 features = [
     "macros",
@@ -180,7 +180,7 @@ features = [
 ]
 
 [dependencies.tracing-actix-web]
-version = "0.7.13"
+version = "0.7.14"
 optional = true
 features = ["opentelemetry_0_25", "uuid_v7"]
 

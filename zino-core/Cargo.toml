@@ -202,7 +202,7 @@ aes-gcm-siv = "0.11.1"
 ahash = "0.8.11"
 apache-avro = "0.17.0"
 base64 = "0.22.1"
-bytes = "1.7.2"
+bytes = "1.8.0"
 cfg-if = "1.0"
 convert_case = "0.6.0"
 cron = "0.12.1"
@@ -220,7 +220,7 @@ multer = "3.1.0"
 parking_lot = "0.12.3"
 percent-encoding = "2.3.1"
 rand = "0.8.5"
-regex = "1.11.0"
+regex = "1.11.1"
 reqwest-tracing = "0.5.3"
 rust_decimal = "1.36.0"
 ryu = "1.0.18"
@@ -256,7 +256,7 @@ version = "0.9.2"
 optional = true
 
 [dependencies.datafusion]
-version = "42.0.0"
+version = "42.1.0"
 optional = true
 
 [dependencies.dotenvy]
@@ -297,12 +297,12 @@ default-features = false
 features = ["http-listener"]
 
 [dependencies.minijinja]
-version = "2.3.1"
+version = "2.4.0"
 optional = true
 features = ["loader"]
 
 [dependencies.opendal]
-version = "0.50.0"
+version = "0.50.1"
 optional = true
 default-features = false
 features = ["layers-tracing"]
@@ -320,7 +320,7 @@ version = "0.4.0"
 optional = true
 
 [dependencies.regorus]
-version = "0.2.6"
+version = "0.2.7"
 optional = true
 default-features = false
 features = [
@@ -340,7 +340,7 @@ features = [
 ]
 
 [dependencies.reqwest]
-version = "0.12.8"
+version = "0.12.9"
 default-features = false
 features = [
     "blocking",
@@ -362,11 +362,11 @@ version = "0.34.0"
 optional = true
 
 [dependencies.serde]
-version = "1.0.210"
+version = "1.0.214"
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1.0.128"
+version = "1.0.132"
 features = ["raw_value"]
 
 [dependencies.sm3]
@@ -426,7 +426,7 @@ version = "0.9.5"
 optional = true
 
 [dependencies.utoipa]
-version = "5.1.1"
+version = "5.1.3"
 optional = true
 features = [
     "non_strict_integers",
@@ -445,7 +445,7 @@ features = [
 ]
 
 [dev-dependencies]
-anyhow = "1.0.89"
+anyhow = "1.0.91"
 arrayvec = "0.7.6"
 base64-simd = "0.8.0"
 criterion = "0.5.1"
@@ -453,7 +453,7 @@ data-encoding = "2.6.0"
 indexmap = "2.6.0"
 libsm = "0.6.0"
 sm3 = "0.4.2"
-sonic-rs = "0.3.13"
+sonic-rs = "0.3.14"
 tinyvec = { version = "1.8.0", features = ["alloc"] }
 uuid-simd = "0.8.0"
 

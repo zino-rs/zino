@@ -337,12 +337,12 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
 
             #[inline]
             fn primary_key_column() -> &'static Column<'static> {
-                zino_core::LazyLock::force(&#schema_primary_key_column)
+                &#schema_primary_key_column
             }
 
             #[inline]
             fn schema() -> &'static schema::Schema {
-                zino_core::LazyLock::force(&#avro_schema)
+                &#avro_schema
             }
 
             #[inline]
