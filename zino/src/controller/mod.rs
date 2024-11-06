@@ -68,7 +68,7 @@ use zino_core::{
     model::{ModelHooks, Mutation, Query},
     orm::{ModelAccessor, ModelHelper},
     request::RequestContext,
-    response::{ExtractRejection, Rejection, Response, StatusCode},
+    response::{ExtractRejection, Rejection, Response},
     JsonValue, Map,
 };
 
@@ -113,7 +113,6 @@ where
         Self::before_respond(&mut model_snapshot, extension.as_ref())
             .await
             .extract(&req)?;
-        res.set_code(StatusCode::CREATED);
         res.set_json_data(Self::data_item(model_snapshot));
         Ok(res.into())
     }
