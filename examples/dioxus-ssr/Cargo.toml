@@ -22,7 +22,7 @@ features = [
 
 [dependencies.zino]
 path = "../../zino"
-version = "0.25.3"
+version = "0.25.4"
 features = ["dioxus-ssr"]
 
 [dependencies.zino-core]
