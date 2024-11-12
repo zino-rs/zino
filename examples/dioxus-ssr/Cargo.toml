@@ -27,7 +27,7 @@ features = ["dioxus-ssr"]
 
 [dependencies.zino-core]
 path = "../../zino-core"
-version = "0.26.3"
+version = "0.26.4"
 features = ["env-filter", "tls-native"]
 
 [dependencies.zino-dioxus]

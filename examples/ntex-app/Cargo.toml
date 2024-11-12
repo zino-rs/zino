@@ -10,11 +10,11 @@ publish = false
 tracing = "0.1.40"
 
 [dependencies.ntex]
-version = "2.7.0"
+version = "2.8.0"
 default-features = false
 
 [dependencies.serde]
-version = "1.0.214"
+version = "1.0.215"
 features = ["derive"]
 
 [dependencies.zino]
@@ -29,7 +29,7 @@ features = [
 
 [dependencies.zino-core]
 path = "../../zino-core"
-version = "0.26.3"
+version = "0.26.4"
 features = [
     "cookie",
     "env-filter",

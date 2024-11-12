@@ -40,9 +40,9 @@ version = "4.5.20"
 features = ["color", "derive"]
 
 [dependencies.rustls-acme]
-version = "0.11.1"
+version = "0.12.1"
 default-features = false
-features = ["tokio","ring"]
+features = ["tokio", "ring"]
 
 [dependencies.serde]
 version = "1.0.214"
@@ -63,6 +63,4 @@ features = ["axum"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.26.3"
-
-[workspace]
+version = "0.26.4"

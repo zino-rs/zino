@@ -26,9 +26,10 @@ impl Query {
     /// Creates a new instance.
     #[inline]
     pub fn new(filters: impl Into<JsonValue>) -> Self {
+        let filters = filters.into().into_map_opt().unwrap_or_default();
         Self {
             fields: Vec::new(),
-            filters: filters.into().into_map_opt().unwrap_or_default(),
+            filters,
             sort_order: SmallVec::new(),
             offset: 0,
             limit: 0,

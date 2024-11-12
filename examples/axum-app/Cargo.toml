@@ -14,7 +14,7 @@ version = "0.7.7"
 default-features = false
 
 [dependencies.serde]
-version = "1.0.214"
+version = "1.0.215"
 features = ["derive"]
 
 [dependencies.zino]
@@ -29,7 +29,7 @@ features = [
 
 [dependencies.zino-core]
 path = "../../zino-core"
-version = "0.26.3"
+version = "0.26.4"
 features = [
     "cookie",
     "env-filter",

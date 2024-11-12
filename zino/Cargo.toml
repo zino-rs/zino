@@ -151,7 +151,7 @@ version = "2.0.0"
 optional = true
 
 [dependencies.tokio]
-version = "1.41.0"
+version = "1.41.1"
 optional = true
 features = [
     "macros",
@@ -190,4 +190,4 @@ optional = true
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.26.3"
+version = "0.26.4"
