@@ -1,7 +1,7 @@
 [package]
 name = "zino-actix"
 description = "Integrations with actix-web for zino."
-version = "0.0.1"
+version = "0.1.0"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -13,3 +13,29 @@ documentation = "https://docs.rs/zino-actix"
 readme = "README.md"
 
 [dependencies]
+actix-cors = "0.7.0"
+actix-files = "0.6.6"
+futures = "0.3.31"
+tracing = "0.1.40"
+
+[dependencies.actix-web]
+version = "4.9.0"
+default-features = false
+features = ["compress-gzip"]
+
+[dependencies.tracing-actix-web]
+version = "0.7.14"
+features = ["opentelemetry_0_25", "uuid_v7"]
+
+[dependencies.utoipa-rapidoc]
+version = "5.0.0"
+features = ["actix-web"]
+
+[dependencies.zino-core]
+path = "../zino-core"
+version = "0.26.4"
+features = [
+    "http02",
+    "openapi",
+    "runtime-tokio",
+]

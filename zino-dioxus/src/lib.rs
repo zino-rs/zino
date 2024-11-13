@@ -4,6 +4,7 @@
 #![allow(non_snake_case)]
 #![forbid(unsafe_code)]
 
+pub mod application;
 pub mod class;
 pub mod extension;
 pub mod feedback;

@@ -1,7 +1,7 @@
 [package]
 name = "zino-ntex"
 description = "Integrations with ntex for zino."
-version = "0.0.1"
+version = "0.1.0"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -13,3 +13,16 @@ documentation = "https://docs.rs/zino-ntex"
 readme = "README.md"
 
 [dependencies]
+futures = "0.3.31"
+ntex-files = "2.0.0"
+tracing = "0.1.40"
+
+[dependencies.ntex]
+version = "2.8.0"
+default-features = false
+features = ["compress", "tokio"]
+
+[dependencies.zino-core]
+path = "../zino-core"
+version = "0.26.4"
+features = ["runtime-tokio"]

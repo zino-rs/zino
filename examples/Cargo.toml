@@ -5,7 +5,6 @@ members = [
     "amis-app",
     "axum-app",
     "dioxus-desktop",
-    "dioxus-ssr",
     "minimal-app",
     "ntex-app",
 ]
