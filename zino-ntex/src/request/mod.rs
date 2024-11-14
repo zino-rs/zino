@@ -1,6 +1,6 @@
 use crate::response::NtexRejection;
 use ntex::{
-    http::Payload,
+    http::{Method, Payload, Uri},
     util::Bytes,
     web::{
         error::{DefaultError, ErrorRenderer},
@@ -15,7 +15,7 @@ use std::{
 };
 use zino_core::{
     error::Error,
-    request::{Context, RequestContext, Uri},
+    request::{Context, RequestContext},
     response::Rejection,
     state::Data,
 };
@@ -40,19 +40,32 @@ impl<T> DerefMut for Extractor<T> {
 }
 
 impl RequestContext for Extractor<HttpRequest> {
+    type Method = Method;
+    type Uri = Uri;
+
     #[inline]
-    fn request_method(&self) -> &str {
-        self.method().as_str()
+    fn request_method(&self) -> &Self::Method {
+        self.method()
     }
 
     #[inline]
-    fn original_uri(&self) -> &Uri {
+    fn original_uri(&self) -> &Self::Uri {
         self.uri()
     }
 
     #[inline]
     fn matched_route(&self) -> Cow<'_, str> {
         self.match_info().path().into()
+    }
+
+    #[inline]
+    fn request_path(&self) -> &str {
+        self.uri().path()
+    }
+
+    #[inline]
+    fn get_query_string(&self) -> Option<&str> {
+        self.uri().query()
     }
 
     #[inline]

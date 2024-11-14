@@ -2,13 +2,13 @@ use ntex::{
     http::{
         body::Body,
         header::{self, HeaderName, HeaderValue},
-        ResponseError,
+        ResponseError, StatusCode
     },
     web::{HttpRequest, HttpResponse, Responder, WebResponseError},
 };
 use std::fmt;
 use zino_core::{
-    response::{Rejection, Response, ResponseCode, StatusCode},
+    response::{Rejection, Response, ResponseCode},
     trace::TimingMetric,
 };
 

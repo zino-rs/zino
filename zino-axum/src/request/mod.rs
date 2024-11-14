@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use axum::extract::{ConnectInfo, FromRequest, MatchedPath, OriginalUri, Request};
+use axum::{extract::{ConnectInfo, FromRequest, MatchedPath, OriginalUri, Request}, http::{Method, Uri}};
 use std::{
     borrow::Cow,
     convert::Infallible,
@@ -10,7 +10,7 @@ use std::{
 use zino_core::{
     error::Error,
     extension::HeaderMapExt,
-    request::{Context, RequestContext, Uri},
+    request::{Context, RequestContext},
     state::Data,
 };
 
@@ -48,9 +48,12 @@ impl From<Extractor<Request>> for Request {
 }
 
 impl RequestContext for Extractor<Request> {
+    type Method = Method;
+    type Uri = Uri;
+
     #[inline]
-    fn request_method(&self) -> &str {
-        self.method().as_str()
+    fn request_method(&self) -> &Self::Method {
+        self.method()
     }
 
     #[inline]
@@ -71,6 +74,16 @@ impl RequestContext for Extractor<Request> {
         } else {
             self.uri().path().into()
         }
+    }
+
+    #[inline]
+    fn request_path(&self) -> &str {
+        self.uri().path()
+    }
+
+    #[inline]
+    fn get_query_string(&self) -> Option<&str> {
+        self.uri().query()
     }
 
     #[inline]

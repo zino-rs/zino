@@ -2,7 +2,7 @@ use crate::{middleware, AxumResponse, Extractor};
 use axum::{
     error_handling::HandleErrorLayer,
     extract::{rejection::LengthLimitError, DefaultBodyLimit},
-    http::{HeaderName, HeaderValue},
+    http::{HeaderName, HeaderValue, StatusCode},
     middleware::from_fn,
     BoxError, Router,
 };
@@ -23,7 +23,7 @@ use utoipa_rapidoc::RapiDoc;
 use zino_core::{
     application::{Application, Plugin, ServerTag},
     extension::TomlTableExt,
-    response::{Response, StatusCode},
+    response::Response,
     schedule::AsyncScheduler,
     LazyLock,
 };

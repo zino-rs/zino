@@ -1,9 +1,9 @@
 use axum::{
     body::Body,
-    http::header::{self, HeaderName, HeaderValue},
+    http::{header::{self, HeaderName, HeaderValue}, StatusCode},
     response::IntoResponse,
 };
-use zino_core::response::{Rejection, Response, ResponseCode, StatusCode};
+use zino_core::response::{Rejection, Response, ResponseCode};
 
 /// An HTTP response for `axum`.
 pub struct AxumResponse<S: ResponseCode = StatusCode>(Response<S>);

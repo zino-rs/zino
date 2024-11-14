@@ -1,5 +1,5 @@
 use self::RejectionKind::*;
-use super::{Response, StatusCode};
+use super::Response;
 use crate::{
     error::Error,
     request::{Context, RequestContext},
@@ -182,59 +182,68 @@ impl Rejection {
     }
 }
 
-impl From<Rejection> for Response<StatusCode> {
-    fn from(rejection: Rejection) -> Self {
-        let mut res = match rejection.kind {
-            BadRequest(validation) => {
-                let mut res = Response::new(StatusCode::BAD_REQUEST);
-                res.set_validation_data(validation);
+macro_rules! impl_from_rejection {
+    ($Ty:ty) => {
+        impl From<Rejection> for Response<$Ty> {
+            fn from(rejection: Rejection) -> Self {
+                let mut res = match rejection.kind {
+                    BadRequest(validation) => {
+                        let mut res = Response::new(<$Ty>::BAD_REQUEST);
+                        res.set_validation_data(validation);
+                        res
+                    }
+                    Unauthorized(err) => {
+                        let mut res = Response::new(<$Ty>::UNAUTHORIZED);
+                        res.set_error_message(err);
+                        res
+                    }
+                    Forbidden(err) => {
+                        let mut res = Response::new(<$Ty>::FORBIDDEN);
+                        res.set_error_message(err);
+                        res
+                    }
+                    NotFound(err) => {
+                        let mut res = Response::new(<$Ty>::NOT_FOUND);
+                        res.set_error_message(err);
+                        res
+                    }
+                    MethodNotAllowed(err) => {
+                        let mut res = Response::new(<$Ty>::METHOD_NOT_ALLOWED);
+                        res.set_error_message(err);
+                        res
+                    }
+                    Conflict(err) => {
+                        let mut res = Response::new(<$Ty>::CONFLICT);
+                        res.set_error_message(err);
+                        res
+                    }
+                    InternalServerError(err) => {
+                        let mut res = Response::new(<$Ty>::INTERNAL_SERVER_ERROR);
+                        res.set_error_message(err);
+                        res
+                    }
+                    ServiceUnavailable(err) => {
+                        let mut res = Response::new(<$Ty>::SERVICE_UNAVAILABLE);
+                        res.set_error_message(err);
+                        res
+                    }
+                };
+                if let Some(ctx) = rejection.context {
+                    res.set_instance(ctx.instance().to_owned());
+                    res.set_start_time(ctx.start_time());
+                    res.set_request_id(ctx.request_id());
+                }
+                res.set_trace_context(rejection.trace_context);
                 res
             }
-            Unauthorized(err) => {
-                let mut res = Response::new(StatusCode::UNAUTHORIZED);
-                res.set_error_message(err);
-                res
-            }
-            Forbidden(err) => {
-                let mut res = Response::new(StatusCode::FORBIDDEN);
-                res.set_error_message(err);
-                res
-            }
-            NotFound(err) => {
-                let mut res = Response::new(StatusCode::NOT_FOUND);
-                res.set_error_message(err);
-                res
-            }
-            MethodNotAllowed(err) => {
-                let mut res = Response::new(StatusCode::METHOD_NOT_ALLOWED);
-                res.set_error_message(err);
-                res
-            }
-            Conflict(err) => {
-                let mut res = Response::new(StatusCode::CONFLICT);
-                res.set_error_message(err);
-                res
-            }
-            InternalServerError(err) => {
-                let mut res = Response::new(StatusCode::INTERNAL_SERVER_ERROR);
-                res.set_error_message(err);
-                res
-            }
-            ServiceUnavailable(err) => {
-                let mut res = Response::new(StatusCode::SERVICE_UNAVAILABLE);
-                res.set_error_message(err);
-                res
-            }
-        };
-        if let Some(ctx) = rejection.context {
-            res.set_instance(ctx.instance().to_owned());
-            res.set_start_time(ctx.start_time());
-            res.set_request_id(ctx.request_id());
         }
-        res.set_trace_context(rejection.trace_context);
-        res
     }
 }
+
+impl_from_rejection!(http::StatusCode);
+
+#[cfg(feature = "http02")]
+impl_from_rejection!(http02::StatusCode);
 
 /// Trait for extracting rejections.
 pub trait ExtractRejection<T> {

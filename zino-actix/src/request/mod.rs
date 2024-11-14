@@ -1,5 +1,6 @@
 use actix_web::{
     dev::{Payload, ServiceRequest},
+    http::{Method, Uri},
     web::Bytes,
     FromRequest, HttpMessage, HttpRequest,
 };
@@ -12,7 +13,7 @@ use std::{
 };
 use zino_core::{
     error::Error,
-    request::{Context, RequestContext, Uri},
+    request::{Context, RequestContext},
     state::Data,
 };
 
@@ -36,13 +37,16 @@ impl<T> DerefMut for Extractor<T> {
 }
 
 impl RequestContext for Extractor<HttpRequest> {
+    type Method = Method;
+    type Uri = Uri;
+
     #[inline]
-    fn request_method(&self) -> &str {
-        self.method().as_str()
+    fn request_method(&self) -> &Self::Method {
+        self.method()
     }
 
     #[inline]
-    fn original_uri(&self) -> &Uri {
+    fn original_uri(&self) -> &Self::Uri {
         self.uri()
     }
 
@@ -53,6 +57,16 @@ impl RequestContext for Extractor<HttpRequest> {
         } else {
             self.uri().path().into()
         }
+    }
+
+    #[inline]
+    fn request_path(&self) -> &str {
+        self.uri().path()
+    }
+
+    #[inline]
+    fn get_query_string(&self) -> Option<&str> {
+        self.uri().query()
     }
 
     #[inline]

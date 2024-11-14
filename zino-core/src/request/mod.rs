@@ -41,24 +41,27 @@ mod context;
 
 pub use context::Context;
 
-/// The URI component of a request for http v0.2.
-#[cfg(feature = "http02")]
-pub type Uri = http02::Uri;
-
-/// The URI component of a request.
-#[cfg(not(feature = "http02"))]
-pub type Uri = http::Uri;
-
 /// Request context.
 pub trait RequestContext {
-    /// Returns the request method as `str`.
-    fn request_method(&self) -> &str;
+    /// The method type.
+    type Method: AsRef<str>;
+    /// The uri type.
+    type Uri;
+
+    /// Returns the request method.
+    fn request_method(&self) -> &Self::Method;
 
     /// Returns the original request URI regardless of nesting.
-    fn original_uri(&self) -> &Uri;
+    fn original_uri(&self) -> &Self::Uri;
 
     /// Returns the route that matches the request.
     fn matched_route(&self) -> Cow<'_, str>;
+
+    /// Returns the request path regardless of nesting.
+    fn request_path(&self) -> &str;
+
+    /// Gets the query string of the request.
+    fn get_query_string(&self) -> Option<&str>;
 
     /// Gets an HTTP header value with the given name.
     fn get_header(&self, name: &str) -> Option<&str>;
@@ -79,12 +82,6 @@ pub trait RequestContext {
     /// Reads the entire request body into a byte buffer.
     async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error>;
 
-    /// Returns the request path regardless of nesting.
-    #[inline]
-    fn request_path(&self) -> &str {
-        self.original_uri().path()
-    }
-
     /// Returns the request path segments.
     #[inline]
     fn path_segments(&self) -> Vec<&str> {
@@ -99,7 +96,7 @@ pub trait RequestContext {
             metrics::gauge!("zino_http_requests_in_flight").increment(1.0);
             metrics::counter!(
                 "zino_http_requests_total",
-                "method" => self.request_method().to_owned(),
+                "method" => self.request_method().as_ref().to_owned(),
                 "route" => self.matched_route().into_owned(),
             )
             .increment(1);
@@ -331,7 +328,7 @@ pub trait RequestContext {
     /// You can use [`decode_query()`](Self::decode_query) or [`parse_query()`](Self::parse_query)
     /// if you need percent-decoding.
     fn get_query(&self, name: &str) -> Option<&str> {
-        self.original_uri().query()?.split('&').find_map(|param| {
+        self.get_query_string()?.split('&').find_map(|param| {
             if let Some((key, value)) = param.split_once('=') {
                 (key == name).then_some(value)
             } else {
@@ -359,7 +356,7 @@ pub trait RequestContext {
     /// Returns a default value of `T` when the query is empty.
     /// If the query has a `timestamp` parameter, it will be used to prevent replay attacks.
     fn parse_query<T: Default + DeserializeOwned>(&self) -> Result<T, Rejection> {
-        if let Some(query) = self.original_uri().query() {
+        if let Some(query) = self.get_query_string() {
             #[cfg(feature = "jwt")]
             if let Some(timestamp) = self.get_query("timestamp").and_then(|s| s.parse().ok()) {
                 let duration = DateTime::from_timestamp(timestamp).span_between_now();
@@ -464,7 +461,7 @@ pub trait RequestContext {
     fn parse_authentication(&self) -> Result<Authentication, Rejection> {
         let method = self.request_method();
         let query = self.parse_query::<Map>().unwrap_or_default();
-        let mut authentication = Authentication::new(method);
+        let mut authentication = Authentication::new(method.as_ref());
         let mut validation = Validation::new();
         if let Some(signature) = query.get_str("signature") {
             authentication.set_signature(signature.to_owned());

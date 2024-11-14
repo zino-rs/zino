@@ -1,4 +1,3 @@
-use super::StatusCode;
 use crate::SharedString;
 use serde::Serialize;
 use std::borrow::Cow;
@@ -56,44 +55,53 @@ pub trait ResponseCode {
     }
 }
 
-impl ResponseCode for StatusCode {
-    type ErrorCode = SharedString;
-    type BusinessCode = u16;
+macro_rules! impl_response_code {
+    ($Ty:ty) => {
+        impl ResponseCode for $Ty {
+            type ErrorCode = SharedString;
+            type BusinessCode = u16;
 
-    const OK: Self = StatusCode::OK;
-    const BAD_REQUEST: Self = StatusCode::BAD_REQUEST;
-    const INTERNAL_SERVER_ERROR: Self = StatusCode::INTERNAL_SERVER_ERROR;
+            const OK: Self = Self::OK;
+            const BAD_REQUEST: Self = Self::BAD_REQUEST;
+            const INTERNAL_SERVER_ERROR: Self = Self::INTERNAL_SERVER_ERROR;
 
-    #[inline]
-    fn status_code(&self) -> u16 {
-        self.as_u16()
-    }
+            #[inline]
+            fn status_code(&self) -> u16 {
+                self.as_u16()
+            }
 
-    #[inline]
-    fn is_success(&self) -> bool {
-        self.is_success()
-    }
+            #[inline]
+            fn is_success(&self) -> bool {
+                self.is_success()
+            }
 
-    #[inline]
-    fn type_uri(&self) -> Option<SharedString> {
-        None
-    }
+            #[inline]
+            fn type_uri(&self) -> Option<SharedString> {
+                None
+            }
 
-    #[inline]
-    fn title(&self) -> Option<SharedString> {
-        if self.is_success() {
-            None
-        } else {
-            self.canonical_reason().map(Cow::Borrowed)
-        }
-    }
+            #[inline]
+            fn title(&self) -> Option<SharedString> {
+                if self.is_success() {
+                    None
+                } else {
+                    self.canonical_reason().map(Cow::Borrowed)
+                }
+            }
 
-    #[inline]
-    fn message(&self) -> Option<SharedString> {
-        if self.is_success() {
-            self.canonical_reason().map(Cow::Borrowed)
-        } else {
-            None
+            #[inline]
+            fn message(&self) -> Option<SharedString> {
+                if self.is_success() {
+                    self.canonical_reason().map(Cow::Borrowed)
+                } else {
+                    None
+                }
+            }
         }
     }
 }
+
+impl_response_code!(http::StatusCode);
+
+#[cfg(feature = "http02")]
+impl_response_code!(http02::StatusCode);
