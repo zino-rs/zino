@@ -15,6 +15,7 @@ members = [
     "zino-ntex",
     "zino-router",
     "zino-rpc",
+    "zino-salvo",
     "zino-server",
 ]
 
