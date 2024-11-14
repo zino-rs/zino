@@ -20,7 +20,7 @@ use zino_core::{
     state::Data,
 };
 
-/// An HTTP request extractor for `ntex`.
+/// An HTTP request extractor.
 pub struct Extractor<T>(T, Payload);
 
 impl<T> Deref for Extractor<T> {

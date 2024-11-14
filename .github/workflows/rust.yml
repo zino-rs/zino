@@ -20,6 +20,8 @@ jobs:
       run: rustup install 1.80
     - name: Set default toolchain
       run: rustup default 1.80
+    - name: Install libgtk
+      run: apt-get install libgtk-3-dev
     - name: Build
       run: cargo build --features axum,full --verbose
     - name: Run tests

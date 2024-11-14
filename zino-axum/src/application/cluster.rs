@@ -28,7 +28,7 @@ use zino_core::{
     LazyLock,
 };
 
-/// An HTTP server cluster for `axum`.
+/// An HTTP server cluster.
 #[derive(Default)]
 pub struct Cluster {
     /// Custom plugins.

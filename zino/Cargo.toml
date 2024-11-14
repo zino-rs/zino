@@ -1,7 +1,7 @@
 [package]
 name = "zino"
 description = "Next-generation framework for composable applications in Rust."
-version = "0.25.4"
+version = "0.26.0"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -55,7 +55,7 @@ optional = true
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.26.4"
+version = "0.27.0"
 
 [dependencies.zino-dioxus]
 path = "../zino-dioxus"

@@ -1,6 +1,6 @@
 [package]
 name = "zino-dioxus"
-description = "Dioxus components for zino."
+description = "Integrations with dioxus for zino."
 version = "0.9.0"
 rust-version = "1.80"
 edition = "2021"
@@ -63,5 +63,5 @@ features = [
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.26.4"
+version = "0.27.0"
 features = ["runtime-tokio"]
