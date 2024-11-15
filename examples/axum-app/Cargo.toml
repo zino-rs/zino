@@ -19,7 +19,7 @@ features = ["derive"]
 
 [dependencies.zino]
 path = "../../zino"
-version = "0.26.0"
+version = "0.26.1"
 features = [
     "axum",
     "i18n",

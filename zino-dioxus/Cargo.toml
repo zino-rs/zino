@@ -1,7 +1,7 @@
 [package]
 name = "zino-dioxus"
-description = "Integrations with dioxus for zino."
-version = "0.9.0"
+description = "Dioxus components for zino."
+version = "0.9.1"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -12,14 +12,19 @@ repository = "https://github.com/zino-rs/zino"
 documentation = "https://docs.rs/zino-dioxus"
 readme = "README.md"
 
+[package.metadata.docs.rs]
+features = []
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+rustdoc-args = ["--cfg", "docsrs"]
+
 [features]
 default = []
+desktop = ["dep:dioxus-desktop"]
 clipboard = ["dioxus-sdk/clipboard"]
 
 [dependencies]
 dioxus = "0.5.6"
 dioxus-core = "0.5.6"
-dioxus-desktop = "0.5.6"
 dioxus-hooks = "0.5.6"
 dioxus-router = "0.5.6"
 image = "0.25.5"
@@ -35,6 +40,10 @@ features = ["serde"]
 version = "0.29.0"
 default-features = false
 features = ["shortcodes", "syntect"]
+
+[dependencies.dioxus-desktop]
+version = "0.5.6"
+optional = true
 
 [dependencies.dioxus-free-icons]
 version = "0.8.6"

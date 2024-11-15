@@ -1,6 +1,40 @@
 /// Generates SQL `SET` expressions.
-use super::{query::QueryExt, DatabaseDriver, Schema};
-use crate::model::{EncodeColumn, Mutation, Query};
+use super::{query::QueryExt, DatabaseDriver, Entity, Schema};
+use crate::{
+    error::Error,
+    model::{EncodeColumn, Mutation, Query},
+};
+use std::marker::PhantomData;
+
+/// A mutation builder for the model entity.
+#[derive(Debug, Clone)]
+pub struct MutationBuilder<E: Entity> {
+    /// The phantom data.
+    phantom: PhantomData<E>,
+}
+
+impl<E: Entity> MutationBuilder<E> {
+    /// Creates a new instance.
+    #[inline]
+    pub fn new() -> Self {
+        Self {
+            phantom: PhantomData,
+        }
+    }
+
+    /// Builds the model mutation.
+    #[inline]
+    pub fn build(self) -> Result<Mutation, Error> {
+        Ok(Mutation::default())
+    }
+}
+
+impl<E: Entity> Default for MutationBuilder<E> {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 /// Extension trait for [`Mutation`](crate::model::Mutation).
 pub(super) trait MutationExt<DB> {

@@ -86,7 +86,7 @@
 //! | `$not`     | `NOT`               | `NOT`            | `NOT`                 |
 //! | `$rand`    | `rand()`            | `random()`       | `abs(random())`       |
 //! | `$text`    | `match() against()` | `to_tsvector()`  | `MATCH`               |
-//! | `$ovlp`    | `overlaps()`        | `OVERLAPS`       | N/A                   |
+//! | `$ovlp`    | N/A                 | `OVERLAPS`       | N/A                   |
 //! | `$eq`      | `=`                 | `=`              | `=`                   |
 //! | `$ne`      | `<>`                | `<>`             | `<>`                  |
 //! | `$lt`      | `<`                 | `<`              | `<`                   |
@@ -117,6 +117,7 @@ use std::sync::{
 
 mod accessor;
 mod column;
+mod entity;
 mod executor;
 mod helper;
 mod manager;
@@ -127,10 +128,13 @@ mod schema;
 mod transaction;
 
 pub use accessor::ModelAccessor;
+pub use entity::Entity;
 pub use executor::Executor;
 pub use helper::ModelHelper;
 pub use manager::PoolManager;
+pub use mutation::MutationBuilder;
 pub use pool::ConnectionPool;
+pub use query::QueryBuilder;
 pub use schema::Schema;
 pub use transaction::Transaction;
 

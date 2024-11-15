@@ -1,6 +1,9 @@
 use axum::{
     body::Body,
-    http::{header::{self, HeaderName, HeaderValue}, StatusCode},
+    http::{
+        header::{self, HeaderName, HeaderValue},
+        StatusCode,
+    },
     response::IntoResponse,
 };
 use zino_core::response::{Rejection, Response, ResponseCode};

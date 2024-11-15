@@ -22,7 +22,7 @@ features = [
 
 [dependencies.zino]
 path = "../../zino"
-version = "0.26.0"
+version = "0.26.1"
 features = ["dioxus-desktop"]
 
 [dependencies.zino-core]
@@ -32,4 +32,4 @@ features = ["env-filter", "tls-native"]
 
 [dependencies.zino-dioxus]
 path = "../../zino-dioxus"
-version = "0.9.0"
+version = "0.9.1"

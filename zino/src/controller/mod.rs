@@ -64,6 +64,7 @@ pub trait DefaultController<K> {
 #[cfg(any(feature = "actix", feature = "axum", feature = "ntex"))]
 #[cfg(feature = "orm")]
 use zino_core::{
+    error::Error,
     extension::JsonObjectExt,
     model::{ModelHooks, Mutation, Query},
     orm::{ModelAccessor, ModelHelper},
@@ -313,6 +314,11 @@ where
     async fn batch_delete(mut req: Self::Request) -> Self::Result {
         let data = req.parse_body::<JsonValue>().await?;
         let mut query = if let JsonValue::Object(map) = data {
+            if map.is_empty() {
+                let err = Error::new("filters should be nonempty");
+                let rejection = Rejection::from_validation_entry("body", err);
+                return Err(rejection.context(&req).into());
+            }
             Query::new(map)
         } else {
             let primary_key_values = Map::from_entry("$in", data);

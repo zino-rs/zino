@@ -2,7 +2,7 @@ use ntex::{
     http::{
         body::Body,
         header::{self, HeaderName, HeaderValue},
-        ResponseError, StatusCode
+        ResponseError, StatusCode,
     },
     web::{HttpRequest, HttpResponse, Responder, WebResponseError},
 };

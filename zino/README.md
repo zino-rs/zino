@@ -20,7 +20,7 @@ which emphasizes **simplicity**, **extensibility** and **productivity**.
 - 📅 Lightweight scheduler for sync and async cron jobs.
 - 💠 Unified access to storage services, data sources and chatbots.
 - 📊 Built-in support for [`tracing`], [`metrics`] and logging.
-- 💖 Full integrations with [`actix-web`], [`axum`], [`dioxus`] and many others.
+- 💖 Full integrations with [`actix-web`], [`axum`], [`dioxus`] and more.
 
 ## Getting started
 

@@ -237,7 +237,7 @@ macro_rules! impl_from_rejection {
                 res
             }
         }
-    }
+    };
 }
 
 impl_from_rejection!(http::StatusCode);

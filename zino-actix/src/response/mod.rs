@@ -1,6 +1,9 @@
 use actix_web::{
     body::BoxBody,
-    http::{header::{self, HeaderName, HeaderValue}, StatusCode},
+    http::{
+        header::{self, HeaderName, HeaderValue},
+        StatusCode,
+    },
     HttpRequest, HttpResponse, Responder, ResponseError,
 };
 use std::fmt;

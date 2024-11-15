@@ -98,7 +98,7 @@ macro_rules! impl_response_code {
                 }
             }
         }
-    }
+    };
 }
 
 impl_response_code!(http::StatusCode);

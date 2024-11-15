@@ -1,5 +1,8 @@
 use async_trait::async_trait;
-use axum::{extract::{ConnectInfo, FromRequest, MatchedPath, OriginalUri, Request}, http::{Method, Uri}};
+use axum::{
+    extract::{ConnectInfo, FromRequest, MatchedPath, OriginalUri, Request},
+    http::{Method, Uri},
+};
 use std::{
     borrow::Cow,
     convert::Infallible,

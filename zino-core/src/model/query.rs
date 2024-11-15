@@ -5,8 +5,8 @@ use crate::{
 };
 use smallvec::SmallVec;
 
-#[derive(Debug, Clone)]
 /// A query type for models.
+#[derive(Debug, Clone)]
 pub struct Query {
     // Projection fields.
     fields: Vec<String>,

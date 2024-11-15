@@ -301,11 +301,7 @@ pub trait RequestContext {
 
     /// Parses the route parameter by name as an instance of type `T`.
     /// The name should not include `:`, `*`, `{` or `}`.
-    fn parse_param<T>(&self, name: &str) -> Result<T, Rejection>
-    where
-        T: FromStr,
-        <T as FromStr>::Err: std::error::Error + Send + 'static,
-    {
+    fn parse_param<T: FromStr<Err: Into<Error>>>(&self, name: &str) -> Result<T, Rejection> {
         if let Some(param) = self.get_param(name) {
             percent_encoding::percent_decode_str(param)
                 .decode_utf8_lossy()

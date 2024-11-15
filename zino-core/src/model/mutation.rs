@@ -4,8 +4,8 @@ use crate::{
     JsonValue, Map,
 };
 
-#[derive(Debug, Clone, Default)]
 /// A mutation type for models.
+#[derive(Debug, Clone, Default)]
 pub struct Mutation {
     // Editable fields.
     fields: Vec<String>,
