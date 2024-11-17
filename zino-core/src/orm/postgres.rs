@@ -671,9 +671,9 @@ impl QueryExt<DatabaseDriver> for Query {
                 .map(|s| format!(r#""{s}""#))
                 .collect::<Vec<_>>()
                 .join(".");
-            format!(r#"{table_name} AS `{model_name}`"#)
+            format!(r#"{table_name} AS "{model_name}""#)
         } else {
-            format!(r#""{table_name}" AS `{model_name}`"#)
+            format!(r#""{table_name}" AS "{model_name}""#)
         }
     }
 

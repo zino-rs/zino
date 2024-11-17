@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.27.0"
+version = "0.27.1"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -366,7 +366,7 @@ version = "1.0.215"
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1.0.132"
+version = "1.0.133"
 features = ["raw_value"]
 
 [dependencies.sm3]

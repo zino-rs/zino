@@ -24,5 +24,5 @@ features = ["compress", "tokio"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.27.0"
+version = "0.27.1"
 features = ["runtime-tokio"]

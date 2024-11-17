@@ -162,8 +162,8 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                         "$nin" => "NOT IN",
                         "$betw" => "BETWEEN",
                         "$like" => "LIKE",
+                        "$ilike" => "ILIKE",
                         "$rlike" => "REGEXP",
-                        "$glob" => "GLOB",
                         "$is" => "IS",
                         "$size" => "json_array_length",
                         _ => {
@@ -206,6 +206,10 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                                 conditions.push(condition);
                             }
                         }
+                    } else if operator == "ILIKE" {
+                        let value = self.encode_value(Some(value));
+                        let condition = format!(r#"LOWER({field}) LIKE LOWER({value})"#);
+                        conditions.push(condition);
                     } else if operator == "json_array_length" {
                         if let Some(Ok(length)) = value.parse_usize() {
                             let condition = format!(r#"json_array_length({field}) = {length}"#);

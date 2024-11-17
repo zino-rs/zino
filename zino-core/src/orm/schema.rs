@@ -1327,7 +1327,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 let field = Query::format_field(key);
                 if key != "*" {
                     if distinct {
-                        format!(r#"count(distinct {field}) as {key}_count_distinct"#)
+                        format!(r#"count(distinct {field}) as {key}_distinct"#)
                     } else {
                         format!(r#"count({field}) as {key}_count"#)
                     }

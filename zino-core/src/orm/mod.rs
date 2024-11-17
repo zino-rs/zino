@@ -86,7 +86,6 @@
 //! | `$not`     | `NOT`               | `NOT`            | `NOT`                 |
 //! | `$rand`    | `rand()`            | `random()`       | `abs(random())`       |
 //! | `$text`    | `match() against()` | `to_tsvector()`  | `MATCH`               |
-//! | `$ovlp`    | N/A                 | `OVERLAPS`       | N/A                   |
 //! | `$eq`      | `=`                 | `=`              | `=`                   |
 //! | `$ne`      | `<>`                | `<>`             | `<>`                  |
 //! | `$lt`      | `<`                 | `<`              | `<`                   |
@@ -97,9 +96,8 @@
 //! | `$nin`     | `NOT IN`            | `NOT IN`         | `NOT IN`              |
 //! | `$betw`    | `BETWEEN AND`       | `BETWEEN AND`    | `BETWEEN AND`         |
 //! | `$like`    | `LIKE`              | `LIKE`           | `LIKE`                |
-//! | `$ilike`   | `ILIKE`             | `ILIKE`          | N/A                   |
+//! | `$ilike`   | `ILIKE`             | `ILIKE`          | `LOWER() LIKE`        |
 //! | `$rlike`   | `RLIKE`             | `~*`             | `REGEXP`              |
-//! | `$glob`    | N/A                 | N/A              | `GLOB`                |
 //! | `$is`      | `IS`                | `IS`             | `IS`                  |
 //! | `$size`    | `json_length()`     | `array_length()` | `json_array_length()` |
 //!
@@ -260,27 +258,28 @@ impl GlobalPool {
 /// Shared connection pools.
 static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
     let config = State::shared().config();
-    let Some(database_config) = config.get_table("database") else {
-        return ConnectionPools(SmallVec::new());
-    };
-    if let Some(time_zone) = database_config.get_str("time-zone") {
-        TIME_ZONE
-            .set(time_zone)
-            .expect("fail to set time zone for the database session");
-    }
-    if let Some(max_rows) = database_config.get_usize("max-rows") {
-        MAX_ROWS.store(max_rows, Relaxed);
-    }
-    if let Some(auto_migration) = database_config.get_bool("auto-migration") {
-        AUTO_MIGRATION.store(auto_migration, Relaxed);
-    }
-    if let Some(debug_only) = database_config.get_bool("debug-only") {
-        DEBUG_ONLY.store(debug_only, Relaxed);
+    let mut database_type = DRIVER_NAME;
+    if let Some(database) = config.get_table("database") {
+        if let Some(driver) = database.get_str("type") {
+            database_type = driver;
+        }
+        if let Some(time_zone) = database.get_str("time-zone") {
+            TIME_ZONE
+                .set(time_zone)
+                .expect("fail to set time zone for the database session");
+        }
+        if let Some(max_rows) = database.get_usize("max-rows") {
+            MAX_ROWS.store(max_rows, Relaxed);
+        }
+        if let Some(auto_migration) = database.get_bool("auto-migration") {
+            AUTO_MIGRATION.store(auto_migration, Relaxed);
+        }
+        if let Some(debug_only) = database.get_bool("debug-only") {
+            DEBUG_ONLY.store(debug_only, Relaxed);
+        }
     }
 
     // Database connection pools.
-    let driver = DRIVER_NAME;
-    let database_type = database_config.get_str("type").unwrap_or(driver);
     let databases = config.get_array(database_type).unwrap_or_else(|| {
         panic!(
             "the `{database_type}` field should be an array of tables; \
@@ -292,6 +291,7 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
         .filter_map(|v| v.as_table())
         .map(ConnectionPool::with_config)
         .collect();
+    let driver = DRIVER_NAME;
     if database_type == driver {
         tracing::warn!(driver, "connect to database services lazily");
     } else {

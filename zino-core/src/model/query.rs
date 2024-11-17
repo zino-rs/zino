@@ -162,6 +162,12 @@ impl Query {
         filters
     }
 
+    /// Sets the fields.
+    #[inline]
+    pub fn set_fields(&mut self, fields: Vec<String>) {
+        self.fields = fields;
+    }
+
     /// Retains the projection fields in the allow list.
     /// If the projection fields are empty, it will be set to the list.
     #[inline]
