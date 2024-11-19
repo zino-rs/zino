@@ -16,6 +16,7 @@ use zino_derive::{DecodeRow, Model, ModelAccessor, ModelHooks, Schema};
     Model,
 )]
 #[serde(default)]
+#[schema(auto_rename)]
 pub struct Tag {
     // Basic fields.
     #[schema(primary_key, read_only, constructor = "Uuid::now_v7")]
@@ -32,7 +33,6 @@ pub struct Tag {
     #[schema(
         snapshot,
         reference = "Tag",
-        fetch_as = "parent_tag",
         comment = "Optional parent tag"
     )]
     parent_id: Option<Uuid>,

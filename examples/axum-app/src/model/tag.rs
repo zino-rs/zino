@@ -16,6 +16,7 @@ use zino_derive::{DecodeRow, Model, ModelAccessor, ModelHooks, Schema};
     Model,
 )]
 #[serde(default)]
+#[schema(auto_rename)]
 pub struct Tag {
     // Basic fields.
     #[schema(primary_key, auto_increment, read_only)]
@@ -29,12 +30,7 @@ pub struct Tag {
     // Info fields.
     #[schema(not_null, index_type = "hash", comment = "Tag category")]
     category: String,
-    #[schema(
-        snapshot,
-        reference = "Tag",
-        fetch_as = "parent_tag",
-        comment = "Optional parent tag"
-    )]
+    #[schema(snapshot, reference = "Tag", comment = "Optional parent tag")]
     parent_id: Option<i64>,
 
     // Extensions.

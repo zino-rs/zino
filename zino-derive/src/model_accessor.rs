@@ -10,10 +10,13 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let name = input.ident;
 
     // Parsing struct attributes
+    let mut auto_rename = false;
     let mut composite_constraints = Vec::new();
     for attr in input.attrs.iter() {
         for (key, value) in parser::parse_schema_attr(attr).into_iter() {
-            if key == "unique_on" {
+            if key == "auto_rename" {
+                auto_rename = true;
+            } else if key == "unique_on" {
                 if let Some(value) = value {
                     let mut fields = Vec::new();
                     let column_values = value
@@ -189,6 +192,11 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                         }
                                     });
                                 }
+                            }
+                            if auto_rename && name.ends_with("_id") {
+                                let value = name.trim_end_matches("_id").to_owned();
+                                let populated_field = [&name, "_populated"].concat();
+                                populated_field_mappings.insert(populated_field, value);
                             }
                         }
                         "fetch_as" => {
@@ -455,27 +463,49 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 });
                             }
                         }
+                        "minimum" => {
+                            if let Some(value) = value.and_then(|s| s.parse::<i64>().ok()) {
+                                field_constraints.push(quote! {
+                                    let minimum = #value;
+                                    if self.#ident < minimum {
+                                        let message = format!("should be not less than {minimum}");
+                                        validation.record(#name, message);
+                                    }
+                                });
+                            }
+                        }
+                        "maximum" => {
+                            if let Some(value) = value.and_then(|s| s.parse::<i64>().ok()) {
+                                field_constraints.push(quote! {
+                                    let maximum = #value;
+                                    if self.#ident > maximum {
+                                        let message = format!("should be not greater than {maximum}");
+                                        validation.record(#name, message);
+                                    }
+                                });
+                            }
+                        }
                         "less_than" => {
                             if let Some(value) = value {
                                 if let Some((field_type, field_type_fn)) = value.split_once("::") {
                                     let field_type_ident = format_ident!("{}", field_type);
                                     let field_type_fn_ident = format_ident!("{}", field_type_fn);
                                     field_constraints.push(quote! {
-                                            let field_value = <#field_type_ident>::#field_type_fn_ident();
-                                            if self.#ident >= field_value {
-                                                let message = format!("should be less than `{field_value}`");
-                                                validation.record(#name, message);
-                                            }
-                                        });
+                                        let field_value = <#field_type_ident>::#field_type_fn_ident();
+                                        if self.#ident >= field_value {
+                                            let message = format!("should be less than `{field_value}`");
+                                            validation.record(#name, message);
+                                        }
+                                    });
                                 } else {
                                     let field_ident = format_ident!("{}", value);
                                     field_constraints.push(quote! {
-                                            let field_value = self.#field_ident;
-                                            if self.#ident >= field_value {
-                                                let message = format!("should be less than `{field_value}`");
-                                                validation.record(#name, message);
-                                            }
-                                        });
+                                        let field_value = self.#field_ident;
+                                        if self.#ident >= field_value {
+                                            let message = format!("should be less than `{field_value}`");
+                                            validation.record(#name, message);
+                                        }
+                                    });
                                 }
                             }
                         }
@@ -485,21 +515,21 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     let field_type_ident = format_ident!("{}", field_type);
                                     let field_type_fn_ident = format_ident!("{}", field_type_fn);
                                     field_constraints.push(quote! {
-                                            let field_value = <#field_type_ident>::#field_type_fn_ident();
-                                            if self.#ident <= field_value {
-                                                let message = format!("should be greater than `{field_value}`");
-                                                validation.record(#name, message);
-                                            }
-                                        });
+                                        let field_value = <#field_type_ident>::#field_type_fn_ident();
+                                        if self.#ident <= field_value {
+                                            let message = format!("should be greater than `{field_value}`");
+                                            validation.record(#name, message);
+                                        }
+                                    });
                                 } else {
                                     let field_ident = format_ident!("{}", value);
                                     field_constraints.push(quote! {
-                                            let field_value = self.#field_ident;
-                                            if self.#ident <= field_value {
-                                                let message = format!("should be greater than `{field_value}`");
-                                                validation.record(#name, message);
-                                            }
-                                        });
+                                        let field_value = self.#field_ident;
+                                        if self.#ident <= field_value {
+                                            let message = format!("should be greater than `{field_value}`");
+                                            validation.record(#name, message);
+                                        }
+                                    });
                                 }
                             }
                         }

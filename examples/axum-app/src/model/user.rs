@@ -4,7 +4,7 @@ use zino::prelude::*;
 use zino_derive::{DecodeRow, Model, ModelAccessor, ModelHooks, Schema};
 use zino_model::user::JwtAuthService;
 
-/// The `User` model.
+/// The `user` model.
 #[derive(
     Debug,
     Clone,

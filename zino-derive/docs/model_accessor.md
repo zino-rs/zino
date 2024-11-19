@@ -2,6 +2,9 @@ Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
 
 # Attributes on structs
 
+- **`#[schema(auto_rename)]`**: The `auto_rename` annotation is used to
+  rename the field name automatically when fetching data of the referenced model.
+
 - **`#[schema(unique_on = "field_1, field_2, ...")]`**: The `unique_on` attribute specifies
   the composite columns on which the model is considered to be unique.
 
@@ -76,6 +79,12 @@ Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
 
 - **`#[schema(unique_items)]`**: The `unique_items` annotation is used to indicate that
   the array items should be unique.
+
+- **`#[schema(minimum = integer)]`**: The `minimum` attribute specifies
+  the minimum integer for the column value.
+
+- **`#[schema(maximum = integer)]`**: The `maximum` attribute specifies
+  the maximum integer for the column value.
 
 - **`#[schema(less_than = "value")]`**: The `less_than` attribute specifies
   a comparison relation in which the column value is less than another column.
