@@ -1,9 +1,6 @@
 /// Generates SQL `SET` expressions.
 use super::{query::QueryExt, DatabaseDriver, Entity, Schema};
-use crate::{
-    error::Error,
-    model::{EncodeColumn, Mutation, Query},
-};
+use crate::model::{EncodeColumn, Mutation, Query};
 use std::marker::PhantomData;
 
 /// A mutation builder for the model entity.
@@ -24,8 +21,8 @@ impl<E: Entity> MutationBuilder<E> {
 
     /// Builds the model mutation.
     #[inline]
-    pub fn build(self) -> Result<Mutation, Error> {
-        Ok(Mutation::default())
+    pub fn build(self) -> Mutation {
+        Mutation::default()
     }
 }
 

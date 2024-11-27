@@ -1,6 +1,5 @@
 use super::{Entity, Schema};
 use crate::{
-    error::Error,
     extension::{JsonObjectExt, JsonValueExt},
     model::{EncodeColumn, Query},
     JsonValue, Map, SharedString,
@@ -18,6 +17,8 @@ pub struct QueryBuilder<E: Entity> {
     logical_and: Vec<Map>,
     /// The logical `OR` conditions.
     logical_or: Vec<Map>,
+    /// Sort order.
+    sort_order: Vec<(String, bool)>,
     // Offset.
     offset: usize,
     // Limit.
@@ -33,6 +34,7 @@ impl<E: Entity> QueryBuilder<E> {
             fields: Vec::new(),
             logical_and: Vec::new(),
             logical_or: Vec::new(),
+            sort_order: Vec::new(),
             offset: 0,
             limit: 0,
         }
@@ -204,14 +206,22 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `AND` condition for the field `IN` a list of values.
     #[inline]
-    pub fn and_in<T: Into<JsonValue>>(self, col: E::Column, values: Vec<T>) -> Self {
-        self.push_logical_and(col, "$in", values.into())
+    pub fn and_in<T, V>(self, col: E::Column, values: V) -> Self
+    where
+        T: Into<JsonValue>,
+        V: Into<Vec<T>>,
+    {
+        self.push_logical_and(col, "$in", values.into().into())
     }
 
     /// Adds a logical `AND` condition for the field `NOT IN` a list of values.
     #[inline]
-    pub fn and_not_in<T: Into<JsonValue>>(self, col: E::Column, values: Vec<T>) -> Self {
-        self.push_logical_and(col, "$nin", values.into())
+    pub fn and_not_in<T, V>(self, col: E::Column, values: V) -> Self
+    where
+        T: Into<JsonValue>,
+        V: Into<Vec<T>>,
+    {
+        self.push_logical_and(col, "$nin", values.into().into())
     }
 
     /// Adds a logical `AND` condition for the field `BETWEEN` two values.
@@ -344,14 +354,22 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `OR` condition for the field `IN` a list of values.
     #[inline]
-    pub fn or_in<T: Into<JsonValue>>(self, col: E::Column, values: Vec<T>) -> Self {
-        self.push_logical_or(col, "$in", values.into())
+    pub fn or_in<T, V>(self, col: E::Column, values: V) -> Self
+    where
+        T: Into<JsonValue>,
+        V: Into<Vec<T>>,
+    {
+        self.push_logical_or(col, "$in", values.into().into())
     }
 
     /// Adds a logical `OR` condition for the field `NOT IN` a list of values.
     #[inline]
-    pub fn or_not_in<T: Into<JsonValue>>(self, col: E::Column, values: Vec<T>) -> Self {
-        self.push_logical_or(col, "$nin", values.into())
+    pub fn or_not_in<T, V>(self, col: E::Column, values: V) -> Self
+    where
+        T: Into<JsonValue>,
+        V: Into<Vec<T>>,
+    {
+        self.push_logical_or(col, "$nin", values.into().into())
     }
 
     /// Adds a logical `OR` condition for the field `BETWEEN` two values.
@@ -422,6 +440,30 @@ impl<E: Entity> QueryBuilder<E> {
         self
     }
 
+    /// Sets the sort order.
+    #[inline]
+    pub fn order_by(mut self, col: E::Column, descending: bool) -> Self {
+        let field = col.as_ref().into();
+        self.sort_order.push((field, descending));
+        self
+    }
+
+    /// Sets the sort with an ascending order.
+    #[inline]
+    pub fn order_asc(mut self, col: E::Column) -> Self {
+        let field = col.as_ref().into();
+        self.sort_order.push((field, false));
+        self
+    }
+
+    /// Sets the sort with an descending order.
+    #[inline]
+    pub fn order_desc(mut self, col: E::Column) -> Self {
+        let field = col.as_ref().into();
+        self.sort_order.push((field, true));
+        self
+    }
+
     /// Sets the offset.
     #[inline]
     pub fn offset(mut self, offset: usize) -> Self {
@@ -437,16 +479,25 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Builds the model query.
-    pub fn build(self) -> Result<Query, Error> {
+    pub fn build(self) -> Query {
         let mut filters = Map::new();
-        filters.upsert("$and", self.logical_and);
-        filters.upsert("$or", self.logical_or);
+        let logical_and = self.logical_and;
+        let logical_or = self.logical_or;
+        if !logical_and.is_empty() {
+            filters.upsert("$and", logical_and);
+        }
+        if !logical_or.is_empty() {
+            filters.upsert("$or", logical_or);
+        }
 
         let mut query = Query::new(filters);
         query.set_fields(self.fields);
         query.set_offset(self.offset);
         query.set_limit(self.limit);
-        Ok(query)
+        for (field, descending) in self.sort_order.into_iter() {
+            query.order_by(field, descending);
+        }
+        query
     }
 
     /// Pushes a logical `AND` condition for the column and expressions.

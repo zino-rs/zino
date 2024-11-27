@@ -7,11 +7,20 @@ use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
 
 mod decode_row;
+mod entity;
 mod model;
 mod model_accessor;
 mod model_hooks;
 mod parser;
 mod schema;
+
+#[doc = include_str!("../docs/entity.md")]
+#[proc_macro_derive(Entity, attributes(schema))]
+pub fn derive_entity(item: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(item as DeriveInput);
+    let output = entity::parse_token_stream(input);
+    TokenStream::from(output)
+}
 
 #[doc = include_str!("../docs/schema.md")]
 #[proc_macro_derive(Schema, attributes(schema))]

@@ -20,6 +20,7 @@ pub fn Markdown(props: MarkdownProps) -> Element {
     options.extension.math_dollars = true;
     options.extension.shortcodes = true;
     options.extension.underline = true;
+    options.extension.subscript = false;
     options.parse.smart = true;
     options.parse.relaxed_autolinks = true;
     options.render.full_info_string = true;

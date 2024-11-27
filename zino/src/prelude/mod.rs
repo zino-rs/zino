@@ -36,4 +36,7 @@ pub use zino_core::auth::RegoEngine;
 
 #[cfg(feature = "orm")]
 #[doc(no_inline)]
-pub use zino_core::orm::{ModelAccessor, ModelHelper, ScalarQuery, Schema, Transaction};
+pub use zino_core::orm::{
+    Entity, ModelAccessor, ModelHelper, MutationBuilder, QueryBuilder, ScalarQuery, Schema,
+    Transaction,
+};

@@ -1,13 +1,9 @@
-use crate::{
-    error::Error,
-    model::{Column, Model},
-};
-use std::str::FromStr;
+use crate::model::Model;
 
 /// An interface for the model entity.
 pub trait Entity: Model {
     /// The column type.
-    type Column: AsRef<str> + FromStr<Err: Into<Error>> + Into<Column<'static>>;
+    type Column: AsRef<str>;
 
     /// The primary key column.
     const PRIMARY_KEY: Self::Column;

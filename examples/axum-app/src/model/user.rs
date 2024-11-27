@@ -1,7 +1,7 @@
 use super::Tag;
 use serde::{Deserialize, Serialize};
 use zino::prelude::*;
-use zino_derive::{DecodeRow, Model, ModelAccessor, ModelHooks, Schema};
+use zino_derive::{DecodeRow, Entity, Model, ModelAccessor, ModelHooks, Schema};
 use zino_model::user::JwtAuthService;
 
 /// The `user` model.
@@ -16,6 +16,7 @@ use zino_model::user::JwtAuthService;
     ModelAccessor,
     ModelHooks,
     Model,
+    Entity,
 )]
 #[serde(default)]
 pub struct User {

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use zino::prelude::*;
-use zino_derive::{DecodeRow, Model, ModelAccessor, ModelHooks, Schema};
+use zino_derive::{DecodeRow, Entity, Model, ModelAccessor, ModelHooks, Schema};
 
 /// The `tag` model.
 #[derive(
@@ -14,6 +14,7 @@ use zino_derive::{DecodeRow, Model, ModelAccessor, ModelHooks, Schema};
     ModelAccessor,
     ModelHooks,
     Model,
+    Entity,
 )]
 #[serde(default)]
 #[schema(auto_rename)]
