@@ -8,17 +8,17 @@ use smallvec::SmallVec;
 /// A query type for models.
 #[derive(Debug, Clone)]
 pub struct Query {
-    // Projection fields.
+    /// Projection fields.
     fields: Vec<String>,
-    // Filters.
+    /// Filters.
     filters: Map,
-    // Sort order: `false` for ascending and `true` for descending.
+    /// Sort order: `false` for ascending and `true` for descending.
     sort_order: SmallVec<[(SharedString, bool); 2]>,
-    // Offset.
+    /// Offset.
     offset: usize,
-    // Limit.
+    /// Limit.
     limit: usize,
-    // Extra flags.
+    /// Extra flags.
     extra: Map,
 }
 

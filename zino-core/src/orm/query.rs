@@ -4,25 +4,48 @@ use crate::{
     model::{EncodeColumn, Query},
     JsonValue, Map, SharedString,
 };
-use std::{borrow::Cow, fmt::Display};
+use std::{borrow::Cow, fmt::Display, marker::PhantomData};
 
 /// A query builder for the model entity.
+///
+/// # Examples
+/// ```rust,ignore
+/// use crate::model::{User, UserColumn};
+/// use zino_core::orm::{QueryBuilder, Schema};
+///
+/// let query = QueryBuilder::<User>::new()
+///     .and_not_in(UserColumn::Status, ["Deleted", "Locked"])
+///     .or(QueryBuilder::<User>::new()
+///         .and_eq(UserColumn::Roles, "worker")
+///         .and_eq(UserColumn::Visibility, "Public"))
+///     .or(QueryBuilder::<User>::new()
+///         .and_in(UserColumn::Roles, ["admin", "auditor"])
+///         .and_ne(UserColumn::Visibility, "Public"))
+///     .order_desc(UserColumn::UpdatedAt)
+///     .limit(10)
+///     .build();
+/// let users: Vec<User> = User::find(&query).await?;
+/// ```
 #[derive(Debug, Clone)]
 pub struct QueryBuilder<E: Entity> {
-    /// The selection columns.
-    columns: Vec<E::Column>,
     /// The projection fields.
     fields: Vec<String>,
+    /// The `GROUP BY` fields.
+    group_by_fields: Vec<String>,
+    /// The filters.
+    filters: Map,
     /// The logical `AND` conditions.
     logical_and: Vec<Map>,
     /// The logical `OR` conditions.
     logical_or: Vec<Map>,
     /// Sort order.
     sort_order: Vec<(String, bool)>,
-    // Offset.
+    /// Offset.
     offset: usize,
-    // Limit.
+    /// Limit.
     limit: usize,
+    /// The phantom data.
+    phantom: PhantomData<E>,
 }
 
 impl<E: Entity> QueryBuilder<E> {
@@ -30,13 +53,15 @@ impl<E: Entity> QueryBuilder<E> {
     #[inline]
     pub fn new() -> Self {
         Self {
-            columns: Vec::new(),
             fields: Vec::new(),
+            group_by_fields: Vec::new(),
+            filters: Map::new(),
             logical_and: Vec::new(),
             logical_or: Vec::new(),
             sort_order: Vec::new(),
             offset: 0,
             limit: 0,
+            phantom: PhantomData,
         }
     }
 
@@ -44,7 +69,6 @@ impl<E: Entity> QueryBuilder<E> {
     #[inline]
     pub fn field(mut self, col: E::Column) -> Self {
         self.fields.push(E::format_column(&col));
-        self.columns.push(col);
         self
     }
 
@@ -52,7 +76,6 @@ impl<E: Entity> QueryBuilder<E> {
     #[inline]
     pub fn fields(mut self, cols: Vec<E::Column>) -> Self {
         self.fields = cols.iter().map(E::format_column).collect();
-        self.columns = cols;
         self
     }
 
@@ -60,7 +83,6 @@ impl<E: Entity> QueryBuilder<E> {
     #[inline]
     pub fn alias(mut self, col: E::Column, alias: &str) -> Self {
         let field = format!("{alias}:{}", E::format_column(&col));
-        self.columns.push(col);
         self.fields.push(field);
         self
     }
@@ -73,7 +95,6 @@ impl<E: Entity> QueryBuilder<E> {
         } else {
             format!("{}_count:count({})", col.as_ref(), col_name)
         };
-        self.columns.push(col);
         self.fields.push(field);
         self
     }
@@ -86,7 +107,6 @@ impl<E: Entity> QueryBuilder<E> {
         } else {
             format!("{}_distinct:count(distinct {})", col.as_ref(), col_name)
         };
-        self.columns.push(col);
         self.fields.push(field);
         self
     }
@@ -99,7 +119,6 @@ impl<E: Entity> QueryBuilder<E> {
         } else {
             format!("{}_sum:sum({})", col.as_ref(), col_name)
         };
-        self.columns.push(col);
         self.fields.push(field);
         self
     }
@@ -112,7 +131,6 @@ impl<E: Entity> QueryBuilder<E> {
         } else {
             format!("{}_avg:avg({})", col.as_ref(), col_name)
         };
-        self.columns.push(col);
         self.fields.push(field);
         self
     }
@@ -125,13 +143,11 @@ impl<E: Entity> QueryBuilder<E> {
         } else {
             format!("{}_min:min({})", col.as_ref(), col_name)
         };
-        self.columns.push(col);
         self.fields.push(field);
         self
     }
 
     /// Adds a field with an optional alias for the aggregate function `MAX` of a column.
-    #[inline]
     pub fn max(mut self, col: E::Column, alias: Option<&str>) -> Self {
         let col_name = E::format_column(&col);
         let field = if let Some(alias) = alias {
@@ -139,8 +155,30 @@ impl<E: Entity> QueryBuilder<E> {
         } else {
             format!("{}_max:max({})", col.as_ref(), col_name)
         };
-        self.columns.push(col);
         self.fields.push(field);
+        self
+    }
+
+    /// Adds a `GROUP BY` column.
+    #[inline]
+    pub fn group_by(mut self, col: E::Column) -> Self {
+        let field = E::format_column(&col);
+        self.group_by_fields.push(field);
+        self
+    }
+
+    /// Adds a logical `AND` condition for the primary key.
+    #[inline]
+    pub fn primary_key(mut self, value: impl Into<JsonValue>) -> Self {
+        let field = E::format_column(&E::PRIMARY_KEY);
+        self.filters.upsert(field, value);
+        self
+    }
+
+    /// Adds a logical `AND` condition which selects random items by `rand() < value`.
+    #[inline]
+    pub fn rand(mut self, value: impl Into<JsonValue>) -> Self {
+        self.filters.upsert("$rand", value);
         self
     }
 
@@ -480,9 +518,13 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Builds the model query.
     pub fn build(self) -> Query {
-        let mut filters = Map::new();
+        let mut filters = self.filters;
+        let group_by_fields = self.group_by_fields;
         let logical_and = self.logical_and;
         let logical_or = self.logical_or;
+        if !group_by_fields.is_empty() {
+            filters.upsert("$group", group_by_fields);
+        }
         if !logical_and.is_empty() {
             filters.upsert("$and", logical_and);
         }
@@ -715,36 +757,6 @@ pub(super) trait QueryExt<DB> {
                             if let Some(filters) = value.as_array() {
                                 let condition = Self::format_logical_filters::<M>(filters, " OR ");
                                 logical_and_conditions.push(condition);
-                            }
-                        }
-                        "$ovlp" => {
-                            if let Some(values) = value.parse_str_array() {
-                                if let [start_field, end_field, start_value, end_value] =
-                                    values.as_slice()
-                                {
-                                    let start_field = Self::format_field(start_field);
-                                    let end_field = Self::format_field(end_field);
-                                    let start_value = Self::escape_string(start_value);
-                                    let end_value = Self::escape_string(end_value);
-                                    let condition = if cfg!(any(
-                                        feature = "orm-mariadb",
-                                        feature = "orm-mysql",
-                                        feature = "orm-tidb"
-                                    )) {
-                                        format!(
-                                            r#"overlaps({start_field}, {end_field}, {start_value}, {end_value})"#
-                                        )
-                                    } else if cfg!(feature = "orm-postgres") {
-                                        format!(
-                                            r#"({start_field}, {end_field}) OVERLAPS ({start_value}, {end_value})"#
-                                        )
-                                    } else {
-                                        format!(
-                                            r#"({start_field} <= {end_value} AND {end_field} >= {start_value})"#
-                                        )
-                                    };
-                                    logical_and_conditions.push(condition);
-                                }
                             }
                         }
                         _ => {

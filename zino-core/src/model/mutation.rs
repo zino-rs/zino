@@ -7,9 +7,9 @@ use crate::{
 /// A mutation type for models.
 #[derive(Debug, Clone, Default)]
 pub struct Mutation {
-    // Editable fields.
+    /// Editable fields.
     fields: Vec<String>,
-    // Updates.
+    /// Updates.
     updates: Map,
 }
 
