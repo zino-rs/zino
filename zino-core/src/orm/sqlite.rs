@@ -569,7 +569,9 @@ impl QueryExt<DatabaseDriver> for Query {
     }
 
     fn format_field(field: &str) -> Cow<'_, str> {
-        if field.contains('.') {
+        if field.contains('`') {
+            field.into()
+        } else if field.contains('.') {
             field
                 .split('.')
                 .map(|s| format!("`{s}`"))

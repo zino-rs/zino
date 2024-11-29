@@ -1,4 +1,4 @@
-use super::{Entity, Schema};
+use super::{Aggregation, Entity, Schema};
 use crate::{
     extension::{JsonObjectExt, JsonValueExt},
     model::{EncodeColumn, Query},
@@ -32,6 +32,8 @@ pub struct QueryBuilder<E: Entity> {
     fields: Vec<String>,
     /// The `GROUP BY` fields.
     group_by_fields: Vec<String>,
+    /// The `HAVING` conditions.
+    having_conditions: Vec<Map>,
     /// The filters.
     filters: Map,
     /// The logical `AND` conditions.
@@ -55,6 +57,7 @@ impl<E: Entity> QueryBuilder<E> {
         Self {
             fields: Vec::new(),
             group_by_fields: Vec::new(),
+            having_conditions: Vec::new(),
             filters: Map::new(),
             logical_and: Vec::new(),
             logical_or: Vec::new(),
@@ -74,97 +77,82 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds the fields corresponding to the columns.
     #[inline]
-    pub fn fields(mut self, cols: Vec<E::Column>) -> Self {
-        self.fields = cols.iter().map(E::format_column).collect();
+    pub fn fields<V: Into<Vec<E::Column>>>(mut self, cols: V) -> Self {
+        let mut fields = cols.into().iter().map(E::format_column).collect();
+        self.fields.append(&mut fields);
         self
     }
 
     /// Adds a field with an alias for the column.
-    #[inline]
     pub fn alias(mut self, col: E::Column, alias: &str) -> Self {
-        let field = format!("{alias}:{}", E::format_column(&col));
-        self.fields.push(field);
+        let col_name = E::format_column(&col);
+        let field = Query::format_field(&col_name);
+        let field_alias = [alias, ":", &field].concat();
+        self.fields.push(field_alias);
         self
     }
 
-    /// Adds a field with an optional alias for the aggregate function `COUNT` of a column.
-    pub fn count(mut self, col: E::Column, alias: Option<&str>) -> Self {
-        let col_name = E::format_column(&col);
-        let field = if let Some(alias) = alias {
-            format!("{alias}:count({col_name})")
+    /// Adds a field with an optional alias for the aggregate function.
+    pub fn aggregate(mut self, aggregation: Aggregation<E>, alias: Option<&str>) -> Self {
+        let expr = aggregation.expr();
+        let field_alias = if let Some(alias) = alias {
+            [alias, ":", &expr].concat()
         } else {
-            format!("{}_count:count({})", col.as_ref(), col_name)
+            let mut field_alias = aggregation.default_alias();
+            field_alias.push(':');
+            field_alias.push_str(&expr);
+            field_alias
         };
-        self.fields.push(field);
-        self
-    }
-
-    /// Adds a field with an optional alias for the aggregate function `COUNT DISTINCT` of a column.
-    pub fn distinct(mut self, col: E::Column, alias: Option<&str>) -> Self {
-        let col_name = E::format_column(&col);
-        let field = if let Some(alias) = alias {
-            format!("{alias}:count(distinct {col_name})")
-        } else {
-            format!("{}_distinct:count(distinct {})", col.as_ref(), col_name)
-        };
-        self.fields.push(field);
-        self
-    }
-
-    /// Adds a field with an optional alias for the aggregate function `SUM` of a column.
-    pub fn sum(mut self, col: E::Column, alias: Option<&str>) -> Self {
-        let col_name = E::format_column(&col);
-        let field = if let Some(alias) = alias {
-            format!("{alias}:sum({col_name})")
-        } else {
-            format!("{}_sum:sum({})", col.as_ref(), col_name)
-        };
-        self.fields.push(field);
-        self
-    }
-
-    /// Adds a field with an optional alias for the aggregate function `AVG` of a column.
-    pub fn avg(mut self, col: E::Column, alias: Option<&str>) -> Self {
-        let col_name = E::format_column(&col);
-        let field = if let Some(alias) = alias {
-            format!("{alias}:avg({col_name})")
-        } else {
-            format!("{}_avg:avg({})", col.as_ref(), col_name)
-        };
-        self.fields.push(field);
-        self
-    }
-
-    /// Adds a field with an optional alias for the aggregate function `MIN` of a column.
-    pub fn min(mut self, col: E::Column, alias: Option<&str>) -> Self {
-        let col_name = E::format_column(&col);
-        let field = if let Some(alias) = alias {
-            format!("{alias}:min({col_name})")
-        } else {
-            format!("{}_min:min({})", col.as_ref(), col_name)
-        };
-        self.fields.push(field);
-        self
-    }
-
-    /// Adds a field with an optional alias for the aggregate function `MAX` of a column.
-    pub fn max(mut self, col: E::Column, alias: Option<&str>) -> Self {
-        let col_name = E::format_column(&col);
-        let field = if let Some(alias) = alias {
-            format!("{alias}:max({col_name})")
-        } else {
-            format!("{}_max:max({})", col.as_ref(), col_name)
-        };
-        self.fields.push(field);
+        self.fields.push(field_alias);
         self
     }
 
     /// Adds a `GROUP BY` column.
-    #[inline]
     pub fn group_by(mut self, col: E::Column) -> Self {
         let field = E::format_column(&col);
+        if !self.fields.contains(&field) {
+            self.fields.push(field.clone());
+        }
         self.group_by_fields.push(field);
         self
+    }
+
+    /// Adds a `HAVING` condition for equal parts.
+    #[inline]
+    pub fn having_eq(mut self, aggregation: Aggregation<E>, value: impl Into<JsonValue>) -> Self {
+        let condition = Map::from_entry(aggregation.expr(), value);
+        self.having_conditions.push(condition);
+        self
+    }
+
+    /// Adds a `HAVING` condition for non-equal parts.
+    #[inline]
+    pub fn having_ne(self, aggregation: Aggregation<E>, value: impl Into<JsonValue>) -> Self {
+        self.push_having_condition(aggregation, "$ne", value)
+    }
+
+    /// Adds a `HAVING` condition for the column less than a value.
+    #[inline]
+    pub fn having_lt(self, aggregation: Aggregation<E>, value: impl Into<JsonValue>) -> Self {
+        self.push_having_condition(aggregation, "$lt", value)
+    }
+
+    /// Adds a `HAVING` condition for the column not greater than a value.
+    #[inline]
+    pub fn having_le(self, aggregation: Aggregation<E>, value: impl Into<JsonValue>) -> Self {
+        self.push_having_condition(aggregation, "$le", value)
+    }
+
+    /// Adds a `HAVING` condition for the column greater than a value.
+    #[inline]
+    pub fn having_gt(self, aggregation: Aggregation<E>, value: impl Into<JsonValue>) -> Self {
+        self.push_having_condition(aggregation, "$gt", value)
+    }
+
+    /// Adds a `HAVING` condition for the column not less than a value.
+    #[inline]
+    pub fn having_ge(self, aggregation: Aggregation<E>, value: impl Into<JsonValue>) -> Self {
+        self.push_having_condition(aggregation, "$ge", value)
     }
 
     /// Adds a logical `AND` condition for the primary key.
@@ -183,24 +171,32 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a logical `AND` condition by merging the other query builder.
-    pub fn and<M: Entity>(mut self, query: QueryBuilder<M>) -> Self {
-        let mut logical_and = query.logical_and;
-        let logical_or = query.logical_or;
+    pub fn and<M: Entity>(mut self, mut other: QueryBuilder<M>) -> Self {
+        let mut logical_and = other.logical_and;
+        let logical_or = other.logical_or;
         if !logical_or.is_empty() {
             logical_and.push(Map::from_entry("$or", logical_or));
         }
-        self.logical_and.push(Map::from_entry("$and", logical_and));
+        if !logical_and.is_empty() {
+            self.logical_and.push(Map::from_entry("$and", logical_and));
+        }
+        self.fields.append(&mut other.fields);
+        self.group_by_fields.append(&mut other.group_by_fields);
         self
     }
 
     /// Adds a logical `AND NOT` condition by merging the other query builder.
-    pub fn and_not<M: Entity>(mut self, query: QueryBuilder<M>) -> Self {
-        let mut logical_and = query.logical_and;
-        let logical_or = query.logical_or;
+    pub fn and_not<M: Entity>(mut self, mut other: QueryBuilder<M>) -> Self {
+        let mut logical_and = other.logical_and;
+        let logical_or = other.logical_or;
         if !logical_or.is_empty() {
             logical_and.push(Map::from_entry("$or", logical_or));
         }
-        self.logical_and.push(Map::from_entry("$not", logical_and));
+        if !logical_and.is_empty() {
+            self.logical_and.push(Map::from_entry("$not", logical_and));
+        }
+        self.fields.append(&mut other.fields);
+        self.group_by_fields.append(&mut other.group_by_fields);
         self
     }
 
@@ -218,31 +214,31 @@ impl<E: Entity> QueryBuilder<E> {
         self.push_logical_and(col, "$ne", value.into())
     }
 
-    /// Adds a logical `AND` condition for the field less than a value.
+    /// Adds a logical `AND` condition for the column less than a value.
     #[inline]
     pub fn and_lt(self, col: E::Column, value: impl Into<JsonValue>) -> Self {
         self.push_logical_and(col, "$lt", value.into())
     }
 
-    /// Adds a logical `AND` condition for the field not greater than a value.
+    /// Adds a logical `AND` condition for the column not greater than a value.
     #[inline]
     pub fn and_le(self, col: E::Column, value: impl Into<JsonValue>) -> Self {
         self.push_logical_and(col, "$le", value.into())
     }
 
-    /// Adds a logical `AND` condition for the field greater than a value.
+    /// Adds a logical `AND` condition for the column greater than a value.
     #[inline]
     pub fn and_gt(self, col: E::Column, value: impl Into<JsonValue>) -> Self {
         self.push_logical_and(col, "$gt", value.into())
     }
 
-    /// Adds a logical `AND` condition for the field not less than a value.
+    /// Adds a logical `AND` condition for the column not less than a value.
     #[inline]
     pub fn and_ge(self, col: E::Column, value: impl Into<JsonValue>) -> Self {
         self.push_logical_and(col, "$ge", value.into())
     }
 
-    /// Adds a logical `AND` condition for the field `IN` a list of values.
+    /// Adds a logical `AND` condition for the column `IN` a list of values.
     #[inline]
     pub fn and_in<T, V>(self, col: E::Column, values: V) -> Self
     where
@@ -252,7 +248,7 @@ impl<E: Entity> QueryBuilder<E> {
         self.push_logical_and(col, "$in", values.into().into())
     }
 
-    /// Adds a logical `AND` condition for the field `NOT IN` a list of values.
+    /// Adds a logical `AND` condition for the column `NOT IN` a list of values.
     #[inline]
     pub fn and_not_in<T, V>(self, col: E::Column, values: V) -> Self
     where
@@ -262,62 +258,74 @@ impl<E: Entity> QueryBuilder<E> {
         self.push_logical_and(col, "$nin", values.into().into())
     }
 
-    /// Adds a logical `AND` condition for the field `BETWEEN` two values.
+    /// Adds a logical `AND` condition for the column is in a range `[min, max)`.
+    pub fn and_in_range<T: Into<JsonValue>>(mut self, col: E::Column, min: T, max: T) -> Self {
+        let field = E::format_column(&col);
+        let mut condition = Map::new();
+        condition.upsert("$ge", min);
+        condition.upsert("$lt", max);
+        self.logical_and.push(Map::from_entry(field, condition));
+        self
+    }
+
+    /// Adds a logical `AND` condition for the column `BETWEEN` two values.
     #[inline]
     pub fn and_between<T: Into<JsonValue>>(self, col: E::Column, min: T, max: T) -> Self {
         self.push_logical_and(col, "$betw", vec![min, max].into())
     }
 
-    /// Adds a logical `AND` condition for the field `LIKE` a string value.
+    /// Adds a logical `AND` condition for the column `LIKE` a string value.
     #[inline]
     pub fn and_like(self, col: E::Column, value: String) -> Self {
         self.push_logical_and(col, "$like", value.into())
     }
 
-    /// Adds a logical `AND` condition for the field `ILIKE` a string value.
+    /// Adds a logical `AND` condition for the column `ILIKE` a string value.
     #[inline]
     pub fn and_ilike(self, col: E::Column, value: String) -> Self {
         self.push_logical_and(col, "$ilike", value.into())
     }
 
-    /// Adds a logical `AND` condition for the field `RLIKE` a string value.
+    /// Adds a logical `AND` condition for the column `RLIKE` a string value.
     #[inline]
     pub fn and_rlike(self, col: E::Column, value: String) -> Self {
         self.push_logical_and(col, "$rlike", value.into())
     }
 
-    /// Adds a logical `AND` condition for the field which contains a string value.
+    /// Adds a logical `AND` condition for the column which contains a string value.
     #[inline]
     pub fn and_contains(self, col: E::Column, value: &str) -> Self {
-        self.push_logical_and(col, "$like", format!("%{value}%").into())
+        let value = ["%", value, "%"].concat();
+        self.push_logical_and(col, "$like", value.into())
     }
 
-    /// Adds a logical `AND` condition for the field which starts with a string value.
+    /// Adds a logical `AND` condition for the column which starts with a string value.
     #[inline]
     pub fn and_starts_with(self, col: E::Column, value: &str) -> Self {
-        self.push_logical_and(col, "$like", format!("{value}%").into())
+        let value = [value, "%"].concat();
+        self.push_logical_and(col, "$like", value.into())
     }
 
-    /// Adds a logical `AND` condition for the field which ends with a string value.
+    /// Adds a logical `AND` condition for the column which ends with a string value.
     #[inline]
     pub fn and_ends_with(self, col: E::Column, value: &str) -> Self {
-        self.push_logical_and(col, "$like", format!("%{value}").into())
+        let value = ["%", value].concat();
+        self.push_logical_and(col, "$like", value.into())
     }
 
-    /// Adds a logical `AND` condition for the field which is null.
+    /// Adds a logical `AND` condition for the column which is null.
     #[inline]
     pub fn and_null(self, col: E::Column) -> Self {
         self.push_logical_and(col, "$is", JsonValue::Null)
     }
 
-    /// Adds a logical `AND` condition for the field which is not null.
+    /// Adds a logical `AND` condition for the column which is not null.
     #[inline]
     pub fn and_not_null(self, col: E::Column) -> Self {
         self.push_logical_and(col, "$is", "not_null".into())
     }
 
     /// Adds a logical `AND` condition for the two ranges which overlaps with each other.
-    #[inline]
     pub fn and_overlaps<T: Into<JsonValue>>(
         mut self,
         cols: (E::Column, E::Column),
@@ -331,24 +339,32 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a logical `OR` condition by merging the other query builder.
-    pub fn or<M: Entity>(mut self, query: QueryBuilder<M>) -> Self {
-        let mut logical_and = query.logical_and;
-        let logical_or = query.logical_or;
+    pub fn or<M: Entity>(mut self, mut other: QueryBuilder<M>) -> Self {
+        let mut logical_and = other.logical_and;
+        let logical_or = other.logical_or;
         if !logical_or.is_empty() {
             logical_and.push(Map::from_entry("$or", logical_or));
         }
-        self.logical_or.push(Map::from_entry("$and", logical_and));
+        if !logical_and.is_empty() {
+            self.logical_or.push(Map::from_entry("$and", logical_and));
+        }
+        self.fields.append(&mut other.fields);
+        self.group_by_fields.append(&mut other.group_by_fields);
         self
     }
 
     /// Adds a logical `OR NOT` condition by merging the other query builder.
-    pub fn or_not<M: Entity>(mut self, query: QueryBuilder<M>) -> Self {
-        let mut logical_and = query.logical_and;
-        let logical_or = query.logical_or;
+    pub fn or_not<M: Entity>(mut self, mut other: QueryBuilder<M>) -> Self {
+        let mut logical_and = other.logical_and;
+        let logical_or = other.logical_or;
         if !logical_or.is_empty() {
             logical_and.push(Map::from_entry("$or", logical_or));
         }
-        self.logical_or.push(Map::from_entry("$not", logical_and));
+        if !logical_and.is_empty() {
+            self.logical_or.push(Map::from_entry("$not", logical_and));
+        }
+        self.fields.append(&mut other.fields);
+        self.group_by_fields.append(&mut other.group_by_fields);
         self
     }
 
@@ -366,31 +382,31 @@ impl<E: Entity> QueryBuilder<E> {
         self.push_logical_or(col, "$ne", value.into())
     }
 
-    /// Adds a logical `OR` condition for the field less than a value.
+    /// Adds a logical `OR` condition for the column less than a value.
     #[inline]
     pub fn or_lt(self, col: E::Column, value: impl Into<JsonValue>) -> Self {
         self.push_logical_or(col, "$lt", value.into())
     }
 
-    /// Adds a logical `OR` condition for the field not greater than a value.
+    /// Adds a logical `OR` condition for the column not greater than a value.
     #[inline]
     pub fn or_le(self, col: E::Column, value: impl Into<JsonValue>) -> Self {
         self.push_logical_or(col, "$le", value.into())
     }
 
-    /// Adds a logical `OR` condition for the field greater than a value.
+    /// Adds a logical `OR` condition for the column greater than a value.
     #[inline]
     pub fn or_gt(self, col: E::Column, value: impl Into<JsonValue>) -> Self {
         self.push_logical_or(col, "$gt", value.into())
     }
 
-    /// Adds a logical `OR` condition for the field not less than a value.
+    /// Adds a logical `OR` condition for the column not less than a value.
     #[inline]
     pub fn or_ge(self, col: E::Column, value: impl Into<JsonValue>) -> Self {
         self.push_logical_or(col, "$ge", value.into())
     }
 
-    /// Adds a logical `OR` condition for the field `IN` a list of values.
+    /// Adds a logical `OR` condition for the column `IN` a list of values.
     #[inline]
     pub fn or_in<T, V>(self, col: E::Column, values: V) -> Self
     where
@@ -400,7 +416,7 @@ impl<E: Entity> QueryBuilder<E> {
         self.push_logical_or(col, "$in", values.into().into())
     }
 
-    /// Adds a logical `OR` condition for the field `NOT IN` a list of values.
+    /// Adds a logical `OR` condition for the column `NOT IN` a list of values.
     #[inline]
     pub fn or_not_in<T, V>(self, col: E::Column, values: V) -> Self
     where
@@ -410,62 +426,74 @@ impl<E: Entity> QueryBuilder<E> {
         self.push_logical_or(col, "$nin", values.into().into())
     }
 
-    /// Adds a logical `OR` condition for the field `BETWEEN` two values.
+    /// Adds a logical `OR` condition for the column is in a range `[min, max)`.
+    pub fn or_in_range<T: Into<JsonValue>>(mut self, col: E::Column, min: T, max: T) -> Self {
+        let field = E::format_column(&col);
+        let mut condition = Map::new();
+        condition.upsert("$ge", min);
+        condition.upsert("$lt", max);
+        self.logical_or.push(Map::from_entry(field, condition));
+        self
+    }
+
+    /// Adds a logical `OR` condition for the column `BETWEEN` two values.
     #[inline]
     pub fn or_between<T: Into<JsonValue>>(self, col: E::Column, min: T, max: T) -> Self {
         self.push_logical_or(col, "$betw", vec![min, max].into())
     }
 
-    /// Adds a logical `OR` condition for the field `LIKE` a string value.
+    /// Adds a logical `OR` condition for the column `LIKE` a string value.
     #[inline]
     pub fn or_like(self, col: E::Column, value: String) -> Self {
         self.push_logical_or(col, "$like", value.into())
     }
 
-    /// Adds a logical `OR` condition for the field `ILIKE` a string value.
+    /// Adds a logical `OR` condition for the column `ILIKE` a string value.
     #[inline]
     pub fn or_ilike(self, col: E::Column, value: String) -> Self {
         self.push_logical_or(col, "$ilike", value.into())
     }
 
-    /// Adds a logical `OR` condition for the field `RLIKE` a string value.
+    /// Adds a logical `OR` condition for the column `RLIKE` a string value.
     #[inline]
     pub fn or_rlike(self, col: E::Column, value: String) -> Self {
         self.push_logical_or(col, "$rlike", value.into())
     }
 
-    /// Adds a logical `OR` condition for the field which contains a string value.
+    /// Adds a logical `OR` condition for the column which contains a string value.
     #[inline]
     pub fn or_contains(self, col: E::Column, value: &str) -> Self {
-        self.push_logical_or(col, "$like", format!("%{value}%").into())
+        let value = ["%", value, "%"].concat();
+        self.push_logical_or(col, "$like", value.into())
     }
 
-    /// Adds a logical `OR` condition for the field which starts with a string value.
+    /// Adds a logical `OR` condition for the column which starts with a string value.
     #[inline]
     pub fn or_starts_with(self, col: E::Column, value: &str) -> Self {
-        self.push_logical_or(col, "$like", format!("{value}%").into())
+        let value = [value, "%"].concat();
+        self.push_logical_or(col, "$like", value.into())
     }
 
-    /// Adds a logical `OR` condition for the field which ends with a string value.
+    /// Adds a logical `OR` condition for the column which ends with a string value.
     #[inline]
     pub fn or_ends_with(self, col: E::Column, value: &str) -> Self {
-        self.push_logical_or(col, "$like", format!("%{value}").into())
+        let value = ["%", value].concat();
+        self.push_logical_or(col, "$like", value.into())
     }
 
-    /// Adds a logical `OR` condition for the field which is null.
+    /// Adds a logical `OR` condition for the column which is null.
     #[inline]
     pub fn or_null(self, col: E::Column) -> Self {
         self.push_logical_or(col, "$is", JsonValue::Null)
     }
 
-    /// Adds a logical `OR` condition for the field which is not null.
+    /// Adds a logical `OR` condition for the column which is not null.
     #[inline]
     pub fn or_not_null(self, col: E::Column) -> Self {
         self.push_logical_or(col, "$is", "not_null".into())
     }
 
     /// Adds a logical `OR` condition for the two ranges which overlaps with each other.
-    #[inline]
     pub fn or_overlaps<T: Into<JsonValue>>(
         mut self,
         cols: (E::Column, E::Column),
@@ -480,25 +508,22 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Sets the sort order.
     #[inline]
-    pub fn order_by(mut self, col: E::Column, descending: bool) -> Self {
-        let field = col.as_ref().into();
-        self.sort_order.push((field, descending));
+    pub fn order_by(mut self, col: impl ToString, descending: bool) -> Self {
+        self.sort_order.push((col.to_string(), descending));
         self
     }
 
     /// Sets the sort with an ascending order.
     #[inline]
-    pub fn order_asc(mut self, col: E::Column) -> Self {
-        let field = col.as_ref().into();
-        self.sort_order.push((field, false));
+    pub fn order_asc(mut self, col: impl ToString) -> Self {
+        self.sort_order.push((col.to_string(), false));
         self
     }
 
     /// Sets the sort with an descending order.
     #[inline]
-    pub fn order_desc(mut self, col: E::Column) -> Self {
-        let field = col.as_ref().into();
-        self.sort_order.push((field, true));
+    pub fn order_desc(mut self, col: impl ToString) -> Self {
+        self.sort_order.push((col.to_string(), true));
         self
     }
 
@@ -520,10 +545,14 @@ impl<E: Entity> QueryBuilder<E> {
     pub fn build(self) -> Query {
         let mut filters = self.filters;
         let group_by_fields = self.group_by_fields;
+        let having_conditions = self.having_conditions;
         let logical_and = self.logical_and;
         let logical_or = self.logical_or;
         if !group_by_fields.is_empty() {
             filters.upsert("$group", group_by_fields);
+        }
+        if !having_conditions.is_empty() {
+            filters.upsert("$having", having_conditions);
         }
         if !logical_and.is_empty() {
             filters.upsert("$and", logical_and);
@@ -542,8 +571,20 @@ impl<E: Entity> QueryBuilder<E> {
         query
     }
 
+    /// Adds a `HAVING` condition for non-equal parts.
+    pub fn push_having_condition(
+        mut self,
+        aggregation: Aggregation<E>,
+        operator: &str,
+        value: impl Into<JsonValue>,
+    ) -> Self {
+        let condition = Map::from_entry(operator, value);
+        self.having_conditions
+            .push(Map::from_entry(aggregation.expr(), condition));
+        self
+    }
+
     /// Pushes a logical `AND` condition for the column and expressions.
-    #[inline]
     fn push_logical_and(mut self, col: E::Column, operator: &str, value: JsonValue) -> Self {
         let condition = Map::from_entry(operator, value);
         self.logical_and
@@ -552,7 +593,6 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Pushes a logical `OR` condition for the column and expressions.
-    #[inline]
     fn push_logical_or(mut self, col: E::Column, operator: &str, value: JsonValue) -> Self {
         let condition = Map::from_entry(operator, value);
         self.logical_or
@@ -775,16 +815,12 @@ pub(super) trait QueryExt<DB> {
                     }
                 }
                 if !logical_and_conditions.is_empty() {
-                    let condition = format!("({})", logical_and_conditions.join(" AND "));
+                    let condition = Self::join_conditions(logical_and_conditions, " AND ");
                     conditions.push(condition);
                 }
             }
         }
-        if conditions.is_empty() {
-            String::new()
-        } else {
-            format!("({})", conditions.join(operator))
-        }
+        Self::join_conditions(conditions, operator)
     }
 
     /// Formats a query filter.
@@ -792,27 +828,25 @@ pub(super) trait QueryExt<DB> {
         if let Some(filter) = value.as_object() {
             let mut conditions = Vec::with_capacity(filter.len());
             for (name, value) in filter {
-                if let Some(value) = value.parse_string() {
-                    let operator = match name.as_str() {
-                        "$eq" => "=",
-                        "$ne" => "<>",
-                        "$lt" => "<",
-                        "$le" => "<=",
-                        "$gt" => ">",
-                        "$ge" => ">=",
-                        _ => "=",
-                    };
-                    let field = Self::format_field(key);
-                    let value = Self::escape_string(value);
-                    let condition = format!(r#"{field} {operator} {value}"#);
-                    conditions.push(condition);
-                }
+                let operator = match name.as_str() {
+                    "$eq" => "=",
+                    "$ne" => "<>",
+                    "$lt" => "<",
+                    "$le" => "<=",
+                    "$gt" => ">",
+                    "$ge" => ">=",
+                    _ => "=",
+                };
+                let field = Self::format_field(key);
+                let value = if let Some(s) = value.as_str() {
+                    Self::escape_string(s)
+                } else {
+                    value.to_string()
+                };
+                let condition = format!(r#"{field} {operator} {value}"#);
+                conditions.push(condition);
             }
-            if conditions.is_empty() {
-                String::new()
-            } else {
-                format!("({})", conditions.join(" AND "))
-            }
+            Self::join_conditions(conditions, " AND ")
         } else if let Some(value) = value.parse_string() {
             let key = Self::format_field(key);
             let value = Self::escape_string(value);
@@ -831,10 +865,11 @@ pub(super) trait QueryExt<DB> {
             let sort_order = sort_order
                 .iter()
                 .map(|(sort, descending)| {
+                    let sort_field = Query::format_field(sort);
                     if *descending {
-                        format!("{sort} DESC")
+                        format!("{sort_field} DESC")
                     } else {
-                        format!("{sort} ASC")
+                        format!("{sort_field} ASC")
                     }
                 })
                 .collect::<Vec<_>>();
@@ -851,5 +886,14 @@ pub(super) trait QueryExt<DB> {
 
         let offset = self.query_offset();
         format!("LIMIT {limit} OFFSET {offset}")
+    }
+
+    /// Joins the conditions.
+    fn join_conditions(mut conditions: Vec<String>, operator: &str) -> String {
+        match conditions.len() {
+            0 => String::new(),
+            1 => conditions.remove(0),
+            _ => format!("({})", conditions.join(operator)),
+        }
     }
 }

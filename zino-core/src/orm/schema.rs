@@ -1,6 +1,6 @@
 use super::{
     column::ColumnExt, mutation::MutationExt, query::QueryExt, ConnectionPool, DatabaseRow,
-    Executor, GlobalPool, ModelHelper,
+    Executor, GlobalPool, JoinOn, ModelHelper,
 };
 use crate::{
     bail,
@@ -1206,38 +1206,27 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Ok(())
     }
 
-    /// Performs a left outer join to another table to filter rows in the joined table,
+    /// Performs a join to another table to filter rows in the "joined" table,
     /// and decodes it as `Vec<T>`.
-    async fn lookup<M, T>(query: &Query, columns: &[(&str, &str)]) -> Result<Vec<T>, Error>
+    async fn lookup<M, T>(query: &Query, join_on: &JoinOn<Self, M>) -> Result<Vec<T>, Error>
     where
         M: Schema,
         T: DecodeRow<DatabaseRow, Error = Error>,
     {
         Self::before_query(query).await?;
 
-        let model_name = Self::model_name();
-        let other_model_name = M::model_name();
         let table_name = query.format_table_name::<Self>();
         let other_table_name = query.format_table_name::<M>();
         let projection = query.format_table_fields::<Self>();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let pagination = query.format_pagination();
-        let on_expressions = columns
-            .iter()
-            .map(|(left_col, right_col)| {
-                let left_col = format!("{model_name}.{left_col}");
-                let right_col = format!("{other_model_name}.{right_col}");
-                let left_col_field = Query::format_field(&left_col);
-                let right_col_field = Query::format_field(&right_col);
-                format!("{left_col_field} = {right_col_field}")
-            })
-            .collect::<Vec<_>>()
-            .join(" AND ");
+        let join_type = join_on.join_type().as_str();
+        let on_conditions = join_on.format_conditions();
         let sql = format!(
             "SELECT {projection} FROM {table_name} \
-                LEFT OUTER JOIN {other_table_name} \
-                    ON {on_expressions} {filters} {sort} {pagination};"
+                {join_type} {other_table_name} \
+                    ON {on_conditions} {filters} {sort} {pagination};"
         );
         let mut ctx = Self::before_scan(&sql).await?;
         ctx.set_query(&sql);
@@ -1254,14 +1243,14 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Ok(data)
     }
 
-    /// Performs a left outer join to another table to filter rows in the "joined" table,
+    /// Performs a join to another table to filter rows in the "joined" table,
     /// and parses it as `Vec<T>`.
-    async fn lookup_as<M, T>(query: &Query, columns: &[(&str, &str)]) -> Result<Vec<T>, Error>
+    async fn lookup_as<M, T>(query: &Query, join_on: &JoinOn<Self, M>) -> Result<Vec<T>, Error>
     where
         M: Schema,
         T: DeserializeOwned,
     {
-        let mut data = Self::lookup::<M, Map>(query, columns).await?;
+        let mut data = Self::lookup::<M, Map>(query, join_on).await?;
         let translate_enabled = query.translate_enabled();
         for model in data.iter_mut() {
             Self::after_decode(model).await?;
@@ -1327,9 +1316,9 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 let field = Query::format_field(key);
                 if key != "*" {
                     if distinct {
-                        format!(r#"count(distinct {field}) as {key}_distinct"#)
+                        format!(r#"count(distinct {field}) AS {key}_distinct"#)
                     } else {
-                        format!(r#"count({field}) as {key}_count"#)
+                        format!(r#"count({field}) AS {key}_count"#)
                     }
                 } else {
                     "count(*)".to_owned()
@@ -1357,6 +1346,41 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     ) -> Result<T, Error> {
         let map = Self::count_many::<Map>(query, columns).await?;
         serde_json::from_value(map.into()).map_err(Error::from)
+    }
+
+    /// Aggregates the rows selected by the query in the table.
+    async fn aggregate<T>(query: &Query) -> Result<Vec<T>, Error>
+    where
+        T: DecodeRow<DatabaseRow, Error = Error>,
+    {
+        Self::before_aggregate(query).await?;
+
+        let table_name = query.format_table_name::<Self>();
+        let projection = query.format_table_fields::<Self>();
+        let filters = query.format_filters::<Self>();
+        let sort = query.format_sort();
+        let pagination = query.format_pagination();
+        let sql = format!("SELECT {projection} FROM {table_name} {filters} {sort} {pagination};");
+        let mut ctx = Self::before_scan(&sql).await?;
+        ctx.set_query(sql);
+
+        let pool = Self::acquire_reader().await?.pool();
+        let rows = pool.fetch(ctx.query()).await?;
+        let mut data = Vec::with_capacity(rows.len());
+        for row in rows {
+            data.push(T::decode_row(&row)?);
+        }
+        ctx.set_query_result(u64::try_from(data.len())?, true);
+        Self::after_scan(&ctx).await?;
+        Self::after_aggregate(&ctx).await?;
+        Ok(data)
+    }
+
+    /// Aggregates the rows selected by the query in the table,
+    /// and parses it as an instance of type `T`.
+    async fn aggregate_as<T: DeserializeOwned>(query: &Query) -> Result<Vec<T>, Error> {
+        let data = Self::aggregate::<Map>(query).await?;
+        serde_json::from_value(data.into()).map_err(Error::from)
     }
 
     /// Executes the query in the table, and returns the total number of rows affected.

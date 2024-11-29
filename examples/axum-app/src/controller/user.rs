@@ -1,4 +1,4 @@
-use crate::model::User;
+use crate::model::{User, UserColumn::*};
 use std::time::Instant;
 use zino::{prelude::*, Request, Response, Result};
 
@@ -39,5 +39,23 @@ pub async fn view(req: Request) -> Result {
     let mut res = Response::default().context(&req);
     res.record_server_timing("db", None, db_query_duration);
     res.set_json_data(data);
+    Ok(res.into())
+}
+
+pub async fn stats(req: Request) -> Result {
+    let query = QueryBuilder::<User>::new()
+        .aggregate(Aggregation::Count(Id, false), Some("num_users"))
+        .aggregate(Aggregation::Sum(LoginCount), Some("total_login"))
+        .aggregate(Aggregation::Avg(LoginCount), None)
+        .and_not_in(Status, ["Deleted", "Locked"])
+        .group_by(CurrentLoginIp)
+        .having_ge(Aggregation::Avg(LoginCount), 10)
+        .order_desc("total_login")
+        .limit(10)
+        .build();
+    let items = User::aggregate::<Map>(&query).await.extract(&req)?;
+
+    let mut res = Response::default().context(&req);
+    res.set_json_data(User::data_items(items));
     Ok(res.into())
 }

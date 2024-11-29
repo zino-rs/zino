@@ -1,9 +1,10 @@
 use crate::model::Model;
+use std::fmt::Display;
 
 /// An interface for the model entity.
 pub trait Entity: Model {
     /// The column type.
-    type Column: AsRef<str>;
+    type Column: AsRef<str> + Display;
 
     /// The primary key column.
     const PRIMARY_KEY: Self::Column;
@@ -11,6 +12,6 @@ pub trait Entity: Model {
     /// Formats the column name.
     #[inline]
     fn format_column(col: &Self::Column) -> String {
-        format!("{}.{}", Self::MODEL_NAME, col.as_ref())
+        [Self::MODEL_NAME, ".", col.as_ref()].concat()
     }
 }

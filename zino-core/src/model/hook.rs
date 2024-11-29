@@ -243,6 +243,23 @@ pub trait ModelHooks: Model {
         Ok(())
     }
 
+    /// A hook running before aggregating the models in the table.
+    #[inline]
+    async fn before_aggregate(_query: &Query) -> Result<(), Error> {
+        Ok(())
+    }
+
+    /// A hook running after aggregating the models in the table.
+    #[inline]
+    async fn after_aggregate(ctx: &QueryContext) -> Result<(), Error> {
+        if !ctx.is_success() {
+            ctx.record_error("fail to aggregate the models in the table");
+        }
+        #[cfg(feature = "metrics")]
+        ctx.emit_metrics("aggregate");
+        Ok(())
+    }
+
     /// A hook running before selecting the models with a `Query` from the table.
     #[inline]
     async fn before_query(_query: &Query) -> Result<(), Error> {

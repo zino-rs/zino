@@ -37,7 +37,8 @@ pub fn routes() -> Vec<Router> {
         .route("/user/:id/view", get(user::view))
         .route("/user/list", get(User::list))
         .route("/user/import", post(User::import))
-        .route("/user/export", get(User::export));
+        .route("/user/export", get(User::export))
+        .route("/user/stats", get(user::stats));
     routes.push(router);
 
     // Tag controller.

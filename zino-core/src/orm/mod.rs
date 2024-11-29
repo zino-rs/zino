@@ -17,7 +17,7 @@
 //! The design of our ORM is inspired by [`Mongoose`], [`Prisma`], [`TypeORM`] and [`PostgREST`].
 //!
 //! ```rust,ignore
-//! use zino_core::{model::{Mutation, Query}, orm::Schema, Map, Record};
+//! use zino_core::{model::{Mutation, Query}, orm::{JoinOn, Schema}, Map, Record};
 //!
 //! // Constructs a model `Query` with JSON expressions.
 //! let query = Query::new(json!({
@@ -62,7 +62,8 @@
 //! query.order_desc("task.updated_at");
 //!
 //! // Performs a LEFT OUTER JOIN using `lookup` provided by the `Schema` trait.
-//! let entries = Task::lookup::<Project, Map>(&query, &[("project_id", "id")]).await?;
+//! let join_on = JoinOn::left_join().with("project_id", "id");
+//! let entries = Task::lookup::<Project, Map>(&query, &join_on).await?;
 //!
 //! // Executes the raw SQL with interpolations `${param}` and argument bindings `#{param}`.
 //! let sql =
@@ -114,10 +115,12 @@ use std::sync::{
 };
 
 mod accessor;
+mod aggregate;
 mod column;
 mod entity;
 mod executor;
 mod helper;
+mod join;
 mod manager;
 mod mutation;
 mod pool;
@@ -126,9 +129,11 @@ mod schema;
 mod transaction;
 
 pub use accessor::ModelAccessor;
+pub use aggregate::Aggregation;
 pub use entity::Entity;
 pub use executor::Executor;
 pub use helper::ModelHelper;
+pub use join::JoinOn;
 pub use manager::PoolManager;
 pub use mutation::MutationBuilder;
 pub use pool::ConnectionPool;
