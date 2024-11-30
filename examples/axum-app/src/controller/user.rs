@@ -55,6 +55,16 @@ pub async fn stats(req: Request) -> Result {
         .build();
     let items = User::aggregate::<Map>(&query).await.extract(&req)?;
 
+    let rank_window = Window::rank(CurrentLoginIp).order_desc(LoginCount);
+    let query = QueryBuilder::<User>::new()
+        .fields([Id, Name, CurrentLoginIp, LoginCount])
+        .and_not_in(Status, ["Deleted", "Locked"])
+        .window(rank_window, Some("login_count_rank"))
+        .order_desc(UpdatedAt)
+        .limit(10)
+        .build();
+    let users: Vec<Map> = User::find(&query).await.extract(&req)?;
+
     let mut res = Response::default().context(&req);
     res.set_json_data(User::data_items(items));
     Ok(res.into())

@@ -127,6 +127,7 @@ mod pool;
 mod query;
 mod schema;
 mod transaction;
+mod window;
 
 pub use accessor::ModelAccessor;
 pub use aggregate::Aggregation;
@@ -140,6 +141,7 @@ pub use pool::ConnectionPool;
 pub use query::QueryBuilder;
 pub use schema::Schema;
 pub use transaction::Transaction;
+pub use window::Window;
 
 #[cfg(feature = "orm-sqlx")]
 mod decode;

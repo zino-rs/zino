@@ -2,8 +2,8 @@ use self::ServerTag::*;
 use std::fmt;
 
 /// A server tag is used to distinguish different servers.
-#[non_exhaustive]
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum ServerTag {
     #[default]
     /// The `main` server.

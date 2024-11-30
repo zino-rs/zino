@@ -1,9 +1,9 @@
+use super::QueryOrder;
 use crate::{
     extension::{JsonObjectExt, JsonValueExt},
     validation::Validation,
     JsonValue, Map, SharedString,
 };
-use smallvec::SmallVec;
 
 /// A query type for models.
 #[derive(Debug, Clone)]
@@ -12,8 +12,8 @@ pub struct Query {
     fields: Vec<String>,
     /// Filters.
     filters: Map,
-    /// Sort order: `false` for ascending and `true` for descending.
-    sort_order: SmallVec<[(SharedString, bool); 2]>,
+    /// Sort order.
+    sort_order: Vec<QueryOrder>,
     /// Offset.
     offset: usize,
     /// Limit.
@@ -30,7 +30,7 @@ impl Query {
         Self {
             fields: Vec::new(),
             filters,
-            sort_order: SmallVec::new(),
+            sort_order: Vec::new(),
             offset: 0,
             limit: 0,
             extra: Map::new(),
@@ -63,11 +63,11 @@ impl Query {
                         self.sort_order.clear();
                         self.sort_order.extend(sort_order.into_iter().map(|s| {
                             if let Some(sort) = s.strip_suffix("|asc") {
-                                (sort.to_owned().into(), false)
+                                QueryOrder::new(sort.to_owned(), false)
                             } else if let Some(sort) = s.strip_suffix("|desc") {
-                                (sort.to_owned().into(), true)
+                                QueryOrder::new(sort.to_owned(), true)
                             } else {
-                                (s.to_owned().into(), true)
+                                QueryOrder::new(s.to_owned(), true)
                             }
                         }));
                     }
@@ -224,26 +224,55 @@ impl Query {
 
     /// Sets the sort order.
     #[inline]
-    pub fn order_by(&mut self, field: impl Into<SharedString>, descending: bool) {
-        let field = field.into();
-        self.sort_order.retain(|(s, _)| s != &field);
-        self.sort_order.push((field, descending));
+    pub fn set_order(&mut self, sort_order: Vec<QueryOrder>) {
+        self.sort_order = sort_order;
     }
 
-    /// Sets the sort with an ascending order.
+    /// Adds a query order.
+    #[inline]
+    pub fn order_by(&mut self, field: impl Into<SharedString>, descending: bool) {
+        let field = field.into();
+        self.sort_order
+            .retain(|order| order.field() != field.as_ref());
+        self.sort_order.push(QueryOrder::new(field, descending));
+    }
+
+    /// Adds a query order with an extra flag to indicate whether the nulls appear first or last.
+    pub fn order_by_with_nulls(
+        &mut self,
+        field: impl Into<SharedString>,
+        descending: bool,
+        nulls_first: bool,
+    ) {
+        let field = field.into();
+        self.sort_order
+            .retain(|order| order.field() != field.as_ref());
+
+        let mut order = QueryOrder::new(field, descending);
+        if nulls_first {
+            order.set_nulls_first();
+        } else {
+            order.set_nulls_last();
+        }
+        self.sort_order.push(order);
+    }
+
+    /// Adds a query order with an ascending order.
     #[inline]
     pub fn order_asc(&mut self, field: impl Into<SharedString>) {
         let field = field.into();
-        self.sort_order.retain(|(s, _)| s != &field);
-        self.sort_order.push((field, false));
+        self.sort_order
+            .retain(|order| order.field() != field.as_ref());
+        self.sort_order.push(QueryOrder::new(field, false));
     }
 
-    /// Sets the sort with an descending order.
+    /// Adds a query order with an descending order.
     #[inline]
     pub fn order_desc(&mut self, field: impl Into<SharedString>) {
         let field = field.into();
-        self.sort_order.retain(|(s, _)| s != &field);
-        self.sort_order.push((field, true));
+        self.sort_order
+            .retain(|order| order.field() != field.as_ref());
+        self.sort_order.push(QueryOrder::new(field, true));
     }
 
     /// Sets the query offset.
@@ -276,10 +305,9 @@ impl Query {
         &self.filters
     }
 
-    /// Returns the sort order.
-    /// A `true` boolean value represents a descending order.
+    /// Returns a reference to the sort order.
     #[inline]
-    pub fn sort_order(&self) -> &[(SharedString, bool)] {
+    pub fn sort_order(&self) -> &[QueryOrder] {
         self.sort_order.as_slice()
     }
 
@@ -338,7 +366,7 @@ impl Default for Query {
         Self {
             fields: Vec::new(),
             filters: Map::new(),
-            sort_order: SmallVec::new(),
+            sort_order: Vec::new(),
             offset: 0,
             limit: 10,
             extra: Map::new(),

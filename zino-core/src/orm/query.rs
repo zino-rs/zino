@@ -1,7 +1,7 @@
-use super::{Aggregation, Entity, Schema};
+use super::{Aggregation, Entity, Schema, Window};
 use crate::{
     extension::{JsonObjectExt, JsonValueExt},
-    model::{EncodeColumn, Query},
+    model::{EncodeColumn, Query, QueryOrder},
     JsonValue, Map, SharedString,
 };
 use std::{borrow::Cow, fmt::Display, marker::PhantomData};
@@ -41,7 +41,7 @@ pub struct QueryBuilder<E: Entity> {
     /// The logical `OR` conditions.
     logical_or: Vec<Map>,
     /// Sort order.
-    sort_order: Vec<(String, bool)>,
+    sort_order: Vec<QueryOrder>,
     /// Offset.
     offset: usize,
     /// Limit.
@@ -99,6 +99,21 @@ impl<E: Entity> QueryBuilder<E> {
             [alias, ":", &expr].concat()
         } else {
             let mut field_alias = aggregation.default_alias();
+            field_alias.push(':');
+            field_alias.push_str(&expr);
+            field_alias
+        };
+        self.fields.push(field_alias);
+        self
+    }
+
+    /// Adds a field with an optional alias for the window function.
+    pub fn window(mut self, window: Window<E>, alias: Option<&str>) -> Self {
+        let expr = window.expr();
+        let field_alias = if let Some(alias) = alias {
+            [alias, ":", &expr].concat()
+        } else {
+            let mut field_alias = window.default_alias();
             field_alias.push(':');
             field_alias.push_str(&expr);
             field_alias
@@ -506,24 +521,44 @@ impl<E: Entity> QueryBuilder<E> {
         self
     }
 
-    /// Sets the sort order.
+    /// Adds a query order.
     #[inline]
     pub fn order_by(mut self, col: impl ToString, descending: bool) -> Self {
-        self.sort_order.push((col.to_string(), descending));
+        self.sort_order
+            .push(QueryOrder::new(col.to_string(), descending));
         self
     }
 
-    /// Sets the sort with an ascending order.
+    /// Adds a query order with an extra flag to indicate whether the nulls appear first or last.
+    #[inline]
+    pub fn order_by_with_nulls(
+        mut self,
+        col: impl ToString,
+        descending: bool,
+        nulls_first: bool,
+    ) -> Self {
+        let mut order = QueryOrder::new(col.to_string(), descending);
+        if nulls_first {
+            order.set_nulls_first();
+        } else {
+            order.set_nulls_last();
+        }
+        self.sort_order.push(order);
+        self
+    }
+
+    /// Adds a query order with an ascending order.
     #[inline]
     pub fn order_asc(mut self, col: impl ToString) -> Self {
-        self.sort_order.push((col.to_string(), false));
+        self.sort_order
+            .push(QueryOrder::new(col.to_string(), false));
         self
     }
 
-    /// Sets the sort with an descending order.
+    /// Adds a query order with an descending order.
     #[inline]
     pub fn order_desc(mut self, col: impl ToString) -> Self {
-        self.sort_order.push((col.to_string(), true));
+        self.sort_order.push(QueryOrder::new(col.to_string(), true));
         self
     }
 
@@ -563,11 +598,9 @@ impl<E: Entity> QueryBuilder<E> {
 
         let mut query = Query::new(filters);
         query.set_fields(self.fields);
+        query.set_order(self.sort_order);
         query.set_offset(self.offset);
         query.set_limit(self.limit);
-        for (field, descending) in self.sort_order.into_iter() {
-            query.order_by(field, descending);
-        }
         query
     }
 
@@ -623,7 +656,7 @@ pub(super) trait QueryExt<DB> {
     fn query_filters(&self) -> &Map;
 
     /// Returns the sort order.
-    fn query_order(&self) -> &[(SharedString, bool)];
+    fn query_order(&self) -> &[QueryOrder];
 
     /// Returns the query offset.
     fn query_offset(&self) -> usize;
@@ -864,13 +897,19 @@ pub(super) trait QueryExt<DB> {
         } else {
             let sort_order = sort_order
                 .iter()
-                .map(|(sort, descending)| {
-                    let sort_field = Query::format_field(sort);
-                    if *descending {
+                .map(|order| {
+                    let sort_field = Query::format_field(order.field());
+                    let mut expr = if order.is_descending() {
                         format!("{sort_field} DESC")
                     } else {
                         format!("{sort_field} ASC")
+                    };
+                    if order.nulls_first() {
+                        expr.push_str(" NULLS FIRST");
+                    } else if order.nulls_last() {
+                        expr.push_str(" NULLS LAST");
                     }
+                    expr
                 })
                 .collect::<Vec<_>>();
             format!("ORDER BY {}", sort_order.join(", "))

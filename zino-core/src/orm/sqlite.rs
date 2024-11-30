@@ -3,7 +3,7 @@ use crate::{
     datetime::{Date, DateTime, Time},
     error::Error,
     extension::{JsonObjectExt, JsonValueExt},
-    model::{Column, DecodeRow, EncodeColumn, Query},
+    model::{Column, DecodeRow, EncodeColumn, Query, QueryOrder},
     AvroValue, JsonValue, Map, Record, SharedString, Uuid,
 };
 use std::borrow::Cow;
@@ -541,7 +541,7 @@ impl QueryExt<DatabaseDriver> for Query {
     }
 
     #[inline]
-    fn query_order(&self) -> &[(SharedString, bool)] {
+    fn query_order(&self) -> &[QueryOrder] {
         self.sort_order()
     }
 

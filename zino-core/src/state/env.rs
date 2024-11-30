@@ -3,8 +3,8 @@ use crate::application::Plugin;
 use std::fmt;
 
 /// Application running environment.
-#[non_exhaustive]
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Env {
     #[default]
     /// The `dev` environment.

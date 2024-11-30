@@ -22,17 +22,26 @@ use crate::model::Query;
 /// let entries = Task::aggregate::<Map>(&query).await?;
 /// ```
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub enum Aggregation<E: Entity> {
-    /// A `COUNT` function with the `DISTINCT` modifier.
+    /// The `COUNT` function with the `DISTINCT` modifier.
     Count(E::Column, bool),
-    /// A `SUM` function.
+    /// The `SUM` function.
     Sum(E::Column),
-    /// An `AVG` function.
+    /// The `AVG` function.
     Avg(E::Column),
-    /// A `Min` function.
+    /// The `MIN` function.
     Min(E::Column),
-    /// A `Max` function.
+    /// The `MAX` function.
     Max(E::Column),
+    /// The `STDDEV` function.
+    Stddev(E::Column),
+    /// The `VARIANCE` function.
+    Variance(E::Column),
+    /// The `JSON_ARRAYAGG` function.
+    JsonArrayagg(E::Column),
+    /// The `JSON_OBJECTAGG` function.
+    JsonObjectagg(E::Column, E::Column),
 }
 
 impl<E: Entity> Aggregation<E> {
@@ -41,15 +50,21 @@ impl<E: Entity> Aggregation<E> {
         match self {
             Count(col, distinct) => {
                 if *distinct {
-                    [col.as_ref(), "_", "distinct"].concat()
+                    [col.as_ref(), "_distinct"].concat()
                 } else {
-                    [col.as_ref(), "_", "count"].concat()
+                    [col.as_ref(), "_count"].concat()
                 }
             }
-            Sum(col) => [col.as_ref(), "_", "sum"].concat(),
-            Avg(col) => [col.as_ref(), "_", "avg"].concat(),
-            Min(col) => [col.as_ref(), "_", "min"].concat(),
-            Max(col) => [col.as_ref(), "_", "col"].concat(),
+            Sum(col) => [col.as_ref(), "_sum"].concat(),
+            Avg(col) => [col.as_ref(), "_avg"].concat(),
+            Min(col) => [col.as_ref(), "_min"].concat(),
+            Max(col) => [col.as_ref(), "_max"].concat(),
+            Stddev(col) => [col.as_ref(), "_stddev"].concat(),
+            Variance(col) => [col.as_ref(), "_variance"].concat(),
+            JsonArrayagg(col) => [col.as_ref(), "_arrayagg"].concat(),
+            JsonObjectagg(key_col, val_col) => {
+                [key_col.as_ref(), "_", val_col.as_ref(), "_objectagg"].concat()
+            }
         }
     }
 
@@ -84,6 +99,48 @@ impl<E: Entity> Aggregation<E> {
                 let col_name = E::format_column(col);
                 let field = Query::format_field(&col_name);
                 format!("max({field})")
+            }
+            Stddev(col) => {
+                let col_name = E::format_column(col);
+                let field = Query::format_field(&col_name);
+                format!("stddev({field})")
+            }
+            Variance(col) => {
+                let col_name = E::format_column(col);
+                let field = Query::format_field(&col_name);
+                format!("variance({field})")
+            }
+            JsonArrayagg(col) => {
+                let col_name = E::format_column(col);
+                let field = Query::format_field(&col_name);
+                if cfg!(any(
+                    feature = "orm-mariadb",
+                    feature = "orm-mysql",
+                    feature = "orm-tidb"
+                )) {
+                    format!("json_arrayagg({field})")
+                } else if cfg!(feature = "orm-postgres") {
+                    format!("jsonb_agg({field})")
+                } else {
+                    format!("json_group_array({field})")
+                }
+            }
+            JsonObjectagg(key_col, val_col) => {
+                let key_col_name = E::format_column(key_col);
+                let val_col_name = E::format_column(val_col);
+                let key_field = Query::format_field(&key_col_name);
+                let val_field = Query::format_field(&val_col_name);
+                if cfg!(any(
+                    feature = "orm-mariadb",
+                    feature = "orm-mysql",
+                    feature = "orm-tidb"
+                )) {
+                    format!("json_objectagg({key_field}, {val_field})")
+                } else if cfg!(feature = "orm-postgres") {
+                    format!("jsonb_object_agg({key_field}, {val_field})")
+                } else {
+                    format!("json_group_object({key_field}, {val_field})")
+                }
             }
         }
     }
