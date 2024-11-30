@@ -223,6 +223,16 @@ impl<E: Entity> QueryBuilder<E> {
         self
     }
 
+    /// Adds a logical `AND` condition for equal parts if the value is not none.
+    #[inline]
+    pub fn and_eq_if_some<T: Into<JsonValue>>(mut self, col: E::Column, value: Option<T>) -> Self {
+        if let Some(value) = value {
+            let condition = Map::from_entry(E::format_column(&col), value);
+            self.logical_and.push(condition);
+        }
+        self
+    }
+
     /// Adds a logical `AND` condition for non-equal parts.
     #[inline]
     pub fn and_ne(self, col: E::Column, value: impl Into<JsonValue>) -> Self {

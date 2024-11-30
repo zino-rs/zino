@@ -1,6 +1,7 @@
 /// Generates SQL `SET` expressions.
 use super::{query::QueryExt, DatabaseDriver, Entity, Schema};
 use crate::{
+    datetime::DateTime,
     extension::JsonObjectExt,
     model::{EncodeColumn, Mutation, Query},
     JsonValue, Map,
@@ -20,8 +21,8 @@ use std::marker::PhantomData;
 ///     .build();
 /// let mut mutation = MutationBuilder::<User>::new()
 ///     .set(UserColumn::Status, "Active")
-///     .set(UserColumn::UpdatedAt, DateTime::now())
-///     .inc(UserColumn::Version, 1)
+///     .set_now(UserColumn::UpdatedAt)
+///     .inc_one(UserColumn::Version)
 ///     .build();
 /// let ctx = User::update_one(&query, &mut mutation).await?;
 /// ```
@@ -62,10 +63,23 @@ impl<E: Entity> MutationBuilder<E> {
         self
     }
 
+    /// Sets the value of a column to the current date time.
+    #[inline]
+    pub fn set_now(mut self, col: E::Column) -> Self {
+        self.updates.upsert(col.as_ref(), DateTime::now());
+        self
+    }
+
     /// Increments the value of a column.
     #[inline]
     pub fn inc(mut self, col: E::Column, value: impl Into<JsonValue>) -> Self {
         self.inc_ops.upsert(col.as_ref(), value.into());
+        self
+    }
+    /// Increments the value of a column by 1.
+    #[inline]
+    pub fn inc_one(mut self, col: E::Column) -> Self {
+        self.inc_ops.upsert(col.as_ref(), 1);
         self
     }
 

@@ -16,10 +16,10 @@ readme = "README.md"
 hyper-staticfile = "0.10.1"
 phf = "0.11.2"
 serde_json = "1.0.133"
-tracing = "0.1.40"
+tracing = "0.1.41"
 
 [dependencies.hyper]
-version = "1.5.0"
+version = "1.5.1"
 features = ["http1", "server"]
 
 [dependencies.hyper-util]
@@ -37,5 +37,5 @@ features = ["parse"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.27.2"
+version = "0.27.3"
 features = ["tracing-subscriber"]

@@ -19,7 +19,7 @@ orm = ["zino-core/orm"]
 async-trait = "0.1.83"
 futures = "0.3.31"
 http = "1.1.0"
-tracing = "0.1.40"
+tracing = "0.1.41"
 
 [dependencies.axum]
 version = "0.7.9"
@@ -63,5 +63,5 @@ features = ["axum"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.27.2"
+version = "0.27.3"
 features = ["openapi", "runtime-tokio"]

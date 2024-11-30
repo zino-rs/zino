@@ -16,7 +16,7 @@ readme = "README.md"
 actix-cors = "0.7.0"
 actix-files = "0.6.6"
 futures = "0.3.31"
-tracing = "0.1.40"
+tracing = "0.1.41"
 
 [dependencies.actix-web]
 version = "4.9.0"
@@ -33,7 +33,7 @@ features = ["actix-web"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.27.2"
+version = "0.27.3"
 features = [
     "http02",
     "openapi",
