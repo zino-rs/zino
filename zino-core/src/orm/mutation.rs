@@ -1,10 +1,10 @@
 /// Generates SQL `SET` expressions.
-use super::{query::QueryExt, DatabaseDriver, Entity, Schema};
+use super::{query::QueryExt, DatabaseDriver, Entity, IntoSqlValue, Schema};
 use crate::{
     datetime::DateTime,
     extension::JsonObjectExt,
     model::{EncodeColumn, Mutation, Query},
-    JsonValue, Map,
+    Map,
 };
 use std::marker::PhantomData;
 
@@ -58,22 +58,23 @@ impl<E: Entity> MutationBuilder<E> {
 
     /// Sets the value of a column.
     #[inline]
-    pub fn set(mut self, col: E::Column, value: impl Into<JsonValue>) -> Self {
-        self.updates.upsert(col.as_ref(), value.into());
+    pub fn set(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
+        self.updates.upsert(col.as_ref(), value.into_sql_value());
         self
     }
 
     /// Sets the value of a column to the current date time.
     #[inline]
     pub fn set_now(mut self, col: E::Column) -> Self {
-        self.updates.upsert(col.as_ref(), DateTime::now());
+        self.updates
+            .upsert(col.as_ref(), DateTime::now().into_sql_value());
         self
     }
 
     /// Increments the value of a column.
     #[inline]
-    pub fn inc(mut self, col: E::Column, value: impl Into<JsonValue>) -> Self {
-        self.inc_ops.upsert(col.as_ref(), value.into());
+    pub fn inc(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
+        self.inc_ops.upsert(col.as_ref(), value.into_sql_value());
         self
     }
     /// Increments the value of a column by 1.
@@ -85,24 +86,24 @@ impl<E: Entity> MutationBuilder<E> {
 
     /// Multiplies the value of a column by a number.
     #[inline]
-    pub fn mul(mut self, col: E::Column, value: impl Into<JsonValue>) -> Self {
-        self.mul_ops.upsert(col.as_ref(), value.into());
+    pub fn mul(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
+        self.mul_ops.upsert(col.as_ref(), value.into_sql_value());
         self
     }
 
     /// Updates the value of a column to a specified value
     /// if the specified value is less than the current value of the column.
     #[inline]
-    pub fn min(mut self, col: E::Column, value: impl Into<JsonValue>) -> Self {
-        self.min_ops.upsert(col.as_ref(), value.into());
+    pub fn min(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
+        self.min_ops.upsert(col.as_ref(), value.into_sql_value());
         self
     }
 
     /// Updates the value of a column to a specified value
     /// if the specified value is greater than the current value of the column.
     #[inline]
-    pub fn max(mut self, col: E::Column, value: impl Into<JsonValue>) -> Self {
-        self.max_ops.upsert(col.as_ref(), value.into());
+    pub fn max(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
+        self.max_ops.upsert(col.as_ref(), value.into_sql_value());
         self
     }
 
@@ -222,8 +223,14 @@ impl MutationExt<DatabaseDriver> for Mutation {
                     if permissive || fields.contains(key) {
                         if let Some(col) = M::get_writable_column(key) {
                             let key = Query::format_field(key);
-                            let value = col.encode_value(Some(value));
-                            let mutation = format!(r#"{key} = {value}"#);
+                            let mutation = if let Some(subquery) =
+                                value.as_object().and_then(|m| m.get_str("$subquery"))
+                            {
+                                format!(r#"{key} = {subquery}"#)
+                            } else {
+                                let value = col.encode_value(Some(value));
+                                format!(r#"{key} = {value}"#)
+                            };
                             mutations.push(mutation);
                         }
                     }

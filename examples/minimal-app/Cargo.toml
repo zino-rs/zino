@@ -8,6 +8,6 @@ publish = false
 
 [dependencies.zino]
 path = "../../zino"
-version = "0.26.3"
+version = "0.26.4"
 features = ["axum"]
 

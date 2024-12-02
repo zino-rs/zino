@@ -641,7 +641,7 @@ impl Default for DateTime {
 impl fmt::Display for DateTime {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0.format("%Y-%m-%d %H:%M:%S%.6f %z"))
+        self.0.format("%Y-%m-%d %H:%M:%S%.6f %z").fmt(f)
     }
 }
 

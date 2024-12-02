@@ -11,101 +11,6 @@
 //! | `orm-postgres` | Enables the PostgreSQL database driver.              | No       |
 //! | `orm-sqlite`   | Enables the SQLite database driver.                  | No       |
 //! | `orm-tidb`     | Enables the TiDB database driver.                    | No       |
-//!
-//! # Design references
-//!
-//! The design of our ORM is inspired by [`Mongoose`], [`Prisma`], [`TypeORM`] and [`PostgREST`].
-//!
-//! ```rust,ignore
-//! use zino_core::{model::{Mutation, Query}, orm::{JoinOn, Schema}, Map, Record};
-//!
-//! // Constructs a model `Query` with JSON expressions.
-//! let query = Query::new(json!({
-//!     "$or": [
-//!         {
-//!             "roles": "worker",
-//!             "visibility": "Public",
-//!         },
-//!         {
-//!             "roles": { "$in": ["admin", "auditor"] },
-//!             "visibility": { "$ne": "Public" },
-//!         },
-//!     ],
-//!     "status": { "$nin": ["Deleted", "Locked"] },
-//! }));
-//!
-//! // Constructs a model `Mutation` with JSON expressions.
-//! let mut mutation = Mutation::new(json!({
-//!     "status": "Active",
-//!     "refreshed_at": DateTime::now(),
-//!     "$inc": { "refresh_count": 1 },
-//! }));
-//!
-//! // Updates the models using `update_many` provided by the `Schema` trait.
-//! let ctx = User::update_many(&query, &mut mutation).await?;
-//! ctx.emit_metrics("user_refresh");
-//!
-//! // Constructs a model `Query` with projection fields.
-//! let mut query = Query::new(json!({
-//!     "project.start_date": { "$le": "2023-10-07" },
-//!     "project.end_date": { "$ge": "2023-10-01" },
-//!     "task.status": "Completed",
-//! }));
-//! query.allow_fields(&[
-//!     "task.id",
-//!     "task.name",
-//!     "task.status",
-//!     "task.project_id",
-//!     "project.start_date",
-//!     "project.end_date",
-//! ]);
-//! query.order_desc("task.updated_at");
-//!
-//! // Performs a LEFT OUTER JOIN using `lookup` provided by the `Schema` trait.
-//! let join_on = JoinOn::left_join().with("project_id", "id");
-//! let entries = Task::lookup::<Project, Map>(&query, &join_on).await?;
-//!
-//! // Executes the raw SQL with interpolations `${param}` and argument bindings `#{param}`.
-//! let sql =
-//!     "SELECT u.id, u.name, u.tags, t.id, t.name \
-//!         FROM ${user_table} u INNER JOIN ${tag_table} t \
-//!             ON t.id = ANY(u.tags) AND t.category = #{category};";
-//! let params = json!({
-//!     "user_table": User::table_name(),
-//!     "tag_table": Tag::table_name(),
-//!     "category": "Rustacean",
-//! });
-//! let records = User::query::<Record>(sql, params.as_object()).await?;
-//! ```
-//!
-//! # Query operators
-//!
-//! | Name       | MySQL               | PostgreSQL       | SQLite                |
-//! |------------|---------------------|------------------|-----------------------|
-//! | `$and`     | `AND`               | `AND`            | `AND`                 |
-//! | `$or`      | `OR`                | `OR`             | `OR`                  |
-//! | `$not`     | `NOT`               | `NOT`            | `NOT`                 |
-//! | `$rand`    | `rand()`            | `random()`       | `abs(random())`       |
-//! | `$text`    | `match() against()` | `to_tsvector()`  | `MATCH`               |
-//! | `$eq`      | `=`                 | `=`              | `=`                   |
-//! | `$ne`      | `<>`                | `<>`             | `<>`                  |
-//! | `$lt`      | `<`                 | `<`              | `<`                   |
-//! | `$le`      | `<=`                | `<=`             | `<=`                  |
-//! | `$gt`      | `>`                 | `>`              | `>`                   |
-//! | `$ge`      | `>=`                | `>=`             | `>=`                  |
-//! | `$in`      | `IN`                | `IN`             | `IN`                  |
-//! | `$nin`     | `NOT IN`            | `NOT IN`         | `NOT IN`              |
-//! | `$betw`    | `BETWEEN AND`       | `BETWEEN AND`    | `BETWEEN AND`         |
-//! | `$like`    | `LIKE`              | `LIKE`           | `LIKE`                |
-//! | `$ilike`   | `ILIKE`             | `ILIKE`          | `LOWER() LIKE`        |
-//! | `$rlike`   | `RLIKE`             | `~*`             | `REGEXP`              |
-//! | `$is`      | `IS`                | `IS`             | `IS`                  |
-//! | `$size`    | `json_length()`     | `array_length()` | `json_array_length()` |
-//!
-//! [`Mongoose`]: https://mongoosejs.com/
-//! [`Prisma`]: https://www.prisma.io/
-//! [`TypeORM`]: https://typeorm.io/
-//! [`PostgREST`]: https://postgrest.org/
 
 use crate::{extension::TomlTableExt, state::State, LazyLock};
 use smallvec::SmallVec;
@@ -127,6 +32,7 @@ mod pool;
 mod query;
 mod schema;
 mod transaction;
+mod value;
 mod window;
 
 pub use accessor::ModelAccessor;
@@ -141,6 +47,7 @@ pub use pool::ConnectionPool;
 pub use query::QueryBuilder;
 pub use schema::Schema;
 pub use transaction::Transaction;
+pub use value::IntoSqlValue;
 pub use window::Window;
 
 #[cfg(feature = "orm-sqlx")]

@@ -63,5 +63,5 @@ features = ["axum"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.27.3"
+version = "0.27.4"
 features = ["openapi", "runtime-tokio"]

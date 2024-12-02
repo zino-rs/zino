@@ -37,6 +37,6 @@ pub use zino_core::auth::RegoEngine;
 #[cfg(feature = "orm")]
 #[doc(no_inline)]
 pub use zino_core::orm::{
-    Aggregation, Entity, JoinOn, ModelAccessor, ModelHelper, MutationBuilder, QueryBuilder,
-    ScalarQuery, Schema, Transaction, Window,
+    Aggregation, Entity, IntoSqlValue, JoinOn, ModelAccessor, ModelHelper, MutationBuilder,
+    QueryBuilder, ScalarQuery, Schema, Transaction, Window,
 };

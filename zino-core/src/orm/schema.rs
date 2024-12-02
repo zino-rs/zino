@@ -1,6 +1,6 @@
 use super::{
-    column::ColumnExt, mutation::MutationExt, query::QueryExt, ConnectionPool, DatabaseRow,
-    Executor, GlobalPool, JoinOn, ModelHelper,
+    column::ColumnExt, mutation::MutationExt, query::QueryExt, ConnectionPool, DatabaseRow, Entity,
+    Executor, GlobalPool, IntoSqlValue, JoinOn, ModelHelper, QueryBuilder,
 };
 use crate::{
     bail,
@@ -536,6 +536,56 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Ok(ctx)
     }
 
+    /// Prepares the SQL to insert models selected by a subquery.
+    async fn prepare_insert_from_subquery<C, E>(
+        columns: &[C],
+        subquery: QueryBuilder<E>,
+    ) -> Result<QueryContext, Error>
+    where
+        C: AsRef<str>,
+        E: Entity + Schema,
+    {
+        if columns.is_empty() {
+            bail!("a list of columns should be nonempty");
+        }
+
+        let table_name = Query::table_name_escaped::<Self>();
+        let fields = columns
+            .iter()
+            .map(|col| col.as_ref())
+            .collect::<Vec<_>>()
+            .join(", ");
+        let subquery = subquery.build_subquery();
+        let sql = format!("INSERT INTO {table_name} ({fields}) {subquery};");
+        let mut ctx = Self::before_scan(&sql).await?;
+        ctx.set_query(sql);
+        if cfg!(debug_assertions) && super::DEBUG_ONLY.load(Relaxed) {
+            ctx.cancel();
+        }
+        Ok(ctx)
+    }
+
+    /// Inserts the models selected by a subquery.
+    async fn insert_from_subquery<C, E>(
+        columns: &[C],
+        subquery: QueryBuilder<E>,
+    ) -> Result<QueryContext, Error>
+    where
+        C: AsRef<str>,
+        E: Entity + Schema,
+    {
+        let mut ctx = Self::prepare_insert_from_subquery(columns, subquery).await?;
+        if ctx.is_cancelled() {
+            return Ok(ctx);
+        }
+
+        let pool = Self::acquire_writer().await?.pool();
+        let query_result = pool.execute(ctx.query()).await?;
+        ctx.set_query_result(query_result.rows_affected(), true);
+        Self::after_scan(&ctx).await?;
+        Ok(ctx)
+    }
+
     /// Prepares the SQL to update the model in the table.
     async fn prepare_update(self) -> Result<QueryContext, Error> {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
@@ -592,14 +642,18 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Prepares the SQL to update the model for partial columns in the table.
-    async fn prepare_update_partial(self, columns: &[&str]) -> Result<QueryContext, Error> {
+    async fn prepare_update_partial<C: AsRef<str>>(
+        self,
+        columns: &[C],
+    ) -> Result<QueryContext, Error> {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let table_name = Query::table_name_escaped::<Self>();
         let primary_key = Query::escape_string(self.primary_key());
         let map = self.into_map();
         let read_only_fields = Self::read_only_fields();
         let mut mutations = Vec::with_capacity(columns.len());
-        for &field in columns {
+        for col in columns {
+            let field = col.as_ref();
             if !read_only_fields.contains(&field) {
                 if let Some(col) = Self::columns().iter().find(|col| col.name() == field) {
                     let value = col.encode_value(map.get(field));
@@ -622,7 +676,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Updates the model for partial columns in the table.
-    async fn update_partial(mut self, columns: &[&str]) -> Result<QueryContext, Error> {
+    async fn update_partial<C: AsRef<str>>(mut self, columns: &[C]) -> Result<QueryContext, Error> {
         let model_data = self.before_update().await?;
         let mut ctx = self.prepare_update_partial(columns).await?;
         if ctx.is_cancelled() {
@@ -942,6 +996,57 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Ok(ctx)
     }
 
+    /// Prepares the SQL to delete models selected by a subquery.
+    async fn prepare_delete_by_subquery<C, E>(
+        columns: &[C],
+        subquery: QueryBuilder<E>,
+    ) -> Result<QueryContext, Error>
+    where
+        C: AsRef<str>,
+        E: Entity + Schema,
+    {
+        if columns.is_empty() {
+            bail!("a list of columns should be nonempty");
+        }
+
+        let table_name = Query::table_name_escaped::<Self>();
+        let fields = columns
+            .iter()
+            .map(|col| col.as_ref())
+            .collect::<Vec<_>>()
+            .join(", ");
+        let subquery = subquery.build_subquery();
+        let sql = format!("DELETE FROM {table_name} WHERE ({fields}) IN {subquery};");
+        let mut ctx = Self::before_scan(&sql).await?;
+        ctx.set_query(sql);
+        if cfg!(debug_assertions) && super::DEBUG_ONLY.load(Relaxed) {
+            ctx.cancel();
+        }
+        Ok(ctx)
+    }
+
+    /// Deletes the models selected by a subquery.
+    async fn delete_by_subquery<C, E>(
+        columns: &[C],
+        subquery: QueryBuilder<E>,
+    ) -> Result<QueryContext, Error>
+    where
+        C: AsRef<str>,
+        E: Entity + Schema,
+    {
+        let mut ctx = Self::prepare_delete_by_subquery(columns, subquery).await?;
+        if ctx.is_cancelled() {
+            return Ok(ctx);
+        }
+
+        let pool = Self::acquire_writer().await?.pool();
+        let query_result = pool.execute(ctx.query()).await?;
+        ctx.set_query_result(query_result.rows_affected(), true);
+        Self::after_scan(&ctx).await?;
+        Self::after_query(&ctx).await?;
+        Ok(ctx)
+    }
+
     /// Finds a list of models selected by the query in the table,
     /// and decodes it as `Vec<T>`.
     async fn find<T>(query: &Query) -> Result<Vec<T>, Error>
@@ -1028,18 +1133,18 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Populates the related data in the corresponding `columns` for `Vec<Map>` using
     /// a merged select on the primary key, which solves the `N+1` problem.
-    async fn populate(
+    async fn populate<C: AsRef<str>>(
         query: &mut Query,
         data: &mut Vec<Map>,
-        columns: &[&str],
+        columns: &[C],
     ) -> Result<u64, Error> {
         Self::before_query(query).await?;
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
         for row in data.iter() {
-            for &col in columns {
-                if let Some(value) = row.get(col) {
+            for col in columns {
+                if let Some(value) = row.get(col.as_ref()) {
                     if let JsonValue::Array(vec) = value {
                         for value in vec {
                             if !values.contains(value) {
@@ -1088,9 +1193,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::after_query(&ctx).await?;
 
         for row in data {
-            for &col in columns {
-                if let Some(vec) = row.get_array(col).filter(|vec| !vec.is_empty()) {
-                    let populated_field = [col, "_populated"].concat();
+            for col in columns {
+                let field = col.as_ref();
+                if let Some(vec) = row.get_array(field).filter(|vec| !vec.is_empty()) {
+                    let populated_field = [field, "_populated"].concat();
                     let populated_values = vec
                         .iter()
                         .map(|key| {
@@ -1105,12 +1211,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                         })
                         .collect::<Vec<_>>();
                     row.upsert(populated_field, populated_values);
-                } else if let Some(key) = row.get(col) {
+                } else if let Some(key) = row.get(field) {
                     let populated_value = associations
                         .iter()
                         .find_map(|(k, v)| (key == k).then_some(v));
                     if let Some(value) = populated_value {
-                        let populated_field = [col, "_populated"].concat();
+                        let populated_field = [field, "_populated"].concat();
                         row.upsert(populated_field, value.clone());
                     }
                 }
@@ -1121,17 +1227,17 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Populates the related data in the corresponding `columns` for `Map` using
     /// a merged select on the primary key, which solves the `N+1` problem.
-    async fn populate_one(
+    async fn populate_one<C: AsRef<str>>(
         query: &mut Query,
         data: &mut Map,
-        columns: &[&str],
+        columns: &[C],
     ) -> Result<(), Error> {
         Self::before_query(query).await?;
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut values = Vec::new();
-        for &col in columns {
-            if let Some(value) = data.get(col) {
+        for col in columns {
+            if let Some(value) = data.get(col.as_ref()) {
                 if let JsonValue::Array(vec) = value {
                     for value in vec {
                         if !values.contains(value) {
@@ -1176,9 +1282,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Self::after_scan(&ctx).await?;
         Self::after_query(&ctx).await?;
 
-        for &col in columns {
-            if let Some(vec) = data.get_array(col).filter(|vec| !vec.is_empty()) {
-                let populated_field = [col, "_populated"].concat();
+        for col in columns {
+            let field = col.as_ref();
+            if let Some(vec) = data.get_array(field).filter(|vec| !vec.is_empty()) {
+                let populated_field = [field, "_populated"].concat();
                 let populated_values = vec
                     .iter()
                     .map(|key| {
@@ -1193,12 +1300,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     })
                     .collect::<Vec<_>>();
                 data.upsert(populated_field, populated_values);
-            } else if let Some(key) = data.get(col) {
+            } else if let Some(key) = data.get(field) {
                 let populated_value = associations
                     .iter()
                     .find_map(|(k, v)| (key == k).then_some(v));
                 if let Some(value) = populated_value {
-                    let populated_field = [col, "_populated"].concat();
+                    let populated_field = [field, "_populated"].concat();
                     data.upsert(populated_field, value.clone());
                 }
             }
@@ -1302,8 +1409,9 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Counts the number of rows selected by the query in the table.
     /// The boolean value determines whether it only counts distinct values or not.
-    async fn count_many<T>(query: &Query, columns: &[(&str, bool)]) -> Result<T, Error>
+    async fn count_many<C, T>(query: &Query, columns: &[(C, bool)]) -> Result<T, Error>
     where
+        C: AsRef<str>,
         T: DecodeRow<DatabaseRow, Error = Error>,
     {
         Self::before_count(query).await?;
@@ -1312,13 +1420,14 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let filters = query.format_filters::<Self>();
         let projection = columns
             .iter()
-            .map(|&(key, distinct)| {
-                let field = Query::format_field(key);
-                if key != "*" {
-                    if distinct {
-                        format!(r#"count(distinct {field}) AS {key}_distinct"#)
+            .map(|(col, distinct)| {
+                let col_name = col.as_ref();
+                let field = Query::format_field(col_name);
+                if col_name != "*" {
+                    if *distinct {
+                        format!(r#"count(distinct {field}) AS {col_name}_distinct"#)
                     } else {
-                        format!(r#"count({field}) AS {key}_count"#)
+                        format!(r#"count({field}) AS {col_name}_count"#)
                     }
                 } else {
                     "count(*)".to_owned()
@@ -1340,11 +1449,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Counts the number of rows selected by the query in the table,
     /// and parses it as an instance of type `T`.
-    async fn count_many_as<T: DeserializeOwned>(
-        query: &Query,
-        columns: &[(&str, bool)],
-    ) -> Result<T, Error> {
-        let map = Self::count_many::<Map>(query, columns).await?;
+    async fn count_many_as<C, T>(query: &Query, columns: &[(C, bool)]) -> Result<T, Error>
+    where
+        C: AsRef<str>,
+        T: DeserializeOwned,
+    {
+        let map = Self::count_many::<C, Map>(query, columns).await?;
         serde_json::from_value(map.into()).map_err(Error::from)
     }
 
@@ -1659,14 +1769,15 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Filters the values of the primary key.
-    async fn filter<T: Into<JsonValue>>(
-        primary_key_values: Vec<T>,
-    ) -> Result<Vec<JsonValue>, Error> {
+    async fn filter<T: IntoSqlValue>(primary_key_values: Vec<T>) -> Result<Vec<JsonValue>, Error> {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let limit = primary_key_values.len();
         let mut query = Query::default();
         query.allow_fields(&[primary_key_name]);
-        query.add_filter(primary_key_name, Map::from_entry("$in", primary_key_values));
+        query.add_filter(
+            primary_key_name,
+            Map::from_entry("$in", primary_key_values.into_sql_value()),
+        );
         query.set_limit(limit);
 
         let data = Self::find::<Map>(&query).await?;
