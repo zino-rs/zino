@@ -1,28 +1,28 @@
-use crate::model::User;
+use crate::model::{User, UserColumn::*};
 use zino::{prelude::*, Request, Response, Result};
 use zino_model::user::JwtAuthService;
 
 pub async fn login(mut req: Request) -> Result {
-    let current_time = DateTime::now();
     let body: Map = req.parse_body().await?;
     let (user_id, mut data) = User::generate_token(body).await.extract(&req)?;
 
-    let user_updates = json!({
-        "status": "Active",
-        "last_login_at": data.remove("current_login_at").and_then(|v| v.as_date_time()),
-        "last_login_ip": data.remove("current_login_ip"),
-        "current_login_at": current_time,
-        "current_login_ip": req.client_ip(),
-        "$inc": { "login_count": 1 },
-    });
-
-    let mut user_mutations = user_updates.into_map_opt().unwrap_or_default();
-    let (validation, user) = User::update_by_id(&user_id, &mut user_mutations, None)
+    let last_login_ip = data.remove("current_login_ip");
+    let last_login_at = data
+        .remove("current_login_at")
+        .and_then(|v| v.as_date_time());
+    let mut mutation = MutationBuilder::<User>::new()
+        .set(Status, "Active")
+        .set_if_not_null(LastLoginIp, last_login_ip)
+        .set_if_some(LastLoginAt, last_login_at)
+        .set_if_some(CurrentLoginIp, req.client_ip())
+        .set_now(CurrentLoginAt)
+        .inc_one(LoginCount)
+        .set_now(UpdatedAt)
+        .inc_one(Version)
+        .build();
+    let user: User = User::update_by_id(&user_id, &mut mutation)
         .await
         .extract(&req)?;
-    if !validation.is_success() {
-        reject!(req, validation);
-    }
     data.upsert("entry", user.snapshot());
 
     let mut res = Response::default().context(&req);
@@ -41,20 +41,20 @@ pub async fn refresh(req: Request) -> Result {
 pub async fn logout(req: Request) -> Result {
     let user_session = req
         .get_data::<UserSession<_>>()
-        .ok_or_else(|| warn!("401 Unauthorized: the user session is invalid"))
+        .ok_or_else(|| warn!("401 Unauthorized: user session is invalid"))
         .extract(&req)?;
-
-    let mut mutations = Map::from_entry("status", "SignedOut");
     let user_id = user_session.user_id();
-    let (validation, user) = User::update_by_id(user_id, &mut mutations, None)
+
+    let mut mutation = MutationBuilder::<User>::new()
+        .set(Status, "SignedOut")
+        .set_now(UpdatedAt)
+        .inc_one(Version)
+        .build();
+    let user: User = User::update_by_id(user_id, &mut mutation)
         .await
         .extract(&req)?;
-    if !validation.is_success() {
-        reject!(req, validation);
-    }
 
-    let data = Map::data_entry(user.snapshot());
     let mut res = Response::default().context(&req);
-    res.set_json_data(data);
+    res.set_json_data(Map::data_entry(user.snapshot()));
     Ok(res.into())
 }

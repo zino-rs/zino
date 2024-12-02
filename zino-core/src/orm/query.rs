@@ -320,6 +320,17 @@ impl<E: Entity> QueryBuilder<E> {
         self
     }
 
+    /// Adds a logical `AND` condition for equal parts if the value is not null.
+    #[inline]
+    pub fn and_eq_if_not_null(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
+        let value = value.into_sql_value();
+        if !value.is_null() {
+            let condition = Map::from_entry(E::format_column(&col), value);
+            self.logical_and.push(condition);
+        }
+        self
+    }
+
     /// Adds a logical `AND` condition for equal parts if the value is not none.
     #[inline]
     pub fn and_eq_if_some<T: IntoSqlValue>(mut self, col: E::Column, value: Option<T>) -> Self {
@@ -334,6 +345,17 @@ impl<E: Entity> QueryBuilder<E> {
     #[inline]
     pub fn and_ne(self, col: E::Column, value: impl IntoSqlValue) -> Self {
         self.push_logical_and(col, "$ne", value.into_sql_value())
+    }
+
+    /// Adds a logical `AND` condition for non-equal parts if the value is not null.
+    #[inline]
+    pub fn and_ne_if_not_null(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+        let value = value.into_sql_value();
+        if !value.is_null() {
+            self.push_logical_and(col, "$ne", value)
+        } else {
+            self
+        }
     }
 
     /// Adds a logical `AND` condition for non-equal parts if the value is not none.
@@ -388,6 +410,48 @@ impl<E: Entity> QueryBuilder<E> {
         V: Into<Vec<T>>,
     {
         self.push_logical_and(col, "$nin", values.into().into_sql_value())
+    }
+
+    /// Adds a logical `AND` condition for the columns `IN` a subquery.
+    pub fn and_in_subquery<C, M>(mut self, cols: C, subquery: QueryBuilder<M>) -> Self
+    where
+        C: Into<Vec<E::Column>>,
+        M: Entity + Schema,
+    {
+        let cols = cols
+            .into()
+            .into_iter()
+            .map(|col| {
+                let col_name = E::format_column(&col);
+                Query::format_field(&col_name).into_owned()
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+        let field = format!("({cols})");
+        let condition = Map::from_entry("$in", subquery.into_sql_value());
+        self.logical_and.push(Map::from_entry(field, condition));
+        self
+    }
+
+    /// Adds a logical `AND` condition for the columns `NOT IN` a subquery.
+    pub fn and_not_in_subquery<C, M>(mut self, cols: C, subquery: QueryBuilder<M>) -> Self
+    where
+        C: Into<Vec<E::Column>>,
+        M: Entity + Schema,
+    {
+        let cols = cols
+            .into()
+            .into_iter()
+            .map(|col| {
+                let col_name = E::format_column(&col);
+                Query::format_field(&col_name).into_owned()
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+        let field = format!("({cols})");
+        let condition = Map::from_entry("$nin", subquery.into_sql_value());
+        self.logical_and.push(Map::from_entry(field, condition));
+        self
     }
 
     /// Adds a logical `AND` condition for the column in a range `[min, max)`.
@@ -514,6 +578,17 @@ impl<E: Entity> QueryBuilder<E> {
         self
     }
 
+    /// Adds a logical `OR` condition for equal parts if the value is not null.
+    #[inline]
+    pub fn or_eq_if_not_null(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
+        let value = value.into_sql_value();
+        if !value.is_null() {
+            let condition = Map::from_entry(E::format_column(&col), value);
+            self.logical_or.push(condition);
+        }
+        self
+    }
+
     /// Adds a logical `OR` condition for equal parts if the value is not none.
     #[inline]
     pub fn or_eq_if_some<T: IntoSqlValue>(mut self, col: E::Column, value: Option<T>) -> Self {
@@ -528,6 +603,17 @@ impl<E: Entity> QueryBuilder<E> {
     #[inline]
     pub fn or_ne(self, col: E::Column, value: impl IntoSqlValue) -> Self {
         self.push_logical_or(col, "$ne", value.into_sql_value())
+    }
+
+    /// Adds a logical `OR` condition for non-equal parts if the value is not none.
+    #[inline]
+    pub fn or_ne_if_not_null(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+        let value = value.into_sql_value();
+        if !value.is_null() {
+            self.push_logical_or(col, "$ne", value)
+        } else {
+            self
+        }
     }
 
     /// Adds a logical `OR` condition for non-equal parts if the value is not none.
@@ -582,6 +668,48 @@ impl<E: Entity> QueryBuilder<E> {
         V: Into<Vec<T>>,
     {
         self.push_logical_or(col, "$nin", values.into().into_sql_value())
+    }
+
+    /// Adds a logical `OR` condition for the columns `IN` a subquery.
+    pub fn or_in_subquery<C, M>(mut self, cols: C, subquery: QueryBuilder<M>) -> Self
+    where
+        C: Into<Vec<E::Column>>,
+        M: Entity + Schema,
+    {
+        let cols = cols
+            .into()
+            .into_iter()
+            .map(|col| {
+                let col_name = E::format_column(&col);
+                Query::format_field(&col_name).into_owned()
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+        let field = format!("({cols})");
+        let condition = Map::from_entry("$in", subquery.into_sql_value());
+        self.logical_or.push(Map::from_entry(field, condition));
+        self
+    }
+
+    /// Adds a logical `OR` condition for the columns `NOT IN` a subquery.
+    pub fn or_not_in_subquery<C, M>(mut self, cols: C, subquery: QueryBuilder<M>) -> Self
+    where
+        C: Into<Vec<E::Column>>,
+        M: Entity + Schema,
+    {
+        let cols = cols
+            .into()
+            .into_iter()
+            .map(|col| {
+                let col_name = E::format_column(&col);
+                Query::format_field(&col_name).into_owned()
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+        let field = format!("({cols})");
+        let condition = Map::from_entry("$nin", subquery.into_sql_value());
+        self.logical_or.push(Map::from_entry(field, condition));
+        self
     }
 
     /// Adds a logical `OR` condition for the column is in a range `[min, max)`.
@@ -1045,10 +1173,16 @@ pub(super) trait QueryExt<DB> {
                     "$le" => "<=",
                     "$gt" => ">",
                     "$ge" => ">=",
+                    "$in" => "IN",
+                    "$nin" => "NOT IN",
                     _ => "=",
                 };
                 let field = Self::format_field(key);
-                let condition = if let Some(s) = value.as_str() {
+                let condition = if let Some(subquery) =
+                    value.as_object().and_then(|m| m.get_str("$subquery"))
+                {
+                    format!(r#"{field} {operator} {subquery}"#)
+                } else if let Some(s) = value.as_str() {
                     if name == "$subquery" {
                         format!(r#"{field} {operator} {s}"#)
                     } else {

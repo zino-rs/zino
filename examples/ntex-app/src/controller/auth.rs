@@ -16,7 +16,7 @@ pub async fn login(mut req: Request) -> Result {
     });
 
     let mut user_mutations = user_updates.into_map_opt().unwrap_or_default();
-    let (validation, user) = User::update_by_id(&user_id, &mut user_mutations, None)
+    let (validation, user) = User::mutate_by_id(&user_id, &mut user_mutations, None)
         .await
         .extract(&req)?;
     if !validation.is_success() {
@@ -45,7 +45,7 @@ pub async fn logout(req: Request) -> Result {
 
     let mut mutations = Map::from_entry("status", "SignedOut");
     let user_id = user_session.user_id();
-    let (validation, user) = User::update_by_id(user_id, &mut mutations, None)
+    let (validation, user) = User::mutate_by_id(user_id, &mut mutations, None)
         .await
         .extract(&req)?;
     if !validation.is_success() {

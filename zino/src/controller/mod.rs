@@ -132,7 +132,7 @@ where
         let mut body = req.parse_body().await?;
 
         let extension = req.get_data::<<Self as ModelHooks>::Extension>();
-        let (validation, model) = Self::update_by_id(&id, &mut body, extension)
+        let (validation, model) = Self::mutate_by_id(&id, &mut body, extension)
             .await
             .extract(&req)?;
         let mut res = Response::from(validation).context(&req);

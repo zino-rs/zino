@@ -407,8 +407,8 @@ where
         Ok(())
     }
 
-    /// Updates a model of the primary key using the json object.
-    async fn update_by_id(
+    /// Mutates a model of the primary key with the JSON data and the optional extension.
+    async fn mutate_by_id(
         id: &K,
         data: &mut Map,
         extension: Option<<Self as ModelHooks>::Extension>,

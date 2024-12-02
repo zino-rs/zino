@@ -206,7 +206,10 @@ impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
                             name
                         }
                     };
-                    if operator == "IN" || operator == "NOT IN" {
+                    if let Some(subquery) = value.as_object().and_then(|m| m.get_str("$subquery")) {
+                        let condition = format!(r#"{field} {operator} {subquery}"#);
+                        conditions.push(condition);
+                    } else if operator == "IN" || operator == "NOT IN" {
                         if let Some(values) = value.as_array() {
                             if values.is_empty() {
                                 let condition = if operator == "IN" { "FALSE" } else { "TRUE" };
@@ -627,12 +630,12 @@ impl QueryExt<DatabaseDriver> for Query {
         } else if field.contains('.') {
             field
                 .split('.')
-                .map(|s| format!(r#""{s}""#))
+                .map(|s| ["\"", s, "\""].concat())
                 .collect::<Vec<_>>()
                 .join(".")
                 .into()
         } else {
-            format!(r#""{field}""#).into()
+            ["\"", field, "\""].concat().into()
         }
     }
 
@@ -651,7 +654,7 @@ impl QueryExt<DatabaseDriver> for Query {
                     } else if field.contains('.') {
                         field
                             .split('.')
-                            .map(|s| format!(r#""{s}""#))
+                            .map(|s| ["\"", s, "\""].concat())
                             .collect::<Vec<_>>()
                             .join(".")
                     } else {
@@ -670,7 +673,7 @@ impl QueryExt<DatabaseDriver> for Query {
         if table_name.contains('.') {
             let table_name = table_name
                 .split('.')
-                .map(|s| format!(r#""{s}""#))
+                .map(|s| ["\"", s, "\""].concat())
                 .collect::<Vec<_>>()
                 .join(".");
             format!(r#"{table_name} AS "{model_name}""#)
@@ -684,11 +687,11 @@ impl QueryExt<DatabaseDriver> for Query {
         if table_name.contains('.') {
             table_name
                 .split('.')
-                .map(|s| format!(r#""{s}""#))
+                .map(|s| ["\"", s, "\""].concat())
                 .collect::<Vec<_>>()
                 .join(".")
         } else {
-            format!(r#""{table_name}""#)
+            ["\"", table_name, "\""].concat()
         }
     }
 

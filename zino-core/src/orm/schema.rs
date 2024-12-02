@@ -10,6 +10,7 @@ use crate::{
     warn, JsonValue, Map,
 };
 use serde::de::DeserializeOwned;
+use sqlx::Acquire;
 use std::{fmt::Display, sync::atomic::Ordering::Relaxed};
 
 /// Database schema.
@@ -1638,6 +1639,92 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 rows_affected
             );
         }
+    }
+
+    /// Prepares the SQL to update a model selected by the primary key in the table.
+    async fn prepare_update_by_id(mutation: &mut Mutation) -> Result<QueryContext, Error> {
+        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let table_name = Query::table_name_escaped::<Self>();
+        let updates = mutation.format_updates::<Self>();
+        let placeholder = Query::placeholder(1);
+        let sql = if cfg!(any(
+            feature = "orm-mariadb",
+            feature = "orm-mysql",
+            feature = "orm-tidb"
+        )) {
+            format!(
+                "UPDATE {table_name} SET {updates} \
+                    WHERE {primary_key_name} = {placeholder};"
+            )
+        } else if cfg!(feature = "orm-postgres") {
+            let type_annotation = Self::primary_key_column().type_annotation();
+            format!(
+                "UPDATE {table_name} SET {updates} \
+                    WHERE {primary_key_name} = ({placeholder}){type_annotation} RETURNING *;"
+            )
+        } else {
+            format!(
+                "UPDATE {table_name} SET {updates} \
+                    WHERE {primary_key_name} = {placeholder} RETURNING *;"
+            )
+        };
+        let mut ctx = Self::before_scan(&sql).await?;
+        ctx.set_query(sql);
+        if cfg!(debug_assertions) && super::DEBUG_ONLY.load(Relaxed) {
+            ctx.cancel();
+        }
+        Ok(ctx)
+    }
+
+    /// Updates a model selected by the primary key in the table,
+    /// and decodes it as an instance of type `T`.
+    async fn update_by_id<T>(
+        primary_key: &Self::PrimaryKey,
+        mutation: &mut Mutation,
+    ) -> Result<Option<T>, Error>
+    where
+        T: DecodeRow<DatabaseRow, Error = Error>,
+    {
+        let mut ctx = Self::prepare_update_by_id(mutation).await?;
+        if ctx.is_cancelled() {
+            return Ok(None);
+        }
+
+        let pool = Self::acquire_writer().await?.pool();
+        let optional_row = if cfg!(any(
+            feature = "orm-mariadb",
+            feature = "orm-mysql",
+            feature = "orm-tidb"
+        )) {
+            let mut transaction = pool.begin().await?;
+            let connection = transaction.acquire().await?;
+            let query_result = connection.execute_with(ctx.query(), &[primary_key]).await?;
+            let optional_row = if query_result.rows_affected() == 1 {
+                let primary_key_name = Self::PRIMARY_KEY_NAME;
+                let table_name = Query::table_name_escaped::<Self>();
+                let placeholder = Query::placeholder(1);
+                let sql =
+                    format!("SELECT * FROM {table_name} WHERE {primary_key_name} = {placeholder};");
+                connection.fetch_optional_with(&sql, &[primary_key]).await?
+            } else {
+                None
+            };
+            transaction.commit().await?;
+            optional_row
+        } else {
+            pool.fetch_optional_with(ctx.query(), &[primary_key])
+                .await?
+        };
+        let (num_rows, data) = if let Some(row) = optional_row {
+            (1, Some(T::decode_row(&row)?))
+        } else {
+            (0, None)
+        };
+        ctx.add_argument(primary_key);
+        ctx.set_query_result(num_rows, true);
+        Self::after_scan(&ctx).await?;
+        Self::after_query(&ctx).await?;
+        Ok(data)
     }
 
     /// Finds a model selected by the primary key in the table,

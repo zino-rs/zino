@@ -63,6 +63,25 @@ impl<E: Entity> MutationBuilder<E> {
         self
     }
 
+    /// Sets the value of a column if the value is not null.
+    #[inline]
+    pub fn set_if_not_null(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
+        let value = value.into_sql_value();
+        if !value.is_null() {
+            self.updates.upsert(col.as_ref(), value);
+        }
+        self
+    }
+
+    /// Sets the value of a column if the value is not none.
+    #[inline]
+    pub fn set_if_some<T: IntoSqlValue>(mut self, col: E::Column, value: Option<T>) -> Self {
+        if let Some(value) = value {
+            self.updates.upsert(col.as_ref(), value.into_sql_value());
+        }
+        self
+    }
+
     /// Sets the value of a column to the current date time.
     #[inline]
     pub fn set_now(mut self, col: E::Column) -> Self {

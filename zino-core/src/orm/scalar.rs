@@ -166,13 +166,14 @@ where
 
     /// Finds a model selected by the primary key in the table,
     /// and decodes the column value as a single concrete type `T`.
-    async fn find_scalar_by_id<T>(primary_key: &Self::PrimaryKey, column: &str) -> Result<T, Error>
+    async fn find_scalar_by_id<C, T>(primary_key: &Self::PrimaryKey, column: C) -> Result<T, Error>
     where
+        C: AsRef<str>,
         T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
     {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let table_name = Query::table_name_escaped::<Self>();
-        let projection = Query::format_field(column);
+        let projection = Query::format_field(column.as_ref());
         let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
             let type_annotation = Self::primary_key_column().type_annotation();
