@@ -4,7 +4,7 @@ use crate::{
     datetime::DateTime,
     extension::JsonObjectExt,
     model::{EncodeColumn, Mutation, Query},
-    Map,
+    JsonValue, Map,
 };
 use std::marker::PhantomData;
 
@@ -79,6 +79,13 @@ impl<E: Entity> MutationBuilder<E> {
         if let Some(value) = value {
             self.updates.upsert(col.as_ref(), value.into_sql_value());
         }
+        self
+    }
+
+    /// Sets the value of a column to null.
+    #[inline]
+    pub fn set_null(mut self, col: E::Column) -> Self {
+        self.updates.upsert(col.as_ref(), JsonValue::Null);
         self
     }
 

@@ -30,11 +30,7 @@ pub struct Tag {
     // Info fields.
     #[schema(not_null, index_type = "hash", comment = "Tag category")]
     category: String,
-    #[schema(
-        snapshot,
-        reference = "Tag",
-        comment = "Optional parent tag"
-    )]
+    #[schema(snapshot, reference = "Tag", comment = "Optional parent tag")]
     parent_id: Option<Uuid>,
 
     // Extensions.

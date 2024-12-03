@@ -24,21 +24,21 @@ pub mod task;
 pub mod log;
 pub mod record;
 
-pub use group::Group;
-pub use policy::Policy;
-pub use resource::Resource;
-pub use tag::Tag;
-pub use user::User;
+pub use group::{Group, GroupColumn};
+pub use policy::{Policy, PolicyColumn};
+pub use resource::{Resource, ResourceColumn};
+pub use tag::{Tag, TagColumn};
+pub use user::{User, UserColumn};
 
-pub use application::Application;
-pub use message::Message;
-pub use order::Order;
+pub use application::{Application, ApplicationColumn};
+pub use message::{Message, MessageColumn};
+pub use order::{Order, OrderColumn};
 
-pub use collection::Collection;
-pub use dataset::Dataset;
-pub use project::Project;
-pub use source::Source;
-pub use task::Task;
+pub use collection::{Collection, CollectionColumn};
+pub use dataset::{Dataset, DatasetColumn};
+pub use project::{Project, ProjectColumn};
+pub use source::{Source, SourceColumn};
+pub use task::{Task, TaskColumn};
 
-pub use log::Log;
-pub use record::Record;
+pub use log::{Log, LogColumn};
+pub use record::{Record, RecordColumn};

@@ -10,6 +10,7 @@ members = [
     "zino-derive",
     "zino-dioxus",
     "zino-extra",
+    "zino-http",
     "zino-middleware",
     "zino-model",
     "zino-ntex",

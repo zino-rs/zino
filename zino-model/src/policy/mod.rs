@@ -10,7 +10,7 @@ use zino_core::{
     validation::Validation,
     Map, Uuid,
 };
-use zino_derive::{DecodeRow, ModelAccessor, Schema};
+use zino_derive::{DecodeRow, Entity, ModelAccessor, Schema};
 
 #[cfg(feature = "tags")]
 use crate::tag::Tag;
@@ -22,8 +22,11 @@ use crate::user::User;
 use zino_core::auth::UserSession;
 
 /// The `policy` model.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, DecodeRow, Schema, ModelAccessor)]
+#[derive(
+    Debug, Clone, Default, Serialize, Deserialize, DecodeRow, Entity, Schema, ModelAccessor,
+)]
 #[serde(default)]
+#[schema(auto_rename)]
 pub struct Policy {
     // Basic fields.
     #[schema(read_only)]

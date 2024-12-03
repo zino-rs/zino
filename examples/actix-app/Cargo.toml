@@ -1,8 +1,8 @@
 [package]
 name = "actix-app"
 description = "An example for actix-web integration."
-version = "0.9.0"
-rust-version = "1.75"
+version = "0.9.1"
+rust-version = "1.80"
 edition = "2021"
 publish = false
 
@@ -19,7 +19,7 @@ features = ["derive"]
 
 [dependencies.zino]
 path = "../../zino"
-version = "0.26.4"
+version = "0.27.0"
 features = [
     "actix",
     "i18n",
@@ -30,7 +30,7 @@ features = [
 
 [dependencies.zino-core]
 path = "../../zino-core"
-version = "0.27.4"
+version = "0.28.0"
 features = [
     "cookie",
     "env-filter",
@@ -40,8 +40,8 @@ features = [
 
 [dependencies.zino-derive]
 path = "../../zino-derive"
-version = "0.24.4"
+version = "0.25.0"
 
 [dependencies.zino-model]
 path = "../../zino-model"
-version = "0.24.4"
+version = "0.25.0"

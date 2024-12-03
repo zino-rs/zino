@@ -9,7 +9,7 @@ use zino_core::{
     validation::Validation,
     Map, Uuid,
 };
-use zino_derive::{DecodeRow, ModelAccessor, Schema};
+use zino_derive::{DecodeRow, Entity, ModelAccessor, Schema};
 
 #[cfg(any(feature = "owner-id", feature = "maintainer-id"))]
 use crate::user::User;
@@ -18,8 +18,11 @@ use crate::user::User;
 use zino_core::auth::UserSession;
 
 /// The `record` model.
-#[derive(Debug, Clone, Default, Serialize, Deserialize, DecodeRow, Schema, ModelAccessor)]
+#[derive(
+    Debug, Clone, Default, Serialize, Deserialize, DecodeRow, Entity, Schema, ModelAccessor,
+)]
 #[serde(default)]
+#[schema(auto_rename)]
 pub struct Record {
     // Basic fields.
     #[schema(read_only)]
