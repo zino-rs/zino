@@ -4,6 +4,7 @@ members = [
     "zino",
     "zino-actix",
     "zino-amis",
+    "zino-auth",
     "zino-axum",
     "zino-chart",
     "zino-core",
