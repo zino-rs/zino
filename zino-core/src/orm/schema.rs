@@ -1878,15 +1878,21 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Returns `true` if the model is unique on the column values.
-    async fn is_unique_on(&self, columns: Vec<(&str, JsonValue)>) -> Result<bool, Error> {
+    async fn is_unique_on<C, T>(&self, columns: Vec<(C, T)>) -> Result<bool, Error>
+    where
+        C: AsRef<str>,
+        T: IntoSqlValue,
+    {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let mut query = Query::default();
-        let mut fields = vec![primary_key_name];
-        for (field, value) in columns.into_iter() {
-            fields.push(field);
-            query.add_filter(field, value);
+        let mut fields = Vec::with_capacity(columns.len() + 1);
+        fields.push(primary_key_name.to_owned());
+        for (col, value) in columns.into_iter() {
+            let field = col.as_ref();
+            fields.push(field.to_owned());
+            query.add_filter(field, value.into_sql_value());
         }
-        query.allow_fields(&fields);
+        query.set_fields(fields);
         query.set_limit(2);
 
         let data = Self::find::<Map>(&query).await?;
