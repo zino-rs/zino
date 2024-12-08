@@ -12,7 +12,7 @@ use std::borrow::Cow;
 #[cfg(feature = "orm-sqlx")]
 use sqlx::{types::Decimal, Column as _, Row, TypeInfo, ValueRef};
 
-impl<'c> EncodeColumn<DatabaseDriver> for Column<'c> {
+impl EncodeColumn<DatabaseDriver> for Column<'_> {
     fn column_type(&self) -> &str {
         if let Some(column_type) = self.extra().get_str("column_type") {
             return column_type;

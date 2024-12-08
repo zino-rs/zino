@@ -232,6 +232,9 @@ pub trait JsonObjectExt {
     /// The addressed value is returned and if there is no such value `None` is returned.
     fn pointer(&self, pointer: &str) -> Option<&JsonValue>;
 
+    /// Looks up a value by a JSON Pointer and returns a mutable reference to that value.
+    fn pointer_mut(&mut self, pointer: &str) -> Option<&mut JsonValue>;
+
     /// Inserts or updates a  pair into the map.
     /// If the map did have this key present, the value is updated and the old value is returned,
     /// otherwise `None` is returned.
@@ -729,6 +732,16 @@ impl JsonObjectExt for Map {
             self.get(key)?.pointer(pointer)
         } else {
             self.get(path)
+        }
+    }
+
+    fn pointer_mut(&mut self, pointer: &str) -> Option<&mut JsonValue> {
+        let path = pointer.strip_prefix('/')?;
+        if let Some(position) = path.find('/') {
+            let (key, pointer) = path.split_at(position);
+            self.get_mut(key)?.pointer_mut(pointer)
+        } else {
+            self.get_mut(path)
         }
     }
 

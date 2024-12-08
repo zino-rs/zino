@@ -521,6 +521,18 @@ impl<E: Entity> QueryBuilder<E> {
         self.push_logical_and(col, "$is", "not_null".into_sql_value())
     }
 
+    /// Adds a logical `AND` condition for the column which is an empty string or a null.
+    #[inline]
+    pub fn and_empty(self, col: E::Column) -> Self {
+        self.and_eq(col, "null")
+    }
+
+    /// Adds a logical `AND` condition for the column which is not an empty string or a null.
+    #[inline]
+    pub fn and_nonempty(self, col: E::Column) -> Self {
+        self.and_eq(col, "not_null")
+    }
+
     /// Adds a logical `AND` condition for the two ranges which overlaps with each other.
     pub fn and_overlaps<T: IntoSqlValue>(
         mut self,
@@ -777,6 +789,18 @@ impl<E: Entity> QueryBuilder<E> {
     #[inline]
     pub fn or_not_null(self, col: E::Column) -> Self {
         self.push_logical_or(col, "$is", "not_null".into_sql_value())
+    }
+
+    /// Adds a logical `OR` condition for the column which is an empty string or a null.
+    #[inline]
+    pub fn or_empty(self, col: E::Column) -> Self {
+        self.or_eq(col, "null")
+    }
+
+    /// Adds a logical `OR` condition for the column which is not an empty string or a null.
+    #[inline]
+    pub fn or_nonempty(self, col: E::Column) -> Self {
+        self.or_eq(col, "not_null")
     }
 
     /// Adds a logical `OR` condition for the two ranges which overlaps with each other.

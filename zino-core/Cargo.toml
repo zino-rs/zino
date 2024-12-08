@@ -213,7 +213,7 @@ faster-hex = "0.10.0"
 futures = "0.3.30"
 hkdf = "0.12.4"
 hmac = "0.12.1"
-http = "1.1.0"
+http = "1.2.0"
 md-5 = "0.10.6"
 mime_guess = "2.0.5"
 multer = "3.1.0"
@@ -445,7 +445,7 @@ features = [
 ]
 
 [dev-dependencies]
-anyhow = "1.0.93"
+anyhow = "1.0.94"
 arrayvec = "0.7.6"
 base64-simd = "0.8.0"
 criterion = "0.5.1"

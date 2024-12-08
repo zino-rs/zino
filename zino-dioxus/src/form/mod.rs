@@ -43,7 +43,7 @@ pub trait DataEntry {
     fn label(&self) -> Cow<'_, str>;
 }
 
-impl<'a> DataEntry for [&'a str; 2] {
+impl DataEntry for [&str; 2] {
     #[inline]
     fn key(&self) -> Cow<'_, str> {
         self[0].into()

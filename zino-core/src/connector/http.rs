@@ -32,15 +32,12 @@ use url::Url;
 ///         .get_config("amap")
 ///         .expect("the `amap` field should be a table");
 ///     let base_url = "https://restapi.amap.com/v3/geocode/geo";
-///     let mut connector = HttpConnector::try_new("GET", base_url)
-///         .expect("fail to construct AMap Geocode connector");
-///     connector.set_query(&json!({
-///         "key": config.get_str("key"),
-///         "address": "${address}",
-///         "city": "${city}",
-///         "output": "JSON",
-///     }));
-///     connector
+///     connector = HttpConnector::try_new("GET", base_url)
+///         .expect("fail to construct AMap Geocode connector")
+///         .query("output", "JSON")
+///         .query("key", config.get_str("key"))
+///         .query_param("address", None)
+///         .query_param("city", None)
 /// });
 ///
 /// async fn get_lng_lat(city: &str, address: &str) -> Result<(f32, f32), Error> {
@@ -67,6 +64,8 @@ pub struct HttpConnector {
     method: Method,
     /// Base URL.
     base_url: Url,
+    /// HTTP request query.
+    query: Map,
     /// HTTP request headers.
     headers: Map,
     /// Optional request body.
@@ -81,6 +80,7 @@ impl HttpConnector {
         Ok(Self {
             method: method.parse()?,
             base_url: base_url.parse()?,
+            query: Map::new(),
             headers: Map::new(),
             body: None,
             json_pointer: None,
@@ -111,10 +111,31 @@ impl HttpConnector {
         Ok(connector)
     }
 
+    /// Adds a key/value pair for the request query.
+    #[inline]
+    pub fn query(mut self, key: &str, value: impl Into<JsonValue>) -> Self {
+        let value = value.into();
+        if !value.is_null() {
+            self.query.upsert(key, value);
+        }
+        self
+    }
+
+    /// Adds a parameter for the request query.
+    #[inline]
+    pub fn query_param(mut self, key: &str, param: Option<&str>) -> Self {
+        if let Some(param) = param {
+            self.query.upsert(key, format!("${param}"));
+        } else {
+            self.query.upsert(key, format!("${key}"));
+        }
+        self
+    }
+
     /// Inserts a key/value pair into the request headers.
     #[inline]
     pub fn insert_header(&mut self, key: &str, value: impl Into<JsonValue>) {
-        self.headers.upsert(key, value.into());
+        self.headers.upsert(key, value);
     }
 
     /// Sets the request path.
@@ -153,6 +174,9 @@ impl HttpConnector {
         let mut url = self.base_url.clone();
         if let Some(query) = query.filter(|s| !s.is_empty()) {
             url.set_query(Some(query));
+        } else if !self.query.is_empty() {
+            let query = serde_qs::to_string(&self.query)?;
+            url.set_query(Some(&query));
         }
 
         let resource = helper::format_query(url.as_str(), params);

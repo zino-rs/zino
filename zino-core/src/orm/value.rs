@@ -99,7 +99,7 @@ impl IntoSqlValue for &Url {
     }
 }
 
-impl<'a> IntoSqlValue for Cow<'a, str> {
+impl IntoSqlValue for Cow<'_, str> {
     #[inline]
     fn into_sql_value(self) -> JsonValue {
         self.into()

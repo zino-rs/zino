@@ -164,11 +164,9 @@ where
                 }
             }
 
-            let mut data = Map::new();
-            data.upsert("token_type", "Bearer");
-            data.upsert("expires_in", claims.expires_in().as_secs());
-            data.upsert("refresh_token", claims.refresh_token()?);
-            data.upsert("access_token", claims.access_token()?);
+            let refresh_token = claims.refresh_token()?;
+            let mut data = claims.bearer_auth()?;
+            data.upsert("refresh_token", refresh_token);
             if let Some(login_at_field) = Self::LOGIN_AT_FIELD {
                 data.upsert(login_at_field, user.remove(login_at_field));
             }
@@ -218,12 +216,7 @@ where
                 claims.add_data_entry("tenant_id", tenant_id);
             }
         }
-
-        let mut data = Map::new();
-        data.upsert("token_type", "Bearer");
-        data.upsert("expires_in", claims.expires_in().as_secs());
-        data.upsert("access_token", claims.access_token()?);
-        Ok(data)
+        claims.bearer_auth()
     }
 
     /// Verfifies the JWT claims.

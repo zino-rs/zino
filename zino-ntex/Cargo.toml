@@ -18,7 +18,7 @@ ntex-files = "2.0.0"
 tracing = "0.1.41"
 
 [dependencies.ntex]
-version = "2.9.0"
+version = "2.10.0"
 default-features = false
 features = ["compress", "tokio"]
 

@@ -38,7 +38,7 @@ version = "0.7.9"
 default-features = false
 
 [dependencies.clap]
-version = "4.5.21"
+version = "4.5.22"
 features = ["color", "derive"]
 
 [dependencies.rustls-acme]
@@ -51,7 +51,7 @@ version = "1.0.215"
 features = ["derive"]
 
 [dependencies.tokio]
-version = "1.41.1"
+version = "1.42.0"
 features = ["full"]
 
 [dependencies.tokio-stream]

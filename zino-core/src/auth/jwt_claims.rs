@@ -160,6 +160,15 @@ impl JwtClaims<Map> {
     pub fn add_data_entry(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) {
         self.0.custom.upsert(key.into(), value.into());
     }
+
+    /// Returns the Bearer auth as a JSON object.
+    pub fn bearer_auth(self) -> Result<Map, Error> {
+        let mut data = Map::new();
+        data.upsert("token_type", "Bearer");
+        data.upsert("expires_in", self.expires_in().as_secs());
+        data.upsert("access_token", self.access_token()?);
+        Ok(data)
+    }
 }
 
 impl JwtClaims<()> {

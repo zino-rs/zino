@@ -20,7 +20,7 @@ pub(super) trait ColumnExt {
     fn constraints(&self) -> Vec<String>;
 }
 
-impl<'a> ColumnExt for Column<'a> {
+impl ColumnExt for Column<'_> {
     fn is_compatible(&self, data_type: &str) -> bool {
         let column_type = self.column_type();
         if column_type.eq_ignore_ascii_case(data_type) {

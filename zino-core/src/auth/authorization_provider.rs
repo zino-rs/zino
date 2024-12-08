@@ -49,13 +49,10 @@ use crate::error::Error;
 ///
 /// static DINGTALK_TOKEN_CONNECTOR: LazyLock<HttpConnector> = LazyLock::new(|| {
 ///     let base_url = "https://oapi.dingtalk.com/gettoken";
-///     let mut connector = HttpConnector::try_new("GET", base_url)
-///         .expect("fail to construct DingTalk token connector");
-///     connector.set_query(&json!({
-///         "appkey": "${client_key}",
-///         "appsecret": "${client_secret}",
-///     }));
-///     connector
+///     connector = HttpConnector::try_new("GET", base_url)
+///         .expect("fail to construct DingTalk token connector")
+///         .query_param("appkey", Some("client_key"))
+///         .query_param("appsecret", Some("client_secret"))
 /// });
 /// ```
 pub trait AuthorizationProvider {

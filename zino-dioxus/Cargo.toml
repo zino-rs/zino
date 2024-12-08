@@ -54,7 +54,7 @@ version = "0.5.1"
 optional = true
 
 [dependencies.tokio]
-version = "1.41.1"
+version = "1.42.0"
 features = [
     "parking_lot",
     "rt-multi-thread",
