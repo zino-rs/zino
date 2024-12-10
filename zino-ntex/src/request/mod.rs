@@ -13,11 +13,10 @@ use std::{
     net::IpAddr,
     ops::{Deref, DerefMut},
 };
-use zino_core::{
-    error::Error,
+use zino_core::{error::Error, state::Data};
+use zino_http::{
     request::{Context, RequestContext},
     response::Rejection,
-    state::Data,
 };
 
 /// An HTTP request extractor.

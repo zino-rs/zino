@@ -11,11 +11,8 @@ use std::{
     net::IpAddr,
     ops::{Deref, DerefMut},
 };
-use zino_core::{
-    error::Error,
-    request::{Context, RequestContext},
-    state::Data,
-};
+use zino_core::{error::Error, state::Data};
+use zino_http::request::{Context, RequestContext};
 
 /// An HTTP request extractor.
 pub struct Extractor<T>(T, Payload);

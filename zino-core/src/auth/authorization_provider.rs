@@ -53,6 +53,8 @@ use crate::error::Error;
 ///         .expect("fail to construct DingTalk token connector")
 ///         .query_param("appkey", Some("client_key"))
 ///         .query_param("appsecret", Some("client_secret"))
+///         .build_query()
+///         .expect("fail to build a query template for the connector")
 /// });
 /// ```
 pub trait AuthorizationProvider {

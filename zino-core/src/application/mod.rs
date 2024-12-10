@@ -76,7 +76,7 @@ mod sentry_client;
 #[cfg(feature = "tracing-subscriber")]
 mod tracing_subscriber;
 
-pub(crate) mod http_client;
+pub mod http_client;
 
 pub(crate) use secret_key::SECRET_KEY;
 

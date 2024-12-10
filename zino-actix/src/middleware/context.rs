@@ -7,7 +7,7 @@ use std::{
     pin::Pin,
 };
 use tracing::Span;
-use zino_core::request::RequestContext;
+use zino_http::request::RequestContext;
 
 #[derive(Default)]
 pub struct RequestContextInitializer;

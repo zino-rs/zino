@@ -7,9 +7,9 @@ use ntex::{
     web::{HttpRequest, HttpResponse, Responder, WebResponseError},
 };
 use std::fmt;
-use zino_core::{
+use zino_http::{
     response::{Rejection, Response, ResponseCode},
-    trace::TimingMetric,
+    timing::TimingMetric,
 };
 
 /// An HTTP response for `ntex`.

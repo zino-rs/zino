@@ -18,7 +18,7 @@ pub use response::{AxumRejection, AxumResponse};
 pub type Request = Extractor<axum::http::Request<axum::body::Body>>;
 
 /// A specialized response.
-pub type Response = zino_core::response::Response<axum::http::StatusCode>;
+pub type Response = zino_http::response::Response<axum::http::StatusCode>;
 
 /// A specialized `Result` type.
 pub type Result<T = AxumResponse> = std::result::Result<T, AxumRejection>;

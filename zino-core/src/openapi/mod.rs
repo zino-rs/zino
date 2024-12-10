@@ -1,6 +1,6 @@
 //! OpenAPI specification and API documentation.
 
-use crate::{application, extension::TomlTableExt, response::WebHook, LazyLock, Uuid};
+use crate::{application, extension::TomlTableExt, LazyLock, Uuid};
 use ahash::{HashMap, HashMapExt};
 use convert_case::{Case, Casing};
 use serde_json::json;
@@ -22,10 +22,8 @@ use utoipa::openapi::{
 
 mod model;
 mod parser;
-mod webhook;
 
 pub(crate) use model::translate_model_entry;
-pub(crate) use webhook::get_webhook;
 
 /// Constructs the OpenAPI `Info` object.
 pub(crate) fn openapi_info(title: &str, version: &str) -> Info {
@@ -230,7 +228,6 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
         Ok(entries) => {
             let mut openapi_tags = Vec::new();
             let mut model_definitions = HashMap::new();
-            let mut webhook_definitions = HashMap::new();
             let mut components_builder = ComponentsBuilder::new();
             let files = entries
                 .filter_map(|entry| entry.ok())
@@ -344,16 +341,6 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
                         }
                     }
                 }
-                if let Some(webhooks) = openapi_config.get_table("webhooks") {
-                    for (webhook_name, webhook_request) in webhooks {
-                        if let Some(request) = webhook_request.as_table() {
-                            if let Ok(webhook) = WebHook::try_new(request) {
-                                let webhook_name = webhook_name.to_owned().leak() as &'static str;
-                                webhook_definitions.insert(webhook_name, webhook);
-                            }
-                        }
-                    }
-                }
                 openapi_tags.push(parser::parse_tag(&name, &openapi_config))
             }
             if OPENAPI_COMPONENTS.set(components_builder.build()).is_err() {
@@ -364,9 +351,6 @@ static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
             }
             if MODEL_DEFINITIONS.set(model_definitions).is_err() {
                 panic!("fail to set model definitions");
-            }
-            if WEBHOOK_DEFINITIONS.set(webhook_definitions).is_err() {
-                panic!("fail to set webhook definitions");
             }
         }
         Err(err) => {
@@ -398,6 +382,3 @@ static OPENAPI_EXTERNAL_DOCS: OnceLock<ExternalDocs> = OnceLock::new();
 
 /// Model definitions.
 static MODEL_DEFINITIONS: OnceLock<HashMap<&str, Table>> = OnceLock::new();
-
-/// WebHook definitions.
-static WEBHOOK_DEFINITIONS: OnceLock<HashMap<&str, WebHook>> = OnceLock::new();

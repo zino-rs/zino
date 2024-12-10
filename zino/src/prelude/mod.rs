@@ -13,9 +13,6 @@ pub use zino_core::{
     file::NamedFile,
     json,
     model::{Model, ModelHooks, Mutation, Query, QueryContext},
-    reject,
-    request::RequestContext,
-    response::{ExtractRejection, Rejection, StatusCode, WebHook},
     schedule::{AsyncCronJob, AsyncJob, AsyncJobScheduler, CronJob, Job, JobScheduler},
     state::State,
     validation::Validation,
@@ -39,4 +36,11 @@ pub use zino_core::auth::RegoEngine;
 pub use zino_core::orm::{
     Aggregation, Entity, IntoSqlValue, JoinOn, ModelAccessor, ModelHelper, MutationBuilder,
     QueryBuilder, ScalarQuery, Schema, Transaction, Window,
+};
+
+#[cfg(any(feature = "actix", feature = "axum", feature = "ntex"))]
+pub use zino_http::{
+    reject,
+    request::RequestContext,
+    response::{ExtractRejection, Rejection, StatusCode, WebHook},
 };

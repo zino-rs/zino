@@ -25,19 +25,22 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-actix = ["dep:zino-actix"]
-axum = ["dep:zino-axum"]
+actix = ["dep:zino-actix", "dep:zino-http"]
+axum = ["dep:zino-axum", "dep:zino-http"]
+cookie = ["zino-core/cookie", "zino-http?/cookie"]
 dioxus = ["zino-dioxus"]
 dioxus-desktop = ["dioxus", "zino-dioxus/desktop"]
 debug = ["zino-core/debug"]
 default = ["logger"]
-i18n = ["zino-core/i18n"]
-jwt = ["zino-core/jwt"]
+i18n = ["zino-core/i18n", "zino-http?/i18n"]
+jwt = ["zino-core/jwt", "zino-http?/jwt"]
 logger = ["zino-core/tracing-log", "zino-core/tracing-subscriber"]
-ntex = ["dep:zino-ntex"]
+metrics = ["zino-core/metrics", "zino-http?/metrics"]
+ntex = ["dep:zino-http", "dep:zino-ntex"]
 oidc = ["zino-core/oidc"]
 opa = ["zino-core/opa"]
 orm = ["zino-axum?/orm", "zino-core/orm"]
+view = ["zino-core/view", "zino-http?/view"]
 
 [dependencies]
 cfg-if = "1.0"
@@ -60,6 +63,11 @@ version = "0.28.1"
 [dependencies.zino-dioxus]
 path = "../zino-dioxus"
 version = "0.9.5"
+optional = true
+
+[dependencies.zino-http]
+path = "../zino-http"
+version = "0.1.0"
 optional = true
 
 [dependencies.zino-ntex]

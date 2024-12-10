@@ -22,16 +22,17 @@ path = "../../zino"
 version = "0.27.0"
 features = [
     "axum",
+    "cookie",
     "i18n",
     "jwt",
     "orm",
+    "view",
 ]
 
 [dependencies.zino-core]
 path = "../../zino-core"
 version = "0.28.0"
 features = [
-    "cookie",
     "env-filter",
     "orm-mysql",
     "validator-email",

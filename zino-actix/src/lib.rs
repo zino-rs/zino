@@ -21,7 +21,7 @@ pub type RouterConfigure = fn(cfg: &mut actix_web::web::ServiceConfig);
 pub type Request = request::Extractor<actix_web::HttpRequest>;
 
 /// A specialized response.
-pub type Response = zino_core::response::Response<actix_web::http::StatusCode>;
+pub type Response = zino_http::response::Response<actix_web::http::StatusCode>;
 
 /// A specialized `Result` type.
 pub type Result<T = response::ActixResponse> = std::result::Result<T, response::ActixRejection>;

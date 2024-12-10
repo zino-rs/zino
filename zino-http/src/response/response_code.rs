@@ -1,6 +1,6 @@
-use crate::SharedString;
 use serde::Serialize;
 use std::borrow::Cow;
+use zino_core::SharedString;
 
 /// Trait for response code.
 /// See [Problem Details for HTTP APIs](https://tools.ietf.org/html/rfc7807).

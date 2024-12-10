@@ -10,12 +10,8 @@ use std::{
     net::{IpAddr, SocketAddr},
     ops::{Deref, DerefMut},
 };
-use zino_core::{
-    error::Error,
-    extension::HeaderMapExt,
-    request::{Context, RequestContext},
-    state::Data,
-};
+use zino_core::{error::Error, extension::HeaderMapExt, state::Data};
+use zino_http::request::{Context, RequestContext};
 
 /// An HTTP request extractor.
 pub struct Extractor<T>(T);

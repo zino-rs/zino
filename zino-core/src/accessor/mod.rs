@@ -105,7 +105,7 @@ impl GlobalAccessor {
                 if let Some(batch_max_operations) = config.get_usize("batch-max-operations") {
                     builder = builder.batch_max_operations(batch_max_operations);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-azdls")]
             "azdls" => {
@@ -125,7 +125,7 @@ impl GlobalAccessor {
                 if let Some(account_key) = config.get_str("account-key") {
                     builder = builder.account_key(account_key);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-cacache")]
             "cacache" => {
@@ -133,7 +133,7 @@ impl GlobalAccessor {
                 if let Some(dir) = config.get_str("data-dir") {
                     builder = builder.datadir(dir);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-cos")]
             "cos" => {
@@ -153,7 +153,7 @@ impl GlobalAccessor {
                 if let Some(secret_key) = config.get_str("secret-key") {
                     builder = builder.secret_key(secret_key);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-dashmap")]
             "dashmap" => {
@@ -161,7 +161,7 @@ impl GlobalAccessor {
                 if let Some(root) = config.get_str("root") {
                     builder = builder.root(root);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-dropbox")]
             "dropbox" => {
@@ -181,7 +181,7 @@ impl GlobalAccessor {
                 if let Some(client_secret) = config.get_str("client-secret") {
                     builder = builder.client_secret(client_secret);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-fs")]
             "fs" => {
@@ -192,7 +192,7 @@ impl GlobalAccessor {
                 if let Some(atomic_write_dir) = config.get_str("atomic-write-dir") {
                     builder = builder.atomic_write_dir(atomic_write_dir);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-gcs")]
             "gcs" => {
@@ -215,7 +215,7 @@ impl GlobalAccessor {
                 if let Some(credential_path) = config.get_str("credential-path") {
                     builder = builder.credential_path(credential_path);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-gdrive")]
             "gdrive" => {
@@ -226,7 +226,7 @@ impl GlobalAccessor {
                 if let Some(access_token) = config.get_str("access-token") {
                     builder = builder.access_token(access_token);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-ghac")]
             "ghac" => {
@@ -237,7 +237,7 @@ impl GlobalAccessor {
                 if let Some(version) = config.get_str("version") {
                     builder = builder.version(version);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-http")]
             "http" => {
@@ -257,7 +257,7 @@ impl GlobalAccessor {
                 if let Some(token) = config.get_str("token") {
                     builder = builder.token(token);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-ipfs")]
             "ipfs" => {
@@ -268,7 +268,7 @@ impl GlobalAccessor {
                 if let Some(endpoint) = config.get_str("endpoint") {
                     builder = builder.endpoint(endpoint);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-ipmfs")]
             "ipmfs" => {
@@ -279,7 +279,7 @@ impl GlobalAccessor {
                 if let Some(endpoint) = config.get_str("endpoint") {
                     builder = builder.endpoint(endpoint);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-memcached")]
             "memcached" => {
@@ -293,12 +293,12 @@ impl GlobalAccessor {
                 if let Some(default_ttl) = config.get_duration("default-ttl") {
                     builder = builder.default_ttl(default_ttl);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-memory")]
             "memory" => {
                 let builder = services::Memory::default();
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-mini-moka")]
             "minimoka" => {
@@ -312,7 +312,7 @@ impl GlobalAccessor {
                 if let Some(time_to_idle) = config.get_duration("time-to-idle") {
                     builder = builder.time_to_idle(time_to_idle);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-moka")]
             "moka" => {
@@ -332,7 +332,7 @@ impl GlobalAccessor {
                 if let Some(segments) = config.get_usize("segments") {
                     builder = builder.segments(segments);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-mysql")]
             "mysql" => {
@@ -354,7 +354,7 @@ impl GlobalAccessor {
                 if let Some(value_field) = config.get_str("value-field") {
                     builder = builder.value_field(value_field);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-obs")]
             "obs" => {
@@ -374,7 +374,7 @@ impl GlobalAccessor {
                 if let Some(secret_access_key) = config.get_str("secret_access_key") {
                     builder = builder.secret_access_key(secret_access_key);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-onedrive")]
             "onedrive" => {
@@ -385,7 +385,7 @@ impl GlobalAccessor {
                 if let Some(access_token) = config.get_str("access-token") {
                     builder = builder.access_token(access_token);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-oss")]
             "oss" => {
@@ -417,7 +417,7 @@ impl GlobalAccessor {
                 if let Some(batch_max_operations) = config.get_usize("batch-max-operations") {
                     builder = builder.batch_max_operations(batch_max_operations);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-persy")]
             "persy" => {
@@ -431,7 +431,7 @@ impl GlobalAccessor {
                 if let Some(index) = config.get_str("index") {
                     builder = builder.index(index);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-postgresql")]
             "postgresql" => {
@@ -453,7 +453,7 @@ impl GlobalAccessor {
                 if let Some(value_field) = config.get_str("value-field") {
                     builder = builder.value_field(value_field);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-redis")]
             "redis" => {
@@ -476,7 +476,7 @@ impl GlobalAccessor {
                 if let Some(default_ttl) = config.get_duration("default-ttl") {
                     builder = builder.default_ttl(default_ttl);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-redb")]
             "redb" => {
@@ -490,7 +490,7 @@ impl GlobalAccessor {
                 if let Some(table) = config.get_str("table") {
                     builder = builder.table(table);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-s3")]
             "s3" | "minio" => {
@@ -522,7 +522,7 @@ impl GlobalAccessor {
                 if let Some(batch_max_operations) = config.get_usize("batch-max-operations") {
                     builder = builder.batch_max_operations(batch_max_operations);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-sled")]
             "sled" => {
@@ -536,7 +536,7 @@ impl GlobalAccessor {
                 if let Some(tree) = config.get_str("tree") {
                     builder = builder.tree(tree);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-supabase")]
             "supabase" => {
@@ -553,7 +553,7 @@ impl GlobalAccessor {
                 if let Some(key) = config.get_str("key") {
                     builder = builder.key(key);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-webdav")]
             "webdav" => {
@@ -573,7 +573,7 @@ impl GlobalAccessor {
                 if let Some(token) = config.get_str("token") {
                     builder = builder.token(token);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-webhdfs")]
             "webhdfs" => {
@@ -587,16 +587,14 @@ impl GlobalAccessor {
                 if let Some(delegation) = config.get_str("delegation") {
                     builder = builder.delegation(delegation);
                 }
-                Ok(Operator::new(builder)?.finish())
+                Operator::new(builder)?.finish()
             }
-            _ => Err(Error::new(Unsupported, "scheme is unsupported")),
+            _ => return Err(Error::new(Unsupported, "scheme is unsupported")),
         };
-        operator.map(|op| {
-            let op = op.layer(RetryLayer::new()).layer(TracingLayer);
-            #[cfg(feature = "metrics")]
-            let op = op.layer(opendal::layers::MetricsLayer::default());
-            op
-        })
+        let op = operator.layer(RetryLayer::new()).layer(TracingLayer);
+        #[cfg(feature = "metrics")]
+        let op = op.layer(opendal::layers::MetricsLayer::default());
+        Ok(op)
     }
 
     /// Gets the operator for the specific service.

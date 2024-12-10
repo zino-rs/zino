@@ -1,5 +1,5 @@
-use crate::Uuid;
 use std::time::Instant;
+use zino_core::Uuid;
 
 #[cfg(feature = "i18n")]
 use unic_langid::LanguageIdentifier;

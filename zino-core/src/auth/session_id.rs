@@ -134,7 +134,7 @@ impl SessionId {
     }
 
     /// Parses the `SessionId`.
-    pub(crate) fn parse(s: &str) -> Result<SessionId, ParseSessionIdError> {
+    pub fn parse(s: &str) -> Result<SessionId, ParseSessionIdError> {
         use ParseSessionIdError::*;
         if let Some(s) = s.strip_prefix("SID:ANON:") {
             if let Some((realm, s)) = s.split_once(':') {
@@ -207,7 +207,7 @@ impl fmt::Display for SessionId {
 
 /// An error which can be returned when parsing a `SessionId`.
 #[derive(Debug)]
-pub(crate) enum ParseSessionIdError {
+pub enum ParseSessionIdError {
     /// An error that can occur when parsing thread.
     ParseThreadError(Error),
     /// An error that can occur when parsing count.

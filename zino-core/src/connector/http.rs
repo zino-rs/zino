@@ -38,6 +38,8 @@ use url::Url;
 ///         .query("key", config.get_str("key"))
 ///         .query_param("address", None)
 ///         .query_param("city", None)
+///         .build_query()
+///         .expect("fail to build a query template for the connector")
 /// });
 ///
 /// async fn get_lng_lat(city: &str, address: &str) -> Result<(f32, f32), Error> {
@@ -132,10 +134,21 @@ impl HttpConnector {
         self
     }
 
-    /// Inserts a key/value pair into the request headers.
+    /// Builds the request query.
+    pub fn build_query(mut self) -> Result<Self, Error> {
+        if !self.query.is_empty() {
+            let query = serde_qs::to_string(&self.query)?;
+            self.base_url.set_query(Some(&query));
+            self.query.clear();
+        }
+        Ok(self)
+    }
+
+    /// Adds a key/value pair for the request headers.
     #[inline]
-    pub fn insert_header(&mut self, key: &str, value: impl Into<JsonValue>) {
+    pub fn header(mut self, key: &str, value: impl Into<JsonValue>) -> Self {
         self.headers.upsert(key, value);
+        self
     }
 
     /// Sets the request path.

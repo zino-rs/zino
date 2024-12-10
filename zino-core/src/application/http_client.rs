@@ -70,7 +70,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
 }
 
 /// Constructs a request builder.
-pub(crate) fn request_builder(url: &str, options: Option<&Map>) -> Result<RequestBuilder, Error> {
+pub fn request_builder(url: &str, options: Option<&Map>) -> Result<RequestBuilder, Error> {
     if options.is_none() || options.is_some_and(|map| map.is_empty()) {
         let request_builder = SHARED_HTTP_CLIENT_WITH_MIDDLEWARE
             .get()

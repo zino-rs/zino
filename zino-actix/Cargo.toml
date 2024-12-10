@@ -34,8 +34,9 @@ features = ["actix-web"]
 [dependencies.zino-core]
 path = "../zino-core"
 version = "0.28.1"
-features = [
-    "http02",
-    "openapi",
-    "runtime-tokio",
-]
+features = ["openapi", "runtime-tokio"]
+
+[dependencies.zino-http]
+path = "../zino-http"
+version = "0.1.0"
+features = ["http02"]

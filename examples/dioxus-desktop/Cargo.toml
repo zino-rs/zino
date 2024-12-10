@@ -32,4 +32,4 @@ features = ["env-filter", "tls-native"]
 
 [dependencies.zino-dioxus]
 path = "../../zino-dioxus"
-version = "0.9.4"
+version = "0.9.5"

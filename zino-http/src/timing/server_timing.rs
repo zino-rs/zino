@@ -1,4 +1,4 @@
-use crate::trace::TimingMetric;
+use super::TimingMetric;
 use smallvec::SmallVec;
 use std::fmt;
 

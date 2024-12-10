@@ -1,6 +1,13 @@
 //! Request context and validation.
 
 use crate::{
+    helper,
+    response::{Rejection, Response, ResponseCode},
+};
+use multer::Multipart;
+use serde::de::DeserializeOwned;
+use std::{borrow::Cow, net::IpAddr, str::FromStr, time::Instant};
+use zino_core::{
     application::http_client,
     auth::{AccessKeyId, Authentication, ParseSecurityTokenError, SecurityToken, SessionId},
     channel::{CloudEvent, Subscription},
@@ -8,34 +15,29 @@ use crate::{
     error::Error,
     extension::{HeaderMapExt, JsonObjectExt},
     file::NamedFile,
-    helper,
     model::{ModelHooks, Query},
-    response::{Rejection, Response, ResponseCode},
     trace::{TraceContext, TraceState},
     validation::Validation,
     warn, JsonValue, Map, SharedString, Uuid,
 };
-use multer::Multipart;
-use serde::de::DeserializeOwned;
-use std::{borrow::Cow, net::IpAddr, str::FromStr, time::Instant};
 
 #[cfg(feature = "cookie")]
 use cookie::{Cookie, SameSite};
 
 #[cfg(feature = "jwt")]
-use crate::auth::JwtClaims;
-#[cfg(feature = "jwt")]
 use jwt_simple::algorithms::MACLike;
+#[cfg(feature = "jwt")]
+use zino_core::auth::JwtClaims;
 
 #[cfg(any(feature = "cookie", feature = "jwt"))]
 use std::time::Duration;
 
 #[cfg(feature = "i18n")]
-use crate::i18n;
-#[cfg(feature = "i18n")]
 use fluent::FluentArgs;
 #[cfg(feature = "i18n")]
 use unic_langid::LanguageIdentifier;
+#[cfg(feature = "i18n")]
+use zino_core::i18n;
 
 mod context;
 
@@ -133,7 +135,7 @@ pub trait RequestContext {
             let supported_locales = i18n::SUPPORTED_LOCALES.as_slice();
             let locale = self
                 .get_header("accept-language")
-                .and_then(|languages| i18n::select_language(languages, supported_locales))
+                .and_then(|languages| helper::select_language(languages, supported_locales))
                 .unwrap_or(&i18n::DEFAULT_LOCALE);
             ctx.set_locale(locale);
         }
@@ -356,7 +358,7 @@ pub trait RequestContext {
             #[cfg(feature = "jwt")]
             if let Some(timestamp) = self.get_query("timestamp").and_then(|s| s.parse().ok()) {
                 let duration = DateTime::from_timestamp(timestamp).span_between_now();
-                if duration > crate::auth::default_time_tolerance() {
+                if duration > zino_core::auth::default_time_tolerance() {
                     let err = warn!("timestamp `{}` can not be trusted", timestamp);
                     let rejection = Rejection::from_validation_entry("timestamp", err);
                     return Err(rejection.context(self));
@@ -502,7 +504,7 @@ pub trait RequestContext {
             match DateTime::parse_utc_str(date) {
                 Ok(date) => {
                     #[cfg(feature = "jwt")]
-                    if date.span_between_now() <= crate::auth::default_time_tolerance() {
+                    if date.span_between_now() <= zino_core::auth::default_time_tolerance() {
                         authentication.set_date_header("date", date);
                     } else {
                         validation.record("date", "untrusted date");
@@ -630,7 +632,7 @@ pub trait RequestContext {
             return Err(Rejection::bad_request(validation).context(self));
         }
 
-        let mut options = crate::auth::default_verification_options();
+        let mut options = zino_core::auth::default_verification_options();
         options.reject_before = self
             .get_query("timestamp")
             .and_then(|s| s.parse().ok())
@@ -638,7 +640,7 @@ pub trait RequestContext {
         options.required_nonce = self.get_query("nonce").map(|s| s.to_owned());
 
         match key.verify_token(token, Some(options)) {
-            Ok(claims) => Ok(JwtClaims(claims)),
+            Ok(claims) => Ok(claims.into()),
             Err(err) => {
                 let message = format!("401 Unauthorized: {err}");
                 Err(Rejection::with_message(message).context(self))

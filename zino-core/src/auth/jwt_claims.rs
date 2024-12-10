@@ -16,7 +16,7 @@ use std::time::Duration;
 
 /// JWT Claims.
 #[derive(Debug, Clone)]
-pub struct JwtClaims<T = Map>(pub(crate) JWTClaims<T>);
+pub struct JwtClaims<T = Map>(JWTClaims<T>);
 
 impl<T: Default + Serialize + DeserializeOwned> JwtClaims<T> {
     /// Creates a new instance.
@@ -179,15 +179,22 @@ impl JwtClaims<()> {
     }
 }
 
+impl<T> From<JWTClaims<T>> for JwtClaims<T> {
+    #[inline]
+    fn from(claims: JWTClaims<T>) -> Self {
+        Self(claims)
+    }
+}
+
 /// Returns the default time tolerance.
 #[inline]
-pub(crate) fn default_time_tolerance() -> Duration {
+pub fn default_time_tolerance() -> Duration {
     *DEFAULT_TIME_TOLERANCE
 }
 
 /// Returns the default verfication options.
 #[inline]
-pub(crate) fn default_verification_options() -> VerificationOptions {
+pub fn default_verification_options() -> VerificationOptions {
     SHARED_VERIFICATION_OPTIONS.clone()
 }
 

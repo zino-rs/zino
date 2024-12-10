@@ -6,7 +6,7 @@ use axum::{
     },
     response::IntoResponse,
 };
-use zino_core::response::{Rejection, Response, ResponseCode};
+use zino_http::response::{Rejection, Response, ResponseCode};
 
 /// An HTTP response for `axum`.
 pub struct AxumResponse<S: ResponseCode = StatusCode>(Response<S>);

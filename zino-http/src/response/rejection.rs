@@ -1,12 +1,7 @@
 use self::RejectionKind::*;
 use super::Response;
-use crate::{
-    error::Error,
-    request::{Context, RequestContext},
-    trace::TraceContext,
-    validation::Validation,
-    warn, SharedString,
-};
+use crate::request::{Context, RequestContext};
+use zino_core::{error::Error, trace::TraceContext, validation::Validation, warn, SharedString};
 
 /// A rejection response type.
 #[derive(Debug)]
@@ -255,13 +250,6 @@ impl<T> ExtractRejection<T> for Option<T> {
     #[inline]
     fn extract<Ctx: RequestContext>(self, ctx: &Ctx) -> Result<T, Rejection> {
         self.ok_or_else(|| Rejection::not_found(warn!("resource does not exist")).context(ctx))
-    }
-}
-
-impl<T> ExtractRejection<T> for Result<T, Validation> {
-    #[inline]
-    fn extract<Ctx: RequestContext>(self, ctx: &Ctx) -> Result<T, Rejection> {
-        self.map_err(|err| Rejection::bad_request(err).context(ctx))
     }
 }
 

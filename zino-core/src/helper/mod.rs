@@ -1,15 +1,19 @@
 /// Helper utilities.
-mod form_data;
 mod header;
 mod mask_text;
-mod query;
 mod str_array;
 
-pub(crate) use form_data::parse_form_data;
-pub(crate) use header::{check_json_content_type, displayed_inline, get_data_type};
+pub(crate) use header::check_json_content_type;
 pub(crate) use mask_text::mask_text;
-pub(crate) use query::format_query;
 pub(crate) use str_array::parse_str_array;
+
+#[cfg(any(
+    feature = "connector",
+    feature = "orm",
+    feature = "orm-mysql",
+    feature = "orm-postgres",
+))]
+pub(crate) mod query;
 
 #[cfg(any(
     feature = "connector-mysql",
@@ -20,6 +24,14 @@ pub(crate) use str_array::parse_str_array;
     feature = "orm-postgres",
 ))]
 mod sql_query;
+
+#[cfg(any(
+    feature = "connector",
+    feature = "orm",
+    feature = "orm-mysql",
+    feature = "orm-postgres",
+))]
+pub(crate) use query::format_query;
 
 #[cfg(any(
     feature = "connector-mysql",

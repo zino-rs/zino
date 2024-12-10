@@ -7,9 +7,9 @@ use actix_web::{
     HttpRequest, HttpResponse, Responder, ResponseError,
 };
 use std::fmt;
-use zino_core::{
+use zino_http::{
     response::{Rejection, Response, ResponseCode},
-    trace::TimingMetric,
+    timing::TimingMetric,
 };
 
 /// An HTTP response for `actix-web`.

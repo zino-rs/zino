@@ -68,9 +68,14 @@ use zino_core::{
     extension::JsonObjectExt,
     model::{ModelHooks, Mutation, Query},
     orm::{ModelAccessor, ModelHelper},
+    JsonValue, Map,
+};
+
+#[cfg(any(feature = "actix", feature = "axum", feature = "ntex"))]
+#[cfg(feature = "orm")]
+use zino_http::{
     request::RequestContext,
     response::{ExtractRejection, Rejection, Response},
-    JsonValue, Map,
 };
 
 #[cfg(any(feature = "actix", feature = "axum", feature = "ntex"))]

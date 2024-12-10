@@ -1,14 +1,9 @@
 //! Constructing responses and rejections.
 
 use crate::{
-    error::Error,
-    extension::JsonValueExt,
-    file::NamedFile,
     helper,
     request::RequestContext,
-    trace::{ServerTiming, TimingMetric, TraceContext},
-    validation::Validation,
-    JsonValue, SharedString, Uuid,
+    timing::{ServerTiming, TimingMetric},
 };
 use bytes::Bytes;
 use etag::EntityTag;
@@ -17,6 +12,10 @@ use smallvec::SmallVec;
 use std::{
     marker::PhantomData,
     time::{Duration, Instant},
+};
+use zino_core::{
+    error::Error, extension::JsonValueExt, file::NamedFile, trace::TraceContext,
+    validation::Validation, JsonValue, SharedString, Uuid,
 };
 
 #[cfg(feature = "cookie")]
@@ -191,11 +190,11 @@ impl<S: ResponseCode> Response<S> {
             .map_err(|err| err.into())
             .and_then(|mut value| {
                 if let Some(data) = value.as_object_mut() {
-                    let mut map = crate::Map::new();
+                    let mut map = zino_core::Map::new();
                     map.append(data);
-                    crate::view::render(template_name, map)
+                    zino_core::view::render(template_name, map)
                 } else {
-                    Err(crate::warn!("invalid template data"))
+                    Err(zino_core::warn!("invalid template data"))
                 }
             });
         match result {

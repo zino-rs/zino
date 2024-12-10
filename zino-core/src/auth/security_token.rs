@@ -69,7 +69,7 @@ impl SecurityToken {
     }
 
     /// Parses the token with the encryption key.
-    pub(crate) fn parse_with(token: String, key: &[u8]) -> Result<Self, ParseSecurityTokenError> {
+    pub fn parse_with(token: String, key: &[u8]) -> Result<Self, ParseSecurityTokenError> {
         let authorization = base64::decode(&token).map_err(|err| DecodeError(err.into()))?;
         let signature = crypto::decrypt(&authorization, key)
             .map_err(|_| DecodeError(warn!("fail to decrypt authorization")))?;
@@ -110,7 +110,7 @@ impl AsRef<[u8]> for SecurityToken {
 
 /// An error which can be returned when parsing a token.
 #[derive(Debug)]
-pub(crate) enum ParseSecurityTokenError {
+pub enum ParseSecurityTokenError {
     /// An error that can occur while decoding.
     DecodeError(Error),
     /// An error which can occur while parsing a expires timestamp.

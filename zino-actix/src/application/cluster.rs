@@ -13,9 +13,9 @@ use utoipa_rapidoc::RapiDoc;
 use zino_core::{
     application::{Application, Plugin, ServerTag},
     extension::TomlTableExt,
-    response::Response,
     schedule::AsyncScheduler,
 };
+use zino_http::response::Response;
 
 /// An HTTP server cluster.
 #[derive(Default)]

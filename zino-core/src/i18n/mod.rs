@@ -9,10 +9,6 @@ use intl_memoizer::concurrent::IntlLangMemoizer;
 use std::{fs, io::ErrorKind};
 use unic_langid::LanguageIdentifier;
 
-mod language;
-
-pub use language::select_language;
-
 /// Translates the localization message.
 pub fn translate(
     locale: &LanguageIdentifier,
@@ -105,19 +101,8 @@ static LOCALIZATION: LazyLock<Vec<(LanguageIdentifier, Translation)>> = LazyLock
     locales
 });
 
-/// Supported locales.
-pub(crate) static SUPPORTED_LOCALES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
-    LOCALIZATION
-        .iter()
-        .map(|(key, _)| {
-            let language: &'static str = key.to_string().leak();
-            language
-        })
-        .collect::<Vec<_>>()
-});
-
 /// Default bundle.
-pub(crate) static DEFAULT_BUNDLE: LazyLock<Option<&'static Translation>> = LazyLock::new(|| {
+static DEFAULT_BUNDLE: LazyLock<Option<&'static Translation>> = LazyLock::new(|| {
     let default_locale = LazyLock::force(&DEFAULT_LOCALE);
     LOCALIZATION
         .iter()
@@ -125,10 +110,21 @@ pub(crate) static DEFAULT_BUNDLE: LazyLock<Option<&'static Translation>> = LazyL
 });
 
 /// Default locale.
-pub(crate) static DEFAULT_LOCALE: LazyLock<&'static str> = LazyLock::new(|| {
+pub static DEFAULT_LOCALE: LazyLock<&'static str> = LazyLock::new(|| {
     if let Some(i18n) = State::shared().get_config("i18n") {
         i18n.get_str("default-locale").unwrap_or("en-US")
     } else {
         "en-US"
     }
+});
+
+/// Supported locales.
+pub static SUPPORTED_LOCALES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
+    LOCALIZATION
+        .iter()
+        .map(|(key, _)| {
+            let language: &'static str = key.to_string().leak();
+            language
+        })
+        .collect::<Vec<_>>()
 });

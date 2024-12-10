@@ -1,5 +1,5 @@
-use crate::SharedString;
 use std::{fmt, time::Duration};
+use zino_core::SharedString;
 
 /// A metric of the performance timing.
 #[derive(Debug, Clone)]

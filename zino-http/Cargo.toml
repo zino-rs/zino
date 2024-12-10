@@ -1,7 +1,7 @@
 [package]
 name = "zino-http"
 description = "HTTP requests and responses for zino."
-version = "0.0.1"
+version = "0.1.0"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -12,4 +12,76 @@ repository = "https://github.com/zino-rs/zino"
 documentation = "https://docs.rs/zino-http"
 readme = "README.md"
 
+[features]
+cookie = ["dep:cookie", "reqwest/cookies", "zino-core/cookie"]
+i18n = ["dep:fluent", "dep:unic-langid", "zino-core/i18n"]
+http02 = ["dep:http02"]
+jwt = ["dep:jwt-simple", "zino-core/jwt"]
+metrics = ["zino-core/metrics"]
+openapi = ["zino-core/openapi"]
+view = ["zino-core/view"]
+
 [dependencies]
+bytes = "1.9.0"
+etag = "4.0.0"
+futures = "0.3.31"
+http = "1.2.0"
+mime_guess = "2.0.5"
+multer = "3.1.0"
+percent-encoding = "2.3.1"
+regex = "1.11.1"
+ryu = "1.0.18"
+serde_qs = "0.13.0"
+smallvec = "1.13.2"
+tracing = "0.1.41"
+url = "2.5.4"
+
+[dependencies.cookie]
+version = "0.18.1"
+optional = true
+
+[dependencies.fluent]
+version = "0.16.1"
+optional = true
+
+[dependencies.http02]
+package = "http"
+version = "0.2.12"
+optional = true
+
+[dependencies.jwt-simple]
+version = "0.12.10"
+optional = true
+default-features = false
+features = ["pure-rust"]
+
+[dependencies.reqwest]
+version = "0.12.9"
+default-features = false
+features = [
+    "blocking",
+    "gzip",
+    "json",
+    "multipart",
+]
+
+[dependencies.serde]
+version = "1.0.215"
+features = ["derive"]
+
+[dependencies.serde_json]
+version = "1.0.133"
+features = ["raw_value"]
+
+[dependencies.toml]
+version = "0.8.19"
+default-features = false
+features = ["parse"]
+
+[dependencies.unic-langid]
+version = "0.9.5"
+optional = true
+
+[dependencies.zino-core]
+path = "../zino-core"
+version = "0.28.1"

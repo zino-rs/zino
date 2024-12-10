@@ -1,12 +1,4 @@
-use crate::{
-    application::http_client,
-    bail,
-    error::Error,
-    extension::{HeaderMapExt, JsonObjectExt, JsonValueExt, TomlTableExt, TomlValueExt},
-    helper,
-    trace::TraceContext,
-    JsonValue, Map,
-};
+use crate::helper;
 use http::{
     header::{HeaderMap, HeaderName},
     Method,
@@ -15,6 +7,14 @@ use serde::{de::DeserializeOwned, Serialize};
 use serde_json::value::RawValue;
 use toml::Table;
 use url::Url;
+use zino_core::{
+    application::http_client,
+    bail,
+    error::Error,
+    extension::{HeaderMapExt, JsonObjectExt, JsonValueExt, TomlTableExt, TomlValueExt},
+    trace::TraceContext,
+    JsonValue, Map,
+};
 
 /// User-defined HTTP callbacks.
 pub struct WebHook {
@@ -24,6 +24,8 @@ pub struct WebHook {
     method: Method,
     /// Base URL.
     base_url: Url,
+    /// HTTP request query.
+    query: Map,
     /// HTTP request headers.
     headers: Map,
     /// Optional request body.
@@ -67,6 +69,7 @@ impl WebHook {
             name: name.to_owned(),
             method,
             base_url,
+            query: Map::new(),
             headers,
             body,
             params,
@@ -80,10 +83,42 @@ impl WebHook {
         crate::openapi::get_webhook(name)
     }
 
-    /// Inserts a key/value pair into the webhook request headers.
+    /// Adds a key/value pair for the request query.
     #[inline]
-    pub fn insert_header(&mut self, key: &str, value: impl Into<JsonValue>) {
-        self.headers.upsert(key, value.into());
+    pub fn query(mut self, key: &str, value: impl Into<JsonValue>) -> Self {
+        let value = value.into();
+        if !value.is_null() {
+            self.query.upsert(key, value);
+        }
+        self
+    }
+
+    /// Adds a parameter for the request query.
+    #[inline]
+    pub fn query_param(mut self, key: &str, param: Option<&str>) -> Self {
+        if let Some(param) = param {
+            self.query.upsert(key, format!("${param}"));
+        } else {
+            self.query.upsert(key, format!("${key}"));
+        }
+        self
+    }
+
+    /// Builds the request query.
+    pub fn build_query(mut self) -> Result<Self, Error> {
+        if !self.query.is_empty() {
+            let query = serde_qs::to_string(&self.query)?;
+            self.base_url.set_query(Some(&query));
+            self.query.clear();
+        }
+        Ok(self)
+    }
+
+    /// Adds a key/value pair for the request headers.
+    #[inline]
+    pub fn header(mut self, key: &str, value: impl Into<JsonValue>) -> Self {
+        self.headers.upsert(key, value);
+        self
     }
 
     /// Sets the request query.

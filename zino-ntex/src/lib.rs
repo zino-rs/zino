@@ -20,7 +20,7 @@ pub type RouterConfigure = fn(cfg: &mut ntex::web::ServiceConfig);
 pub type Request = Extractor<ntex::web::HttpRequest>;
 
 /// A specialized response.
-pub type Response = zino_core::response::Response<ntex::http::StatusCode>;
+pub type Response = zino_http::response::Response<ntex::http::StatusCode>;
 
 /// A specialized `Result` type.
 pub type Result<T = NtexResponse> = std::result::Result<T, NtexRejection>;
