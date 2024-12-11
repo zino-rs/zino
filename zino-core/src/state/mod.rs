@@ -109,10 +109,18 @@ impl<T> State<T> {
     pub fn load_config(&mut self) {
         let env = self.env.as_str();
         let config_table = if let Ok(config_url) = std::env::var("ZINO_APP_CONFIG_URL") {
-            config::fetch_config_url(&config_url, env).unwrap_or_else(|err| {
-                tracing::error!("fail to fetch the config url `{config_url}`: {err}");
+            #[cfg(feature = "http-client")]
+            {
+                config::fetch_config_url(&config_url, env).unwrap_or_else(|err| {
+                    tracing::error!("fail to fetch the config url `{config_url}`: {err}");
+                    Table::new()
+                })
+            }
+            #[cfg(not(feature = "http-client"))]
+            {
+                tracing::error!("cannot fetch the config url `{config_url}`");
                 Table::new()
-            })
+            }
         } else {
             let format = std::env::var("ZINO_APP_CONFIG_FORMAT")
                 .map(|s| s.to_ascii_lowercase())

@@ -89,3 +89,4 @@ version = "0.1.0"
 [dependencies.zino-core]
 path = "../zino-core"
 version = "0.28.1"
+features = ["http-client"]

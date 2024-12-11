@@ -38,16 +38,12 @@
 
 use crate::{
     datetime::DateTime,
-    error::Error,
-    extension::{HeaderMapExt, JsonObjectExt, TomlTableExt},
+    extension::{JsonObjectExt, TomlTableExt},
     schedule::{AsyncJobScheduler, AsyncScheduler, Scheduler},
     state::{Env, State},
-    trace::TraceContext,
     LazyLock, Map,
 };
 use ahash::{HashMap, HashMapExt};
-use reqwest::Response;
-use serde::de::DeserializeOwned;
 use std::{
     borrow::Cow,
     env, fs,
@@ -64,6 +60,9 @@ mod secret_key;
 mod server_tag;
 mod static_record;
 
+#[cfg(feature = "http-client")]
+pub mod http_client;
+
 #[cfg(feature = "metrics")]
 mod metrics_exporter;
 
@@ -76,9 +75,10 @@ mod sentry_client;
 #[cfg(feature = "tracing-subscriber")]
 mod tracing_subscriber;
 
-pub mod http_client;
-
 pub(crate) use secret_key::SECRET_KEY;
+
+#[cfg(feature = "http-client")]
+use crate::{error::Error, extension::HeaderMapExt, trace::TraceContext};
 
 pub use plugin::Plugin;
 pub use server_tag::ServerTag;
@@ -116,6 +116,7 @@ pub trait Application {
         metrics_exporter::init::<Self>();
 
         // HTTP client
+        #[cfg(feature = "http-client")]
         http_client::init::<Self>();
 
         // View template
@@ -328,7 +329,8 @@ pub trait Application {
     }
 
     /// Makes an HTTP request to the provided URL.
-    async fn fetch(url: &str, options: Option<&Map>) -> Result<Response, Error> {
+    #[cfg(feature = "http-client")]
+    async fn fetch(url: &str, options: Option<&Map>) -> Result<reqwest::Response, Error> {
         let mut trace_context = TraceContext::new();
         let span_id = trace_context.span_id();
         trace_context
@@ -344,7 +346,11 @@ pub trait Application {
 
     /// Makes an HTTP request to the provided URL and
     /// deserializes the response body via JSON.
-    async fn fetch_json<T: DeserializeOwned>(url: &str, options: Option<&Map>) -> Result<T, Error> {
+    #[cfg(feature = "http-client")]
+    async fn fetch_json<T: serde::de::DeserializeOwned>(
+        url: &str,
+        options: Option<&Map>,
+    ) -> Result<T, Error> {
         let response = Self::fetch(url, options).await?.error_for_status()?;
         let data = if response.headers().has_json_content_type() {
             response.json().await?

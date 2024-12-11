@@ -23,6 +23,7 @@ The following optional features are available:
 | `dotenv`             | Enables the configuration loader for a `.env` file.    | No       |
 | `env-filter`         | Enables the `env-filter` for [`tracing-subscriber`].   | No       |
 | `flume`              | Enables the message channel via [`flume`].             | No       |
+| `http-client`        | Enables the HTTP client via [`reqwest`].               | No       |
 | `i18n`               | Enables the support for internationalization.          | No       |
 | `locale`             | Enables the support for locale related utilities.      | No       |
 | `metrics`            | Enables the [`metrics`] exporter.                      | No       |
@@ -43,6 +44,7 @@ The following optional features are available:
 [`opendal`]: https://crates.io/crates/opendal
 [`tracing-subscriber`]: https://crates.io/crates/tracing-subscriber
 [`flume`]: https://crates.io/crates/flume
+[`reqwest`]: https://crates.io/crates/reqwest
 [`metrics`]: https://crates.io/crates/metrics
 [`async-std`]: https://crates.io/crates/async-std
 [`tokio`]: https://crates.io/crates/tokio

@@ -1,13 +1,10 @@
 //! HTTP file uploading and downloading.
 
 use crate::{
-    application::http_client,
     crypto,
     encoding::{base64, hex},
     error::Error,
-    extension::{JsonObjectExt, JsonValueExt},
-    json,
-    trace::TraceContext,
+    extension::JsonObjectExt,
     warn, JsonValue, Map,
 };
 use bytes::Bytes;
@@ -15,15 +12,19 @@ use etag::EntityTag;
 use md5::{Digest, Md5};
 use mime_guess::Mime;
 use multer::{Field, Multipart};
-use reqwest::{
-    multipart::{Form, Part},
-    Response,
-};
 use std::{
-    borrow::Cow,
     fs::{self, File, OpenOptions},
     io::{self, ErrorKind, Read, Write},
     path::Path,
+};
+
+#[cfg(feature = "http-client")]
+use crate::{application::http_client, extension::JsonValueExt, json, trace::TraceContext};
+
+#[cfg(feature = "http-client")]
+use reqwest::{
+    multipart::{Form, Part},
+    Response,
 };
 
 /// A file with an associated name.
@@ -452,6 +453,7 @@ impl NamedFile {
     }
 
     /// Downloads a file from the URL.
+    #[cfg(feature = "http-client")]
     pub async fn download_from(url: &str, options: Option<&Map>) -> Result<Self, Error> {
         let mut trace_context = TraceContext::new();
         let span_id = trace_context.span_id();
@@ -483,7 +485,10 @@ impl NamedFile {
     }
 
     /// Uploads the file to the URL.
+    #[cfg(feature = "http-client")]
     pub async fn upload_to(&self, url: &str, options: Option<&Map>) -> Result<Response, Error> {
+        use std::borrow::Cow;
+
         let mut trace_context = TraceContext::new();
         let span_id = trace_context.span_id();
         trace_context

@@ -3,6 +3,7 @@ use std::path::Path;
 use toml::value::Table;
 
 /// Fetches the config from a URL.
+#[cfg(feature = "http-client")]
 pub(super) fn fetch_config_url(config_url: &str, env: &str) -> Result<Table, Error> {
     let res = reqwest::blocking::get(config_url)?;
     let config_table = if res

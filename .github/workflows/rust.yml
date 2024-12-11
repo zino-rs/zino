@@ -20,6 +20,8 @@ jobs:
       run: rustup install 1.80
     - name: Set default toolchain
       run: rustup default 1.80
+    - name: Update packages
+      run: sudo apt-get update
     - name: Install libgtk
       run: sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev libxdo-dev
     - name: Build
