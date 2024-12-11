@@ -5,7 +5,7 @@ use zino_core::{json, JsonValue, SharedString};
 /// A ToastUI Editor.
 pub fn TuiEditor(props: TuiEditorProps) -> Element {
     let mut markdown = use_signal(String::new);
-    let eval_editor = eval(
+    let eval_editor = document::eval(
         r#"
         const { Editor } = toastui;
         const { codeSyntaxHighlight } = Editor.plugin;
@@ -24,7 +24,7 @@ pub fn TuiEditor(props: TuiEditorProps) -> Element {
     );
     spawn(async move {
         loop {
-            let mut eval = eval(
+            let mut eval = document::eval(
                 r#"
                 const value = document.getElementById("tui-editor-input").value;
                 dioxus.send(value);
@@ -72,28 +72,28 @@ pub fn TuiEditor(props: TuiEditorProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct TuiEditorProps {
     /// The editor ID.
-    #[props(into, default = "editor".into())]
+    #[props(into, default = "editor")]
     pub id: SharedString,
     /// The height of the container.
-    #[props(into, default = "auto".into())]
+    #[props(into, default = "auto")]
     pub height: SharedString,
     /// The min-height of the container.
-    #[props(into, default = "300px".into())]
+    #[props(into, default = "300px")]
     pub min_height: SharedString,
     /// The initial value of Markdown string.
     #[props(into)]
     pub initial_value: SharedString,
     /// The initial type to show: `markdown` | `wysiwyg`.
-    #[props(into, default = "markdown".into())]
+    #[props(into, default = "markdown")]
     pub edit_type: SharedString,
     /// The preview style of Markdown mode: `tab` | `vertical`.
-    #[props(into, default = "vertical".into())]
+    #[props(into, default = "vertical")]
     pub preview_style: SharedString,
     /// The theme: `light` | `dark`.
-    #[props(into, default = "light".into())]
+    #[props(into, default = "light")]
     pub theme: SharedString,
     /// The i18n locale.
-    #[props(into, default = "en-US".into())]
+    #[props(into, default = "en-US")]
     pub locale: SharedString,
     /// An event handler to be called when the input value is changed.
     pub on_change: Option<EventHandler<String>>,

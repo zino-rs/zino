@@ -7,19 +7,22 @@ use crate::{
 use multer::Multipart;
 use serde::de::DeserializeOwned;
 use std::{borrow::Cow, net::IpAddr, str::FromStr, time::Instant};
-use zino_auth::{AccessKeyId, Authentication, ParseSecurityTokenError, SecurityToken, SessionId};
 use zino_core::{
     application::http_client,
     channel::{CloudEvent, Subscription},
-    datetime::DateTime,
     error::Error,
-    extension::{HeaderMapExt, JsonObjectExt},
+    extension::HeaderMapExt,
     file::NamedFile,
     model::{ModelHooks, Query},
     trace::{TraceContext, TraceState},
-    validation::Validation,
     warn, JsonValue, Map, SharedString, Uuid,
 };
+
+#[cfg(feature = "auth")]
+use zino_auth::{AccessKeyId, Authentication, ParseSecurityTokenError, SecurityToken, SessionId};
+
+#[cfg(feature = "auth")]
+use zino_core::{datetime::DateTime, extension::JsonObjectExt, validation::Validation};
 
 #[cfg(feature = "cookie")]
 use cookie::{Cookie, SameSite};
@@ -454,8 +457,7 @@ pub trait RequestContext {
     /// The value is extracted from the query or the `authorization` header.
     /// By default, the `Accept` header value is ignored and
     /// the canonicalized resource is set to the request path.
-    /// You should always manually set canonicalized headers by calling
-    /// `Authentication`'s method [`set_headers()`](Authentication::set_headers).
+    #[cfg(feature = "auth")]
     fn parse_authentication(&self) -> Result<Authentication, Rejection> {
         let method = self.request_method();
         let query = self.parse_query::<Map>().unwrap_or_default();
@@ -526,6 +528,7 @@ pub trait RequestContext {
     /// Attempts to construct an instance of `AccessKeyId` from an HTTP request.
     /// The value is extracted from the query parameter `access_key_id`
     /// or the `authorization` header.
+    #[cfg(feature = "auth")]
     fn parse_access_key_id(&self) -> Result<AccessKeyId, Rejection> {
         if let Some(access_key_id) = self.get_query("access_key_id") {
             Ok(access_key_id.into())
@@ -551,6 +554,7 @@ pub trait RequestContext {
 
     /// Attempts to construct an instance of `SecurityToken` from an HTTP request.
     /// The value is extracted from the `x-security-token` header.
+    #[cfg(feature = "auth")]
     fn parse_security_token(&self, key: &[u8]) -> Result<SecurityToken, Rejection> {
         use ParseSecurityTokenError::*;
         let query = self.parse_query::<Map>()?;
@@ -591,6 +595,7 @@ pub trait RequestContext {
 
     /// Attempts to construct an instance of `SessionId` from an HTTP request.
     /// The value is extracted from the `x-session-id` or `session-id` header.
+    #[cfg(feature = "auth")]
     fn parse_session_id(&self) -> Result<SessionId, Rejection> {
         self.get_header("x-session-id")
             .or_else(|| self.get_header("session-id"))

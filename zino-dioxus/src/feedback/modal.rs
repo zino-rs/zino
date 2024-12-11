@@ -19,8 +19,8 @@ pub fn ModalCard(props: ModalCardProps) -> Element {
     };
     rsx! {
         div {
-            class: props.class,
-            class: if props.visible { props.active_class },
+            class: "{props.class}",
+            class: if props.visible { "{props.active_class}" },
             style: "--bulma-modal-content-width:{width}",
             div { class: "modal-background" }
             div {
@@ -54,16 +54,16 @@ pub fn ModalCard(props: ModalCardProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct ModalCardProps {
     /// The class attribute for the component.
-    #[props(into, default = "modal".into())]
+    #[props(into, default = "modal")]
     pub class: Class,
     /// A class to apply when the modal is visible.
-    #[props(into, default = "is-active".into())]
+    #[props(into, default = "is-active")]
     pub active_class: Class,
     // A class to apply to the modal title.
     #[props(into, default)]
     pub title_class: Class,
     /// A class to apply to the `close` button element.
-    #[props(into, default = "delete".into())]
+    #[props(into, default = "delete")]
     pub close_class: Class,
     /// An event handler to be called when the `close` button is clicked.
     pub on_close: Option<EventHandler<MouseEvent>>,

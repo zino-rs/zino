@@ -29,7 +29,7 @@ pub fn Icon(props: IconProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct IconProps {
     /// The class attribute for the component.
-    #[props(into, default = "icon".into())]
+    #[props(into, default = "icon")]
     pub class: Class,
     /// The class to apply to the `<i>` element for a icon font.
     #[props(into, default)]
@@ -64,7 +64,7 @@ pub fn SvgIcon<T: IconShape + Clone + PartialEq + 'static>(props: SvgIconProps<T
 #[derive(Clone, PartialEq, Props)]
 pub struct SvgIconProps<T: IconShape + Clone + PartialEq + 'static> {
     /// The class attribute for the component.
-    #[props(into, default = "icon".into())]
+    #[props(into, default = "icon")]
     pub class: Class,
     /// The icon shape to use.
     pub shape: T,
@@ -81,10 +81,9 @@ pub struct SvgIconProps<T: IconShape + Clone + PartialEq + 'static> {
 
 /// A wrapper for combining an icon with text.
 pub fn IconText(props: IconTextProps) -> Element {
-    let class = props.class;
     rsx! {
         span {
-            class: "{class}",
+            class: "{props.class}",
             { props.children }
         }
     }
@@ -94,7 +93,7 @@ pub fn IconText(props: IconTextProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct IconTextProps {
     /// The class attribute for the component.
-    #[props(into, default = "icon-text".into())]
+    #[props(into, default = "icon-text")]
     pub class: Class,
     /// The children to render within the component.
     children: Element,

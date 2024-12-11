@@ -1,7 +1,7 @@
 [package]
 name = "zino-dioxus"
 description = "Dioxus components for zino."
-version = "0.9.5"
+version = "0.10.0"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -23,17 +23,17 @@ desktop = ["dep:dioxus-desktop"]
 clipboard = ["dioxus-sdk/clipboard"]
 
 [dependencies]
-dioxus = "0.5.6"
-dioxus-core = "0.5.6"
-dioxus-hooks = "0.5.6"
-dioxus-router = "0.5.6"
+dioxus = "0.6.0"
+dioxus-core = "0.6.0"
+dioxus-hooks = "0.6.0"
+dioxus-router = "0.6.0"
 image = "0.25.5"
 rust_decimal = "1.36.0"
 smallvec = "1.13.2"
 tracing = "0.1.41"
 
 [dependencies.chrono]
-version = "0.4.38"
+version = "0.4.39"
 features = ["serde"]
 
 [dependencies.comrak]
@@ -42,15 +42,15 @@ default-features = false
 features = ["shortcodes", "syntect"]
 
 [dependencies.dioxus-desktop]
-version = "0.5.6"
+version = "0.6.0"
 optional = true
 
 [dependencies.dioxus-free-icons]
-version = "0.8.6"
+version = "0.9.0"
 features = ["bootstrap", "font-awesome-solid"]
 
 [dependencies.dioxus-sdk]
-version = "0.5.1"
+version = "0.6.0"
 optional = true
 
 [dependencies.tokio]

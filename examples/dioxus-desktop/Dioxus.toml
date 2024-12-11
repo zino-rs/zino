@@ -14,8 +14,8 @@ index_on_404 = true
 
 [web.resource]
 style = [
-    "./css/bulma.min.css",
-    "./css/custom.css",
+    "public/css/bulma.min.css",
+    "public/css/custom.css",
 ]
 script = []
 
@@ -36,7 +36,7 @@ resources = ["config", "public"]
 tsp = true
 icon_path = "public/icons/icon.ico"
 webview_install_mode = "Skip"
-allow_downgrades = true
+allow_downgrades = false
 
 [bundle.windows.nsis]
 installer_icon = "public/icons/icon.ico"

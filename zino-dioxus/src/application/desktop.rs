@@ -33,10 +33,14 @@ where
         let desktop_context = dioxus_desktop::window();
         if let Some(config) = Self::shared_state().get_config("webview") {
             if let Some(zoom) = config.get_f64("zoom") {
-                desktop_context.webview.zoom(zoom);
+                if let Err(err) = desktop_context.webview.zoom(zoom) {
+                    tracing::error!("fail to set the webview zoom level: {err}");
+                }
             }
             if let Some(url) = config.get_str("url") {
-                desktop_context.webview.load_url(url);
+                if let Err(err) = desktop_context.webview.load_url(url) {
+                    tracing::error!("fail to load url: {err}");
+                }
             }
         }
         rsx! { Router::<R> {} }
@@ -237,6 +241,7 @@ where
             "launch a window named `{window_title}`",
         );
 
-        dioxus_desktop::launch::launch(Self::app_root, Vec::new(), desktop_config);
+        let vdom = VirtualDom::new(Self::app_root);
+        dioxus_desktop::launch::launch_virtual_dom(vdom, desktop_config);
     }
 }

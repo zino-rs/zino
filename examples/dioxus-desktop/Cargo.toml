@@ -1,18 +1,18 @@
 [package]
 name = "dioxus-desktop"
 description = "An example for Dioxus desktop integration."
-version = "0.6.1"
+version = "0.7.0"
 rust-version = "1.80"
 edition = "2021"
 publish = false
 
 [dependencies]
-dioxus = "0.5.6"
-dioxus-router = "0.5.6"
+dioxus = "0.6.0"
+dioxus-router = "0.6.0"
 tracing = "0.1.41"
 
 [dependencies.dioxus-free-icons]
-version = "0.8.6"
+version = "0.9.0"
 features = [
     "bootstrap",
     "font-awesome-brands",
@@ -28,8 +28,8 @@ features = ["dioxus-desktop"]
 [dependencies.zino-core]
 path = "../../zino-core"
 version = "0.28.0"
-features = ["env-filter", "tls-native"]
+features = ["env-filter", "http-client", "tls-native"]
 
 [dependencies.zino-dioxus]
 path = "../../zino-dioxus"
-version = "0.9.5"
+version = "0.10.0"

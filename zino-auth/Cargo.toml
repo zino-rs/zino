@@ -12,11 +12,20 @@ repository = "https://github.com/zino-rs/zino"
 documentation = "https://docs.rs/zino-auth"
 readme = "README.md"
 
+[package.metadata.docs.rs]
+features = [
+    "jwt",
+    "opa",
+    "sqids",
+]
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+rustdoc-args = ["--cfg", "docsrs"]
+
 [features]
 crypto-sm = ["zino-core/crypto-sm"]
 jwt = ["dep:jwt-simple", "regorus?/jwt"]
-sqids = ["dep:sqids"]
 opa = ["regorus"]
+sqids = ["dep:sqids"]
 
 [dependencies]
 cfg-if = "1.0"

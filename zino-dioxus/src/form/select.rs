@@ -17,7 +17,7 @@ pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -
     let entries = options.clone();
     rsx! {
         div {
-            class: props.class,
+            class: "{props.class}",
             class: if props.fullwidth { "is-fullwidth" },
             select {
                 name: props.name.into_owned(),
@@ -60,7 +60,7 @@ pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -
 #[derive(Clone, PartialEq, Props)]
 pub struct DataSelectProps<T: Clone + PartialEq + 'static> {
     /// The class attribute for the component.
-    #[props(into, default = "select".into())]
+    #[props(into, default = "select")]
     pub class: Class,
     /// The data options.
     #[props(into)]

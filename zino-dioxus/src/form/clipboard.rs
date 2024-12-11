@@ -5,7 +5,7 @@ use zino_core::SharedString;
 /// A button to copy the content to clipboard when clicked.
 pub fn CopyToClipboard(props: CopyToClipboardProps) -> Element {
     if props.hidden {
-        return None;
+        return rsx!{};
     }
 
     let mut clipboard = use_clipboard();

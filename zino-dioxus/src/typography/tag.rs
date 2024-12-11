@@ -6,7 +6,7 @@ use zino_core::SharedString;
 pub fn Tag(props: TagProps) -> Element {
     rsx! {
         button {
-            class: props.class,
+            class: "{props.class}",
             class: if !props.color.is_empty() { "is-{props.color}" },
             class: if !props.theme.is_empty() { "is-{props.theme}" },
             class: if !props.size.is_empty() { "is-{props.size}" },
@@ -26,7 +26,7 @@ pub fn Tag(props: TagProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct TagProps {
     /// The class attribute for the component.
-    #[props(into, default = "tag".into())]
+    #[props(into, default = "tag")]
     pub class: Class,
     /// The color of the tag: `white` | `light` | `dark` | `black`
     /// | `primary` | `link` | `info` | `success` | `warning` | `danger`.
@@ -55,8 +55,8 @@ pub fn Tags(props: TagsProps) -> Element {
     let justify = props.justify;
     rsx! {
         div {
-            class: props.class,
-            class: if !justify.is_empty() { format!("is-justify-content-{justify}") },
+            class: "{props.class}",
+            class: if !justify.is_empty() { "is-justify-content-{justify}" },
             class: if props.addons { "has-addons" },
             { props.children }
         }
@@ -67,7 +67,7 @@ pub fn Tags(props: TagsProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct TagsProps {
     /// The class attribute for the component.
-    #[props(into, default = "tags".into())]
+    #[props(into, default = "tags")]
     pub class: Class,
     /// The `justify-content` value: `flex-start` | `flex-end` | `center` | `space-between`
     /// | `space-around` | `space-evenly` | `start` | `end` | `left` | `right`.

@@ -16,6 +16,7 @@ The following optional features are available:
 
 | Name                 | Description                                            | Default? |
 |----------------------|--------------------------------------------------------|----------|
+| `auth`               | Enables the authentication and authorization.          | No       |
 | `cookie`             | Enables the support for cookies.                       | No       |
 | `i18n`               | Enables the support for internationalization.          | No       |
 | `jwt`                | Enables the support for JSON Web Token.                | No       |

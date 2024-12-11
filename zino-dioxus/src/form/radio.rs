@@ -9,12 +9,12 @@ pub fn Radio(props: RadioProps) -> Element {
             input {
                 class: props.class,
                 r#type: "radio",
-                ..props.attributes,
                 onchange: move |event| {
                     if let Some(handler) = props.on_change.as_ref() {
                         handler.call(event.value());
                     }
-                }
+                },
+                ..props.attributes,
             }
             { props.children }
         }
@@ -25,10 +25,10 @@ pub fn Radio(props: RadioProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct RadioProps {
     /// The class attribute for the component.
-    #[props(into, default = "radio".into())]
+    #[props(into, default = "radio")]
     pub class: Class,
     /// A class to apply to the `label` element.
-    #[props(into, default = "radio".into())]
+    #[props(into, default = "radio")]
     pub label_class: Class,
     /// An event handler to be called when the radio button is checked.
     pub on_change: Option<EventHandler<String>>,

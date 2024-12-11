@@ -1,10 +1,10 @@
 use crate::{class::Class, extension::VNodeExt};
 use dioxus::prelude::*;
-use dioxus_router::components::{IntoRoutable, Link};
+use dioxus_router::{components::Link, navigation::NavigationTarget};
 
 /// A responsive navigation header.
 pub fn Navbar(props: NavbarProps) -> Element {
-    let children = props.children.as_ref()?;
+    let children = props.children?;
     if children.has_component("NavbarBrand") {
         rsx! {
             nav {
@@ -28,7 +28,7 @@ pub fn Navbar(props: NavbarProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarProps {
     /// The class attribute for the component.
-    #[props(into, default = "navbar is-link".into())]
+    #[props(into, default = "navbar is-link")]
     pub class: Class,
     /// The children to render within the component.
     children: Element,
@@ -48,7 +48,7 @@ pub fn NavbarBrand(props: NavbarBrandProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarBrandProps {
     /// The class attribute for the component.
-    #[props(into, default = "navbar-brand".into())]
+    #[props(into, default = "navbar-brand")]
     pub class: Class,
     /// The children to render within the component.
     children: Element,
@@ -68,7 +68,7 @@ pub fn NavbarMenu(props: NavbarMenuProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarMenuProps {
     /// The class attribute for the component.
-    #[props(into, default = "navbar-menu is-active".into())]
+    #[props(into, default = "navbar-menu is-active")]
     pub class: Class,
     /// The children to render within the component.
     children: Element,
@@ -88,7 +88,7 @@ pub fn NavbarStart(props: NavbarStartProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarStartProps {
     /// The class attribute for the component.
-    #[props(into, default = "navbar-start".into())]
+    #[props(into, default = "navbar-start")]
     pub class: Class,
     /// The children to render within the component.
     children: Element,
@@ -108,7 +108,7 @@ pub fn NavbarCenter(props: NavbarCenterProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarCenterProps {
     /// The class attribute for the component.
-    #[props(into, default = "navbar-center".into())]
+    #[props(into, default = "navbar-center")]
     pub class: Class,
     /// The children to render within the component.
     children: Element,
@@ -128,7 +128,7 @@ pub fn NavbarEnd(props: NavbarEndProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarEndProps {
     /// The class attribute for the component.
-    #[props(into, default = "navbar-end".into())]
+    #[props(into, default = "navbar-end")]
     pub class: Class,
     /// The children to render within the component.
     children: Element,
@@ -140,7 +140,7 @@ pub fn NavbarDropdown(props: NavbarDropdownProps) -> Element {
         div {
             class: "navbar-item has-dropdown is-hoverable",
             a {
-                class: props.button_class,
+                class: "{props.button_class}",
                 class: if props.arrowless { "is-arrowless" },
                 { props.button }
             }
@@ -156,10 +156,10 @@ pub fn NavbarDropdown(props: NavbarDropdownProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarDropdownProps {
     /// The class attribute for the component.
-    #[props(into, default = "navbar-dropdown".into())]
+    #[props(into, default = "navbar-dropdown")]
     pub class: Class,
     /// A class to apply to the trigger button element.
-    #[props(into, default = "navbar-link".into())]
+    #[props(into, default = "navbar-link")]
     pub button_class: Class,
     /// A flag to indicate whether the trigger button has an arrow or not.
     #[props(default)]
@@ -186,14 +186,14 @@ pub fn NavbarLink(props: NavbarLinkProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarLinkProps {
     /// The class attribute for the component.
-    #[props(into, default = "navbar-item".into())]
+    #[props(into, default = "navbar-item")]
     pub class: Class,
     /// A class to apply to the generate HTML anchor tag if the `target` route is active.
-    #[props(into, default = "is-active".into())]
+    #[props(into, default = "is-active")]
     pub active_class: Class,
     /// The navigation target. Roughly equivalent to the href attribute of an HTML anchor tag.
     #[props(into)]
-    pub to: IntoRoutable,
+    pub to: NavigationTarget,
     /// The children to render within the component.
     children: Element,
 }
@@ -212,7 +212,7 @@ pub fn NavbarItem(props: NavbarItemProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NavbarItemProps {
     /// The class attribute for the component.
-    #[props(into, default = "navbar-item".into())]
+    #[props(into, default = "navbar-item")]
     pub class: Class,
     /// The children to render within the component.
     children: Element,

@@ -9,7 +9,7 @@ where
     E: Clone + PartialEq + 'static,
 {
     if !props.visible {
-        return None;
+        return rsx!{};
     }
     match props.future {
         Some(Ok(data)) => {
@@ -18,8 +18,7 @@ where
             }
             rsx! {
                 div {
-                    class: props.class,
-                    class: "is-success",
+                    class: "{props.class} is-success",
                     position: "fixed",
                     top: "4rem",
                     right: "0.75rem",
@@ -52,8 +51,7 @@ where
             }
             rsx! {
                 div {
-                    class: props.class,
-                    class: "is-danger",
+                    class: "{props.class} is-danger",
                     position: "fixed",
                     top: "4rem",
                     right: "0.75rem",
@@ -85,12 +83,11 @@ where
                 handler.call(());
             }
             if props.loading.is_empty() {
-                None
+                rsx!{}
             } else {
                 rsx! {
                     div {
-                        class: props.class,
-                        class: "is-warning",
+                        class: "{props.class} is-warning",
                         position: "fixed",
                         top: "4rem",
                         right: "0.75rem",
@@ -125,10 +122,10 @@ where
 #[derive(Clone, PartialEq, Props)]
 pub struct OperationResultProps<T: Clone + PartialEq + 'static, E: Clone + PartialEq + 'static> {
     /// The class attribute for the component.
-    #[props(into, default = "message".into())]
+    #[props(into, default = "message")]
     pub class: Class,
     /// A class to apply to the `close` button element.
-    #[props(into, default = "delete".into())]
+    #[props(into, default = "delete")]
     pub close_class: Class,
     /// A future value which represents the result of user operations.
     pub future: Option<Result<T, E>>,

@@ -13,7 +13,7 @@ pub fn FileUpload(props: FileUploadProps) -> Element {
     let has_name = props.children.is_some() || !file_names().is_empty();
     rsx! {
         div {
-            class: props.class,
+            class: "{props.class}",
             class: if !props.color.is_empty() { "is-{props.color}" },
             class: if !props.size.is_empty() { "is-{props.size}" },
             class: if props.fullwidth { "is-fullwidth" },
@@ -23,7 +23,6 @@ pub fn FileUpload(props: FileUploadProps) -> Element {
                 input {
                     class: props.input_class,
                     r#type: "file",
-                    ..props.attributes,
                     onchange: move |event| async move {
                         if let Some(handler) = props.on_change.as_ref() {
                             if let Some(file_engine) = event.files() {
@@ -48,7 +47,8 @@ pub fn FileUpload(props: FileUploadProps) -> Element {
                                 handler.call(files);
                             }
                         }
-                    }
+                    },
+                    ..props.attributes,
                 }
                 div {
                     class: "file-cta",
@@ -88,13 +88,13 @@ pub fn FileUpload(props: FileUploadProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct FileUploadProps {
     /// The class attribute for the component.
-    #[props(into, default = "file".into())]
+    #[props(into, default = "file")]
     pub class: Class,
     /// A class to apply to the `label` element.
-    #[props(into, default = "file-label".into())]
+    #[props(into, default = "file-label")]
     pub label_class: Class,
     /// A class to apply to the `label` element.
-    #[props(into, default = "file-input".into())]
+    #[props(into, default = "file-input")]
     pub input_class: Class,
     /// A flag to determine whether the control is fullwidth or not.
     /// The color of the button: `primary` | `link` | `info` | `success` | `warning` | `danger`.
@@ -124,13 +124,18 @@ pub fn FileTree(props: FileTreeProps) -> Element {
     let tree_id = props.tree_id;
     let icon_size = props.icon_size;
     let on_click = props.on_click;
-    let current_dir = props.current_dir.as_ref()?;
-    let current_dir_name = current_dir.file_name().and_then(|s| s.to_str())?;
+    let Some(current_dir) = props.current_dir.as_ref() else {
+        return rsx!{};
+    };
+    let Some(current_dir_name) = current_dir.file_name().and_then(|s| s.to_str()) else {
+        return rsx!{};
+    };
+
     let mut opened = use_signal(|| props.opened);
     let mut folders = Vec::new();
     let mut files = Vec::new();
     if opened() {
-        let entries = fs::read_dir(current_dir).ok()?;
+        let entries = fs::read_dir(current_dir)?;
         for entry in entries.flatten() {
             if let Ok(metadata) = entry.metadata() {
                 let path = entry.path();
@@ -200,10 +205,10 @@ pub fn FileTree(props: FileTreeProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct FileTreeProps {
     /// The class attribute for the component.
-    #[props(into, default = "file-tree".into())]
+    #[props(into, default = "file-tree")]
     pub class: Class,
     /// The class attribute for files in the current directory.
-    #[props(into, default = "file-node".into())]
+    #[props(into, default = "file-node")]
     pub file_class: Class,
     /// The current directory.
     pub current_dir: Option<PathBuf>,

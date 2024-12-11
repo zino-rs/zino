@@ -6,12 +6,11 @@ use zino_core::SharedString;
 pub fn Textarea(props: TextareaProps) -> Element {
     rsx! {
         textarea {
-            class: props.class,
+            class: "{props.class}",
             class: if !props.color.is_empty() { "is-{props.color}" },
             class: if !props.size.is_empty() { "is-{props.size}" },
             class: if !props.state.is_empty() { "is-{props.state}" },
             value: props.initial_value,
-            ..props.attributes,
             onchange: move |event| {
                 if let Some(handler) = props.on_change.as_ref() {
                     handler.call(event.value());
@@ -21,7 +20,8 @@ pub fn Textarea(props: TextareaProps) -> Element {
                 if let Some(handler) = props.on_input.as_ref() {
                     handler.call(event.value());
                 }
-            }
+            },
+            ..props.attributes,
         }
     }
 }
@@ -30,7 +30,7 @@ pub fn Textarea(props: TextareaProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct TextareaProps {
     /// The class attribute for the component.
-    #[props(into, default = "textarea".into())]
+    #[props(into, default = "textarea")]
     pub class: Class,
     /// The color of the input: `primary` | `link` | `info` | `success` | `warning` | `danger`.
     #[props(into, default)]

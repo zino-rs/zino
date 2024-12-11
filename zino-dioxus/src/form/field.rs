@@ -26,16 +26,16 @@ pub fn FormFieldContainer(props: FormFieldContainerProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct FormFieldContainerProps {
     /// The class attribute for the component.
-    #[props(into, default = "field is-horizontal".into())]
+    #[props(into, default = "field is-horizontal")]
     pub class: Class,
     /// A class to apply to the field label container.
-    #[props(into, default = "field-label".into())]
+    #[props(into, default = "field-label")]
     pub field_label_class: Class,
     /// A class to apply to the field body container.
-    #[props(into, default = "field-body".into())]
+    #[props(into, default = "field-body")]
     pub field_body_class: Class,
     /// A class to apply to the `label` element.
-    #[props(into, default = "label".into())]
+    #[props(into, default = "label")]
     pub label_class: Class,
     /// The label content.
     #[props(into)]
@@ -50,7 +50,7 @@ pub fn FormField(props: FormFieldProps) -> Element {
         div {
             class: props.class,
             div {
-                class: props.control_class,
+                class: "{props.control_class}",
                 class: if props.expanded { "is-expanded" },
                 { props.children }
             }
@@ -62,10 +62,10 @@ pub fn FormField(props: FormFieldProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct FormFieldProps {
     /// The class attribute for the component.
-    #[props(into, default = "field".into())]
+    #[props(into, default = "field")]
     pub class: Class,
     /// A class to apply custom styles.
-    #[props(into, default = "control".into())]
+    #[props(into, default = "control")]
     pub control_class: Class,
     /// A flag to determine whether the control is expanded or not.
     #[props(default = false)]
@@ -78,7 +78,7 @@ pub struct FormFieldProps {
 pub fn FormGroup(props: FormGroupProps) -> Element {
     rsx! {
         div {
-            class: props.class,
+            class: "{props.class}",
             class: if props.align == "center" { "is-grouped-centered" },
             class: if props.align == "right" { "is-grouped-right" },
             for item in props.items.iter() {
@@ -95,10 +95,10 @@ pub fn FormGroup(props: FormGroupProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct FormGroupProps {
     /// The class attribute for the component.
-    #[props(into, default = "field is-grouped".into())]
+    #[props(into, default = "field is-grouped")]
     pub class: Class,
     /// A class to apply custom styles.
-    #[props(into, default = "control".into())]
+    #[props(into, default = "control")]
     pub control_class: Class,
     /// The alignment of the group: `left` | `center` | `right`.
     #[props(into, default)]
@@ -115,7 +115,7 @@ pub fn FormAddons(props: FormAddonsProps) -> Element {
             class: props.class,
             for (index, item) in props.items.iter().enumerate() {
                 div {
-                    class: props.control_class.clone(),
+                    class: "{props.control_class}",
                     class: if props.expand == index + 1 { "is-expanded" },
                     { item }
                 }
@@ -128,10 +128,10 @@ pub fn FormAddons(props: FormAddonsProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct FormAddonsProps {
     /// The class attribute for the component.
-    #[props(into, default = "field has-addons".into())]
+    #[props(into, default = "field has-addons")]
     pub class: Class,
     /// A class to apply custom styles.
-    #[props(into, default = "control".into())]
+    #[props(into, default = "control")]
     pub control_class: Class,
     /// A modifier to expand the `n`th element to fill up the remaining space.
     #[props(default = 0)]

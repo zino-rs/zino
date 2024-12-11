@@ -9,12 +9,12 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
             input {
                 class: props.class,
                 r#type: "checkbox",
-                ..props.attributes,
                 onchange: move |event| {
                     if let Some(handler) = props.on_change.as_ref() {
                         handler.call(event.value());
                     }
-                }
+                },
+                ..props.attributes,
             }
             { props.children }
         }
@@ -25,10 +25,10 @@ pub fn Checkbox(props: CheckboxProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct CheckboxProps {
     /// The class attribute for the component.
-    #[props(into, default = "checkbox".into())]
+    #[props(into, default = "checkbox")]
     pub class: Class,
     /// A class to apply to the `label` element.
-    #[props(into, default = "checkbox".into())]
+    #[props(into, default = "checkbox")]
     pub label_class: Class,
     /// An event handler to be called when the checkbox's state is changed.
     pub on_change: Option<EventHandler<String>>,

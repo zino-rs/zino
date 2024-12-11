@@ -6,6 +6,8 @@ use zino_dioxus::prelude::*;
 
 pub fn Wrapper() -> Element {
     rsx! {
+        document::Stylesheet { href: asset!("/public/css/bulma.min.css") }
+        document::Stylesheet { href: asset!("/public/css/custom.css") }
         Navbar {
             NavbarStart {
                 NavbarLink {

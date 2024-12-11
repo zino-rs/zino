@@ -13,11 +13,11 @@ pub fn Notification(props: NotificationProps) -> Element {
         });
     }
     if hidden() {
-        return None;
+        return rsx!{};
     }
     rsx! {
         div {
-            class: props.class,
+            class: "{props.class}",
             class: if !props.color.is_empty() { "is-{props.color}" },
             class: if !props.theme.is_empty() { "is-{props.theme}" },
             position: "fixed",
@@ -44,10 +44,10 @@ pub fn Notification(props: NotificationProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct NotificationProps {
     /// The class attribute for the component.
-    #[props(into, default = "notification".into())]
+    #[props(into, default = "notification")]
     pub class: Class,
     /// A class to apply to the `close` button element.
-    #[props(into, default = "delete".into())]
+    #[props(into, default = "delete")]
     pub close_class: Class,
     /// The color of the notification: `primary` | `link` | `info` | `success` | `warning` | `danger`.
     #[props(into, default)]

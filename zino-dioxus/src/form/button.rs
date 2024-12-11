@@ -7,8 +7,8 @@ pub fn Button(props: ButtonProps) -> Element {
     let title = props.title;
     rsx! {
         button {
-            class: props.class,
-            class: if props.selected { props.selected_class },
+            class: "{props.class}",
+            class: if props.selected { "{props.selected_class}" },
             class: if !props.color.is_empty() { "is-{props.color}" },
             class: if !props.theme.is_empty() { "is-{props.theme}" },
             class: if !props.size.is_empty() { "is-{props.size}" },
@@ -36,10 +36,10 @@ pub fn Button(props: ButtonProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct ButtonProps {
     /// The class attribute for the component.
-    #[props(into, default = "button".into())]
+    #[props(into, default = "button")]
     pub class: Class,
     /// A class to apply to the component if the button is selected.
-    #[props(into, default = "is-link is-selected".into())]
+    #[props(into, default = "is-link is-selected")]
     pub selected_class: Class,
     /// The color of the button: `white` | `light` | `dark` | `black` | `text` | `ghost`
     /// | `primary` | `link` | `info` | `success` | `warning` | `danger`.
@@ -91,7 +91,7 @@ pub struct ButtonProps {
 pub fn Buttons(props: ButtonsProps) -> Element {
     rsx! {
         div {
-            class: props.class,
+            class: "{props.class}",
             class: if props.align == "center" { "is-centered" },
             class: if props.align == "right" { "is-right" },
             class: if props.addons { "has-addons" },
@@ -104,7 +104,7 @@ pub fn Buttons(props: ButtonsProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct ButtonsProps {
     /// The class attribute for the component.
-    #[props(into, default = "buttons".into())]
+    #[props(into, default = "buttons")]
     pub class: Class,
     /// The alignment of the buttons: `left` | `center` | `right`.
     #[props(into, default)]

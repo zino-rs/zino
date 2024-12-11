@@ -6,13 +6,12 @@ use zino_core::SharedString;
 pub fn Input(props: InputProps) -> Element {
     rsx! {
        input {
-            class: props.class,
+            class: "{props.class}",
             class: if !props.color.is_empty() { "is-{props.color}" },
             class: if !props.size.is_empty() { "is-{props.size}" },
             class: if !props.state.is_empty() { "is-{props.state}" },
             r#type: "text",
             value: props.initial_value,
-            ..props.attributes,
             onchange: move |event| {
                 if let Some(handler) = props.on_change.as_ref() {
                     handler.call(event.value());
@@ -22,7 +21,8 @@ pub fn Input(props: InputProps) -> Element {
                 if let Some(handler) = props.on_input.as_ref() {
                     handler.call(event.value());
                 }
-            }
+            },
+            ..props.attributes,
         }
     }
 }
@@ -31,7 +31,7 @@ pub fn Input(props: InputProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct InputProps {
     /// The class attribute for the component.
-    #[props(into, default = "input".into())]
+    #[props(into, default = "input")]
     pub class: Class,
     /// The color of the input: `primary` | `link` | `info` | `success` | `warning` | `danger`.
     #[props(into, default)]

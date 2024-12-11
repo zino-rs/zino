@@ -15,7 +15,7 @@ pub fn Sidebar(props: SidebarProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct SidebarProps {
     /// The class attribute for the component.
-    #[props(into, default = "sidebar".into())]
+    #[props(into, default = "sidebar")]
     pub class: Class,
     /// The children to render within the component.
     children: Element,

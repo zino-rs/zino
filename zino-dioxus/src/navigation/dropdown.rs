@@ -7,7 +7,7 @@ pub fn Dropdown(props: DropdownProps) -> Element {
     let title = props.title;
     rsx! {
         div {
-            class: props.class,
+            class: "{props.class}",
             class: if props.hoverable { "is-hoverable" },
             class: if props.dropup { "is-up" },
             class: if props.align == "right" { "is-right" },
@@ -33,16 +33,16 @@ pub fn Dropdown(props: DropdownProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct DropdownProps {
     /// The class attribute for the component.
-    #[props(into, default = "dropdown".into())]
+    #[props(into, default = "dropdown")]
     pub class: Class,
     /// A class to apply to the trigger button.
-    #[props(into, default = "dropdown-trigger".into())]
+    #[props(into, default = "dropdown-trigger")]
     pub trigger_class: Class,
     /// A class to apply to the menu.
-    #[props(into, default = "dropdown-menu".into())]
+    #[props(into, default = "dropdown-menu")]
     pub menu_class: Class,
     /// A class to apply to the menu content.
-    #[props(into, default = "dropdown-content".into())]
+    #[props(into, default = "dropdown-content")]
     pub content_class: Class,
     /// A flag to indicate whether the dropdown will show up when hovering.
     #[props(default)]

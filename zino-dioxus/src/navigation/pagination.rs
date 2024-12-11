@@ -10,13 +10,11 @@ pub fn Pagination(props: PaginationProps) -> Element {
     let current_page = props.current_page.max(1);
     let page_count = total.div_ceil(page_size);
     if total == 0 || page_count <= 1 {
-        return None;
+        return rsx!{};
     }
-
     rsx! {
         nav {
-            class: props.class,
-            class: "is-centered",
+            class: "{props.class} is-centered",
             a {
                 class: "pagination-previous",
                 class: if current_page == 1 || page_count <= 5 { "is-invisible" },
@@ -201,7 +199,7 @@ pub fn Pagination(props: PaginationProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct PaginationProps {
     /// The class attribute for the component.
-    #[props(into, default = "pagination".into())]
+    #[props(into, default = "pagination")]
     pub class: Class,
     /// Total number of data items.
     pub total: usize,
@@ -211,10 +209,10 @@ pub struct PaginationProps {
     /// The current page number.
     pub current_page: usize,
     /// The element for the previous button.
-    #[props(into, default = "Previous".into())]
+    #[props(into, default = "Previous")]
     pub prev_text: SharedString,
     /// The text for the next button.
-    #[props(into, default = "Next".into())]
+    #[props(into, default = "Next")]
     pub next_text: SharedString,
     /// The element for the previous button.
     pub prev: Option<VNode>,

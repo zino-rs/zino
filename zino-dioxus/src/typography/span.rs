@@ -24,13 +24,13 @@ pub fn FixedWidthSpan(props: FixedWidthSpanProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct FixedWidthSpanProps {
     /// The class attribute for the component.
-    #[props(into, default = "is-inline-block".into())]
+    #[props(into, default = "is-inline-block")]
     pub class: Class,
     /// The width of the span.
     #[props(into)]
     pub width: JsonValue,
     /// The `text-align` CSS property: `left` | `right` | `center` | `justify`.
-    #[props(into, default = "left".into())]
+    #[props(into, default = "left")]
     pub align: SharedString,
     /// The children to render within the component.
     children: Element,

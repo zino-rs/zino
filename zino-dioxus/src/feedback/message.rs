@@ -5,7 +5,7 @@ use zino_core::SharedString;
 /// Contextual feedback messages for typical user actions.
 pub fn Message(props: MessageProps) -> Element {
     if props.hidden {
-        return None;
+        return rsx!{};
     }
     rsx! {
         div {
@@ -37,10 +37,10 @@ pub fn Message(props: MessageProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct MessageProps {
     /// The class attribute for the component.
-    #[props(into, default = "message".into())]
+    #[props(into, default = "message")]
     pub class: Class,
     /// A class to apply to the `close` button element.
-    #[props(into, default = "delete".into())]
+    #[props(into, default = "delete")]
     pub close_class: Class,
     /// An event handler to be called when the `close` button is clicked.
     pub on_close: Option<EventHandler<bool>>,

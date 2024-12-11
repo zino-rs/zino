@@ -6,7 +6,7 @@ use zino_core::SharedString;
 pub fn Progress(props: ProgressProps) -> Element {
     rsx! {
         progress {
-            class: props.class,
+            class: "{props.class}",
             class: if !props.color.is_empty() { "is-{props.color}" },
             class: if !props.size.is_empty() { "is-{props.size}" },
             ..props.attributes,
@@ -19,7 +19,7 @@ pub fn Progress(props: ProgressProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct ProgressProps {
     /// The class attribute for the component.
-    #[props(into, default = "progress".into())]
+    #[props(into, default = "progress")]
     pub class: Class,
     /// The color of the button: `primary` | `link` | `info` | `success` | `warning` | `danger`.
     #[props(into, default)]

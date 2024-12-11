@@ -34,7 +34,7 @@ pub fn Card(props: CardProps) -> Element {
 #[derive(Clone, PartialEq, Props)]
 pub struct CardProps {
     /// The class attribute for the component.
-    #[props(into, default = "card".into())]
+    #[props(into, default = "card")]
     pub class: Class,
     /// The modal title to render within the component.
     pub title: Element,
