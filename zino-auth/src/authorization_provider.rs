@@ -1,5 +1,5 @@
 use super::ClientCredentials;
-use crate::error::Error;
+use zino_core::error::Error;
 
 /// A server which provides authorization services.
 ///

@@ -9,3 +9,19 @@
 Authentication and authorization for [`zino`].
 
 [`zino`]: https://github.com/zino-rs/zino
+
+## Feature flags
+
+The following optional features are available:
+
+| Name                 | Description                                            | Default? |
+|----------------------|--------------------------------------------------------|----------|
+| `crypto-sm`          | Enables China's Standards of Encryption Algorithms.    | No       |
+| `jwt`                | Enables the support for JSON Web Token.                | No       |
+| `opa`                | Enables the support for OPA via [`regorus`].           | No       |
+| `sqids`              | Enables the support for [`sqids`].                     | No       |
+
+[`rauthy`]: https://crates.io/crates/rauthy-client
+[`regorus`]: https://crates.io/crates/regorus
+[`sqids`]: https://crates.io/crates/sqids
+

@@ -52,6 +52,7 @@ The following optional features are available:
 | Name         | Description                                          | Default? |
 |--------------|------------------------------------------------------|----------|
 | `actix`      | Enables the integration with [`actix-web`].          | No       |
+| `auth`       | Enables the authentication and authorization.        | No       |
 | `axum`       | Enables the integration with [`axum`].               | No       |
 | `cookie`     | Enables the support for cookies.                     | No       |
 | `debug`      | Enables the features for ease of debugging.          | No       |

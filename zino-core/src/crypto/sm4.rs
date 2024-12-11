@@ -13,7 +13,7 @@ const KEY_SIZE: usize = 16;
 const NONCE_SIZE: usize = 16;
 
 /// Encrypts the plaintext using `SM4`.
-pub(crate) fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
+pub fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
     let mut rng = rand::thread_rng();
     let mut nonce = [0u8; NONCE_SIZE];
     rng.fill(&mut nonce);
@@ -27,7 +27,7 @@ pub(crate) fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
 }
 
 /// Decrypts the data as bytes using `SM4`.
-pub(crate) fn decrypt(data: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
+pub fn decrypt(data: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
     if data.len() <= NONCE_SIZE {
         bail!("invalid data length");
     }

@@ -1,10 +1,10 @@
 use super::{AccessKeyId, SecretAccessKey};
-use crate::{datetime::DateTime, encoding::base64, error::Error, validation::Validation, Map};
 use hmac::{
     digest::{FixedOutput, KeyInit, MacMarker, Update},
     Mac,
 };
 use std::time::Duration;
+use zino_core::{datetime::DateTime, encoding::base64, error::Error, validation::Validation, Map};
 
 /// HTTP signature using HMAC.
 pub struct Authentication {

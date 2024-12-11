@@ -12,7 +12,7 @@ const KEY_SIZE: usize = 32;
 const NONCE_SIZE: usize = 12;
 
 /// Encrypts the plaintext using `AES-GCM-SIV`.
-pub(crate) fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
+pub fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
     let cipher = Aes256GcmSiv::new(GenericArray::from_slice(&padded_key(key)));
 
     let mut rng = rand::thread_rng();
@@ -28,7 +28,7 @@ pub(crate) fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
 }
 
 /// Decrypts the data as bytes using `AES-GCM-SIV`.
-pub(crate) fn decrypt(data: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
+pub fn decrypt(data: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
     if data.len() <= NONCE_SIZE {
         bail!("invalid data length");
     }

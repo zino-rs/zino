@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
+use zino_auth::JwtClaims;
 use zino_core::{
-    auth::JwtClaims,
     bail,
     datetime::DateTime,
     error::Error,
@@ -37,7 +37,8 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// use zino_core::{auth::JwtClaims, model::Model, orm::ModelAccessor};
+    /// use zino_auth::JwtClaims;
+    /// use zino_core::{model::Model, orm::ModelAccessor};
     /// use zino_model::user::{JwtAuthService, User};
     ///
     /// let user = User::new();

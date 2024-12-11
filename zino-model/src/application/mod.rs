@@ -2,8 +2,8 @@
 
 use crate::user::User;
 use serde::{Deserialize, Serialize};
+use zino_auth::AccessKeyId;
 use zino_core::{
-    auth::AccessKeyId,
     datetime::DateTime,
     error::Error,
     extension::JsonObjectExt,
@@ -17,7 +17,7 @@ use zino_derive::{DecodeRow, Entity, ModelAccessor, Schema};
 use crate::tag::Tag;
 
 #[cfg(feature = "maintainer-id")]
-use zino_core::auth::UserSession;
+use zino_auth::UserSession;
 
 /// The `application` model.
 #[derive(

@@ -9,3 +9,19 @@
 HTTP requests and responses for [`zino`].
 
 [`zino`]: https://github.com/zino-rs/zino
+
+## Feature flags
+
+The following optional features are available:
+
+| Name                 | Description                                            | Default? |
+|----------------------|--------------------------------------------------------|----------|
+| `cookie`             | Enables the support for cookies.                       | No       |
+| `i18n`               | Enables the support for internationalization.          | No       |
+| `jwt`                | Enables the support for JSON Web Token.                | No       |
+| `metrics`            | Enables the [`metrics`] exporter.                      | No       |
+| `openapi`            | Enables the support for OpenAPI docs via [`utoipa`].   | No       |
+| `view`               | Enables the HTML template rendering.                   | No       |
+
+[`metrics`]: https://crates.io/crates/metrics
+[`utoipa`]: https://crates.io/crates/utoipa

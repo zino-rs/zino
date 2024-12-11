@@ -1,4 +1,4 @@
 //! Encoding and decoding.
 
-pub(crate) mod base64;
-pub(crate) mod hex;
+pub mod base64;
+pub mod hex;

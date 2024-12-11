@@ -1,10 +1,3 @@
-use crate::{
-    crypto::{self, Digest},
-    encoding::base64,
-    extension::TomlTableExt,
-    state::State,
-    LazyLock,
-};
 use hmac::{
     digest::{FixedOutput, KeyInit, MacMarker, Update},
     Hmac, Mac,
@@ -12,6 +5,14 @@ use hmac::{
 use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, fmt, iter};
+use zino_core::{
+    application::APP_NAME,
+    crypto::{self, Digest},
+    encoding::base64,
+    extension::TomlTableExt,
+    state::State,
+    LazyLock,
+};
 
 /// Access key ID.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -192,7 +193,7 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
         .unwrap_or_else(|| {
             let secret = config.get_str("secret").unwrap_or_else(|| {
                 tracing::warn!("auto-generated `secret` is used for deriving a secret key");
-                crate::application::APP_NAME.as_ref()
+                APP_NAME.as_ref()
             });
             crypto::digest(secret.as_bytes())
         });

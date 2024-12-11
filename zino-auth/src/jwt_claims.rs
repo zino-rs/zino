@@ -1,11 +1,3 @@
-use crate::{
-    crypto,
-    datetime::DateTime,
-    error::Error,
-    extension::{JsonObjectExt, TomlTableExt},
-    state::State,
-    JsonValue, LazyLock, Map,
-};
 use jwt_simple::{
     algorithms::MACLike,
     claims::{self, Audiences, Claims, JWTClaims},
@@ -13,6 +5,15 @@ use jwt_simple::{
 };
 use serde::{de::DeserializeOwned, Serialize};
 use std::time::Duration;
+use zino_core::{
+    application::APP_NAME,
+    crypto,
+    datetime::DateTime,
+    error::Error,
+    extension::{JsonObjectExt, TomlTableExt},
+    state::State,
+    JsonValue, LazyLock, Map,
+};
 
 /// JWT Claims.
 #[derive(Debug, Clone)]
@@ -249,7 +250,7 @@ static SECRET_KEY: LazyLock<JwtHmacKey> = LazyLock::new(|| {
         .unwrap_or_else(|| {
             let secret = config.get_str("secret").unwrap_or_else(|| {
                 tracing::warn!("auto-generated `secret` is used for deriving a secret key");
-                crate::application::APP_NAME.as_ref()
+                APP_NAME.as_ref()
             });
             crypto::digest(secret.as_bytes())
         });

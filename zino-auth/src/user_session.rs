@@ -1,10 +1,13 @@
 use super::{AccessKeyId, SessionId};
-use crate::{application::APP_DOMAIN, crypto::Digest};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+use zino_core::{application::APP_DOMAIN, crypto::Digest};
 
 #[cfg(feature = "jwt")]
-use crate::{auth::JwtClaims, error::Error, extension::JsonObjectExt, warn};
+use super::JwtClaims;
+
+#[cfg(feature = "jwt")]
+use zino_core::{error::Error, extension::JsonObjectExt, warn};
 
 /// Role-based user sessions.
 #[derive(Debug, Clone, Serialize, Deserialize)]

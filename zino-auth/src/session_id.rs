@@ -1,7 +1,7 @@
-use crate::{encoding::base64, error::Error, validation::Validation, SharedString};
 use hmac::digest::{Digest, FixedOutput, HashMarker, Update};
 use serde::{Deserialize, Serialize};
 use std::{error, fmt};
+use zino_core::{encoding::base64, error::Error, validation::Validation, SharedString};
 
 /// Session Identification URI.
 /// See [the spec](https://www.w3.org/TR/WD-session-id).

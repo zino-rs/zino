@@ -31,7 +31,7 @@ static INTERPOLATION_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
 
 #[cfg(test)]
 mod tests {
-    use crate::{extension::JsonObjectExt, Map};
+    use zino_core::{extension::JsonObjectExt, Map};
 
     #[test]
     fn it_formats_query_params() {

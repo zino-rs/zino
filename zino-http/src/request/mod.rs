@@ -7,9 +7,9 @@ use crate::{
 use multer::Multipart;
 use serde::de::DeserializeOwned;
 use std::{borrow::Cow, net::IpAddr, str::FromStr, time::Instant};
+use zino_auth::{AccessKeyId, Authentication, ParseSecurityTokenError, SecurityToken, SessionId};
 use zino_core::{
     application::http_client,
-    auth::{AccessKeyId, Authentication, ParseSecurityTokenError, SecurityToken, SessionId},
     channel::{CloudEvent, Subscription},
     datetime::DateTime,
     error::Error,
@@ -27,7 +27,7 @@ use cookie::{Cookie, SameSite};
 #[cfg(feature = "jwt")]
 use jwt_simple::algorithms::MACLike;
 #[cfg(feature = "jwt")]
-use zino_core::auth::JwtClaims;
+use zino_auth::JwtClaims;
 
 #[cfg(any(feature = "cookie", feature = "jwt"))]
 use std::time::Duration;
@@ -358,7 +358,7 @@ pub trait RequestContext {
             #[cfg(feature = "jwt")]
             if let Some(timestamp) = self.get_query("timestamp").and_then(|s| s.parse().ok()) {
                 let duration = DateTime::from_timestamp(timestamp).span_between_now();
-                if duration > zino_core::auth::default_time_tolerance() {
+                if duration > zino_auth::default_time_tolerance() {
                     let err = warn!("timestamp `{}` can not be trusted", timestamp);
                     let rejection = Rejection::from_validation_entry("timestamp", err);
                     return Err(rejection.context(self));
@@ -504,7 +504,7 @@ pub trait RequestContext {
             match DateTime::parse_utc_str(date) {
                 Ok(date) => {
                     #[cfg(feature = "jwt")]
-                    if date.span_between_now() <= zino_core::auth::default_time_tolerance() {
+                    if date.span_between_now() <= zino_auth::default_time_tolerance() {
                         authentication.set_date_header("date", date);
                     } else {
                         validation.record("date", "untrusted date");
@@ -632,7 +632,7 @@ pub trait RequestContext {
             return Err(Rejection::bad_request(validation).context(self));
         }
 
-        let mut options = zino_core::auth::default_verification_options();
+        let mut options = zino_auth::default_verification_options();
         options.reject_before = self
             .get_query("timestamp")
             .and_then(|s| s.parse().ok())

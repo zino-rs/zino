@@ -1,7 +1,7 @@
-use crate::{application, error::Error, LazyLock};
 use parking_lot::Mutex;
 use regorus::{Engine, Value};
 use std::{fs, io::ErrorKind};
+use zino_core::{application, error::Error, LazyLock};
 
 /// Rego evaluation engine.
 pub struct RegoEngine {

@@ -1,7 +1,7 @@
 [package]
 name = "zino-auth"
 description = "Authentication and authorization for zino."
-version = "0.0.1"
+version = "0.1.0"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -12,4 +12,62 @@ repository = "https://github.com/zino-rs/zino"
 documentation = "https://docs.rs/zino-auth"
 readme = "README.md"
 
+[features]
+crypto-sm = ["zino-core/crypto-sm"]
+jwt = ["dep:jwt-simple", "regorus?/jwt"]
+sqids = ["dep:sqids"]
+opa = ["regorus"]
+
 [dependencies]
+cfg-if = "1.0"
+hmac = "0.12.1"
+parking_lot = "0.12.3"
+rand = "0.8.5"
+tracing = "0.1.41"
+
+[dependencies.jwt-simple]
+version = "0.12.10"
+optional = true
+default-features = false
+features = ["pure-rust"]
+
+[dependencies.regorus]
+version = "0.2.7"
+optional = true
+default-features = false
+features = [
+    "arc",
+    "base64",
+    "base64url",
+    "crypto",
+    "glob",
+    "hex",
+    "http",
+    "jsonschema",
+    "regex",
+    "semver",
+    "time",
+    "urlquery",
+    "uuid",
+]
+
+[dependencies.serde]
+version = "1.0.215"
+features = ["derive"]
+
+[dependencies.sm3]
+version = "0.4.2"
+optional = true
+
+[dependencies.sqids]
+version = "0.4.1"
+optional = true
+
+[dependencies.toml]
+version = "0.8.19"
+default-features = false
+features = ["parse"]
+
+[dependencies.zino-core]
+path = "../zino-core"
+version = "0.28.1"

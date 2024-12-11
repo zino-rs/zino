@@ -1,3 +1,5 @@
+//! HTTP client.
+
 use super::Application;
 use crate::{
     error::Error,

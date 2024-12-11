@@ -1,8 +1,8 @@
 //! The `user` model and related services.
 
 use serde::{Deserialize, Serialize};
+use zino_auth::{AccessKeyId, UserSession};
 use zino_core::{
-    auth::{AccessKeyId, UserSession},
     bail,
     datetime::DateTime,
     error::Error,

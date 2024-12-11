@@ -15,7 +15,7 @@ use zino_derive::{DecodeRow, Entity, ModelAccessor, Schema};
 use crate::user::User;
 
 #[cfg(feature = "maintainer-id")]
-use zino_core::auth::UserSession;
+use zino_auth::UserSession;
 
 /// The `tag` model.
 #[derive(

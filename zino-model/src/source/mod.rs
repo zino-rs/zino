@@ -18,7 +18,7 @@ use crate::tag::Tag;
 use crate::user::User;
 
 #[cfg(feature = "maintainer-id")]
-use zino_core::auth::UserSession;
+use zino_auth::UserSession;
 
 /// The `source` model.
 #[derive(

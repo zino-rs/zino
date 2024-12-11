@@ -139,18 +139,14 @@ full = [
     "env-filter",
     "flume",
     "i18n",
-    "jwt",
     "metrics",
     "oidc",
-    "opa",
     "openapi",
     "orm",
-    "sqids",
     "tracing-log",
     "view",
 ]
 i18n = ["dep:fluent", "dep:intl-memoizer", "dep:unic-langid"]
-jwt = ["dep:jwt-simple", "regorus?/jwt"]
 locale = ["random_word"]
 locale-en = ["locale", "random_word/en"]
 locale-es = ["locale", "random_word/es"]
@@ -163,7 +159,6 @@ metrics = [
     "opendal?/layers-metrics",
 ]
 oidc = ["dep:rauthy-client"]
-opa = ["regorus"]
 openapi = ["dep:utoipa"]
 orm = ["orm-sqlx"]
 orm-mariadb = ["orm-sqlx", "sqlx/mysql"]
@@ -272,12 +267,6 @@ optional = true
 version = "0.5.2"
 optional = true
 
-[dependencies.jwt-simple]
-version = "0.12.10"
-optional = true
-default-features = false
-features = ["pure-rust"]
-
 [dependencies.metrics]
 version = "0.24.1"
 optional = true
@@ -310,26 +299,6 @@ optional = true
 [dependencies.rauthy-client]
 version = "0.4.0"
 optional = true
-
-[dependencies.regorus]
-version = "0.2.7"
-optional = true
-default-features = false
-features = [
-    "arc",
-    "base64",
-    "base64url",
-    "crypto",
-    "glob",
-    "hex",
-    "http",
-    "jsonschema",
-    "regex",
-    "semver",
-    "time",
-    "urlquery",
-    "uuid",
-]
 
 [dependencies.reqwest]
 version = "0.12.9"

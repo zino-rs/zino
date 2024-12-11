@@ -387,7 +387,7 @@ pub(crate) fn join_path(dir: &Path, path: &str) -> PathBuf {
 }
 
 /// App name.
-pub(crate) static APP_NAME: LazyLock<&'static str> = LazyLock::new(|| {
+pub static APP_NAME: LazyLock<&'static str> = LazyLock::new(|| {
     SHARED_APP_STATE
         .config()
         .get_str("name")
@@ -399,7 +399,7 @@ pub(crate) static APP_NAME: LazyLock<&'static str> = LazyLock::new(|| {
 });
 
 /// App version.
-pub(crate) static APP_VERSION: LazyLock<&'static str> = LazyLock::new(|| {
+pub static APP_VERSION: LazyLock<&'static str> = LazyLock::new(|| {
     SHARED_APP_STATE
         .config()
         .get_str("version")
@@ -411,7 +411,7 @@ pub(crate) static APP_VERSION: LazyLock<&'static str> = LazyLock::new(|| {
 });
 
 /// Domain.
-pub(crate) static APP_DOMAIN: LazyLock<&'static str> = LazyLock::new(|| {
+pub static APP_DOMAIN: LazyLock<&'static str> = LazyLock::new(|| {
     SHARED_APP_STATE
         .config()
         .get_str("domain")
@@ -419,7 +419,7 @@ pub(crate) static APP_DOMAIN: LazyLock<&'static str> = LazyLock::new(|| {
 });
 
 /// Project directory.
-pub(crate) static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
+pub static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     env::var("CARGO_MANIFEST_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|err| {
@@ -433,7 +433,7 @@ pub(crate) static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
 });
 
 /// The config directory.
-pub(crate) static CONFIG_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
+pub static CONFIG_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     env::var("ZINO_APP_CONFIG_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|_| PROJECT_DIR.join("config"))

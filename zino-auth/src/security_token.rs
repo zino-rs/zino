@@ -1,7 +1,7 @@
 use self::ParseSecurityTokenError::*;
 use super::AccessKeyId;
-use crate::{crypto, datetime::DateTime, encoding::base64, error::Error, warn};
 use std::{fmt, time::Duration};
+use zino_core::{crypto, datetime::DateTime, encoding::base64, error::Error, warn};
 
 /// Security token.
 #[derive(Debug, Clone)]

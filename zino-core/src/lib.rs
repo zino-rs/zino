@@ -5,8 +5,6 @@
 #![allow(async_fn_in_trait)]
 #![forbid(unsafe_code)]
 
-mod crypto;
-mod encoding;
 mod helper;
 mod mock;
 #[cfg(feature = "openapi")]
@@ -26,9 +24,10 @@ pub mod orm;
 pub mod view;
 
 pub mod application;
-pub mod auth;
 pub mod channel;
+pub mod crypto;
 pub mod datetime;
+pub mod encoding;
 pub mod error;
 pub mod extension;
 pub mod file;

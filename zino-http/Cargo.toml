@@ -16,7 +16,7 @@ readme = "README.md"
 cookie = ["dep:cookie", "reqwest/cookies", "zino-core/cookie"]
 i18n = ["dep:fluent", "dep:unic-langid", "zino-core/i18n"]
 http02 = ["dep:http02"]
-jwt = ["dep:jwt-simple", "zino-core/jwt"]
+jwt = ["dep:jwt-simple", "zino-auth/jwt"]
 metrics = ["zino-core/metrics"]
 openapi = ["zino-core/openapi"]
 view = ["zino-core/view"]
@@ -81,6 +81,10 @@ features = ["parse"]
 [dependencies.unic-langid]
 version = "0.9.5"
 optional = true
+
+[dependencies.zino-auth]
+path = "../zino-auth"
+version = "0.1.0"
 
 [dependencies.zino-core]
 path = "../zino-core"
