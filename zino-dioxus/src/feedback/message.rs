@@ -5,7 +5,7 @@ use zino_core::SharedString;
 /// Contextual feedback messages for typical user actions.
 pub fn Message(props: MessageProps) -> Element {
     if props.hidden {
-        return rsx!{};
+        return rsx! {};
     }
     rsx! {
         div {

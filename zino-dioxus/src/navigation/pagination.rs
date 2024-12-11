@@ -10,7 +10,7 @@ pub fn Pagination(props: PaginationProps) -> Element {
     let current_page = props.current_page.max(1);
     let page_count = total.div_ceil(page_size);
     if total == 0 || page_count <= 1 {
-        return rsx!{};
+        return rsx! {};
     }
     rsx! {
         nav {

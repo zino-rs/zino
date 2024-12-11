@@ -1,7 +1,7 @@
 [package]
 name = "zino-actix"
 description = "Integrations with actix-web for zino."
-version = "0.1.2"
+version = "0.2.0"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -33,7 +33,7 @@ features = ["actix-web"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.28.1"
+version = "0.29.0"
 features = ["openapi", "runtime-tokio"]
 
 [dependencies.zino-http]

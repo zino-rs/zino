@@ -13,7 +13,7 @@ pub fn Notification(props: NotificationProps) -> Element {
         });
     }
     if hidden() {
-        return rsx!{};
+        return rsx! {};
     }
     rsx! {
         div {

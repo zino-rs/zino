@@ -16,10 +16,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Install 1.80
-      run: rustup install 1.80
+    - name: Install 1.83
+      run: rustup install 1.83
     - name: Set default toolchain
-      run: rustup default 1.80
+      run: rustup default 1.83
     - name: Update packages
       run: sudo apt-get update
     - name: Install libgtk

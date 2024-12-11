@@ -35,7 +35,7 @@ rand = "0.8.5"
 tracing = "0.1.41"
 
 [dependencies.jwt-simple]
-version = "0.12.10"
+version = "0.12.11"
 optional = true
 default-features = false
 features = ["pure-rust"]
@@ -79,4 +79,4 @@ features = ["parse"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.28.1"
+version = "0.29.0"

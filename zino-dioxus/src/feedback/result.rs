@@ -9,7 +9,7 @@ where
     E: Clone + PartialEq + 'static,
 {
     if !props.visible {
-        return rsx!{};
+        return rsx! {};
     }
     match props.future {
         Some(Ok(data)) => {
@@ -83,7 +83,7 @@ where
                 handler.call(());
             }
             if props.loading.is_empty() {
-                rsx!{}
+                rsx! {}
             } else {
                 rsx! {
                     div {

@@ -1,7 +1,7 @@
 [package]
 name = "zino-amis"
 description = "UI generator for amis."
-version = "0.1.1"
+version = "0.2.0"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -41,5 +41,5 @@ features = ["parse"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.28.1"
+version = "0.29.0"
 features = ["tracing-subscriber"]

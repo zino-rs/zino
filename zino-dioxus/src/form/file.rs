@@ -125,10 +125,10 @@ pub fn FileTree(props: FileTreeProps) -> Element {
     let icon_size = props.icon_size;
     let on_click = props.on_click;
     let Some(current_dir) = props.current_dir.as_ref() else {
-        return rsx!{};
+        return rsx! {};
     };
     let Some(current_dir_name) = current_dir.file_name().and_then(|s| s.to_str()) else {
-        return rsx!{};
+        return rsx! {};
     };
 
     let mut opened = use_signal(|| props.opened);

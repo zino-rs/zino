@@ -1,7 +1,7 @@
 [package]
 name = "zino-axum"
 description = "Integrations with axum for zino."
-version = "0.1.3"
+version = "0.2.0"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -32,7 +32,7 @@ features = [
 ]
 
 [dependencies.tokio]
-version = "1.41.1"
+version = "1.42.0"
 features = [
     "macros",
     "parking_lot",
@@ -63,7 +63,7 @@ features = ["axum"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.28.1"
+version = "0.29.0"
 features = ["openapi", "runtime-tokio"]
 
 [dependencies.zino-http]

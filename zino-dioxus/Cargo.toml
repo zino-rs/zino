@@ -13,12 +13,12 @@ documentation = "https://docs.rs/zino-dioxus"
 readme = "README.md"
 
 [package.metadata.docs.rs]
-features = []
+features = ["desktop"]
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-default = []
+default = ["desktop"]
 desktop = ["dep:dioxus-desktop"]
 clipboard = ["dioxus-sdk/clipboard"]
 
@@ -72,5 +72,5 @@ features = [
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.28.1"
+version = "0.29.0"
 features = ["runtime-tokio"]
