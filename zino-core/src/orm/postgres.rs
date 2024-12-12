@@ -33,13 +33,7 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
                     "INT"
                 }
             }
-            "u16" | "i16" | "u8" | "i8" => {
-                if self.auto_increment() {
-                    "SMALLSERIAL"
-                } else {
-                    "SMALLINT"
-                }
-            }
+            "u16" | "i16" | "u8" | "i8" => "SMALLINT",
             "f64" => "DOUBLE PRECISION",
             "f32" => "REAL",
             "Decimal" => "NUMERIC",

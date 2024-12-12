@@ -71,7 +71,7 @@ impl GlobalAccessor {
     /// Constructs a new operator with the configuration for the specific storage service,
     /// returning an error if it fails.
     pub fn try_new_operator(scheme: &'static str, config: &Table) -> Result<Operator, Error> {
-        let operator = match scheme {
+        let operator: Operator = match scheme {
             #[cfg(feature = "accessor-azblob")]
             "azblob" => {
                 let mut builder = services::Azblob::default();

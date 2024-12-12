@@ -36,7 +36,7 @@ edition = []
 tracing = "0.1.41"
 
 [dependencies.serde]
-version = "1.0.215"
+version = "1.0.216"
 features = ["derive"]
 
 [dependencies.sqlx]
@@ -54,7 +54,7 @@ features = ["jwt"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.29.0"
+version = "0.29.1"
 features = ["orm", "validator-email"]
 
 [dependencies.zino-derive]

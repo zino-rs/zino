@@ -21,9 +21,9 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
             "u64" | "i64" | "usize" | "isize" | "Option<u64>" | "Option<i64>" | "u32" | "i32"
             | "u16" | "i16" | "u8" | "i8" | "Option<u32>" | "Option<i32>" => "INTEGER",
             "f64" | "f32" => "REAL",
-            "Date" => "DATE",
-            "Time" => "TIME",
-            "DateTime" => "DATETIME",
+            "Date" | "NaiveDate" => "DATE",
+            "Time" | "NaiveTime" => "TIME",
+            "DateTime" | "NaiveDateTime" => "DATETIME",
             "Vec<u8>" => "BLOB",
             _ => "TEXT",
         }

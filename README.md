@@ -59,6 +59,9 @@ fn main() {
 | [`zino-auth`]   | Authentication and authorization. | [![Crates.io](https://img.shields.io/crates/v/zino-auth)][zino-auth] | [![Documentation](https://shields.io/docsrs/zino-auth)][zino-auth-docs] |
 | [`zino-http`]   | Requests and responses.           | [![Crates.io](https://img.shields.io/crates/v/zino-http)][zino-http] | [![Documentation](https://shields.io/docsrs/zino-http)][zino-http-docs] |
 | [`zino-extra`]  | Extra utilities.                  | [![Crates.io](https://img.shields.io/crates/v/zino-extra)][zino-extra] | [![Documentation](https://shields.io/docsrs/zino-extra)][zino-extra-docs] |
+| [`zino-actix`]  | Integrations with actix-web.      | [![Crates.io](https://img.shields.io/crates/v/zino-actix)][zino-actix] | [![Documentation](https://shields.io/docsrs/zino-actix)][zino-actix-docs] |
+| [`zino-axum`]   | Integrations with axum.           | [![Crates.io](https://img.shields.io/crates/v/zino-axum)][zino-axum] | [![Documentation](https://shields.io/docsrs/zino-axum)][zino-axum-docs] |
+| [`zino-ntex`]   | Integrations with ntex.           | [![Crates.io](https://img.shields.io/crates/v/zino-ntex)][zino-ntex] | [![Documentation](https://shields.io/docsrs/zino-ntex)][zino-ntex-docs] |
 | [`zino-dioxus`] | Dioxus components.                | [![Crates.io](https://img.shields.io/crates/v/zino-dioxus)][zino-dioxus] | [![Documentation](https://shields.io/docsrs/zino-dioxus)][zino-dioxus-docs] |
 | [`zino-amis`]   | UI generator for amis.            | [![Crates.io](https://img.shields.io/crates/v/zino-amis)][zino-amis] | [![Documentation](https://shields.io/docsrs/zino-amis)][zino-amis-docs] |
 | [`zino-cli`]    | CLI tools.                        | [![Crates.io](https://img.shields.io/crates/v/zino-cli)][zino-cli] | [![Documentation](https://shields.io/docsrs/zino-cli)][zino-cli-docs] |
@@ -77,6 +80,9 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [`zino-auth`]: https://github.com/zino-rs/zino/tree/main/zino-auth
 [`zino-http`]: https://github.com/zino-rs/zino/tree/main/zino-http
 [`zino-extra`]: https://github.com/zino-rs/zino/tree/main/zino-extra
+[`zino-actix`]: https://github.com/zino-rs/zino/tree/main/zino-actix
+[`zino-axum`]: https://github.com/zino-rs/zino/tree/main/zino-axum
+[`zino-ntex`]: https://github.com/zino-rs/zino/tree/main/zino-ntex
 [`zino-dioxus`]: https://github.com/zino-rs/zino/tree/main/zino-dioxus
 [`zino-amis`]: https://github.com/zino-rs/zino/tree/main/zino-amis
 [`zino-cli`]: https://github.com/zino-rs/zino/tree/main/zino-cli

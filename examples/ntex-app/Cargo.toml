@@ -14,7 +14,7 @@ version = "2.10.0"
 default-features = false
 
 [dependencies.serde]
-version = "1.0.215"
+version = "1.0.216"
 features = ["derive"]
 
 [dependencies.zino]
@@ -31,7 +31,7 @@ features = [
 
 [dependencies.zino-core]
 path = "../../zino-core"
-version = "0.29.0"
+version = "0.29.1"
 features = ["env-filter", "orm-postgres"]
 
 [dependencies.zino-derive]
