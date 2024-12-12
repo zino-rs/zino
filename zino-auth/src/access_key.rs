@@ -63,7 +63,7 @@ impl AccessKeyId {
     /// Attempts to construct an instance by generating [Sqids](https://sqids.org/) from a UUID.
     #[cfg(feature = "sqids")]
     #[inline]
-    pub fn encode_uuid(id: &uuid::Uuid) -> Result<Self, sqids::Error> {
+    pub fn encode_uuid(id: &zino_core::Uuid) -> Result<Self, sqids::Error> {
         let (hi, lo) = id.as_u64_pair();
         SQIDS_GENERATOR.encode(&[hi, lo]).map(AccessKeyId)
     }
@@ -71,9 +71,9 @@ impl AccessKeyId {
     /// Decodes `self` as [Sqids](https://sqids.org/) into a UUID.
     #[cfg(feature = "sqids")]
     #[inline]
-    pub fn decode_uuid(&self) -> Option<uuid::Uuid> {
+    pub fn decode_uuid(&self) -> Option<zino_core::Uuid> {
         if let [hi, lo] = SQIDS_GENERATOR.decode(self.as_str()).as_slice() {
-            Some(uuid::Uuid::from_u64_pair(*hi, *lo))
+            Some(zino_core::Uuid::from_u64_pair(*hi, *lo))
         } else {
             None
         }

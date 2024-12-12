@@ -51,16 +51,17 @@ fn main() {
 
 ## Crates
 
-| Name            | Description            | Crates.io    | Documentation |
-|-----------------|------------------------|--------------|---------------|
-| [`zino-core`]   | Core types and traits. | [![Crates.io](https://img.shields.io/crates/v/zino-core)][zino-core] | [![Documentation](https://shields.io/docsrs/zino-core)][zino-core-docs] |
-| [`zino-derive`] | Derived traits.        | [![Crates.io](https://img.shields.io/crates/v/zino-derive)][zino-derive] | [![Documentation](https://shields.io/docsrs/zino-derive)][zino-derive-docs] |
-| [`zino-model`]  | Domain models.         | [![Crates.io](https://img.shields.io/crates/v/zino-model)][zino-model] | [![Documentation](https://shields.io/docsrs/zino-model)][zino-model-docs] |
-| [`zino-http`]   | Requests and responses.| [![Crates.io](https://img.shields.io/crates/v/zino-http)][zino-http] | [![Documentation](https://shields.io/docsrs/zino-http)][zino-http-docs] |
-| [`zino-extra`]  | Extra utilities.       | [![Crates.io](https://img.shields.io/crates/v/zino-extra)][zino-extra] | [![Documentation](https://shields.io/docsrs/zino-extra)][zino-extra-docs] |
-| [`zino-dioxus`] | Dioxus components.     | [![Crates.io](https://img.shields.io/crates/v/zino-dioxus)][zino-dioxus] | [![Documentation](https://shields.io/docsrs/zino-dioxus)][zino-dioxus-docs] |
-| [`zino-amis`]   | UI generator for amis. | [![Crates.io](https://img.shields.io/crates/v/zino-amis)][zino-amis] | [![Documentation](https://shields.io/docsrs/zino-amis)][zino-amis-docs] |
-| [`zino-cli`]    | CLI tools.             | [![Crates.io](https://img.shields.io/crates/v/zino-cli)][zino-cli] | [![Documentation](https://shields.io/docsrs/zino-cli)][zino-cli-docs] |
+| Name            | Description                       | Crates.io    | Documentation |
+|-----------------|-----------------------------------|--------------|---------------|
+| [`zino-core`]   | Core types and traits.            | [![Crates.io](https://img.shields.io/crates/v/zino-core)][zino-core] | [![Documentation](https://shields.io/docsrs/zino-core)][zino-core-docs] |
+| [`zino-derive`] | Derived traits.                   | [![Crates.io](https://img.shields.io/crates/v/zino-derive)][zino-derive] | [![Documentation](https://shields.io/docsrs/zino-derive)][zino-derive-docs] |
+| [`zino-model`]  | Domain models.                    | [![Crates.io](https://img.shields.io/crates/v/zino-model)][zino-model] | [![Documentation](https://shields.io/docsrs/zino-model)][zino-model-docs] |
+| [`zino-auth`]   | Authentication and authorization. | [![Crates.io](https://img.shields.io/crates/v/zino-auth)][zino-auth] | [![Documentation](https://shields.io/docsrs/zino-auth)][zino-auth-docs] |
+| [`zino-http`]   | Requests and responses.           | [![Crates.io](https://img.shields.io/crates/v/zino-http)][zino-http] | [![Documentation](https://shields.io/docsrs/zino-http)][zino-http-docs] |
+| [`zino-extra`]  | Extra utilities.                  | [![Crates.io](https://img.shields.io/crates/v/zino-extra)][zino-extra] | [![Documentation](https://shields.io/docsrs/zino-extra)][zino-extra-docs] |
+| [`zino-dioxus`] | Dioxus components.                | [![Crates.io](https://img.shields.io/crates/v/zino-dioxus)][zino-dioxus] | [![Documentation](https://shields.io/docsrs/zino-dioxus)][zino-dioxus-docs] |
+| [`zino-amis`]   | UI generator for amis.            | [![Crates.io](https://img.shields.io/crates/v/zino-amis)][zino-amis] | [![Documentation](https://shields.io/docsrs/zino-amis)][zino-amis-docs] |
+| [`zino-cli`]    | CLI tools.                        | [![Crates.io](https://img.shields.io/crates/v/zino-cli)][zino-cli] | [![Documentation](https://shields.io/docsrs/zino-cli)][zino-cli-docs] |
 
 ## License
 
@@ -73,6 +74,7 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [`zino-core`]: https://github.com/zino-rs/zino/tree/main/zino-core
 [`zino-derive`]: https://github.com/zino-rs/zino/tree/main/zino-derive
 [`zino-model`]: https://github.com/zino-rs/zino/tree/main/zino-model
+[`zino-auth`]: https://github.com/zino-rs/zino/tree/main/zino-auth
 [`zino-http`]: https://github.com/zino-rs/zino/tree/main/zino-http
 [`zino-extra`]: https://github.com/zino-rs/zino/tree/main/zino-extra
 [`zino-dioxus`]: https://github.com/zino-rs/zino/tree/main/zino-dioxus
@@ -86,6 +88,8 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [zino-derive-docs]: https://docs.rs/zino-derive
 [zino-model]: https://crates.io/crates/zino-model
 [zino-model-docs]: https://docs.rs/zino-model
+[zino-auth]: https://crates.io/crates/zino-auth
+[zino-auth-docs]: https://docs.rs/zino-auth
 [zino-http]: https://crates.io/crates/zino-http
 [zino-http-docs]: https://docs.rs/zino-http
 [zino-extra]: https://crates.io/crates/zino-extra

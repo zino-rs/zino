@@ -55,7 +55,7 @@ optional = true
 
 [dependencies.zino-auth]
 path = "../zino-auth"
-version = "0.1.0"
+version = "0.1.1"
 optional = true
 
 [dependencies.zino-axum]
