@@ -1,7 +1,7 @@
 [package]
 name = "zino-http"
 description = "HTTP requests and responses for zino."
-version = "0.1.0"
+version = "0.1.1"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -31,7 +31,7 @@ cookie = ["dep:cookie", "reqwest/cookies", "zino-core/cookie"]
 i18n = ["dep:fluent", "dep:unic-langid", "zino-core/i18n"]
 http02 = ["dep:http02"]
 jwt = ["dep:jwt-simple", "auth", "zino-auth/jwt"]
-metrics = ["zino-core/metrics"]
+metrics = ["dep:metrics", "zino-core/metrics"]
 openapi = ["zino-core/openapi"]
 view = ["zino-core/view"]
 
@@ -68,6 +68,10 @@ version = "0.12.10"
 optional = true
 default-features = false
 features = ["pure-rust"]
+
+[dependencies.metrics]
+version = "0.24.1"
+optional = true
 
 [dependencies.reqwest]
 version = "0.12.9"

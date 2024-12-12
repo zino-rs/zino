@@ -69,12 +69,12 @@ version = "0.29.0"
 
 [dependencies.zino-dioxus]
 path = "../zino-dioxus"
-version = "0.10.0"
+version = "0.10.1"
 optional = true
 
 [dependencies.zino-http]
 path = "../zino-http"
-version = "0.1.0"
+version = "0.1.1"
 optional = true
 
 [dependencies.zino-ntex]
