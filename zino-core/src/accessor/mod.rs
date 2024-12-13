@@ -39,7 +39,7 @@
 //! # Examples
 //!
 //! ```rust
-//! use zino_core::{accessor::GloabalAccessor, error::Error, file::NamedFile};
+//! use zino_core::{accessor::GlobalAccessor, error::Error, file::NamedFile};
 //!
 //! async fn upload_file(file: NamedFile) -> Result<(), Error> {
 //!     let Some(operator) = GlobalAccessor::get("aliyun") else {

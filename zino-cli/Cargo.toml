@@ -60,9 +60,9 @@ features = ["net"]
 
 [dependencies.zino]
 path = "../zino"
-version = "0.28.0"
+version = "0.28.1"
 features = ["axum"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.29.1"
+version = "0.29.2"
