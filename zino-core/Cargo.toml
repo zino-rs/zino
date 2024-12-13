@@ -108,8 +108,8 @@ all-validators = [
 chatbot = []
 chatbot-openai = ["dep:async-openai", "chatbot"]
 connector = ["connector-http"]
-connector-arrow = ["dep:datafusion", "connector"]
-connector-http = ["connector"]
+connector-arrow = ["dep:datafusion", "connector", "http-client"]
+connector-http = ["connector", "http-client"]
 connector-mysql = ["connector", "sqlx", "sqlx/mysql"]
 connector-postgres = ["connector", "sqlx", "sqlx/postgres"]
 connector-sqlite = ["connector", "sqlx", "sqlx/sqlite"]
@@ -139,7 +139,6 @@ full = [
     "env-filter",
     "flume",
     "http-client",
-    "i18n",
     "metrics",
     "oidc",
     "openapi",
@@ -148,7 +147,6 @@ full = [
     "view",
 ]
 http-client = ["dep:reqwest-middleware", "dep:reqwest-tracing", "reqwest"]
-i18n = ["dep:fluent", "dep:intl-memoizer", "dep:unic-langid"]
 locale = ["random_word"]
 locale-en = ["locale", "random_word/en"]
 locale-es = ["locale", "random_word/es"]
@@ -214,6 +212,7 @@ md-5 = "0.10.6"
 mime_guess = "2.0.5"
 multer = "3.1.0"
 parking_lot = "0.12.3"
+percent-encoding = "2.3.1"
 rand = "0.8.5"
 regex = "1.11.1"
 rust_decimal = "1.36.0"
@@ -256,16 +255,8 @@ optional = true
 version = "0.15.7"
 optional = true
 
-[dependencies.fluent]
-version = "0.16.1"
-optional = true
-
 [dependencies.flume]
 version = "0.11.1"
-optional = true
-
-[dependencies.intl-memoizer]
-version = "0.5.2"
 optional = true
 
 [dependencies.metrics]

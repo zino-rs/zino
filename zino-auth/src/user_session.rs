@@ -1,7 +1,10 @@
 use super::{AccessKeyId, SessionId};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use zino_core::{application::APP_DOMAIN, crypto::Digest};
+use zino_core::{
+    application::{Agent, Application},
+    crypto::Digest,
+};
 
 #[cfg(feature = "jwt")]
 use super::JwtClaims;
@@ -47,7 +50,7 @@ impl<U, R, T> UserSession<U, R, T> {
     #[inline]
     pub fn set_access_key_id(&mut self, access_key_id: AccessKeyId) {
         if self.session_id.is_none() {
-            let session_id = SessionId::new::<Digest>(*APP_DOMAIN, access_key_id.as_ref());
+            let session_id = SessionId::new::<Digest>(Agent::domain(), access_key_id.as_ref());
             self.session_id = Some(session_id);
         }
         self.access_key_id = Some(access_key_id);

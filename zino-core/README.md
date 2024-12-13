@@ -24,7 +24,6 @@ The following optional features are available:
 | `env-filter`         | Enables the `env-filter` for [`tracing-subscriber`].   | No       |
 | `flume`              | Enables the message channel via [`flume`].             | No       |
 | `http-client`        | Enables the HTTP client via [`reqwest`].               | No       |
-| `i18n`               | Enables the support for internationalization.          | No       |
 | `locale`             | Enables the support for locale related utilities.      | No       |
 | `metrics`            | Enables the [`metrics`] exporter.                      | No       |
 | `oidc`               | Enables the support for OIDC via [`rauthy`].           | No       |

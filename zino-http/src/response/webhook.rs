@@ -8,7 +8,7 @@ use serde_json::value::RawValue;
 use toml::Table;
 use url::Url;
 use zino_core::{
-    application::http_client,
+    application::Agent,
     bail,
     error::Error,
     extension::{HeaderMapExt, JsonObjectExt, JsonValueExt, TomlTableExt, TomlValueExt},
@@ -97,9 +97,9 @@ impl WebHook {
     #[inline]
     pub fn query_param(mut self, key: &str, param: Option<&str>) -> Self {
         if let Some(param) = param {
-            self.query.upsert(key, format!("${param}"));
+            self.query.upsert(key, ["${", param, "}"].concat());
         } else {
-            self.query.upsert(key, format!("${key}"));
+            self.query.upsert(key, ["${", key, "}"].concat());
         }
         self
     }
@@ -150,7 +150,14 @@ impl WebHook {
     /// Triggers the webhook and deserializes the response body via JSON.
     pub async fn trigger<T: DeserializeOwned>(&self) -> Result<T, Error> {
         let params = self.params.as_ref();
-        let resource = helper::format_query(self.base_url.as_str(), params);
+        let mut url = self.base_url.clone();
+        if !self.query.is_empty() {
+            let query = serde_qs::to_string(&self.query)?;
+            url.set_query(Some(&query));
+        }
+
+        let url = percent_encoding::percent_decode_str(url.as_str()).decode_utf8()?;
+        let resource = helper::format_query(&url, params);
         let mut options = Map::from_entry("method", self.method.as_str());
         if let Some(body) = self.body.as_deref().map(|v| v.get()) {
             options.upsert("body", helper::format_query(body, params));
@@ -174,7 +181,7 @@ impl WebHook {
             .trace_state_mut()
             .push("zino", format!("{span_id:x}"));
 
-        let response = http_client::request_builder(resource.as_ref(), Some(&options))?
+        let response = Agent::request_builder(resource.as_ref(), Some(&options))?
             .headers(headers)
             .header("traceparent", trace_context.traceparent())
             .header("tracestate", trace_context.tracestate())

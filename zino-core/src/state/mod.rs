@@ -57,7 +57,7 @@
 //! ```
 
 use crate::{
-    application::{self, ServerTag},
+    application::{self, Agent, Application, ServerTag},
     crypto,
     encoding::base64,
     extension::TomlTableExt,
@@ -125,7 +125,7 @@ impl<T> State<T> {
             let format = std::env::var("ZINO_APP_CONFIG_FORMAT")
                 .map(|s| s.to_ascii_lowercase())
                 .unwrap_or_else(|_| "toml".to_owned());
-            let config_dir = &application::CONFIG_DIR;
+            let config_dir = Agent::config_dir();
             if config_dir.exists() {
                 let config_file = format!("config.{env}.{format}");
                 let config_file_path = config_dir.join(&config_file);

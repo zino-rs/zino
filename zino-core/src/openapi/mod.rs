@@ -1,6 +1,10 @@
 //! OpenAPI specification and API documentation.
 
-use crate::{application, extension::TomlTableExt, LazyLock, Uuid};
+use crate::{
+    application::{Agent, Application},
+    extension::TomlTableExt,
+    LazyLock, Uuid,
+};
 use ahash::{HashMap, HashMapExt};
 use convert_case::{Case, Casing};
 use serde_json::json;
@@ -223,7 +227,7 @@ pub(crate) fn default_external_docs() -> Option<ExternalDocs> {
 /// OpenAPI paths.
 static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
     let mut paths: BTreeMap<String, PathItem> = BTreeMap::new();
-    let openapi_dir = application::CONFIG_DIR.join("openapi");
+    let openapi_dir = Agent::config_dir().join("openapi");
     match fs::read_dir(openapi_dir) {
         Ok(entries) => {
             let mut openapi_tags = Vec::new();

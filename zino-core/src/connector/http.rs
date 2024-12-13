@@ -1,6 +1,6 @@
 use super::{Connector, DataSource, DataSourceConnector::Http};
 use crate::{
-    application::http_client,
+    application::Agent,
     bail,
     error::Error,
     extension::{
@@ -127,9 +127,9 @@ impl HttpConnector {
     #[inline]
     pub fn query_param(mut self, key: &str, param: Option<&str>) -> Self {
         if let Some(param) = param {
-            self.query.upsert(key, format!("${param}"));
+            self.query.upsert(key, ["${", param, "}"].concat());
         } else {
-            self.query.upsert(key, format!("${key}"));
+            self.query.upsert(key, ["${", key, "}"].concat());
         }
         self
     }
@@ -192,7 +192,8 @@ impl HttpConnector {
             url.set_query(Some(&query));
         }
 
-        let resource = helper::format_query(url.as_str(), params);
+        let url = percent_encoding::percent_decode_str(url.as_str()).decode_utf8()?;
+        let resource = helper::format_query(&url, params);
         let mut options = Map::from_entry("method", self.method.as_str());
         if let Some(body) = self.body.as_deref().map(|v| v.get()) {
             options.upsert("body", helper::format_query(body, params));
@@ -215,7 +216,7 @@ impl HttpConnector {
         trace_context
             .trace_state_mut()
             .push("zino", format!("{span_id:x}"));
-        http_client::request_builder(resource.as_ref(), Some(&options))?
+        Agent::request_builder(resource.as_ref(), Some(&options))?
             .headers(headers)
             .header("traceparent", trace_context.traceparent())
             .header("tracestate", trace_context.tracestate())

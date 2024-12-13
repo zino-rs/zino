@@ -1,13 +1,17 @@
 //! Internationalization and localization.
 
-use crate::{
-    application, bail, error::Error, extension::TomlTableExt, state::State, warn, LazyLock,
-    SharedString,
-};
 use fluent::{bundle::FluentBundle, FluentArgs, FluentResource};
 use intl_memoizer::concurrent::IntlLangMemoizer;
 use std::{fs, io::ErrorKind};
 use unic_langid::LanguageIdentifier;
+use zino_core::{
+    application::{Agent, Application},
+    bail,
+    error::Error,
+    extension::TomlTableExt,
+    state::State,
+    warn, LazyLock, SharedString,
+};
 
 /// Translates the localization message.
 pub fn translate(
@@ -62,7 +66,7 @@ type Translation = FluentBundle<FluentResource, IntlLangMemoizer>;
 /// Localization.
 static LOCALIZATION: LazyLock<Vec<(LanguageIdentifier, Translation)>> = LazyLock::new(|| {
     let mut locales = Vec::new();
-    let locale_dir = application::CONFIG_DIR.join("locale");
+    let locale_dir = Agent::config_dir().join("locale");
     match fs::read_dir(locale_dir) {
         Ok(entries) => {
             let files = entries.filter_map(|entry| entry.ok());
@@ -110,7 +114,7 @@ static DEFAULT_BUNDLE: LazyLock<Option<&'static Translation>> = LazyLock::new(||
 });
 
 /// Default locale.
-pub static DEFAULT_LOCALE: LazyLock<&'static str> = LazyLock::new(|| {
+pub(crate) static DEFAULT_LOCALE: LazyLock<&'static str> = LazyLock::new(|| {
     if let Some(i18n) = State::shared().get_config("i18n") {
         i18n.get_str("default-locale").unwrap_or("en-US")
     } else {
@@ -119,7 +123,7 @@ pub static DEFAULT_LOCALE: LazyLock<&'static str> = LazyLock::new(|| {
 });
 
 /// Supported locales.
-pub static SUPPORTED_LOCALES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
+pub(crate) static SUPPORTED_LOCALES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
     LOCALIZATION
         .iter()
         .map(|(key, _)| {

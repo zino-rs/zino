@@ -26,7 +26,7 @@ pub use zino_auth::{
 
 #[cfg(feature = "i18n")]
 #[doc(no_inline)]
-pub use zino_core::fluent_args;
+pub use zino_http::fluent_args;
 
 #[cfg(feature = "jwt")]
 #[doc(no_inline)]

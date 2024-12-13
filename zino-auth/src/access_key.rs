@@ -6,7 +6,7 @@ use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, fmt, iter};
 use zino_core::{
-    application::APP_NAME,
+    application::{Agent, Application},
     crypto::{self, Digest},
     encoding::base64,
     extension::TomlTableExt,
@@ -193,7 +193,7 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
         .unwrap_or_else(|| {
             let secret = config.get_str("secret").unwrap_or_else(|| {
                 tracing::warn!("auto-generated `secret` is used for deriving a secret key");
-                APP_NAME.as_ref()
+                Agent::name()
             });
             crypto::digest(secret.as_bytes())
         });

@@ -19,7 +19,7 @@ use std::{
 };
 
 #[cfg(feature = "http-client")]
-use crate::{application::http_client, extension::JsonValueExt, json, trace::TraceContext};
+use crate::{application::Agent, extension::JsonValueExt, json, trace::TraceContext};
 
 #[cfg(feature = "http-client")]
 use reqwest::{
@@ -461,7 +461,7 @@ impl NamedFile {
             .trace_state_mut()
             .push("zino", format!("{span_id:x}"));
 
-        let response = http_client::request_builder(url, options)?
+        let response = Agent::request_builder(url, options)?
             .header("traceparent", trace_context.traceparent())
             .header("tracestate", trace_context.tracestate())
             .send()
@@ -514,13 +514,13 @@ impl NamedFile {
         form = form.part(field_name, part).percent_encode_noop();
 
         let request_builder = if options.is_some() {
-            http_client::request_builder(url, options)?
+            Agent::request_builder(url, options)?
         } else {
             let options = json!({
                 "method": "POST",
                 "data_type": "multipart",
             });
-            http_client::request_builder(url, options.as_object())?
+            Agent::request_builder(url, options.as_object())?
         };
         request_builder
             .header("traceparent", trace_context.traceparent())

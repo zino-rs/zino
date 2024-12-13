@@ -55,13 +55,14 @@ use toml::value::Table;
 #[cfg(feature = "openapi")]
 use utoipa::openapi::{OpenApi, OpenApiBuilder};
 
+mod agent;
 mod plugin;
 mod secret_key;
 mod server_tag;
 mod static_record;
 
 #[cfg(feature = "http-client")]
-pub mod http_client;
+pub(crate) mod http_client;
 
 #[cfg(feature = "metrics")]
 mod metrics_exporter;
@@ -80,6 +81,7 @@ pub(crate) use secret_key::SECRET_KEY;
 #[cfg(feature = "http-client")]
 use crate::{error::Error, extension::HeaderMapExt, trace::TraceContext};
 
+pub use agent::Agent;
 pub use plugin::Plugin;
 pub use server_tag::ServerTag;
 pub use static_record::StaticRecord;
@@ -363,7 +365,7 @@ pub trait Application {
 }
 
 /// Joins a path to the specific dir.
-pub(crate) fn join_path(dir: &Path, path: &str) -> PathBuf {
+fn join_path(dir: &Path, path: &str) -> PathBuf {
     fn join_path_components(mut full_path: PathBuf, path: &str) -> PathBuf {
         for component in Path::new(path).components() {
             match component {
@@ -393,7 +395,7 @@ pub(crate) fn join_path(dir: &Path, path: &str) -> PathBuf {
 }
 
 /// App name.
-pub static APP_NAME: LazyLock<&'static str> = LazyLock::new(|| {
+static APP_NAME: LazyLock<&'static str> = LazyLock::new(|| {
     SHARED_APP_STATE
         .config()
         .get_str("name")
@@ -405,7 +407,7 @@ pub static APP_NAME: LazyLock<&'static str> = LazyLock::new(|| {
 });
 
 /// App version.
-pub static APP_VERSION: LazyLock<&'static str> = LazyLock::new(|| {
+static APP_VERSION: LazyLock<&'static str> = LazyLock::new(|| {
     SHARED_APP_STATE
         .config()
         .get_str("version")
@@ -416,16 +418,16 @@ pub static APP_VERSION: LazyLock<&'static str> = LazyLock::new(|| {
         })
 });
 
-/// Domain.
-pub static APP_DOMAIN: LazyLock<&'static str> = LazyLock::new(|| {
+/// App domain.
+static APP_DOMAIN: LazyLock<&'static str> = LazyLock::new(|| {
     SHARED_APP_STATE
         .config()
         .get_str("domain")
         .unwrap_or("localhost")
 });
 
-/// Project directory.
-pub static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
+/// The project directory.
+static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     env::var("CARGO_MANIFEST_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|err| {
@@ -439,7 +441,7 @@ pub static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
 });
 
 /// The config directory.
-pub static CONFIG_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
+static CONFIG_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     env::var("ZINO_APP_CONFIG_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|_| PROJECT_DIR.join("config"))

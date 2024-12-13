@@ -8,7 +8,7 @@ use multer::Multipart;
 use serde::de::DeserializeOwned;
 use std::{borrow::Cow, net::IpAddr, str::FromStr, time::Instant};
 use zino_core::{
-    application::http_client,
+    application::Agent,
     channel::{CloudEvent, Subscription},
     error::Error,
     extension::HeaderMapExt,
@@ -36,11 +36,11 @@ use zino_auth::JwtClaims;
 use std::time::Duration;
 
 #[cfg(feature = "i18n")]
+use crate::i18n;
+#[cfg(feature = "i18n")]
 use fluent::FluentArgs;
 #[cfg(feature = "i18n")]
 use unic_langid::LanguageIdentifier;
-#[cfg(feature = "i18n")]
-use zino_core::i18n;
 
 mod context;
 
@@ -754,7 +754,7 @@ pub trait RequestContext {
     /// Makes an HTTP request to the provided URL.
     async fn fetch(&self, url: &str, options: Option<&Map>) -> Result<reqwest::Response, Error> {
         let trace_context = self.new_trace_context();
-        http_client::request_builder(url, options)?
+        Agent::request_builder(url, options)?
             .header("traceparent", trace_context.traceparent())
             .header("tracestate", trace_context.tracestate())
             .send()

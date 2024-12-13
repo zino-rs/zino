@@ -2,7 +2,7 @@
 
 use super::{Connector, DataSource, DataSourceConnector::Arrow};
 use crate::{
-    application::{self, http_client, PROJECT_DIR},
+    application::{Agent, Application},
     bail,
     error::Error,
     extension::TomlTableExt,
@@ -64,7 +64,7 @@ impl ArrowConnector {
     pub fn new() -> Self {
         Self {
             context: OnceLock::new(),
-            root: PROJECT_DIR.to_owned(),
+            root: Agent::project_dir().to_owned(),
             tables: None,
             system_variables: ScalarValueProvider::default(),
             user_defined_variables: ScalarValueProvider::default(),
@@ -80,7 +80,7 @@ impl ArrowConnector {
         }
         Self {
             context: OnceLock::new(),
-            root: application::join_path(&PROJECT_DIR, root),
+            root: Agent::parse_path(root),
             tables: config.get_array("tables").cloned(),
             system_variables,
             user_defined_variables: ScalarValueProvider::default(),
@@ -125,7 +125,7 @@ impl ArrowConnector {
                 let table_path = if let Some(url) = table.get_str("url") {
                     let table_file_path = root.join(format!("{table_name}.{data_type}"));
                     let mut table_file = File::create(&table_file_path)?;
-                    let mut res = http_client::request_builder(url, None)?.send().await?;
+                    let mut res = Agent::request_builder(url, None)?.send().await?;
                     while let Some(chunk) = res.chunk().await? {
                         table_file.write_all(&chunk)?;
                     }

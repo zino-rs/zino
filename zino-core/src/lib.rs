@@ -16,8 +16,6 @@ pub mod accessor;
 pub mod chatbot;
 #[cfg(feature = "connector")]
 pub mod connector;
-#[cfg(feature = "i18n")]
-pub mod i18n;
 #[cfg(feature = "orm")]
 pub mod orm;
 #[cfg(feature = "view")]
@@ -36,10 +34,6 @@ pub mod schedule;
 pub mod state;
 pub mod trace;
 pub mod validation;
-
-#[cfg(feature = "i18n")]
-#[doc(no_inline)]
-pub use fluent::fluent_args;
 
 #[doc(no_inline)]
 pub use serde_json::json;

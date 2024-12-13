@@ -16,7 +16,7 @@ pub(crate) fn format_query<'a>(query: &'a str, params: Option<&'a Map>) -> Cow<'
                     JsonValue::String(s) => s.to_owned(),
                     _ => value.to_string(),
                 })
-                .unwrap_or_else(|| format!("${{{key}}}"))
+                .unwrap_or_else(|| ["${", key, "}"].concat())
         })
     } else {
         Cow::Borrowed(query)

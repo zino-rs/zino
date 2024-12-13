@@ -171,7 +171,7 @@ cfg_if::cfg_if! {
             connect_options
         }
     } else {
-        use crate::application::{self, PROJECT_DIR};
+        use crate::application::{Agent, Application};
         use sqlx::sqlite::SqliteConnectOptions;
 
         /// Options and flags which can be used to configure a SQLite connection.
@@ -181,7 +181,7 @@ cfg_if::cfg_if! {
                 connect_options = connect_options.read_only(read_only);
             }
 
-            let database_path = application::join_path(&PROJECT_DIR, database);
+            let database_path = Agent::parse_path(database);
             connect_options.filename(database_path)
         }
     }

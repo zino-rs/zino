@@ -1,7 +1,11 @@
 use parking_lot::Mutex;
 use regorus::{Engine, Value};
 use std::{fs, io::ErrorKind};
-use zino_core::{application, error::Error, LazyLock};
+use zino_core::{
+    application::{Agent, Application},
+    error::Error,
+    LazyLock,
+};
 
 /// Rego evaluation engine.
 pub struct RegoEngine {
@@ -110,7 +114,7 @@ impl RegoEngine {
 /// Shared Rego evaluation engine.
 static SHARED_REGO_ENGINE: LazyLock<RegoEngine> = LazyLock::new(|| {
     let engine = RegoEngine::new();
-    let opa_dir = application::CONFIG_DIR.join("opa");
+    let opa_dir = Agent::config_dir().join("opa");
     match fs::read_dir(opa_dir) {
         Ok(entries) => {
             let files = entries.filter_map(|entry| entry.ok());

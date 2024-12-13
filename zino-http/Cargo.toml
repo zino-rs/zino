@@ -28,7 +28,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [features]
 auth = ["zino-auth"]
 cookie = ["dep:cookie", "reqwest/cookies", "zino-core/cookie"]
-i18n = ["dep:fluent", "dep:unic-langid", "zino-core/i18n"]
+i18n = ["dep:fluent", "dep:intl-memoizer", "dep:unic-langid"]
 http02 = ["dep:http02"]
 jwt = ["dep:jwt-simple", "auth", "zino-auth/jwt"]
 metrics = ["dep:metrics", "zino-core/metrics"]
@@ -61,6 +61,10 @@ optional = true
 [dependencies.http02]
 package = "http"
 version = "0.2.12"
+optional = true
+
+[dependencies.intl-memoizer]
+version = "0.5.2"
 optional = true
 
 [dependencies.jwt-simple]

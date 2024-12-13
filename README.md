@@ -100,6 +100,12 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [zino-http-docs]: https://docs.rs/zino-http
 [zino-extra]: https://crates.io/crates/zino-extra
 [zino-extra-docs]: https://docs.rs/zino-extra
+[zino-actix]: https://crates.io/crates/zino-actix
+[zino-actix-docs]: https://docs.rs/zino-actix
+[zino-axum]: https://crates.io/crates/zino-axum
+[zino-axum-docs]: https://docs.rs/zino-axum
+[zino-ntex]: https://crates.io/crates/zino-ntex
+[zino-ntex-docs]: https://docs.rs/zino-ntex
 [zino-dioxus]: https://crates.io/crates/zino-dioxus
 [zino-dioxus-docs]: https://docs.rs/zino-dioxus
 [zino-amis]: https://crates.io/crates/zino-amis
