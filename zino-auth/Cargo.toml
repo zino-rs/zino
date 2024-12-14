@@ -75,7 +75,6 @@ optional = true
 [dependencies.toml]
 version = "0.8.19"
 default-features = false
-features = ["parse"]
 
 [dependencies.zino-core]
 path = "../zino-core"

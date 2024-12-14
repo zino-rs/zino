@@ -98,7 +98,6 @@ features = ["raw_value"]
 [dependencies.toml]
 version = "0.8.19"
 default-features = false
-features = ["parse"]
 
 [dependencies.unic-langid]
 version = "0.9.5"

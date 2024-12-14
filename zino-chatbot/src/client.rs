@@ -1,16 +1,12 @@
 use self::ChatbotClient::*;
-use super::ChatbotService;
-use crate::{bail, error::Error, extension::TomlTableExt, Map};
+use super::{ChatbotService, OpenAiChatCompletion};
 use toml::Table;
-
-#[cfg(feature = "chatbot-openai")]
-use super::OpenAiChatCompletion;
+use zino_core::{bail, error::Error, extension::TomlTableExt, Map};
 
 /// Client for supported chatbot services.
 #[non_exhaustive]
 pub(super) enum ChatbotClient {
     /// OpenAI
-    #[cfg(feature = "chatbot-openai")]
     OpenAi(OpenAiChatCompletion),
 }
 
@@ -43,7 +39,6 @@ impl Chatbot {
     /// returning an error if it fails.
     pub fn try_new(service: &str, config: &Table) -> Result<Chatbot, Error> {
         match service {
-            #[cfg(feature = "chatbot-openai")]
             "openai" => OpenAiChatCompletion::try_new_chatbot(config),
             _ => {
                 bail!("chatbot service `{}` is unsupported", service);
@@ -72,14 +67,12 @@ impl ChatbotService for Chatbot {
 
     fn model(&self) -> &str {
         match &self.client {
-            #[cfg(feature = "chatbot-openai")]
             OpenAi(chat_completion) => chat_completion.model(),
         }
     }
 
     async fn try_send(&self, message: String, options: Option<Map>) -> Result<Vec<String>, Error> {
         match &self.client {
-            #[cfg(feature = "chatbot-openai")]
             OpenAi(chat_completion) => chat_completion.try_send(message, options).await,
         }
     }

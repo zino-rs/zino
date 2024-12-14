@@ -10,8 +10,6 @@ mod mock;
 #[cfg(feature = "openapi")]
 mod openapi;
 
-#[cfg(feature = "chatbot")]
-pub mod chatbot;
 #[cfg(feature = "orm")]
 pub mod orm;
 #[cfg(feature = "view")]

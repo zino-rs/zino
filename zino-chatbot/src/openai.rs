@@ -1,10 +1,4 @@
 use super::{client::ChatbotClient::OpenAi, Chatbot, ChatbotService};
-use crate::{
-    application::http_client,
-    error::Error,
-    extension::{JsonObjectExt, TomlTableExt},
-    Map,
-};
 use async_openai::{
     config::{Config, OpenAIConfig},
     types::{
@@ -15,6 +9,12 @@ use async_openai::{
 };
 use futures::StreamExt;
 use toml::Table;
+use zino_core::{
+    application::Agent,
+    error::Error,
+    extension::{JsonObjectExt, TomlTableExt},
+    Map,
+};
 
 /// OpenAI chat completion.
 pub(super) struct OpenAiChatCompletion<C = OpenAIConfig>
@@ -60,7 +60,7 @@ impl ChatbotService for OpenAiChatCompletion<OpenAIConfig> {
         }
 
         let mut client = Client::with_config(openai_config);
-        if let Some(reqwest_client) = http_client::SHARED_HTTP_CLIENT.get() {
+        if let Some(reqwest_client) = Agent::get_http_client() {
             client = client.with_http_client(reqwest_client.clone());
         }
 

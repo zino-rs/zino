@@ -1,26 +1,21 @@
-//! Unified access to different chatbot services.
-//!
-//! ## Supported chatbot services
-//!
-//! | Chatbot service  | Description            | Feature flag           |
-//! |------------------|------------------------|------------------------|
-//! | `openai`         | OpenAI                 | `chatbot-openai`       |
-//!
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![doc = include_str!("../README.md")]
+#![doc(html_favicon_url = "https://zino.cc/assets/zino-logo.png")]
+#![doc(html_logo_url = "https://zino.cc/assets/zino-logo.svg")]
+#![allow(async_fn_in_trait)]
+#![forbid(unsafe_code)]
 
-use crate::{
+use toml::Table;
+use zino_core::{
     application::StaticRecord, error::Error, extension::TomlTableExt, state::State, LazyLock, Map,
 };
-use toml::Table;
 
 mod client;
 
 /// Supported chatbot services.
-#[cfg(feature = "chatbot-openai")]
 mod openai;
 
 pub use client::Chatbot;
-
-#[cfg(feature = "chatbot-openai")]
 use openai::OpenAiChatCompletion;
 
 /// Underlying trait of all chatbot services for implementors.

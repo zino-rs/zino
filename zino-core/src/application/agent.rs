@@ -21,6 +21,13 @@ impl Application for Agent {
 }
 
 impl Agent {
+    /// Gets the shared HTTP client.
+    #[cfg(feature = "http-client")]
+    #[inline]
+    pub fn get_http_client() -> Option<&'static reqwest::Client> {
+        super::http_client::SHARED_HTTP_CLIENT.get()
+    }
+
     /// Constructs a request builder.
     #[cfg(feature = "http-client")]
     #[inline]

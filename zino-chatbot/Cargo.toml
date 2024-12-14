@@ -1,0 +1,27 @@
+[package]
+name = "zino-chatbot"
+description = "Unified access to chatbot services for zino."
+version = "0.0.1"
+rust-version = "1.80"
+edition = "2021"
+license = "MIT"
+categories = ["asynchronous", "network-programming", "web-programming"]
+keywords = ["http", "web", "framework"]
+homepage = "https://github.com/zino-rs/zino"
+repository = "https://github.com/zino-rs/zino"
+documentation = "https://docs.rs/zino-chatbot"
+readme = "README.md"
+
+[dependencies]
+async-openai = "0.26.0"
+futures = "0.3.31"
+tracing = "0.1.41"
+
+[dependencies.toml]
+version = "0.8.19"
+default-features = false
+
+[dependencies.zino-core]
+path = "../zino-core"
+version = "0.29.2"
+features = ["http-client"]
