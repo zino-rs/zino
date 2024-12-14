@@ -1,7 +1,7 @@
 use super::ArrowArrayExt;
-use crate::{error::Error, Map, Record};
 use datafusion::{arrow::util, dataframe::DataFrame};
 use serde::de::DeserializeOwned;
+use zino_core::{error::Error, Map, Record};
 
 /// Executor trait for [`DataFrame`](datafusion::dataframe::DataFrame).
 pub trait DataFrameExecutor {

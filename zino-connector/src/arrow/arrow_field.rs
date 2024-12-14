@@ -1,4 +1,3 @@
-use crate::{bail, error::Error, extension::AvroRecordExt, AvroValue, Record};
 use datafusion::arrow::{
     array::{
         self, Array, BinaryArray, BooleanArray, Float32Array, Float64Array, Int32Array, Int64Array,
@@ -7,6 +6,7 @@ use datafusion::arrow::{
     datatypes::{DataType, Field},
 };
 use std::sync::Arc;
+use zino_core::{bail, error::Error, extension::AvroRecordExt, AvroValue, Record};
 
 /// Extension trait for [`Field`](datafusion::arrow::datatypes::Field).
 pub(super) trait ArrowFieldExt {

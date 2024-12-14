@@ -1,15 +1,5 @@
 use super::{Connector, DataSource, DataSourceConnector::Http};
-use crate::{
-    application::Agent,
-    bail,
-    error::Error,
-    extension::{
-        AvroRecordExt, HeaderMapExt, JsonObjectExt, JsonValueExt, TomlTableExt, TomlValueExt,
-    },
-    helper,
-    trace::TraceContext,
-    warn, JsonValue, Map, Record,
-};
+use crate::helper;
 use http::{
     header::{HeaderMap, HeaderName},
     Method,
@@ -19,13 +9,24 @@ use serde::{de::DeserializeOwned, Serialize};
 use serde_json::value::RawValue;
 use toml::Table;
 use url::Url;
+use zino_core::{
+    application::Agent,
+    bail,
+    error::Error,
+    extension::{
+        AvroRecordExt, HeaderMapExt, JsonObjectExt, JsonValueExt, TomlTableExt, TomlValueExt,
+    },
+    trace::TraceContext,
+    warn, JsonValue, Map, Record,
+};
 
 /// A connector to HTTP services.
 ///
 /// # Examples
 ///
 /// ```rust,ignore
-/// use zino_core::{connector::HttpConnector, error::Error, state::State, LazyLock, Map};
+/// use zino_connector::HttpConnector;
+/// use zino_core::{error::Error, state::State, LazyLock, Map};
 ///
 /// static AMAP_GEOCODE_CONNECTOR: LazyLock<HttpConnector> = LazyLock::new(|| {
 ///     let config = State::shared()

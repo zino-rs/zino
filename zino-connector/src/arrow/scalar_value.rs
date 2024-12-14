@@ -1,9 +1,9 @@
-use crate::{JsonValue, TomlValue};
 use datafusion::{
     arrow::datatypes::{DataType, Field},
     scalar::ScalarValue,
 };
 use std::sync::Arc;
+use zino_core::{JsonValue, TomlValue};
 
 /// Extension trait for [`ScalarValue`](datafusion::scalar::ScalarValue).
 pub(super) trait ScalarValueExt {

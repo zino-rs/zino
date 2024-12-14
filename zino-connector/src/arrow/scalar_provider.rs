@@ -1,5 +1,4 @@
 use super::ScalarValueExt;
-use crate::Map;
 use datafusion::{
     arrow::datatypes::DataType, error::DataFusionError, scalar::ScalarValue, variable::VarProvider,
 };
@@ -8,6 +7,7 @@ use std::{
     ops::{Deref, DerefMut},
 };
 use toml::Table;
+use zino_core::Map;
 
 /// A provider for scalar values.
 #[derive(Debug, Clone)]

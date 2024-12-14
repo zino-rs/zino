@@ -12,8 +12,6 @@ mod openapi;
 
 #[cfg(feature = "chatbot")]
 pub mod chatbot;
-#[cfg(feature = "connector")]
-pub mod connector;
 #[cfg(feature = "orm")]
 pub mod orm;
 #[cfg(feature = "view")]

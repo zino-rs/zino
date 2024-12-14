@@ -1,10 +1,11 @@
 use super::{sqlx_row::SerializeRow, Connector, DataSource, DataSourceConnector::Sqlite};
-use crate::{error::Error, extension::TomlTableExt, helper, AvroValue, Map, Record};
+use crate::helper;
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use sqlx::sqlite::{SqlitePool, SqlitePoolOptions};
 use std::time::Duration;
 use toml::Table;
+use zino_core::{error::Error, extension::TomlTableExt, AvroValue, Map, Record};
 
 impl Connector for SqlitePool {
     fn try_new_data_source(config: &Table) -> Result<DataSource, Error> {

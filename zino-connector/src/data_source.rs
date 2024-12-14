@@ -1,7 +1,7 @@
 use self::DataSourceConnector::*;
 use super::Connector;
-use crate::{bail, error::Error, extension::TomlTableExt, Map, Record};
 use toml::Table;
+use zino_core::{bail, error::Error, extension::TomlTableExt, Map, Record};
 
 #[cfg(feature = "connector-arrow")]
 use super::ArrowConnector;
@@ -121,30 +121,6 @@ impl DataSource {
     #[inline]
     pub fn catalog(&self) -> &str {
         self.catalog.as_str()
-    }
-
-    /// Returns a reference to the inner connector if it is of type `ArrowConnector`,
-    /// or `None` if it isn’t.
-    #[cfg(feature = "connector-arrow")]
-    #[inline]
-    pub fn get_arrow_connector(&self) -> Option<&ArrowConnector> {
-        if let Arrow(connector) = &self.connector {
-            Some(connector)
-        } else {
-            None
-        }
-    }
-
-    /// Returns a reference to the inner connector if it is of type `HttpConnector`,
-    /// or `None` if it isn’t.
-    #[cfg(feature = "connector-http")]
-    #[inline]
-    pub fn get_http_connector(&self) -> Option<&HttpConnector> {
-        if let Http(connector) = &self.connector {
-            Some(connector)
-        } else {
-            None
-        }
     }
 }
 

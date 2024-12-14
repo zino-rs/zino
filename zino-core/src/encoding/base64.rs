@@ -14,7 +14,6 @@ pub fn decode(data: impl AsRef<[u8]>) -> Result<Vec<u8>, DecodeError> {
 }
 
 /// Encodes the data as base64-encoded data URL string.
-#[cfg(feature = "connector-arrow")]
 pub fn encode_data_url(data: impl AsRef<[u8]>) -> String {
     fn inner(bytes: &[u8]) -> String {
         let mut data = String::with_capacity(bytes.len() * 3 / 4);

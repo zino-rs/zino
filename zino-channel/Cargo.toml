@@ -12,6 +12,11 @@ repository = "https://github.com/zino-rs/zino"
 documentation = "https://docs.rs/zino-channel"
 readme = "README.md"
 
+[package.metadata.docs.rs]
+features = ["flume"]
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+rustdoc-args = ["--cfg", "docsrs"]
+
 [features]
 flume = [
     "dep:ahash",

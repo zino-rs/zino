@@ -15,7 +15,6 @@ The following optional features are available:
 | Name                 | Description                                            | Default? |
 |----------------------|--------------------------------------------------------|----------|
 | `chatbot`            | Enables the chatbot services.                          | No       |
-| `connector`          | Enables the data source connectors.                    | No       |
 | `cookie`             | Enables the support for cookies.                       | No       |
 | `crypto-sm`          | Enables China's Standards of Encryption Algorithms.    | No       |
 | `debug`              | Enables the features for ease of debugging.            | No       |

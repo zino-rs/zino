@@ -1,4 +1,3 @@
-use crate::{bail, encoding::base64, error::Error, warn, AvroValue, JsonValue, Map};
 use apache_avro::{Days, Duration, Millis, Months};
 use datafusion::arrow::{
     array::{self, Array, ArrayAccessor, FixedSizeBinaryArray, FixedSizeListArray, StringArray},
@@ -12,6 +11,7 @@ use datafusion::arrow::{
     },
 };
 use std::collections::HashMap;
+use zino_core::{bail, encoding::base64, error::Error, warn, AvroValue, JsonValue, Map};
 
 /// Extension trait for [`dyn Array`](datafusion::arrow::array::Array).
 pub(super) trait ArrowArrayExt {

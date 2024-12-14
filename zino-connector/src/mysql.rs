@@ -1,17 +1,18 @@
-use super::{sqlx_row::SerializeRow, Connector, DataSource, DataSourceConnector::Postgres};
-use crate::{error::Error, extension::TomlTableExt, helper, state::State, AvroValue, Map, Record};
+use super::{sqlx_row::SerializeRow, Connector, DataSource, DataSourceConnector::MySql};
+use crate::helper;
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
-use sqlx::postgres::{PgPool, PgPoolOptions};
+use sqlx::mysql::{MySqlPool, MySqlPoolOptions};
 use std::time::Duration;
 use toml::Table;
+use zino_core::{error::Error, extension::TomlTableExt, state::State, AvroValue, Map, Record};
 
-impl Connector for PgPool {
+impl Connector for MySqlPool {
     fn try_new_data_source(config: &Table) -> Result<DataSource, Error> {
-        let name = config.get_str("name").unwrap_or("postgres");
-        let database = config.get_str("database").unwrap_or("postgres");
-        let authority = State::format_authority(config, Some(5432));
-        let dsn = format!("postgres://{authority}/{database}");
+        let name = config.get_str("name").unwrap_or("mysql");
+        let database = config.get_str("database").unwrap_or(name);
+        let authority = State::format_authority(config, Some(3306));
+        let dsn = format!("mysql://{authority}/{database}");
 
         let max_connections = config.get_u32("max-connections").unwrap_or(16);
         let min_connections = config.get_u32("min-connections").unwrap_or(2);
@@ -24,19 +25,19 @@ impl Connector for PgPool {
         let acquire_timeout = config
             .get_duration("acquire-timeout")
             .unwrap_or_else(|| Duration::from_secs(30));
-        let pool_options = PgPoolOptions::new()
+        let pool_options = MySqlPoolOptions::new()
             .max_connections(max_connections)
             .min_connections(min_connections)
             .max_lifetime(max_lifetime)
             .idle_timeout(idle_timeout)
             .acquire_timeout(acquire_timeout);
         let pool = pool_options.connect_lazy(&dsn)?;
-        let data_source = DataSource::new("postgres", None, name, database, Postgres(pool));
+        let data_source = DataSource::new("mysql", None, name, database, MySql(pool));
         Ok(data_source)
     }
 
     async fn execute(&self, query: &str, params: Option<&Map>) -> Result<Option<u64>, Error> {
-        let (sql, values) = helper::prepare_sql_query(query, params, '$');
+        let (sql, values) = helper::prepare_sql_query(query, params, '?');
         let mut query = sqlx::query(&sql);
         for value in values {
             query = query.bind(value.to_string());
@@ -47,7 +48,7 @@ impl Connector for PgPool {
     }
 
     async fn query(&self, query: &str, params: Option<&Map>) -> Result<Vec<Record>, Error> {
-        let (sql, values) = helper::prepare_sql_query(query, params, '$');
+        let (sql, values) = helper::prepare_sql_query(query, params, '?');
         let mut query = sqlx::query(&sql);
         for value in values {
             query = query.bind(value.to_string());
@@ -69,7 +70,7 @@ impl Connector for PgPool {
         query: &str,
         params: Option<&Map>,
     ) -> Result<Vec<T>, Error> {
-        let (sql, values) = helper::prepare_sql_query(query, params, '$');
+        let (sql, values) = helper::prepare_sql_query(query, params, '?');
         let mut query = sqlx::query(&sql);
         for value in values {
             query = query.bind(value.to_string());
@@ -86,7 +87,7 @@ impl Connector for PgPool {
     }
 
     async fn query_one(&self, query: &str, params: Option<&Map>) -> Result<Option<Record>, Error> {
-        let (sql, values) = helper::prepare_sql_query(query, params, '$');
+        let (sql, values) = helper::prepare_sql_query(query, params, '?');
         let mut query = sqlx::query(&sql);
         for value in values {
             query = query.bind(value.to_string());
@@ -110,7 +111,7 @@ impl Connector for PgPool {
         query: &str,
         params: Option<&Map>,
     ) -> Result<Option<T>, Error> {
-        let (sql, values) = helper::prepare_sql_query(query, params, '$');
+        let (sql, values) = helper::prepare_sql_query(query, params, '?');
         let mut query = sqlx::query(&sql);
         for value in values {
             query = query.bind(value.to_string());

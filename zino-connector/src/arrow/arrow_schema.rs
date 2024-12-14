@@ -1,11 +1,11 @@
 use super::ArrowFieldExt;
-use crate::{bail, error::Error, Record, TomlValue};
 use datafusion::arrow::{
     array::Array,
     datatypes::{DataType, Field, Schema, UnionFields, UnionMode},
 };
 use std::sync::Arc;
 use toml::Table;
+use zino_core::{bail, error::Error, Record, TomlValue};
 
 /// Extension trait for [`Schema`](datafusion::arrow::datatypes::Schema).
 pub(super) trait ArrowSchemaExt {

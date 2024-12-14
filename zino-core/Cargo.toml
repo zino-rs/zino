@@ -19,14 +19,6 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 all-chatbots = ["chatbot", "chatbot-openai"]
-all-connectors = [
-    "connector",
-    "connector-arrow",
-    "connector-http",
-    "connector-mysql",
-    "connector-postgres",
-    "connector-sqlite",
-]
 all-locales = [
     "locale",
     "locale-de",
@@ -43,12 +35,6 @@ all-validators = [
 ]
 chatbot = []
 chatbot-openai = ["dep:async-openai", "chatbot"]
-connector = ["connector-http"]
-connector-arrow = ["dep:datafusion", "connector", "http-client"]
-connector-http = ["connector", "http-client"]
-connector-mysql = ["connector", "sqlx", "sqlx/mysql"]
-connector-postgres = ["connector", "sqlx", "sqlx/postgres"]
-connector-sqlite = ["connector", "sqlx", "sqlx/sqlite"]
 cookie = ["dep:cookie", "reqwest?/cookies"]
 crypto-sm = ["dep:ctr", "dep:sm3", "dep:sm4"]
 debug = [
@@ -65,7 +51,6 @@ dotenv = ["dep:dotenvy"]
 env-filter = ["tracing-subscriber/env-filter", "tracing-subscriber/smallvec"]
 full = [
     "all-chatbots",
-    "all-connectors",
     "all-locales",
     "all-validators",
     "cookie",
@@ -136,7 +121,6 @@ hkdf = "0.12.4"
 hmac = "0.12.1"
 http = "1.2.0"
 parking_lot = "0.12.3"
-percent-encoding = "2.3.1"
 rand = "0.8.5"
 regex = "1.11.1"
 rust_decimal = "1.36.0"
@@ -169,10 +153,6 @@ features = ["serde"]
 
 [dependencies.ctr]
 version = "0.9.2"
-optional = true
-
-[dependencies.datafusion]
-version = "42.2.0"
 optional = true
 
 [dependencies.dotenvy]

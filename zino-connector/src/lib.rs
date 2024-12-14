@@ -1,5 +1,9 @@
-//! Unified connector to different data sources.
-//!
+#![doc = include_str!("../README.md")]
+#![doc(html_favicon_url = "https://zino.cc/assets/zino-logo.png")]
+#![doc(html_logo_url = "https://zino.cc/assets/zino-logo.svg")]
+#![allow(async_fn_in_trait)]
+#![forbid(unsafe_code)]
+
 //! ## Supported data sources
 //!
 //! | Data source type | Description            | Feature flag           |
@@ -22,14 +26,13 @@
 //! | `sqlite`         | SQLite                 | `connector-sqlite`     |
 //! | `tidb`           | TiDB                   | `connector-mysql`      |
 //! | `timescaledb`    | TimescaleDB            | `connector-postgres`   |
-//!
 
-use crate::{
+use serde::de::DeserializeOwned;
+use toml::Table;
+use zino_core::{
     application::StaticRecord, error::Error, extension::TomlTableExt, state::State, AvroValue,
     LazyLock, Map, Record,
 };
-use serde::de::DeserializeOwned;
-use toml::Table;
 
 mod data_source;
 
@@ -53,6 +56,9 @@ mod sqlite;
     feature = "connector-sqlite"
 ))]
 mod sqlx_row;
+
+#[cfg(feature = "connector-http")]
+mod helper;
 
 #[cfg(feature = "connector-arrow")]
 pub use arrow::{ArrowConnector, DataFrameExecutor};

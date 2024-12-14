@@ -1,13 +1,7 @@
 //! Utilities for DataFusion.
 
 use super::{Connector, DataSource, DataSourceConnector::Arrow};
-use crate::{
-    application::{Agent, Application},
-    bail,
-    error::Error,
-    extension::TomlTableExt,
-    helper, warn, LazyLock, Map, Record,
-};
+use crate::helper;
 use datafusion::{
     arrow::{datatypes::Schema, record_batch::RecordBatch},
     dataframe::DataFrame,
@@ -28,6 +22,13 @@ use std::{
     sync::{Arc, OnceLock},
 };
 use toml::value::{Array, Table};
+use zino_core::{
+    application::{Agent, Application},
+    bail,
+    error::Error,
+    extension::TomlTableExt,
+    warn, LazyLock, Map, Record,
+};
 
 mod arrow_array;
 mod arrow_field;
