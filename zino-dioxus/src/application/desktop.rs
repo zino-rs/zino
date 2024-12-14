@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
 use dioxus_desktop::{
     tao::window::{Fullscreen, Icon, Theme},
+    trayicon::menu::dpi::PhysicalPosition,
     Config, WindowBuilder,
     WindowCloseBehaviour::*,
 };
@@ -97,7 +98,8 @@ where
         let mut window_title = app_name;
         let mut app_window = WindowBuilder::new()
             .with_title(app_name)
-            .with_maximized(true);
+            .with_maximized(true)
+            .with_position(PhysicalPosition::<i32>::default());
         if let Some(config) = app_state.get_config("window") {
             if let Some(title) = config.get_str("title") {
                 app_window = app_window.with_title(title);

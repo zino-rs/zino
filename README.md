@@ -54,10 +54,10 @@ fn main() {
 | Name            | Description                       | Crates.io    | Documentation |
 |-----------------|-----------------------------------|--------------|---------------|
 | [`zino-core`]   | Core types and traits.            | [![Crates.io](https://img.shields.io/crates/v/zino-core)][zino-core] | [![Documentation](https://shields.io/docsrs/zino-core)][zino-core-docs] |
-| [`zino-derive`] | Derived traits.                   | [![Crates.io](https://img.shields.io/crates/v/zino-derive)][zino-derive] | [![Documentation](https://shields.io/docsrs/zino-derive)][zino-derive-docs] |
-| [`zino-model`]  | Domain models.                    | [![Crates.io](https://img.shields.io/crates/v/zino-model)][zino-model] | [![Documentation](https://shields.io/docsrs/zino-model)][zino-model-docs] |
 | [`zino-auth`]   | Authentication and authorization. | [![Crates.io](https://img.shields.io/crates/v/zino-auth)][zino-auth] | [![Documentation](https://shields.io/docsrs/zino-auth)][zino-auth-docs] |
 | [`zino-http`]   | Requests and responses.           | [![Crates.io](https://img.shields.io/crates/v/zino-http)][zino-http] | [![Documentation](https://shields.io/docsrs/zino-http)][zino-http-docs] |
+| [`zino-derive`] | Derived traits.                   | [![Crates.io](https://img.shields.io/crates/v/zino-derive)][zino-derive] | [![Documentation](https://shields.io/docsrs/zino-derive)][zino-derive-docs] |
+| [`zino-model`]  | Domain models.                    | [![Crates.io](https://img.shields.io/crates/v/zino-model)][zino-model] | [![Documentation](https://shields.io/docsrs/zino-model)][zino-model-docs] |
 | [`zino-extra`]  | Extra utilities.                  | [![Crates.io](https://img.shields.io/crates/v/zino-extra)][zino-extra] | [![Documentation](https://shields.io/docsrs/zino-extra)][zino-extra-docs] |
 | [`zino-actix`]  | Integrations with actix-web.      | [![Crates.io](https://img.shields.io/crates/v/zino-actix)][zino-actix] | [![Documentation](https://shields.io/docsrs/zino-actix)][zino-actix-docs] |
 | [`zino-axum`]   | Integrations with axum.           | [![Crates.io](https://img.shields.io/crates/v/zino-axum)][zino-axum] | [![Documentation](https://shields.io/docsrs/zino-axum)][zino-axum-docs] |
@@ -75,10 +75,10 @@ This project is licensed under the [MIT license][license].
 If you have any problems or ideas, please don't hesitate to [open an issue][zino-issue].
 
 [`zino-core`]: https://github.com/zino-rs/zino/tree/main/zino-core
-[`zino-derive`]: https://github.com/zino-rs/zino/tree/main/zino-derive
-[`zino-model`]: https://github.com/zino-rs/zino/tree/main/zino-model
 [`zino-auth`]: https://github.com/zino-rs/zino/tree/main/zino-auth
 [`zino-http`]: https://github.com/zino-rs/zino/tree/main/zino-http
+[`zino-derive`]: https://github.com/zino-rs/zino/tree/main/zino-derive
+[`zino-model`]: https://github.com/zino-rs/zino/tree/main/zino-model
 [`zino-extra`]: https://github.com/zino-rs/zino/tree/main/zino-extra
 [`zino-actix`]: https://github.com/zino-rs/zino/tree/main/zino-actix
 [`zino-axum`]: https://github.com/zino-rs/zino/tree/main/zino-axum
@@ -90,14 +90,14 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [zino-docs]: https://docs.rs/zino
 [zino-core]: https://crates.io/crates/zino-core
 [zino-core-docs]: https://docs.rs/zino-core
-[zino-derive]: https://crates.io/crates/zino-derive
-[zino-derive-docs]: https://docs.rs/zino-derive
-[zino-model]: https://crates.io/crates/zino-model
-[zino-model-docs]: https://docs.rs/zino-model
 [zino-auth]: https://crates.io/crates/zino-auth
 [zino-auth-docs]: https://docs.rs/zino-auth
 [zino-http]: https://crates.io/crates/zino-http
 [zino-http-docs]: https://docs.rs/zino-http
+[zino-derive]: https://crates.io/crates/zino-derive
+[zino-derive-docs]: https://docs.rs/zino-derive
+[zino-model]: https://crates.io/crates/zino-model
+[zino-model-docs]: https://docs.rs/zino-model
 [zino-extra]: https://crates.io/crates/zino-extra
 [zino-extra-docs]: https://docs.rs/zino-extra
 [zino-actix]: https://crates.io/crates/zino-actix

@@ -14,7 +14,6 @@ The following optional features are available:
 
 | Name                 | Description                                            | Default? |
 |----------------------|--------------------------------------------------------|----------|
-| `accessor`           | Enables the data access layer built with [`opendal`].  | No       |
 | `chatbot`            | Enables the chatbot services.                          | No       |
 | `connector`          | Enables the data source connectors.                    | No       |
 | `cookie`             | Enables the support for cookies.                       | No       |
@@ -22,7 +21,6 @@ The following optional features are available:
 | `debug`              | Enables the features for ease of debugging.            | No       |
 | `dotenv`             | Enables the configuration loader for a `.env` file.    | No       |
 | `env-filter`         | Enables the `env-filter` for [`tracing-subscriber`].   | No       |
-| `flume`              | Enables the message channel via [`flume`].             | No       |
 | `http-client`        | Enables the HTTP client via [`reqwest`].               | No       |
 | `locale`             | Enables the support for locale related utilities.      | No       |
 | `metrics`            | Enables the [`metrics`] exporter.                      | No       |
@@ -40,9 +38,7 @@ The following optional features are available:
 | `view`               | Enables the HTML template rendering.                   | No       |
 
 [`zino`]: https://github.com/zino-rs/zino
-[`opendal`]: https://crates.io/crates/opendal
 [`tracing-subscriber`]: https://crates.io/crates/tracing-subscriber
-[`flume`]: https://crates.io/crates/flume
 [`reqwest`]: https://crates.io/crates/reqwest
 [`metrics`]: https://crates.io/crates/metrics
 [`async-std`]: https://crates.io/crates/async-std

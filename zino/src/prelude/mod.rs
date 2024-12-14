@@ -9,7 +9,6 @@ pub use zino_core::{
     datetime::{Date, DateTime, Time},
     error::Error,
     extension::{JsonObjectExt, JsonValueExt, TomlTableExt},
-    file::NamedFile,
     json,
     model::{Model, ModelHooks, Mutation, Query, QueryContext},
     schedule::{AsyncCronJob, AsyncJob, AsyncJobScheduler, CronJob, Job, JobScheduler},
@@ -17,6 +16,9 @@ pub use zino_core::{
     validation::Validation,
     warn, BoxFuture, Decimal, LazyLock, Map, Record, Uuid,
 };
+
+#[doc(no_inline)]
+pub use zino_files::NamedFile;
 
 #[cfg(feature = "auth")]
 #[doc(no_inline)]

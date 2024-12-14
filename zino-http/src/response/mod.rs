@@ -14,9 +14,10 @@ use std::{
     time::{Duration, Instant},
 };
 use zino_core::{
-    error::Error, extension::JsonValueExt, file::NamedFile, trace::TraceContext,
-    validation::Validation, JsonValue, SharedString, Uuid,
+    error::Error, extension::JsonValueExt, trace::TraceContext, validation::Validation, JsonValue,
+    SharedString, Uuid,
 };
+use zino_files::NamedFile;
 
 #[cfg(feature = "cookie")]
 use cookie::Cookie;

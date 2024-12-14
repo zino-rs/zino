@@ -1,12 +1,5 @@
 //! HTTP file uploading and downloading.
 
-use crate::{
-    crypto,
-    encoding::{base64, hex},
-    error::Error,
-    extension::JsonObjectExt,
-    warn, JsonValue, Map,
-};
 use bytes::Bytes;
 use etag::EntityTag;
 use md5::{Digest, Md5};
@@ -17,9 +10,16 @@ use std::{
     io::{self, ErrorKind, Read, Write},
     path::Path,
 };
+use zino_core::{
+    crypto,
+    encoding::{base64, hex},
+    error::Error,
+    extension::JsonObjectExt,
+    warn, JsonValue, Map,
+};
 
 #[cfg(feature = "http-client")]
-use crate::{application::Agent, extension::JsonValueExt, json, trace::TraceContext};
+use zino_core::{application::Agent, extension::JsonValueExt, json, trace::TraceContext};
 
 #[cfg(feature = "http-client")]
 use reqwest::{

@@ -75,3 +75,7 @@ features = [
 path = "../zino-core"
 version = "0.29.2"
 features = ["runtime-tokio"]
+
+[dependencies.zino-files]
+path = "../zino-files"
+version = "0.1.0"

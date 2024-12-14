@@ -30,4 +30,4 @@ cfg_if::cfg_if! {
 
 mod sha1;
 
-pub(crate) use sha1::checksum;
+pub use sha1::checksum;

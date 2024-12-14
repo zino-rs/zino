@@ -5,7 +5,8 @@ use std::{
     fs,
     path::{Path, PathBuf},
 };
-use zino_core::{file::NamedFile, SharedString};
+use zino_core::SharedString;
+use zino_files::NamedFile;
 
 /// A custom file upload input.
 pub fn FileUpload(props: FileUploadProps) -> Element {

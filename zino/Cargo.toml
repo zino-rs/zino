@@ -37,7 +37,7 @@ default = ["logger"]
 i18n = ["dep:zino-http", "zino-http/i18n"]
 jwt = ["auth", "zino-auth/jwt", "zino-http?/jwt"]
 logger = ["zino-core/tracing-log", "zino-core/tracing-subscriber"]
-metrics = ["zino-core/metrics", "zino-http?/metrics"]
+metrics = ["zino-core/metrics", "zino-files/metrics", "zino-http?/metrics"]
 ntex = ["dep:zino-http", "dep:zino-ntex"]
 oidc = ["auth", "zino-core/oidc"]
 opa = ["auth", "zino-auth/opa"]
@@ -71,6 +71,10 @@ version = "0.29.2"
 path = "../zino-dioxus"
 version = "0.10.2"
 optional = true
+
+[dependencies.zino-files]
+path = "../zino-files"
+version = "0.1.0"
 
 [dependencies.zino-http]
 path = "../zino-http"

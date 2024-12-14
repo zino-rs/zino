@@ -18,70 +18,6 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-accessor = ["opendal"]
-accessor-azblob = ["accessor", "opendal/services-azblob"]
-accessor-azdls = ["accessor", "opendal/services-azdls"]
-accessor-cacache = ["accessor", "opendal/services-cacache"]
-accessor-cos = ["accessor", "opendal/services-cos"]
-accessor-dashmap = ["accessor", "opendal/services-dashmap"]
-accessor-dropbox = ["accessor", "opendal/services-dropbox"]
-accessor-fs = ["accessor", "opendal/services-fs"]
-accessor-gcs = ["accessor", "opendal/services-gcs"]
-accessor-gdrive = ["accessor", "opendal/services-gdrive"]
-accessor-ghac = ["accessor", "opendal/services-ghac"]
-accessor-http = ["accessor", "opendal/services-http"]
-accessor-ipfs = ["accessor", "opendal/services-ipfs"]
-accessor-ipmfs = ["accessor", "opendal/services-ipmfs"]
-accessor-memcached = ["accessor", "opendal/services-memcached"]
-accessor-memory = ["accessor", "opendal/services-memory"]
-accessor-mini-moka = ["accessor", "opendal/services-mini-moka"]
-accessor-moka = ["accessor", "opendal/services-moka"]
-accessor-mysql = ["accessor", "opendal/services-mysql"]
-accessor-obs = ["accessor", "opendal/services-obs"]
-accessor-onedrive = ["accessor", "opendal/services-onedrive"]
-accessor-oss = ["accessor", "opendal/services-oss"]
-accessor-persy = ["accessor", "opendal/services-persy"]
-accessor-postgresql = ["accessor", "opendal/services-postgresql"]
-accessor-redb = ["accessor", "opendal/services-redb"]
-accessor-redis = ["accessor", "opendal/services-redis"]
-accessor-s3 = ["accessor", "opendal/services-s3"]
-accessor-sled = ["accessor", "opendal/services-sled"]
-accessor-supabase = ["accessor", "opendal/services-supabase"]
-accessor-webdav = ["accessor", "opendal/services-webdav"]
-accessor-webhdfs = ["accessor", "opendal/services-webhdfs"]
-all-accessors = [
-    "accessor",
-    "accessor-azblob",
-    "accessor-azdls",
-    "accessor-cacache",
-    "accessor-cos",
-    "accessor-dashmap",
-    "accessor-dropbox",
-    "accessor-fs",
-    "accessor-gcs",
-    "accessor-gdrive",
-    "accessor-ghac",
-    "accessor-http",
-    "accessor-ipfs",
-    "accessor-ipmfs",
-    "accessor-memcached",
-    "accessor-memory",
-    "accessor-mini-moka",
-    "accessor-moka",
-    "accessor-mysql",
-    "accessor-obs",
-    "accessor-onedrive",
-    "accessor-oss",
-    "accessor-persy",
-    "accessor-postgresql",
-    "accessor-redb",
-    "accessor-redis",
-    "accessor-s3",
-    "accessor-sled",
-    "accessor-supabase",
-    "accessor-webdav",
-    "accessor-webhdfs",
-]
 all-chatbots = ["chatbot", "chatbot-openai"]
 all-connectors = [
     "connector",
@@ -127,9 +63,7 @@ debug = [
 default = []
 dotenv = ["dep:dotenvy"]
 env-filter = ["tracing-subscriber/env-filter", "tracing-subscriber/smallvec"]
-flume = ["dep:flume"]
 full = [
-    "all-accessors",
     "all-chatbots",
     "all-connectors",
     "all-locales",
@@ -137,7 +71,6 @@ full = [
     "cookie",
     "dotenv",
     "env-filter",
-    "flume",
     "http-client",
     "metrics",
     "oidc",
@@ -153,11 +86,7 @@ locale-es = ["locale", "random_word/es"]
 locale-de = ["locale", "random_word/de"]
 locale-fr = ["locale", "random_word/fr"]
 locale-zh = ["locale", "random_word/zh"]
-metrics = [
-    "dep:metrics",
-    "dep:metrics-exporter-prometheus",
-    "opendal?/layers-metrics",
-]
+metrics = ["dep:metrics", "dep:metrics-exporter-prometheus"]
 oidc = ["dep:rauthy-client"]
 openapi = ["dep:utoipa"]
 orm = ["orm-sqlx"]
@@ -196,21 +125,16 @@ aes-gcm-siv = "0.11.1"
 ahash = "0.8.11"
 apache-avro = "0.17.0"
 base64 = "0.22.1"
-bytes = "1.9.0"
 cfg-if = "1.0"
 convert_case = "0.6.0"
 cron = "0.13.0"
 csv = "1.3.1"
 dirs = "5.0.1"
-etag = "4.0.0"
 faster-hex = "0.10.0"
 futures = "0.3.31"
 hkdf = "0.12.4"
 hmac = "0.12.1"
 http = "1.2.0"
-md-5 = "0.10.6"
-mime_guess = "2.0.5"
-multer = "3.1.0"
 parking_lot = "0.12.3"
 percent-encoding = "2.3.1"
 rand = "0.8.5"
@@ -255,10 +179,6 @@ optional = true
 version = "0.15.7"
 optional = true
 
-[dependencies.flume]
-version = "0.11.1"
-optional = true
-
 [dependencies.metrics]
 version = "0.24.1"
 optional = true
@@ -273,12 +193,6 @@ features = ["http-listener"]
 version = "2.5.0"
 optional = true
 features = ["loader"]
-
-[dependencies.opendal]
-version = "0.50.2"
-optional = true
-default-features = false
-features = ["layers-tracing"]
 
 [dependencies.phonenumber]
 version = "0.3.6"

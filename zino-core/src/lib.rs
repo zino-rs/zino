@@ -10,8 +10,6 @@ mod mock;
 #[cfg(feature = "openapi")]
 mod openapi;
 
-#[cfg(feature = "accessor")]
-pub mod accessor;
 #[cfg(feature = "chatbot")]
 pub mod chatbot;
 #[cfg(feature = "connector")]
@@ -22,13 +20,11 @@ pub mod orm;
 pub mod view;
 
 pub mod application;
-pub mod channel;
 pub mod crypto;
 pub mod datetime;
 pub mod encoding;
 pub mod error;
 pub mod extension;
-pub mod file;
 pub mod model;
 pub mod schedule;
 pub mod state;

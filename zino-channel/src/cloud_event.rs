@@ -1,5 +1,5 @@
-use crate::{datetime::DateTime, JsonValue, Map, SharedString};
 use serde::{Deserialize, Serialize};
+use zino_core::{datetime::DateTime, JsonValue, Map, SharedString};
 
 /// Cloud event.
 /// See [the spec](https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md).

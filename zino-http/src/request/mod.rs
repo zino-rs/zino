@@ -7,16 +7,16 @@ use crate::{
 use multer::Multipart;
 use serde::de::DeserializeOwned;
 use std::{borrow::Cow, net::IpAddr, str::FromStr, time::Instant};
+use zino_channel::{CloudEvent, Subscription};
 use zino_core::{
     application::Agent,
-    channel::{CloudEvent, Subscription},
     error::Error,
     extension::HeaderMapExt,
-    file::NamedFile,
     model::{ModelHooks, Query},
     trace::{TraceContext, TraceState},
     warn, JsonValue, Map, SharedString, Uuid,
 };
+use zino_files::NamedFile;
 
 #[cfg(feature = "auth")]
 use zino_auth::{AccessKeyId, Authentication, ParseSecurityTokenError, SecurityToken, SessionId};
