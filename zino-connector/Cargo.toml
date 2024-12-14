@@ -106,4 +106,4 @@ optional = true
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.29.2"
+version = "0.29.3"

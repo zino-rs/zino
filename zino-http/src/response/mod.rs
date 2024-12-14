@@ -17,7 +17,7 @@ use zino_core::{
     error::Error, extension::JsonValueExt, trace::TraceContext, validation::Validation, JsonValue,
     SharedString, Uuid,
 };
-use zino_files::NamedFile;
+use zino_storage::NamedFile;
 
 #[cfg(feature = "cookie")]
 use cookie::Cookie;

@@ -1,6 +1,6 @@
 [![github]](https://github.com/zino-rs/zino)
-[![crates-io]](https://crates.io/crates/zino-files)
-[![docs-rs]](https://docs.rs/zino-files)
+[![crates-io]](https://crates.io/crates/zino-storage)
+[![docs-rs]](https://docs.rs/zino-storage)
 
 [github]: https://img.shields.io/badge/github-8da0cb?labelColor=555555&logo=github
 [crates-io]: https://img.shields.io/badge/crates.io-fc8d62?labelColor=555555&logo=rust

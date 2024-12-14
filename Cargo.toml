@@ -13,7 +13,6 @@ members = [
     "zino-derive",
     "zino-dioxus",
     "zino-extra",
-    "zino-files",
     "zino-http",
     "zino-middleware",
     "zino-model",
@@ -23,6 +22,7 @@ members = [
     "zino-rpc",
     "zino-salvo",
     "zino-server",
+    "zino-storage",
 ]
 
 [profile.release]

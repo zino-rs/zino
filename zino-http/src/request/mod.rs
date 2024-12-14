@@ -16,7 +16,7 @@ use zino_core::{
     trace::{TraceContext, TraceState},
     warn, JsonValue, Map, SharedString, Uuid,
 };
-use zino_files::NamedFile;
+use zino_storage::NamedFile;
 
 #[cfg(feature = "auth")]
 use zino_auth::{AccessKeyId, Authentication, ParseSecurityTokenError, SecurityToken, SessionId};

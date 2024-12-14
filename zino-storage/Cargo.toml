@@ -1,5 +1,5 @@
 [package]
-name = "zino-files"
+name = "zino-storage"
 description = "Files and storage services for zino."
 version = "0.1.0"
 rust-version = "1.80"
@@ -9,7 +9,7 @@ categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 homepage = "https://github.com/zino-rs/zino"
 repository = "https://github.com/zino-rs/zino"
-documentation = "https://docs.rs/zino-files"
+documentation = "https://docs.rs/zino-storage"
 readme = "README.md"
 
 [package.metadata.docs.rs]
@@ -120,5 +120,5 @@ default-features = false
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.29.2"
+version = "0.29.3"
 features = ["http-client"]

@@ -18,7 +18,7 @@ pub use zino_core::{
 };
 
 #[doc(no_inline)]
-pub use zino_files::NamedFile;
+pub use zino_storage::NamedFile;
 
 #[cfg(feature = "auth")]
 #[doc(no_inline)]
