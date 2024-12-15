@@ -11,9 +11,9 @@ version = "0.11.2"
 features = ["macros"]
 
 [dependencies.zino-amis]
-path = "../../zino-amis"
+path = "../../crates/zino-amis"
 version = "0.2.1"
 
 [dependencies.zino-core]
-path = "../../zino-core"
+path = "../../crates/zino-core"
 version = "0.29.3"

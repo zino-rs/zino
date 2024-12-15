@@ -7,7 +7,7 @@ edition = "2021"
 publish = false
 
 [dependencies.zino]
-path = "../../zino"
+path = "../../crates/zino"
 version = "0.28.2"
 features = ["axum"]
 
