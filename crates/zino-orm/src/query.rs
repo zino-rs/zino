@@ -5,7 +5,8 @@
 //! The design of our ORM is inspired by [`Mongoose`], [`Prisma`], [`TypeORM`] and [`PostgREST`].
 //!
 //! ```rust,ignore
-//! use zino_core::{model::{Mutation, Query}, orm::{JoinOn, Schema}, Map, Record};
+//! use zino_core::{model::{Mutation, Query}, json, Map, Record};
+//! use zino_orm::{JoinOn, Schema};
 //!
 //! // Constructs a model `Query` with JSON expressions.
 //! let query = Query::new(json!({

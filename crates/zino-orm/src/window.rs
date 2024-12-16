@@ -45,7 +45,7 @@ enum WindownFunction<E: Entity> {
 /// # Examples
 /// ```rust,ignore
 /// use crate::model::{User, UserColumn::*};
-/// use zino_core::orm::{QueryBuilder, Schema, Window};
+/// use zino_orm::{QueryBuilder, Schema, Window};
 ///
 /// let rank_window = Window::rank(CurrentLoginIp).order_desc(LoginCount);
 /// let query = QueryBuilder::<User>::new()

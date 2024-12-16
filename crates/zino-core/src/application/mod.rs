@@ -52,9 +52,6 @@ use std::{
 };
 use toml::value::Table;
 
-#[cfg(feature = "openapi")]
-use utoipa::openapi::{OpenApi, OpenApiBuilder};
-
 mod agent;
 mod plugin;
 mod secret_key;
@@ -175,22 +172,6 @@ pub trait Application {
     {
         tracing::info!(plugin_name = plugin.name());
         self
-    }
-
-    /// Gets the [OpenAPI](https://spec.openapis.org/oas/latest.html) document.
-    #[cfg(feature = "openapi")]
-    #[inline]
-    fn openapi() -> OpenApi {
-        use crate::openapi;
-        OpenApiBuilder::new()
-            .paths(openapi::default_paths()) // should come first to load OpenAPI files
-            .components(Some(openapi::default_components()))
-            .tags(Some(openapi::default_tags()))
-            .servers(Some(openapi::default_servers()))
-            .security(Some(openapi::default_securities()))
-            .external_docs(openapi::default_external_docs())
-            .info(openapi::openapi_info(Self::name(), Self::version()))
-            .build()
     }
 
     /// Returns a reference to the shared application state.

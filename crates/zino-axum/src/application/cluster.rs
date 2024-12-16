@@ -180,6 +180,7 @@ impl Application for Cluster {
                     server_tag.is_main()
                 };
                 if is_docs_server {
+                    let openapi = zino_openapi::openapi();
                     if let Some(config) = app_state.get_config("openapi") {
                         if config.get_bool("show-docs") != Some(false) {
                             // If the `spec-url` has been configured, the user should
@@ -188,7 +189,7 @@ impl Application for Cluster {
                             let rapidoc = if let Some(url) = config.get_str("spec-url") {
                                 RapiDoc::new(url)
                             } else {
-                                RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
+                                RapiDoc::with_openapi("/api-docs/openapi.json", openapi)
                             };
                             if let Some(custom_html) = config.get_str("custom-html") {
                                 let custom_html_file = Self::parse_path(custom_html);
@@ -203,9 +204,8 @@ impl Application for Cluster {
                             tracing::info!("RapiDoc router `{path}` is registered for `{addr}`");
                         }
                     } else {
-                        let rapidoc =
-                            RapiDoc::with_openapi("/api-docs/openapi.json", Self::openapi())
-                                .path("/rapidoc");
+                        let rapidoc = RapiDoc::with_openapi("/api-docs/openapi.json", openapi)
+                            .path("/rapidoc");
                         app = app.merge(rapidoc);
                         tracing::info!("RapiDoc router `/rapidoc` is registered for `{addr}`");
                     }

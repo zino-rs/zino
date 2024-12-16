@@ -23,7 +23,6 @@ The following optional features are available:
 | `locale`             | Enables the support for locale related utilities.      | No       |
 | `metrics`            | Enables the [`metrics`] exporter.                      | No       |
 | `oidc`               | Enables the support for OIDC via [`rauthy`].           | No       |
-| `openapi`            | Enables the support for OpenAPI docs via [`utoipa`].   | No       |
 | `runtime-async-std`  | Enables the [`async-std`] runtime.                     | No       |
 | `runtime-tokio`      | Enables the [`tokio`] runtime.                         | No       |
 | `sentry`             | Enables the integration with [`sentry`].               | No       |
@@ -41,6 +40,5 @@ The following optional features are available:
 [`tokio`]: https://crates.io/crates/tokio
 [`native-tls`]: https://crates.io/crates/native-tls
 [`rauthy`]: https://crates.io/crates/rauthy-client
-[`utoipa`]: https://crates.io/crates/utoipa
 [`rustls`]: https://crates.io/crates/rustls
 [`sentry`]: https://crates.io/crates/sentry

@@ -13,7 +13,7 @@ documentation = "https://docs.rs/zino-ntex"
 readme = "README.md"
 
 [features]
-orm = ["zino-orm"]
+orm = ["zino-orm", "zino-orm/openapi"]
 
 [dependencies]
 futures = "0.3.31"

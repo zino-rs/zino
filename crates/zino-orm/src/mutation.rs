@@ -13,7 +13,7 @@ use zino_core::{
 /// # Examples
 /// ```rust,ignore
 /// use crate::model::{User, UserColumn};
-/// use zino_core::orm::{MutationBuilder, QueryBuilder, Schema};
+/// use zino_orm::{MutationBuilder, QueryBuilder, Schema};
 ///
 /// let query = QueryBuilder::<User>::new()
 ///     .primary_key("01936dc6-e48c-7d22-8e69-b29f85682fac")

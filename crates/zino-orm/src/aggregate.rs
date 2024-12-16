@@ -7,7 +7,8 @@ use zino_core::model::Query;
 /// # Examples
 /// ```rust,ignore
 /// use crate::model::{Task, TaskColumn};
-/// use zino_core::{orm::{Aggregation, QueryBuilder, Schema}, Map};
+/// use zino_core::Map;
+/// use zino_orm::{Aggregation, QueryBuilder, Schema};
 ///
 /// let query = QueryBuilder::<Task>::new()
 ///     .aggregate(Aggregation::Count(TaskColumn::Id, false), Some("num_tasks"))

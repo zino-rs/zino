@@ -54,6 +54,8 @@ where
 
     /// Translates the model data.
     fn translate_model(model: &mut Map) {
+        #[cfg(feature = "openapi")]
+        zino_openapi::translate_model_entry(model, Self::model_name());
         for col in Self::columns() {
             if let Some(translated_field) = col.extra().get_str("translate_as") {
                 let field = [col.name(), "_translated"].concat();

@@ -13,7 +13,7 @@ documentation = "https://docs.rs/zino-actix"
 readme = "README.md"
 
 [features]
-orm = ["zino-orm"]
+orm = ["zino-orm", "zino-orm/openapi"]
 
 [dependencies]
 actix-cors = "0.7.0"
@@ -48,3 +48,7 @@ features = ["http02"]
 path = "../zino-orm"
 version = "0.1.0"
 optional = true
+
+[dependencies.zino-openapi]
+path = "../zino-openapi"
+version = "0.1.0"

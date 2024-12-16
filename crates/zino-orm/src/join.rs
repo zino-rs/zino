@@ -37,7 +37,8 @@ impl JoinType {
 /// # Examples
 /// ```rust,ignore
 /// use crate::model::{Project, ProjectColumn, Task, TaskColumn};
-/// use zino_core::{orm::{JoinOn, QueryBuilder, Schema}, Map};
+/// use zino_core::Map;
+/// use zino_orm::{JoinOn, QueryBuilder, Schema};
 ///
 /// let query = QueryBuilder::<Task>::new()
 ///     .fields([TaskColumn::Id, TaskColumn::Name, TaskColumn::ProjectId])

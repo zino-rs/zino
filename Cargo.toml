@@ -17,6 +17,7 @@ members = [
     "crates/zino-middleware",
     "crates/zino-model",
     "crates/zino-ntex",
+    "crates/zino-openapi",
     "crates/zino-orm",
     "crates/zino-router",
     "crates/zino-rpc",

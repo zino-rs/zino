@@ -7,8 +7,6 @@
 
 mod helper;
 mod mock;
-#[cfg(feature = "openapi")]
-mod openapi;
 
 pub mod application;
 pub mod crypto;
