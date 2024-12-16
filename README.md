@@ -38,7 +38,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-zino = { version = "0.28", features = ["axum"] }
+zino = { version = "0.29", features = ["axum"] }
 ```
 
 ```rust
@@ -58,6 +58,7 @@ fn main() {
 | [`zino-channel`] | Cloud events and subscriptions.  | [![Crates.io](https://img.shields.io/crates/v/zino-channel)][zino-channel] | [![Documentation](https://shields.io/docsrs/zino-channel)][zino-channel-docs] |
 | [`zino-storage`] | Files and storage services.      | [![Crates.io](https://img.shields.io/crates/v/zino-storage)][zino-storage] | [![Documentation](https://shields.io/docsrs/zino-storage)][zino-storage-docs] |
 | [`zino-http`]   | Requests and responses.           | [![Crates.io](https://img.shields.io/crates/v/zino-http)][zino-http] | [![Documentation](https://shields.io/docsrs/zino-http)][zino-http-docs] |
+| [`zino-orm`]    | Database schema and ORM.          | [![Crates.io](https://img.shields.io/crates/v/zino-orm)][zino-orm] | [![Documentation](https://shields.io/docsrs/zino-orm)][zino-orm-docs] |
 | [`zino-derive`] | Derived traits.                   | [![Crates.io](https://img.shields.io/crates/v/zino-derive)][zino-derive] | [![Documentation](https://shields.io/docsrs/zino-derive)][zino-derive-docs] |
 | [`zino-model`]  | Domain models.                    | [![Crates.io](https://img.shields.io/crates/v/zino-model)][zino-model] | [![Documentation](https://shields.io/docsrs/zino-model)][zino-model-docs] |
 | [`zino-extra`]  | Extra utilities.                  | [![Crates.io](https://img.shields.io/crates/v/zino-extra)][zino-extra] | [![Documentation](https://shields.io/docsrs/zino-extra)][zino-extra-docs] |
@@ -82,6 +83,7 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [`zino-storage`]: https://github.com/zino-rs/zino/tree/main/crates/zino-storage
 [`zino-http`]: https://github.com/zino-rs/zino/tree/main/crates/zino-http
 [`zino-derive`]: https://github.com/zino-rs/zino/tree/main/crates/zino-derive
+[`zino-orm`]: https://github.com/zino-rs/zino/tree/main/crates/zino-orm
 [`zino-model`]: https://github.com/zino-rs/zino/tree/main/crates/zino-model
 [`zino-extra`]: https://github.com/zino-rs/zino/tree/main/crates/zino-extra
 [`zino-actix`]: https://github.com/zino-rs/zino/tree/main/crates/zino-actix
@@ -102,6 +104,8 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [zino-storage-docs]: https://docs.rs/zino-storage
 [zino-http]: https://crates.io/crates/zino-http
 [zino-http-docs]: https://docs.rs/zino-http
+[zino-orm]: https://crates.io/crates/zino-orm
+[zino-orm-docs]: https://docs.rs/zino-orm
 [zino-derive]: https://crates.io/crates/zino-derive
 [zino-derive-docs]: https://docs.rs/zino-derive
 [zino-model]: https://crates.io/crates/zino-model

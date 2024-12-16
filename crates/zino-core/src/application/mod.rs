@@ -64,9 +64,6 @@ pub(crate) mod http_client;
 #[cfg(feature = "metrics")]
 mod metrics_exporter;
 
-#[cfg(feature = "oidc")]
-mod rauthy_client;
-
 #[cfg(feature = "sentry")]
 mod sentry_client;
 
@@ -293,10 +290,7 @@ pub trait Application {
 
     /// Loads resources after booting the application.
     #[inline]
-    async fn load() {
-        #[cfg(feature = "oidc")]
-        rauthy_client::setup::<Self>().await;
-    }
+    async fn load() {}
 
     /// Handles the graceful shutdown.
     #[inline]

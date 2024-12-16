@@ -18,6 +18,7 @@ The following optional features are available:
 |----------------------|--------------------------------------------------------|----------|
 | `crypto-sm`          | Enables China's Standards of Encryption Algorithms.    | No       |
 | `jwt`                | Enables the support for JSON Web Token.                | No       |
+| `oidc`               | Enables the support for OIDC via [`rauthy`].           | No       |
 | `opa`                | Enables the support for OPA via [`regorus`].           | No       |
 | `sqids`              | Enables the support for [`sqids`].                     | No       |
 

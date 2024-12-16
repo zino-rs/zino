@@ -22,8 +22,6 @@ The following optional features are available:
 | `i18n`               | Enables the support for internationalization.          | No       |
 | `jwt`                | Enables the support for JSON Web Token.                | No       |
 | `metrics`            | Enables the [`metrics`] exporter.                      | No       |
-| `openapi`            | Enables the support for OpenAPI docs via [`utoipa`].   | No       |
 | `view`               | Enables the HTML template rendering.                   | No       |
 
 [`metrics`]: https://crates.io/crates/metrics
-[`utoipa`]: https://crates.io/crates/utoipa

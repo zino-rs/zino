@@ -57,7 +57,7 @@ default-features = false
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.29.3"
+version = "0.30.0"
 
 [dependencies.zino-openapi]
 path = "../zino-openapi"

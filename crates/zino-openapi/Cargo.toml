@@ -12,6 +12,13 @@ repository = "https://github.com/zino-rs/zino"
 documentation = "https://docs.rs/zino-openapi"
 readme = "README.md"
 
+[features]
+debug = [
+    "utoipa/preserve_order",
+    "utoipa/preserve_path_order",
+    "zino-core/debug",
+]
+
 [dependencies]
 ahash = "0.8.11"
 convert_case = "0.6.0"
@@ -33,4 +40,4 @@ features = [
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.29.3"
+version = "0.30.0"

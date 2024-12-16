@@ -22,7 +22,6 @@ The following optional features are available:
 | `http-client`        | Enables the HTTP client via [`reqwest`].               | No       |
 | `locale`             | Enables the support for locale related utilities.      | No       |
 | `metrics`            | Enables the [`metrics`] exporter.                      | No       |
-| `oidc`               | Enables the support for OIDC via [`rauthy`].           | No       |
 | `runtime-async-std`  | Enables the [`async-std`] runtime.                     | No       |
 | `runtime-tokio`      | Enables the [`tokio`] runtime.                         | No       |
 | `sentry`             | Enables the integration with [`sentry`].               | No       |
@@ -39,6 +38,5 @@ The following optional features are available:
 [`async-std`]: https://crates.io/crates/async-std
 [`tokio`]: https://crates.io/crates/tokio
 [`native-tls`]: https://crates.io/crates/native-tls
-[`rauthy`]: https://crates.io/crates/rauthy-client
 [`rustls`]: https://crates.io/crates/rustls
 [`sentry`]: https://crates.io/crates/sentry

@@ -76,13 +76,6 @@ impl WebHook {
         })
     }
 
-    /// Gets a webhook with the specific name from the OpenAPI docs.
-    #[cfg(feature = "openapi")]
-    #[inline]
-    pub fn get_from_openapi(name: &str) -> Option<&'static WebHook> {
-        crate::openapi::get_webhook(name)
-    }
-
     /// Adds a key/value pair for the request query.
     #[inline]
     pub fn query(mut self, key: &str, value: impl Into<JsonValue>) -> Self {

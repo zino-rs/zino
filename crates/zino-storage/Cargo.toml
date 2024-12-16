@@ -1,7 +1,7 @@
 [package]
 name = "zino-storage"
 description = "Files and storage services for zino."
-version = "0.1.0"
+version = "0.2.0"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -120,5 +120,5 @@ default-features = false
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.29.3"
+version = "0.30.0"
 features = ["http-client"]
