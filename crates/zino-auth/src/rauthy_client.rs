@@ -4,33 +4,31 @@ use rauthy_client::{
 };
 use std::collections::HashSet;
 use zino_core::{
-    application::{Application, Plugin},
+    application::{Agent, Application, Plugin},
+    error::Error,
     extension::TomlTableExt,
+    bail,
 };
 
 /// The Rauthy client.
 #[derive(Debug, Clone, Copy)]
-struct RauthyClient;
+pub struct RauthyClient;
 
 impl RauthyClient {
     /// Initializes the Rauthy client and setups the OIDC provider.
     pub fn init() -> Plugin {
         let loader = Box::pin(async {
             let Some(config) = Agent::config().get_table("rauthy") else {
-                tracing::warn!("`rauthy` config should be specified");
-                return;
+                bail!("`rauthy` config should be specified");
             };
             let Some(client_id) = config.get_str("client-id") else {
-                tracing::warn!("`rauthy.client-id` should be specified");
-                return;
+                bail!("`rauthy.client-id` should be specified");
             };
             let Some(redirect_uri) = config.get_str("redirect-uri") else {
-                tracing::warn!("`rauthy.redirect-uri` should be specified");
-                return;
+                bail!("`rauthy.redirect-uri` should be specified");
             };
             let Some(issuer_uri) = config.get_str("issuer-uri") else {
-                tracing::warn!("`rauthy.issuer-uri` should be specified");
-                return;
+                bail!("`rauthy.issuer-uri` should be specified");
             };
             let audiences = if let Some(audiences) = config.get_str_array("audiences") {
                 HashSet::from_iter(audiences.into_iter().map(|s| s.to_owned()))

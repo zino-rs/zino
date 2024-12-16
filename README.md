@@ -58,9 +58,12 @@ fn main() {
 | [`zino-channel`] | Cloud events and subscriptions.  | [![Crates.io](https://img.shields.io/crates/v/zino-channel)][zino-channel] | [![Documentation](https://shields.io/docsrs/zino-channel)][zino-channel-docs] |
 | [`zino-storage`] | Files and storage services.      | [![Crates.io](https://img.shields.io/crates/v/zino-storage)][zino-storage] | [![Documentation](https://shields.io/docsrs/zino-storage)][zino-storage-docs] |
 | [`zino-http`]   | Requests and responses.           | [![Crates.io](https://img.shields.io/crates/v/zino-http)][zino-http] | [![Documentation](https://shields.io/docsrs/zino-http)][zino-http-docs] |
+| [`zino-openapi`] | OpenAPI docs generator.          | [![Crates.io](https://img.shields.io/crates/v/zino-openapi)][zino-openapi] | [![Documentation](https://shields.io/docsrs/zino-openapi)][zino-openapi-docs] |
 | [`zino-orm`]    | Database schema and ORM.          | [![Crates.io](https://img.shields.io/crates/v/zino-orm)][zino-orm] | [![Documentation](https://shields.io/docsrs/zino-orm)][zino-orm-docs] |
 | [`zino-derive`] | Derived traits.                   | [![Crates.io](https://img.shields.io/crates/v/zino-derive)][zino-derive] | [![Documentation](https://shields.io/docsrs/zino-derive)][zino-derive-docs] |
 | [`zino-model`]  | Domain models.                    | [![Crates.io](https://img.shields.io/crates/v/zino-model)][zino-model] | [![Documentation](https://shields.io/docsrs/zino-model)][zino-model-docs] |
+| [`zino-connector`] | Connector to data sources.     | [![Crates.io](https://img.shields.io/crates/v/zino-connector)][zino-connector] | [![Documentation](https://shields.io/docsrs/zino-connector)][zino-connector-docs] |
+| [`zino-chatbot`] | Chatbot services.                | [![Crates.io](https://img.shields.io/crates/v/zino-chatbot)][zino-chatbot] | [![Documentation](https://shields.io/docsrs/zino-chatbot)][zino-chatbot-docs] |
 | [`zino-extra`]  | Extra utilities.                  | [![Crates.io](https://img.shields.io/crates/v/zino-extra)][zino-extra] | [![Documentation](https://shields.io/docsrs/zino-extra)][zino-extra-docs] |
 | [`zino-actix`]  | Integrations with actix-web.      | [![Crates.io](https://img.shields.io/crates/v/zino-actix)][zino-actix] | [![Documentation](https://shields.io/docsrs/zino-actix)][zino-actix-docs] |
 | [`zino-axum`]   | Integrations with axum.           | [![Crates.io](https://img.shields.io/crates/v/zino-axum)][zino-axum] | [![Documentation](https://shields.io/docsrs/zino-axum)][zino-axum-docs] |
@@ -82,10 +85,12 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [`zino-channel`]: https://github.com/zino-rs/zino/tree/main/crates/zino-channel
 [`zino-storage`]: https://github.com/zino-rs/zino/tree/main/crates/zino-storage
 [`zino-http`]: https://github.com/zino-rs/zino/tree/main/crates/zino-http
+[`zino-openapi`]: https://github.com/zino-rs/zino/tree/main/crates/zino-openapi
 [`zino-derive`]: https://github.com/zino-rs/zino/tree/main/crates/zino-derive
 [`zino-orm`]: https://github.com/zino-rs/zino/tree/main/crates/zino-orm
 [`zino-model`]: https://github.com/zino-rs/zino/tree/main/crates/zino-model
-[`zino-extra`]: https://github.com/zino-rs/zino/tree/main/crates/zino-extra
+[`zino-connector`]: https://github.com/zino-rs/zino/tree/main/crates/zino-connector
+[`zino-chatbot`]: https://github.com/zino-rs/zino/tree/main/crates/zino-chatbot
 [`zino-actix`]: https://github.com/zino-rs/zino/tree/main/crates/zino-actix
 [`zino-axum`]: https://github.com/zino-rs/zino/tree/main/crates/zino-axum
 [`zino-ntex`]: https://github.com/zino-rs/zino/tree/main/crates/zino-ntex
@@ -104,12 +109,18 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [zino-storage-docs]: https://docs.rs/zino-storage
 [zino-http]: https://crates.io/crates/zino-http
 [zino-http-docs]: https://docs.rs/zino-http
+[zino-openapi]: https://crates.io/crates/zino-openapi
+[zino-openapi-docs]: https://docs.rs/zino-openapi
 [zino-orm]: https://crates.io/crates/zino-orm
 [zino-orm-docs]: https://docs.rs/zino-orm
 [zino-derive]: https://crates.io/crates/zino-derive
 [zino-derive-docs]: https://docs.rs/zino-derive
 [zino-model]: https://crates.io/crates/zino-model
 [zino-model-docs]: https://docs.rs/zino-model
+[zino-connector]: https://crates.io/crates/zino-connector
+[zino-connector-docs]: https://docs.rs/zino-connector
+[zino-chatbot]: https://crates.io/crates/zino-chatbot
+[zino-chatbot-docs]: https://docs.rs/zino-chatbot
 [zino-extra]: https://crates.io/crates/zino-extra
 [zino-extra-docs]: https://docs.rs/zino-extra
 [zino-actix]: https://crates.io/crates/zino-actix
