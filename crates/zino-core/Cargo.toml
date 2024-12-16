@@ -35,10 +35,7 @@ all-validators = [
 cookie = ["dep:cookie", "reqwest?/cookies"]
 crypto-sm = ["dep:ctr", "dep:sm3", "dep:sm4"]
 debug = [
-    "minijinja?/debug",
-    "minijinja?/preserve_order",
     "serde_json/preserve_order",
-    "tera?/preserve_order",
     "toml/preserve_order",
     "utoipa?/preserve_order",
     "utoipa?/preserve_path_order",
@@ -58,7 +55,6 @@ full = [
     "openapi",
     "orm",
     "tracing-log",
-    "view",
 ]
 http-client = ["dep:reqwest-middleware", "dep:reqwest-tracing", "reqwest"]
 locale = ["random_word"]
@@ -97,9 +93,6 @@ validator-credit-card = ["validator", "dep:card-validate"]
 validator-email = ["validator"]
 validator-phone-number = ["validator", "dep:phonenumber"]
 validator-regex = ["validator"]
-view = ["dep:minijinja"]
-view-minijinja = ["view", "dep:minijinja"]
-view-tera = ["view", "dep:tera"]
 
 [dependencies]
 aes-gcm-siv = "0.11.1"
@@ -160,11 +153,6 @@ version = "0.16.0"
 optional = true
 default-features = false
 features = ["http-listener"]
-
-[dependencies.minijinja]
-version = "2.5.0"
-optional = true
-features = ["loader"]
 
 [dependencies.phonenumber]
 version = "0.3.6"
@@ -236,10 +224,6 @@ features = [
     "rust_decimal",
     "uuid",
 ]
-
-[dependencies.tera]
-version = "1.20.0"
-optional = true
 
 [dependencies.toml]
 version = "0.8.19"

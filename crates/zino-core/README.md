@@ -33,7 +33,6 @@ The following optional features are available:
 | `tracing-log`        | Enables the `tracing-log` for [`tracing-subscriber`].  | No       |
 | `tracing-subscriber` | Enables the integration with [`tracing-subscriber`].   | No       |
 | `validator`          | Enables the common validation rules.                   | No       |
-| `view`               | Enables the HTML template rendering.                   | No       |
 
 [`zino`]: https://github.com/zino-rs/zino
 [`tracing-subscriber`]: https://crates.io/crates/tracing-subscriber

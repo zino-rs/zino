@@ -18,6 +18,7 @@ The following optional features are available:
 |----------------------|--------------------------------------------------------|----------|
 | `auth`               | Enables the authentication and authorization.          | No       |
 | `cookie`             | Enables the support for cookies.                       | No       |
+| `debug`              | Enables the features for ease of debugging.            | No       |
 | `i18n`               | Enables the support for internationalization.          | No       |
 | `jwt`                | Enables the support for JSON Web Token.                | No       |
 | `metrics`            | Enables the [`metrics`] exporter.                      | No       |

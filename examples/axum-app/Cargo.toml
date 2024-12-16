@@ -36,7 +36,6 @@ features = [
     "env-filter",
     "orm-mysql",
     "validator-email",
-    "view-tera",
 ]
 
 [dependencies.zino-derive]

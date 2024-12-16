@@ -14,6 +14,9 @@ pub mod timing;
 #[cfg(feature = "i18n")]
 pub mod i18n;
 
+#[cfg(feature = "view")]
+pub mod view;
+
 #[cfg(feature = "i18n")]
 #[doc(no_inline)]
 pub use fluent::fluent_args;

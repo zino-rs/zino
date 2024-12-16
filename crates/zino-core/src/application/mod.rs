@@ -121,10 +121,6 @@ pub trait Application {
         #[cfg(feature = "http-client")]
         http_client::init::<Self>();
 
-        // View template
-        #[cfg(feature = "view")]
-        crate::view::init::<Self>();
-
         // Initializes the directories to ensure that they are ready for use
         for path in SHARED_DIRS.values() {
             if !path.exists() {

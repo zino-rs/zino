@@ -193,7 +193,7 @@ impl<S: ResponseCode> Response<S> {
                 if let Some(data) = value.as_object_mut() {
                     let mut map = zino_core::Map::new();
                     map.append(data);
-                    zino_core::view::render(template_name, map)
+                    crate::view::render(template_name, map)
                 } else {
                     Err(zino_core::warn!("invalid template data"))
                 }

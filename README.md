@@ -76,20 +76,20 @@ This project is licensed under the [MIT license][license].
 
 If you have any problems or ideas, please don't hesitate to [open an issue][zino-issue].
 
-[`zino-core`]: https://github.com/zino-rs/zino/tree/main/zino-core
-[`zino-auth`]: https://github.com/zino-rs/zino/tree/main/zino-auth
-[`zino-channel`]: https://github.com/zino-rs/zino/tree/main/zino-channel
-[`zino-storage`]: https://github.com/zino-rs/zino/tree/main/zino-storage
-[`zino-http`]: https://github.com/zino-rs/zino/tree/main/zino-http
-[`zino-derive`]: https://github.com/zino-rs/zino/tree/main/zino-derive
-[`zino-model`]: https://github.com/zino-rs/zino/tree/main/zino-model
-[`zino-extra`]: https://github.com/zino-rs/zino/tree/main/zino-extra
-[`zino-actix`]: https://github.com/zino-rs/zino/tree/main/zino-actix
-[`zino-axum`]: https://github.com/zino-rs/zino/tree/main/zino-axum
-[`zino-ntex`]: https://github.com/zino-rs/zino/tree/main/zino-ntex
-[`zino-dioxus`]: https://github.com/zino-rs/zino/tree/main/zino-dioxus
-[`zino-amis`]: https://github.com/zino-rs/zino/tree/main/zino-amis
-[`zino-cli`]: https://github.com/zino-rs/zino/tree/main/zino-cli
+[`zino-core`]: https://github.com/zino-rs/zino/tree/main/crates/zino-core
+[`zino-auth`]: https://github.com/zino-rs/zino/tree/main/crates/zino-auth
+[`zino-channel`]: https://github.com/zino-rs/zino/tree/main/crates/zino-channel
+[`zino-storage`]: https://github.com/zino-rs/zino/tree/main/crates/zino-storage
+[`zino-http`]: https://github.com/zino-rs/zino/tree/main/crates/zino-http
+[`zino-derive`]: https://github.com/zino-rs/zino/tree/main/crates/zino-derive
+[`zino-model`]: https://github.com/zino-rs/zino/tree/main/crates/zino-model
+[`zino-extra`]: https://github.com/zino-rs/zino/tree/main/crates/zino-extra
+[`zino-actix`]: https://github.com/zino-rs/zino/tree/main/crates/zino-actix
+[`zino-axum`]: https://github.com/zino-rs/zino/tree/main/crates/zino-axum
+[`zino-ntex`]: https://github.com/zino-rs/zino/tree/main/crates/zino-ntex
+[`zino-dioxus`]: https://github.com/zino-rs/zino/tree/main/crates/zino-dioxus
+[`zino-amis`]: https://github.com/zino-rs/zino/tree/main/crates/zino-amis
+[`zino-cli`]: https://github.com/zino-rs/zino/tree/main/crates/zino-cli
 [zino]: https://crates.io/crates/zino
 [zino-docs]: https://docs.rs/zino
 [zino-core]: https://crates.io/crates/zino-core

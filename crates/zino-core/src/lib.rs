@@ -12,8 +12,6 @@ mod openapi;
 
 #[cfg(feature = "orm")]
 pub mod orm;
-#[cfg(feature = "view")]
-pub mod view;
 
 pub mod application;
 pub mod crypto;
