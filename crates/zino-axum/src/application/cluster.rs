@@ -301,7 +301,7 @@ impl Application for Cluster {
                 .recv()
                 .await;
             #[cfg(feature = "orm")]
-            zino_core::orm::GlobalPool::close_all().await;
+            zino_orm::GlobalPool::close_all().await;
         };
         #[cfg(not(unix))]
         let terminate = std::future::pending::<()>();

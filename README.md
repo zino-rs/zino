@@ -91,6 +91,7 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [`zino-model`]: https://github.com/zino-rs/zino/tree/main/crates/zino-model
 [`zino-connector`]: https://github.com/zino-rs/zino/tree/main/crates/zino-connector
 [`zino-chatbot`]: https://github.com/zino-rs/zino/tree/main/crates/zino-chatbot
+[`zino-extra`]: https://github.com/zino-rs/zino/tree/main/crates/zino-extra
 [`zino-actix`]: https://github.com/zino-rs/zino/tree/main/crates/zino-actix
 [`zino-axum`]: https://github.com/zino-rs/zino/tree/main/crates/zino-axum
 [`zino-ntex`]: https://github.com/zino-rs/zino/tree/main/crates/zino-ntex
