@@ -221,3 +221,27 @@ impl SubAssign<Duration> for Time {
         *self = *self - rhs;
     }
 }
+
+#[cfg(feature = "sqlx")]
+impl<DB> sqlx::Type<DB> for Time
+where
+    DB: sqlx::Database,
+    NaiveTime: sqlx::Type<DB>,
+{
+    #[inline]
+    fn type_info() -> <DB as sqlx::Database>::TypeInfo {
+        <NaiveTime as sqlx::Type<DB>>::type_info()
+    }
+}
+
+#[cfg(feature = "sqlx")]
+impl<'r, DB> sqlx::Decode<'r, DB> for Time
+where
+    DB: sqlx::Database,
+    NaiveTime: sqlx::Decode<'r, DB>,
+{
+    #[inline]
+    fn decode(value: <DB as sqlx::Database>::ValueRef<'r>) -> Result<Self, crate::BoxError> {
+        <NaiveTime as sqlx::Decode<'r, DB>>::decode(value).map(|dt| dt.into())
+    }
+}

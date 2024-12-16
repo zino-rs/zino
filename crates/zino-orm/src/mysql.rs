@@ -1,13 +1,13 @@
-use super::{query::QueryExt, DatabaseDriver, DatabaseRow, Schema};
-use crate::{
+use super::{query::QueryExt, DatabaseDriver, DatabaseRow, DecodeRow, EncodeColumn, Schema};
+use chrono::NaiveDateTime;
+use std::borrow::Cow;
+use zino_core::{
     datetime::{Date, DateTime, Time},
     error::Error,
     extension::{JsonObjectExt, JsonValueExt},
-    model::{Column, DecodeRow, EncodeColumn, Query, QueryOrder},
+    model::{Column, Query, QueryOrder},
     AvroValue, JsonValue, Map, Record, SharedString, Uuid,
 };
-use chrono::NaiveDateTime;
-use std::borrow::Cow;
 
 #[cfg(feature = "orm-sqlx")]
 use sqlx::{types::Decimal, Column as _, Row, TypeInfo, ValueRef};
@@ -621,7 +621,7 @@ impl QueryExt<DatabaseDriver> for Query {
         query: &'a str,
         params: Option<&'a Map>,
     ) -> (Cow<'a, str>, Vec<&'a JsonValue>) {
-        crate::helper::prepare_sql_query(query, params, '?')
+        crate::query::prepare_sql_query(query, params, '?')
     }
 
     fn format_field(field: &str) -> Cow<'_, str> {

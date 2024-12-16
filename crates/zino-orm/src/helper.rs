@@ -1,5 +1,6 @@
 use super::Schema;
-use crate::{
+use std::fmt::Display;
+use zino_core::{
     crypto,
     encoding::base64,
     error::Error,
@@ -7,7 +8,6 @@ use crate::{
     state::State,
     warn, LazyLock, Map,
 };
-use std::fmt::Display;
 
 /// Helper utilities for models.
 pub trait ModelHelper<K>: Schema<PrimaryKey = K>
@@ -54,8 +54,6 @@ where
 
     /// Translates the model data.
     fn translate_model(model: &mut Map) {
-        #[cfg(feature = "openapi")]
-        crate::openapi::translate_model_entry(model, Self::model_name());
         for col in Self::columns() {
             if let Some(translated_field) = col.extra().get_str("translate_as") {
                 let field = [col.name(), "_translated"].concat();

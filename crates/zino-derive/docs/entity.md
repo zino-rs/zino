@@ -1,4 +1,4 @@
-Derives the [`Entity`](zino_core::orm::Entity) trait.
+Derives the [`Entity`](zino_orm::Entity) trait.
 
 # Attributes on struct fields
 

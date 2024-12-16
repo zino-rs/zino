@@ -24,7 +24,6 @@ The following optional features are available:
 | `metrics`            | Enables the [`metrics`] exporter.                      | No       |
 | `oidc`               | Enables the support for OIDC via [`rauthy`].           | No       |
 | `openapi`            | Enables the support for OpenAPI docs via [`utoipa`].   | No       |
-| `orm`                | Enables the ORM for MySQL, PostgreSQL or **SQLite**.   | No       |
 | `runtime-async-std`  | Enables the [`async-std`] runtime.                     | No       |
 | `runtime-tokio`      | Enables the [`tokio`] runtime.                         | No       |
 | `sentry`             | Enables the integration with [`sentry`].               | No       |

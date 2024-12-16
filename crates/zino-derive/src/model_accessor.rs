@@ -636,7 +636,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             query.add_filter(#field_name, "null");
                         });
                         soft_delete_updates.push(quote! {
-                            updates.upsert(#field_name, DateTime::now().format_timestamp());
+                            updates.upsert(#field_name, DateTime::now().into_sql_value());
                         });
                     }
                     "version" if type_name == "u64" => {
@@ -776,12 +776,12 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     quote! {
         use zino_core::{
             model::{Mutation, Query},
-            orm::ModelHelper as _,
             validation::Validation as ZinoValidation,
             Map as ZinoMap,
         };
+        use zino_orm::{IntoSqlValue as _, ModelHelper as _};
 
-        impl zino_core::orm::ModelAccessor<#model_primary_key_type> for #name {
+        impl zino_orm::ModelAccessor<#model_primary_key_type> for #name {
             #[inline]
             fn id(&self) -> &#model_primary_key_type {
                 &self.#model_primary_key

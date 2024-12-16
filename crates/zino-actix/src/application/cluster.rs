@@ -53,6 +53,8 @@ impl Application for Cluster {
         let runtime = Runtime::new().expect("fail to build Tokio runtime for `ActixCluster`");
         let app_env = Self::env();
         runtime.block_on(async {
+            #[cfg(feature = "orm")]
+            zino_orm::GlobalPool::connect_all().await;
             Self::load().await;
             app_env.load_plugins(self.custom_plugins).await;
         });

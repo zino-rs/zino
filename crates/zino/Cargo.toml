@@ -41,8 +41,13 @@ metrics = ["zino-core/metrics", "zino-http?/metrics", "zino-storage/metrics"]
 ntex = ["dep:zino-http", "dep:zino-ntex"]
 oidc = ["auth", "zino-core/oidc"]
 opa = ["auth", "zino-auth/opa"]
-orm = ["zino-axum?/orm", "zino-core/orm"]
-view = ["dep:zino-http", "zino-http/view"]
+orm = [
+    "zino-orm",
+    "zino-actix?/orm",
+    "zino-axum?/orm",
+    "zino-ntex?/orm",
+]
+view = ["zino-http/view"]
 
 [dependencies]
 cfg-if = "1.0"
@@ -84,4 +89,9 @@ optional = true
 [dependencies.zino-ntex]
 path = "../zino-ntex"
 version = "0.2.2"
+optional = true
+
+[dependencies.zino-orm]
+path = "../zino-orm"
+version = "0.1.0"
 optional = true

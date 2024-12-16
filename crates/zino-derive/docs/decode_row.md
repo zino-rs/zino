@@ -1,4 +1,4 @@
-Derives the [`DecodeRow`](zino_core::model::DecodeRow) trait.
+Derives the [`DecodeRow`](zino_orm::DecodeRow) trait.
 
 # Attributes on struct fields
 

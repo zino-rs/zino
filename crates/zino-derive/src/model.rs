@@ -222,7 +222,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                     } else if name == "password" {
                         quote! {
                             if let Some(password) = data.parse_string(#name) {
-                                use zino_core::orm::ModelHelper;
+                                use zino_orm::ModelHelper;
                                 match Self::encrypt_password(&password) {
                                     Ok(password) => self.password = password,
                                     Err(err) => validation.record_fail(#name, err),

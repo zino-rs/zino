@@ -1,5 +1,5 @@
-use crate::model::Model;
 use std::fmt::Display;
+use zino_core::model::Model;
 
 /// An interface for the model entity.
 pub trait Entity: Model {

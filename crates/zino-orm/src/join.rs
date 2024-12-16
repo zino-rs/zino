@@ -1,6 +1,6 @@
 use super::{query::QueryExt, Entity, Schema};
-use crate::model::Query;
 use std::marker::PhantomData;
+use zino_core::model::Query;
 
 /// Variants for `JOIN` types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

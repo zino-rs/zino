@@ -1,6 +1,6 @@
 use self::WindownFunction::*;
 use super::{query::QueryExt, Entity};
-use crate::model::Query;
+use zino_core::model::Query;
 
 /// A windown function.
 #[derive(Debug, Clone, Copy)]

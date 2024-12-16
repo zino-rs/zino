@@ -1,9 +1,26 @@
 use super::query::QueryExt;
-use crate::{
-    extension::JsonObjectExt,
-    model::{Column, EncodeColumn, Query},
-};
 use convert_case::{Case, Casing};
+use std::borrow::Cow;
+use zino_core::{
+    extension::JsonObjectExt,
+    model::{Column, Query},
+    JsonValue,
+};
+
+/// Encodes the column to be sent to the database.
+pub trait EncodeColumn<DB> {
+    /// Returns the corresponding column type in the database.
+    fn column_type(&self) -> &str;
+
+    /// Encodes a json value as a column value represented by a str.
+    fn encode_value<'a>(&self, value: Option<&'a JsonValue>) -> Cow<'a, str>;
+
+    /// Formats a string value for the column.
+    fn format_value<'a>(&self, value: &'a str) -> Cow<'a, str>;
+
+    /// Formats a column filter.
+    fn format_filter(&self, key: &str, value: &JsonValue) -> String;
+}
 
 /// Extension trait for [`Column`].
 pub(super) trait ColumnExt {

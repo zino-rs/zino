@@ -1,4 +1,4 @@
-use std::sync::OnceLock;
+use std::sync::LazyLock;
 use tera::{Context, Tera};
 use zino_core::{
     application::{Agent, Application},

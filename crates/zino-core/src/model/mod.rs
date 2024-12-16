@@ -9,20 +9,18 @@ mod mutation;
 mod order;
 mod query;
 mod reference;
-mod row;
 mod translation;
 
 #[doc(no_inline)]
 pub use apache_avro::schema;
 
-pub use column::{Column, EncodeColumn};
+pub use column::Column;
 pub use context::QueryContext;
 pub use hook::ModelHooks;
 pub use mutation::Mutation;
 pub use order::QueryOrder;
 pub use query::Query;
 pub use reference::Reference;
-pub use row::DecodeRow;
 pub use translation::Translation;
 
 /// General data model.

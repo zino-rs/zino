@@ -51,6 +51,8 @@ impl Application for Cluster {
     fn run_with<T: AsyncScheduler + Send + 'static>(self, mut scheduler: T) {
         let app_env = Self::env();
         System::new("prelude").block_on(async {
+            #[cfg(feature = "orm")]
+            zino_orm::GlobalPool::connect_all().await;
             Self::load().await;
             app_env.load_plugins(self.custom_plugins).await;
         });

@@ -1,12 +1,12 @@
 /// Generates SQL `SET` expressions.
-use super::{query::QueryExt, DatabaseDriver, Entity, IntoSqlValue, Schema};
-use crate::{
+use super::{query::QueryExt, DatabaseDriver, EncodeColumn, Entity, IntoSqlValue, Schema};
+use std::marker::PhantomData;
+use zino_core::{
     datetime::DateTime,
     extension::JsonObjectExt,
-    model::{EncodeColumn, Mutation, Query},
+    model::{Mutation, Query},
     JsonValue, Map,
 };
-use std::marker::PhantomData;
 
 /// A mutation builder for the model entity.
 ///

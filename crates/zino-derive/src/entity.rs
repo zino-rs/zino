@@ -58,11 +58,11 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
         impl std::fmt::Display for #model_column_type {
             #[inline]
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                <#name as zino_core::orm::Entity>::format_column(self).fmt(f)
+                <#name as zino_orm::Entity>::format_column(self).fmt(f)
             }
         }
 
-        impl zino_core::orm::Entity for #name {
+        impl zino_orm::Entity for #name {
             type Column = #model_column_type;
             const PRIMARY_KEY: Self::Column = <#model_column_type>::#primary_key_variant;
         }

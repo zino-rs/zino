@@ -1,5 +1,6 @@
-use super::{ModelHelper, Schema};
-use crate::{
+use super::{IntoSqlValue, ModelHelper, Schema};
+use std::fmt::Display;
+use zino_core::{
     bail,
     datetime::DateTime,
     error::Error,
@@ -8,7 +9,6 @@ use crate::{
     validation::Validation,
     warn, JsonValue, Map,
 };
-use std::fmt::Display;
 
 /// Access model fields.
 ///
@@ -229,7 +229,7 @@ where
     /// Constructs the mutation updates for the model of the next version.
     fn next_version_updates(&self) -> Map {
         let mut updates = Map::new();
-        updates.upsert("updated_at", DateTime::now().format_timestamp());
+        updates.upsert("updated_at", DateTime::now().into_sql_value());
         updates.upsert("version", self.next_version());
         updates
     }
@@ -274,7 +274,7 @@ where
     /// Constructs the mutation updates for the model of the next edition.
     fn next_edition_updates(&self) -> Map {
         let mut updates = Map::new();
-        updates.upsert("updated_at", DateTime::now().format_timestamp());
+        updates.upsert("updated_at", DateTime::now().into_sql_value());
         updates.upsert("version", self.next_version());
         updates.upsert("edition", self.next_edition());
         updates

@@ -10,9 +10,6 @@ mod mock;
 #[cfg(feature = "openapi")]
 mod openapi;
 
-#[cfg(feature = "orm")]
-pub mod orm;
-
 pub mod application;
 pub mod crypto;
 pub mod datetime;

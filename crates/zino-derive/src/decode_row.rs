@@ -32,36 +32,36 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             }
             if type_name == "Uuid" {
                 decode_model_fields.push(quote! {
-                    model.#ident = orm::decode_uuid(row, #name)?;
+                    model.#ident = zino_orm::decode_uuid(row, #name)?;
                 });
             } else if type_name == "Option<Uuid>" {
                 decode_model_fields.push(quote! {
-                    model.#ident = orm::decode_uuid(row, #name).ok().filter(|id| !id.is_nil());
+                    model.#ident = zino_orm::decode_uuid(row, #name).ok().filter(|id| !id.is_nil());
                 });
             } else if type_name == "Decimal" {
                 decode_model_fields.push(quote! {
-                    model.#ident = orm::decode_decimal(row, #name)?;
+                    model.#ident = zino_orm::decode_decimal(row, #name)?;
                 });
             } else if type_name == "Map" {
                 decode_model_fields.push(quote! {
-                    if let Some(JsonValue::Object(map)) = orm::decode_optional(row, #name)? {
+                    if let Some(JsonValue::Object(map)) = zino_orm::decode_optional(row, #name)? {
                         model.#ident = map;
                     }
                 });
             } else if parser::check_vec_type(&type_name) {
                 decode_model_fields.push(quote! {
-                    model.#ident = orm::decode_array(row, #name)?;
+                    model.#ident = zino_orm::decode_array(row, #name)?;
                 });
             } else if UNSIGNED_INTEGER_TYPES.contains(&type_name.as_str()) {
                 let integer_type_ident = format_ident!("{}", type_name.replace('u', "i"));
                 decode_model_fields.push(quote! {
-                    if let Some(value) = orm::decode_optional::<#integer_type_ident>(row, #name)? {
+                    if let Some(value) = zino_orm::decode_optional::<#integer_type_ident>(row, #name)? {
                         model.#ident = value.try_into()?;
                     }
                 });
             } else {
                 decode_model_fields.push(quote! {
-                    if let Some(value) = orm::decode_optional(row, #name)? {
+                    if let Some(value) = zino_orm::decode_optional(row, #name)? {
                         model.#ident = value;
                     }
                 });
@@ -69,11 +69,11 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
         }
     }
     quote! {
-        impl zino_core::model::DecodeRow<zino_core::orm::DatabaseRow> for #name {
+        impl zino_orm::DecodeRow<zino_orm::DatabaseRow> for #name {
             type Error = zino_core::error::Error;
 
-            fn decode_row(row: &zino_core::orm::DatabaseRow) -> Result<Self, Self::Error> {
-                use zino_core::{extension::JsonValueExt, orm, JsonValue};
+            fn decode_row(row: &zino_orm::DatabaseRow) -> Result<Self, Self::Error> {
+                use zino_core::{extension::JsonValueExt, JsonValue};
 
                 let mut model = Self::default();
                 #(#decode_model_fields)*

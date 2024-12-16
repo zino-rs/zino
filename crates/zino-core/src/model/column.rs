@@ -14,7 +14,7 @@ use rand::{
     thread_rng, Rng,
 };
 use serde::Serialize;
-use std::{borrow::Cow, collections::BTreeMap};
+use std::collections::BTreeMap;
 
 /// A model field with associated metadata.
 #[derive(Debug, Clone, Serialize)]
@@ -745,19 +745,4 @@ impl<'a> Column<'a> {
             (0..num_items).map(|_| self.mock_string()).collect()
         }
     }
-}
-
-/// Encodes the column to be sent to the database.
-pub trait EncodeColumn<DB> {
-    /// Returns the corresponding column type in the database.
-    fn column_type(&self) -> &str;
-
-    /// Encodes a json value as a column value represented by a str.
-    fn encode_value<'a>(&self, value: Option<&'a JsonValue>) -> Cow<'a, str>;
-
-    /// Formats a string value for the column.
-    fn format_value<'a>(&self, value: &'a str) -> Cow<'a, str>;
-
-    /// Formats a column filter.
-    fn format_filter(&self, key: &str, value: &JsonValue) -> String;
 }

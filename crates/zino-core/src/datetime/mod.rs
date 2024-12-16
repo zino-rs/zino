@@ -219,16 +219,6 @@ impl DateTime {
         format!("{}", datetime.format("%Y-%m-%d %H:%M:%S"))
     }
 
-    /// Returns a date-time string which can be used as a `TIMESTAMP` value in SQL.
-    #[inline]
-    pub fn format_timestamp(&self) -> String {
-        if cfg!(feature = "orm-postgres") {
-            self.to_string()
-        } else {
-            self.to_utc_timestamp()
-        }
-    }
-
     /// Returns the amount of time elapsed from another datetime to this one,
     /// or zero duration if that datetime is later than this one.
     #[inline]
@@ -648,7 +638,7 @@ impl fmt::Display for DateTime {
 impl Serialize for DateTime {
     #[inline]
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&self.format_timestamp())
+        serializer.serialize_str(&self.to_utc_timestamp())
     }
 }
 
@@ -756,6 +746,30 @@ impl SubAssign<Duration> for DateTime {
     #[inline]
     fn sub_assign(&mut self, rhs: Duration) {
         *self = *self - rhs;
+    }
+}
+
+#[cfg(feature = "sqlx")]
+impl<DB> sqlx::Type<DB> for DateTime
+where
+    DB: sqlx::Database,
+    LocalDateTime: sqlx::Type<DB>,
+{
+    #[inline]
+    fn type_info() -> <DB as sqlx::Database>::TypeInfo {
+        <LocalDateTime as sqlx::Type<DB>>::type_info()
+    }
+}
+
+#[cfg(feature = "sqlx")]
+impl<'r, DB> sqlx::Decode<'r, DB> for DateTime
+where
+    DB: sqlx::Database,
+    LocalDateTime: sqlx::Decode<'r, DB>,
+{
+    #[inline]
+    fn decode(value: <DB as sqlx::Database>::ValueRef<'r>) -> Result<Self, crate::BoxError> {
+        <LocalDateTime as sqlx::Decode<'r, DB>>::decode(value).map(|dt| dt.into())
     }
 }
 

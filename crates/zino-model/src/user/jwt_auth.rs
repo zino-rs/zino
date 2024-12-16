@@ -6,9 +6,9 @@ use zino_core::{
     error::Error,
     extension::{JsonObjectExt, JsonValueExt},
     model::Query,
-    orm::{ModelAccessor, ModelHelper},
     warn, Map, Uuid,
 };
+use zino_orm::{ModelAccessor, ModelHelper};
 
 /// JWT authentication service.
 pub trait JwtAuthService<K = Uuid>
@@ -38,8 +38,9 @@ where
     ///
     /// ```rust
     /// use zino_auth::JwtClaims;
-    /// use zino_core::{model::Model, orm::ModelAccessor};
+    /// use zino_core::model::Model;
     /// use zino_model::user::{JwtAuthService, User};
+    /// use zino_orm::ModelAccessor;
     ///
     /// let user = User::new();
     /// let subject = user.id().to_string();

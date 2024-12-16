@@ -1,13 +1,14 @@
 use super::{
     executor::Executor, mutation::MutationExt, query::QueryExt, schema::Schema, DatabaseDriver,
-};
-use crate::{
-    error::Error,
-    extension::JsonValueExt,
-    model::{EncodeColumn, Mutation, Query},
-    BoxFuture, Map,
+    EncodeColumn,
 };
 use std::fmt::Display;
+use zino_core::{
+    error::Error,
+    extension::JsonValueExt,
+    model::{Mutation, Query},
+    BoxFuture, Map,
+};
 
 #[cfg(feature = "orm-sqlx")]
 use sqlx::Acquire;

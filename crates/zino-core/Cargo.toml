@@ -53,7 +53,7 @@ full = [
     "metrics",
     "oidc",
     "openapi",
-    "orm",
+    "sqlx",
     "tracing-log",
 ]
 http-client = ["dep:reqwest-middleware", "dep:reqwest-tracing", "reqwest"]
@@ -66,13 +66,7 @@ locale-zh = ["locale", "random_word/zh"]
 metrics = ["dep:metrics", "dep:metrics-exporter-prometheus"]
 oidc = ["dep:rauthy-client"]
 openapi = ["dep:utoipa"]
-orm = ["orm-sqlx"]
-orm-mariadb = ["orm-sqlx", "sqlx/mysql"]
-orm-mysql = ["orm-sqlx", "sqlx/mysql"]
-orm-postgres = ["orm-sqlx", "sqlx/postgres"]
-orm-sqlite = ["orm-sqlx", "sqlx/sqlite"]
-orm-sqlx = ["orm", "sqlx", "sqlx/sqlite"]
-orm-tidb = ["orm-sqlx", "sqlx/mysql"]
+sqlx = ["dep:sqlx"]
 runtime-async-std = ["sqlx?/runtime-async-std"]
 runtime-tokio = ["sqlx?/runtime-tokio"]
 sentry = ["dep:sentry", "dep:sentry-tracing", "tracing-subscriber"]
@@ -218,12 +212,6 @@ optional = true
 version = "0.8.2"
 optional = true
 default-features = false
-features = [
-    "chrono",
-    "json",
-    "rust_decimal",
-    "uuid",
-]
 
 [dependencies.toml]
 version = "0.8.19"

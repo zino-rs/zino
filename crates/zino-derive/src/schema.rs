@@ -281,8 +281,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
         use zino_core::{
             error::Error as ZinoError,
             model::{schema, Column},
-            orm::{self, ConnectionPool, Schema},
         };
+        use zino_orm::{ConnectionPool, Schema};
 
         static #avro_schema: zino_core::LazyLock<schema::Schema> = zino_core::LazyLock::new(|| {
             let mut fields = #schema_columns.iter().enumerate()
@@ -366,7 +366,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             }
 
             async fn acquire_reader() -> Result<&'static ConnectionPool, ZinoError> {
-                use zino_core::{bail, error::Error, orm::PoolManager, warn};
+                use zino_core::{bail, error::Error, warn};
+                use zino_orm::PoolManager;
 
                 if let Some(reader) = #schema_reader.get() {
                     if reader.is_available()
@@ -417,7 +418,8 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             }
 
             async fn acquire_writer() -> Result<&'static ConnectionPool, ZinoError> {
-                use zino_core::{bail, error::Error, orm::PoolManager, warn};
+                use zino_core::{bail, error::Error, warn};
+                use zino_orm::PoolManager;
 
                 if let Some(writer) = #schema_writer.get() {
                     if writer.is_available()

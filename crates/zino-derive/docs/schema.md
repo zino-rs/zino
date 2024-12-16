@@ -1,4 +1,4 @@
-Derives the [`Schema`](zino_core::orm::Schema) trait.
+Derives the [`Schema`](zino_orm::Schema) trait.
 
 # Attributes on structs
 

@@ -1,11 +1,5 @@
 //! Crypto helpers for hashing, signing, encryption and decryption.
 
-#[cfg(feature = "orm")]
-mod password;
-
-#[cfg(feature = "orm")]
-pub(crate) use password::*;
-
 cfg_if::cfg_if! {
     if #[cfg(feature = "crypto-sm")] {
         mod sm3;
@@ -28,6 +22,10 @@ cfg_if::cfg_if! {
     }
 }
 
+mod password;
 mod sha1;
 
+pub use password::{
+    encrypt_hashed_password, encrypt_raw_password, verify_hashed_password, verify_raw_password,
+};
 pub use sha1::checksum;

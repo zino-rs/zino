@@ -1,4 +1,4 @@
-Derives the [`ModelAccessor`](zino_core::orm::ModelAccessor) trait.
+Derives the [`ModelAccessor`](zino_orm::ModelAccessor) trait.
 
 # Attributes on structs
 

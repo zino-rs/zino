@@ -70,6 +70,8 @@ impl Application for Cluster {
             .expect("fail to build Tokio runtime for `AxumCluster`");
         let app_env = Self::env();
         runtime.block_on(async {
+            #[cfg(feature = "orm")]
+            zino_orm::GlobalPool::connect_all().await;
             Self::load().await;
             app_env.load_plugins(self.custom_plugins).await;
         });
@@ -290,7 +292,7 @@ impl Application for Cluster {
                 tracing::error!("fail to install the `Ctrl+C` handler: {err}");
             }
             #[cfg(feature = "orm")]
-            zino_core::orm::GlobalPool::close_all().await;
+            zino_orm::GlobalPool::close_all().await;
         };
         #[cfg(unix)]
         let terminate = async {

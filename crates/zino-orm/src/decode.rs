@@ -1,73 +1,6 @@
 use super::{DatabaseDriver, DatabaseRow};
-use crate::{error::Error, warn, BoxError, Decimal, Uuid};
-use chrono::{DateTime, Local, NaiveDate, NaiveTime};
-use sqlx::{Database, Decode, Row, Type};
-
-impl<DB> Type<DB> for crate::datetime::Date
-where
-    DB: Database,
-    NaiveDate: Type<DB>,
-{
-    #[inline]
-    fn type_info() -> <DB as Database>::TypeInfo {
-        <NaiveDate as Type<DB>>::type_info()
-    }
-}
-
-impl<DB> Type<DB> for crate::datetime::Time
-where
-    DB: Database,
-    NaiveTime: Type<DB>,
-{
-    #[inline]
-    fn type_info() -> <DB as Database>::TypeInfo {
-        <NaiveTime as Type<DB>>::type_info()
-    }
-}
-
-impl<DB> Type<DB> for crate::datetime::DateTime
-where
-    DB: Database,
-    DateTime<Local>: Type<DB>,
-{
-    #[inline]
-    fn type_info() -> <DB as Database>::TypeInfo {
-        <DateTime<Local> as Type<DB>>::type_info()
-    }
-}
-
-impl<'r, DB> Decode<'r, DB> for crate::datetime::Date
-where
-    DB: Database,
-    NaiveDate: Decode<'r, DB>,
-{
-    #[inline]
-    fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, BoxError> {
-        <NaiveDate as Decode<'r, DB>>::decode(value).map(|dt| dt.into())
-    }
-}
-
-impl<'r, DB> Decode<'r, DB> for crate::datetime::Time
-where
-    DB: Database,
-    NaiveTime: Decode<'r, DB>,
-{
-    #[inline]
-    fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, BoxError> {
-        <NaiveTime as Decode<'r, DB>>::decode(value).map(|dt| dt.into())
-    }
-}
-
-impl<'r, DB> Decode<'r, DB> for crate::datetime::DateTime
-where
-    DB: Database,
-    DateTime<Local>: Decode<'r, DB>,
-{
-    #[inline]
-    fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, BoxError> {
-        <DateTime<Local> as Decode<'r, DB>>::decode(value).map(|dt| dt.into())
-    }
-}
+use sqlx::{Database, Decode, Row};
+use zino_core::{error::Error, warn, Decimal, Uuid};
 
 /// Decodes a single value as `T` for the field in a row.
 #[inline]
@@ -197,7 +130,7 @@ where
         serde_json::from_str(&value)
             .map_err(|err| warn!("fail to decode the `{}` field: {}", field, err))
     } else {
-        crate::bail!("invalid array data for the `{}` field", field);
+        zino_core::bail!("invalid array data for the `{}` field", field);
     }
 }
 
@@ -209,7 +142,7 @@ where
     T: Decode<'r, DatabaseDriver> + std::str::FromStr,
     <T as std::str::FromStr>::Err: std::error::Error + Send + 'static,
 {
-    use crate::{extension::JsonValueExt, JsonValue};
+    use zino_core::{extension::JsonValueExt, JsonValue};
 
     let Some(value) = decode_optional::<JsonValue>(row, field)? else {
         return Ok(Vec::new());

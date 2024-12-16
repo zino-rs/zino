@@ -95,13 +95,14 @@
 //! [`TypeORM`]: https://typeorm.io/
 //! [`PostgREST`]: https://postgrest.org/
 
-use super::{Aggregation, Entity, IntoSqlValue, Schema, Window};
-use crate::{
-    extension::{JsonObjectExt, JsonValueExt},
-    model::{EncodeColumn, Query, QueryOrder},
-    JsonValue, Map, SharedString,
-};
+use super::{Aggregation, EncodeColumn, Entity, IntoSqlValue, Schema, Window};
+use regex::{Captures, Regex};
 use std::{borrow::Cow, fmt::Display, marker::PhantomData};
+use zino_core::{
+    extension::{JsonObjectExt, JsonValueExt},
+    model::{Query, QueryOrder},
+    JsonValue, LazyLock, Map, SharedString,
+};
 
 /// A query builder for the model entity.
 ///
@@ -1275,5 +1276,108 @@ pub(super) trait QueryExt<DB> {
             1 => conditions.remove(0),
             _ => format!("({})", conditions.join(operator)),
         }
+    }
+}
+
+/// Formats the query using interpolation of the parameters.
+///
+/// The interpolation parameter is represented as `${param}`,
+/// in which `param` can only contain restricted chracters `[a-zA-Z]+[\w\.]*`.
+pub(crate) fn format_query<'a>(query: &'a str, params: Option<&'a Map>) -> Cow<'a, str> {
+    if let Some(params) = params.filter(|_| query.contains('$')) {
+        INTERPOLATION_PATTERN.replace_all(query, |captures: &Captures| {
+            let key = &captures[1];
+            params
+                .get(key)
+                .map(|value| match value {
+                    JsonValue::String(s) => s.to_owned(),
+                    _ => value.to_string(),
+                })
+                .unwrap_or_else(|| ["${", key, "}"].concat())
+        })
+    } else {
+        Cow::Borrowed(query)
+    }
+}
+
+/// Prepares the SQL query for binding parameters
+/// (`?` for most SQL flavors and `$N` for PostgreSQL).
+///
+/// The parameter is represented as `${param}` or `#{param}`,
+/// in which `param` can only contain restricted chracters `[a-zA-Z]+[\w\.]*`.
+pub(crate) fn prepare_sql_query<'a>(
+    query: &'a str,
+    params: Option<&'a Map>,
+    placeholder: char,
+) -> (Cow<'a, str>, Vec<&'a JsonValue>) {
+    let sql = format_query(query, params);
+    if let Some(params) = params.filter(|_| sql.contains('#')) {
+        let mut values = Vec::new();
+        let sql = STATEMENT_PATTERN.replace_all(&sql, |captures: &Captures| {
+            let key = &captures[1];
+            let value = params.get(key).unwrap_or(&JsonValue::Null);
+            values.push(value);
+            if placeholder == '$' {
+                Cow::Owned(format!("${}", values.len()))
+            } else {
+                Cow::Borrowed("?")
+            }
+        });
+        (sql.into_owned().into(), values)
+    } else {
+        (sql, Vec::new())
+    }
+}
+
+/// Regex for the interpolation parameter.
+static INTERPOLATION_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\$\{\s*([a-zA-Z]+[\w\.]*)\s*\}")
+        .expect("fail to create a regex for the interpolation parameter")
+});
+
+/// Regex for the prepared statement.
+static STATEMENT_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\#\{\s*([a-zA-Z]+[\w\.]*)\s*\}")
+        .expect("fail to create a regex for the prepared statement")
+});
+
+#[cfg(test)]
+mod tests {
+    use zino_core::{extension::JsonObjectExt, Map};
+
+    #[test]
+    fn it_formats_query_params() {
+        let query = "SELECT ${fields} FROM users WHERE name = 'alice' AND age >= #{age};";
+        let mut params = Map::new();
+        params.upsert("fields", "id, name, age");
+        params.upsert("age", 18);
+
+        let sql = super::format_query(query, Some(&params));
+        assert_eq!(
+            sql,
+            "SELECT id, name, age FROM users WHERE name = 'alice' AND age >= #{age};"
+        );
+    }
+
+    #[test]
+    fn it_formats_sql_query_params() {
+        let query = "SELECT ${fields} FROM users WHERE name = 'alice' AND age >= #{age};";
+        let mut params = Map::new();
+        params.upsert("fields", "id, name, age");
+        params.upsert("age", 18);
+
+        let (sql, values) = super::prepare_sql_query(query, Some(&params), '?');
+        assert_eq!(
+            sql,
+            "SELECT id, name, age FROM users WHERE name = 'alice' AND age >= ?;"
+        );
+        assert_eq!(values[0], 18);
+
+        let (sql, values) = super::prepare_sql_query(query, Some(&params), '$');
+        assert_eq!(
+            sql,
+            "SELECT id, name, age FROM users WHERE name = 'alice' AND age >= $1;"
+        );
+        assert_eq!(values[0], 18);
     }
 }

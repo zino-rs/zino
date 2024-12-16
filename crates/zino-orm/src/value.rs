@@ -1,12 +1,12 @@
 use super::{Entity, QueryBuilder, Schema};
-use crate::{
+use http::Uri;
+use std::{borrow::Cow, net::IpAddr, path::Path};
+use url::Url;
+use zino_core::{
     datetime::{Date, DateTime, Time},
     extension::JsonObjectExt,
     Decimal, JsonValue, Map, Uuid,
 };
-use http::Uri;
-use std::{borrow::Cow, net::IpAddr, path::Path};
-use url::Url;
 
 /// A generic interface for converting into SQL values.
 pub trait IntoSqlValue {
@@ -53,7 +53,11 @@ impl_into_sql_value!(
 impl IntoSqlValue for DateTime {
     #[inline]
     fn into_sql_value(self) -> JsonValue {
-        self.format_timestamp().into()
+        if cfg!(feature = "orm-postgres") {
+            self.to_string().into()
+        } else {
+            self.to_utc_timestamp().into()
+        }
     }
 }
 

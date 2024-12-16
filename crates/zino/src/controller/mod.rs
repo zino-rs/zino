@@ -67,7 +67,6 @@ use zino_core::{
     error::Error,
     extension::JsonObjectExt,
     model::{ModelHooks, Mutation, Query},
-    orm::{ModelAccessor, ModelHelper},
     JsonValue, Map,
 };
 
@@ -77,6 +76,10 @@ use zino_http::{
     request::RequestContext,
     response::{ExtractRejection, Rejection, Response},
 };
+
+#[cfg(any(feature = "actix", feature = "axum", feature = "ntex"))]
+#[cfg(feature = "orm")]
+use zino_orm::{ModelAccessor, ModelHelper};
 
 #[cfg(any(feature = "actix", feature = "axum", feature = "ntex"))]
 #[cfg(feature = "orm")]

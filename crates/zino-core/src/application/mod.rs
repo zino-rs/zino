@@ -315,16 +315,11 @@ pub trait Application {
     async fn load() {
         #[cfg(feature = "oidc")]
         rauthy_client::setup::<Self>().await;
-        #[cfg(feature = "orm")]
-        crate::orm::GlobalPool::connect_all().await;
     }
 
     /// Handles the graceful shutdown.
     #[inline]
-    async fn shutdown() {
-        #[cfg(feature = "orm")]
-        crate::orm::GlobalPool::close_all().await;
-    }
+    async fn shutdown() {}
 
     /// Makes an HTTP request to the provided URL.
     #[cfg(feature = "http-client")]

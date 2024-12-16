@@ -22,4 +22,7 @@ syn = "2.0.90"
 [dependencies.zino-core]
 path = "../zino-core"
 version = "0.29.3"
-features = ["orm"]
+
+[dependencies.zino-orm]
+path = "../zino-orm"
+version = "0.1.0"

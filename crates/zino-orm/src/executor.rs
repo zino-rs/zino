@@ -1,4 +1,4 @@
-use crate::error::Error;
+use zino_core::error::Error;
 
 /// Executing queries against the database.
 pub trait Executor {

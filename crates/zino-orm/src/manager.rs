@@ -1,7 +1,7 @@
 use super::{pool::ConnectionPool, DatabasePool};
-use crate::extension::TomlTableExt;
 use std::time::Duration;
 use toml::value::Table;
+use zino_core::extension::TomlTableExt;
 
 /// A manager of the connection pool.
 pub trait PoolManager {
@@ -113,8 +113,8 @@ impl PoolManager for ConnectionPool<DatabasePool> {
 
 cfg_if::cfg_if! {
     if #[cfg(any(feature = "orm-mariadb", feature = "orm-mysql", feature = "orm-tidb"))] {
-        use crate::state::State;
         use sqlx::mysql::{MySqlConnectOptions, MySqlSslMode};
+        use zino_core::state::State;
 
         /// Options and flags which can be used to configure a MySQL connection.
         fn new_connect_options(database: &'static str, config: &'static Table) -> MySqlConnectOptions {
@@ -142,8 +142,8 @@ cfg_if::cfg_if! {
             connect_options
         }
     } else if #[cfg(feature = "orm-postgres")] {
-        use crate::state::State;
         use sqlx::postgres::{PgConnectOptions, PgSslMode};
+        use zino_core::state::State;
 
         /// Options and flags which can be used to configure a PostgreSQL connection.
         fn new_connect_options(database: &'static str, config: &'static Table) -> PgConnectOptions {
@@ -171,8 +171,8 @@ cfg_if::cfg_if! {
             connect_options
         }
     } else {
-        use crate::application::{Agent, Application};
         use sqlx::sqlite::SqliteConnectOptions;
+        use zino_core::application::{Agent, Application};
 
         /// Options and flags which can be used to configure a SQLite connection.
         fn new_connect_options(database: &'static str, config: &'static Table) -> SqliteConnectOptions {

@@ -8,11 +8,11 @@ use zino_core::{
     error::Error,
     extension::JsonObjectExt,
     model::{Model, ModelHooks},
-    orm::ModelHelper,
     validation::Validation,
     Map, Uuid,
 };
 use zino_derive::{DecodeRow, Entity, ModelAccessor, Schema};
+use zino_orm::ModelHelper;
 
 #[cfg(feature = "tags")]
 use crate::tag::Tag;
