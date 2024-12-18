@@ -1,7 +1,7 @@
 [package]
 name = "zino-actix"
 description = "Integrations with actix-web for zino."
-version = "0.3.0"
+version = "0.4.0"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -46,7 +46,7 @@ features = ["http02"]
 
 [dependencies.zino-orm]
 path = "../zino-orm"
-version = "0.1.0"
+version = "0.2.0"
 optional = true
 
 [dependencies.zino-openapi]

@@ -8,4 +8,13 @@
 
 Derived traits for [`zino`].
 
+The following traits can be derived:
+
+- [`Model`](zino_core::model::Model): General data model.
+- [`ModelHooks`](zino_core::model::ModelHooks): Hooks for the model.
+- [`Entity`](zino_orm::Entity): An interface for the model entity.
+- [`DecodeRow`](zino_orm::DecodeRow): A collection of values that can be decoded from a single row.
+- [`Schema`](zino_orm::Schema): Database schema.
+- [`ModelAccessor`](zino_orm::ModelAccessor): Access model fields.
+
 [`zino`]: https://github.com/zino-rs/zino

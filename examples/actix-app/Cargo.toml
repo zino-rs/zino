@@ -1,7 +1,7 @@
 [package]
 name = "actix-app"
 description = "An example for actix-web integration."
-version = "0.11.0"
+version = "0.11.1"
 rust-version = "1.80"
 edition = "2021"
 publish = false
@@ -19,7 +19,7 @@ features = ["derive"]
 
 [dependencies.zino]
 path = "../../crates/zino"
-version = "0.29.0"
+version = "0.30.0"
 features = [
     "actix",
     "cookie",
@@ -37,13 +37,13 @@ features = ["env-filter"]
 
 [dependencies.zino-derive]
 path = "../../crates/zino-derive"
-version = "0.27.0"
+version = "0.28.0"
 
 [dependencies.zino-model]
 path = "../../crates/zino-model"
-version = "0.27.0"
+version = "0.28.0"
 
 [dependencies.zino-orm]
 path = "../../crates/zino-orm"
-version = "0.1.0"
+version = "0.2.0"
 features = ["orm-postgres"]

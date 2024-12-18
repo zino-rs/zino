@@ -231,12 +231,18 @@ impl<E: Entity> QueryBuilder<E> {
         self
     }
 
-    /// Adds a `HAVING` condition for equal parts.
+    /// Adds a `HAVING` condition using the value as a filter for the column.
     #[inline]
-    pub fn having_eq(mut self, aggregation: Aggregation<E>, value: impl IntoSqlValue) -> Self {
+    pub fn having_filter(mut self, aggregation: Aggregation<E>, value: impl IntoSqlValue) -> Self {
         let condition = Map::from_entry(aggregation.expr(), value.into_sql_value());
         self.having_conditions.push(condition);
         self
+    }
+
+    /// Adds a `HAVING` condition for equal parts.
+    #[inline]
+    pub fn having_eq(self, aggregation: Aggregation<E>, value: impl IntoSqlValue) -> Self {
+        self.push_having_condition(aggregation, "$eq", value.into_sql_value())
     }
 
     /// Adds a `HAVING` condition for non-equal parts.
@@ -314,33 +320,39 @@ impl<E: Entity> QueryBuilder<E> {
         self
     }
 
-    /// Adds a logical `AND` condition for equal parts.
+    /// Adds a logical `AND` condition using the value as a filter for the column.
     #[inline]
-    pub fn and_eq(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn and_filter(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
         let condition = Map::from_entry(E::format_column(&col), value.into_sql_value());
         self.logical_and.push(condition);
         self
     }
 
+    /// Adds a logical `AND` condition for equal parts.
+    #[inline]
+    pub fn and_eq(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+        self.push_logical_and(col, "$eq", value.into_sql_value())
+    }
+
     /// Adds a logical `AND` condition for equal parts if the value is not null.
     #[inline]
-    pub fn and_eq_if_not_null(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn and_eq_if_not_null(self, col: E::Column, value: impl IntoSqlValue) -> Self {
         let value = value.into_sql_value();
         if !value.is_null() {
-            let condition = Map::from_entry(E::format_column(&col), value);
-            self.logical_and.push(condition);
+            self.push_logical_and(col, "$eq", value)
+        } else {
+            self
         }
-        self
     }
 
     /// Adds a logical `AND` condition for equal parts if the value is not none.
     #[inline]
-    pub fn and_eq_if_some<T: IntoSqlValue>(mut self, col: E::Column, value: Option<T>) -> Self {
+    pub fn and_eq_if_some<T: IntoSqlValue>(self, col: E::Column, value: Option<T>) -> Self {
         if let Some(value) = value {
-            let condition = Map::from_entry(E::format_column(&col), value.into_sql_value());
-            self.logical_and.push(condition);
+            self.push_logical_and(col, "$eq", value.into_sql_value())
+        } else {
+            self
         }
-        self
     }
 
     /// Adds a logical `AND` condition for non-equal parts.
@@ -584,33 +596,39 @@ impl<E: Entity> QueryBuilder<E> {
         self
     }
 
-    /// Adds a logical `OR` condition for equal parts.
+    /// Adds a logical `OR` condition using the value as a filter for the column.
     #[inline]
-    pub fn or_eq(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn or_filter(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
         let condition = Map::from_entry(E::format_column(&col), value.into_sql_value());
         self.logical_or.push(condition);
         self
     }
 
+    /// Adds a logical `OR` condition for equal parts.
+    #[inline]
+    pub fn or_eq(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+        self.push_logical_or(col, "$or", value.into_sql_value())
+    }
+
     /// Adds a logical `OR` condition for equal parts if the value is not null.
     #[inline]
-    pub fn or_eq_if_not_null(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn or_eq_if_not_null(self, col: E::Column, value: impl IntoSqlValue) -> Self {
         let value = value.into_sql_value();
         if !value.is_null() {
-            let condition = Map::from_entry(E::format_column(&col), value);
-            self.logical_or.push(condition);
+            self.push_logical_or(col, "$eq", value)
+        } else {
+            self
         }
-        self
     }
 
     /// Adds a logical `OR` condition for equal parts if the value is not none.
     #[inline]
-    pub fn or_eq_if_some<T: IntoSqlValue>(mut self, col: E::Column, value: Option<T>) -> Self {
+    pub fn or_eq_if_some<T: IntoSqlValue>(self, col: E::Column, value: Option<T>) -> Self {
         if let Some(value) = value {
-            let condition = Map::from_entry(E::format_column(&col), value.into_sql_value());
-            self.logical_or.push(condition);
+            self.push_logical_or(col, "$eq", value.into_sql_value())
+        } else {
+            self
         }
-        self
     }
 
     /// Adds a logical `OR` condition for non-equal parts.

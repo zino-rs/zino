@@ -1,7 +1,7 @@
 [package]
 name = "zino-model"
 description = "Domain models for zino."
-version = "0.27.0"
+version = "0.28.0"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -59,8 +59,8 @@ features = ["validator-email"]
 
 [dependencies.zino-derive]
 path = "../zino-derive"
-version = "0.27.0"
+version = "0.28.0"
 
 [dependencies.zino-orm]
 path = "../zino-orm"
-version = "0.1.0"
+version = "0.2.0"

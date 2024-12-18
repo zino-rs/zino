@@ -5,9 +5,9 @@ use rauthy_client::{
 use std::collections::HashSet;
 use zino_core::{
     application::{Agent, Application, Plugin},
+    bail,
     error::Error,
     extension::TomlTableExt,
-    bail,
 };
 
 /// The Rauthy client.
