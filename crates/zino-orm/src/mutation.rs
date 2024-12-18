@@ -103,6 +103,7 @@ impl<E: Entity> MutationBuilder<E> {
         self.inc_ops.upsert(col.as_ref(), value.into_sql_value());
         self
     }
+
     /// Increments the value of a column by 1.
     #[inline]
     pub fn inc_one(mut self, col: E::Column) -> Self {

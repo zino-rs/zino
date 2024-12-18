@@ -253,6 +253,11 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
                     return conditions.join(" AND ");
                 }
             }
+        } else if value.is_null() {
+            return format!(r#"{field} IS NULL"#);
+        } else if self.has_attribute("exact_filter") {
+            let value = self.encode_value(Some(value));
+            return format!(r#"{field} = {value}"#);
         } else if let Some([min_value, max_value]) = value.as_array().map(|v| v.as_slice()) {
             let min_value = self.encode_value(Some(min_value));
             let max_value = self.encode_value(Some(max_value));
@@ -265,8 +270,6 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
             let min_value = self.format_value(min_value);
             let max_value = self.format_value(max_value);
             return format!(r#"{field} >= {min_value} AND {field} < {max_value}"#);
-        } else if value.is_null() {
-            return format!(r#"{field} IS NULL"#);
         }
 
         match type_name {

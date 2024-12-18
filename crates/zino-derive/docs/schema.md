@@ -75,6 +75,9 @@ Derives the [`Schema`](zino_orm::Schema) trait.
 - **`#[schema(write_only)]`**: The `write_only` annotation is used to indicate that
   the column is write-only and can not be seen by frontend users.
 
+- **`#[schema(exact_filter)]`**: The `exact_filter` annotation is used to indicate that
+  the column will use an exact equality filter when unspecified.
+
 - **`#[schema(fuzzy_search)]`**: The `fuzzy_search` annotation is used to indicate that
   the column supports fuzzy search.
 

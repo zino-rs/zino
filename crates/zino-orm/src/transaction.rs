@@ -14,6 +14,47 @@ use zino_core::{
 use sqlx::Acquire;
 
 /// An in-progress database transaction.
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// use crate::model::{Account, AccountColumn, Order, Stock, StockColumn};
+/// use zino_orm::{MutationBuilder, QueryBuilder, Schema, Transaction};
+///
+/// let user_id = "0193d8e6-2970-7b52-bc06-80a981212aa9";
+/// let product_id = "0193c06d-bee6-7070-a5e7-9659161bddb5";
+///
+/// let order = Order::from_customer(user_id, product_id);
+/// let quantity = order.quantity();
+/// let total_price = order.total_price();
+/// let order_ctx = order.prepare_insert()?;
+///
+/// let stock_query = QueryBuilder::<Stock>::new()
+///     .and_eq(StockColumn::ProductId, product_id)
+///     .and_ge(StockColumn::Quantity, quantity)
+///     .build();
+/// let mut stock_mutation = MutationBuilder::<Stock>::new()
+///     .inc(StockColumn::Quantity, -quantity)
+///     .build();
+/// let stock_ctx = Stock::prepare_update_one(&stock_query, &mut stock_mutation).await?;
+///
+/// let account_query = QueryBuilder::<Account>::new()
+///     .and_eq(AccountColumn::UserId, user_id)
+///     .and_ge(AccountColumn::Balance, total_price)
+///     .build();
+/// let mut account_mutation = MutationBuilder::<Account>::new()
+///     .inc(AccountColumn::Balance, -total_price)
+///     .build();
+/// let account_ctx = Account::prepare_update_one(&account_query, &mut account_mutation).await?;
+///
+/// Order::transaction(move |tx| Box::pin(async move {
+///      let connection = tx.acquire().await?;
+///      connection.execute(order_ctx.query()).await?;
+///      connection.execute(stock_ctx.query()).await?;
+///      connection.execute(account_ctx.query()).await?;
+///      Ok(())
+/// })).await?;
+/// ```
 pub trait Transaction<K, Tx>: Schema<PrimaryKey = K>
 where
     K: Default + Display + PartialEq,
