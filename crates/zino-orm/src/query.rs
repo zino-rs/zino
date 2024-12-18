@@ -607,7 +607,7 @@ impl<E: Entity> QueryBuilder<E> {
     /// Adds a logical `OR` condition for equal parts.
     #[inline]
     pub fn or_eq(self, col: E::Column, value: impl IntoSqlValue) -> Self {
-        self.push_logical_or(col, "$or", value.into_sql_value())
+        self.push_logical_or(col, "$eq", value.into_sql_value())
     }
 
     /// Adds a logical `OR` condition for equal parts if the value is not null.
