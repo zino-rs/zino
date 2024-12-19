@@ -67,7 +67,9 @@ impl Application for Cluster {
                         scheduler.tick().await;
 
                         // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
-                        time::sleep(scheduler.time_till_next_job()).await;
+                        if let Some(duration) = scheduler.time_till_next_job() {
+                            time::sleep(duration).await;
+                        }
                     }
                 }));
         }

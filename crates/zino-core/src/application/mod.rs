@@ -274,7 +274,9 @@ pub trait Application {
     {
         thread::spawn(move || loop {
             scheduler.tick();
-            thread::sleep(scheduler.time_till_next_job());
+            if let Some(duration) = scheduler.time_till_next_job() {
+                thread::sleep(duration);
+            }
         });
         self
     }

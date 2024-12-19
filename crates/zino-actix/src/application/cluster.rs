@@ -59,14 +59,24 @@ impl Application for Cluster {
             app_env.load_plugins(self.custom_plugins).await;
         });
         if scheduler.is_ready() {
-            runtime.spawn(async move {
-                loop {
-                    scheduler.tick().await;
+            if scheduler.is_blocking() {
+                runtime.spawn(async move {
+                    if let Err(err) = scheduler.run().await {
+                        tracing::error!("fail to run the async scheduler: {err}");
+                    }
+                });
+            } else {
+                runtime.spawn(async move {
+                    loop {
+                        scheduler.tick().await;
 
-                    // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
-                    rt::time::sleep(scheduler.time_till_next_job()).await;
-                }
-            });
+                        // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
+                        if let Some(duration) = scheduler.time_till_next_job() {
+                            rt::time::sleep(duration).await;
+                        }
+                    }
+                });
+            }
         }
 
         runtime.block_on(async {

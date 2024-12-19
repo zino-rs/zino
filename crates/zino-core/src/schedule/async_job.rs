@@ -4,7 +4,7 @@ use super::AsyncScheduler;
 use crate::{datetime::DateTime, extension::TomlTableExt, BoxFuture, Map, Uuid};
 use chrono::Local;
 use cron::Schedule;
-use std::{str::FromStr, time::Duration};
+use std::{io, str::FromStr, time::Duration};
 use toml::Table;
 
 /// A function pointer of the async cron job.
@@ -246,9 +246,9 @@ impl AsyncJobScheduler {
     }
 
     /// Returns the duration till the next job is supposed to run.
-    pub fn time_till_next_job(&self) -> Duration {
+    pub fn time_till_next_job(&self) -> Option<Duration> {
         if self.jobs.is_empty() {
-            Duration::from_millis(500)
+            Some(Duration::from_millis(500))
         } else {
             let mut duration = chrono::Duration::zero();
             let now = Local::now();
@@ -260,9 +260,7 @@ impl AsyncJobScheduler {
                     }
                 }
             }
-            duration
-                .to_std()
-                .unwrap_or_else(|_| Duration::from_millis(500))
+            duration.to_std().ok()
         }
     }
 
@@ -297,12 +295,22 @@ impl AsyncScheduler for AsyncJobScheduler {
     }
 
     #[inline]
-    fn time_till_next_job(&self) -> Duration {
+    fn is_blocking(&self) -> bool {
+        false
+    }
+
+    #[inline]
+    fn time_till_next_job(&self) -> Option<Duration> {
         self.time_till_next_job()
     }
 
     #[inline]
     async fn tick(&mut self) {
         self.tick().await;
+    }
+
+    #[inline]
+    async fn run(self) -> io::Result<()> {
+        Ok(())
     }
 }

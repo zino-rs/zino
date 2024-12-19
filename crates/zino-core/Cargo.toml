@@ -32,6 +32,7 @@ all-validators = [
     "validator-phone-number",
     "validator-regex",
 ]
+apalis = ["dep:apalis"]
 cookie = ["reqwest?/cookies"]
 crypto-sm = ["dep:ctr", "dep:sm3", "dep:sm4"]
 debug = ["serde_json/preserve_order", "toml/preserve_order"]
@@ -41,6 +42,7 @@ env-filter = ["tracing-subscriber/env-filter", "tracing-subscriber/smallvec"]
 full = [
     "all-locales",
     "all-validators",
+    "apalis",
     "cookie",
     "dotenv",
     "env-filter",
@@ -56,10 +58,15 @@ locale-es = ["locale", "random_word/es"]
 locale-de = ["locale", "random_word/de"]
 locale-fr = ["locale", "random_word/fr"]
 locale-zh = ["locale", "random_word/zh"]
-metrics = ["dep:metrics", "dep:metrics-exporter-prometheus"]
+metrics = ["dep:metrics", "dep:metrics-exporter-prometheus", "apalis?/prometheus"]
 runtime-async-std = ["sqlx?/runtime-async-std"]
 runtime-tokio = ["sqlx?/runtime-tokio"]
-sentry = ["dep:sentry", "dep:sentry-tracing", "tracing-subscriber"]
+sentry = [
+    "dep:sentry",
+    "dep:sentry-tracing",
+    "apalis?/sentry",
+    "tracing-subscriber",
+]
 sqlx = ["dep:sqlx"]
 tls-native = [
     "reqwest?/native-tls",
@@ -102,6 +109,10 @@ sha2 = "0.10.8"
 smallvec = "1.13.2"
 tracing = "0.1.41"
 url = "2.5.4"
+
+[dependencies.apalis]
+version = "0.6.2"
+optional = true
 
 [dependencies.argon2]
 version = "0.5.3"

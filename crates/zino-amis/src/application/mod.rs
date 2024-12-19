@@ -45,14 +45,24 @@ impl Application for Amis {
             Self::load().await;
         });
         if scheduler.is_ready() {
-            runtime.spawn(async move {
-                loop {
-                    scheduler.tick().await;
+            if scheduler.is_blocking() {
+                runtime.spawn(async move {
+                    if let Err(err) = scheduler.run().await {
+                        tracing::error!("fail to run the async scheduler: {err}");
+                    }
+                });
+            } else {
+                runtime.spawn(async move {
+                    loop {
+                        scheduler.tick().await;
 
-                    // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
-                    tokio::time::sleep(scheduler.time_till_next_job()).await;
-                }
-            });
+                        // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
+                        if let Some(duration) = scheduler.time_till_next_job() {
+                            tokio::time::sleep(duration).await;
+                        }
+                    }
+                });
+            }
         }
 
         runtime.block_on(async {

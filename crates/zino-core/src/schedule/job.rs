@@ -245,9 +245,9 @@ impl JobScheduler {
     }
 
     /// Returns the duration till the next job is supposed to run.
-    pub fn time_till_next_job(&self) -> Duration {
+    pub fn time_till_next_job(&self) -> Option<Duration> {
         if self.jobs.is_empty() {
-            Duration::from_millis(500)
+            Some(Duration::from_millis(500))
         } else {
             let mut duration = chrono::Duration::zero();
             let now = Local::now();
@@ -259,9 +259,7 @@ impl JobScheduler {
                     }
                 }
             }
-            duration
-                .to_std()
-                .unwrap_or_else(|_| Duration::from_millis(500))
+            duration.to_std().ok()
         }
     }
 
@@ -296,7 +294,7 @@ impl Scheduler for JobScheduler {
     }
 
     #[inline]
-    fn time_till_next_job(&self) -> Duration {
+    fn time_till_next_job(&self) -> Option<Duration> {
         self.time_till_next_job()
     }
 
