@@ -1,7 +1,7 @@
 [package]
 name = "zino-amis"
 description = "UI generator for amis."
-version = "0.3.0"
+version = "0.3.1"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -15,11 +15,11 @@ readme = "README.md"
 [dependencies]
 hyper-staticfile = "0.10.1"
 phf = "0.11.2"
-serde_json = "1.0.133"
+serde_json = "1.0.134"
 tracing = "0.1.41"
 
 [dependencies.hyper]
-version = "1.5.1"
+version = "1.5.2"
 features = ["http1", "server"]
 
 [dependencies.hyper-util]
@@ -41,5 +41,5 @@ features = ["parse"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.30.0"
+version = "0.30.1"
 features = ["tracing-subscriber"]

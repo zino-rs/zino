@@ -22,7 +22,7 @@ debug = [
 [dependencies]
 ahash = "0.8.11"
 convert_case = "0.6.0"
-serde_json = "1.0.133"
+serde_json = "1.0.134"
 tracing = "0.1.41"
 
 [dependencies.toml]
@@ -30,7 +30,7 @@ version = "0.8.19"
 default-features = false
 
 [dependencies.utoipa]
-version = "5.2.0"
+version = "5.3.0"
 features = [
     "non_strict_integers",
     "url",

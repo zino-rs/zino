@@ -110,7 +110,7 @@ version = "1.0.216"
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1.0.133"
+version = "1.0.134"
 features = ["raw_value"]
 
 [dependencies.tera]

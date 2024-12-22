@@ -19,7 +19,7 @@ features = ["derive"]
 
 [dependencies.zino]
 path = "../../crates/zino"
-version = "0.30.0"
+version = "0.30.1"
 features = [
     "cookie",
     "i18n",
@@ -31,18 +31,18 @@ features = [
 
 [dependencies.zino-core]
 path = "../../crates/zino-core"
-version = "0.30.0"
+version = "0.30.1"
 features = ["env-filter"]
 
 [dependencies.zino-derive]
 path = "../../crates/zino-derive"
-version = "0.28.0"
+version = "0.28.1"
 
 [dependencies.zino-model]
 path = "../../crates/zino-model"
-version = "0.28.0"
+version = "0.28.1"
 
 [dependencies.zino-orm]
 path = "../../crates/zino-orm"
-version = "0.2.0"
+version = "0.2.1"
 features = ["orm-postgres"]

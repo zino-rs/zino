@@ -1,5 +1,5 @@
 use super::{DatabaseDriver, DatabaseRow};
-use sqlx::{Database, Decode, Row};
+use sqlx::{Database, Decode, Row, ValueRef};
 use zino_core::{error::Error, warn, Decimal, Uuid};
 
 /// Decodes a single value as `T` for the field in a row.
@@ -19,13 +19,20 @@ pub fn decode_optional<'r, T>(row: &'r DatabaseRow, field: &str) -> Result<Optio
 where
     T: Decode<'r, DatabaseDriver>,
 {
-    match row.try_get_unchecked(field) {
-        Ok(value) => Ok(Some(value)),
+    match row.try_get_raw(field) {
+        Ok(value) => {
+            if value.is_null() {
+                Ok(None)
+            } else {
+                let value = decode_raw(field, value)?;
+                Ok(Some(value))
+            }
+        }
         Err(err) => {
             if let sqlx::Error::ColumnNotFound(_) = err {
                 Ok(None)
             } else {
-                Err(warn!("fail to decode the `{}` field: {}", field, err))
+                Err(warn!("fail to get the `{}` field: {}", field, err))
             }
         }
     }
@@ -40,13 +47,20 @@ where
 ))]
 #[inline]
 pub fn decode_decimal(row: &DatabaseRow, field: &str) -> Result<Decimal, Error> {
-    match row.try_get_unchecked(field) {
-        Ok(value) => Ok(value),
+    match row.try_get_raw(field) {
+        Ok(value) => {
+            if value.is_null() {
+                Ok(Decimal::ZERO)
+            } else {
+                let value = decode_raw(field, value)?;
+                Ok(value)
+            }
+        }
         Err(err) => {
             if let sqlx::Error::ColumnNotFound(_) = err {
                 Ok(Decimal::ZERO)
             } else {
-                Err(warn!("fail to decode the `{}` field: {}", field, err))
+                Err(warn!("fail to get the `{}` field: {}", field, err))
             }
         }
     }
@@ -73,13 +87,20 @@ pub fn decode_decimal(row: &DatabaseRow, field: &str) -> Result<Decimal, Error> 
 #[cfg(feature = "orm-postgres")]
 #[inline]
 pub fn decode_uuid(row: &DatabaseRow, field: &str) -> Result<Uuid, Error> {
-    match row.try_get_unchecked(field) {
-        Ok(id) => Ok(id),
+    match row.try_get_raw(field) {
+        Ok(value) => {
+            if value.is_null() {
+                Ok(Uuid::nil())
+            } else {
+                let id = decode_raw(field, value)?;
+                Ok(id)
+            }
+        }
         Err(err) => {
             if let sqlx::Error::ColumnNotFound(_) = err {
                 Ok(Uuid::nil())
             } else {
-                Err(warn!("fail to decode the `{}` field: {}", field, err))
+                Err(warn!("fail to get the `{}` field: {}", field, err))
             }
         }
     }
@@ -104,13 +125,20 @@ pub fn decode_array<'r, T>(row: &'r DatabaseRow, field: &str) -> Result<Vec<T>, 
 where
     T: for<'a> Decode<'a, DatabaseDriver> + sqlx::Type<DatabaseDriver>,
 {
-    match row.try_get_unchecked(field) {
-        Ok(vec) => Ok(vec),
+    match row.try_get_raw(field) {
+        Ok(value) => {
+            if value.is_null() {
+                Ok(Vec::new())
+            } else {
+                let vec = decode_raw(field, value)?;
+                Ok(vec)
+            }
+        }
         Err(err) => {
             if let sqlx::Error::ColumnNotFound(_) = err {
                 Ok(Vec::new())
             } else {
-                Err(warn!("fail to decode the `{}` field: {}", field, err))
+                Err(warn!("fail to get the `{}` field: {}", field, err))
             }
         }
     }
