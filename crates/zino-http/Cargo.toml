@@ -96,7 +96,7 @@ optional = true
 features = ["loader"]
 
 [dependencies.reqwest]
-version = "0.12.9"
+version = "0.12.12"
 default-features = false
 features = [
     "blocking",
@@ -106,7 +106,7 @@ features = [
 ]
 
 [dependencies.serde]
-version = "1.0.216"
+version = "1.0.217"
 features = ["derive"]
 
 [dependencies.serde_json]

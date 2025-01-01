@@ -36,7 +36,7 @@ edition = []
 tracing = "0.1.41"
 
 [dependencies.serde]
-version = "1.0.216"
+version = "1.0.217"
 features = ["derive"]
 
 [dependencies.sqlx]

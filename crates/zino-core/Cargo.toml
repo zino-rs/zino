@@ -153,7 +153,7 @@ version = "0.4.3"
 optional = true
 
 [dependencies.reqwest]
-version = "0.12.9"
+version = "0.12.12"
 optional = true
 default-features = false
 features = [
@@ -181,7 +181,7 @@ version = "0.35.0"
 optional = true
 
 [dependencies.serde]
-version = "1.0.216"
+version = "1.0.217"
 features = ["derive"]
 
 [dependencies.serde_json]
@@ -236,7 +236,7 @@ features = [
 ]
 
 [dev-dependencies]
-anyhow = "1.0.94"
+anyhow = "1.0.95"
 arrayvec = "0.7.6"
 base64-simd = "0.8.0"
 criterion = "0.5.1"

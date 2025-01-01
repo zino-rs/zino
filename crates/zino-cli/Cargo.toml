@@ -47,7 +47,7 @@ default-features = false
 features = ["tokio", "ring"]
 
 [dependencies.serde]
-version = "1.0.216"
+version = "1.0.217"
 features = ["derive"]
 
 [dependencies.tokio]
