@@ -1,7 +1,7 @@
 [package]
 name = "axum-app"
 description = "An example for axum integration."
-version = "0.17.1"
+version = "0.18.0"
 rust-version = "1.80"
 edition = "2021"
 publish = false
@@ -10,7 +10,7 @@ publish = false
 tracing = "0.1.41"
 
 [dependencies.axum]
-version = "0.7.9"
+version = "0.8.1"
 default-features = false
 
 [dependencies.serde]
@@ -19,7 +19,7 @@ features = ["derive"]
 
 [dependencies.zino]
 path = "../../crates/zino"
-version = "0.30.1"
+version = "0.31.0"
 features = [
     "axum",
     "cookie",

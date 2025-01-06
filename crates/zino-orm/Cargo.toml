@@ -41,7 +41,7 @@ version = "1.0.217"
 features = ["derive"]
 
 [dependencies.sqlx]
-version = "0.8.2"
+version = "0.8.3"
 optional = true
 default-features = false
 features = [

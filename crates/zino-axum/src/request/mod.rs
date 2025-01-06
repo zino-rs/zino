@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use axum::{
     extract::{ConnectInfo, FromRequest, MatchedPath, OriginalUri, Request},
     http::{Method, Uri},
@@ -124,7 +123,6 @@ impl RequestContext for Extractor<Request> {
     }
 }
 
-#[async_trait]
 impl FromRequest<()> for Extractor<Request> {
     type Rejection = Infallible;
 

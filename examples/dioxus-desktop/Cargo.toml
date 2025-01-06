@@ -22,7 +22,7 @@ features = [
 
 [dependencies.zino]
 path = "../../crates/zino"
-version = "0.30.1"
+version = "0.31.0"
 features = ["dioxus-desktop"]
 
 [dependencies.zino-core]

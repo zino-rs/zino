@@ -43,7 +43,7 @@ default-features = false
 features = ["pure-rust"]
 
 [dependencies.rauthy-client]
-version = "0.5.0"
+version = "0.6.1"
 optional = true
 
 [dependencies.regorus]

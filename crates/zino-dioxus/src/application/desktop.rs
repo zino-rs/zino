@@ -1,7 +1,6 @@
 use dioxus::prelude::*;
 use dioxus_desktop::{
     tao::window::{Fullscreen, Icon, Theme},
-    trayicon::menu::dpi::PhysicalPosition,
     Config, WindowBuilder,
     WindowCloseBehaviour::*,
 };
@@ -108,8 +107,7 @@ where
         let mut window_title = app_name;
         let mut app_window = WindowBuilder::new()
             .with_title(app_name)
-            .with_maximized(true)
-            .with_position(PhysicalPosition::<i32>::default());
+            .with_maximized(true);
         if let Some(config) = app_state.get_config("window") {
             if let Some(title) = config.get_str("title") {
                 app_window = app_window.with_title(title);
@@ -181,8 +179,9 @@ where
                     Ok(img) => {
                         let width = img.width();
                         let height = img.height();
+                        let href = icon_file.to_string_lossy().replace('\\', "/");
                         let head =
-                            format!(r#"<link rel="icon" type="image/x-icon" href="{icon}">"#);
+                            format!(r#"<link rel="icon" type="image/x-icon" href="{href}">"#);
                         custom_heads.push(head);
                         match Icon::from_rgba(img.into_bytes(), width, height) {
                             Ok(icon) => {
@@ -202,13 +201,25 @@ where
             }
             if let Some(stylesheets) = config.get_str_array("stylesheets") {
                 for style in stylesheets {
-                    let head = format!(r#"<link rel="stylesheet" href="{style}">"#);
+                    let href = if style.starts_with("https://") || style.starts_with("http://") {
+                        style.to_owned()
+                    } else {
+                        let style_file = Self::parse_path(style);
+                        style_file.to_string_lossy().replace('\\', "/")
+                    };
+                    let head = format!(r#"<link rel="stylesheet" href="{href}">"#);
                     custom_heads.push(head);
                 }
             }
             if let Some(scripts) = config.get_str_array("scripts") {
                 for script in scripts {
-                    let head = format!(r#"<script src="{script}"></script>"#);
+                    let src = if script.starts_with("https://") || script.starts_with("http://") {
+                        script.to_owned()
+                    } else {
+                        let script_file = Self::parse_path(script);
+                        script_file.to_string_lossy().replace('\\', "/")
+                    };
+                    let head = format!(r#"<script src="{src}"></script>"#);
                     custom_heads.push(head);
                 }
             }

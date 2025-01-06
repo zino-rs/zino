@@ -31,7 +31,7 @@ version = "0.7.15"
 features = ["opentelemetry_0_27", "uuid_v7"]
 
 [dependencies.utoipa-rapidoc]
-version = "5.0.0"
+version = "5.0.1"
 features = ["actix-web"]
 
 [dependencies.zino-core]

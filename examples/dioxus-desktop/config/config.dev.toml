@@ -12,6 +12,10 @@ transparent = false
 disable-default-menu = true
 resource-dir = "public"
 icon = "public/favicon.ico"
+stylesheets = [
+    "public/css/bulma.min.css",
+    "public/css/custom.css",
+]
 
 [tracing]
 filter = "info,dioxus_core=warn,sqlx=info,zino=trace,zino_core=trace"
