@@ -1,33 +1,23 @@
 //! Scheduler for sync and async cron jobs.
 
-use super::Scheduler;
-use crate::{datetime::DateTime, extension::TomlTableExt, Map, Uuid};
+use super::{JobContext, Scheduler};
+use crate::{datetime::DateTime, extension::TomlTableExt, Uuid};
 use chrono::Local;
 use cron::Schedule;
 use std::{str::FromStr, time::Duration};
 use toml::Table;
 
 /// A function pointer of the cron job.
-pub type CronJob = fn(id: Uuid, data: &mut Map, last_tick: DateTime);
+pub type CronJob = fn(ctx: &mut JobContext);
 
 /// A schedulable job.
 pub struct Job {
-    /// Job ID.
-    id: Uuid,
-    /// Job data.
-    data: Map,
-    /// Flag to indicate whether the job is disabled.
-    disabled: bool,
-    /// Flag to indicate whether the job is executed immediately.
-    immediate: bool,
-    /// Remaining ticks.
-    remaining_ticks: Option<usize>,
+    /// Job context.
+    context: JobContext,
     /// Cron expression parser.
     schedule: Schedule,
     /// Cron job to run.
     run: CronJob,
-    /// Last time when running the job.
-    last_tick: Option<chrono::DateTime<Local>>,
 }
 
 impl Job {
@@ -41,14 +31,9 @@ impl Job {
         let schedule = Schedule::from_str(cron_expr)
             .unwrap_or_else(|err| panic!("invalid cron expression `{cron_expr}`: {err}"));
         Self {
-            id: Uuid::now_v7(),
-            data: Map::new(),
-            disabled: false,
-            immediate: false,
-            remaining_ticks: None,
+            context: JobContext::new(),
             schedule,
             run: exec,
-            last_tick: None,
         }
     }
 
@@ -61,142 +46,126 @@ impl Job {
         let cron_expr = config.get_str("cron").unwrap_or_default();
         let schedule = Schedule::from_str(cron_expr)
             .unwrap_or_else(|err| panic!("invalid cron expression `{cron_expr}`: {err}"));
-        let data = config
-            .get_table("data")
-            .map(|t| t.to_map())
-            .unwrap_or_default();
-        let disabled = config.get_bool("disable").unwrap_or_default();
-        let immediate = config.get_bool("immediate").unwrap_or_default();
-        let remaining_ticks = config
+        let mut context = JobContext::new();
+        if let Some(disabled) = config.get_bool("disable") {
+            context.set_status(disabled);
+        }
+        if let Some(immediate) = config.get_bool("immediate") {
+            context.set_mode(immediate);
+        }
+        if let Some(ticks) = config
             .get_bool("once")
             .and_then(|b| b.then_some(1))
-            .or_else(|| config.get_usize("max-ticks"));
+            .or_else(|| config.get_usize("max-ticks"))
+        {
+            context.set_remaining_ticks(ticks);
+        }
         Self {
-            id: Uuid::now_v7(),
-            data,
-            disabled,
-            immediate,
-            remaining_ticks,
+            context,
             schedule,
             run: exec,
-            last_tick: None,
         }
     }
 
-    /// Enables the flag to indicate whether the job is disabled.
+    /// Sets the job name.
     #[inline]
-    pub fn disable(mut self, disabled: bool) -> Self {
-        self.disabled = disabled;
+    pub fn name(mut self, name: &'static str) -> Self {
+        self.context.set_name(name);
         self
     }
 
-    /// Enables the flag to indicate whether the job is executed immediately.
+    /// Sets the initial job data.
     #[inline]
-    pub fn immediate(mut self, immediate: bool) -> Self {
-        self.immediate = immediate;
+    pub fn data<T: Send + 'static>(mut self, data: T) -> Self {
+        self.context.set_data(data);
         self
     }
 
     /// Sets the number of maximum ticks.
     #[inline]
     pub fn max_ticks(mut self, ticks: usize) -> Self {
-        self.remaining_ticks = Some(ticks);
+        self.context.set_remaining_ticks(ticks);
         self
     }
 
     /// Sets the number of maximum ticks as `1` to ensure that the job can only be executed once.
     #[inline]
     pub fn once(mut self) -> Self {
-        self.remaining_ticks = Some(1);
+        self.context.set_remaining_ticks(1);
         self
     }
 
-    /// Returns the job ID.
+    /// Enables the flag to indicate whether the job is disabled.
     #[inline]
-    pub fn id(&self) -> Uuid {
-        self.id
+    pub fn disable(mut self, disabled: bool) -> Self {
+        self.context.set_status(disabled);
+        self
     }
 
-    /// Returns a reference to the job data.
+    /// Enables the flag to indicate whether the job is executed immediately.
     #[inline]
-    pub fn data(&self) -> &Map {
-        &self.data
-    }
-
-    /// Returns a mutable reference to the job data.
-    #[inline]
-    pub fn data_mut(&mut self) -> &mut Map {
-        &mut self.data
-    }
-
-    /// Returns `true` if the job is disabled.
-    #[inline]
-    pub fn is_disabled(&self) -> bool {
-        self.disabled
-    }
-
-    /// Returns `true` if the job is executed immediately.
-    #[inline]
-    pub fn is_immediate(&self) -> bool {
-        self.immediate
-    }
-
-    /// Returns `true` if the job is fused and can not be executed any more.
-    #[inline]
-    pub fn is_fused(&self) -> bool {
-        self.remaining_ticks == Some(0)
+    pub fn immediate(mut self, immediate: bool) -> Self {
+        self.context.set_mode(immediate);
+        self
     }
 
     /// Pauses the job by setting the `disabled` flag to `true`.
     #[inline]
     pub fn pause(&mut self) {
-        self.disabled = true;
+        self.context.set_status(true);
     }
 
     /// Resumes the job by setting the `disabled` flag to `false`.
     #[inline]
     pub fn resume(&mut self) {
-        self.disabled = false;
-    }
-
-    /// Sets the last tick when the job was executed.
-    #[inline]
-    pub fn set_last_tick(&mut self, last_tick: Option<DateTime>) {
-        self.last_tick = last_tick.map(|dt| dt.into());
+        self.context.set_status(false);
     }
 
     /// Executes missed runs.
     pub fn tick(&mut self) {
         let now = Local::now();
-        let disabled = self.disabled;
+        let ctx = &mut self.context;
         let run = self.run;
-        if let Some(last_tick) = self.last_tick {
+        if let Some(last_tick) = ctx.last_tick().map(|dt| dt.into()) {
             for event in self.schedule.after(&last_tick) {
-                if event > now || self.is_fused() {
+                if event > now || ctx.is_fused() {
                     break;
                 }
-                if !disabled {
-                    run(self.id, &mut self.data, last_tick.into());
-                    if let Some(ticks) = self.remaining_ticks {
-                        self.remaining_ticks = Some(ticks.saturating_sub(1));
-                    }
+                if !ctx.is_disabled() {
+                    ctx.start();
+                    run(ctx);
+                    ctx.finish();
                 }
             }
-        } else if !disabled && self.immediate && !self.is_fused() {
-            run(self.id, &mut self.data, now.into());
-            if let Some(ticks) = self.remaining_ticks {
-                self.remaining_ticks = Some(ticks.saturating_sub(1));
-            }
+        } else if !ctx.is_disabled() && ctx.is_immediate() && !ctx.is_fused() {
+            ctx.start();
+            run(ctx);
+            ctx.finish();
         }
-        self.last_tick = Some(now);
+        ctx.set_last_tick(now.into());
     }
 
     /// Executes the job manually.
     pub fn execute(&mut self) {
-        let now = Local::now();
+        let now = DateTime::now();
+        let ctx = &mut self.context;
         let run = self.run;
-        run(self.id, &mut self.data, now.into());
-        self.last_tick = Some(now);
+        ctx.start();
+        run(ctx);
+        ctx.finish();
+        ctx.set_last_tick(now);
+    }
+
+    /// Returns a reference to the job context.
+    #[inline]
+    pub fn context(&self) -> &JobContext {
+        &self.context
+    }
+
+    /// Returns a mutable reference to the job context.
+    #[inline]
+    pub fn context_mut(&mut self) -> &mut JobContext {
+        &mut self.context
     }
 }
 
@@ -216,14 +185,17 @@ impl JobScheduler {
 
     /// Adds a job to the scheduler and returns the job ID.
     pub fn add(&mut self, job: Job) -> Uuid {
-        let job_id = job.id;
+        let job_id = job.context().job_id();
         self.jobs.push(job);
         job_id
     }
 
     /// Removes a job by ID from the scheduler.
     pub fn remove(&mut self, job_id: Uuid) -> bool {
-        let position = self.jobs.iter().position(|job| job.id == job_id);
+        let position = self
+            .jobs
+            .iter()
+            .position(|job| job.context().job_id() == job_id);
         if let Some(index) = position {
             self.jobs.remove(index);
             true
@@ -235,13 +207,17 @@ impl JobScheduler {
     /// Returns a reference to the job with the ID.
     #[inline]
     pub fn get(&self, job_id: Uuid) -> Option<&Job> {
-        self.jobs.iter().find(|job| job.id == job_id)
+        self.jobs
+            .iter()
+            .find(|job| job.context().job_id() == job_id)
     }
 
     /// Returns a mutable reference to the job with the ID.
     #[inline]
     pub fn get_mut(&mut self, job_id: Uuid) -> Option<&mut Job> {
-        self.jobs.iter_mut().find(|job| job.id == job_id)
+        self.jobs
+            .iter_mut()
+            .find(|job| job.context().job_id() == job_id)
     }
 
     /// Returns the duration till the next job is supposed to run.
@@ -270,8 +246,10 @@ impl JobScheduler {
         let mut fused_jobs = Vec::new();
         for job in &mut self.jobs {
             job.tick();
-            if job.is_fused() {
-                fused_jobs.push(job.id());
+
+            let ctx = job.context();
+            if ctx.is_fused() {
+                fused_jobs.push(ctx.job_id());
             }
         }
         for job_id in fused_jobs {

@@ -3,9 +3,11 @@
 use std::{future::Future, io, time::Duration};
 
 mod async_job;
+mod context;
 mod job;
 
 pub use async_job::{AsyncCronJob, AsyncJob, AsyncJobScheduler};
+pub use context::JobContext;
 pub use job::{CronJob, Job, JobScheduler};
 
 /// An interface for scheduling sync jobs.

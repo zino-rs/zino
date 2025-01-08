@@ -11,7 +11,7 @@ pub use zino_core::{
     extension::{JsonObjectExt, JsonValueExt, TomlTableExt},
     json,
     model::{Model, ModelHooks, Mutation, Query, QueryContext},
-    schedule::{AsyncCronJob, AsyncJob, AsyncJobScheduler, CronJob, Job, JobScheduler},
+    schedule::{AsyncCronJob, AsyncJob, AsyncJobScheduler, CronJob, Job, JobContext, JobScheduler},
     state::State,
     validation::Validation,
     warn, BoxFuture, Decimal, LazyLock, Map, Record, Uuid,

@@ -41,5 +41,5 @@ features = ["parse"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.30.1"
+version = "0.31.0"
 features = ["tracing-subscriber"]
