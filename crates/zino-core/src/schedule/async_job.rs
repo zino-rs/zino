@@ -48,10 +48,10 @@ impl AsyncJob {
             .unwrap_or_else(|err| panic!("invalid cron expression `{cron_expr}`: {err}"));
         let mut context = JobContext::new();
         if let Some(disabled) = config.get_bool("disable") {
-            context.set_status(disabled);
+            context.set_disabled_status(disabled);
         }
         if let Some(immediate) = config.get_bool("immediate") {
-            context.set_mode(immediate);
+            context.set_immediate_mode(immediate);
         }
         if let Some(ticks) = config
             .get_bool("once")
@@ -98,27 +98,27 @@ impl AsyncJob {
     /// Enables the flag to indicate whether the job is disabled.
     #[inline]
     pub fn disable(mut self, disabled: bool) -> Self {
-        self.context.set_status(disabled);
+        self.context.set_disabled_status(disabled);
         self
     }
 
     /// Enables the flag to indicate whether the job is executed immediately.
     #[inline]
     pub fn immediate(mut self, immediate: bool) -> Self {
-        self.context.set_mode(immediate);
+        self.context.set_immediate_mode(immediate);
         self
     }
 
     /// Pauses the job by setting the `disabled` flag to `true`.
     #[inline]
     pub fn pause(&mut self) {
-        self.context.set_status(true);
+        self.context.set_disabled_status(true);
     }
 
     /// Resumes the job by setting the `disabled` flag to `false`.
     #[inline]
     pub fn resume(&mut self) {
-        self.context.set_status(false);
+        self.context.set_disabled_status(false);
     }
 
     /// Executes the missed runs asynchronously.

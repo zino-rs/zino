@@ -448,7 +448,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     None
                 } else {
                     let name = col.name();
-                    fields.push(name);
+                    let field = Query::format_field(name);
+                    fields.push(field);
                     Some(col.encode_value(map.get(name)))
                 }
             })
@@ -513,7 +514,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         }
 
         let table_name = Query::table_name_escaped::<Self>();
-        let fields = Self::fields().join(", ");
+        let fields = Self::fields()
+            .iter()
+            .map(|&field| Query::format_field(field))
+            .collect::<Vec<_>>()
+            .join(", ");
         let values = values.join(", ");
         let sql = format!("INSERT INTO {table_name} ({fields}) VALUES {values};");
         let mut ctx = Self::before_scan(&sql).await?;
@@ -802,19 +807,20 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     async fn prepare_upsert(self) -> Result<QueryContext, Error> {
         let map = self.into_map();
         let table_name = Query::table_name_escaped::<Self>();
-        let fields = Self::fields();
-        let num_fields = fields.len();
+        let num_fields = Self::fields().len();
         let read_only_fields = Self::read_only_fields();
         let num_writable_fields = num_fields - read_only_fields.len();
+        let mut fields = Vec::with_capacity(num_fields);
         let mut values = Vec::with_capacity(num_fields);
         let mut mutations = Vec::with_capacity(num_writable_fields);
         for col in Self::columns() {
-            let field = col.name();
-            let value = col.encode_value(map.get(field));
-            if !read_only_fields.contains(&field) {
-                let field = Query::format_field(field);
+            let name = col.name();
+            let field = Query::format_field(name);
+            let value = col.encode_value(map.get(name));
+            if !read_only_fields.contains(&name) {
                 mutations.push(format!("{field} = {value}"));
             }
+            fields.push(field);
             values.push(value);
         }
 

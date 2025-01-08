@@ -20,7 +20,7 @@ name = "zli"
 path = "src/main.rs"
 
 [dependencies]
-git2 = "0.19.0"
+git2 = "0.20.0"
 humantime = "2.1.0"
 humantime-serde = "1.1.1"
 include_dir = "0.7.4"

@@ -203,7 +203,7 @@ pub fn default_verification_options() -> VerificationOptions {
 static SHARED_VERIFICATION_OPTIONS: LazyLock<VerificationOptions> = LazyLock::new(|| {
     if let Some(config) = State::shared().get_config("jwt") {
         VerificationOptions {
-            accept_future: config.get_bool("accept_future").unwrap_or_default(),
+            accept_future: config.get_bool("accept-future").unwrap_or_default(),
             required_subject: config.get_str("required-subject").map(|s| s.to_owned()),
             time_tolerance: config.get_duration("time-tolerance").map(|d| d.into()),
             max_validity: config.get_duration("max-validity").map(|d| d.into()),

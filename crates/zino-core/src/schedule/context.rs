@@ -95,15 +95,15 @@ impl JobContext {
         self.last_tick = Some(last_tick);
     }
 
-    /// Sets the job status.
+    /// Sets the disabled status.
     #[inline]
-    pub fn set_status(&mut self, disabled: bool) {
+    pub fn set_disabled_status(&mut self, disabled: bool) {
         self.disabled = disabled;
     }
 
-    /// Sets the running mode.
+    /// Sets the immediate mode.
     #[inline]
-    pub fn set_mode(&mut self, immediate: bool) {
+    pub fn set_immediate_mode(&mut self, immediate: bool) {
         self.immediate = immediate;
     }
 
