@@ -193,10 +193,15 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     });
                                 }
                             }
-                            if auto_rename && name.ends_with("_id") {
-                                let value = name.trim_end_matches("_id").to_owned();
-                                let populated_field = [&name, "_populated"].concat();
-                                populated_field_mappings.insert(populated_field, value);
+                            if auto_rename {
+                                if name.ends_with("_id") {
+                                    let value = name.trim_end_matches("_id").to_owned();
+                                    let populated_field = [&name, "_populated"].concat();
+                                    populated_field_mappings.insert(populated_field, value);
+                                } else if parser::check_vec_type(type_name) {
+                                    let populated_field = [&name, "_populated"].concat();
+                                    populated_field_mappings.insert(populated_field, name.clone());
+                                }
                             }
                         }
                         "fetch_as" => {

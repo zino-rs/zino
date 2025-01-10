@@ -62,7 +62,6 @@ The following optional features are available:
 | `logger`     | Enables the default logger.                          | Yes      |
 | `metrics`    | Enables the [`metrics`] exporter.                    | No       |
 | `ntex`       | Enables the integration with [`ntex`].               | No       |
-| `oidc`       | Enables the support for OIDC via [`rauthy`].         | No       |
 | `opa`        | Enables the support for OPA via [`regorus`].         | No       |
 | `orm`        | Enables the ORM for MySQL, PostgreSQL or **SQLite**. | No       |
 | `view`       | Enables the HTML template rendering.                 | No       |
@@ -71,7 +70,6 @@ The following optional features are available:
 [`sqlx`]: https://crates.io/crates/sqlx
 [`tracing`]: https://crates.io/crates/tracing
 [`metrics`]: https://crates.io/crates/metrics
-[`rauthy`]: https://crates.io/crates/rauthy-client
 [`regorus`]: https://crates.io/crates/regorus
 [`actix-web`]: https://crates.io/crates/actix-web
 [`axum`]: https://crates.io/crates/axum

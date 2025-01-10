@@ -18,7 +18,6 @@ features = [
     "axum",
     "i18n",
     "jwt",
-    "oidc",
     "opa",
     "orm",
 ]
@@ -39,7 +38,6 @@ jwt = ["auth", "zino-auth/jwt", "zino-http?/jwt"]
 logger = ["zino-core/tracing-log", "zino-core/tracing-subscriber"]
 metrics = ["zino-core/metrics", "zino-http?/metrics", "zino-storage/metrics"]
 ntex = ["dep:zino-http", "dep:zino-ntex", "dep:zino-openapi"]
-oidc = ["auth", "zino-auth/oidc"]
 opa = ["auth", "zino-auth/opa"]
 orm = [
     "zino-orm",
@@ -60,7 +58,7 @@ optional = true
 
 [dependencies.zino-auth]
 path = "../zino-auth"
-version = "0.3.0"
+version = "0.3.1"
 optional = true
 
 [dependencies.zino-axum]

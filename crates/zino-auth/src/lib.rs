@@ -23,6 +23,8 @@ pub use user_session::UserSession;
 
 #[cfg(feature = "jwt")]
 mod jwt_claims;
+#[cfg(feature = "ldap")]
+mod ldap_client;
 #[cfg(feature = "oidc")]
 mod rauthy_client;
 #[cfg(feature = "opa")]
@@ -30,6 +32,9 @@ mod rego_engine;
 
 #[cfg(feature = "jwt")]
 pub use jwt_claims::{default_time_tolerance, default_verification_options, JwtClaims, JwtHmacKey};
+
+#[cfg(feature = "ldap")]
+pub use ldap_client::LdapClient;
 
 #[cfg(feature = "oidc")]
 pub use rauthy_client::RauthyClient;
