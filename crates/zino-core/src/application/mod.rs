@@ -21,9 +21,7 @@
 //!             }
 //!             Ok(())
 //!         });
-//!         let mut plugin = Plugin::new("casbin");
-//!         plugin.set_loader(loader);
-//!         plugin
+//!         Plugin::with_loader("casbin", loader)
 //!     }
 //! }
 //!

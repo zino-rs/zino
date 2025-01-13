@@ -1,7 +1,7 @@
 [package]
 name = "zino-chatbot"
 description = "Unified access to chatbot services for zino."
-version = "0.3.0"
+version = "0.3.1"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -13,7 +13,7 @@ documentation = "https://docs.rs/zino-chatbot"
 readme = "README.md"
 
 [dependencies]
-async-openai = "0.26.0"
+async-openai = "0.27.0"
 futures = "0.3.31"
 tracing = "0.1.41"
 
@@ -23,5 +23,5 @@ default-features = false
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.31.0"
+version = "0.31.1"
 features = ["http-client"]

@@ -1,7 +1,7 @@
 [package]
 name = "zino-http"
 description = "HTTP requests and responses for zino."
-version = "0.3.0"
+version = "0.3.1"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -132,14 +132,14 @@ optional = true
 
 [dependencies.zino-channel]
 path = "../zino-channel"
-version = "0.3.0"
+version = "0.3.1"
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.31.0"
+version = "0.31.1"
 features = ["http-client"]
 
 [dependencies.zino-storage]
 path = "../zino-storage"
-version = "0.3.0"
+version = "0.3.1"
 features = ["http-client"]

@@ -186,11 +186,11 @@ macro_rules! impl_sqlx_executor {
 }
 
 #[cfg(feature = "orm-sqlx")]
-impl<'c> Executor for &'c sqlx::Pool<super::DatabaseDriver> {
+impl Executor for &sqlx::Pool<super::DatabaseDriver> {
     impl_sqlx_executor!();
 }
 
 #[cfg(feature = "orm-sqlx")]
-impl<'c> Executor for &'c mut super::DatabaseConnection {
+impl Executor for &mut super::DatabaseConnection {
     impl_sqlx_executor!();
 }

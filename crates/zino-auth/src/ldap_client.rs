@@ -41,9 +41,7 @@ impl LdapClient {
             }
             Ok(())
         });
-        let mut plugin = Plugin::new("ldap-client");
-        plugin.set_loader(loader);
-        plugin
+        Plugin::with_loader("ldap-client", loader)
     }
 
     /// Returns an existing LDAP connection from the pool or creates a new one if required.

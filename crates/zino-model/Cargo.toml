@@ -54,7 +54,7 @@ features = ["jwt"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.31.0"
+version = "0.31.1"
 features = ["validator-email"]
 
 [dependencies.zino-derive]
@@ -63,4 +63,4 @@ version = "0.29.1"
 
 [dependencies.zino-orm]
 path = "../zino-orm"
-version = "0.3.0"
+version = "0.3.1"

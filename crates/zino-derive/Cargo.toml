@@ -14,15 +14,15 @@ readme = "README.md"
 proc-macro = true
 
 [dependencies]
-convert_case = "0.6.0"
+convert_case = "0.7.1"
 proc-macro2 = "1.0.92"
 quote = "1.0.38"
 syn = "2.0.95"
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.31.0"
+version = "0.31.1"
 
 [dependencies.zino-orm]
 path = "../zino-orm"
-version = "0.3.0"
+version = "0.3.1"

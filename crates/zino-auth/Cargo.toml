@@ -81,7 +81,7 @@ version = "0.4.2"
 optional = true
 
 [dependencies.sqids]
-version = "0.4.1"
+version = "0.4.2"
 optional = true
 
 [dependencies.toml]
@@ -90,4 +90,4 @@ default-features = false
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.31.0"
+version = "0.31.1"

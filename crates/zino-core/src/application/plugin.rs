@@ -31,6 +31,17 @@ impl Plugin {
         }
     }
 
+    /// Creates a new instance with the loader.
+    #[inline]
+    pub fn with_loader(name: &'static str, loader: BoxFuture<'static, Result<(), Error>>) -> Self {
+        Self {
+            name,
+            loader: Some(loader),
+            environments: SmallVec::new(),
+            dependencies: SmallVec::new(),
+        }
+    }
+
     /// Sets an asynchronous loader for the plugin.
     #[inline]
     pub fn set_loader(&mut self, loader: BoxFuture<'static, Result<(), Error>>) {

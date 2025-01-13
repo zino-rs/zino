@@ -71,8 +71,6 @@ impl RauthyClient {
             }
             Ok(())
         });
-        let mut plugin = Plugin::new("rauthy-client");
-        plugin.set_loader(loader);
-        plugin
+        Plugin::with_loader("rauthy-client", loader)
     }
 }
