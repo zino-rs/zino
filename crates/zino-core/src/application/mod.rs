@@ -300,10 +300,7 @@ pub trait Application {
     #[cfg(feature = "http-client")]
     async fn fetch(url: &str, options: Option<&Map>) -> Result<reqwest::Response, Error> {
         let mut trace_context = TraceContext::new();
-        let span_id = trace_context.span_id();
-        trace_context
-            .trace_state_mut()
-            .push("zino", format!("{span_id:x}"));
+        trace_context.record_trace_state();
         http_client::request_builder(url, options)?
             .header("traceparent", trace_context.traceparent())
             .header("tracestate", trace_context.tracestate())

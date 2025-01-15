@@ -166,10 +166,7 @@ pub trait RequestContext {
             })
             .map(|t| t.child())
             .unwrap_or_default();
-        let span_id = trace_context.span_id();
-        trace_context
-            .trace_state_mut()
-            .push("zino", format!("{span_id:x}"));
+        trace_context.record_trace_state();
         trace_context
     }
 

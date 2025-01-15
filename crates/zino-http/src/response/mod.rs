@@ -552,10 +552,7 @@ impl<S: ResponseCode> Response<S> {
             (trace_context.traceparent(), trace_context.tracestate())
         } else {
             let mut trace_context = TraceContext::new();
-            let span_id = trace_context.span_id();
-            trace_context
-                .trace_state_mut()
-                .push("zino", format!("{span_id:x}"));
+            trace_context.record_trace_state();
             (trace_context.traceparent(), trace_context.tracestate())
         }
     }

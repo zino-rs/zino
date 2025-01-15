@@ -213,10 +213,7 @@ impl HttpConnector {
         }
 
         let mut trace_context = TraceContext::new();
-        let span_id = trace_context.span_id();
-        trace_context
-            .trace_state_mut()
-            .push("zino", format!("{span_id:x}"));
+        trace_context.record_trace_state();
         Agent::request_builder(resource.as_ref(), Some(&options))?
             .headers(headers)
             .header("traceparent", trace_context.traceparent())

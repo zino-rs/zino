@@ -1,5 +1,9 @@
 use super::TraceState;
-use crate::{extension::HeaderMapExt, Uuid};
+use crate::{
+    extension::{HeaderMapExt, TomlTableExt},
+    state::State,
+    LazyLock, Uuid,
+};
 use http::header::HeaderMap;
 use tracing::Span;
 
@@ -157,6 +161,14 @@ impl TraceContext {
         self.trace_flags ^= ((random as u8) ^ self.trace_flags) & FLAG_RANDOM_TRACE_ID;
     }
 
+    /// Records the trace state.
+    #[inline]
+    pub fn record_trace_state(&mut self) {
+        let span_id = self.span_id();
+        self.trace_state
+            .push(*TRACING_VENDOR, format!("{span_id:x}"));
+    }
+
     /// Returns a mutable reference to the trace state.
     #[inline]
     pub fn trace_state_mut(&mut self) -> &mut TraceState {
@@ -184,6 +196,14 @@ impl Default for TraceContext {
         Self::new()
     }
 }
+
+/// Shared tracing vendor.
+static TRACING_VENDOR: LazyLock<&str> = LazyLock::new(|| {
+    State::shared()
+        .get_config("tracing")
+        .and_then(|t| t.get_str("vendor"))
+        .unwrap_or("zino")
+});
 
 #[cfg(test)]
 mod tests {

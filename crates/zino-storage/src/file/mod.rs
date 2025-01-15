@@ -456,10 +456,7 @@ impl NamedFile {
     #[cfg(feature = "http-client")]
     pub async fn download_from(url: &str, options: Option<&Map>) -> Result<Self, Error> {
         let mut trace_context = TraceContext::new();
-        let span_id = trace_context.span_id();
-        trace_context
-            .trace_state_mut()
-            .push("zino", format!("{span_id:x}"));
+        trace_context.record_trace_state();
 
         let response = Agent::request_builder(url, options)?
             .header("traceparent", trace_context.traceparent())
@@ -490,10 +487,7 @@ impl NamedFile {
         use std::borrow::Cow;
 
         let mut trace_context = TraceContext::new();
-        let span_id = trace_context.span_id();
-        trace_context
-            .trace_state_mut()
-            .push("zino", format!("{span_id:x}"));
+        trace_context.record_trace_state();
 
         let mut form = Form::new();
         for (key, value) in self.extra() {

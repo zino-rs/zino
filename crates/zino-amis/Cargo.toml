@@ -27,7 +27,7 @@ version = "0.1.10"
 features = ["http1", "tokio"]
 
 [dependencies.tokio]
-version = "1.42.0"
+version = "1.43.0"
 features = [
     "net",
     "rt-multi-thread",
