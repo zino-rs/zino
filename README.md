@@ -11,7 +11,7 @@ which emphasizes **simplicity**, **extensibility** and **productivity**.
 
 - 🚀 Out-of-the-box features for rapid application development.
 - 🎨 Minimal design, composable architecture and high-level abstractions.
-- 🌐 Adopt an API-first approch to development with open standards.
+- 🌐 Adopt an API-first approach to development with open standards.
 - ⚡ Embrace practical conventions to get the best performance.
 - 💎 Highly optimized ORM for MySQL, PostgreSQL and SQLite based on [`sqlx`].
 - ✨ Innovations on query population, field translation and model hooks.
