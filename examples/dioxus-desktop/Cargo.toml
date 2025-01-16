@@ -27,7 +27,7 @@ features = ["dioxus-desktop"]
 
 [dependencies.zino-core]
 path = "../../crates/zino-core"
-version = "0.31.1"
+version = "0.31.2"
 features = ["env-filter", "http-client", "tls-native"]
 
 [dependencies.zino-dioxus]

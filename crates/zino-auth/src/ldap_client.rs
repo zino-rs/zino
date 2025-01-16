@@ -30,10 +30,10 @@ impl LdapClient {
             };
             let ldap_config = LdapConfig {
                 ldap_url: url.to_owned(),
-                bind_dn: format!("cn={account}"),
+                bind_dn: account.to_owned(),
                 bind_pw: password.into_owned(),
                 pool_size: config.get_usize("pool-size").unwrap_or(10),
-                dn_attribute: None,
+                dn_attribute: config.get_str("attribute").map(|s| s.to_owned()),
             };
             let ldap_pool = simple_ldap::pool::build_connection_pool(&ldap_config).await;
             if LDAP_POOL.set(ldap_pool).is_err() {

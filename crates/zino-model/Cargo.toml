@@ -49,12 +49,12 @@ features = ["derive"]
 
 [dependencies.zino-auth]
 path = "../zino-auth"
-version = "0.3.1"
+version = "0.3.2"
 features = ["jwt"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.31.1"
+version = "0.31.2"
 features = ["validator-email"]
 
 [dependencies.zino-derive]

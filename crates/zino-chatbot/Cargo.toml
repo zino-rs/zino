@@ -13,7 +13,7 @@ documentation = "https://docs.rs/zino-chatbot"
 readme = "README.md"
 
 [dependencies]
-async-openai = "0.27.0"
+async-openai = "0.27.1"
 futures = "0.3.31"
 tracing = "0.1.41"
 
@@ -23,5 +23,5 @@ default-features = false
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.31.1"
+version = "0.31.2"
 features = ["http-client"]

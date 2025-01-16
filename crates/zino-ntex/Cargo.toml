@@ -27,12 +27,12 @@ features = ["compress", "tokio"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.31.1"
+version = "0.31.2"
 features = ["runtime-tokio"]
 
 [dependencies.zino-http]
 path = "../zino-http"
-version = "0.3.1"
+version = "0.3.2"
 
 [dependencies.zino-orm]
 path = "../zino-orm"

@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.31.1"
+version = "0.31.2"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -139,13 +139,13 @@ version = "0.24.1"
 optional = true
 
 [dependencies.metrics-exporter-prometheus]
-version = "0.16.0"
+version = "0.16.1"
 optional = true
 default-features = false
 features = ["http-listener"]
 
 [dependencies.phonenumber]
-version = "0.3.6"
+version = "0.3.7"
 optional = true
 
 [dependencies.random_word]

@@ -24,7 +24,7 @@ git2 = "0.20.0"
 humantime = "2.1.0"
 humantime-serde = "1.1.1"
 include_dir = "0.7.4"
-log = "0.4.22"
+log = "0.4.25"
 taplo = "0.13.2"
 toml = "0.8.19"
 toml_edit = "0.22.22"
@@ -38,7 +38,7 @@ version = "0.8.1"
 default-features = false
 
 [dependencies.clap]
-version = "4.5.23"
+version = "4.5.25"
 features = ["color", "derive"]
 
 [dependencies.rustls-acme]
@@ -65,4 +65,4 @@ features = ["axum"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.31.0"
+version = "0.31.2"

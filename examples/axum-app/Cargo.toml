@@ -31,7 +31,7 @@ features = [
 
 [dependencies.zino-core]
 path = "../../crates/zino-core"
-version = "0.31.1"
+version = "0.31.2"
 features = ["env-filter", "validator-email"]
 
 [dependencies.zino-derive]

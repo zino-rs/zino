@@ -36,12 +36,12 @@ features = ["actix-web"]
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.31.1"
+version = "0.31.2"
 features = ["runtime-tokio"]
 
 [dependencies.zino-http]
 path = "../zino-http"
-version = "0.3.1"
+version = "0.3.2"
 features = ["http02"]
 
 [dependencies.zino-orm]
