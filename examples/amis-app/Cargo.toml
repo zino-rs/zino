@@ -12,7 +12,7 @@ features = ["macros"]
 
 [dependencies.zino-amis]
 path = "../../crates/zino-amis"
-version = "0.3.1"
+version = "0.3.2"
 
 [dependencies.zino-core]
 path = "../../crates/zino-core"
