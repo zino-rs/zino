@@ -13,7 +13,7 @@ documentation = "https://docs.rs/zino-chatbot"
 readme = "README.md"
 
 [dependencies]
-async-openai = "0.27.1"
+async-openai = "0.27.2"
 futures = "0.3.31"
 tracing = "0.1.41"
 

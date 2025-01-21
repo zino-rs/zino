@@ -110,7 +110,7 @@ version = "1.0.217"
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1.0.135"
+version = "1.0.137"
 features = ["raw_value"]
 
 [dependencies.tera]
@@ -141,5 +141,5 @@ features = ["http-client"]
 
 [dependencies.zino-storage]
 path = "../zino-storage"
-version = "0.3.1"
+version = "0.3.2"
 features = ["http-client"]

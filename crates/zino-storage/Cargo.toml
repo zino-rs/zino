@@ -1,7 +1,7 @@
 [package]
 name = "zino-storage"
 description = "Files and storage services for zino."
-version = "0.3.1"
+version = "0.3.2"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"

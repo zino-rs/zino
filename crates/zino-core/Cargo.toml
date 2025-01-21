@@ -185,7 +185,7 @@ version = "1.0.217"
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1.0.135"
+version = "1.0.137"
 features = ["raw_value"]
 
 [dependencies.sm3]
@@ -241,7 +241,7 @@ arrayvec = "0.7.6"
 base64-simd = "0.8.0"
 criterion = "0.5.1"
 data-encoding = "2.6.0"
-indexmap = "2.7.0"
+indexmap = "2.7.1"
 libsm = "0.6.0"
 ryu = "1.0.18"
 sm3 = "0.4.2"

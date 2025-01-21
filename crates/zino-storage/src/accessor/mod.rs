@@ -415,8 +415,8 @@ impl GlobalAccessor {
                 if let Some(encryption_key_id) = config.get_str("server-side-encryption-key-id") {
                     builder = builder.server_side_encryption_key_id(encryption_key_id);
                 }
-                if let Some(batch_max_operations) = config.get_usize("batch-max-operations") {
-                    builder = builder.batch_max_operations(batch_max_operations);
+                if let Some(delete_max_size) = config.get_usize("delete-max-size") {
+                    builder = builder.delete_max_size(delete_max_size);
                 }
                 Operator::new(builder)?.finish()
             }
@@ -520,8 +520,8 @@ impl GlobalAccessor {
                 if let Some(external_id) = config.get_str("external-id") {
                     builder = builder.external_id(external_id);
                 }
-                if let Some(batch_max_operations) = config.get_usize("batch-max-operations") {
-                    builder = builder.batch_max_operations(batch_max_operations);
+                if let Some(delete_max_size) = config.get_usize("delete-max-size") {
+                    builder = builder.delete_max_size(delete_max_size);
                 }
                 Operator::new(builder)?.finish()
             }
@@ -603,6 +603,12 @@ impl GlobalAccessor {
     pub fn get(name: &str) -> Option<&'static Operator> {
         SHARED_STORAGE_ACCESSORS.find(name)
     }
+
+    /// Gets the config for the specific service.
+    #[inline]
+    pub fn get_config(name: &str) -> Option<&'static Table> {
+        SHARED_STORAGE_CONFIGS.find(name).map(|&v| v)
+    }
 }
 
 /// Shared storage accessors.
@@ -618,4 +624,17 @@ static SHARED_STORAGE_ACCESSORS: LazyLock<StaticRecord<Operator>> = LazyLock::ne
         }
     }
     operators
+});
+
+/// Shared storage configs.
+static SHARED_STORAGE_CONFIGS: LazyLock<StaticRecord<&Table>> = LazyLock::new(|| {
+    let mut configs = StaticRecord::new();
+    if let Some(accessors) = State::shared().config().get_array("accessor") {
+        for accessor in accessors.iter().filter_map(|v| v.as_table()) {
+            let scheme = accessor.get_str("scheme").unwrap_or("unkown");
+            let name = accessor.get_str("name").unwrap_or(scheme);
+            configs.add(name, accessor);
+        }
+    }
+    configs
 });
