@@ -120,5 +120,5 @@ default-features = false
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.31.2"
+version = "0.31.3"
 features = ["http-client"]

@@ -1,7 +1,7 @@
 [package]
 name = "ntex-app"
 description = "An example for ntex integration."
-version = "0.6.1"
+version = "0.6.2"
 rust-version = "1.80"
 edition = "2021"
 publish = false
@@ -19,7 +19,7 @@ features = ["derive"]
 
 [dependencies.zino]
 path = "../../crates/zino"
-version = "0.31.2"
+version = "0.31.3"
 features = [
     "cookie",
     "i18n",
@@ -31,18 +31,18 @@ features = [
 
 [dependencies.zino-core]
 path = "../../crates/zino-core"
-version = "0.31.2"
+version = "0.31.3"
 features = ["env-filter"]
 
 [dependencies.zino-derive]
 path = "../../crates/zino-derive"
-version = "0.29.1"
+version = "0.29.2"
 
 [dependencies.zino-model]
 path = "../../crates/zino-model"
-version = "0.29.1"
+version = "0.29.2"
 
 [dependencies.zino-orm]
 path = "../../crates/zino-orm"
-version = "0.3.1"
+version = "0.3.2"
 features = ["orm-postgres"]
