@@ -366,8 +366,8 @@ where
         let mut model = Self::find_by_id::<Map>(id)
             .await?
             .ok_or_else(|| warn!("404 Not Found: cannot find the model `{}`", id))?;
-        Self::after_decode(&mut model).await?;
         Self::translate_model(&mut model);
+        Self::after_decode(&mut model).await?;
         Ok(model)
     }
 

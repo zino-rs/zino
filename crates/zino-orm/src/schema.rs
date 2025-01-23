@@ -1090,8 +1090,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut data = Self::find::<Map>(query).await?;
         let translate_enabled = query.translate_enabled();
         for model in data.iter_mut() {
-            Self::after_decode(model).await?;
             translate_enabled.then(|| Self::translate_model(model));
+            Self::after_decode(model).await?;
         }
         serde_json::from_value(data.into()).map_err(Error::from)
     }
@@ -1129,10 +1129,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     async fn find_one_as<T: DeserializeOwned>(query: &Query) -> Result<Option<T>, Error> {
         match Self::find_one::<Map>(query).await? {
             Some(mut data) => {
-                Self::after_decode(&mut data).await?;
                 query
                     .translate_enabled()
                     .then(|| Self::translate_model(&mut data));
+                Self::after_decode(&mut data).await?;
                 serde_json::from_value(data.into()).map_err(Error::from)
             }
             None => Ok(None),
@@ -1188,8 +1188,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         for row in rows {
             let mut map = Map::decode_row(&row)?;
             let primary_key = map.get(primary_key_name).cloned();
-            Self::after_decode(&mut map).await?;
             translate_enabled.then(|| Self::translate_model(&mut map));
+            Self::after_decode(&mut map).await?;
             if let Some(key) = primary_key {
                 associations.push((key, map));
             }
@@ -1280,8 +1280,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         for row in rows {
             let mut map = Map::decode_row(&row)?;
             let primary_key = map.get(primary_key_name).cloned();
-            Self::after_decode(&mut map).await?;
             translate_enabled.then(|| Self::translate_model(&mut map));
+            Self::after_decode(&mut map).await?;
             if let Some(key) = primary_key {
                 associations.push((key, map));
             }
@@ -1368,8 +1368,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut data = Self::lookup::<M, Map>(query, join_on).await?;
         let translate_enabled = query.translate_enabled();
         for model in data.iter_mut() {
-            Self::after_decode(model).await?;
             translate_enabled.then(|| Self::translate_model(model));
+            Self::after_decode(model).await?;
         }
         serde_json::from_value(data.into()).map_err(Error::from)
     }

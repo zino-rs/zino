@@ -7,9 +7,11 @@ use crate::{
     JsonValue, Map, Record, Uuid,
 };
 use chrono::NaiveDateTime;
+use convert_case::{Case, Casing};
 use rust_decimal::Decimal;
 use std::{
     borrow::Cow,
+    mem,
     net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr},
     num::{ParseFloatError, ParseIntError},
     str::{FromStr, ParseBoolError},
@@ -245,6 +247,9 @@ pub trait JsonObjectExt {
 
     /// Extracts values from the populated data corresponding to the key and moves them to `self`.
     fn extract_from_populated(&mut self, key: &str, fields: &[&str]);
+
+    /// Renames all the keys to the specific case.
+    fn rename_keys(&mut self, case: Case);
 
     /// Attempts to read the map as an instance of the model `M`.
     fn read_as_model<M: Model>(&self) -> Result<M, Validation>;
@@ -768,6 +773,13 @@ impl JsonObjectExt for Map {
             }
         }
         self.append(&mut object);
+    }
+
+    #[inline]
+    fn rename_keys(&mut self, case: Case) {
+        for (key, value) in mem::take(self) {
+            self.insert(key.to_case(case), value);
+        }
     }
 
     fn read_as_model<M: Model>(&self) -> Result<M, Validation> {

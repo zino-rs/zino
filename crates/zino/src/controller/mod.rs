@@ -107,10 +107,6 @@ where
         }
 
         let mut model_snapshot = model.snapshot();
-        Self::after_decode(&mut model_snapshot)
-            .await
-            .extract(&req)?;
-
         let ctx = model.insert().await.extract(&req)?;
         if let Some(last_insert_id) = ctx.last_insert_id() {
             if model_snapshot.get_i64("id") == Some(0) {
@@ -119,6 +115,9 @@ where
         }
 
         Self::translate_model(&mut model_snapshot);
+        Self::after_decode(&mut model_snapshot)
+            .await
+            .extract(&req)?;
         Self::before_respond(&mut model_snapshot, extension.as_ref())
             .await
             .extract(&req)?;
@@ -169,7 +168,7 @@ where
     }
 
     async fn list(req: Self::Request) -> Self::Result {
-        let mut query = match req.get_query("mode") {
+        let mut query = match req.get_query("query_mode") {
             Some("full") => Self::default_query(),
             Some("snapshot") => Self::default_snapshot_query(),
             _ => Self::default_list_query(),
@@ -192,8 +191,8 @@ where
             let mut models = Self::find(&query).await.extract(&req)?;
             let translate_enabled = query.translate_enabled();
             for model in models.iter_mut() {
-                Self::after_decode(model).await.extract(&req)?;
                 translate_enabled.then(|| Self::translate_model(model));
+                Self::after_decode(model).await.extract(&req)?;
                 Self::before_respond(model, extension.as_ref())
                     .await
                     .extract(&req)?;
@@ -475,8 +474,8 @@ where
         let mut models = Self::find(&query).await.extract(&req)?;
         let translate_enabled = query.translate_enabled();
         for model in models.iter_mut() {
-            Self::after_decode(model).await.extract(&req)?;
             translate_enabled.then(|| Self::translate_model(model));
+            Self::after_decode(model).await.extract(&req)?;
             Self::before_respond(model, extension.as_ref())
                 .await
                 .extract(&req)?;
@@ -508,8 +507,8 @@ where
             let mut models = Self::find(&query).await.extract(&req)?;
             let translate_enabled = query.translate_enabled();
             for model in models.iter_mut() {
-                Self::after_decode(model).await.extract(&req)?;
                 translate_enabled.then(|| Self::translate_model(model));
+                Self::after_decode(model).await.extract(&req)?;
             }
             models
         };

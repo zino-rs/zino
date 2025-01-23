@@ -726,16 +726,16 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     fetched_queries.push(quote! {
         let mut models = Self::find::<Map>(query).await?;
         for model in models.iter_mut() {
-            Self::after_decode(model).await?;
             translate_enabled.then(|| Self::translate_model(model));
+            Self::after_decode(model).await?;
         }
     });
     fetched_one_queries.push(quote! {
         let mut model = Self::find_by_id::<Map>(id)
             .await?
             .ok_or_else(|| zino_core::warn!("404 Not Found: cannot find the model `{}`", id))?;
-        Self::after_decode(&mut model).await?;
         Self::translate_model(&mut model);
+        Self::after_decode(&mut model).await?;
     });
     if !model_references.is_empty() {
         for (model, ref_fields) in model_references.into_iter() {
