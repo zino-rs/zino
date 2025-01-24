@@ -233,9 +233,9 @@ impl AsyncJobScheduler {
     }
 
     /// Returns the duration till the next job is supposed to run.
-    pub fn time_till_next_job(&self) -> Option<Duration> {
+    pub fn time_till_next_job(&self) -> Duration {
         if self.jobs.is_empty() {
-            Some(DEFAULT_TICK_INTERVAL)
+            DEFAULT_TICK_INTERVAL
         } else {
             let mut duration = Duration::ZERO;
             let now = Local::now();
@@ -257,7 +257,7 @@ impl AsyncJobScheduler {
                     }
                 }
             }
-            Some(duration)
+            duration
         }
     }
 
@@ -300,7 +300,7 @@ impl AsyncScheduler for AsyncJobScheduler {
 
     #[inline]
     fn time_till_next_job(&self) -> Option<Duration> {
-        self.time_till_next_job()
+        Some(self.time_till_next_job())
     }
 
     #[inline]

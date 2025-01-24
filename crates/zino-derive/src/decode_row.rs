@@ -11,6 +11,16 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     // Model name
     let name = input.ident;
 
+    // Parsing struct attributes
+    let mut auto_coalesce = true;
+    for attr in input.attrs.iter() {
+        for (key, value) in parser::parse_schema_attr(attr).into_iter() {
+            if key == "auto_coalesce" && value.is_some_and(|v| v == "false") {
+                auto_coalesce = false;
+            }
+        }
+    }
+
     // Parsing field attributes
     let mut decode_model_fields = Vec::new();
     for field in parser::parse_struct_fields(input.data) {
@@ -36,18 +46,28 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 });
             } else if type_name == "Option<Uuid>" {
                 decode_model_fields.push(quote! {
-                    model.#ident = zino_orm::decode_uuid(row, #name).ok().filter(|id| !id.is_nil());
+                    let value = zino_orm::decode_uuid(row, #name)?;
+                    model.#ident = (!value.is_nil()).then_some(value);
                 });
             } else if type_name == "Decimal" {
                 decode_model_fields.push(quote! {
                     model.#ident = zino_orm::decode_decimal(row, #name)?;
                 });
             } else if type_name == "Map" {
-                decode_model_fields.push(quote! {
-                    if let Some(JsonValue::Object(map)) = zino_orm::decode_optional(row, #name)? {
-                        model.#ident = map;
+                let field_decoder = if auto_coalesce {
+                    quote! {
+                        if let Some(JsonValue::Object(map)) = zino_orm::decode_optional(row, #name)? {
+                            model.#ident = map;
+                        }
                     }
-                });
+                } else {
+                    quote! {
+                        if let JsonValue::Object(map) = zino_orm::decode(row, #name)? {
+                            model.#ident = map;
+                        }
+                    }
+                };
+                decode_model_fields.push(field_decoder);
             } else if parser::check_option_type(&type_name) {
                 decode_model_fields.push(quote! {
                     model.#ident = zino_orm::decode_optional(row, #name)?;
@@ -58,17 +78,32 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 });
             } else if UNSIGNED_INTEGER_TYPES.contains(&type_name.as_str()) {
                 let integer_type_ident = format_ident!("{}", type_name.replace('u', "i"));
-                decode_model_fields.push(quote! {
-                    if let Some(value) = zino_orm::decode_optional::<#integer_type_ident>(row, #name)? {
+                let field_decoder = if auto_coalesce {
+                    quote! {
+                        if let Some(value) = zino_orm::decode_optional::<#integer_type_ident>(row, #name)? {
+                            model.#ident = value.try_into()?;
+                        }
+                    }
+                } else {
+                    quote! {
+                        let value = zino_orm::decode::<#integer_type_ident>(row, #name)?;
                         model.#ident = value.try_into()?;
                     }
-                });
+                };
+                decode_model_fields.push(field_decoder);
             } else {
-                decode_model_fields.push(quote! {
-                    if let Some(value) = zino_orm::decode_optional(row, #name)? {
-                        model.#ident = value;
+                let field_decoder = if auto_coalesce {
+                    quote! {
+                        if let Some(value) = zino_orm::decode_optional(row, #name)? {
+                            model.#ident = value;
+                        }
                     }
-                });
+                } else {
+                    quote! {
+                        model.#ident = zino_orm::decode(row, #name)?;
+                    }
+                };
+                decode_model_fields.push(field_decoder);
             }
         }
     }
