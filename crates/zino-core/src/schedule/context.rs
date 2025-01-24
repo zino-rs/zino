@@ -1,5 +1,8 @@
-use crate::{datetime::DateTime, Uuid};
-use std::{any::Any, time::Instant};
+use crate::{datetime::DateTime, error::Error, Uuid};
+use std::{
+    any::Any,
+    time::{Duration, Instant},
+};
 
 /// Data associated with a job.
 #[derive(Debug)]
@@ -8,7 +11,9 @@ pub struct JobContext {
     job_id: Uuid,
     /// Job name.
     job_name: Option<&'static str>,
-    /// Start time.
+    /// The source.
+    source: String,
+    /// The start time.
     start_time: Instant,
     /// Flag to indicate whether the job is disabled.
     disabled: bool,
@@ -18,6 +23,10 @@ pub struct JobContext {
     remaining_ticks: Option<usize>,
     /// Last time when running the job.
     last_tick: Option<DateTime>,
+    /// Next time when running the job.
+    next_tick: Option<DateTime>,
+    /// An error occurred in the job execution.
+    execution_error: Option<Error>,
     /// Optional job data.
     job_data: Option<Box<dyn Any + Send>>,
 }
@@ -29,11 +38,14 @@ impl JobContext {
         Self {
             job_id: Uuid::now_v7(),
             job_name: None,
+            source: String::new(),
             start_time: Instant::now(),
             disabled: false,
             immediate: false,
             remaining_ticks: None,
             last_tick: None,
+            next_tick: None,
+            execution_error: None,
             job_data: None,
         }
     }
@@ -45,7 +57,6 @@ impl JobContext {
     }
 
     /// Finishes the job.
-    #[inline]
     pub fn finish(&mut self) {
         if let Some(ticks) = self.remaining_ticks {
             self.remaining_ticks = Some(ticks.saturating_sub(1));
@@ -53,14 +64,31 @@ impl JobContext {
 
         let job_id = self.job_id.to_string();
         let job_name = self.job_name;
+        let remaining_ticks = self.remaining_ticks;
+        let last_tick = self.last_tick.map(|dt| dt.to_string());
+        let next_tick = self.next_tick.map(|dt| dt.to_string());
         let execution_time = self.start_time.elapsed();
-        tracing::warn!(
-            job_id,
-            job_name,
-            remaining_ticks = self.remaining_ticks,
-            last_tick = self.last_tick.map(|dt| dt.to_string()),
-            execution_time_millis = execution_time.as_millis(),
-        );
+        let execution_time_millis = execution_time.as_millis();
+        if let Some(error) = self.execution_error.as_ref() {
+            tracing::error!(
+                job_id,
+                job_name,
+                remaining_ticks,
+                last_tick,
+                next_tick,
+                execution_time_millis,
+                "{error}"
+            );
+        } else {
+            tracing::warn!(
+                job_id,
+                job_name,
+                remaining_ticks,
+                last_tick,
+                next_tick,
+                execution_time_millis,
+            );
+        }
         #[cfg(feature = "metrics")]
         if let Some(name) = job_name {
             metrics::histogram!(
@@ -75,12 +103,31 @@ impl JobContext {
             )
             .record(execution_time.as_secs_f64());
         }
+        self.set_last_tick(DateTime::now());
+    }
+
+    /// Records an error occurred in the job execution.
+    #[inline]
+    pub fn record_error(&mut self, error: impl Into<Error>) {
+        self.execution_error = Some(error.into());
+    }
+
+    /// Retries to run the job after a time span.
+    #[inline]
+    pub fn retry_after(&mut self, duration: Duration) {
+        self.next_tick = Some(DateTime::now() + duration);
     }
 
     /// Sets the job name.
     #[inline]
     pub fn set_name(&mut self, name: &'static str) {
         self.job_name = Some(name);
+    }
+
+    /// Sets the source.
+    #[inline]
+    pub fn set_source(&mut self, source: impl Into<String>) {
+        self.source = source.into();
     }
 
     /// Sets the remaining_ticks.
@@ -93,6 +140,12 @@ impl JobContext {
     #[inline]
     pub fn set_last_tick(&mut self, last_tick: DateTime) {
         self.last_tick = Some(last_tick);
+    }
+
+    /// Sets the next tick.
+    #[inline]
+    pub fn set_next_tick(&mut self, next_tick: Option<DateTime>) {
+        self.next_tick = next_tick;
     }
 
     /// Sets the disabled status.
@@ -149,6 +202,12 @@ impl JobContext {
         self.job_name
     }
 
+    /// Returns a reference to the source, *i.e.* the cron expression for a cron job.
+    #[inline]
+    pub fn source(&self) -> &str {
+        &self.source
+    }
+
     /// Returns the start time.
     #[inline]
     pub fn start_time(&self) -> Instant {
@@ -161,10 +220,10 @@ impl JobContext {
         self.disabled
     }
 
-    /// Returns `true` if the job is executed immediately.
-    #[inline]
+    /// Returns `true` if the job should be executed immediately.
     pub fn is_immediate(&self) -> bool {
-        self.immediate
+        self.immediate && self.last_tick.is_none()
+            || self.next_tick.and_then(|dt| dt.span_before_now()).is_some()
     }
 
     /// Returns `true` if the job is fused and can not be executed any more.
@@ -177,6 +236,12 @@ impl JobContext {
     #[inline]
     pub fn last_tick(&self) -> Option<DateTime> {
         self.last_tick
+    }
+
+    /// Returns the next tick.
+    #[inline]
+    pub fn next_tick(&self) -> Option<DateTime> {
+        self.next_tick
     }
 }
 

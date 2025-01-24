@@ -65,3 +65,6 @@ impl AsyncScheduler for apalis::prelude::Monitor {
         self.run().await
     }
 }
+
+/// The default tick interval.
+const DEFAULT_TICK_INTERVAL: Duration = Duration::from_millis(500);

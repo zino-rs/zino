@@ -50,6 +50,7 @@ pub fn decode_decimal(row: &DatabaseRow, field: &str) -> Result<Decimal, Error> 
     match row.try_get_raw(field) {
         Ok(value) => {
             if value.is_null() {
+                warn!("decode the NULL as a zero value");
                 Ok(Decimal::ZERO)
             } else {
                 let value = decode_raw(field, value)?;
@@ -128,6 +129,7 @@ where
     match row.try_get_raw(field) {
         Ok(value) => {
             if value.is_null() {
+                warn!("decode the NULL as an empty array");
                 Ok(Vec::new())
             } else {
                 let vec = decode_raw(field, value)?;

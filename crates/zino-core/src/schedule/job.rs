@@ -1,6 +1,6 @@
 //! Scheduler for sync and async cron jobs.
 
-use super::{JobContext, Scheduler};
+use super::{JobContext, Scheduler, DEFAULT_TICK_INTERVAL};
 use crate::{datetime::DateTime, extension::TomlTableExt, Uuid};
 use chrono::Local;
 use cron::Schedule;
@@ -30,8 +30,10 @@ impl Job {
     pub fn new(cron_expr: &str, exec: CronJob) -> Self {
         let schedule = Schedule::from_str(cron_expr)
             .unwrap_or_else(|err| panic!("invalid cron expression `{cron_expr}`: {err}"));
+        let mut context = JobContext::new();
+        context.set_source(cron_expr);
         Self {
-            context: JobContext::new(),
+            context,
             schedule,
             run: exec,
         }
@@ -124,36 +126,40 @@ impl Job {
     /// Executes missed runs.
     pub fn tick(&mut self) {
         let now = Local::now();
+        let upcoming = self.upcoming();
         let ctx = &mut self.context;
         let run = self.run;
-        if let Some(last_tick) = ctx.last_tick().map(|dt| dt.into()) {
+        if ctx.is_immediate() && !ctx.is_disabled() && !ctx.is_fused() {
+            ctx.start();
+            ctx.set_next_tick(upcoming);
+            run(ctx);
+            ctx.finish();
+        } else if let Some(last_tick) = ctx.last_tick().map(|dt| dt.into()) {
             for event in self.schedule.after(&last_tick) {
                 if event > now || ctx.is_fused() {
                     break;
                 }
                 if !ctx.is_disabled() {
                     ctx.start();
+                    ctx.set_next_tick(upcoming);
                     run(ctx);
                     ctx.finish();
                 }
             }
-        } else if !ctx.is_disabled() && ctx.is_immediate() && !ctx.is_fused() {
-            ctx.start();
-            run(ctx);
-            ctx.finish();
+        } else {
+            ctx.set_last_tick(now.into());
         }
-        ctx.set_last_tick(now.into());
     }
 
     /// Executes the job manually.
     pub fn execute(&mut self) {
-        let now = DateTime::now();
+        let upcoming = self.upcoming();
         let ctx = &mut self.context;
         let run = self.run;
         ctx.start();
+        ctx.set_next_tick(upcoming);
         run(ctx);
         ctx.finish();
-        ctx.set_last_tick(now);
     }
 
     /// Returns a reference to the job context.
@@ -166,6 +172,12 @@ impl Job {
     #[inline]
     pub fn context_mut(&mut self) -> &mut JobContext {
         &mut self.context
+    }
+
+    /// Returns the date-time for upcoming runs.
+    #[inline]
+    pub fn upcoming(&self) -> Option<DateTime> {
+        self.schedule.upcoming(Local).next().map(|dt| dt.into())
     }
 }
 
@@ -223,19 +235,29 @@ impl JobScheduler {
     /// Returns the duration till the next job is supposed to run.
     pub fn time_till_next_job(&self) -> Option<Duration> {
         if self.jobs.is_empty() {
-            Some(Duration::from_millis(500))
+            Some(DEFAULT_TICK_INTERVAL)
         } else {
-            let mut duration = chrono::Duration::zero();
+            let mut duration = Duration::ZERO;
             let now = Local::now();
             for job in self.jobs.iter() {
+                if let Some(interval) = job
+                    .context()
+                    .next_tick()
+                    .and_then(|dt| dt.span_after_now())
+                    .filter(|interval| duration.is_zero() || interval < &duration)
+                {
+                    duration = interval;
+                }
                 for event in job.schedule.after(&now).take(1) {
                     let interval = event - now;
-                    if duration.is_zero() || interval < duration {
-                        duration = interval;
+                    if let Ok(interval) = interval.to_std() {
+                        if duration.is_zero() || interval < duration {
+                            duration = interval;
+                        }
                     }
                 }
             }
-            duration.to_std().ok()
+            Some(duration)
         }
     }
 
