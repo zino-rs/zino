@@ -243,6 +243,12 @@ impl JobContext {
     pub fn next_tick(&self) -> Option<DateTime> {
         self.next_tick
     }
+
+    /// Returns the execution error.
+    #[inline]
+    pub fn execution_error(&self) -> Option<&Error> {
+        self.execution_error.as_ref()
+    }
 }
 
 impl Default for JobContext {
