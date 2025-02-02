@@ -1,8 +1,8 @@
 use rand::{
-    distributions::{Alphanumeric, DistString},
+    distr::{Alphanumeric, SampleString},
     random,
-    seq::SliceRandom,
-    thread_rng, Rng,
+    seq::IndexedRandom,
+    Rng,
 };
 
 /// Schemes for a mocked URI.
@@ -16,11 +16,11 @@ const ROOT_DOMAINS: [&str; 3] = ["com", "net", "org"];
 
 /// Generates a random URI.
 pub(crate) fn gen_uri() -> String {
-    let mut rng = thread_rng();
-    let num_chars = rng.gen_range(1..=16);
+    let mut rng = rand::rng();
+    let num_chars = rng.random_range(1..=16);
     let mut path = Alphanumeric.sample_string(&mut rng, num_chars);
     if random::<bool>() {
-        let num_chars = rng.gen_range(1..=16);
+        let num_chars = rng.random_range(1..=16);
         let segment = Alphanumeric.sample_string(&mut rng, num_chars);
         path.push('/');
         path.push_str(&segment);

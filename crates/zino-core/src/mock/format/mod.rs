@@ -1,6 +1,6 @@
 use rand::{
-    distributions::{Alphanumeric, DistString},
-    thread_rng, Rng,
+    distr::{Alphanumeric, SampleString},
+    Rng,
 };
 
 mod email;
@@ -11,11 +11,11 @@ mod uri;
 
 /// Generates a random string with the format.
 pub(crate) fn gen_format(format: &str, length: Option<usize>) -> String {
-    let mut rng = thread_rng();
+    let mut rng = rand::rng();
     match format {
         "email" => email::gen_email(),
         "ip" => {
-            if rng.gen::<bool>() {
+            if rng.random::<bool>() {
                 ipv6::gen_ipv6()
             } else {
                 ipv4::gen_ipv4()
@@ -26,7 +26,7 @@ pub(crate) fn gen_format(format: &str, length: Option<usize>) -> String {
         "phone-number" => phone_number::gen_phone_number(),
         "uri" => uri::gen_uri(),
         _ => {
-            let length = length.unwrap_or_else(|| rng.gen_range(1..=32));
+            let length = length.unwrap_or_else(|| rng.random_range(1..=32));
             Alphanumeric.sample_string(&mut rng, length)
         }
     }

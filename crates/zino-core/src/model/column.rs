@@ -8,10 +8,10 @@ use apache_avro::schema::{
     ArraySchema, MapSchema, Name, RecordField, RecordFieldOrder, Schema, UnionSchema,
 };
 use rand::{
-    distributions::{Alphanumeric, DistString, Distribution, Standard},
+    distr::{Alphanumeric, Distribution, SampleString, StandardUniform},
     random,
-    seq::SliceRandom,
-    thread_rng, Rng,
+    seq::IndexedRandom,
+    Rng,
 };
 use serde::Serialize;
 use std::collections::BTreeMap;
@@ -583,8 +583,8 @@ impl<'a> Column<'a> {
             }
 
             let max_items = extra.get_usize("max_items").unwrap_or(8);
-            let mut rng = thread_rng();
-            rng.gen_range(min_items..=max_items)
+            let mut rng = rand::rng();
+            rng.random_range(min_items..=max_items)
         } else if self.is_option_type() {
             random::<bool>().into()
         } else {
@@ -602,13 +602,11 @@ impl<'a> Column<'a> {
             "i8" => self.mock_integer::<i8>(),
             "i16" => self.mock_integer::<i16>(),
             "i32" => self.mock_integer::<i32>(),
-            "i64" => self.mock_integer::<i64>(),
-            "isize" => self.mock_integer::<isize>(),
+            "i64" | "isize" => self.mock_integer::<i64>(),
             "u8" => self.mock_integer::<u8>(),
             "u16" => self.mock_integer::<u16>(),
             "u32" => self.mock_integer::<u32>(),
-            "u64" => self.mock_integer::<u64>(),
-            "usize" => self.mock_integer::<usize>(),
+            "u64" | "usize" => self.mock_integer::<u64>(),
             "f32" => random::<f32>().into(),
             "f64" => random::<f64>().into(),
             "String" => self.mock_string(),
@@ -664,12 +662,12 @@ impl<'a> Column<'a> {
     /// Generates an integer for the column.
     fn mock_integer<T>(&self) -> JsonValue
     where
-        Standard: Distribution<T>,
+        StandardUniform: Distribution<T>,
         T: Into<JsonValue>,
     {
         let extra = self.extra();
         if let Some(values) = extra.parse_enum_values("enum_values") {
-            let mut rng = thread_rng();
+            let mut rng = rand::rng();
             values.choose(&mut rng).cloned().into()
         } else {
             random::<T>().into()
@@ -680,15 +678,15 @@ impl<'a> Column<'a> {
     fn mock_string(&self) -> JsonValue {
         let extra = self.extra();
         if let Some(values) = extra.parse_enum_values("enum_values") {
-            let mut rng = thread_rng();
+            let mut rng = rand::rng();
             values.choose(&mut rng).cloned().into()
         } else if let Some(format) = extra.get_str("format") {
             mock::gen_format(format, extra.get_usize("length")).into()
         } else if self.index_type() == Some("hash") {
-            let mut rng = thread_rng();
+            let mut rng = rand::rng();
             let min_length = extra.get_usize("min_length").unwrap_or(1);
             let max_length = extra.get_usize("max_length").unwrap_or(16);
-            let num_chars = rng.gen_range(min_length..=max_length);
+            let num_chars = rng.random_range(min_length..=max_length);
             Alphanumeric.sample_string(&mut rng, num_chars).into()
         } else {
             let locale = extra.get_str("locale").unwrap_or_default();
@@ -701,25 +699,25 @@ impl<'a> Column<'a> {
     /// Generates an integer array for the column.
     fn mock_integer_array<T>(&self) -> Vec<JsonValue>
     where
-        Standard: Distribution<T>,
+        StandardUniform: Distribution<T>,
         T: Into<JsonValue>,
     {
         let extra = self.extra();
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let mut min_items = extra.get_usize("min_items").unwrap_or(0);
         if self.has_attribute("nonempty") {
             min_items = min_items.max(1);
         }
         if let Some(values) = extra.parse_enum_values("enum_values") {
             let max_items = extra.get_usize("max_items").unwrap_or(values.len());
-            let num_items = rng.gen_range(min_items..=max_items);
+            let num_items = rng.random_range(min_items..=max_items);
             values
                 .choose_multiple(&mut rng, num_items)
                 .cloned()
                 .collect()
         } else {
             let max_items = extra.get_usize("max_items").unwrap_or(8);
-            let num_items = rng.gen_range(min_items..=max_items);
+            let num_items = rng.random_range(min_items..=max_items);
             (0..num_items).map(|_| self.mock_integer::<T>()).collect()
         }
     }
@@ -727,21 +725,21 @@ impl<'a> Column<'a> {
     /// Generates a string array for the column.
     fn mock_string_array(&self) -> Vec<JsonValue> {
         let extra = self.extra();
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         let mut min_items = extra.get_usize("min_items").unwrap_or(0);
         if self.has_attribute("nonempty") {
             min_items = min_items.max(1);
         }
         if let Some(values) = extra.parse_enum_values("enum_values") {
             let max_items = extra.get_usize("max_items").unwrap_or(values.len());
-            let num_items = rng.gen_range(min_items..=max_items);
+            let num_items = rng.random_range(min_items..=max_items);
             values
                 .choose_multiple(&mut rng, num_items)
                 .cloned()
                 .collect()
         } else {
             let max_items = extra.get_usize("max_items").unwrap_or(8);
-            let num_items = rng.gen_range(min_items..=max_items);
+            let num_items = rng.random_range(min_items..=max_items);
             (0..num_items).map(|_| self.mock_string()).collect()
         }
     }

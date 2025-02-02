@@ -14,7 +14,7 @@ const NONCE_SIZE: usize = 16;
 
 /// Encrypts the plaintext using `SM4`.
 pub fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let mut nonce = [0u8; NONCE_SIZE];
     rng.fill(&mut nonce);
 

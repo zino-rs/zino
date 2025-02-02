@@ -101,7 +101,7 @@ hkdf = "0.12.4"
 hmac = "0.12.1"
 http = "1.2.0"
 parking_lot = "0.12.3"
-rand = "0.8.5"
+rand = "0.9.0"
 regex = "1.11.1"
 rust_decimal = "1.36.0"
 serde_qs = "0.13.0"
@@ -140,7 +140,7 @@ version = "0.24.1"
 optional = true
 
 [dependencies.metrics-exporter-prometheus]
-version = "0.16.1"
+version = "0.16.2"
 optional = true
 default-features = false
 features = ["http-listener"]
@@ -186,7 +186,7 @@ version = "1.0.217"
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1.0.137"
+version = "1.0.138"
 features = ["raw_value"]
 
 [dependencies.sm3]

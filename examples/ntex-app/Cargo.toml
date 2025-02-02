@@ -10,7 +10,7 @@ publish = false
 tracing = "0.1.41"
 
 [dependencies.ntex]
-version = "2.10.0"
+version = "2.11.0"
 default-features = false
 
 [dependencies.serde]

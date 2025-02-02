@@ -1,6 +1,6 @@
 use rand::{
-    distributions::{Alphanumeric, DistString},
-    thread_rng, Rng,
+    distr::{Alphanumeric, SampleString},
+    Rng,
 };
 
 #[cfg(feature = "locale")]
@@ -8,8 +8,8 @@ use random_word::Lang;
 
 /// Generates a random sentence for the language.
 pub(crate) fn gen_random_sentence(locale: &str, min_length: usize, max_length: usize) -> String {
-    let mut rng = thread_rng();
-    let mut length = rng.gen_range(min_length..=max_length);
+    let mut rng = rand::rng();
+    let mut length = rng.random_range(min_length..=max_length);
     let mut sentence = String::with_capacity(min_length);
     match locale {
         #[cfg(feature = "locale-en")]
@@ -122,7 +122,7 @@ pub(crate) fn gen_random_sentence(locale: &str, min_length: usize, max_length: u
         }
         _ => {
             while length > 0 {
-                let num_chars = rng.gen_range(1..=16);
+                let num_chars = rng.random_range(1..=16);
                 let word = Alphanumeric.sample_string(&mut rng, num_chars);
                 let word_length = word.len();
                 if let Some(remainder_length) = length.checked_sub(word_length) {

@@ -15,7 +15,7 @@ const NONCE_SIZE: usize = 12;
 pub fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
     let cipher = Aes256GcmSiv::new(GenericArray::from_slice(&padded_key(key)));
 
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let mut bytes = [0u8; NONCE_SIZE];
     rng.fill(&mut bytes);
 
