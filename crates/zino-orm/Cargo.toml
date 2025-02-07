@@ -52,7 +52,7 @@ features = [
 ]
 
 [dependencies.toml]
-version = "0.8.19"
+version = "0.8.20"
 default-features = false
 
 [dependencies.zino-core]

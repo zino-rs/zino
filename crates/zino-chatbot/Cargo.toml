@@ -18,7 +18,7 @@ futures = "0.3.31"
 tracing = "0.1.41"
 
 [dependencies.toml]
-version = "0.8.19"
+version = "0.8.20"
 default-features = false
 
 [dependencies.zino-core]

@@ -137,10 +137,11 @@ impl ColumnExt for Column<'_> {
             .reference()
             .filter(|_| extra.contains_key("foreign_key"))
         {
-            let parent_table_name = reference.name();
-            let parent_column_name = reference.column_name();
+            let column_field = Query::format_field(column_name);
+            let parent_table = Query::format_field(reference.name());
+            let parent_column_field = Query::format_field(reference.column_name());
             let mut constraint = format!(
-                "FOREIGN KEY ({column_name}) REFERENCES {parent_table_name}({parent_column_name})"
+                "FOREIGN KEY ({column_field}) REFERENCES {parent_table}({parent_column_field})"
             );
             if let Some(action) = extra.get_str("on_delete") {
                 constraint.push_str(" ON DELETE ");
