@@ -440,6 +440,17 @@ pub trait RequestContext {
             .map_err(|err| Rejection::from_validation_entry("body", err).context(self))
     }
 
+    /// Parses the multipart form as an instance of `T` with the `name` and a list of files.
+    async fn parse_form<T: DeserializeOwned>(
+        &mut self,
+        name: &str,
+    ) -> Result<(Option<T>, Vec<NamedFile>), Rejection> {
+        let multipart = self.parse_multipart().await?;
+        helper::parse_form(multipart, name)
+            .await
+            .map_err(|err| Rejection::from_validation_entry("body", err).context(self))
+    }
+
     /// Parses the `multipart/form-data` as an instance of type `T` and a list of files.
     async fn parse_form_data<T: DeserializeOwned>(
         &mut self,

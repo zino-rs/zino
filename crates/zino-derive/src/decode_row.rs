@@ -12,7 +12,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let name = input.ident;
 
     // Parsing struct attributes
-    let mut auto_coalesce = true;
+    let mut auto_coalesce = false;
     for attr in input.attrs.iter() {
         for (key, value) in parser::parse_schema_attr(attr).into_iter() {
             if key == "auto_coalesce" && value.is_some_and(|v| v == "false") {

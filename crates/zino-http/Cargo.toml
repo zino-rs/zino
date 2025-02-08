@@ -50,7 +50,6 @@ etag = "4.0.0"
 futures = "0.3.31"
 http = "1.2.0"
 mime_guess = "2.0.5"
-multer = "3.1.0"
 percent-encoding = "2.3.1"
 regex = "1.11.1"
 ryu = "1.0.19"
@@ -94,6 +93,10 @@ optional = true
 version = "2.7.0"
 optional = true
 features = ["loader"]
+
+[dependencies.multer]
+version = "3.1.0"
+features = ["json"]
 
 [dependencies.reqwest]
 version = "0.12.12"
