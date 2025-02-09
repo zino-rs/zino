@@ -192,7 +192,7 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
     // Database connection pools.
     let databases = config.get_array(database_type).unwrap_or_else(|| {
         panic!(
-            "the `{database_type}` field should be an array of tables; \
+            "field `{database_type}` should be an array of tables; \
                 please use `[[{database_type}]]` to configure a list of database services"
         )
     });

@@ -131,7 +131,7 @@ impl<T: Serialize> CloudEvent<T> {
     pub fn into_map(self) -> Map {
         match serde_json::to_value(self) {
             Ok(JsonValue::Object(map)) => map,
-            _ => panic!("the cloud event cann't be converted to a json object"),
+            _ => panic!("cloud event cann't be converted to a json object"),
         }
     }
 }

@@ -13,7 +13,7 @@ impl Validator<str> for AsciiUppercaseValidator {
         for (index, ch) in data.char_indices() {
             if !ch.is_ascii_uppercase() {
                 bail!(
-                    "the char `{}` at the index `{}` is not ASCII uppercase",
+                    "char `{}` at the index `{}` is not ASCII uppercase",
                     ch,
                     index
                 );

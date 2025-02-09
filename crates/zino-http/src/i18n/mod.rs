@@ -29,7 +29,7 @@ pub fn translate(
                 .find_map(|(lang_id, bundle)| (lang_id.language == lang).then_some(bundle))
         })
         .or(*DEFAULT_BUNDLE)
-        .ok_or_else(|| warn!("the localization bundle does not exits"))?;
+        .ok_or_else(|| warn!("localization bundle does not exits"))?;
     let pattern = bundle
         .get_message(message)
         .ok_or_else(|| warn!("fail to get the localization message for `{}`", message))?

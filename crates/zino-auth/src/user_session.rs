@@ -114,7 +114,7 @@ where
             .subject()
             .map(|s| s.into())
             .or_else(|| data.parse_string("uid"))
-            .ok_or_else(|| warn!("the subject of a JWT token should be specified"))?
+            .ok_or_else(|| warn!("subject of a JWT token should be specified"))?
             .parse()?;
         let mut user_session = Self::new(user_id, None);
         if let Some(Ok(roles)) = data

@@ -46,7 +46,7 @@ impl WebHook {
         let mut base_url = if let Some(base_url) = config.get_str("base-url") {
             base_url.parse::<Url>()?
         } else {
-            bail!("the base URL should be specified");
+            bail!("base URL should be specified");
         };
         if let Some(query) = config.get_table("query") {
             let query = serde_qs::to_string(query)?;

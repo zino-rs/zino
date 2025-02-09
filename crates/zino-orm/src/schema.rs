@@ -95,8 +95,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Returns the primary key column.
     #[inline]
     fn primary_key_column() -> &'static Column<'static> {
-        Self::get_column(Self::PRIMARY_KEY_NAME)
-            .expect("the primary key column should always exist")
+        Self::get_column(Self::PRIMARY_KEY_NAME).expect("primary key column should always exist")
     }
 
     /// Gets a column for the field.
@@ -496,7 +495,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Prepares the SQL to insert many models into the table.
     async fn prepare_insert_many(models: Vec<Self>) -> Result<QueryContext, Error> {
         if models.is_empty() {
-            bail!("the list of models to be inserted should be nonempty");
+            bail!("list of models to be inserted should be nonempty");
         }
 
         let columns = Self::columns();

@@ -135,11 +135,11 @@ static GLOBAL_CACHE: LazyLock<RwLock<LruCache<String, JsonValue>>> = LazyLock::n
     let capacity = if let Some(cache) = State::shared().get_config("cache") {
         cache
             .get("capacity")
-            .expect("the `capacity` field is missing")
+            .expect("field `capacity` is missing")
             .as_integer()
-            .expect("the `capacity` field should be an integer")
+            .expect("field `capacity` should be an integer")
             .try_into()
-            .expect("the `capacity` field should be a positive integer")
+            .expect("field `capacity` should be a positive integer")
     } else {
         10000
     };

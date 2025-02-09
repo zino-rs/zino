@@ -39,10 +39,10 @@
 //! static REDIS_CLIENT: LazyLock<Client> = LazyLock::new(|| {
 //!     let config = State::shared()
 //!         .get_config("redis")
-//!         .expect("the `redis` field should be a table");
+//!         .expect("field `redis` should be a table");
 //!     let database = config
 //!         .get_str("database")
-//!         .expect("the `database` field should be a str");
+//!         .expect("field `database` should be a str");
 //!     let authority = State::format_authority(config, Some(6379));
 //!     let url = format!("redis://{authority}/{database}");
 //!     Client::open(url)
@@ -192,10 +192,10 @@ impl<T> State<T> {
             let debug_host = debug_server
                 .get_str("host")
                 .and_then(|s| s.parse::<IpAddr>().ok())
-                .expect("the `debug.host` field should be a str");
+                .expect("field `debug.host` should be a str");
             let debug_port = debug_server
                 .get_u16("port")
-                .expect("the `debug.port` field should be an integer");
+                .expect("field `debug.port` should be an integer");
             listeners.push((ServerTag::Debug, (debug_host, debug_port).into()));
         }
 
@@ -204,10 +204,10 @@ impl<T> State<T> {
             let main_host = main_server
                 .get_str("host")
                 .and_then(|s| s.parse::<IpAddr>().ok())
-                .expect("the `main.host` field should be a str");
+                .expect("field `main.host` should be a str");
             let main_port = main_server
                 .get_u16("port")
-                .expect("the `main.port` field should be an integer");
+                .expect("field `main.port` should be an integer");
             listeners.push((ServerTag::Main, (main_host, main_port).into()));
         }
 
@@ -215,16 +215,16 @@ impl<T> State<T> {
         if config.contains_key("standby") {
             let standbys = config
                 .get_array("standby")
-                .expect("the `standby` field should be an array of tables");
+                .expect("field `standby` should be an array of tables");
             for standby in standbys.iter().filter_map(|v| v.as_table()) {
                 let server_tag = standby.get_str("tag").unwrap_or("standby");
                 let standby_host = standby
                     .get_str("host")
                     .and_then(|s| s.parse::<IpAddr>().ok())
-                    .expect("the `standby.host` field should be a str");
+                    .expect("field `standby.host` should be a str");
                 let standby_port = standby
                     .get_u16("port")
-                    .expect("the `standby.port` field should be an integer");
+                    .expect("field `standby.port` should be an integer");
                 listeners.push((server_tag.into(), (standby_host, standby_port).into()));
             }
         }

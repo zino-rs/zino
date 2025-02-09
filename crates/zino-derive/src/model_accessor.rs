@@ -36,7 +36,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                     composite_constraints.push(quote! {
                         let columns = vec![#(#column_values),*];
                         if !self.is_unique_on(columns).await? {
-                            validation.record(#composite_field, "the composite values should be unique");
+                            validation.record(#composite_field, "composite values should be unique");
                         }
                     });
                 }
@@ -213,75 +213,69 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                         "unique" => {
                             if type_name == "Uuid" {
                                 field_constraints.push(quote! {
-                                        let value = self.#ident;
-                                        if !value.is_nil() {
-                                            let columns = vec![(#name, value)];
-                                            if !self.is_unique_on(columns).await? {
-                                                let message = format!("the value `{value}` is not unique");
-                                                validation.record(#name, message);
-                                            }
+                                    let value = self.#ident;
+                                    if !value.is_nil() {
+                                        let columns = vec![(#name, value)];
+                                        if !self.is_unique_on(columns).await? {
+                                            let message = format!("value `{value}` is not unique");
+                                            validation.record(#name, message);
                                         }
-                                    });
+                                    }
+                                });
                             } else if type_name == "String" {
                                 field_constraints.push(quote! {
-                                        let value = self.#ident.as_str();
-                                        if !value.is_empty() {
-                                            let columns = vec![(#name, value)];
-                                            if !self.is_unique_on(columns).await? {
-                                                let message = format!("the value `{value}` is not unique");
-                                                validation.record(#name, message);
-                                            }
+                                    let value = self.#ident.as_str();
+                                    if !value.is_empty() {
+                                        let columns = vec![(#name, value)];
+                                        if !self.is_unique_on(columns).await? {
+                                            let message = format!("value `{value}` is not unique");
+                                            validation.record(#name, message);
                                         }
-                                    });
+                                    }
+                                });
                             } else if type_name == "Option<String>" {
                                 field_constraints.push(quote! {
                                         if let Some(value) = self.#ident.as_deref() && !value.is_empty() {
                                             let columns = vec![(#name, value)];
                                             if !self.is_unique_on(columns).await? {
-                                                let message = format!("the value `{value}` is not unique");
+                                                let message = format!("value `{value}` is not unique");
                                                 validation.record(#name, message);
                                             }
                                         }
                                     });
                             } else if type_name == "Option<Uuid>" {
                                 field_constraints.push(quote! {
-                                        if let Some(value) = self.#ident && !value.is_nil() {
-                                            let columns = vec![(#name, value)];
-                                            if !self.is_unique_on(columns).await? {
-                                                let message = format!("the value `{value}` is not unique");
-                                                validation.record(#name, message);
-                                            }
+                                    if let Some(value) = self.#ident && !value.is_nil() {
+                                        let columns = vec![(#name, value)];
+                                        if !self.is_unique_on(columns).await? {
+                                            let message = format!("value `{value}` is not unique");
+                                            validation.record(#name, message);
                                         }
-                                    });
+                                    }
+                                });
                             } else if parser::check_option_type(type_name) {
                                 field_constraints.push(quote! {
-                                        if let Some(value) = self.#ident {
-                                            let columns = vec![(#name, value)];
-                                            if !self.is_unique_on(columns).await? {
-                                                let message = format!("the value `{value}` is not unique");
-                                                validation.record(#name, message);
-                                            }
+                                    if let Some(value) = self.#ident {
+                                        let columns = vec![(#name, value)];
+                                        if !self.is_unique_on(columns).await? {
+                                            let message = format!("value `{value}` is not unique");
+                                            validation.record(#name, message);
                                         }
-                                    });
+                                    }
+                                });
                             } else {
                                 field_constraints.push(quote! {
                                     let value = self.#ident;
                                     let columns = vec![(#name, value)];
                                     if !self.is_unique_on(columns).await? {
-                                        let message = format!("the value `{value}` is not unique");
+                                        let message = format!("value `{value}` is not unique");
                                         validation.record(#name, message);
                                     }
                                 });
                             }
                         }
                         "not_null" if is_readable => {
-                            if type_name == "String" {
-                                field_constraints.push(quote! {
-                                    if self.#ident.is_empty() {
-                                        validation.record(#name, "it should be nonempty");
-                                    }
-                                });
-                            } else if type_name == "Uuid" {
+                            if type_name == "Uuid" {
                                 field_constraints.push(quote! {
                                     if self.#ident.is_nil() {
                                         validation.record(#name, "it should not be nil");
@@ -343,7 +337,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                                 let values = [#(#values),*];
                                                 let value = self.#ident.as_str();
                                                 if !values.contains(&value) {
-                                                    let message = format!("the value `{value}` is not allowed");
+                                                    let message = format!("value `{value}` is not allowed");
                                                     validation.record(#name, message);
                                                 }
                                             }
@@ -353,7 +347,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                             let values = [#(#values),*];
                                             for value in self.#ident.iter() {
                                                 if !values.contains(&value.as_str()) {
-                                                    let message = format!("the value `{value}` is not allowed");
+                                                    let message = format!("value `{value}` is not allowed");
                                                     validation.record(#name, message);
                                                     break;
                                                 }
@@ -370,7 +364,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 field_constraints.push(quote! {
                                     let length = #length;
                                     if self.#ident.len() != length {
-                                        let message = format!("the length should be {length}");
+                                        let message = format!("length should be {length}");
                                         validation.record(#name, message);
                                     }
                                 });
@@ -378,7 +372,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 field_constraints.push(quote! {
                                     let length = #length;
                                     if let Some(ref s) = self.#ident && s.len() != length {
-                                        let message = format!("the length should be {length}");
+                                        let message = format!("length should be {length}");
                                         validation.record(#name, message);
                                     }
                                 });
@@ -390,20 +384,20 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 .unwrap_or_default();
                             if type_name == "String" {
                                 field_constraints.push(quote! {
-                                        let length = #length;
-                                        if self.#ident.len() > length {
-                                            let message = format!("the length should be at most {length}");
-                                            validation.record(#name, message);
-                                        }
-                                    });
+                                    let length = #length;
+                                    if self.#ident.len() > length {
+                                        let message = format!("length should be at most {length}");
+                                        validation.record(#name, message);
+                                    }
+                                });
                             } else if type_name == "Option<String>" {
                                 field_constraints.push(quote! {
-                                        let length = #length;
-                                        if let Some(ref s) = self.#ident && s.len() > length {
-                                            let message = format!("the length should be at most {length}");
-                                            validation.record(#name, message);
-                                        }
-                                    });
+                                    let length = #length;
+                                    if let Some(ref s) = self.#ident && s.len() > length {
+                                        let message = format!("length should be at most {length}");
+                                        validation.record(#name, message);
+                                    }
+                                });
                             }
                         }
                         "min_length" if is_readable => {
@@ -412,20 +406,20 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 .unwrap_or_default();
                             if type_name == "String" {
                                 field_constraints.push(quote! {
-                                        let length = #length;
-                                        if self.#ident.len() < length {
-                                            let message = format!("the length should be at least {length}");
-                                            validation.record(#name, message);
-                                        }
-                                    });
+                                    let length = #length;
+                                    if self.#ident.len() < length {
+                                        let message = format!("length should be at least {length}");
+                                        validation.record(#name, message);
+                                    }
+                                });
                             } else if type_name == "Option<String>" {
                                 field_constraints.push(quote! {
-                                        let length = #length;
-                                        if let Some(ref s) = self.#ident && s.len() < length {
-                                            let message = format!("the length should be at least {length}");
-                                            validation.record(#name, message);
-                                        }
-                                    });
+                                    let length = #length;
+                                    if let Some(ref s) = self.#ident && s.len() < length {
+                                        let message = format!("length should be at least {length}");
+                                        validation.record(#name, message);
+                                    }
+                                });
                             }
                         }
                         "max_items" => {
@@ -434,7 +428,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     field_constraints.push(quote! {
                                         let length = #length;
                                         if self.#ident.len() > length {
-                                            let message = format!("the length should be at most {length}");
+                                            let message = format!("length should be at most {length}");
                                             validation.record(#name, message);
                                         }
                                     });
@@ -447,7 +441,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                     field_constraints.push(quote! {
                                         let length = #length;
                                         if self.#ident.len() < length {
-                                            let message = format!("the length should be at least {length}");
+                                            let message = format!("length should be at least {length}");
                                             validation.record(#name, message);
                                         }
                                     });

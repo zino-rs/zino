@@ -13,7 +13,7 @@ impl Validator<str> for AsciiDigitValidator {
         for (index, ch) in data.char_indices() {
             if !ch.is_ascii_digit() {
                 bail!(
-                    "the char `{}` at the index `{}` is not an ASCII decimal digit",
+                    "char `{}` at the index `{}` is not an ASCII decimal digit",
                     ch,
                     index
                 );

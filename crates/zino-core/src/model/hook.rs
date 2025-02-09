@@ -76,7 +76,7 @@ pub trait ModelHooks: Model {
             Some(num_rows) if num_rows > 1 => {
                 Cow::Owned(format!("{num_rows} rows affected or fetched"))
             }
-            _ => Cow::Borrowed("the query result has not been recorded"),
+            _ => Cow::Borrowed("query result has not been recorded"),
         };
         let execution_time = ctx.start_time().elapsed();
         let execution_time_millis = execution_time.as_millis();

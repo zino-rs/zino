@@ -23,11 +23,11 @@ desktop = ["dep:dioxus-desktop"]
 clipboard = ["dioxus-sdk/clipboard"]
 
 [dependencies]
-dioxus = "0.6.2"
-dioxus-core = "0.6.2"
+dioxus = "0.6.3"
+dioxus-core = "0.6.3"
 dioxus-hooks = "0.6.2"
-dioxus-html = "0.6.2"
-dioxus-router = "0.6.2"
+dioxus-html = "0.6.3"
+dioxus-router = "0.6.3"
 image = "0.25.5"
 rust_decimal = "1.36.0"
 smallvec = "1.13.2"
@@ -43,7 +43,7 @@ default-features = false
 features = ["shortcodes", "syntect"]
 
 [dependencies.dioxus-desktop]
-version = "0.6.2"
+version = "0.6.3"
 optional = true
 
 [dependencies.dioxus-free-icons]

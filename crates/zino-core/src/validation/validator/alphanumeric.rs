@@ -12,11 +12,7 @@ impl Validator<str> for AlphanumericValidator {
     fn validate(&self, data: &str) -> Result<(), Self::Error> {
         for (index, ch) in data.char_indices() {
             if !ch.is_alphanumeric() {
-                bail!(
-                    "the char `{}` at the index `{}` is not alphanumeric",
-                    ch,
-                    index
-                );
+                bail!("char `{}` at the index `{}` is not alphanumeric", ch, index);
             }
         }
         Ok(())

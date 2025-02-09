@@ -193,9 +193,9 @@ static SHARED_CHANNEL: LazyLock<MessageChannel> = LazyLock::new(|| {
     let capacity = if let Some(channel) = State::shared().config().get("channel") {
         channel
             .as_table()
-            .expect("the `channel` field should be a table")
+            .expect("field `channel` should be a table")
             .get_usize("capacity")
-            .expect("the `channel.capacity` field should be a positive integer")
+            .expect("field `channel.capacity` should be a positive integer")
     } else {
         10000
     };

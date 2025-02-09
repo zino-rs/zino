@@ -13,7 +13,7 @@ impl Validator<str> for AsciiLowercaseValidator {
         for (index, ch) in data.char_indices() {
             if !ch.is_ascii_lowercase() {
                 bail!(
-                    "the char `{}` at the index `{}` is not ASCII lowercase",
+                    "char `{}` at the index `{}` is not ASCII lowercase",
                     ch,
                     index
                 );

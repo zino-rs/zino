@@ -12,7 +12,7 @@ impl Validator<str> for NumericValidator {
     fn validate(&self, data: &str) -> Result<(), Self::Error> {
         for (index, ch) in data.char_indices() {
             if !ch.is_numeric() {
-                bail!("the char `{}` at the index `{}` is not numeric", ch, index);
+                bail!("char `{}` at the index `{}` is not numeric", ch, index);
             }
         }
         Ok(())

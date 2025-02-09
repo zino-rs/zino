@@ -12,11 +12,7 @@ impl Validator<str> for UppercaseValidator {
     fn validate(&self, data: &str) -> Result<(), Self::Error> {
         for (index, ch) in data.char_indices() {
             if !ch.is_uppercase() {
-                bail!(
-                    "the char `{}` at the index `{}` is not uppercase",
-                    ch,
-                    index
-                );
+                bail!("char `{}` at the index `{}` is not uppercase", ch, index);
             }
         }
         Ok(())

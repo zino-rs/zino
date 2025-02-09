@@ -25,7 +25,7 @@ impl PoolManager for ConnectionPool<DatabasePool> {
         // Connect options.
         let database = config
             .get_str("database")
-            .expect("the `database` field should be a str");
+            .expect("field `database` should be a str");
         let mut connect_options = new_connect_options(database, config);
         if let Some(statement_cache_capacity) = config.get_usize("statement-cache-capacity") {
             connect_options = connect_options.statement_cache_capacity(statement_cache_capacity);
@@ -120,9 +120,9 @@ cfg_if::cfg_if! {
         fn new_connect_options(database: &'static str, config: &'static Table) -> MySqlConnectOptions {
             let username = config
                 .get_str("username")
-                .expect("the `username` field should be a str");
+                .expect("field `username` should be a str");
             let password =
-                State::decrypt_password(config).expect("the `password` field should be a str");
+                State::decrypt_password(config).expect("field `password` should be a str");
 
             let mut connect_options = MySqlConnectOptions::new()
                 .database(database)
@@ -149,9 +149,9 @@ cfg_if::cfg_if! {
         fn new_connect_options(database: &'static str, config: &'static Table) -> PgConnectOptions {
             let username = config
                 .get_str("username")
-                .expect("the `username` field should be a str");
+                .expect("field `username` should be a str");
             let password =
-                State::decrypt_password(config).expect("the `password` field should be a str");
+                State::decrypt_password(config).expect("field `password` should be a str");
 
             let mut connect_options = PgConnectOptions::new()
                 .database(database)

@@ -13,7 +13,7 @@ impl Validator<str> for AsciiHexdigitValidator {
         for (index, ch) in data.char_indices() {
             if !ch.is_ascii_hexdigit() {
                 bail!(
-                    "the char `{}` at the index `{}` is not an ASCII hexadecimal digit",
+                    "char `{}` at the index `{}` is not an ASCII hexadecimal digit",
                     ch,
                     index
                 );

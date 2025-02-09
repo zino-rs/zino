@@ -42,7 +42,7 @@ use zino_core::error::Error;
 /// static DINGTALK_CREDENTIALS: LazyLock<ClientCredentials<DingtalkAuth>> = LazyLock::new(|| {
 ///     let config = State::shared()
 ///         .get_config("dingtalk")
-///         .expect("the `dingtalk` field should be a table");
+///         .expect("field `dingtalk` should be a table");
 ///     ClientCredentials::try_from_config(config)
 ///         .expect("fail to create the Dingtalk credentials")
 /// });

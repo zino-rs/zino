@@ -31,7 +31,7 @@ use zino_core::{
 /// static AMAP_GEOCODE_CONNECTOR: LazyLock<HttpConnector> = LazyLock::new(|| {
 ///     let config = State::shared()
 ///         .get_config("amap")
-///         .expect("the `amap` field should be a table");
+///         .expect("field `amap` should be a table");
 ///     let base_url = "https://restapi.amap.com/v3/geocode/geo";
 ///     connector = HttpConnector::try_new("GET", base_url)
 ///         .expect("fail to construct AMap Geocode connector")
@@ -96,7 +96,7 @@ impl HttpConnector {
         let method = config.get_str("method").unwrap_or("GET");
         let base_url = config
             .get_str("base-url")
-            .ok_or_else(|| warn!("the base URL should be specified"))?;
+            .ok_or_else(|| warn!("base URL should be specified"))?;
 
         let mut connector = HttpConnector::try_new(method, base_url)?;
         let headers = config.get("headers").map(|v| v.to_json_value());

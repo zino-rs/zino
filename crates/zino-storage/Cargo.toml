@@ -98,7 +98,7 @@ multer = "3.1.0"
 tracing = "0.1.41"
 
 [dependencies.opendal]
-version = "0.51.1"
+version = "0.51.2"
 optional = true
 default-features = false
 features = ["layers-tracing"]

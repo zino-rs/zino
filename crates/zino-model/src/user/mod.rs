@@ -217,9 +217,9 @@ impl User {
         let special_roles = ["superuser", "user", "guest"];
         for role in &roles {
             if special_roles.contains(role) && num_roles != 1 {
-                bail!("the special role `{}` is exclusive", role);
+                bail!("special role `{}` is exclusive", role);
             } else if role.is_empty() {
-                bail!("the `roles` can not contain empty values");
+                bail!("`roles` can not contain empty values");
             }
         }
         self.roles = roles.into_iter().map(|s| s.to_owned()).collect();

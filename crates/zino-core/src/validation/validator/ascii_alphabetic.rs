@@ -13,7 +13,7 @@ impl Validator<str> for AsciiAlphabeticValidator {
         for (index, ch) in data.char_indices() {
             if !ch.is_ascii_alphabetic() {
                 bail!(
-                    "the char `{}` at the index `{}` is not ASCII alphabetic",
+                    "char `{}` at the index `{}` is not ASCII alphabetic",
                     ch,
                     index
                 );

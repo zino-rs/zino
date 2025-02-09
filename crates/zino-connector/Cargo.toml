@@ -46,7 +46,7 @@ regex = "1.11.1"
 tracing = "0.1.41"
 
 [dependencies.datafusion]
-version = "44.0.0"
+version = "45.0.0"
 optional = true
 
 [dependencies.futures]

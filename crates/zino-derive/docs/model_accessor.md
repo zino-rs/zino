@@ -34,8 +34,8 @@ Derives the [`ModelAccessor`](zino_orm::ModelAccessor) trait.
   the column value should be unique in the table.
 
 - **`#[schema(not_null)]`**: The `not_null` annotation is used to indicate that
-  the column has a not-null constraint. It also prohibits the cases when
-  the `String` value is empty or the `Uuid` value is `nil`.
+  the column has a not-null constraint. It also prohibits the case when
+  the `Uuid` value is `nil`.
 
 - **`#[schema(nonempty)]`**: The `nonempty` annotation is used to indicate that
   the `String`, `Vec<T>` or `Map` value should be nonempty.

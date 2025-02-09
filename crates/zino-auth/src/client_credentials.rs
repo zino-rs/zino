@@ -44,11 +44,11 @@ impl<S: ?Sized> ClientCredentials<S> {
     pub fn try_from_config(config: &'static Table) -> Result<Self, Error> {
         let client_id = config
             .get_str("client-id")
-            .ok_or_else(|| warn!("the `client-id` field should be specified"))?;
+            .ok_or_else(|| warn!("field `client-id` should be specified"))?;
         let client_key = config.get_str("client-key").unwrap_or_default();
         let client_secret = config
             .get_str("client-secret")
-            .ok_or_else(|| warn!("the `client-secret` field should be specified"))?;
+            .ok_or_else(|| warn!("field `client-secret` should be specified"))?;
         Ok(Self {
             client_id: client_id.into(),
             client_key: client_key.into(),

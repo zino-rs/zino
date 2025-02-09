@@ -46,7 +46,7 @@ impl New {
         let project_dir_already_exists = path.exists() && path.is_dir();
         if project_dir_already_exists && fs::read_dir(&self.project_name)?.next().is_some() {
             return Err(Error::new(format!(
-                "the directory `{}` already exists and is not empty",
+                "directory `{}` already exists and is not empty",
                 self.project_name
             )));
         }
