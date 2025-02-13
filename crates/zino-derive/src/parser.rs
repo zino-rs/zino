@@ -35,6 +35,13 @@ pub(super) fn check_option_type(type_name: &str) -> bool {
         .is_some_and(|(t, s)| t == "Option" && s.ends_with('>'))
 }
 
+/// Returns `true` if the type is `Option<Vec<T>>`.
+pub(super) fn check_option_vec_type(type_name: &str) -> bool {
+    type_name
+        .split_once('<')
+        .is_some_and(|(t, s)| t == "Option" && s.starts_with("Vec<") && s.ends_with(">>"))
+}
+
 /// Returns the type name as a str.
 pub(super) fn get_type_name(ty: &Type) -> String {
     if let Type::Path(ty) = ty {

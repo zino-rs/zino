@@ -97,6 +97,27 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                         self.#ident = models;
                                     }
                                 }
+                            } else if parser::check_option_vec_type(&type_name) {
+                                quote! {
+                                    if let Some(objects) = data.get_map_array(#name) {
+                                        let num_objects = objects.len();
+                                        let mut models = Vec::with_capacity(num_objects);
+                                        let mut errors = Vec::new();
+                                        for (index, object) in objects.iter().enumerate() {
+                                            match object.read_as_model() {
+                                                Ok(model) => models.push(model),
+                                                Err(err) => {
+                                                    let message = format!("#{index}: {err}");
+                                                    errors.push(message);
+                                                },
+                                            }
+                                        }
+                                        if !errors.is_empty() {
+                                            validation.record(#name, errors.join(";"));
+                                        }
+                                        self.#ident = Some(models);
+                                    }
+                                }
                             } else if parser::check_option_type(&type_name) {
                                 quote! {
                                     if let Some(object) = data.parse_object(#name) {
