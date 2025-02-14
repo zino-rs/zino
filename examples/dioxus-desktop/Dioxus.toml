@@ -2,7 +2,6 @@
 name = "DataCube"
 default_platform = "desktop"
 out_dir = "dist"
-asset_dir = "public"
 
 [web.app]
 title = "DataCube"
@@ -30,7 +29,7 @@ icon = [
     "public/icons/128x128@2x.png",
     "public/icons/icon.ico",
 ]
-resources = ["config", "public"]
+resources = ["./config", "./public"]
 
 [bundle.windows]
 tsp = true

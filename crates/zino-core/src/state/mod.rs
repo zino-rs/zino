@@ -134,6 +134,7 @@ impl<T> State<T> {
                     Table::new()
                 })
             } else {
+                tracing::warn!("no config file found in `{}`", config_dir.display());
                 Table::new()
             }
         };

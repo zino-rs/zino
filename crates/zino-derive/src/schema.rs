@@ -407,13 +407,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             err
                         );
                     }
-                    #schema_reader.set(connection_pool).map_err(|_| {
-                        warn!(
-                            "503 Service Unavailable: fail to acquire reader for the model `{}`",
-                            model_name
-                        )
-                    })?;
-                    Ok(connection_pool)
+                    Ok(#schema_reader.get_or_init(|| connection_pool))
                 }
             }
 
@@ -457,13 +451,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             err
                         );
                     }
-                    #schema_writer.set(connection_pool).map_err(|_| {
-                        warn!(
-                            "503 Service Unavailable: fail to acquire writer for the model `{}`",
-                            model_name
-                        )
-                    })?;
-                    Ok(connection_pool)
+                    Ok(#schema_writer.get_or_init(|| connection_pool))
                 }
             }
 

@@ -93,12 +93,13 @@ impl PoolManager for ConnectionPool<DatabasePool> {
     }
 
     async fn check_availability(&self) -> bool {
+        let name = self.name();
         if let Err(err) = self.pool().acquire().await {
-            let name = self.name();
             tracing::error!("fail to acquire a connection for the `{name}` service: {err}");
             self.store_availability(false);
             false
         } else {
+            tracing::info!("acquire a connection for the `{name}` service sucessfully");
             self.store_availability(true);
             true
         }
