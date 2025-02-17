@@ -1107,7 +1107,7 @@ pub(super) trait QueryExt<DB> {
                         let condition = if let Some(subquery) =
                             value.as_object().and_then(|m| m.get_str("$subquery"))
                         {
-                            let key = Query::format_field(key);
+                            let key = Self::format_field(key);
                             format!(r#"{key} = {subquery}"#)
                         } else {
                             col.format_filter(key, value)
@@ -1116,7 +1116,7 @@ pub(super) trait QueryExt<DB> {
                             logical_and_conditions.push(condition);
                         }
                     } else if key.contains('.') {
-                        let condition = Self::format_filter(key, value);
+                        let condition = Self::format_query_filter::<M>(key, value);
                         if !condition.is_empty() {
                             logical_and_conditions.push(condition);
                         }
@@ -1179,7 +1179,7 @@ pub(super) trait QueryExt<DB> {
                                 let condition = if let Some(subquery) =
                                     value.as_object().and_then(|m| m.get_str("$subquery"))
                                 {
-                                    let key = Query::format_field(key);
+                                    let key = Self::format_field(key);
                                     format!(r#"{key} = {subquery}"#)
                                 } else {
                                     col.format_filter(key, value)
@@ -1188,7 +1188,7 @@ pub(super) trait QueryExt<DB> {
                                     logical_and_conditions.push(condition);
                                 }
                             } else if key.contains('.') {
-                                let condition = Self::format_filter(key, value);
+                                let condition = Self::format_query_filter::<M>(key, value);
                                 if !condition.is_empty() {
                                     logical_and_conditions.push(condition);
                                 }
@@ -1206,7 +1206,24 @@ pub(super) trait QueryExt<DB> {
     }
 
     /// Formats a query filter.
-    fn format_filter(key: &str, value: &JsonValue) -> String {
+    fn format_query_filter<M: Schema>(key: &str, value: &JsonValue) -> String {
+        let json_field = key.split_once('.').and_then(|(key, path)| {
+            M::get_column(key)
+                .filter(|col| col.type_name() == "Map")
+                .map(|col| {
+                    let key = [M::model_name(), ".", col.name()].concat();
+                    let field = Self::format_field(&key);
+                    if cfg!(feature = "orm-postgres") {
+                        format!(r#"{}->{}"#, field, path.replace('.', "->"))
+                    } else {
+                        format!(r#"json_extract({field}, '$.{path}')"#)
+                    }
+                })
+        });
+        let requires_json_value = json_field.is_some();
+        let field = json_field
+            .map(|s| s.into())
+            .unwrap_or_else(|| Self::format_field(key));
         if let Some(filter) = value.as_object() {
             let mut conditions = Vec::with_capacity(filter.len());
             for (name, value) in filter {
@@ -1221,11 +1238,12 @@ pub(super) trait QueryExt<DB> {
                     "$nin" => "NOT IN",
                     _ => "=",
                 };
-                let field = Self::format_field(key);
                 let condition = if let Some(subquery) =
                     value.as_object().and_then(|m| m.get_str("$subquery"))
                 {
                     format!(r#"{field} {operator} {subquery}"#)
+                } else if requires_json_value {
+                    Self::format_json_filter(&field, operator, value)
                 } else if let Some(s) = value.as_str() {
                     if name == "$subquery" {
                         format!(r#"{field} {operator} {s}"#)
@@ -1239,14 +1257,49 @@ pub(super) trait QueryExt<DB> {
                 conditions.push(condition);
             }
             Self::join_conditions(conditions, " AND ")
-        } else {
-            let field = Self::format_field(key);
-            let value = if let Some(s) = value.as_str() {
-                Self::escape_string(s)
-            } else {
-                value.to_string()
-            };
+        } else if requires_json_value {
+            Self::format_json_filter(&field, "=", value)
+        } else if let Some(s) = value.as_str() {
+            let value = Self::escape_string(s);
             format!(r#"{field} = {value}"#)
+        } else {
+            format!(r#"{field} = {value}"#)
+        }
+    }
+
+    /// Formats the filter for a JSON field.
+    fn format_json_filter(field: &str, operator: &str, value: &JsonValue) -> String {
+        match value {
+            JsonValue::Null => format!(r#"{field} IS NULL"#),
+            JsonValue::Bool(b) => {
+                let value = if *b { "true" } else { "false" };
+                if cfg!(feature = "orm-postgres") {
+                    format!(r#"({field})::boolean IS {value}"#)
+                } else {
+                    format!(r#"{field} = {value}"#)
+                }
+            }
+            JsonValue::String(s) => {
+                if s == "null" {
+                    format!(r#"{field} IS NULL"#)
+                } else if s == "not_null" {
+                    format!(r#"{field} IS NOT NULL"#)
+                } else if s == "true" || s == "false" {
+                    if cfg!(feature = "orm-postgres") {
+                        format!(r#"({field})::boolean IS {s}"#)
+                    } else {
+                        format!(r#"{field} = {s}"#)
+                    }
+                } else if s == "nonzero" {
+                    format!(r#"{field} <> 0"#)
+                } else if let Ok(value) = s.parse::<serde_json::Number>() {
+                    format!(r#"{field} {operator} {value}"#)
+                } else {
+                    let value = Self::escape_string(value);
+                    format!(r#"{field} {operator} {value}"#)
+                }
+            }
+            _ => format!(r#"{field} {operator} {value}"#),
         }
     }
 
@@ -1259,7 +1312,7 @@ pub(super) trait QueryExt<DB> {
             let sort_order = sort_order
                 .iter()
                 .map(|order| {
-                    let sort_field = Query::format_field(order.field());
+                    let sort_field = Self::format_field(order.field());
                     let mut expr = if order.is_descending() {
                         format!("{sort_field} DESC")
                     } else {

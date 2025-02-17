@@ -56,28 +56,28 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
         if let Some(value) = value {
             match value {
                 JsonValue::Null => "NULL".into(),
-                JsonValue::Bool(value) => {
-                    let value = if *value { "TRUE" } else { "FALSE" };
+                JsonValue::Bool(b) => {
+                    let value = if *b { "TRUE" } else { "FALSE" };
                     value.into()
                 }
-                JsonValue::Number(value) => value.to_string().into(),
-                JsonValue::String(value) => {
-                    if value.is_empty() {
+                JsonValue::Number(n) => n.to_string().into(),
+                JsonValue::String(s) => {
+                    if s.is_empty() {
                         if let Some(value) = self.default_value() {
                             self.format_value(value).into_owned().into()
                         } else {
                             "''".into()
                         }
-                    } else if value == "null" {
+                    } else if s == "null" {
                         "NULL".into()
-                    } else if value == "not_null" {
+                    } else if s == "not_null" {
                         "NOT NULL".into()
                     } else {
-                        self.format_value(value)
+                        self.format_value(s)
                     }
                 }
-                JsonValue::Array(value) => {
-                    let values = value
+                JsonValue::Array(vec) => {
+                    let values = vec
                         .iter()
                         .map(|v| match v {
                             JsonValue::String(v) => Query::escape_string(v),
@@ -258,10 +258,6 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
         } else if self.has_attribute("exact_filter") {
             let value = self.encode_value(Some(value));
             return format!(r#"{field} = {value}"#);
-        } else if let Some([min_value, max_value]) = value.as_array().map(|v| v.as_slice()) {
-            let min_value = self.encode_value(Some(min_value));
-            let max_value = self.encode_value(Some(max_value));
-            return format!(r#"{field} >= {min_value} AND {field} < {max_value}"#);
         } else if let Some((min_value, max_value)) = value
             .as_str()
             .and_then(|value| value.split_once(','))
