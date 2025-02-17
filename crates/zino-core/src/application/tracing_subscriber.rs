@@ -102,11 +102,11 @@ pub(super) fn init<APP: Application + ?Sized>() {
 
     let log_dir = APP::parse_path(log_dir);
     if !log_dir.exists() {
-        fs::create_dir(log_dir.as_path()).unwrap_or_else(|err| {
+        fs::create_dir(&log_dir).unwrap_or_else(|err| {
             let log_dir = log_dir.display();
             panic!("fail to create the log directory `{log_dir}`: {err}");
         });
-    };
+    }
 
     let rolling_period_minutes = log_rolling_period.as_secs().div_ceil(60);
     let (rotation, max_log_files) = match log_rotation {

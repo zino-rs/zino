@@ -394,9 +394,21 @@ static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     env::var("CARGO_MANIFEST_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|err| {
+            if cfg!(not(debug_assertions)) && cfg!(target_os = "macos") {
+                if let Ok(mut path) = env::current_exe() {
+                    path.pop();
+                    if path.ends_with("Contents/MacOS") {
+                        path.pop();
+                        path.push("Resources");
+                        if path.exists() && path.is_dir() {
+                            return path;
+                        }
+                    }
+                }
+            }
             tracing::warn!(
                 "fail to get the environment variable `CARGO_MANIFEST_DIR`: {err}; \
-                    the current directory will be used as the project directory"
+                    current directory will be used as the project directory"
             );
             env::current_dir()
                 .expect("project directory does not exist or permissions are insufficient")
