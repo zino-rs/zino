@@ -191,6 +191,21 @@ impl<E: Entity> QueryBuilder<E> {
         self
     }
 
+    /// Adds a field with an alias extracted from a JSON column.
+    pub fn json_extract(mut self, col: E::Column, path: &str, alias: &str) -> Self {
+        let col_name = E::format_column(&col);
+        let field = Query::format_field(&col_name);
+        let json_field = if cfg!(feature = "orm-postgres") {
+            let path = path.strip_prefix("$.").unwrap_or(path).replace('.', ", ");
+            format!(r#"({field} #>> '{{{path}}}')"#)
+        } else {
+            format!(r#"json_unquote(json_extract({field}, '{path}'))"#)
+        };
+        let field_alias = [alias, ":", &json_field].concat();
+        self.fields.push(field_alias);
+        self
+    }
+
     /// Adds a field with an optional alias for the aggregate function.
     pub fn aggregate(mut self, aggregation: Aggregation<E>, alias: Option<&str>) -> Self {
         let expr = aggregation.expr();
@@ -526,25 +541,25 @@ impl<E: Entity> QueryBuilder<E> {
     /// Adds a logical `AND` condition for the column which is null.
     #[inline]
     pub fn and_null(self, col: E::Column) -> Self {
-        self.push_logical_and(col, "$is", JsonValue::Null)
+        self.and_filter(col, JsonValue::Null)
     }
 
     /// Adds a logical `AND` condition for the column which is not null.
     #[inline]
     pub fn and_not_null(self, col: E::Column) -> Self {
-        self.push_logical_and(col, "$is", "not_null".into_sql_value())
+        self.and_filter(col, "not_null")
     }
 
     /// Adds a logical `AND` condition for the column which is an empty string or a null.
     #[inline]
     pub fn and_empty(self, col: E::Column) -> Self {
-        self.and_eq(col, "null")
+        self.and_filter(col, "empty")
     }
 
     /// Adds a logical `AND` condition for the column which is not an empty string or a null.
     #[inline]
     pub fn and_nonempty(self, col: E::Column) -> Self {
-        self.and_eq(col, "not_null")
+        self.and_filter(col, "nonempty")
     }
 
     /// Adds a logical `AND` condition for the two ranges which overlaps with each other.
@@ -802,25 +817,25 @@ impl<E: Entity> QueryBuilder<E> {
     /// Adds a logical `OR` condition for the column which is null.
     #[inline]
     pub fn or_null(self, col: E::Column) -> Self {
-        self.push_logical_or(col, "$is", JsonValue::Null)
+        self.or_filter(col, JsonValue::Null)
     }
 
     /// Adds a logical `OR` condition for the column which is not null.
     #[inline]
     pub fn or_not_null(self, col: E::Column) -> Self {
-        self.push_logical_or(col, "$is", "not_null".into_sql_value())
+        self.or_filter(col, "not_null")
     }
 
     /// Adds a logical `OR` condition for the column which is an empty string or a null.
     #[inline]
     pub fn or_empty(self, col: E::Column) -> Self {
-        self.or_eq(col, "null")
+        self.or_filter(col, "empty")
     }
 
     /// Adds a logical `OR` condition for the column which is not an empty string or a null.
     #[inline]
     pub fn or_nonempty(self, col: E::Column) -> Self {
-        self.or_eq(col, "not_null")
+        self.or_filter(col, "nonempty")
     }
 
     /// Adds a logical `OR` condition for the two ranges which overlaps with each other.
@@ -1214,7 +1229,8 @@ pub(super) trait QueryExt<DB> {
                     let key = [M::model_name(), ".", col.name()].concat();
                     let field = Self::format_field(&key);
                     if cfg!(feature = "orm-postgres") {
-                        format!(r#"{}->{}"#, field, path.replace('.', "->"))
+                        let path = path.replace('.', ", ");
+                        format!(r#"({field} #> '{{{path}}}')"#)
                     } else {
                         format!(r#"json_extract({field}, '$.{path}')"#)
                     }
@@ -1290,8 +1306,6 @@ pub(super) trait QueryExt<DB> {
                     } else {
                         format!(r#"{field} = {s}"#)
                     }
-                } else if s == "nonzero" {
-                    format!(r#"{field} <> 0"#)
                 } else if let Ok(value) = s.parse::<serde_json::Number>() {
                     format!(r#"{field} {operator} {value}"#)
                 } else {

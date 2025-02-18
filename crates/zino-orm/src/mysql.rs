@@ -255,14 +255,18 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
         } else if self.has_attribute("exact_filter") {
             let value = self.encode_value(Some(value));
             return format!(r#"{field} = {value}"#);
-        } else if let Some((min_value, max_value)) = value
-            .as_str()
-            .and_then(|value| value.split_once(','))
-            .filter(|_| self.is_datetime_type())
-        {
-            let min_value = self.format_value(min_value);
-            let max_value = self.format_value(max_value);
-            return format!(r#"{field} >= {min_value} AND {field} < {max_value}"#);
+        } else if let Some(value) = value.as_str() {
+            if value == "null" {
+                return format!(r#"{field} IS NULL"#);
+            } else if value == "not_null" {
+                return format!(r#"{field} IS NOT NULL"#);
+            } else if let Some((min_value, max_value)) =
+                value.split_once(',').filter(|_| self.is_datetime_type())
+            {
+                let min_value = self.format_value(min_value);
+                let max_value = self.format_value(max_value);
+                return format!(r#"{field} >= {min_value} AND {field} < {max_value}"#);
+            }
         }
 
         match type_name {
@@ -277,11 +281,7 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
             "u64" | "i64" | "u32" | "i32" | "u16" | "i16" | "u8" | "i8" | "usize" | "isize"
             | "Option<u64>" | "Option<i64>" | "Option<u32>" | "Option<i32>" => {
                 if let Some(value) = value.as_str() {
-                    if value == "null" {
-                        format!(r#"{field} IS NULL"#)
-                    } else if value == "not_null" {
-                        format!(r#"{field} IS NOT NULL"#)
-                    } else if value == "nonzero" {
+                    if value == "nonzero" {
                         format!(r#"{field} <> 0"#)
                     } else if value.contains(',') {
                         let value = value.split(',').collect::<Vec<_>>().join(",");
@@ -297,10 +297,10 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
             }
             "String" | "Option<String>" => {
                 if let Some(value) = value.as_str() {
-                    if value == "null" {
+                    if value == "empty" {
                         // either NULL or empty
                         format!(r#"({field} = '') IS NOT FALSE"#)
-                    } else if value == "not_null" {
+                    } else if value == "nonempty" {
                         format!(r#"({field} = '') IS FALSE"#)
                     } else if self.fuzzy_search() {
                         if value.contains(',') {
@@ -378,11 +378,7 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
             }
             "Uuid" | "Option<Uuid>" => {
                 if let Some(value) = value.as_str() {
-                    if value == "null" {
-                        format!(r#"{field} IS NULL"#)
-                    } else if value == "not_null" {
-                        format!(r#"{field} IS NOT NULL"#)
-                    } else if value.contains(',') {
+                    if value.contains(',') {
                         let value = value
                             .split(',')
                             .map(Query::escape_string)
