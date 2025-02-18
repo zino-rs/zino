@@ -439,7 +439,12 @@ impl DecodeRow<DatabaseRow> for Map {
                     "TIME" => decode_raw::<Time>(field, raw_value)?.into(),
                     "BLOB" => {
                         let bytes = decode_raw::<Vec<u8>>(field, raw_value)?;
-                        if bytes.len() == 16 {
+                        if bytes.starts_with(b"[") && bytes.ends_with(b"]")
+                            || bytes.starts_with(b"{") && bytes.ends_with(b"}")
+                        {
+                            serde_json::from_slice::<JsonValue>(&bytes)
+                                .unwrap_or_else(|_| bytes.into())
+                        } else if bytes.len() == 16 {
                             if let Ok(value) = Uuid::from_slice(&bytes) {
                                 value.to_string().into()
                             } else {
@@ -494,7 +499,13 @@ impl DecodeRow<DatabaseRow> for Record {
                     "TIME" => decode_raw::<Time>(field, raw_value)?.into(),
                     "BLOB" => {
                         let bytes = decode_raw::<Vec<u8>>(field, raw_value)?;
-                        if bytes.len() == 16 {
+                        if bytes.starts_with(b"[") && bytes.ends_with(b"]")
+                            || bytes.starts_with(b"{") && bytes.ends_with(b"}")
+                        {
+                            serde_json::from_slice::<JsonValue>(&bytes)
+                                .map(|value| value.into())
+                                .unwrap_or_else(|_| bytes.into())
+                        } else if bytes.len() == 16 {
                             if let Ok(value) = Uuid::from_slice(&bytes) {
                                 value.into()
                             } else {
