@@ -23,8 +23,8 @@ pub fn Pagination(props: PaginationProps) -> Element {
                         handler.call(current_page - 1);
                     }
                 },
-                if props.prev.is_some() {
-                    { props.prev }
+                if let Some(prev) = props.prev {
+                    { prev }
                 } else {
                     SvgIcon {
                         shape: FaArrowLeft,
@@ -178,8 +178,8 @@ pub fn Pagination(props: PaginationProps) -> Element {
                         handler.call(current_page + 1);
                     }
                 },
-                if props.next.is_some() {
-                    { props.next }
+                if let Some(next) = props.next {
+                    { next }
                 } else {
                     span {
                         class: "mr-1",
@@ -215,9 +215,9 @@ pub struct PaginationProps {
     #[props(into, default = "Next")]
     pub next_text: SharedString,
     /// The element for the previous button.
-    pub prev: Option<VNode>,
+    pub prev: Option<Element>,
     /// The element for the next button.
-    pub next: Option<VNode>,
+    pub next: Option<Element>,
     /// An event handler to be called when the page number is changed.
     pub on_change: Option<EventHandler<usize>>,
 }

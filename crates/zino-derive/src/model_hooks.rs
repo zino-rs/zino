@@ -44,6 +44,37 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
         });
     }
 
+    // Parsing field attributes
+    let mut protected_fields = Vec::new();
+    for field in parser::parse_struct_fields(input.data) {
+        if let Some(ident) = field.ident {
+            let mut protected = false;
+            for attr in field.attrs.iter() {
+                let arguments = parser::parse_schema_attr(attr);
+                for (key, _value) in arguments.into_iter() {
+                    if key == "protected" {
+                        protected = true;
+                    }
+                }
+            }
+            if protected {
+                let name = ident.to_string().trim_start_matches("r#").to_owned();
+                protected_fields.push(name);
+            }
+        }
+    }
+    if !protected_fields.is_empty() {
+        model_hooks.push(quote! {
+            #[inline]
+            async fn after_populate(model: &mut zino_core::Map) -> Result<(), zino_core::error::Error> {
+                use zino_core::extension::JsonObjectExt;
+
+                model.remove_all(&[#(#protected_fields),*]);
+                Ok(())
+            }
+        });
+    }
+
     quote! {
         impl zino_core::model::ModelHooks for #name {
             type Data = ();

@@ -1187,6 +1187,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         for row in rows {
             let mut map = Map::decode_row(&row)?;
             let primary_key = map.get(primary_key_name).cloned();
+            Self::after_populate(&mut map).await?;
             translate_enabled.then(|| Self::translate_model(&mut map));
             Self::after_decode(&mut map).await?;
             if let Some(key) = primary_key {
@@ -1279,6 +1280,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         for row in rows {
             let mut map = Map::decode_row(&row)?;
             let primary_key = map.get(primary_key_name).cloned();
+            Self::after_populate(&mut map).await?;
             translate_enabled.then(|| Self::translate_model(&mut map));
             Self::after_decode(&mut map).await?;
             if let Some(key) = primary_key {

@@ -312,6 +312,12 @@ pub trait ModelHooks: Model {
         Ok(())
     }
 
+    /// A hook running after a query population for the model.
+    #[inline]
+    async fn after_populate(_model: &mut Map) -> Result<(), Error> {
+        Ok(())
+    }
+
     /// A hook running after decoding the model as a `Map`.
     #[inline]
     async fn after_decode(_model: &mut Map) -> Result<(), Error> {

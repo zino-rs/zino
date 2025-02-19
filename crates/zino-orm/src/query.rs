@@ -1295,6 +1295,13 @@ pub(super) trait QueryExt<DB> {
                     format!(r#"{field} = {value}"#)
                 }
             }
+            JsonValue::Number(n) => {
+                if cfg!(feature = "orm-postgres") {
+                    format!(r#"{field} {operator} '{n}'"#)
+                } else {
+                    format!(r#"{field} {operator} {n}"#)
+                }
+            }
             JsonValue::String(s) => {
                 if s == "null" {
                     format!(r#"{field} IS NULL"#)
@@ -1306,14 +1313,25 @@ pub(super) trait QueryExt<DB> {
                     } else {
                         format!(r#"{field} = {s}"#)
                     }
-                } else if let Ok(value) = s.parse::<serde_json::Number>() {
-                    format!(r#"{field} {operator} {value}"#)
+                } else if let Ok(n) = s.parse::<serde_json::Number>() {
+                    if cfg!(feature = "orm-postgres") {
+                        format!(r#"{field} {operator} '{n}'"#)
+                    } else {
+                        format!(r#"{field} {operator} {n}"#)
+                    }
                 } else {
-                    let value = Self::escape_string(value);
+                    let value = if cfg!(feature = "orm-postgres") {
+                        Self::escape_string(value)
+                    } else {
+                        Self::escape_string(s)
+                    };
                     format!(r#"{field} {operator} {value}"#)
                 }
             }
-            _ => format!(r#"{field} {operator} {value}"#),
+            _ => {
+                let value = Self::escape_string(value);
+                format!(r#"{field} {operator} {value}"#)
+            }
         }
     }
 

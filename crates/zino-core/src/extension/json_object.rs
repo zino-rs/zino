@@ -248,6 +248,9 @@ pub trait JsonObjectExt {
     /// Extracts values from the populated data corresponding to the key and moves them to `self`.
     fn extract_from_populated(&mut self, key: &str, fields: &[&str]);
 
+    /// Removes all the entries for the keys.
+    fn remove_all(&mut self, keys: &[&str]);
+
     /// Renames all the keys to the specific case.
     fn rename_keys(&mut self, case: Case);
 
@@ -773,6 +776,13 @@ impl JsonObjectExt for Map {
             }
         }
         self.append(&mut object);
+    }
+
+    #[inline]
+    fn remove_all(&mut self, keys: &[&str]) {
+        for &key in keys {
+            self.remove(key);
+        }
     }
 
     #[inline]

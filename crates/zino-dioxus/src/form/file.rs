@@ -55,8 +55,8 @@ pub fn FileUpload(props: FileUploadProps) -> Element {
                     class: "file-cta",
                     span {
                         class: "file-icon",
-                        if props.icon.is_some() {
-                            { props.icon }
+                        if let Some(icon) = props.icon {
+                            { icon }
                         } else {
                             SvgIcon {
                                 shape: FaUpload,
@@ -69,10 +69,10 @@ pub fn FileUpload(props: FileUploadProps) -> Element {
                         { props.label }
                     }
                 }
-                if props.children.is_some() {
+                if let Some(children) = props.children {
                     span {
                         class: "file-name",
-                        { props.children }
+                        { children }
                     }
                 } else if !file_names().is_empty() {
                     span {
@@ -110,14 +110,14 @@ pub struct FileUploadProps {
     #[props(into)]
     pub label: SharedString,
     /// An optional upload icon.
-    pub icon: Option<VNode>,
+    pub icon: Option<Element>,
     /// An event handler to be called when the files are selected.
     pub on_change: Option<EventHandler<Vec<NamedFile>>>,
     /// Spreading the props of the `input` element.
     #[props(extends = input)]
     attributes: Vec<Attribute>,
     /// The children to render within the component.
-    children: Option<VNode>,
+    children: Option<Element>,
 }
 
 /// A list of files and folders in a hierarchical tree structure.

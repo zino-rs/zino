@@ -16,6 +16,9 @@ Derives the [`ModelAccessor`](zino_orm::ModelAccessor) trait.
 - **`#[schema(primary_key)]`**: The `primary_key` annotation is used to
   mark a column as the primary key.
 
+- **`#[schema(protected)]`**: The `protected` annotation is used to indicate that
+  the column should not be included in a query population.
+
 - **`#[schema(snapshot)]`**: The `snapshot` annotation is used to indicate that
   the column should be included in a query population. Built-in snapshot fields:
   `id` | `name` | `status` | `updated_at` | `version`.
