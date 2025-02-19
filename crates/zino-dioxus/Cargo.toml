@@ -1,7 +1,7 @@
 [package]
 name = "zino-dioxus"
 description = "Dioxus components for zino."
-version = "0.13.0"
+version = "0.13.1"
 rust-version = "1.80"
 edition = "2021"
 license = "MIT"
@@ -30,7 +30,7 @@ dioxus-html = "0.6.3"
 dioxus-router = "0.6.3"
 image = "0.25.5"
 rust_decimal = "1.36.0"
-smallvec = "1.13.2"
+smallvec = "1.14.0"
 tracing = "0.1.41"
 
 [dependencies.chrono]
@@ -63,7 +63,7 @@ features = [
 ]
 
 [dependencies.uuid]
-version = "1.13.1"
+version = "1.13.2"
 features = [
     "fast-rng",
     "serde",
@@ -73,7 +73,7 @@ features = [
 
 [dependencies.zino-core]
 path = "../zino-core"
-version = "0.32.0"
+version = "0.32.1"
 features = ["runtime-tokio"]
 
 [dependencies.zino-storage]
