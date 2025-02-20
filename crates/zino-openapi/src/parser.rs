@@ -43,13 +43,13 @@ pub(super) fn parse_tag(name: &str, config: &Table) -> Tag {
 
 /// Parses the operation.
 pub(super) fn parse_operation(
-    name: &str,
+    tag: &str,
     path: &str,
     config: &Table,
     ignore_securities: bool,
 ) -> Operation {
     let mut operation_builder = OperationBuilder::new()
-        .tag(name)
+        .tag(tag)
         .response("default", Ref::from_response_name("default"))
         .response("error", Ref::from_response_name("4XX"));
     if let Some(responses) = config.get_table("responses") {

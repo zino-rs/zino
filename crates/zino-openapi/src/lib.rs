@@ -6,8 +6,14 @@
 use ahash::{HashMap, HashMapExt};
 use convert_case::{Case, Casing};
 use serde_json::json;
-use std::{collections::BTreeMap, fs, io::ErrorKind, sync::OnceLock};
-use toml::Table;
+use std::{
+    collections::BTreeMap,
+    fs::{self, DirEntry},
+    io::{self, ErrorKind},
+    path::PathBuf,
+    sync::OnceLock,
+};
+use toml::{Table, Value};
 use utoipa::openapi::{
     content::ContentBuilder,
     external_docs::ExternalDocs,
@@ -241,136 +247,179 @@ fn default_external_docs() -> Option<ExternalDocs> {
     OPENAPI_EXTERNAL_DOCS.get().cloned()
 }
 
+/// Parses the OpenAPI directory.
+fn parse_openapi_dir(
+    dir: PathBuf,
+    tags: &mut Vec<Tag>,
+    paths: &mut BTreeMap<String, PathItem>,
+    definitions: &mut HashMap<&str, Table>,
+    builder: Option<ComponentsBuilder>,
+) -> Result<ComponentsBuilder, io::Error> {
+    let mut builder = builder.unwrap_or_default();
+    let mut dirs = Vec::new();
+    let mut files = Vec::new();
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir() {
+            dirs.push(path);
+        } else if path.is_file() {
+            files.push(entry);
+        }
+    }
+    for file in files {
+        if file.file_name() == "OPENAPI.toml" {
+            builder = parse_openapi_metadata(file, builder);
+        } else {
+            let data = parse_openapi_model(file, paths, definitions, builder);
+            builder = data.0;
+            tags.push(data.1);
+        }
+    }
+    for dir in dirs {
+        builder = parse_openapi_dir(dir, tags, paths, definitions, Some(builder))?;
+    }
+    Ok(builder)
+}
+
+/// Parses the OpenAPI metadata file.
+fn parse_openapi_metadata(file: DirEntry, mut builder: ComponentsBuilder) -> ComponentsBuilder {
+    let path = file.path();
+    let mut config = fs::read_to_string(&path)
+        .unwrap_or_else(|err| {
+            let path = path.display();
+            panic!("fail to read the OpenAPI metadata file `{path}`: {err}");
+        })
+        .parse::<Table>()
+        .expect("fail to parse the OpenAPI metadata file as a TOML table");
+    if let Some(Value::Table(info)) = config.remove("info") {
+        if OPENAPI_INFO.set(info).is_err() {
+            panic!("fail to set OpenAPI info");
+        }
+    }
+    if let Some(servers) = config.get_array("servers") {
+        let servers = servers
+            .iter()
+            .filter_map(|v| v.as_table())
+            .map(parser::parse_server)
+            .collect::<Vec<_>>();
+        if OPENAPI_SERVERS.set(servers).is_err() {
+            panic!("fail to set OpenAPI servers");
+        }
+    }
+    if let Some(security_schemes) = config.get_table("security_schemes") {
+        for (name, scheme) in security_schemes {
+            if let Some(scheme_config) = scheme.as_table() {
+                let scheme = parser::parse_security_scheme(scheme_config);
+                builder = builder.security_scheme(name, scheme);
+            }
+        }
+    }
+    if let Some(securities) = config.get_array("securities") {
+        let security_requirements = securities
+            .iter()
+            .filter_map(|v| v.as_table())
+            .map(parser::parse_security_requirement)
+            .collect::<Vec<_>>();
+        if OPENAPI_SECURITIES.set(security_requirements).is_err() {
+            panic!("fail to set OpenAPI security requirements");
+        }
+    }
+    if let Some(external_docs) = config.get_table("external_docs") {
+        let external_docs = parser::parse_external_docs(external_docs);
+        if OPENAPI_EXTERNAL_DOCS.set(external_docs).is_err() {
+            panic!("fail to set OpenAPI external docs");
+        }
+    }
+    builder
+}
+
+/// Parses the OpenAPI model file.
+fn parse_openapi_model(
+    file: DirEntry,
+    paths: &mut BTreeMap<String, PathItem>,
+    definitions: &mut HashMap<&str, Table>,
+    mut builder: ComponentsBuilder,
+) -> (ComponentsBuilder, Tag) {
+    let path = file.path();
+    let config = fs::read_to_string(&path)
+        .unwrap_or_else(|err| {
+            let path = path.display();
+            panic!("fail to read the OpenAPI model file `{path}`: {err}");
+        })
+        .parse::<Table>()
+        .expect("fail to parse the OpenAPI model file as a TOML table");
+    let tag_name = config
+        .get_str("name")
+        .map(|s| s.to_owned())
+        .unwrap_or_else(|| {
+            file.file_name()
+                .to_string_lossy()
+                .trim_end_matches(".toml")
+                .to_owned()
+        });
+    let ignore_securities = config.get_array("securities").is_some_and(|v| v.is_empty());
+    if let Some(endpoints) = config.get_array("endpoints") {
+        for endpoint in endpoints.iter().filter_map(|v| v.as_table()) {
+            let path = endpoint.get_str("path").unwrap_or("/");
+            let method = endpoint
+                .get_str("method")
+                .unwrap_or_default()
+                .to_ascii_uppercase();
+            let http_method = parser::parse_http_method(&method);
+            let operation = parser::parse_operation(&tag_name, path, endpoint, ignore_securities);
+            let path_item = PathItem::new(http_method, operation);
+            if let Some(item) = paths.get_mut(path) {
+                item.merge_operations(path_item);
+            } else {
+                paths.insert(path.to_owned(), path_item);
+            }
+        }
+    }
+    if let Some(schemas) = config.get_table("schemas") {
+        for (key, value) in schemas.iter() {
+            if let Some(config) = value.as_table() {
+                let name = key.to_case(Case::Camel);
+                let schema = parser::parse_schema(config);
+                builder = builder.schema(name, schema);
+            }
+        }
+    }
+    if let Some(responses) = config.get_table("responses") {
+        for (key, value) in responses.iter() {
+            if let Some(config) = value.as_table() {
+                let name = key.to_case(Case::Camel);
+                let response = parser::parse_response(config);
+                builder = builder.response(name, response);
+            }
+        }
+    }
+    if let Some(models) = config.get_table("models") {
+        for (model_name, model_fields) in models {
+            if let Some(fields) = model_fields.as_table() {
+                let name = model_name.to_owned().leak() as &'static str;
+                definitions.insert(name, fields.to_owned());
+            }
+        }
+    }
+    (builder, parser::parse_tag(&tag_name, &config))
+}
+
 /// OpenAPI paths.
 static OPENAPI_PATHS: LazyLock<BTreeMap<String, PathItem>> = LazyLock::new(|| {
-    let mut paths: BTreeMap<String, PathItem> = BTreeMap::new();
+    let mut tags = Vec::new();
+    let mut paths = BTreeMap::new();
+    let mut definitions = HashMap::new();
     let openapi_dir = Agent::config_dir().join("openapi");
-    match fs::read_dir(openapi_dir) {
-        Ok(entries) => {
-            let mut openapi_tags = Vec::new();
-            let mut model_definitions = HashMap::new();
-            let mut components_builder = ComponentsBuilder::new();
-            let files = entries
-                .filter_map(|entry| entry.ok())
-                .filter(|entry| entry.file_type().is_ok_and(|f| f.is_file()));
-            for file in files {
-                let openapi_file = file.path();
-                let openapi_config = fs::read_to_string(&openapi_file)
-                    .unwrap_or_else(|err| {
-                        let openapi_file = openapi_file.display();
-                        panic!("fail to read the OpenAPI file `{openapi_file}`: {err}");
-                    })
-                    .parse::<Table>()
-                    .expect("fail to parse the OpenAPI file as a TOML table");
-                if file.file_name() == "OPENAPI.toml" {
-                    if let Some(info_config) = openapi_config.get_table("info") {
-                        if OPENAPI_INFO.set(info_config.clone()).is_err() {
-                            panic!("fail to set OpenAPI info");
-                        }
-                    }
-                    if let Some(servers) = openapi_config.get_array("servers") {
-                        let servers = servers
-                            .iter()
-                            .filter_map(|v| v.as_table())
-                            .map(parser::parse_server)
-                            .collect::<Vec<_>>();
-                        if OPENAPI_SERVERS.set(servers).is_err() {
-                            panic!("fail to set OpenAPI servers");
-                        }
-                    }
-                    if let Some(security_schemes) = openapi_config.get_table("security_schemes") {
-                        for (name, scheme) in security_schemes {
-                            if let Some(scheme_config) = scheme.as_table() {
-                                let scheme = parser::parse_security_scheme(scheme_config);
-                                components_builder =
-                                    components_builder.security_scheme(name, scheme);
-                            }
-                        }
-                    }
-                    if let Some(securities) = openapi_config.get_array("securities") {
-                        let security_requirements = securities
-                            .iter()
-                            .filter_map(|v| v.as_table())
-                            .map(parser::parse_security_requirement)
-                            .collect::<Vec<_>>();
-                        if OPENAPI_SECURITIES.set(security_requirements).is_err() {
-                            panic!("fail to set OpenAPI security requirements");
-                        }
-                    }
-                    if let Some(external_docs) = openapi_config.get_table("external_docs") {
-                        let external_docs = parser::parse_external_docs(external_docs);
-                        if OPENAPI_EXTERNAL_DOCS.set(external_docs).is_err() {
-                            panic!("fail to set OpenAPI external docs");
-                        }
-                    }
-                    continue;
-                }
-
-                let name = openapi_config
-                    .get_str("name")
-                    .map(|s| s.to_owned())
-                    .unwrap_or_else(|| {
-                        file.file_name()
-                            .to_string_lossy()
-                            .trim_end_matches(".toml")
-                            .to_owned()
-                    });
-                let ignore_securities = openapi_config
-                    .get_array("securities")
-                    .is_some_and(|v| v.is_empty());
-                if let Some(endpoints) = openapi_config.get_array("endpoints") {
-                    for endpoint in endpoints.iter().filter_map(|v| v.as_table()) {
-                        let path = endpoint.get_str("path").unwrap_or("/");
-                        let method = endpoint
-                            .get_str("method")
-                            .unwrap_or_default()
-                            .to_ascii_uppercase();
-                        let http_method = parser::parse_http_method(&method);
-                        let operation =
-                            parser::parse_operation(&name, path, endpoint, ignore_securities);
-                        let path_item = PathItem::new(http_method, operation);
-                        if let Some(item) = paths.get_mut(path) {
-                            item.merge_operations(path_item);
-                        } else {
-                            paths.insert(path.to_owned(), path_item);
-                        }
-                    }
-                }
-                if let Some(schemas) = openapi_config.get_table("schemas") {
-                    for (key, value) in schemas.iter() {
-                        if let Some(config) = value.as_table() {
-                            let name = key.to_case(Case::Camel);
-                            let schema = parser::parse_schema(config);
-                            components_builder = components_builder.schema(name, schema);
-                        }
-                    }
-                }
-                if let Some(responses) = openapi_config.get_table("responses") {
-                    for (key, value) in responses.iter() {
-                        if let Some(config) = value.as_table() {
-                            let name = key.to_case(Case::Camel);
-                            let response = parser::parse_response(config);
-                            components_builder = components_builder.response(name, response);
-                        }
-                    }
-                }
-                if let Some(models) = openapi_config.get_table("models") {
-                    for (model_name, model_fields) in models {
-                        if let Some(fields) = model_fields.as_table() {
-                            let model_name = model_name.to_owned().leak() as &'static str;
-                            model_definitions.insert(model_name, fields.to_owned());
-                        }
-                    }
-                }
-                openapi_tags.push(parser::parse_tag(&name, &openapi_config))
-            }
+    match parse_openapi_dir(openapi_dir, &mut tags, &mut paths, &mut definitions, None) {
+        Ok(components_builder) => {
             if OPENAPI_COMPONENTS.set(components_builder.build()).is_err() {
                 panic!("fail to set OpenAPI components");
             }
-            if OPENAPI_TAGS.set(openapi_tags).is_err() {
+            if OPENAPI_TAGS.set(tags).is_err() {
                 panic!("fail to set OpenAPI tags");
             }
-            if MODEL_DEFINITIONS.set(model_definitions).is_err() {
+            if MODEL_DEFINITIONS.set(definitions).is_err() {
                 panic!("fail to set model definitions");
             }
         }
