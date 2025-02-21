@@ -9,7 +9,7 @@ use image::{error::ImageError, ImageReader};
 use std::{fmt::Display, fs, marker::PhantomData, str::FromStr, time::Duration};
 use tokio::runtime::Builder;
 use zino_core::{
-    application::{Application, Plugin},
+    application::{AppType, Application, Plugin},
     extension::TomlTableExt,
     schedule::AsyncScheduler,
 };
@@ -53,6 +53,8 @@ where
     <R as FromStr>::Err: Display,
 {
     type Routes = R;
+
+    const APP_TYPE: AppType = AppType::Desktop;
 
     #[inline]
     fn register(self, _routes: Self::Routes) -> Self {

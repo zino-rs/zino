@@ -47,14 +47,16 @@ impl<S: ResponseCode> Responder for NtexResponse<S> {
 pub struct NtexRejection(Response<StatusCode>);
 
 impl fmt::Debug for NtexRejection {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0.message().unwrap_or("OK"))
+        f.write_str(self.0.message().unwrap_or("OK"))
     }
 }
 
 impl fmt::Display for NtexRejection {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0.status_code())
+        self.0.status_code().fmt(f)
     }
 }
 

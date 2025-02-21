@@ -14,7 +14,7 @@ version = "4.9.0"
 default-features = false
 
 [dependencies.serde]
-version = "1.0.217"
+version = "1.0.218"
 features = ["derive"]
 
 [dependencies.zino]

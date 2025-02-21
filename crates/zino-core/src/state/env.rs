@@ -81,8 +81,7 @@ impl Env {
 impl fmt::Display for Env {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let env = self.as_str();
-        write!(f, "{env}")
+        f.write_str(self.as_str())
     }
 }
 

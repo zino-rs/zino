@@ -11,7 +11,7 @@ use ntex::{
 };
 use ntex_files::{Files, NamedFile};
 use zino_core::{
-    application::{Application, Plugin, ServerTag},
+    application::{AppType, Application, Plugin, ServerTag},
     extension::TomlTableExt,
     schedule::AsyncScheduler,
 };
@@ -29,6 +29,8 @@ pub struct Cluster {
 
 impl Application for Cluster {
     type Routes = Vec<RouterConfigure>;
+
+    const APP_TYPE: AppType = AppType::Server;
 
     #[inline]
     fn register(mut self, routes: Self::Routes) -> Self {

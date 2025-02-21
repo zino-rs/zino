@@ -332,7 +332,7 @@ impl Default for Date {
 impl fmt::Display for Date {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0.format("%Y-%m-%d"))
+        self.0.format("%Y-%m-%d").fmt(f)
     }
 }
 

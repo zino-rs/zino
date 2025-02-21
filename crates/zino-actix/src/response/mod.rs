@@ -49,14 +49,16 @@ impl<S: ResponseCode> Responder for ActixResponse<S> {
 pub struct ActixRejection(Response<StatusCode>);
 
 impl fmt::Debug for ActixRejection {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0.message().unwrap_or("OK"))
+        f.write_str(self.0.message().unwrap_or("OK"))
     }
 }
 
 impl fmt::Display for ActixRejection {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0.status_code())
+        self.0.status_code().fmt(f)
     }
 }
 

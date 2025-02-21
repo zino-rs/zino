@@ -38,16 +38,16 @@ version = "0.8.1"
 default-features = false
 
 [dependencies.clap]
-version = "4.5.29"
+version = "4.5.30"
 features = ["color", "derive"]
 
 [dependencies.rustls-acme]
-version = "0.12.1"
+version = "0.13.0"
 default-features = false
 features = ["tokio", "ring"]
 
 [dependencies.serde]
-version = "1.0.217"
+version = "1.0.218"
 features = ["derive"]
 
 [dependencies.tokio]

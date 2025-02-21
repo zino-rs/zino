@@ -36,7 +36,7 @@ edition = []
 tracing = "0.1.41"
 
 [dependencies.serde]
-version = "1.0.217"
+version = "1.0.218"
 features = ["derive"]
 
 [dependencies.sqlx]
@@ -44,7 +44,7 @@ version = "0.8.3"
 default-features = false
 
 [dependencies.strum]
-version = "0.26.3"
+version = "0.27.1"
 features = ["derive"]
 
 [dependencies.zino-auth]

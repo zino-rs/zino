@@ -73,11 +73,11 @@ features = [
 ]
 
 [dependencies.serde]
-version = "1.0.217"
+version = "1.0.218"
 features = ["derive"]
 
 [dependencies.serde_json]
-version = "1.0.138"
+version = "1.0.139"
 optional = true
 features = ["raw_value"]
 

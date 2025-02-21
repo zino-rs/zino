@@ -139,7 +139,7 @@ impl Default for Time {
 impl fmt::Display for Time {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0.format("%H:%M:%S%.f"))
+        self.0.format("%H:%M:%S%.f").fmt(f)
     }
 }
 

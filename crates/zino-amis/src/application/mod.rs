@@ -6,7 +6,7 @@ use hyper_util::rt::TokioIo;
 use std::{fs, time::Duration};
 use tokio::{net::TcpListener, runtime::Builder};
 use zino_core::{
-    application::{Application, StaticRecord},
+    application::{AppType, Application, StaticRecord},
     extension::TomlTableExt,
     schedule::AsyncScheduler,
 };
@@ -20,6 +20,8 @@ pub struct Amis {
 
 impl Application for Amis {
     type Routes = phf::Map<&'static str, &'static str>;
+
+    const APP_TYPE: AppType = AppType::Web;
 
     fn register(mut self, routes: Self::Routes) -> Self {
         let mut records = StaticRecord::with_capacity(routes.len());

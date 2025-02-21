@@ -18,6 +18,22 @@ use sentry_tracing::EventFilter;
 #[cfg(feature = "env-filter")]
 use tracing_subscriber::filter::EnvFilter;
 
+/// Returns the default log directory for the application.
+fn default_log_dir<APP: Application + ?Sized>() -> String {
+    if cfg!(not(debug_assertions)) && APP::APP_TYPE.is_desktop() && APP::env().is_prod() {
+        let app_name = APP::name();
+        if cfg!(target_os = "windows") {
+            format!("~/AppData/Roaming/{app_name}/Logs")
+        } else if cfg!(target_os = "macos") {
+            format!("~/Library/Logs/{app_name}")
+        } else {
+            format!("~/.local/share/{app_name}/logs")
+        }
+    } else {
+        "logs".to_owned()
+    }
+}
+
 /// Initializes the tracing subscriber.
 pub(super) fn init<APP: Application + ?Sized>() {
     if TRACING_APPENDER_GUARD.get().is_some() {
@@ -56,7 +72,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
         "warn,zino=info,zino_core=info"
     };
 
-    let mut log_dir = "logs";
+    let mut log_dir = default_log_dir::<APP>();
     let mut log_rotation = "hourly";
     let mut log_rolling_period = Duration::from_secs(3600 * 24 * 90); // 90 days
     let mut ansi_terminal = true;
@@ -69,7 +85,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let mut flatten_event = false;
     if let Some(config) = APP::config().get_table("tracing") {
         if let Some(dir) = config.get_str("log-dir") {
-            log_dir = dir;
+            log_dir = dir.to_owned();
         }
         if let Some(rotation) = config.get_str("log-rotation") {
             log_rotation = rotation;
@@ -100,9 +116,9 @@ pub(super) fn init<APP: Application + ?Sized>() {
         flatten_event = config.get_bool("flatten-event").unwrap_or(false);
     }
 
-    let log_dir = APP::parse_path(log_dir);
+    let log_dir = APP::parse_path(&log_dir);
     if !log_dir.exists() {
-        fs::create_dir(&log_dir).unwrap_or_else(|err| {
+        fs::create_dir_all(&log_dir).unwrap_or_else(|err| {
             let log_dir = log_dir.display();
             panic!("fail to create the log directory `{log_dir}`: {err}");
         });

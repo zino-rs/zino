@@ -97,7 +97,7 @@ impl SecurityToken {
 impl fmt::Display for SecurityToken {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.token)
+        self.token.fmt(f)
     }
 }
 

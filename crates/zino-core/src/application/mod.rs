@@ -51,6 +51,7 @@ use std::{
 use toml::value::Table;
 
 mod agent;
+mod app_type;
 mod plugin;
 mod secret_key;
 mod server_tag;
@@ -74,6 +75,7 @@ pub(crate) use secret_key::SECRET_KEY;
 use crate::{error::Error, extension::HeaderMapExt, trace::TraceContext};
 
 pub use agent::Agent;
+pub use app_type::AppType;
 pub use plugin::Plugin;
 pub use server_tag::ServerTag;
 pub use static_record::StaticRecord;
@@ -82,6 +84,9 @@ pub use static_record::StaticRecord;
 pub trait Application {
     /// Routes.
     type Routes;
+
+    /// Application type.
+    const APP_TYPE: AppType;
 
     /// Registers default routes.
     fn register(self, routes: Self::Routes) -> Self;

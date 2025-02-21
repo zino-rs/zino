@@ -89,7 +89,7 @@ impl AccessKeyId {
 impl fmt::Display for AccessKeyId {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
+        self.0.fmt(f)
     }
 }
 
@@ -165,7 +165,7 @@ impl SecretAccessKey {
 impl fmt::Display for SecretAccessKey {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", base64::encode(self.as_bytes()))
+        base64::encode(self.as_bytes()).fmt(f)
     }
 }
 

@@ -1453,7 +1453,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         ctx.set_query_result(1, true);
         Self::after_scan(&ctx).await?;
         Self::after_count(&ctx).await?;
-        T::decode_row(&row).map_err(Error::from)
+        T::decode_row(&row)
     }
 
     /// Counts the number of rows selected by the query in the table,

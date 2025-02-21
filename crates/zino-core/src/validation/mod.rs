@@ -247,6 +247,6 @@ impl fmt::Display for Validation {
             let message = format!("invalid value for `{key}`: {}", err.message());
             errors.push(message);
         }
-        write!(f, "{}", errors.join(","))
+        errors.join(",").fmt(f)
     }
 }

@@ -1,4 +1,4 @@
-use super::Application;
+use super::{AppType, Application};
 use crate::schedule::AsyncScheduler;
 
 #[cfg(feature = "http-client")]
@@ -10,6 +10,8 @@ pub struct Agent;
 
 impl Application for Agent {
     type Routes = ();
+
+    const APP_TYPE: AppType = AppType::Agent;
 
     #[inline]
     fn register(self, _routes: Self::Routes) -> Self {
