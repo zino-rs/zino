@@ -215,23 +215,5 @@ features = [
     "parking_lot",
 ]
 
-[dev-dependencies]
-anyhow = "1.0.95"
-arrayvec = "0.7.6"
-base64-simd = "0.8.0"
-criterion = "0.5.1"
-data-encoding = "2.8.0"
-indexmap = "2.7.1"
-libsm = "0.6.0"
-ryu = "1.0.19"
-sm3 = "0.4.2"
-sonic-rs = "0.3.17"
-tinyvec = { version = "1.8.1", features = ["alloc"] }
-uuid-simd = "0.8.0"
-
-[[bench]]
-name = "criterion_main"
-harness = false
-
 [lints]
 workspace = true

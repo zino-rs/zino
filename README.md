@@ -70,7 +70,6 @@ fn main() {
 | [`zino-ntex`]   | Integrations with ntex.           | [![Crates.io](https://img.shields.io/crates/v/zino-ntex)][zino-ntex] | [![Documentation](https://shields.io/docsrs/zino-ntex)][zino-ntex-docs] |
 | [`zino-dioxus`] | Dioxus components.                | [![Crates.io](https://img.shields.io/crates/v/zino-dioxus)][zino-dioxus] | [![Documentation](https://shields.io/docsrs/zino-dioxus)][zino-dioxus-docs] |
 | [`zino-amis`]   | UI generator for amis.            | [![Crates.io](https://img.shields.io/crates/v/zino-amis)][zino-amis] | [![Documentation](https://shields.io/docsrs/zino-amis)][zino-amis-docs] |
-| [`zino-cli`]    | CLI tools.                        | [![Crates.io](https://img.shields.io/crates/v/zino-cli)][zino-cli] | [![Documentation](https://shields.io/docsrs/zino-cli)][zino-cli-docs] |
 
 ## License
 
@@ -97,7 +96,7 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [`zino-ntex`]: https://github.com/zino-rs/zino/tree/main/crates/zino-ntex
 [`zino-dioxus`]: https://github.com/zino-rs/zino/tree/main/crates/zino-dioxus
 [`zino-amis`]: https://github.com/zino-rs/zino/tree/main/crates/zino-amis
-[`zino-cli`]: https://github.com/zino-rs/zino/tree/main/crates/zino-cli
+[`zino-cli`]: https://github.com/zino-rs/zino/zino-cli
 [zino]: https://crates.io/crates/zino
 [zino-docs]: https://docs.rs/zino
 [zino-core]: https://crates.io/crates/zino-core

@@ -50,6 +50,10 @@ url = "2.5.4"
 version = "0.4.39"
 features = ["serde"]
 
+[workspace.dependencies.multer]
+version = "3.1.0"
+features = ["json"]
+
 [workspace.dependencies.serde]
 version = "1.0.218"
 features = ["derive"]
@@ -116,7 +120,9 @@ path = "crates/zino-storage"
 version = "0.4.0"
 
 [workspace.lints.rust]
+missing_docs = "warn"
 unsafe_code = "forbid"
+unreachable_pub = "deny"
 
 [profile.release]
 lto = "thin"

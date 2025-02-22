@@ -91,10 +91,10 @@ metrics = ["opendal?/layers-metrics", "zino-core/metrics"]
 
 [dependencies]
 md-5 = "0.10.6"
-multer = "3.1.0"
 bytes = { workspace = true }
 etag = { workspace = true }
 mime_guess = { workspace = true }
+multer = { workspace = true }
 toml = { workspace = true }
 tracing = { workspace = true }
 zino-core = { workspace = true, features = ["http-client"] }
