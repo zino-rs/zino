@@ -44,16 +44,20 @@ view-minijinja = ["view", "dep:minijinja"]
 view-tera = ["view", "dep:tera"]
 
 [dependencies]
-percent-encoding = "2.3.1"
 ryu = "1.0.19"
 bytes = { workspace = true }
 cfg-if = { workspace = true }
+convert_case = { workspace = true, optional = true }
 etag = { workspace = true }
 futures = { workspace = true }
 http = { workspace = true }
+jwt-simple = { workspace = true, optional = true }
+metrics = { workspace = true, optional = true }
 mime_guess = { workspace = true }
 multer = { workspace = true }
+percent-encoding = { workspace = true }
 regex = { workspace = true }
+reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_qs = { workspace = true }
@@ -65,10 +69,6 @@ zino-auth = { workspace = true, optional = true }
 zino-channel = { workspace = true }
 zino-core = { workspace = true, features = ["http-client"] }
 zino-storage = { workspace = true, features = ["http-client"] }
-
-[dependencies.convert_case]
-version = "0.7.1"
-optional = true
 
 [dependencies.cookie]
 version = "0.18.1"
@@ -87,30 +87,10 @@ optional = true
 version = "0.5.2"
 optional = true
 
-[dependencies.jwt-simple]
-version = "0.12.11"
-optional = true
-default-features = false
-features = ["pure-rust"]
-
-[dependencies.metrics]
-version = "0.24.1"
-optional = true
-
 [dependencies.minijinja]
 version = "2.7.0"
 optional = true
 features = ["loader"]
-
-[dependencies.reqwest]
-version = "0.12.12"
-default-features = false
-features = [
-    "blocking",
-    "gzip",
-    "json",
-    "multipart",
-]
 
 [dependencies.tera]
 version = "1.20.0"

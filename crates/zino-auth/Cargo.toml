@@ -24,7 +24,7 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-crypto-sm = ["zino-core/crypto-sm"]
+crypto-sm = ["dep:sm3", "zino-core/crypto-sm"]
 jwt = ["dep:jwt-simple", "regorus?/jwt"]
 ldap = ["dep:simple-ldap"]
 oidc = ["dep:rauthy-client"]
@@ -34,18 +34,14 @@ sqids = ["dep:sqids"]
 [dependencies]
 cfg-if = { workspace = true }
 hmac = { workspace = true }
+jwt-simple = { workspace = true, optional = true }
 parking_lot = { workspace = true }
 rand = { workspace = true }
 serde = { workspace = true }
+sm3 = { workspace = true, optional = true }
 toml = { workspace = true }
 tracing = { workspace = true }
 zino-core = { workspace = true }
-
-[dependencies.jwt-simple]
-version = "0.12.11"
-optional = true
-default-features = false
-features = ["pure-rust"]
 
 [dependencies.simple-ldap]
 version = "2.1.1"
@@ -74,10 +70,6 @@ features = [
     "urlquery",
     "uuid",
 ]
-
-[dependencies.sm3]
-version = "0.4.2"
-optional = true
 
 [dependencies.sqids]
 version = "0.4.2"

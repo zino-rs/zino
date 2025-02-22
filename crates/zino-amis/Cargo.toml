@@ -14,7 +14,6 @@ readme = "README.md"
 
 [dependencies]
 hyper-staticfile = "0.10.1"
-phf = "0.11.3"
 serde_json = { workspace = true }
 tokio = { workspace = true }
 toml = { workspace = true }
@@ -28,6 +27,10 @@ features = ["http1", "server"]
 [dependencies.hyper-util]
 version = "0.1.10"
 features = ["http1", "tokio"]
+
+[dependencies.phf]
+version = "0.11.3"
+features = ["macros"]
 
 [lints]
 workspace = true

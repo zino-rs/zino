@@ -36,12 +36,15 @@ etag = "4.0.0"
 futures = "0.3.31"
 hmac = "0.12.1"
 http = "1.2.0"
+metrics = "0.24.1"
 mime_guess = "2.0.5"
 parking_lot = "0.12.3"
+percent-encoding = "2.3.1"
 rand = "0.9.0"
 regex = "1.11.1"
 rust_decimal = "1.36.0"
 serde_qs = "0.13.0"
+sm3 = "0.4.2"
 smallvec = "1.14.0"
 tracing = "0.1.41"
 url = "2.5.4"
@@ -50,9 +53,34 @@ url = "2.5.4"
 version = "0.4.39"
 features = ["serde"]
 
+[workspace.dependencies.jwt-simple]
+version = "0.12.11"
+default-features = false
+features = ["pure-rust"]
+
 [workspace.dependencies.multer]
 version = "3.1.0"
 features = ["json"]
+
+[workspace.dependencies.reqwest]
+version = "0.12.12"
+default-features = false
+features = [
+    "blocking",
+    "gzip",
+    "json",
+    "multipart",
+]
+
+[workspace.dependencies.sqlx]
+version = "0.8.3"
+default-features = false
+features = [
+    "chrono",
+    "json",
+    "rust_decimal",
+    "uuid",
+]
 
 [workspace.dependencies.serde]
 version = "1.0.218"

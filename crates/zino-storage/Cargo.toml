@@ -95,6 +95,7 @@ bytes = { workspace = true }
 etag = { workspace = true }
 mime_guess = { workspace = true }
 multer = { workspace = true }
+reqwest = { workspace = true, optional = true }
 toml = { workspace = true }
 tracing = { workspace = true }
 zino-core = { workspace = true, features = ["http-client"] }
@@ -104,17 +105,6 @@ version = "0.51.2"
 optional = true
 default-features = false
 features = ["layers-tracing"]
-
-[dependencies.reqwest]
-version = "0.12.12"
-optional = true
-default-features = false
-features = [
-    "blocking",
-    "gzip",
-    "json",
-    "multipart",
-]
 
 [lints]
 workspace = true

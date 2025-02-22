@@ -34,15 +34,12 @@ edition = []
 
 [dependencies]
 serde = { workspace = true }
+sqlx = { workspace = true }
 tracing = { workspace = true }
 zino-auth = { workspace = true, features = ["jwt"] }
 zino-core = { workspace = true, features = ["validator-email"] }
 zino-derive = { workspace = true }
 zino-orm = { workspace = true }
-
-[dependencies.sqlx]
-version = "0.8.3"
-default-features = false
 
 [dependencies.strum]
 version = "0.27.1"

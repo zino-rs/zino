@@ -19,6 +19,5 @@ toml = { workspace = true }
 tracing = { workspace = true }
 zino-core = { workspace = true, features = ["http-client"] }
 
-
 [lints]
 workspace = true
