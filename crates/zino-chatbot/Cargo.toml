@@ -14,14 +14,11 @@ readme = "README.md"
 
 [dependencies]
 async-openai = "0.27.2"
-futures = "0.3.31"
-tracing = "0.1.41"
+futures = { workspace = true }
+toml = { workspace = true }
+tracing = { workspace = true }
+zino-core = { workspace = true, features = ["http-client"] }
 
-[dependencies.toml]
-version = "0.8.20"
-default-features = false
 
-[dependencies.zino-core]
-path = "../zino-core"
-version = "0.32.0"
-features = ["http-client"]
+[lints]
+workspace = true

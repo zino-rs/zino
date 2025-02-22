@@ -26,28 +26,16 @@ flume = [
 ]
 
 [dependencies]
-serde_json = "1.0.139"
-
-[dependencies.ahash]
-version = "0.8.11"
-optional = true
+ahash = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
+parking_lot = { workspace = true, optional = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+zino-core = { workspace = true }
 
 [dependencies.flume]
 version = "0.11.1"
 optional = true
 
-[dependencies.futures]
-version = "0.3.31"
-optional = true
-
-[dependencies.parking_lot]
-version = "0.12.3"
-optional = true
-
-[dependencies.serde]
-version = "1.0.218"
-features = ["derive"]
-
-[dependencies.zino-core]
-path = "../zino-core"
-version = "0.32.0"
+[lints]
+workspace = true

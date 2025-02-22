@@ -16,9 +16,14 @@ readme = "README.md"
 orm = ["zino-orm", "zino-orm/openapi"]
 
 [dependencies]
-futures = "0.3.31"
-http = "1.2.0"
-tracing = "0.1.41"
+futures = { workspace = true }
+http = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+zino-core = { workspace = true, features = ["runtime-tokio"] }
+zino-http = { workspace = true }
+zino-orm = { workspace = true, optional = true }
+zino-openapi = { workspace = true }
 
 [dependencies.axum]
 version = "0.8.1"
@@ -28,15 +33,6 @@ features = [
     "matched-path",
     "original-uri",
     "tokio",
-]
-
-[dependencies.tokio]
-version = "1.43.0"
-features = [
-    "macros",
-    "parking_lot",
-    "rt-multi-thread",
-    "signal",
 ]
 
 [dependencies.tower]
@@ -60,20 +56,5 @@ features = [
 version = "6.0.0"
 features = ["axum"]
 
-[dependencies.zino-core]
-path = "../zino-core"
-version = "0.32.0"
-features = ["runtime-tokio"]
-
-[dependencies.zino-http]
-path = "../zino-http"
-version = "0.4.0"
-
-[dependencies.zino-orm]
-path = "../zino-orm"
-version = "0.4.0"
-optional = true
-
-[dependencies.zino-openapi]
-path = "../zino-openapi"
-version = "0.3.0"
+[lints]
+workspace = true

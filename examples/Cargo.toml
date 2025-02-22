@@ -13,13 +13,3 @@ members = [
 lto = "thin"
 codegen-units = 1
 strip = true
-
-[profile.wasm-dev]
-inherits = "dev"
-opt-level = 1
-
-[profile.server-dev]
-inherits = "dev"
-
-[profile.android-dev]
-inherits = "dev"

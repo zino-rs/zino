@@ -1,5 +1,5 @@
 /// Selects a language from the supported locales.
-pub fn select_language<'a>(
+pub(crate) fn select_language<'a>(
     accepted_languages: &'a str,
     supported_locales: &[&'a str],
 ) -> Option<&'a str> {

@@ -24,21 +24,21 @@ orm-sqlx = ["sqlx", "sqlx/sqlite", "zino-core/sqlx"]
 orm-tidb = ["orm-sqlx", "sqlx/mysql"]
 
 [dependencies]
-apache-avro = "0.17.0"
-cfg-if = "1.0"
-chrono = "0.4.39"
-convert_case = "0.7.1"
-http = "1.2.0"
-futures = "0.3.31"
-regex = "1.11.1"
-serde_json = "1.0.139"
-smallvec = "1.14.0"
-tracing = "0.1.41"
-url = "2.5.4"
-
-[dependencies.serde]
-version = "1.0.218"
-features = ["derive"]
+apache-avro = { workspace = true }
+cfg-if = { workspace = true }
+chrono = { workspace = true }
+convert_case = { workspace = true }
+http = { workspace = true }
+futures = { workspace = true }
+regex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+smallvec = { workspace = true }
+toml = { workspace = true }
+tracing = { workspace = true }
+url = { workspace = true }
+zino-core = { workspace = true }
+zino-openapi = { workspace = true, optional = true }
 
 [dependencies.sqlx]
 version = "0.8.3"
@@ -51,15 +51,5 @@ features = [
     "uuid",
 ]
 
-[dependencies.toml]
-version = "0.8.20"
-default-features = false
-
-[dependencies.zino-core]
-path = "../zino-core"
-version = "0.32.1"
-
-[dependencies.zino-openapi]
-path = "../zino-openapi"
-version = "0.3.0"
-optional = true
+[lints]
+workspace = true

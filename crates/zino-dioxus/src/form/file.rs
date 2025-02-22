@@ -97,13 +97,13 @@ pub struct FileUploadProps {
     /// A class to apply to the `label` element.
     #[props(into, default = "file-input")]
     pub input_class: Class,
-    /// A flag to determine whether the control is fullwidth or not.
     /// The color of the button: `primary` | `link` | `info` | `success` | `warning` | `danger`.
     #[props(into, default)]
     pub color: SharedString,
     /// The size of the button: `small` | `normal` | `medium` | `large`.
     #[props(into, default)]
     pub size: SharedString,
+    /// A flag to determine whether the control is fullwidth or not.
     #[props(default)]
     pub fullwidth: bool,
     /// The label content.

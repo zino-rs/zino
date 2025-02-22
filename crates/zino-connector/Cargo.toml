@@ -41,16 +41,21 @@ connector-sqlite = ["dep:futures", "sqlx", "sqlx/sqlite"]
 default = ["connector-http"]
 
 [dependencies]
-apache-avro = "0.17.0"
-regex = "1.11.1"
-tracing = "0.1.41"
+apache-avro = { workspace = true }
+regex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true, optional = true }
+toml = { workspace = true }
+tracing = { workspace = true }
+url = { workspace = true, optional = true }
+zino-core = { workspace = true }
 
 [dependencies.datafusion]
 version = "45.0.0"
 optional = true
 
 [dependencies.futures]
-version = "0.3.31"
+workspace = true
 optional = true
 
 [dependencies.http]
@@ -72,15 +77,6 @@ features = [
     "multipart",
 ]
 
-[dependencies.serde]
-version = "1.0.218"
-features = ["derive"]
-
-[dependencies.serde_json]
-version = "1.0.139"
-optional = true
-features = ["raw_value"]
-
 [dependencies.serde_qs]
 version = "0.13.0"
 optional = true
@@ -96,14 +92,5 @@ features = [
     "uuid",
 ]
 
-[dependencies.toml]
-version = "0.8.20"
-default-features = false
-
-[dependencies.url]
-version = "2.5.4"
-optional = true
-
-[dependencies.zino-core]
-path = "../zino-core"
-version = "0.32.0"
+[lints]
+workspace = true

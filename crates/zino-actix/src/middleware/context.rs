@@ -10,7 +10,7 @@ use tracing::Span;
 use zino_http::request::RequestContext;
 
 #[derive(Default)]
-pub struct RequestContextInitializer;
+pub(crate) struct RequestContextInitializer;
 
 impl<S, B> Transform<S, ServiceRequest> for RequestContextInitializer
 where
@@ -28,7 +28,7 @@ where
     }
 }
 
-pub struct RequestContextMiddleware<S> {
+pub(crate) struct RequestContextMiddleware<S> {
     service: S,
 }
 

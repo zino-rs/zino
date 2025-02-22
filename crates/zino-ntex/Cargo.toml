@@ -16,25 +16,17 @@ readme = "README.md"
 orm = ["zino-orm", "zino-orm/openapi"]
 
 [dependencies]
-futures = "0.3.31"
 ntex-files = "2.0.0"
-tracing = "0.1.41"
+futures = { workspace = true }
+tracing = { workspace = true }
+zino-core = { workspace = true, features = ["runtime-tokio"] }
+zino-http = { workspace = true }
+zino-orm = { workspace = true, optional = true }
 
 [dependencies.ntex]
 version = "2.11.0"
 default-features = false
 features = ["compress", "tokio"]
 
-[dependencies.zino-core]
-path = "../zino-core"
-version = "0.32.0"
-features = ["runtime-tokio"]
-
-[dependencies.zino-http]
-path = "../zino-http"
-version = "0.4.0"
-
-[dependencies.zino-orm]
-path = "../zino-orm"
-version = "0.4.0"
-optional = true
+[lints]
+workspace = true

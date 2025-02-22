@@ -18,8 +18,12 @@ orm = ["zino-orm", "zino-orm/openapi"]
 [dependencies]
 actix-cors = "0.7.0"
 actix-files = "0.6.6"
-futures = "0.3.31"
-tracing = "0.1.41"
+futures = { workspace = true }
+tracing = { workspace = true }
+zino-core = { workspace = true, features = ["runtime-tokio"] }
+zino-http = { workspace = true, features = ["http02"] }
+zino-orm = { workspace = true, optional = true }
+zino-openapi = { workspace = true }
 
 [dependencies.actix-web]
 version = "4.9.0"
@@ -34,21 +38,5 @@ features = ["opentelemetry_0_27", "uuid_v7"]
 version = "6.0.0"
 features = ["actix-web"]
 
-[dependencies.zino-core]
-path = "../zino-core"
-version = "0.32.0"
-features = ["runtime-tokio"]
-
-[dependencies.zino-http]
-path = "../zino-http"
-version = "0.4.0"
-features = ["http02"]
-
-[dependencies.zino-orm]
-path = "../zino-orm"
-version = "0.4.0"
-optional = true
-
-[dependencies.zino-openapi]
-path = "../zino-openapi"
-version = "0.3.0"
+[lints]
+workspace = true

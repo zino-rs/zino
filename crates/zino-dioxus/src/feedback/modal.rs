@@ -59,7 +59,7 @@ pub struct ModalCardProps {
     /// A class to apply when the modal is visible.
     #[props(into, default = "is-active")]
     pub active_class: Class,
-    // A class to apply to the modal title.
+    /// A class to apply to the modal title.
     #[props(into, default)]
     pub title_class: Class,
     /// A class to apply to the `close` button element.

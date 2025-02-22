@@ -15,8 +15,11 @@ readme = "README.md"
 [dependencies]
 hyper-staticfile = "0.10.1"
 phf = "0.11.3"
-serde_json = "1.0.139"
-tracing = "0.1.41"
+serde_json = { workspace = true }
+tokio = { workspace = true }
+toml = { workspace = true }
+tracing = { workspace = true }
+zino-core = { workspace = true, features = ["tracing-subscriber"] }
 
 [dependencies.hyper]
 version = "1.6.0"
@@ -26,20 +29,5 @@ features = ["http1", "server"]
 version = "0.1.10"
 features = ["http1", "tokio"]
 
-[dependencies.tokio]
-version = "1.43.0"
-features = [
-    "net",
-    "rt-multi-thread",
-    "time",
-]
-
-[dependencies.toml]
-version = "0.8.20"
-default-features = false
-features = ["parse"]
-
-[dependencies.zino-core]
-path = "../zino-core"
-version = "0.32.0"
-features = ["tracing-subscriber"]
+[lints]
+workspace = true

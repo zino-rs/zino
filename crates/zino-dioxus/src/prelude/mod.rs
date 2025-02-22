@@ -15,8 +15,11 @@ pub use crate::{
         NavbarLink, NavbarMenu, NavbarStart, Pagination, Sidebar,
     },
     theme::Theme,
-    typography::{Card, FixedWidthSpan, Markdown, Tag, Tags, TuiEditor},
+    typography::{Card, FixedWidthSpan, Tag, Tags, TuiEditor},
 };
 
 #[cfg(feature = "clipboard")]
 pub use crate::form::CopyToClipboard;
+
+#[cfg(feature = "markdown")]
+pub use crate::typography::Markdown;

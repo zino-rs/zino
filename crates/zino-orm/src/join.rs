@@ -21,7 +21,7 @@ pub(super) enum JoinType {
 impl JoinType {
     /// Returns the join type as str.
     #[inline]
-    pub fn as_str(&self) -> &'static str {
+    pub(super) fn as_str(&self) -> &'static str {
         match self {
             JoinType::Inner => "INNER JOIN",
             JoinType::Left => "LEFT JOIN",

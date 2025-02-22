@@ -13,3 +13,6 @@ documentation = "https://docs.rs/zino-rpc"
 readme = "README.md"
 
 [dependencies]
+
+[lints]
+workspace = true

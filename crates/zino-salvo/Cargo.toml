@@ -13,3 +13,6 @@ documentation = "https://docs.rs/zino-salvo"
 readme = "README.md"
 
 [dependencies]
+
+[lints]
+workspace = true

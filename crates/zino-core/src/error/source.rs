@@ -1,7 +1,7 @@
 use super::Error;
 
 /// An iterator of source errors created by [`sources()`](Error::sources).
-pub struct Source<'a> {
+pub(super) struct Source<'a> {
     /// Next source error.
     next: Option<&'a Error>,
 }

@@ -12,7 +12,7 @@ use std::{
 };
 
 #[derive(Default)]
-pub struct ETagFinalizer;
+pub(crate) struct ETagFinalizer;
 
 impl<S, B> Transform<S, ServiceRequest> for ETagFinalizer
 where
@@ -30,7 +30,7 @@ where
     }
 }
 
-pub struct ETagMiddleware<S> {
+pub(crate) struct ETagMiddleware<S> {
     service: S,
 }
 

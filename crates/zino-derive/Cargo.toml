@@ -14,15 +14,13 @@ readme = "README.md"
 proc-macro = true
 
 [dependencies]
-convert_case = "0.7.1"
 proc-macro2 = "1.0.93"
 quote = "1.0.38"
 syn = "2.0.98"
+convert_case = { workspace = true }
+zino-core = { workspace = true }
+zino-orm = { workspace = true }
 
-[dependencies.zino-core]
-path = "../zino-core"
-version = "0.32.0"
-
-[dependencies.zino-orm]
-path = "../zino-orm"
-version = "0.4.0"
+[lints.rust]
+unsafe_code = "forbid"
+unreachable_pub = "deny"

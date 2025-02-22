@@ -32,11 +32,14 @@ opa = ["regorus"]
 sqids = ["dep:sqids"]
 
 [dependencies]
-cfg-if = "1.0"
-hmac = "0.12.1"
-parking_lot = "0.12.3"
-rand = "0.9.0"
-tracing = "0.1.41"
+cfg-if = { workspace = true }
+hmac = { workspace = true }
+parking_lot = { workspace = true }
+rand = { workspace = true }
+serde = { workspace = true }
+toml = { workspace = true }
+tracing = { workspace = true }
+zino-core = { workspace = true }
 
 [dependencies.jwt-simple]
 version = "0.12.11"
@@ -72,10 +75,6 @@ features = [
     "uuid",
 ]
 
-[dependencies.serde]
-version = "1.0.218"
-features = ["derive"]
-
 [dependencies.sm3]
 version = "0.4.2"
 optional = true
@@ -84,10 +83,5 @@ optional = true
 version = "0.4.2"
 optional = true
 
-[dependencies.toml]
-version = "0.8.20"
-default-features = false
-
-[dependencies.zino-core]
-path = "../zino-core"
-version = "0.32.0"
+[lints]
+workspace = true
