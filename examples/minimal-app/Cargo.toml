@@ -1,13 +1,13 @@
 [package]
 name = "minimal-app"
 description = "A minimal example to run a server."
-version = "0.9.1"
+version = "0.9.2"
 rust-version = "1.80"
 edition = "2021"
 publish = false
 
 [dependencies.zino]
 path = "../../crates/zino"
-version = "0.32.1"
+version = "0.32.2"
 features = ["axum"]
 

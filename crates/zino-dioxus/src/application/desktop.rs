@@ -1,12 +1,14 @@
-use dioxus::prelude::*;
-use dioxus_desktop::{
-    tao::window::{Fullscreen, Icon, Theme},
-    Config, WindowBuilder,
-    WindowCloseBehaviour::*,
+use dioxus::{
+    desktop::{
+        tao::window::{Fullscreen, Icon, Theme},
+        Config, WindowBuilder,
+        WindowCloseBehaviour::*,
+    },
+    prelude::*,
 };
 use dioxus_router::{components::Router, routable::Routable};
 use image::{error::ImageError, ImageReader};
-use std::{fmt::Display, fs, marker::PhantomData, str::FromStr, time::Duration};
+use std::{fmt::Display, fs, marker::PhantomData, path::Path, str::FromStr, time::Duration};
 use tokio::runtime::Builder;
 use zino_core::{
     application::{AppType, Application, Plugin},
@@ -19,6 +21,8 @@ use zino_core::{
 pub struct Desktop<R> {
     /// Custom plugins.
     custom_plugins: Vec<Plugin>,
+    /// Custom root element.
+    custom_root: Option<fn() -> Element>,
     /// Phantom type of Dioxus router.
     phantom: PhantomData<R>,
 }
@@ -28,10 +32,18 @@ where
     R: Routable,
     <R as FromStr>::Err: Display,
 {
-    /// Renders the app root.
-    fn app_root() -> Element {
-        let desktop_context = dioxus_desktop::window();
-        if let Some(config) = Self::shared_state().get_config("webview") {
+    /// Sets a custom root element.
+    #[inline]
+    pub fn with_root(mut self, root: fn() -> Element) -> Self {
+        self.custom_root = Some(root);
+        self
+    }
+
+    /// Configures the WebView.
+    pub fn config_webview() {
+        let app_state = Self::shared_state();
+        if let Some(config) = app_state.get_config("webview") {
+            let desktop_context = dioxus::desktop::window();
             if let Some(zoom) = config.get_f64("zoom") {
                 if let Err(err) = desktop_context.webview.zoom(zoom) {
                     tracing::error!("fail to set the webview zoom level: {err}");
@@ -43,6 +55,12 @@ where
                 }
             }
         }
+    }
+
+    /// Renders the app root.
+    #[inline]
+    fn app_root() -> Element {
+        Self::config_webview();
         rsx! { Router::<R> {} }
     }
 }
@@ -181,7 +199,7 @@ where
                     Ok(img) => {
                         let width = img.width();
                         let height = img.height();
-                        let href = icon_file.to_string_lossy().replace('\\', "/");
+                        let href = format_dioxus_href(&icon_file);
                         let head =
                             format!(r#"<link rel="icon" type="image/x-icon" href="{href}">"#);
                         custom_heads.push(head);
@@ -207,7 +225,7 @@ where
                         style.to_owned()
                     } else {
                         let style_file = Self::parse_path(style);
-                        style_file.to_string_lossy().replace('\\', "/")
+                        format_dioxus_href(&style_file)
                     };
                     let head = format!(r#"<link rel="stylesheet" href="{href}">"#);
                     custom_heads.push(head);
@@ -219,7 +237,7 @@ where
                         script.to_owned()
                     } else {
                         let script_file = Self::parse_path(script);
-                        script_file.to_string_lossy().replace('\\', "/")
+                        format_dioxus_href(&script_file)
                     };
                     let head = format!(r#"<script src="{src}"></script>"#);
                     custom_heads.push(head);
@@ -266,7 +284,17 @@ where
             "launch a window named `{window_title}`",
         );
 
-        let vdom = VirtualDom::new(Self::app_root);
-        dioxus_desktop::launch::launch_virtual_dom(vdom, desktop_config);
+        let app = self.custom_root.unwrap_or(Self::app_root);
+        dioxus::desktop::launch::launch_virtual_dom(VirtualDom::new(app), desktop_config);
+    }
+}
+
+/// Formats a local path as the Dioxus href.
+fn format_dioxus_href(path: &Path) -> String {
+    let path = path.to_string_lossy();
+    if cfg!(target_os = "windows") {
+        format!("http://dioxus.{}", path.replace('\\', "/"))
+    } else {
+        path.into_owned()
     }
 }

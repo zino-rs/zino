@@ -47,9 +47,9 @@ impl ColumnExt for Column<'_> {
         let data_type = data_type.to_ascii_uppercase();
         match column_type {
             "INT" => data_type == "INTEGER",
-            "SMALLINT UNSIGNED" => data_type == "SMALLINT",
-            "INT UNSIGNED" => data_type == "INT",
-            "BIGINT UNSIGNED" => data_type == "BIGINT",
+            "SMALLINT UNSIGNED" | "SMALLSERIAL" => data_type == "SMALLINT",
+            "INT UNSIGNED" | "SERIAL" => data_type == "INT",
+            "BIGINT UNSIGNED" | "BIGSERIAL" => data_type == "BIGINT",
             "TEXT" => data_type == "VARCHAR",
             _ => {
                 if cfg!(feature = "orm-postgres") && column_type.ends_with("[]") {

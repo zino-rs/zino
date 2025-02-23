@@ -1,11 +1,11 @@
 # --env=prod
 
-name = "data-cube"
+name = "DataCube"
 version = "0.2.0"
 
 [window]
 title = "DataCube"
-theme = "Light"
+theme = "Dark"
 transparent = false
 
 [desktop]

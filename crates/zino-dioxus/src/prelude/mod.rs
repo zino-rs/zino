@@ -21,5 +21,11 @@ pub use crate::{
 #[cfg(feature = "clipboard")]
 pub use crate::form::CopyToClipboard;
 
+#[cfg(feature = "desktop")]
+pub use crate::application::Desktop;
+
 #[cfg(feature = "markdown")]
 pub use crate::typography::Markdown;
+
+#[doc(no_inline)]
+pub use dioxus_router::components::Router;

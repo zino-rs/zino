@@ -41,7 +41,7 @@ pub fn Overview() -> Element {
                         }
                         img {
                             class: "mr-2",
-                            src: "https://img.shields.io/badge/rustc-1.75+-blue.svg",
+                            src: "https://img.shields.io/badge/rustc-1.80+-blue.svg",
                         }
                         a {
                             class: "mr-2",
