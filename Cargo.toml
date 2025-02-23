@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/zino",
     "crates/zino-actix",
+    "crates/zino-ai",
     "crates/zino-amis",
     "crates/zino-auth",
     "crates/zino-axum",

@@ -97,7 +97,7 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [`zino-ntex`]: https://github.com/zino-rs/zino/tree/main/crates/zino-ntex
 [`zino-dioxus`]: https://github.com/zino-rs/zino/tree/main/crates/zino-dioxus
 [`zino-amis`]: https://github.com/zino-rs/zino/tree/main/crates/zino-amis
-[`zino-cli`]: https://github.com/zino-rs/zino/zino-cli
+[`zino-cli`]: https://github.com/zino-rs/zino-cli
 [zino]: https://crates.io/crates/zino
 [zino-docs]: https://docs.rs/zino
 [zino-core]: https://crates.io/crates/zino-core

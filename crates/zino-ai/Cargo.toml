@@ -1,0 +1,18 @@
+[package]
+name = "zino-ai"
+description = "LLM services for zino."
+version = "0.0.1"
+rust-version = "1.80"
+edition = "2021"
+license = "MIT"
+categories = ["asynchronous", "network-programming", "web-programming"]
+keywords = ["http", "web", "framework"]
+homepage = "https://github.com/zino-rs/zino"
+repository = "https://github.com/zino-rs/zino"
+documentation = "https://docs.rs/zino-ai"
+readme = "README.md"
+
+[dependencies]
+
+[lints]
+workspace = true
