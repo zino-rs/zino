@@ -397,8 +397,10 @@ static APP_DOMAIN: LazyLock<&'static str> = LazyLock::new(|| {
 /// The project directory.
 static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     env::var("CARGO_MANIFEST_DIR")
+        .ok()
+        .filter(|var| !var.is_empty())
         .map(PathBuf::from)
-        .unwrap_or_else(|err| {
+        .unwrap_or_else(|| {
             if cfg!(not(debug_assertions)) && cfg!(target_os = "macos") {
                 if let Ok(mut path) = env::current_exe() {
                     path.pop();
@@ -412,7 +414,7 @@ static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
                 }
             }
             tracing::warn!(
-                "fail to get the environment variable `CARGO_MANIFEST_DIR`: {err}; \
+                "fail to get the environment variable `CARGO_MANIFEST_DIR`; \
                     current directory will be used as the project directory"
             );
             env::current_dir()
@@ -423,8 +425,10 @@ static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
 /// The config directory.
 static CONFIG_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
     env::var("ZINO_APP_CONFIG_DIR")
+        .ok()
+        .filter(|var| !var.is_empty())
         .map(PathBuf::from)
-        .unwrap_or_else(|_| PROJECT_DIR.join("config"))
+        .unwrap_or_else(|| PROJECT_DIR.join("config"))
 });
 
 /// Shared directories.

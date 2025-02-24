@@ -420,9 +420,17 @@ impl DecodeRow<DatabaseRow> for Map {
                 JsonValue::Null
             } else {
                 use super::decode::decode_raw;
-                match col.type_info().name() {
+
+                let type_info = col.type_info();
+                let value_type_info = raw_value.type_info();
+                let column_type = if type_info.is_null() {
+                    value_type_info.name()
+                } else {
+                    type_info.name()
+                };
+                match column_type {
                     "BOOLEAN" => decode_raw::<bool>(field, raw_value)?.into(),
-                    "INTEGER" | "BIGINT" => decode_raw::<i64>(field, raw_value)?.into(),
+                    "INTEGER" => decode_raw::<i64>(field, raw_value)?.into(),
                     "REAL" => decode_raw::<f64>(field, raw_value)?.into(),
                     "TEXT" => {
                         let value = decode_raw::<String>(field, raw_value)?;
@@ -480,9 +488,17 @@ impl DecodeRow<DatabaseRow> for Record {
                 AvroValue::Null
             } else {
                 use super::decode::decode_raw;
-                match col.type_info().name() {
+
+                let type_info = col.type_info();
+                let value_type_info = raw_value.type_info();
+                let column_type = if type_info.is_null() {
+                    value_type_info.name()
+                } else {
+                    type_info.name()
+                };
+                match column_type {
                     "BOOLEAN" => decode_raw::<bool>(field, raw_value)?.into(),
-                    "INTEGER" | "BIGINT" => decode_raw::<i64>(field, raw_value)?.into(),
+                    "INTEGER" => decode_raw::<i64>(field, raw_value)?.into(),
                     "REAL" => decode_raw::<f64>(field, raw_value)?.into(),
                     "TEXT" => {
                         let value = decode_raw::<String>(field, raw_value)?;

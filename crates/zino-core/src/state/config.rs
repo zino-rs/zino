@@ -16,7 +16,7 @@ pub(super) fn fetch_config_url(config_url: &str, env: &str) -> Result<Table, Err
     } else {
         res.text()?.parse()?
     };
-    tracing::info!(env, "`{config_url}` fetched");
+    tracing::info!(env, "fetch the config `{config_url}`");
     Ok(config_table)
 }
 
@@ -29,7 +29,7 @@ pub(super) fn read_config_file(config_file: &Path, env: &str) -> Result<Table, E
         data.parse()?
     };
     if let Some(file_name) = config_file.file_name().and_then(|s| s.to_str()) {
-        tracing::info!(env, "`{file_name}` loaded");
+        tracing::info!(env, "load the config `{file_name}`");
     }
     Ok(config_table)
 }

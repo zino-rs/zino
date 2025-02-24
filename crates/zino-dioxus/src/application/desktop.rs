@@ -127,7 +127,8 @@ where
         let mut window_title = app_name;
         let mut app_window = WindowBuilder::new()
             .with_title(app_name)
-            .with_maximized(true);
+            .with_maximized(true)
+            .with_focused(true);
         if let Some(config) = app_state.get_config("window") {
             if let Some(title) = config.get_str("title") {
                 app_window = app_window.with_title(title);
@@ -136,10 +137,13 @@ where
             if config.get_bool("fullscreen").is_some_and(|b| b) {
                 app_window = app_window.with_fullscreen(Some(Fullscreen::Borderless(None)));
             }
+            if let Some(maximized) = config.get_bool("maximized") {
+                app_window = app_window.with_maximized(maximized);
+            }
             if let Some(resizable) = config.get_bool("resizable") {
                 app_window = app_window.with_resizable(resizable);
             }
-            if let Some(minimizable) = config.get_bool("maximizable") {
+            if let Some(minimizable) = config.get_bool("minimizable") {
                 app_window = app_window.with_minimizable(minimizable);
             }
             if let Some(maximizable) = config.get_bool("maximizable") {
@@ -150,6 +154,9 @@ where
             }
             if let Some(visible) = config.get_bool("visible") {
                 app_window = app_window.with_visible(visible);
+            }
+            if let Some(focused) = config.get_bool("focused") {
+                app_window = app_window.with_focused(focused);
             }
             if let Some(transparent) = config.get_bool("transparent") {
                 app_window = app_window.with_transparent(transparent);
@@ -170,12 +177,14 @@ where
                 app_window = app_window.with_visible_on_all_workspaces(visible);
             }
             if let Some(theme) = config.get_str("theme") {
-                let theme = match theme {
-                    "Light" => Theme::Light,
-                    "Dark" => Theme::Dark,
-                    _ => Theme::default(),
+                let (theme, background_color) = if theme == "Dark" {
+                    (Theme::Dark, (0, 0, 0, 255))
+                } else {
+                    (Theme::Light, (255, 255, 255, 255))
                 };
-                app_window = app_window.with_theme(Some(theme));
+                app_window = app_window
+                    .with_theme(Some(theme))
+                    .with_background_color(background_color);
             }
         }
 
@@ -284,8 +293,10 @@ where
             "launch a window named `{window_title}`",
         );
 
-        let app = self.custom_root.unwrap_or(Self::app_root);
-        dioxus::desktop::launch::launch_virtual_dom(VirtualDom::new(app), desktop_config);
+        let vdom = VirtualDom::new(self.custom_root.unwrap_or(Self::app_root));
+        runtime.block_on(tokio::task::unconstrained(async move {
+            dioxus::desktop::launch::launch_virtual_dom_blocking(vdom, desktop_config)
+        }));
     }
 }
 

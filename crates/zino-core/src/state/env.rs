@@ -65,7 +65,7 @@ impl Env {
                         "fail to load the plugin `{plugin_name}`: {err}",
                     );
                 } else {
-                    tracing::warn!(app_env, plugin_name, "loaded the plugin `{plugin_name}`",);
+                    tracing::warn!(app_env, plugin_name, "load the plugin `{plugin_name}`",);
                 }
             } else {
                 tracing::error!(
