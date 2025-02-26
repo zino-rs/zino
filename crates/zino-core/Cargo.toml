@@ -47,6 +47,7 @@ full = [
     "dotenv",
     "env-filter",
     "http-client",
+    "preferences",
     "metrics",
     "sqlx",
     "tracing-log",
@@ -59,6 +60,7 @@ locale-de = ["locale", "random_word/de"]
 locale-fr = ["locale", "random_word/fr"]
 locale-zh = ["locale", "random_word/zh"]
 metrics = ["dep:metrics", "dep:metrics-exporter-prometheus", "apalis?/prometheus"]
+preferences = ["dep:rust-ini"]
 runtime-async-std = ["sqlx?/runtime-async-std"]
 runtime-tokio = ["sqlx?/runtime-tokio"]
 sentry = [
@@ -161,6 +163,10 @@ features = ["json", "multipart"]
 
 [dependencies.reqwest-tracing]
 version = "0.5.5"
+optional = true
+
+[dependencies.rust-ini]
+version = "0.21.1"
 optional = true
 
 [dependencies.sentry]

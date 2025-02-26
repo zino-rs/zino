@@ -1,7 +1,7 @@
 use ini::{Ini, Properties};
 use std::{path::PathBuf, str::FromStr};
 
-/// Application preferences backed by an `INI` file.
+/// Application preferences from an `INI` file.
 #[derive(Debug, Clone, Default)]
 pub struct Preferences {
     /// The file path.

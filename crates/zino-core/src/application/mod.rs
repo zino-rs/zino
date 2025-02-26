@@ -63,6 +63,9 @@ pub(crate) mod http_client;
 #[cfg(feature = "metrics")]
 mod metrics_exporter;
 
+#[cfg(feature = "preferences")]
+mod preferences;
+
 #[cfg(feature = "sentry")]
 mod sentry_client;
 
@@ -70,6 +73,9 @@ mod sentry_client;
 mod tracing_subscriber;
 
 pub(crate) use secret_key::SECRET_KEY;
+
+#[cfg(feature = "preferences")]
+pub use preferences::Preferences;
 
 #[cfg(feature = "http-client")]
 use crate::{error::Error, extension::HeaderMapExt, trace::TraceContext};

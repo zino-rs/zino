@@ -19,7 +19,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = []
-desktop = ["dep:rust-ini", "dioxus/desktop"]
+desktop = ["dioxus/desktop"]
 clipboard = ["dioxus-sdk/clipboard"]
 markdown = ["dep:comrak"]
 
@@ -62,10 +62,6 @@ features = [
     "png",
     "rayon",
 ]
-
-[dependencies.rust-ini]
-version = "0.21.1"
-optional = true
 
 [lints]
 workspace = true

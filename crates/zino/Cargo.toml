@@ -45,6 +45,7 @@ orm = [
     "zino-axum?/orm",
     "zino-ntex?/orm",
 ]
+preferences = ["zino-core/preferences"]
 view = ["zino-http/view"]
 
 [dependencies]

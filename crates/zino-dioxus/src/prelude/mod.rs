@@ -22,7 +22,7 @@ pub use crate::{
 pub use crate::form::CopyToClipboard;
 
 #[cfg(feature = "desktop")]
-pub use crate::application::{Desktop, Preferences};
+pub use crate::application::Desktop;
 
 #[cfg(feature = "markdown")]
 pub use crate::typography::Markdown;

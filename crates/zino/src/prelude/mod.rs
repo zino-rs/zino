@@ -45,6 +45,10 @@ pub use zino_orm::{
     QueryBuilder, ScalarQuery, Schema, Transaction, Window,
 };
 
+#[cfg(feature = "preferences")]
+#[doc(no_inline)]
+pub use zino_core::application::Preferences;
+
 #[cfg(any(feature = "actix", feature = "axum", feature = "ntex"))]
 pub use zino_http::{
     reject,

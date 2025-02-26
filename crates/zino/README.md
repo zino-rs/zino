@@ -49,22 +49,23 @@ fn main() {
 
 The following optional features are available:
 
-| Name         | Description                                          | Default? |
-|--------------|------------------------------------------------------|----------|
-| `actix`      | Enables the integration with [`actix-web`].          | No       |
-| `auth`       | Enables the authentication and authorization.        | No       |
-| `axum`       | Enables the integration with [`axum`].               | No       |
-| `cookie`     | Enables the support for cookies.                     | No       |
-| `debug`      | Enables the features for ease of debugging.          | No       |
-| `dioxus`     | Enables the integration with [`dioxus`].             | No       |
-| `i18n`       | Enables the support for internationalization.        | No       |
-| `jwt`        | Enables the support for JSON Web Token.              | No       |
-| `logger`     | Enables the default logger.                          | Yes      |
-| `metrics`    | Enables the [`metrics`] exporter.                    | No       |
-| `ntex`       | Enables the integration with [`ntex`].               | No       |
-| `opa`        | Enables the support for OPA via [`regorus`].         | No       |
-| `orm`        | Enables the ORM for MySQL, PostgreSQL or **SQLite**. | No       |
-| `view`       | Enables the HTML template rendering.                 | No       |
+| Name          | Description                                          | Default? |
+|---------------|------------------------------------------------------|----------|
+| `actix`       | Enables the integration with [`actix-web`].          | No       |
+| `auth`        | Enables the authentication and authorization.        | No       |
+| `axum`        | Enables the integration with [`axum`].               | No       |
+| `cookie`      | Enables the support for cookies.                     | No       |
+| `debug`       | Enables the features for ease of debugging.          | No       |
+| `dioxus`      | Enables the integration with [`dioxus`].             | No       |
+| `i18n`        | Enables the support for internationalization.        | No       |
+| `jwt`         | Enables the support for JSON Web Token.              | No       |
+| `logger`      | Enables the default logger.                          | Yes      |
+| `metrics`     | Enables the [`metrics`] exporter.                    | No       |
+| `ntex`        | Enables the integration with [`ntex`].               | No       |
+| `opa`         | Enables the support for OPA via [`regorus`].         | No       |
+| `orm`         | Enables the ORM for MySQL, PostgreSQL or **SQLite**. | No       |
+| `preferences` | Enables the support for application preferences.     | No       |
+| `view`        | Enables the HTML template rendering.                 | No       |
 
 [`zino`]: https://github.com/zino-rs/zino
 [`sqlx`]: https://crates.io/crates/sqlx

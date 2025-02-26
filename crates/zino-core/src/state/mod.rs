@@ -60,9 +60,11 @@ use crate::{
     application::{self, Agent, Application, ServerTag},
     crypto,
     encoding::base64,
+    error::Error,
     extension::TomlTableExt,
     helper, LazyLock,
 };
+use serde::de::DeserializeOwned;
 use std::{
     borrow::Cow,
     net::{IpAddr, Ipv4Addr, SocketAddr},
@@ -169,6 +171,23 @@ impl<T> State<T> {
     #[inline]
     pub fn get_extension_config(&self, extension: &str) -> Option<&Table> {
         self.config().get_table("extensions")?.get_table(extension)
+    }
+
+    /// Parses the config as an instance of `C` corresponding to the `key`.
+    #[inline]
+    pub fn parse_config<C: DeserializeOwned>(&self, key: &str) -> Option<Result<C, Error>> {
+        self.get_config(key)
+            .map(|t| serde_json::from_value(t.to_map().into()).map_err(Error::from))
+    }
+
+    /// Parses the config as an instance of `C` corresponding to the `extension`.
+    #[inline]
+    pub fn parse_extension_config<C: DeserializeOwned>(
+        &self,
+        extension: &str,
+    ) -> Option<Result<C, Error>> {
+        self.get_extension_config(extension)
+            .map(|t| serde_json::from_value(t.to_map().into()).map_err(Error::from))
     }
 
     /// Returns a reference to the data.
