@@ -64,12 +64,13 @@ use crate::{
     extension::TomlTableExt,
     helper, LazyLock,
 };
+use convert_case::{Case, Casing};
 use serde::de::DeserializeOwned;
 use std::{
     borrow::Cow,
     net::{IpAddr, Ipv4Addr, SocketAddr},
 };
-use toml::value::Table;
+use toml::value::{Table, Value};
 
 mod config;
 mod data;
@@ -110,7 +111,7 @@ impl<T> State<T> {
     /// it will fetch the config from the URL instead.
     pub fn load_config(&mut self) {
         let env = self.env.as_str();
-        let config_table = if let Ok(config_url) = std::env::var("ZINO_APP_CONFIG_URL") {
+        let mut config_table = if let Ok(config_url) = std::env::var("ZINO_APP_CONFIG_URL") {
             #[cfg(feature = "http-client")]
             {
                 config::fetch_config_url(&config_url, env).unwrap_or_else(|err| {
@@ -140,6 +141,33 @@ impl<T> State<T> {
                 Table::new()
             }
         };
+
+        // Merges the environment variables for the config table.
+        for (key, value) in config_table.iter_mut() {
+            let Value::Table(table) = value else {
+                continue;
+            };
+            let prefix = key.to_ascii_uppercase();
+            for (key, value) in table.iter_mut() {
+                let name = format!("ZINO_{}_{}", &prefix, key.to_case(Case::Constant));
+                let Ok(s) = std::env::var(&name) else {
+                    continue;
+                };
+                let result = match value.type_str() {
+                    "string" => Ok(Value::String(s)),
+                    "integer" => s.parse().map(Value::Integer).map_err(Error::from),
+                    "float" => s.parse().map(Value::Float).map_err(Error::from),
+                    "boolean" => s.parse().map(Value::Boolean).map_err(Error::from),
+                    "datetime" => s.parse().map(Value::Datetime).map_err(Error::from),
+                    _ => Err(Error::new(format!("cannot parse non-primitive value: {s}"))),
+                };
+                match result {
+                    Ok(v) => *value = v,
+                    Err(err) => tracing::error!("invalid environment variable `{name}`: {err}"),
+                }
+            }
+        }
+
         self.config = config_table;
     }
 
