@@ -4,10 +4,10 @@ description = "Domain models for zino."
 version = "0.31.0"
 categories = ["web-programming", "database"]
 keywords = ["web", "model", "orm", "schema"]
+readme = "README.md"
 documentation = "https://docs.rs/zino-model"
 homepage = { workspace = true }
 repository = { workspace = true }
-readme = { workspace = true }
 edition = { workspace = true }
 rust-version = { workspace = true }
 license = { workspace = true }

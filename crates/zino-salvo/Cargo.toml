@@ -4,10 +4,10 @@ description = "Integrations with salvo for zino."
 version = "0.1.0"
 categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
+readme = "README.md"
 documentation = "https://docs.rs/zino-salvo"
 homepage = { workspace = true }
 repository = { workspace = true }
-readme = { workspace = true }
 edition = { workspace = true }
 rust-version = { workspace = true }
 license = { workspace = true }

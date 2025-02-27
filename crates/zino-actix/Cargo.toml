@@ -5,9 +5,9 @@ version = "0.7.0"
 categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 documentation = "https://docs.rs/zino-actix"
+readme = "README.md"
 homepage = { workspace = true }
 repository = { workspace = true }
-readme = { workspace = true }
 edition = { workspace = true }
 rust-version = { workspace = true }
 license = { workspace = true }

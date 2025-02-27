@@ -4,10 +4,10 @@ description = "Core types and traits for zino."
 version = "0.33.0"
 categories = ["asynchronous", "network-programming", "web-programming::http-server"]
 keywords = ["http", "web", "framework"]
+readme = "README.md"
 documentation = "https://docs.rs/zino-core"
 homepage = { workspace = true }
 repository = { workspace = true }
-readme = { workspace = true }
 edition = { workspace = true }
 rust-version = { workspace = true }
 license = { workspace = true }

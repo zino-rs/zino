@@ -30,7 +30,6 @@ members = [
 [workspace.package]
 homepage = "https://github.com/zino-rs/zino"
 repository = "https://github.com/zino-rs/zino"
-readme = "README.md"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT"

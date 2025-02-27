@@ -4,10 +4,10 @@ description = "Data visualizations for zino."
 version = "0.0.1"
 categories = ["visualization"]
 keywords = ["plotting", "visualization"]
+readme = "README.md"
 documentation = "https://docs.rs/zino-chart"
 homepage = { workspace = true }
 repository = { workspace = true }
-readme = { workspace = true }
 edition = { workspace = true }
 rust-version = { workspace = true }
 license = { workspace = true }

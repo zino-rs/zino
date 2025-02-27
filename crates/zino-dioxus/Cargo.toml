@@ -4,10 +4,10 @@ description = "Dioxus components for zino."
 version = "0.14.0"
 categories = ["gui", "network-programming", "web-programming"]
 keywords = ["zino", "dioxus", "components"]
+readme = "README.md"
 documentation = "https://docs.rs/zino-dioxus"
 homepage = { workspace = true }
 repository = { workspace = true }
-readme = { workspace = true }
 edition = { workspace = true }
 rust-version = { workspace = true }
 license = { workspace = true }
