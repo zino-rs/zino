@@ -39,7 +39,7 @@ edition = "2024"
 rust-version = "1.85"
 
 [dependencies]
-zino = { version = "0.32", features = ["axum"] }
+zino = { version = "0.33", features = ["axum"] }
 ```
 
 ```rust

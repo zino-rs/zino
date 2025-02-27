@@ -31,10 +31,11 @@ Here is the simplest application to run a server:
 [package]
 name = "zino-app"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+rust-version = "1.85"
 
 [dependencies]
-zino = { version = "0.32", features = ["axum"] }
+zino = { version = "0.33", features = ["axum"] }
 ```
 
 ```rust,ignore
