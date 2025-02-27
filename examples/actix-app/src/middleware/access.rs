@@ -1,12 +1,12 @@
 use actix_web::{
-    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     Error,
+    dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready},
 };
 use std::{
-    future::{ready, Future, Ready},
+    future::{Future, Ready, ready},
     pin::Pin,
 };
-use zino::{prelude::*, Request};
+use zino::{Request, prelude::*};
 
 #[derive(Default)]
 pub struct UserSessionInitializer;

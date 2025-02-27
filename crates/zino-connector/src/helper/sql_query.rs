@@ -39,7 +39,7 @@ static STATEMENT_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
 
 #[cfg(test)]
 mod tests {
-    use crate::{extension::JsonObjectExt, Map};
+    use crate::{Map, extension::JsonObjectExt};
 
     #[test]
     fn it_formats_sql_query_params() {

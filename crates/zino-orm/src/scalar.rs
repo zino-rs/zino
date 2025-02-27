@@ -1,8 +1,8 @@
-use super::{column::ColumnExt, query::QueryExt, schema::Schema, DatabaseDriver};
+use super::{DatabaseDriver, column::ColumnExt, query::QueryExt, schema::Schema};
 use futures::TryStreamExt;
 use sqlx::{Decode, Row, Type};
 use std::{fmt::Display, sync::atomic::Ordering::Relaxed};
-use zino_core::{error::Error, extension::JsonValueExt, model::Query, Map};
+use zino_core::{Map, error::Error, extension::JsonValueExt, model::Query};
 
 /// Query on scalar values.
 pub trait ScalarQuery<K>: Schema<PrimaryKey = K>

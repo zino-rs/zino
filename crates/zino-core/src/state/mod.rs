@@ -57,12 +57,13 @@
 //! ```
 
 use crate::{
+    LazyLock,
     application::{self, Agent, Application, ServerTag},
     crypto,
     encoding::base64,
     error::Error,
     extension::TomlTableExt,
-    helper, LazyLock,
+    helper,
 };
 use convert_case::{Case, Casing};
 use serde::de::DeserializeOwned;

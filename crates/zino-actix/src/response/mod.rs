@@ -1,10 +1,10 @@
 use actix_web::{
+    HttpRequest, HttpResponse, Responder, ResponseError,
     body::BoxBody,
     http::{
-        header::{self, HeaderName, HeaderValue},
         StatusCode,
+        header::{self, HeaderName, HeaderValue},
     },
-    HttpRequest, HttpResponse, Responder, ResponseError,
 };
 use std::fmt;
 use zino_http::{

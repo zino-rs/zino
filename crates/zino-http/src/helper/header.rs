@@ -1,6 +1,6 @@
 use mime_guess::{
-    mime::{APPLICATION, AUDIO, IMAGE, JAVASCRIPT, JSON, PDF, TEXT, VIDEO},
     Mime,
+    mime::{APPLICATION, AUDIO, IMAGE, JAVASCRIPT, JSON, PDF, TEXT, VIDEO},
 };
 
 /// Returns `ture` if the content can be displayed inline in the browser.

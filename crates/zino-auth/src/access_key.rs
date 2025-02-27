@@ -1,17 +1,17 @@
 use hmac::{
-    digest::{FixedOutput, KeyInit, MacMarker, Update},
     Hmac, Mac,
+    digest::{FixedOutput, KeyInit, MacMarker, Update},
 };
-use rand::{distr::Alphanumeric, Rng};
+use rand::{Rng, distr::Alphanumeric};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, fmt, iter};
 use zino_core::{
+    LazyLock,
     application::{Agent, Application},
     crypto::{self, Digest},
     encoding::base64,
     extension::TomlTableExt,
     state::State,
-    LazyLock,
 };
 
 /// Access key ID.

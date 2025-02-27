@@ -9,6 +9,46 @@ members = [
     "ntex-app",
 ]
 
+[workspace.package]
+edition = "2024"
+rust-version = "1.85"
+publish = false
+
+[workspace.dependencies]
+tracing = "0.1.41"
+
+[workspace.dependencies.serde]
+version = "1.0.218"
+features = ["derive"]
+
+[workspace.dependencies.zino]
+path = "../crates/zino"
+version = "0.32.2"
+
+[workspace.dependencies.zino-amis]
+path = "../crates/zino-amis"
+version = "0.4.1"
+
+[workspace.dependencies.zino-core]
+path = "../crates/zino-core"
+version = "0.32.2"
+
+[workspace.dependencies.zino-derive]
+path = "../crates/zino-derive"
+version = "0.30.2"
+
+[workspace.dependencies.zino-dioxus]
+path = "../crates/zino-dioxus"
+version = "0.13.2"
+
+[workspace.dependencies.zino-model]
+path = "../crates/zino-model"
+version = "0.30.2"
+
+[workspace.dependencies.zino-orm]
+path = "../crates/zino-orm"
+version = "0.4.2"
+
 [profile.release]
 lto = "thin"
 codegen-units = 1

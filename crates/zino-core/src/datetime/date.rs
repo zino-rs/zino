@@ -1,5 +1,5 @@
-use crate::{error::Error, AvroValue, JsonValue};
-use chrono::{format::ParseError, Datelike, Days, Local, Months, NaiveDate, Weekday};
+use crate::{AvroValue, JsonValue, error::Error};
+use chrono::{Datelike, Days, Local, Months, NaiveDate, Weekday, format::ParseError};
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
     fmt,
@@ -177,11 +177,7 @@ impl Date {
     /// Returns the number of days in the current year.
     #[inline]
     pub fn days_in_current_year(&self) -> u32 {
-        if self.is_leap_year() {
-            366
-        } else {
-            365
-        }
+        if self.is_leap_year() { 366 } else { 365 }
     }
 
     /// Returns the number of days in the current month.

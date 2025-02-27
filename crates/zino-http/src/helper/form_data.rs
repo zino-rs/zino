@@ -1,7 +1,7 @@
 use mime_guess::mime::{APPLICATION, JSON};
 use multer::Multipart;
 use serde::de::DeserializeOwned;
-use zino_core::{error::Error, extension::JsonObjectExt, Map};
+use zino_core::{Map, error::Error, extension::JsonObjectExt};
 use zino_storage::NamedFile;
 
 /// Parses the multipart form as an instance of `T` with the `name` and a list of files.

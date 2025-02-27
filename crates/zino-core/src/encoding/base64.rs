@@ -1,5 +1,5 @@
 //! Base64 encoding and decoding.
-use base64::{engine::general_purpose::STANDARD_NO_PAD, DecodeError, Engine};
+use base64::{DecodeError, Engine, engine::general_purpose::STANDARD_NO_PAD};
 
 /// Encodes the data as base64 string.
 #[inline]

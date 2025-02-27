@@ -3,8 +3,8 @@ use ntex::{
     http::{Method, Payload, Uri},
     util::Bytes,
     web::{
-        error::{DefaultError, ErrorRenderer},
         FromRequest, HttpRequest, WebRequest,
+        error::{DefaultError, ErrorRenderer},
     },
 };
 use std::{

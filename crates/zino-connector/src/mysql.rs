@@ -1,11 +1,11 @@
-use super::{sqlx_row::SerializeRow, Connector, DataSource, DataSourceConnector::MySql};
+use super::{Connector, DataSource, DataSourceConnector::MySql, sqlx_row::SerializeRow};
 use crate::helper;
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use sqlx::mysql::{MySqlPool, MySqlPoolOptions};
 use std::time::Duration;
 use toml::Table;
-use zino_core::{error::Error, extension::TomlTableExt, state::State, AvroValue, Map, Record};
+use zino_core::{AvroValue, Map, Record, error::Error, extension::TomlTableExt, state::State};
 
 impl Connector for MySqlPool {
     fn try_new_data_source(config: &Table) -> Result<DataSource, Error> {

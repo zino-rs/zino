@@ -2,7 +2,7 @@ use super::{AppType, Application};
 use crate::schedule::AsyncScheduler;
 
 #[cfg(feature = "http-client")]
-use crate::{error::Error, Map};
+use crate::{Map, error::Error};
 
 /// An application agent with no routes.
 #[derive(Debug, Clone, Copy)]

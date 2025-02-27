@@ -1,16 +1,16 @@
-use super::{query::QueryExt, DatabaseDriver, DatabaseRow, DecodeRow, EncodeColumn, Schema};
+use super::{DatabaseDriver, DatabaseRow, DecodeRow, EncodeColumn, Schema, query::QueryExt};
 use chrono::NaiveDateTime;
 use std::borrow::Cow;
 use zino_core::{
+    AvroValue, JsonValue, Map, Record, SharedString, Uuid,
     datetime::{Date, DateTime, Time},
     error::Error,
     extension::{JsonObjectExt, JsonValueExt},
     model::{Column, Query, QueryOrder},
-    AvroValue, JsonValue, Map, Record, SharedString, Uuid,
 };
 
 #[cfg(feature = "orm-sqlx")]
-use sqlx::{types::Decimal, Column as _, Row, TypeInfo, ValueRef};
+use sqlx::{Column as _, Row, TypeInfo, ValueRef, types::Decimal};
 
 impl EncodeColumn<DatabaseDriver> for Column<'_> {
     fn column_type(&self) -> &str {

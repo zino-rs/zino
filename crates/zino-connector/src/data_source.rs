@@ -1,7 +1,7 @@
 use self::DataSourceConnector::*;
 use super::Connector;
 use toml::Table;
-use zino_core::{bail, error::Error, extension::TomlTableExt, Map, Record};
+use zino_core::{Map, Record, bail, error::Error, extension::TomlTableExt};
 
 #[cfg(feature = "connector-arrow")]
 use super::ArrowConnector;

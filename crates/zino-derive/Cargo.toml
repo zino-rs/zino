@@ -2,13 +2,13 @@
 name = "zino-derive"
 description = "Derived traits for zino."
 version = "0.30.2"
-rust-version = "1.80"
-edition = "2021"
-license = "MIT"
-homepage = "https://github.com/zino-rs/zino"
-repository = "https://github.com/zino-rs/zino"
 documentation = "https://docs.rs/zino-derive"
-readme = "README.md"
+homepage = { workspace = true }
+repository = { workspace = true }
+readme = { workspace = true }
+edition = { workspace = true }
+rust-version = { workspace = true }
+license = { workspace = true }
 
 [lib]
 proc-macro = true

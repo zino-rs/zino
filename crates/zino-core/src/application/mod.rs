@@ -35,11 +35,11 @@
 //! ```
 
 use crate::{
+    LazyLock, Map,
     datetime::DateTime,
     extension::{JsonObjectExt, TomlTableExt},
     schedule::{AsyncJobScheduler, AsyncScheduler, Scheduler},
     state::{Env, State},
-    LazyLock, Map,
 };
 use ahash::{HashMap, HashMapExt};
 use std::{
@@ -281,10 +281,12 @@ pub trait Application {
         Self: Sized,
         T: Scheduler + Send + 'static,
     {
-        thread::spawn(move || loop {
-            scheduler.tick();
-            if let Some(duration) = scheduler.time_till_next_job() {
-                thread::sleep(duration);
+        thread::spawn(move || {
+            loop {
+                scheduler.tick();
+                if let Some(duration) = scheduler.time_till_next_job() {
+                    thread::sleep(duration);
+                }
             }
         });
         self

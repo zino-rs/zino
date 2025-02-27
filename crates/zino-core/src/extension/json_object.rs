@@ -1,10 +1,10 @@
 use super::JsonValueExt;
 use crate::{
+    JsonValue, Map, Record, Uuid,
     datetime::{self, Date, DateTime, Time},
     helper,
     model::Model,
     validation::Validation,
-    JsonValue, Map, Record, Uuid,
 };
 use chrono::NaiveDateTime;
 use convert_case::{Case, Casing};
@@ -870,8 +870,8 @@ impl JsonObjectExt for Map {
 #[cfg(test)]
 mod tests {
     use crate::{
-        extension::{JsonObjectExt, JsonValueExt},
         Map,
+        extension::{JsonObjectExt, JsonValueExt},
     };
 
     #[test]

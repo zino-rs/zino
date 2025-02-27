@@ -14,6 +14,7 @@ use std::{
 };
 use toml::{Table, Value};
 use utoipa::openapi::{
+    OpenApi, OpenApiBuilder,
     content::ContentBuilder,
     external_docs::ExternalDocs,
     info::{Contact, Info, License},
@@ -25,12 +26,11 @@ use utoipa::openapi::{
     security::SecurityRequirement,
     server::Server,
     tag::Tag,
-    OpenApi, OpenApiBuilder,
 };
 use zino_core::{
+    LazyLock, Uuid,
     application::{Agent, Application},
     extension::TomlTableExt,
-    LazyLock, Uuid,
 };
 
 mod model;

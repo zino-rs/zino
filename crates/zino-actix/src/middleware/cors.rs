@@ -1,5 +1,5 @@
 use actix_cors::Cors;
-use actix_web::http::{header::HeaderName, Method};
+use actix_web::http::{Method, header::HeaderName};
 use zino_core::{application::Application, extension::TomlTableExt};
 
 /// CORS middleware.

@@ -1,6 +1,6 @@
 //! Domain specific models.
-use crate::{validation::Validation, AvroValue, JsonValue, Map, Record};
-use serde::{de::DeserializeOwned, Serialize};
+use crate::{AvroValue, JsonValue, Map, Record, validation::Validation};
+use serde::{Serialize, de::DeserializeOwned};
 
 mod column;
 mod context;

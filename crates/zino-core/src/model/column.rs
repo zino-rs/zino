@@ -1,17 +1,18 @@
 use super::Reference;
 use crate::{
+    Decimal, JsonValue, Map, Uuid,
     datetime::{Date, DateTime, Time},
     extension::{JsonObjectExt, JsonValueExt},
-    mock, Decimal, JsonValue, Map, Uuid,
+    mock,
 };
 use apache_avro::schema::{
     ArraySchema, MapSchema, Name, RecordField, RecordFieldOrder, Schema, UnionSchema,
 };
 use rand::{
+    Rng,
     distr::{Alphanumeric, Distribution, SampleString, StandardUniform},
     random,
     seq::IndexedRandom,
-    Rng,
 };
 use serde::Serialize;
 use std::collections::BTreeMap;

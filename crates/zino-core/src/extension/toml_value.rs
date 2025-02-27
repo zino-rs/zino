@@ -1,4 +1,4 @@
-use crate::{extension::TomlTableExt, JsonValue, TomlValue};
+use crate::{JsonValue, TomlValue, extension::TomlTableExt};
 use serde_json::Number;
 
 /// Extension trait for [`toml::Value`](toml::Value).

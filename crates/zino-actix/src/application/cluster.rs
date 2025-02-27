@@ -1,12 +1,12 @@
-use crate::{middleware, response::ActixResponse, Request, RouterConfigure};
+use crate::{Request, RouterConfigure, middleware, response::ActixResponse};
 use actix_files::{Files, NamedFile};
 use actix_web::{
-    dev::{fn_service, ServiceRequest, ServiceResponse},
+    App, HttpServer, Responder,
+    dev::{ServiceRequest, ServiceResponse, fn_service},
     http::StatusCode,
     middleware::Compress,
     rt::{self, Runtime},
     web::{self, FormConfig, JsonConfig, PayloadConfig},
-    App, HttpServer, Responder,
 };
 use std::{fs, time::Duration};
 use utoipa_rapidoc::RapiDoc;

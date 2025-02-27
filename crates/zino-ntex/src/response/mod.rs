@@ -1,8 +1,8 @@
 use ntex::{
     http::{
+        ResponseError, StatusCode,
         body::Body,
         header::{self, HeaderName, HeaderValue},
-        ResponseError, StatusCode,
     },
     web::{HttpRequest, HttpResponse, Responder, WebResponseError},
 };

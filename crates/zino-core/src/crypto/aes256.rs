@@ -1,7 +1,7 @@
 use crate::{bail, error::Error, warn};
 use aes_gcm_siv::{
-    aead::{generic_array::GenericArray, Aead},
     Aes256GcmSiv, KeyInit, Nonce,
+    aead::{Aead, generic_array::GenericArray},
 };
 use rand::Rng;
 

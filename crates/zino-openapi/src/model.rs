@@ -1,6 +1,6 @@
 use ahash::{HashMap, HashMapExt};
 use convert_case::{Case, Casing};
-use zino_core::{extension::JsonObjectExt, model::Translation, LazyLock, Map};
+use zino_core::{LazyLock, Map, extension::JsonObjectExt, model::Translation};
 
 /// Translates the model data.
 pub fn translate_model_entry(model: &mut Map, model_name: &str) {

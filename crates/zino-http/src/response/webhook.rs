@@ -1,19 +1,19 @@
 use crate::helper;
 use http::{
-    header::{HeaderMap, HeaderName},
     Method,
+    header::{HeaderMap, HeaderName},
 };
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use serde_json::value::RawValue;
 use toml::Table;
 use url::Url;
 use zino_core::{
+    JsonValue, Map,
     application::Agent,
     bail,
     error::Error,
     extension::{HeaderMapExt, JsonObjectExt, JsonValueExt, TomlTableExt, TomlValueExt},
     trace::TraceContext,
-    JsonValue, Map,
 };
 
 /// User-defined HTTP callbacks.

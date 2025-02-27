@@ -1,8 +1,8 @@
 use super::TraceState;
 use crate::{
+    LazyLock, Uuid,
     extension::{HeaderMapExt, TomlTableExt},
     state::State,
-    LazyLock, Uuid,
 };
 use http::header::HeaderMap;
 use tracing::Span;

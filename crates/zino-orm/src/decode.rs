@@ -1,6 +1,6 @@
 use super::{DatabaseDriver, DatabaseRow};
 use sqlx::{Database, Decode, Row, ValueRef};
-use zino_core::{error::Error, warn, Decimal, Uuid};
+use zino_core::{Decimal, Uuid, error::Error, warn};
 
 /// Decodes a single value as `T` for the field in a row.
 #[inline]
@@ -172,7 +172,7 @@ where
     T: Decode<'r, DatabaseDriver> + std::str::FromStr,
     <T as std::str::FromStr>::Err: std::error::Error + Send + 'static,
 {
-    use zino_core::{extension::JsonValueExt, JsonValue};
+    use zino_core::{JsonValue, extension::JsonValueExt};
 
     let Some(value) = decode_optional::<JsonValue>(row, field)? else {
         return Ok(Vec::new());

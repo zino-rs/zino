@@ -1,15 +1,16 @@
 use super::{Connector, DataSource, DataSourceConnector::Http};
 use crate::helper;
 use http::{
-    header::{HeaderMap, HeaderName},
     Method,
+    header::{HeaderMap, HeaderName},
 };
 use reqwest::Response;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use serde_json::value::RawValue;
 use toml::Table;
 use url::Url;
 use zino_core::{
+    JsonValue, Map, Record,
     application::Agent,
     bail,
     error::Error,
@@ -17,7 +18,7 @@ use zino_core::{
         AvroRecordExt, HeaderMapExt, JsonObjectExt, JsonValueExt, TomlTableExt, TomlValueExt,
     },
     trace::TraceContext,
-    warn, JsonValue, Map, Record,
+    warn,
 };
 
 /// A connector to HTTP services.

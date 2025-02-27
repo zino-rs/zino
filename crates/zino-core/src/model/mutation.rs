@@ -1,7 +1,7 @@
 use crate::{
+    JsonValue, Map,
     extension::{JsonObjectExt, JsonValueExt},
     validation::Validation,
-    JsonValue, Map,
 };
 
 /// A mutation type for models.

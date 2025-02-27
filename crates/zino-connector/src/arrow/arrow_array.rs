@@ -3,15 +3,15 @@ use datafusion::arrow::{
     array::{self, Array, ArrayAccessor, FixedSizeBinaryArray, FixedSizeListArray, StringArray},
     datatypes::{
         DataType, Date32Type, Date64Type, DurationMicrosecondType, DurationMillisecondType,
-        DurationNanosecondType, DurationSecondType, Float32Type, Float64Type, Int16Type, Int32Type,
-        Int64Type, Int8Type, IntervalDayTimeType, IntervalUnit, Time32MillisecondType,
+        DurationNanosecondType, DurationSecondType, Float32Type, Float64Type, Int8Type, Int16Type,
+        Int32Type, Int64Type, IntervalDayTimeType, IntervalUnit, Time32MillisecondType,
         Time32SecondType, Time64MicrosecondType, Time64NanosecondType, TimeUnit,
         TimestampMicrosecondType, TimestampMillisecondType, TimestampNanosecondType,
-        TimestampSecondType, UInt16Type, UInt32Type, UInt64Type, UInt8Type,
+        TimestampSecondType, UInt8Type, UInt16Type, UInt32Type, UInt64Type,
     },
 };
 use std::collections::HashMap;
-use zino_core::{bail, encoding::base64, error::Error, warn, AvroValue, JsonValue, Map};
+use zino_core::{AvroValue, JsonValue, Map, bail, encoding::base64, error::Error, warn};
 
 /// Extension trait for [`dyn Array`](datafusion::arrow::array::Array).
 pub(super) trait ArrowArrayExt {

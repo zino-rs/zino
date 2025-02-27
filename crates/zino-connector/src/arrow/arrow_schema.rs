@@ -5,7 +5,7 @@ use datafusion::arrow::{
 };
 use std::sync::Arc;
 use toml::Table;
-use zino_core::{bail, error::Error, Record, TomlValue};
+use zino_core::{Record, TomlValue, bail, error::Error};
 
 /// Extension trait for [`Schema`](datafusion::arrow::datatypes::Schema).
 pub(super) trait ArrowSchemaExt {

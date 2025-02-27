@@ -1,7 +1,7 @@
 //! Scheduler for sync and async cron jobs.
 
-use super::{AsyncScheduler, JobContext, DEFAULT_TICK_INTERVAL};
-use crate::{datetime::DateTime, extension::TomlTableExt, BoxFuture, Uuid};
+use super::{AsyncScheduler, DEFAULT_TICK_INTERVAL, JobContext};
+use crate::{BoxFuture, Uuid, datetime::DateTime, extension::TomlTableExt};
 use chrono::Local;
 use cron::Schedule;
 use std::{io, str::FromStr, time::Duration};

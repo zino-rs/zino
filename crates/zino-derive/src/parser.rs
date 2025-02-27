@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
-    punctuated::Punctuated, Attribute, Data, Expr, Field, Fields, GenericArgument, Lit, Meta,
-    PathArguments, Token, Type,
+    Attribute, Data, Expr, Field, Fields, GenericArgument, Lit, Meta, PathArguments, Token, Type,
+    punctuated::Punctuated,
 };
 
 /// Quotes the `Option<String>` value.
@@ -48,7 +48,7 @@ pub(super) fn get_type_name(ty: &Type) -> String {
         if let Some(segment) = ty.path.segments.last() {
             let type_name = segment.ident.to_string();
             if let PathArguments::AngleBracketed(ref generics) = segment.arguments {
-                if let Some(GenericArgument::Type(ref ty)) = generics.args.first() {
+                if let Some(GenericArgument::Type(ty)) = generics.args.first() {
                     return type_name + "<" + &get_type_name(ty) + ">";
                 }
             }

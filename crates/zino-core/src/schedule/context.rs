@@ -1,4 +1,4 @@
-use crate::{datetime::DateTime, error::Error, Uuid};
+use crate::{Uuid, datetime::DateTime, error::Error};
 use std::{
     any::Any,
     time::{Duration, Instant},

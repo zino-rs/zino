@@ -1,11 +1,11 @@
 use actix_web::{
+    Error,
     body::MessageBody,
     dev::{ServiceRequest, ServiceResponse},
-    Error,
 };
-use tracing::{field::Empty, Span};
+use tracing::{Span, field::Empty};
 use tracing_actix_web::{RootSpanBuilder, TracingLogger};
-use zino_core::{application::Application, trace::TraceContext, Uuid};
+use zino_core::{Uuid, application::Application, trace::TraceContext};
 
 /// Tracing middleware.
 #[inline]

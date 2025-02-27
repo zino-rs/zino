@@ -3,9 +3,10 @@
 use std::{fs, path::Path};
 use toml::{Table, Value};
 use zino_core::{
+    Map,
     error::Error,
     extension::{JsonObjectExt, TomlValueExt},
-    json, Map,
+    json,
 };
 
 /// A list of page schema nodes.

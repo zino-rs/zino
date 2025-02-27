@@ -1,6 +1,6 @@
 use rand::{
-    distr::{Alphanumeric, SampleString},
     Rng,
+    distr::{Alphanumeric, SampleString},
 };
 
 #[cfg(feature = "locale")]

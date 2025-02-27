@@ -3,7 +3,7 @@
 #![doc(html_logo_url = "https://zino.cc/assets/zino-logo.svg")]
 
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{DeriveInput, parse_macro_input};
 
 mod decode_row;
 mod entity;

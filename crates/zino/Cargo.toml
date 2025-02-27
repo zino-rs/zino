@@ -2,15 +2,15 @@
 name = "zino"
 description = "Next-generation framework for composable applications in Rust."
 version = "0.32.2"
-rust-version = "1.80"
-edition = "2021"
-license = "MIT"
 categories = ["asynchronous", "network-programming", "web-programming::http-server"]
 keywords = ["http", "web", "framework"]
-homepage = "https://github.com/zino-rs/zino"
-repository = "https://github.com/zino-rs/zino"
 documentation = "https://docs.rs/zino"
-readme = "README.md"
+homepage = { workspace = true }
+repository = { workspace = true }
+readme = { workspace = true }
+edition = { workspace = true }
+rust-version = { workspace = true }
+license = { workspace = true }
 
 [package.metadata.docs.rs]
 features = [

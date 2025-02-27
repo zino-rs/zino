@@ -7,9 +7,9 @@ use tower_http::{
     classify::{SharedClassifier, StatusInRangeAsFailures, StatusInRangeFailureClass},
     trace::TraceLayer,
 };
-use tracing::{field::Empty, Span};
+use tracing::{Span, field::Empty};
 use zino_core::{
-    application::Application, extension::HeaderMapExt, trace::TraceContext, LazyLock, Uuid,
+    LazyLock, Uuid, application::Application, extension::HeaderMapExt, trace::TraceContext,
 };
 
 /// Type aliases.

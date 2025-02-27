@@ -1,8 +1,8 @@
 use rand::{
+    Rng,
     distr::{Alphanumeric, SampleString},
     random,
     seq::IndexedRandom,
-    Rng,
 };
 
 /// Schemes for a mocked URI.

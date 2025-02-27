@@ -6,7 +6,7 @@ use datafusion::arrow::{
     datatypes::{DataType, Field},
 };
 use std::sync::Arc;
-use zino_core::{bail, error::Error, extension::AvroRecordExt, AvroValue, Record};
+use zino_core::{AvroValue, Record, bail, error::Error, extension::AvroRecordExt};
 
 /// Extension trait for [`Field`](datafusion::arrow::datatypes::Field).
 pub(super) trait ArrowFieldExt {

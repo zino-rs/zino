@@ -2,9 +2,9 @@ use super::query::QueryExt;
 use convert_case::{Case, Casing};
 use std::borrow::Cow;
 use zino_core::{
+    JsonValue,
     extension::JsonObjectExt,
     model::{Column, Query},
-    JsonValue,
 };
 
 /// Encodes the column to be sent to the database.

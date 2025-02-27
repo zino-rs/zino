@@ -3,10 +3,9 @@ use ntex::{
     rt::System,
     time::{self, Seconds},
     web::{
-        self,
+        self, App, HttpServer,
         middleware::Compress,
         types::{FormConfig, JsonConfig, PayloadConfig},
-        App, HttpServer,
     },
 };
 use ntex_files::{Files, NamedFile};

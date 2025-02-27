@@ -7,8 +7,8 @@
 use serde::de::DeserializeOwned;
 use toml::Table;
 use zino_core::{
-    application::StaticRecord, error::Error, extension::TomlTableExt, state::State, AvroValue,
-    LazyLock, Map, Record,
+    AvroValue, LazyLock, Map, Record, application::StaticRecord, error::Error,
+    extension::TomlTableExt, state::State,
 };
 
 mod data_source;

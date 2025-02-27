@@ -1,7 +1,7 @@
 use crate::class::Class;
 use comrak::{
-    plugins::syntect::{SyntectAdapter, SyntectAdapterBuilder},
     Options, Plugins,
+    plugins::syntect::{SyntectAdapter, SyntectAdapterBuilder},
 };
 use dioxus::prelude::*;
 use zino_core::{LazyLock, SharedString};

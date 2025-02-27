@@ -30,7 +30,7 @@ mod rauthy_client;
 mod rego_engine;
 
 #[cfg(feature = "jwt")]
-pub use jwt_claims::{default_time_tolerance, default_verification_options, JwtClaims, JwtHmacKey};
+pub use jwt_claims::{JwtClaims, JwtHmacKey, default_time_tolerance, default_verification_options};
 
 #[cfg(feature = "ldap")]
 pub use ldap_client::LdapClient;

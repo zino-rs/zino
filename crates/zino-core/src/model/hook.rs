@@ -1,8 +1,8 @@
 use super::QueryContext;
 use crate::{
+    Map,
     error::Error,
     model::{Model, Mutation, Query},
-    Map,
 };
 use std::borrow::Cow;
 

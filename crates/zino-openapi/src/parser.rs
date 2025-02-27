@@ -2,6 +2,7 @@ use convert_case::{Case, Casing};
 use std::collections::BTreeMap;
 use toml::Table;
 use utoipa::openapi::{
+    Deprecated, RefOr, Required,
     content::{Content, ContentBuilder},
     external_docs::ExternalDocs,
     header::Header,
@@ -18,11 +19,10 @@ use utoipa::openapi::{
     },
     server::{Server, ServerVariableBuilder},
     tag::{Tag, TagBuilder},
-    Deprecated, RefOr, Required,
 };
 use zino_core::{
-    extension::{TomlTableExt, TomlValueExt},
     TomlValue,
+    extension::{TomlTableExt, TomlValueExt},
 };
 
 /// Parses the tag.

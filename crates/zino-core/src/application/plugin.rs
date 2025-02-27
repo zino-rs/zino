@@ -1,8 +1,8 @@
 use crate::{
+    BoxFuture,
     error::Error,
     extension::TomlTableExt,
     state::{Env, State},
-    BoxFuture,
 };
 use smallvec::SmallVec;
 use toml::value::Table;

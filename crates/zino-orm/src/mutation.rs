@@ -1,11 +1,11 @@
 /// Generates SQL `SET` expressions.
-use super::{query::QueryExt, DatabaseDriver, EncodeColumn, Entity, IntoSqlValue, Schema};
+use super::{DatabaseDriver, EncodeColumn, Entity, IntoSqlValue, Schema, query::QueryExt};
 use std::marker::PhantomData;
 use zino_core::{
+    JsonValue, Map,
     datetime::DateTime,
     extension::JsonObjectExt,
     model::{Mutation, Query},
-    JsonValue, Map,
 };
 
 /// A mutation builder for the model entity.

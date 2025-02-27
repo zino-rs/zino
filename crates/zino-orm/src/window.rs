@@ -1,5 +1,5 @@
 use self::WindownFunction::*;
-use super::{query::QueryExt, Entity};
+use super::{Entity, query::QueryExt};
 use zino_core::model::Query;
 
 /// A windown function.

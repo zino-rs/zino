@@ -6,7 +6,7 @@
 
 use toml::Table;
 use zino_core::{
-    application::StaticRecord, error::Error, extension::TomlTableExt, state::State, LazyLock, Map,
+    LazyLock, Map, application::StaticRecord, error::Error, extension::TomlTableExt, state::State,
 };
 
 mod client;

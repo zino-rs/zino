@@ -1,5 +1,5 @@
 use self::Aggregation::*;
-use super::{query::QueryExt, Entity};
+use super::{Entity, query::QueryExt};
 use zino_core::model::Query;
 
 /// SQL aggregate functions.

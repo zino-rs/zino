@@ -1,7 +1,7 @@
 use rand::{
+    Rng,
     distr::{Alphanumeric, SampleString},
     seq::IndexedRandom,
-    Rng,
 };
 
 /// Subdomains for a mocked email address.

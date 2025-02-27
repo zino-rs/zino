@@ -2,9 +2,9 @@ use parking_lot::Mutex;
 use regorus::{Engine, Value};
 use std::{fs, io::ErrorKind};
 use zino_core::{
+    LazyLock,
     application::{Agent, Application},
     error::Error,
-    LazyLock,
 };
 
 /// Rego evaluation engine.

@@ -3,13 +3,12 @@
 use serde::{Deserialize, Serialize};
 use zino_auth::{AccessKeyId, UserSession};
 use zino_core::{
-    bail,
+    Map, Uuid, bail,
     datetime::DateTime,
     error::Error,
     extension::JsonObjectExt,
     model::{Model, ModelHooks},
     validation::Validation,
-    Map, Uuid,
 };
 use zino_derive::{DecodeRow, Entity, ModelAccessor, Schema};
 use zino_orm::ModelHelper;
@@ -256,7 +255,7 @@ impl User {
 #[cfg(test)]
 mod tests {
     use super::User;
-    use zino_core::{extension::JsonObjectExt, model::Model, Map};
+    use zino_core::{Map, extension::JsonObjectExt, model::Model};
 
     #[test]
     fn it_checks_user_roles() {

@@ -1,7 +1,7 @@
 use crate::{encoding::base64, error::Error};
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
+    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
 
 /// Encrypts the hashed password using `Argon2id`.

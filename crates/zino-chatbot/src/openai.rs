@@ -1,19 +1,19 @@
-use super::{client::ChatbotClient::OpenAi, Chatbot, ChatbotService};
+use super::{Chatbot, ChatbotService, client::ChatbotClient::OpenAi};
 use async_openai::{
+    Chat, Client,
     config::{Config, OpenAIConfig},
     types::{
         ChatCompletionRequestMessage, ChatCompletionRequestUserMessageArgs,
         CreateChatCompletionRequestArgs,
     },
-    Chat, Client,
 };
 use futures::StreamExt;
 use toml::Table;
 use zino_core::{
+    Map,
     application::Agent,
     error::Error,
     extension::{JsonObjectExt, TomlTableExt},
-    Map,
 };
 
 /// OpenAI chat completion.

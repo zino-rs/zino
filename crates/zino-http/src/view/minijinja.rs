@@ -2,10 +2,10 @@ use convert_case::{Case, Casing};
 use minijinja::Environment;
 use std::sync::LazyLock;
 use zino_core::{
+    Map,
     application::{Agent, Application},
     error::Error,
     extension::TomlTableExt,
-    Map,
 };
 
 /// Renders a template with the given data using [`minijinja`](https://crates.io/crates/minijinja).

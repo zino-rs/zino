@@ -1,16 +1,17 @@
 //! Internationalization and localization.
 
-use fluent::{bundle::FluentBundle, FluentArgs, FluentResource};
+use fluent::{FluentArgs, FluentResource, bundle::FluentBundle};
 use intl_memoizer::concurrent::IntlLangMemoizer;
 use std::{fs, io::ErrorKind};
 use unic_langid::LanguageIdentifier;
 use zino_core::{
+    LazyLock, SharedString,
     application::{Agent, Application},
     bail,
     error::Error,
     extension::TomlTableExt,
     state::State,
-    warn, LazyLock, SharedString,
+    warn,
 };
 
 /// Translates the localization message.

@@ -1,4 +1,4 @@
-use super::{pool::ConnectionPool, DatabasePool};
+use super::{DatabasePool, pool::ConnectionPool};
 use std::time::Duration;
 use toml::value::Table;
 use zino_core::extension::TomlTableExt;
@@ -18,7 +18,7 @@ pub trait PoolManager {
 #[cfg(feature = "orm-sqlx")]
 impl PoolManager for ConnectionPool<DatabasePool> {
     fn with_config(config: &'static Table) -> Self {
-        use sqlx::{pool::PoolOptions, Connection, Executor};
+        use sqlx::{Connection, Executor, pool::PoolOptions};
 
         let name = config.get_str("name").unwrap_or("main");
 

@@ -1,4 +1,4 @@
-use super::{query::QueryExt, Entity, Schema};
+use super::{Entity, Schema, query::QueryExt};
 use std::marker::PhantomData;
 use zino_core::model::Query;
 

@@ -2,24 +2,21 @@
 name = "axum-app"
 description = "An example for axum integration."
 version = "0.20.2"
-rust-version = "1.80"
-edition = "2021"
-publish = false
+edition = { workspace = true }
+rust-version = { workspace = true }
+publish = { workspace = true }
 
 [dependencies]
-tracing = "0.1.41"
-
-[dependencies.axum]
-version = "0.8.1"
-default-features = false
-
-[dependencies.serde]
-version = "1.0.218"
-features = ["derive"]
+axum = { version = "0.8.1", default-features = false }
+serde = { workspace = true }
+tracing = { workspace = true }
+zino-core = { workspace = true, features = ["env-filter", "validator-email"] }
+zino-derive = { workspace = true }
+zino-model = { workspace = true }
+zino-orm = { workspace = true, features = ["orm-mysql"] }
 
 [dependencies.zino]
-path = "../../crates/zino"
-version = "0.32.2"
+workspace = true
 features = [
     "axum",
     "cookie",
@@ -28,21 +25,3 @@ features = [
     "orm",
     "view",
 ]
-
-[dependencies.zino-core]
-path = "../../crates/zino-core"
-version = "0.32.2"
-features = ["env-filter", "validator-email"]
-
-[dependencies.zino-derive]
-path = "../../crates/zino-derive"
-version = "0.30.2"
-
-[dependencies.zino-model]
-path = "../../crates/zino-model"
-version = "0.30.2"
-
-[dependencies.zino-orm]
-path = "../../crates/zino-orm"
-version = "0.4.2"
-features = ["orm-mysql"]

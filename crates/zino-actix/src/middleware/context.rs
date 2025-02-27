@@ -1,9 +1,9 @@
 use actix_web::{
-    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     Error, HttpMessage,
+    dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready},
 };
 use std::{
-    future::{ready, Future, Ready},
+    future::{Future, Ready, ready},
     pin::Pin,
 };
 use tracing::Span;

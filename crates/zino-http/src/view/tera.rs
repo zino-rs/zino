@@ -1,10 +1,10 @@
 use std::sync::LazyLock;
 use tera::{Context, Tera};
 use zino_core::{
+    Map,
     application::{Agent, Application},
     error::Error,
     extension::TomlTableExt,
-    Map,
 };
 
 /// Renders a template with the given data using [`tera`](https://crates.io/crates/tera).

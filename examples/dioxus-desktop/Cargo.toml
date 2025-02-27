@@ -2,14 +2,17 @@
 name = "dioxus-desktop"
 description = "An example for Dioxus desktop integration."
 version = "0.10.2"
-rust-version = "1.80"
-edition = "2021"
-publish = false
+edition = { workspace = true }
+rust-version = { workspace = true }
+publish = { workspace = true }
 
 [dependencies]
 dioxus = "0.6.3"
 dioxus-router = "0.6.3"
-tracing = "0.1.41"
+tracing = { workspace = true }
+zino = { workspace = true, features = ["dioxus-desktop"] }
+zino-core = { workspace = true, features = ["env-filter", "http-client", "tls-native"] }
+zino-dioxus = { workspace = true }
 
 [dependencies.dioxus-free-icons]
 version = "0.9.0"
@@ -19,17 +22,3 @@ features = [
     "font-awesome-solid",
     "octicons",
 ]
-
-[dependencies.zino]
-path = "../../crates/zino"
-version = "0.32.2"
-features = ["dioxus-desktop"]
-
-[dependencies.zino-core]
-path = "../../crates/zino-core"
-version = "0.32.2"
-features = ["env-filter", "http-client", "tls-native"]
-
-[dependencies.zino-dioxus]
-path = "../../crates/zino-dioxus"
-version = "0.13.2"

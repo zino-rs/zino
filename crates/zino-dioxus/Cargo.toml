@@ -2,15 +2,15 @@
 name = "zino-dioxus"
 description = "Dioxus components for zino."
 version = "0.13.2"
-rust-version = "1.80"
-edition = "2021"
-license = "MIT"
 categories = ["gui", "network-programming", "web-programming"]
 keywords = ["zino", "dioxus", "components"]
-homepage = "https://github.com/zino-rs/zino"
-repository = "https://github.com/zino-rs/zino"
 documentation = "https://docs.rs/zino-dioxus"
-readme = "README.md"
+homepage = { workspace = true }
+repository = { workspace = true }
+readme = { workspace = true }
+edition = { workspace = true }
+rust-version = { workspace = true }
+license = { workspace = true }
 
 [package.metadata.docs.rs]
 features = ["clipboard", "markdown"]

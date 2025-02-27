@@ -1,7 +1,7 @@
 use crate::{
+    JsonValue,
     datetime::{self, DateTime},
     extension::TomlTableExt,
-    JsonValue,
 };
 use smallvec::SmallVec;
 use toml::Table;

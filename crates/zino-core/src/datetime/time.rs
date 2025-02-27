@@ -1,5 +1,5 @@
-use crate::{error::Error, AvroValue, JsonValue};
-use chrono::{format::ParseError, Local, NaiveTime, Timelike};
+use crate::{AvroValue, JsonValue, error::Error};
+use chrono::{Local, NaiveTime, Timelike, format::ParseError};
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
     fmt,

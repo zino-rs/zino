@@ -100,9 +100,9 @@ use super::{Aggregation, EncodeColumn, Entity, IntoSqlValue, Schema, Window};
 use regex::{Captures, Regex};
 use std::{borrow::Cow, fmt::Display, marker::PhantomData};
 use zino_core::{
+    JsonValue, LazyLock, Map, SharedString,
     extension::{JsonObjectExt, JsonValueExt},
     model::{Query, QueryOrder},
-    JsonValue, LazyLock, Map, SharedString,
 };
 
 /// A query builder for the model entity.
@@ -1447,7 +1447,7 @@ static STATEMENT_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
 
 #[cfg(test)]
 mod tests {
-    use zino_core::{extension::JsonObjectExt, Map};
+    use zino_core::{Map, extension::JsonObjectExt};
 
     #[test]
     fn it_formats_query_params() {

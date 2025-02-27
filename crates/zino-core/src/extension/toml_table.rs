@@ -1,4 +1,4 @@
-use crate::{datetime, extension::TomlValueExt, Map, Uuid};
+use crate::{Map, Uuid, datetime, extension::TomlValueExt};
 use std::{
     net::{AddrParseError, IpAddr, Ipv4Addr, Ipv6Addr},
     time::Duration,

@@ -1,8 +1,8 @@
 use actix_web::{
+    FromRequest, HttpMessage, HttpRequest,
     dev::{Payload, ServiceRequest},
     http::{Method, Uri},
     web::Bytes,
-    FromRequest, HttpMessage, HttpRequest,
 };
 use std::{
     borrow::Cow,

@@ -1,13 +1,13 @@
 use actix_web::{
-    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
-    http::{
-        header::{ETAG, IF_NONE_MATCH},
-        StatusCode,
-    },
     Error,
+    dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready},
+    http::{
+        StatusCode,
+        header::{ETAG, IF_NONE_MATCH},
+    },
 };
 use std::{
-    future::{ready, Future, Ready},
+    future::{Future, Ready, ready},
     pin::Pin,
 };
 

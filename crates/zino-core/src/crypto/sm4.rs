@@ -2,8 +2,8 @@ use crate::{bail, error::Error};
 use ctr::Ctr64LE;
 use rand::Rng;
 use sm4::{
-    cipher::{KeyIvInit, StreamCipher},
     Sm4,
+    cipher::{KeyIvInit, StreamCipher},
 };
 
 /// Size of the `Key`.

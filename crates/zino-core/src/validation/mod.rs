@@ -1,5 +1,5 @@
 //! Generic validator and common validation rules.
-use crate::{error::Error, extension::JsonObjectExt, Map, SharedString};
+use crate::{Map, SharedString, error::Error, extension::JsonObjectExt};
 use smallvec::SmallVec;
 use std::fmt;
 

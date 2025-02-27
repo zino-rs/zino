@@ -2,8 +2,8 @@
 
 use crate::{AvroValue, JsonValue};
 use chrono::{
-    format::ParseError, Datelike, Days, Local, Months, NaiveDate, NaiveDateTime, NaiveTime,
-    SecondsFormat, TimeZone, Timelike, Utc, Weekday,
+    Datelike, Days, Local, Months, NaiveDate, NaiveDateTime, NaiveTime, SecondsFormat, TimeZone,
+    Timelike, Utc, Weekday, format::ParseError,
 };
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
@@ -19,7 +19,7 @@ mod duration;
 mod time;
 
 pub use date::Date;
-pub use duration::{parse_duration, ParseDurationError};
+pub use duration::{ParseDurationError, parse_duration};
 pub use time::Time;
 
 /// Alias for [`chrono::DateTime<Local>`](chrono::DateTime).
@@ -386,11 +386,7 @@ impl DateTime {
     /// Returns the number of days in the current year.
     #[inline]
     pub fn days_in_current_year(&self) -> u32 {
-        if self.is_leap_year() {
-            366
-        } else {
-            365
-        }
+        if self.is_leap_year() { 366 } else { 365 }
     }
 
     /// Returns the number of days in the current month.
@@ -782,9 +778,11 @@ mod tests {
         assert!("2023-12-31".parse::<DateTime>().is_ok());
         assert!("2023-12-31T18:00:00".parse::<DateTime>().is_ok());
         assert!("2023-07-13T02:16:33.449Z".parse::<DateTime>().is_ok());
-        assert!("2023-06-10 05:17:23.713071 +0800"
-            .parse::<DateTime>()
-            .is_ok());
+        assert!(
+            "2023-06-10 05:17:23.713071 +0800"
+                .parse::<DateTime>()
+                .is_ok()
+        );
 
         let datetime = "2023-11-30 16:24:30.654321 +0800"
             .parse::<DateTime>()

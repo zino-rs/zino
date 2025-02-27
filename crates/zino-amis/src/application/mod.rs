@@ -1,6 +1,6 @@
 //! UI generator for amis.
 
-use hyper::{body::Incoming, server::conn::http1, service, Request, Uri};
+use hyper::{Request, Uri, body::Incoming, server::conn::http1, service};
 use hyper_staticfile::{AcceptEncoding, Static};
 use hyper_util::rt::TokioIo;
 use std::{fs, time::Duration};

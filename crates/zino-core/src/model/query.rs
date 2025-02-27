@@ -1,8 +1,8 @@
 use super::QueryOrder;
 use crate::{
+    JsonValue, Map, SharedString,
     extension::{JsonObjectExt, JsonValueExt},
     validation::Validation,
-    JsonValue, Map, SharedString,
 };
 
 /// A query type for models.

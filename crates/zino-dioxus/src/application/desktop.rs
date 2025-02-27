@@ -1,13 +1,13 @@
 use dioxus::{
     desktop::{
-        tao::window::{Fullscreen, Icon, Theme},
         Config, WindowBuilder,
         WindowCloseBehaviour::*,
+        tao::window::{Fullscreen, Icon, Theme},
     },
     prelude::*,
 };
 use dioxus_router::{components::Router, routable::Routable};
-use image::{error::ImageError, ImageReader};
+use image::{ImageReader, error::ImageError};
 use std::{fmt::Display, fs, marker::PhantomData, path::Path, str::FromStr, time::Duration};
 use tokio::runtime::Builder;
 use zino_core::{

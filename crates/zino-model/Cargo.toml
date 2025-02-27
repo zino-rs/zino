@@ -2,15 +2,15 @@
 name = "zino-model"
 description = "Domain models for zino."
 version = "0.30.2"
-rust-version = "1.80"
-edition = "2021"
-license = "MIT"
 categories = ["web-programming", "database"]
 keywords = ["web", "model", "orm", "schema"]
-homepage = "https://github.com/zino-rs/zino"
-repository = "https://github.com/zino-rs/zino"
 documentation = "https://docs.rs/zino-model"
-readme = "README.md"
+homepage = { workspace = true }
+repository = { workspace = true }
+readme = { workspace = true }
+edition = { workspace = true }
+rust-version = { workspace = true }
+license = { workspace = true }
 
 [package.metadata.docs.rs]
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]

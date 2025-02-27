@@ -2,7 +2,7 @@ use printpdf::{
     BuiltinFont, Error, IndirectFontRef, Mm, PdfDocumentReference, PdfLayerReference,
     PdfPageReference,
 };
-use zino_core::{extension::JsonObjectExt, Map};
+use zino_core::{Map, extension::JsonObjectExt};
 
 /// PDF document.
 pub struct PdfDocument {

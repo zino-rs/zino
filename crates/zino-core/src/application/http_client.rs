@@ -2,16 +2,17 @@
 
 use super::Application;
 use crate::{
+    JsonValue, Map, Uuid,
     error::Error,
     extension::{HeaderMapExt, JsonObjectExt, TomlTableExt},
     trace::TraceContext,
-    warn, JsonValue, Map, Uuid,
+    warn,
 };
 use http::Extensions;
 use reqwest::{
+    Client, Method, Request, Response, Url,
     header::{self, HeaderMap, HeaderName},
     multipart::Form,
-    Client, Method, Request, Response, Url,
 };
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware, RequestBuilder};
 use reqwest_tracing::{ReqwestOtelSpanBackend, TracingMiddleware};
@@ -22,7 +23,7 @@ use std::{
     sync::OnceLock,
     time::{Duration, Instant},
 };
-use tracing::{field::Empty, Span};
+use tracing::{Span, field::Empty};
 
 /// Initializes the HTTP client.
 pub(super) fn init<APP: Application + ?Sized>() {

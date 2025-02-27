@@ -1,8 +1,8 @@
 use axum::{
     body::Body,
     http::{
-        header::{ETAG, IF_NONE_MATCH},
         Request, StatusCode,
+        header::{ETAG, IF_NONE_MATCH},
     },
     middleware::Next,
     response::Response,

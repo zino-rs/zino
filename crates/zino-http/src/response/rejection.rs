@@ -1,7 +1,7 @@
 use self::RejectionKind::*;
 use super::Response;
 use crate::request::{Context, RequestContext};
-use zino_core::{error::Error, trace::TraceContext, validation::Validation, warn, SharedString};
+use zino_core::{SharedString, error::Error, trace::TraceContext, validation::Validation, warn};
 
 /// A rejection response type.
 #[derive(Debug)]

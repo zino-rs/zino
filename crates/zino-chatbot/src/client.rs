@@ -1,7 +1,7 @@
 use self::ChatbotClient::*;
 use super::{ChatbotService, OpenAiChatCompletion};
 use toml::Table;
-use zino_core::{bail, error::Error, extension::TomlTableExt, Map};
+use zino_core::{Map, bail, error::Error, extension::TomlTableExt};
 
 /// Client for supported chatbot services.
 #[non_exhaustive]

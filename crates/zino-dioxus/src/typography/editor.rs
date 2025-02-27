@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use std::time::Duration;
-use zino_core::{json, JsonValue, SharedString};
+use zino_core::{JsonValue, SharedString, json};
 
 /// A ToastUI Editor.
 pub fn TuiEditor(props: TuiEditorProps) -> Element {

@@ -6,10 +6,10 @@
 
 use smallvec::SmallVec;
 use std::sync::{
-    atomic::{AtomicBool, AtomicUsize, Ordering::Relaxed},
     OnceLock,
+    atomic::{AtomicBool, AtomicUsize, Ordering::Relaxed},
 };
-use zino_core::{extension::TomlTableExt, state::State, LazyLock};
+use zino_core::{LazyLock, extension::TomlTableExt, state::State};
 
 mod accessor;
 mod aggregate;

@@ -1,11 +1,11 @@
-use super::{sqlx_row::SerializeRow, Connector, DataSource, DataSourceConnector::Postgres};
+use super::{Connector, DataSource, DataSourceConnector::Postgres, sqlx_row::SerializeRow};
 use crate::helper;
 use futures::TryStreamExt;
 use serde::de::DeserializeOwned;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use std::time::Duration;
 use toml::Table;
-use zino_core::{error::Error, extension::TomlTableExt, state::State, AvroValue, Map, Record};
+use zino_core::{AvroValue, Map, Record, error::Error, extension::TomlTableExt, state::State};
 
 impl Connector for PgPool {
     fn try_new_data_source(config: &Table) -> Result<DataSource, Error> {

@@ -56,13 +56,14 @@
 //! ```
 
 use opendal::{
-    layers::{RetryLayer, TracingLayer},
-    services, Error,
+    Error,
     ErrorKind::Unsupported,
     Operator,
+    layers::{RetryLayer, TracingLayer},
+    services,
 };
 use toml::Table;
-use zino_core::{application::StaticRecord, extension::TomlTableExt, state::State, LazyLock};
+use zino_core::{LazyLock, application::StaticRecord, extension::TomlTableExt, state::State};
 
 /// Global storage accessor built on the top of [`opendal`](https://crates.io/crates/opendal).
 #[derive(Debug, Clone, Copy, Default)]
