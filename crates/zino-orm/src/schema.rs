@@ -455,7 +455,15 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             .collect::<Vec<_>>()
             .join(", ");
         let fields = fields.join(", ");
-        let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({values});");
+        let sql = if cfg!(feature = "orm-postgres") {
+            let primary_key_name = Self::PRIMARY_KEY_NAME;
+            format!(
+                "INSERT INTO {table_name} ({fields}) VALUES ({values}) \
+                    RETURNING {primary_key_name};"
+            )
+        } else {
+            format!("INSERT INTO {table_name} ({fields}) VALUES ({values});")
+        };
         let mut ctx = Self::before_scan(&sql).await?;
         ctx.set_query(sql);
         if cfg!(debug_assertions) && super::DEBUG_ONLY.load(Relaxed) {
@@ -473,8 +481,14 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         }
 
         let pool = Self::acquire_writer().await?.pool();
-        let query_result = pool.execute(ctx.query()).await?;
-        let (last_insert_id, rows_affected) = Query::parse_query_result(query_result);
+        let (last_insert_id, rows_affected) =
+            if cfg!(feature = "orm-postgres") && Self::primary_key_column().auto_increment() {
+                let primary_key: i64 = sqlx::query_scalar(ctx.query()).fetch_one(pool).await?;
+                (Some(primary_key), 1)
+            } else {
+                let query_result = pool.execute(ctx.query()).await?;
+                Query::parse_query_result(query_result)
+            };
         let success = rows_affected == 1;
         if let Some(last_insert_id) = last_insert_id {
             ctx.set_last_insert_id(last_insert_id);
@@ -838,10 +852,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         } else {
             let primary_key_name = Self::PRIMARY_KEY_NAME;
 
-            // Both PostgreQL and SQLite (3.24+) support this syntax.
+            // Both PostgreQL and SQLite (3.35+) support this syntax.
             format!(
                 "INSERT INTO {table_name} ({fields}) VALUES ({values}) \
-                    ON CONFLICT ({primary_key_name}) DO UPDATE SET {mutations};"
+                    ON CONFLICT ({primary_key_name}) DO UPDATE SET {mutations} \
+                        RETURNING {primary_key_name};"
             )
         };
         let mut ctx = Self::before_scan(&sql).await?;
@@ -861,8 +876,14 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         }
 
         let pool = Self::acquire_writer().await?.pool();
-        let query_result = pool.execute(ctx.query()).await?;
-        let (last_insert_id, rows_affected) = Query::parse_query_result(query_result);
+        let (last_insert_id, rows_affected) =
+            if cfg!(feature = "orm-postgres") && Self::primary_key_column().auto_increment() {
+                let primary_key: i64 = sqlx::query_scalar(ctx.query()).fetch_one(pool).await?;
+                (Some(primary_key), 1)
+            } else {
+                let query_result = pool.execute(ctx.query()).await?;
+                Query::parse_query_result(query_result)
+            };
         let success = rows_affected == 1;
         if let Some(last_insert_id) = last_insert_id {
             ctx.set_last_insert_id(last_insert_id);
