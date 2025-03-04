@@ -483,7 +483,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_writer().await?.pool();
         let (last_insert_id, rows_affected) =
             if cfg!(feature = "orm-postgres") && Self::primary_key_column().auto_increment() {
-                let primary_key: i64 = sqlx::query_scalar(ctx.query()).fetch_one(pool).await?;
+                let primary_key = sqlx::query_scalar(ctx.query()).fetch_one(pool).await?;
                 (Some(primary_key), 1)
             } else {
                 let query_result = pool.execute(ctx.query()).await?;
@@ -878,7 +878,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let pool = Self::acquire_writer().await?.pool();
         let (last_insert_id, rows_affected) =
             if cfg!(feature = "orm-postgres") && Self::primary_key_column().auto_increment() {
-                let primary_key: i64 = sqlx::query_scalar(ctx.query()).fetch_one(pool).await?;
+                let primary_key = sqlx::query_scalar(ctx.query()).fetch_one(pool).await?;
                 (Some(primary_key), 1)
             } else {
                 let query_result = pool.execute(ctx.query()).await?;

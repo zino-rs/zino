@@ -1,7 +1,7 @@
 [package]
 name = "zino-orm"
 description = "ORM for zino."
-version = "0.5.0"
+version = "0.5.1"
 categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
