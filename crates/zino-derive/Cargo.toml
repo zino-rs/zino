@@ -14,9 +14,9 @@ license = { workspace = true }
 proc-macro = true
 
 [dependencies]
-proc-macro2 = "1.0.93"
-quote = "1.0.38"
-syn = "2.0.98"
+proc-macro2 = "1.0.94"
+quote = "1.0.39"
+syn = "2.0.99"
 convert_case = { workspace = true }
 zino-core = { workspace = true }
 zino-orm = { workspace = true }

@@ -24,6 +24,7 @@ all-locales = [
     "locale-en",
     "locale-es",
     "locale-fr",
+    "locale-ru",
     "locale-zh",
 ]
 all-validators = [
@@ -58,6 +59,7 @@ locale-en = ["locale", "random_word/en"]
 locale-es = ["locale", "random_word/es"]
 locale-de = ["locale", "random_word/de"]
 locale-fr = ["locale", "random_word/fr"]
+locale-ru = ["locale", "random_word/ru"]
 locale-zh = ["locale", "random_word/zh"]
 metrics = ["dep:metrics", "dep:metrics-exporter-prometheus", "apalis?/prometheus"]
 preferences = ["dep:rust-ini"]
@@ -153,16 +155,16 @@ version = "0.3.7"
 optional = true
 
 [dependencies.random_word]
-version = "0.4.3"
+version = "0.5.0"
 optional = true
 
 [dependencies.reqwest-middleware]
-version = "0.4.0"
+version = "0.4.1"
 optional = true
 features = ["json", "multipart"]
 
 [dependencies.reqwest-tracing]
-version = "0.5.5"
+version = "0.5.6"
 optional = true
 
 [dependencies.rust-ini]

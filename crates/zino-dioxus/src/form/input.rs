@@ -12,6 +12,15 @@ pub fn Input(props: InputProps) -> Element {
             class: if !props.state.is_empty() { "is-{props.state}" },
             r#type: "text",
             value: props.initial_value,
+            onmounted: move |event| {
+                if props.auto_focus {
+                    spawn(async move {
+                        if let Err(err) = event.data.set_focus(true).await {
+                            tracing::error!("fail to focus on the textarea: {err}");
+                        }
+                    });
+                }
+            },
             onchange: move |event| {
                 if let Some(handler) = props.on_change.as_ref() {
                     handler.call(event.value());
@@ -20,6 +29,12 @@ pub fn Input(props: InputProps) -> Element {
             oninput: move |event| {
                 if let Some(handler) = props.on_input.as_ref() {
                     handler.call(event.value());
+                }
+            },
+            onkeydown: move |event| {
+                if let Some(handler) = props.on_keydown.as_ref() {
+                    event.stop_propagation();
+                    handler.call(event);
                 }
             },
             ..props.attributes,
@@ -42,6 +57,9 @@ pub struct InputProps {
     /// The state of the input: `hovered` | `focused` | `loading` | `static`.
     #[props(into, default)]
     pub state: SharedString,
+    /// A flag to determine whether the textarea is focused automatically.
+    #[props(default)]
+    pub auto_focus: bool,
     /// The initial value of the textarea.
     #[props(into, default)]
     pub initial_value: String,
@@ -49,6 +67,8 @@ pub struct InputProps {
     pub on_change: Option<EventHandler<String>>,
     /// An event handler to be called when inputing.
     pub on_input: Option<EventHandler<String>>,
+    /// An event handler to be called when a key is pressed.
+    pub on_keydown: Option<EventHandler<KeyboardEvent>>,
     /// Spreading the props of the `input` element.
     #[props(extends = input)]
     attributes: Vec<Attribute>,

@@ -39,7 +39,7 @@ ahash = "0.8.11"
 apache-avro = "0.17.0"
 bytes = "1.9.0"
 cfg-if = "1.0"
-convert_case = "0.7.1"
+convert_case = "0.8.0"
 etag = "4.0.0"
 futures = "0.3.31"
 hmac = "0.12.1"
@@ -51,7 +51,7 @@ percent-encoding = "2.3.1"
 rand = "0.9.0"
 regex = "1.11.1"
 rust_decimal = "1.36.0"
-serde_qs = "0.13.0"
+serde_qs = "0.14.0"
 sm3 = "0.4.2"
 smallvec = "1.14.0"
 tracing = "0.1.41"
@@ -62,7 +62,7 @@ version = "0.4.40"
 features = ["serde"]
 
 [workspace.dependencies.jwt-simple]
-version = "0.12.11"
+version = "0.12.12"
 default-features = false
 features = ["pure-rust"]
 
@@ -115,7 +115,7 @@ default-features = false
 features = ["parse"]
 
 [workspace.dependencies.uuid]
-version = "1.15.0"
+version = "1.15.1"
 features = [
     "fast-rng",
     "serde",

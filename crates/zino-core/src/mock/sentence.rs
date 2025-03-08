@@ -15,7 +15,7 @@ pub(crate) fn gen_random_sentence(locale: &str, min_length: usize, max_length: u
         #[cfg(feature = "locale-en")]
         "en" | "en-US" => {
             while length > 0 {
-                let word = random_word::r#gen(Lang::En);
+                let word = random_word::get(Lang::En);
                 let word_length = word.len();
                 if let Some(remainder_length) = length.checked_sub(word_length) {
                     sentence.push_str(word);
@@ -32,7 +32,7 @@ pub(crate) fn gen_random_sentence(locale: &str, min_length: usize, max_length: u
         #[cfg(feature = "locale-es")]
         "es" | "es-ES" => {
             while length > 0 {
-                let word = random_word::r#gen(Lang::Es);
+                let word = random_word::get(Lang::Es);
                 let word_length = word.len();
                 if let Some(remainder_length) = length.checked_sub(word_length) {
                     sentence.push_str(word);
@@ -49,7 +49,7 @@ pub(crate) fn gen_random_sentence(locale: &str, min_length: usize, max_length: u
         #[cfg(feature = "locale-de")]
         "de" | "de-DE" => {
             while length > 0 {
-                let word = random_word::r#gen(Lang::De);
+                let word = random_word::get(Lang::De);
                 let word_length = word.len();
                 if let Some(remainder_length) = length.checked_sub(word_length) {
                     sentence.push_str(word);
@@ -66,7 +66,24 @@ pub(crate) fn gen_random_sentence(locale: &str, min_length: usize, max_length: u
         #[cfg(feature = "locale-fr")]
         "fr" | "fr-FR" => {
             while length > 0 {
-                let word = random_word::r#gen(Lang::Fr);
+                let word = random_word::get(Lang::Fr);
+                let word_length = word.len();
+                if let Some(remainder_length) = length.checked_sub(word_length) {
+                    sentence.push_str(word);
+                    sentence.push(' ');
+                    length = remainder_length.saturating_sub(1);
+                } else {
+                    if sentence.len() <= min_length {
+                        sentence.push_str(word);
+                    }
+                    break;
+                }
+            }
+        }
+        #[cfg(feature = "locale-ru")]
+        "ru" | "ru-RU" => {
+            while length > 0 {
+                let word = random_word::get(Lang::Ru);
                 let word_length = word.len();
                 if let Some(remainder_length) = length.checked_sub(word_length) {
                     sentence.push_str(word);
@@ -83,7 +100,7 @@ pub(crate) fn gen_random_sentence(locale: &str, min_length: usize, max_length: u
         #[cfg(feature = "locale-zh")]
         "zh" | "zh-CN" | "zh-CHS" => {
             while length > 0 {
-                let mut word = random_word::r#gen(Lang::Zh).trim();
+                let mut word = random_word::get(Lang::Zh).trim();
                 if let Some((_, hans)) = word.split_once(' ') {
                     word = hans;
                 }
@@ -103,7 +120,7 @@ pub(crate) fn gen_random_sentence(locale: &str, min_length: usize, max_length: u
         #[cfg(feature = "locale-zh")]
         "zh-HK" | "zh-TW" | "zh-CHT" => {
             while length > 0 {
-                let mut word = random_word::r#gen(Lang::Zh).trim();
+                let mut word = random_word::get(Lang::Zh).trim();
                 if let Some((hant, _)) = word.split_once(' ') {
                     word = hant;
                 }
