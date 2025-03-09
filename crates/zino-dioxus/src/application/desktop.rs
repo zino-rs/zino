@@ -10,8 +10,10 @@ use dioxus_router::{components::Router, routable::Routable};
 use image::{ImageReader, error::ImageError};
 use std::{fmt::Display, fs, marker::PhantomData, path::Path, str::FromStr, time::Duration};
 use tokio::runtime::Builder;
+use url::Url;
 use zino_core::{
     application::{AppType, Application, Plugin},
+    error::Error,
     extension::TomlTableExt,
     schedule::AsyncScheduler,
 };
@@ -32,6 +34,13 @@ where
     R: Routable,
     <R as FromStr>::Err: Display,
 {
+    /// Renders the app root.
+    #[inline]
+    fn app_root() -> Element {
+        Self::config_webview();
+        rsx! { Router::<R> {} }
+    }
+
     /// Sets a custom root element.
     #[inline]
     pub fn with_root(mut self, root: fn() -> Element) -> Self {
@@ -57,11 +66,25 @@ where
         }
     }
 
-    /// Renders the app root.
-    #[inline]
-    fn app_root() -> Element {
-        Self::config_webview();
-        rsx! { Router::<R> {} }
+    /// Formats a local path as the Dioxus href.
+    pub fn format_local_path(path: &Path) -> String {
+        let path = path.to_string_lossy();
+        if cfg!(target_os = "windows") && !path.is_empty() {
+            format!("http://dioxus.{}", path.replace('\\', "/"))
+        } else {
+            path.into_owned()
+        }
+    }
+
+    /// Parses a resource URL.
+    pub fn parse_resource_url(url: &str) -> Result<Url, Error> {
+        if url.starts_with("http://") || url.starts_with("https://") || url.starts_with("file://") {
+            url.parse().map_err(Error::from)
+        } else if cfg!(target_os = "windows") && !url.is_empty() {
+            format!("http://dioxus.{url}").parse().map_err(Error::from)
+        } else {
+            Err(Error::new(format!("invalid resource URL: {url}")))
+        }
     }
 }
 
@@ -208,7 +231,7 @@ where
                     Ok(img) => {
                         let width = img.width();
                         let height = img.height();
-                        let href = format_dioxus_href(&icon_file);
+                        let href = Self::format_local_path(&icon_file);
                         let head =
                             format!(r#"<link rel="icon" type="image/x-icon" href="{href}">"#);
                         custom_heads.push(head);
@@ -234,7 +257,7 @@ where
                         style.to_owned()
                     } else {
                         let style_file = Self::parse_path(style);
-                        format_dioxus_href(&style_file)
+                        Self::format_local_path(&style_file)
                     };
                     let head = format!(r#"<link rel="stylesheet" href="{href}">"#);
                     custom_heads.push(head);
@@ -246,7 +269,7 @@ where
                         script.to_owned()
                     } else {
                         let script_file = Self::parse_path(script);
-                        format_dioxus_href(&script_file)
+                        Self::format_local_path(&script_file)
                     };
                     let head = format!(r#"<script src="{src}"></script>"#);
                     custom_heads.push(head);
@@ -297,15 +320,5 @@ where
         runtime.block_on(tokio::task::unconstrained(async move {
             dioxus::desktop::launch::launch_virtual_dom_blocking(vdom, desktop_config)
         }));
-    }
-}
-
-/// Formats a local path as the Dioxus href.
-fn format_dioxus_href(path: &Path) -> String {
-    let path = path.to_string_lossy();
-    if cfg!(target_os = "windows") {
-        format!("http://dioxus.{}", path.replace('\\', "/"))
-    } else {
-        path.into_owned()
     }
 }

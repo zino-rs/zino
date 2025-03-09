@@ -11,6 +11,7 @@ use serde::Serialize;
 use smallvec::SmallVec;
 use std::{
     marker::PhantomData,
+    mem,
     time::{Duration, Instant},
 };
 use zino_core::{
@@ -568,7 +569,7 @@ impl<S: ResponseCode> Response<S> {
         let has_bytes_data = !self.bytes_data.is_empty();
         let has_json_data = !self.json_data.is_null();
         let bytes_opt = if has_bytes_data {
-            Some(self.bytes_data.clone())
+            Some(mem::take(&mut self.bytes_data))
         } else if has_json_data {
             if let Some(transformer) = self.data_transformer.as_ref() {
                 Some(transformer(&self.json_data)?)
@@ -597,15 +598,17 @@ impl<S: ResponseCode> Response<S> {
             serde_json::to_writer(&mut bytes, &self)?;
             (bytes, etag_opt)
         } else if has_json_data {
-            let value = &self.json_data;
             let bytes = if content_type.starts_with("text/csv") {
-                value.to_csv(Vec::new())?
+                self.json_data.to_csv(Vec::new())?
             } else if content_type.starts_with("application/jsonlines") {
-                value.to_jsonlines(Vec::new())?
-            } else if let JsonValue::String(s) = value {
-                s.as_bytes().to_vec()
+                self.json_data.to_jsonlines(Vec::new())?
             } else {
-                value.to_string().into_bytes()
+                let text = if let JsonValue::String(s) = &mut self.json_data {
+                    mem::take(s)
+                } else {
+                    self.json_data.to_string()
+                };
+                text.into_bytes()
             };
             (bytes, None)
         } else {

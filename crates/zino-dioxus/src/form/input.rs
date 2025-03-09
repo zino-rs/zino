@@ -10,13 +10,13 @@ pub fn Input(props: InputProps) -> Element {
             class: if !props.color.is_empty() { "is-{props.color}" },
             class: if !props.size.is_empty() { "is-{props.size}" },
             class: if !props.state.is_empty() { "is-{props.state}" },
+            value: if let Some(value) = props.initial_value { "{value}" },
             r#type: "text",
-            value: props.initial_value,
             onmounted: move |event| {
                 if props.auto_focus {
                     spawn(async move {
                         if let Err(err) = event.data.set_focus(true).await {
-                            tracing::error!("fail to focus on the textarea: {err}");
+                            tracing::error!("fail to focus on the input: {err}");
                         }
                     });
                 }
@@ -62,7 +62,7 @@ pub struct InputProps {
     pub auto_focus: bool,
     /// The initial value of the textarea.
     #[props(into, default)]
-    pub initial_value: String,
+    pub initial_value: Option<String>,
     /// An event handler to be called when the input state is changed.
     pub on_change: Option<EventHandler<String>>,
     /// An event handler to be called when inputing.

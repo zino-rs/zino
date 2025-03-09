@@ -70,7 +70,7 @@ optional = true
 
 [dependencies.zino-dioxus]
 path = "../zino-dioxus"
-version = "0.14.0"
+version = "0.14.1"
 optional = true
 
 [dependencies.zino-ntex]

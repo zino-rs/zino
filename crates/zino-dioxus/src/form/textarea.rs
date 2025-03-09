@@ -10,7 +10,7 @@ pub fn Textarea(props: TextareaProps) -> Element {
             class: if !props.color.is_empty() { "is-{props.color}" },
             class: if !props.size.is_empty() { "is-{props.size}" },
             class: if !props.state.is_empty() { "is-{props.state}" },
-            value: props.initial_value,
+            value: if let Some(value) = props.initial_value { "{value}" },
             onmounted: move |event| {
                 if props.auto_focus {
                     spawn(async move {
@@ -61,7 +61,7 @@ pub struct TextareaProps {
     pub auto_focus: bool,
     /// The initial value of the textarea.
     #[props(into, default)]
-    pub initial_value: String,
+    pub initial_value: Option<String>,
     /// An event handler to be called when the textarea state is changed.
     pub on_change: Option<EventHandler<String>>,
     /// An event handler to be called when inputing.

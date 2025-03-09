@@ -39,7 +39,7 @@ version = "0.31.0"
 
 [workspace.dependencies.zino-dioxus]
 path = "../crates/zino-dioxus"
-version = "0.14.0"
+version = "0.14.1"
 
 [workspace.dependencies.zino-model]
 path = "../crates/zino-model"
