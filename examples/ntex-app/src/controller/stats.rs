@@ -1,4 +1,4 @@
-use zino::{prelude::*, Cluster, Request, Response, Result};
+use zino::{Cluster, Request, Response, Result, prelude::*};
 
 pub async fn index(req: Request) -> Result {
     let res = Response::default().context(&req);

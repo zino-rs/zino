@@ -10,7 +10,7 @@ mod service;
 mod view;
 
 use router::Route;
-use zino::{prelude::*, Desktop};
+use zino::{Desktop, prelude::*};
 
 type App = Desktop<Route>;
 

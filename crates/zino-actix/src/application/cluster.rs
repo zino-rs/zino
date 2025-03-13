@@ -135,10 +135,7 @@ impl Application for Cluster {
 
                 let public_dir = Self::parse_path(public_dir);
                 HttpServer::new(move || {
-                    let mut app = App::new().default_service(web::to(|req: Request| async {
-                        let res = Response::new(StatusCode::NOT_FOUND);
-                        ActixResponse::from(res).respond_to(&req.into())
-                    }));
+                    let mut app = App::new();
                     if public_dir.exists() {
                         let index_file = public_dir.join("index.html");
                         let favicon_file = public_dir.join("favicon.ico");
@@ -161,14 +158,19 @@ impl Application for Cluster {
                             .prefer_utf8(true);
                         let not_found_file = public_dir.join("404.html");
                         if not_found_file.exists() {
-                            static_files = static_files.default_handler(fn_service(
-                                |req: ServiceRequest| async {
-                                    let (req, _) = req.into_parts();
-                                    let file = NamedFile::open_async("./public/404.html").await?;
-                                    let res = file.into_response(&req);
-                                    Ok(ServiceResponse::new(req, res))
-                                },
-                            ));
+                            let not_found_service = fn_service(|req: ServiceRequest| async {
+                                let (req, _) = req.into_parts();
+                                let file = NamedFile::open_async("./public/404.html").await?;
+                                let res = file.into_response(&req);
+                                Ok(ServiceResponse::new(req, res))
+                            });
+                            static_files = static_files.default_handler(not_found_service.clone());
+                            app = app.default_service(not_found_service);
+                        } else {
+                            app = app.default_service(web::to(|req: Request| async {
+                                let res = Response::new(StatusCode::NOT_FOUND);
+                                ActixResponse::from(res).respond_to(&req.into())
+                            }));
                         }
                         app = app.service(static_files);
                         tracing::info!(

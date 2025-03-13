@@ -68,7 +68,7 @@ pub struct FormFieldProps {
     #[props(into, default = "control")]
     pub control_class: Class,
     /// A flag to determine whether the control is expanded or not.
-    #[props(default = false)]
+    #[props(default)]
     pub expanded: bool,
     /// The children to render within the component.
     children: Element,

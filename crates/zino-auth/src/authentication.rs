@@ -3,6 +3,7 @@ use hmac::{
     Mac,
     digest::{FixedOutput, KeyInit, MacMarker, Update},
 };
+use http::HeaderMap;
 use std::time::Duration;
 use zino_core::{Map, datetime::DateTime, encoding::base64, error::Error, validation::Validation};
 
@@ -102,18 +103,22 @@ impl Authentication {
     /// Sets the canonicalized headers.
     /// The header is matched if it has a prefix in the filter list.
     #[inline]
-    pub fn set_headers(
-        &mut self,
-        headers: impl Iterator<Item = (String, String)>,
-        filter: &[&'static str],
-    ) {
+    pub fn set_headers(&mut self, headers: HeaderMap, filters: &[&'static str]) {
         let mut headers = headers
-            .filter_map(|(name, values)| {
-                let key = name.as_str();
-                filter
-                    .iter()
-                    .any(|&s| key.starts_with(s))
-                    .then(|| (key.to_ascii_lowercase(), values.clone()))
+            .into_iter()
+            .filter_map(|(name, value)| {
+                name.and_then(|name| {
+                    let key = name.as_str();
+                    if filters.iter().any(|&s| key.starts_with(s)) {
+                        value
+                            .to_str()
+                            .inspect_err(|err| tracing::warn!("invalid header value: {err}"))
+                            .ok()
+                            .map(|value| (key.to_ascii_lowercase(), value.to_owned()))
+                    } else {
+                        None
+                    }
+                })
             })
             .collect::<Vec<_>>();
         headers.sort_by(|a, b| a.0.cmp(&b.0));

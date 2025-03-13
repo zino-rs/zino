@@ -2,7 +2,7 @@ use ntex::{
     service::{Middleware, Service, ServiceCtx},
     web::{Error, ErrorRenderer, WebRequest, WebResponse},
 };
-use zino::{prelude::*, Request};
+use zino::{Request, prelude::*};
 
 #[derive(Default)]
 pub struct UserSessionInitializer;

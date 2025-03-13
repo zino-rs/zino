@@ -147,6 +147,7 @@ impl Application for Cluster {
 
                 let mut app = Router::new();
                 let public_dir = Self::parse_path(public_dir);
+                let not_found_file = public_dir.join("404.html");
                 if public_dir.exists() {
                     let index_file = public_dir.join("index.html");
                     let favicon_file = public_dir.join("favicon.ico");
@@ -162,7 +163,7 @@ impl Application for Cluster {
                         .precompressed_gzip()
                         .precompressed_br()
                         .append_index_html_on_directories(true)
-                        .not_found_service(ServeFile::new(not_found_file));
+                        .not_found_service(ServeFile::new(&not_found_file));
                     let mut serve_dir_route =
                         Router::new().nest_service(public_route_prefix, serve_dir);
                     if public_route_prefix.ends_with("/page") {
@@ -173,6 +174,15 @@ impl Application for Cluster {
                     tracing::info!(
                         "Static pages `{public_route_prefix}/**` are registered for `{addr}`"
                     );
+                }
+                if not_found_file.exists() {
+                    app = app.fallback_service(ServeFile::new(not_found_file));
+                } else {
+                    app = app.fallback_service(tower::service_fn(|req| async {
+                        let req = Extractor::from(req);
+                        let res = Response::new(StatusCode::NOT_FOUND).context(&req);
+                        Ok::<AxumResponse, Infallible>(res.into())
+                    }));
                 }
                 for route in &default_routes {
                     app = app.merge(route.clone());
@@ -223,61 +233,55 @@ impl Application for Cluster {
                     }
                 }
 
-                app = app
-                    .fallback_service(tower::service_fn(|req| async {
-                        let req = Extractor::from(req);
-                        let res = Response::new(StatusCode::NOT_FOUND).context(&req);
-                        Ok::<AxumResponse, Infallible>(res.into())
-                    }))
-                    .layer(
-                        ServiceBuilder::new()
-                            .layer(SetResponseHeaderLayer::if_not_present(
-                                HeaderName::from_static("connection"),
-                                HeaderValue::from_static("keep-alive"),
-                            ))
-                            .layer(SetResponseHeaderLayer::if_not_present(
-                                HeaderName::from_static("keep-alive"),
-                                HeaderValue::from_str(&format!("timeout={keep_alive_timeout}"))
-                                    .expect("fail to set the `keep-alive` header value"),
-                            ))
-                            .layer(DefaultBodyLimit::max(body_limit))
-                            .layer(
-                                CompressionLayer::new()
-                                    .gzip(true)
-                                    .compress_when(DefaultPredicate::new()),
-                            )
-                            .layer(DecompressionLayer::new().gzip(true))
-                            .layer(LazyLock::force(&middleware::TRACING_MIDDLEWARE))
-                            .layer(LazyLock::force(&middleware::CORS_MIDDLEWARE))
-                            .layer(from_fn(middleware::request_context))
-                            .layer(from_fn(middleware::extract_etag))
-                            .layer(HandleErrorLayer::new(|err: BoxError| async move {
-                                let status_code = if err.is::<Elapsed>() {
-                                    StatusCode::REQUEST_TIMEOUT
-                                } else if err.is::<LengthLimitError>() {
-                                    StatusCode::PAYLOAD_TOO_LARGE
+                app = app.layer(
+                    ServiceBuilder::new()
+                        .layer(SetResponseHeaderLayer::if_not_present(
+                            HeaderName::from_static("connection"),
+                            HeaderValue::from_static("keep-alive"),
+                        ))
+                        .layer(SetResponseHeaderLayer::if_not_present(
+                            HeaderName::from_static("keep-alive"),
+                            HeaderValue::from_str(&format!("timeout={keep_alive_timeout}"))
+                                .expect("fail to set the `keep-alive` header value"),
+                        ))
+                        .layer(DefaultBodyLimit::max(body_limit))
+                        .layer(
+                            CompressionLayer::new()
+                                .gzip(true)
+                                .compress_when(DefaultPredicate::new()),
+                        )
+                        .layer(DecompressionLayer::new().gzip(true))
+                        .layer(LazyLock::force(&middleware::TRACING_MIDDLEWARE))
+                        .layer(LazyLock::force(&middleware::CORS_MIDDLEWARE))
+                        .layer(from_fn(middleware::request_context))
+                        .layer(from_fn(middleware::extract_etag))
+                        .layer(HandleErrorLayer::new(|err: BoxError| async move {
+                            let status_code = if err.is::<Elapsed>() {
+                                StatusCode::REQUEST_TIMEOUT
+                            } else if err.is::<LengthLimitError>() {
+                                StatusCode::PAYLOAD_TOO_LARGE
+                            } else {
+                                StatusCode::INTERNAL_SERVER_ERROR
+                            };
+                            let res = Response::new(status_code);
+                            Ok::<AxumResponse, Infallible>(res.into())
+                        }))
+                        .layer(CatchPanicLayer::custom(
+                            |err: Box<dyn Any + Send + 'static>| {
+                                let details = if let Some(s) = err.downcast_ref::<String>() {
+                                    Cow::Owned(s.to_owned())
+                                } else if let Some(s) = err.downcast_ref::<&str>() {
+                                    Cow::Borrowed(*s)
                                 } else {
-                                    StatusCode::INTERNAL_SERVER_ERROR
+                                    Cow::Borrowed("Unknown panic message")
                                 };
-                                let res = Response::new(status_code);
-                                Ok::<AxumResponse, Infallible>(res.into())
-                            }))
-                            .layer(CatchPanicLayer::custom(
-                                |err: Box<dyn Any + Send + 'static>| {
-                                    let details = if let Some(s) = err.downcast_ref::<String>() {
-                                        Cow::Owned(s.to_owned())
-                                    } else if let Some(s) = err.downcast_ref::<&str>() {
-                                        Cow::Borrowed(*s)
-                                    } else {
-                                        Cow::Borrowed("Unknown panic message")
-                                    };
-                                    let mut res = Response::internal_server_error();
-                                    res.set_message(details);
-                                    crate::response::build_http_response(res)
-                                },
-                            ))
-                            .layer(TimeoutLayer::new(request_timeout)),
-                    );
+                                let mut res = Response::internal_server_error();
+                                res.set_message(details);
+                                crate::response::build_http_response(res)
+                            },
+                        ))
+                        .layer(TimeoutLayer::new(request_timeout)),
+                );
                 Box::pin(async move {
                     let tcp_listener = TcpListener::bind(&addr)
                         .await

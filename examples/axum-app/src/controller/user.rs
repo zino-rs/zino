@@ -1,6 +1,6 @@
 use crate::model::{User, UserColumn::*};
 use std::time::Instant;
-use zino::{prelude::*, Request, Response, Result};
+use zino::{Request, Response, Result, prelude::*};
 
 pub async fn new(mut req: Request) -> Result {
     let mut user = User::new();

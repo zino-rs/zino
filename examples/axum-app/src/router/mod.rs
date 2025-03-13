@@ -4,9 +4,9 @@ use crate::{
     model::{Tag, User},
 };
 use axum::{
+    Router,
     middleware::from_fn,
     routing::{get, post},
-    Router,
 };
 use zino::DefaultController;
 

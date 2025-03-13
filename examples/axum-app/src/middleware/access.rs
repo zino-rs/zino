@@ -1,6 +1,6 @@
 use crate::model::User;
 use axum::{middleware::Next, response::Response};
-use zino::{prelude::*, Request, Result};
+use zino::{Request, Result, prelude::*};
 use zino_model::user::JwtAuthService;
 
 pub async fn init_user_session(mut req: Request, next: Next) -> Result<Response> {

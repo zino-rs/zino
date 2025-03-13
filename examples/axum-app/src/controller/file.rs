@@ -1,5 +1,5 @@
 use std::time::{Duration, Instant};
-use zino::{prelude::*, Cluster, Request, Response, Result};
+use zino::{Cluster, Request, Response, Result, prelude::*};
 
 pub async fn upload(mut req: Request) -> Result {
     let (mut body, files) = req.parse_form_data::<Map>().await?;

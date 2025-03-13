@@ -75,7 +75,7 @@ pub struct SvgIconProps<T: IconShape + Clone + PartialEq + 'static> {
     #[props(into)]
     pub height: Option<u32>,
     /// A flag to use the instrinsic size for the icon.
-    #[props(default = false)]
+    #[props(default)]
     pub intrinsic: bool,
 }
 

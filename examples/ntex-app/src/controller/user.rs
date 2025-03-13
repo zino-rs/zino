@@ -1,5 +1,5 @@
 use std::time::Instant;
-use zino::{prelude::*, Request, Response, Result};
+use zino::{Request, Response, Result, prelude::*};
 use zino_model::user::User;
 
 pub async fn new(mut req: Request) -> Result {

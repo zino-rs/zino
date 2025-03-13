@@ -1,5 +1,5 @@
 use crate::model::{User, UserColumn::*};
-use zino::{prelude::*, Request, Response, Result};
+use zino::{Request, Response, Result, prelude::*};
 use zino_model::user::JwtAuthService;
 
 pub async fn login(mut req: Request) -> Result {
