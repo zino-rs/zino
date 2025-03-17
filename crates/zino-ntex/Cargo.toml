@@ -24,7 +24,7 @@ zino-http = { workspace = true }
 zino-orm = { workspace = true, optional = true }
 
 [dependencies.ntex]
-version = "2.11.0"
+version = "2.12.2"
 default-features = false
 features = ["compress", "tokio"]
 

@@ -2,6 +2,7 @@ use dioxus::{
     desktop::{
         Config, WindowBuilder,
         WindowCloseBehaviour::*,
+        muda::Menu,
         tao::window::{Fullscreen, Icon, Theme},
     },
     prelude::*,
@@ -25,6 +26,8 @@ pub struct Desktop<R> {
     custom_plugins: Vec<Plugin>,
     /// Custom root element.
     custom_root: Option<fn() -> Element>,
+    /// Custom menu bar.
+    custom_menu: Option<Menu>,
     /// Phantom type of Dioxus router.
     phantom: PhantomData<R>,
 }
@@ -45,6 +48,13 @@ where
     #[inline]
     pub fn with_root(mut self, root: fn() -> Element) -> Self {
         self.custom_root = Some(root);
+        self
+    }
+
+    /// Sets a custom menu bar.
+    #[inline]
+    pub fn with_menu(mut self, menu: Menu) -> Self {
+        self.custom_menu = Some(menu);
         self
     }
 
@@ -216,7 +226,7 @@ where
         let mut desktop_config = Config::new()
             .with_window(app_window)
             .with_disable_context_menu(!in_debug)
-            .with_menu(None);
+            .with_menu(self.custom_menu);
         if let Some(config) = app_state.get_config("desktop") {
             let mut custom_heads = Vec::new();
             custom_heads.push(r#"<meta charset="UTF-8">"#.to_owned());

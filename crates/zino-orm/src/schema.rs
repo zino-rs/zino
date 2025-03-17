@@ -1000,7 +1000,17 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let table_name = query.format_table_name::<Self>();
         let filters = query.format_filters::<Self>();
-        let sql = format!("DELETE FROM {table_name} {filters};");
+        let sort = query.format_sort();
+        let pagination = query.format_pagination();
+        let sql = if cfg!(feature = "orm-postgres") {
+            let primary_key_name = Self::PRIMARY_KEY_NAME;
+            format!(
+                "DELETE FROM {table_name} WHERE {primary_key_name} IN \
+                    (SELECT {primary_key_name} FROM {table_name} {filters} {sort} {pagination});"
+            )
+        } else {
+            format!("DELETE FROM {table_name} {filters} {sort} {pagination};")
+        };
         let mut ctx = Self::before_scan(&sql).await?;
         ctx.set_query(sql);
         if cfg!(debug_assertions) && super::DEBUG_ONLY.load(Relaxed) {

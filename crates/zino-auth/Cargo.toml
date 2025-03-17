@@ -24,7 +24,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 crypto-sm = ["dep:sm3", "zino-core/crypto-sm"]
-jwt = ["dep:jwt-simple", "regorus?/jwt"]
+jwt = ["dep:jwt-simple"]
 oidc = ["dep:rauthy-client"]
 opa = ["regorus"]
 sqids = ["dep:sqids"]
@@ -47,7 +47,7 @@ version = "0.6.1"
 optional = true
 
 [dependencies.regorus]
-version = "0.3.0"
+version = "0.4.0"
 optional = true
 default-features = false
 features = [
