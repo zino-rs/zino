@@ -145,6 +145,8 @@ pub struct QueryBuilder<E: Entity> {
     offset: usize,
     /// Limit.
     limit: usize,
+    /// Extra flags.
+    extra: Map,
     /// The phantom data.
     phantom: PhantomData<E>,
 }
@@ -163,8 +165,16 @@ impl<E: Entity> QueryBuilder<E> {
             sort_order: Vec::new(),
             offset: 0,
             limit: 0,
+            extra: Map::new(),
             phantom: PhantomData,
         }
+    }
+
+    /// Sets a table for the query, which should only be used to specify a dynamic table.
+    #[inline]
+    pub fn table_name(mut self, table_name: String) -> Self {
+        self.extra.upsert("table_name", table_name);
+        self
     }
 
     /// Adds a field corresponding to the column.
@@ -913,7 +923,7 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Builds the model query.
-    pub fn build(self) -> Query {
+    pub fn build(mut self) -> Query {
         let mut filters = self.filters;
         let group_by_fields = self.group_by_fields;
         let having_conditions = self.having_conditions;
@@ -937,6 +947,7 @@ impl<E: Entity> QueryBuilder<E> {
         query.set_order(self.sort_order);
         query.set_offset(self.offset);
         query.set_limit(self.limit);
+        query.append_extra_flags(&mut self.extra);
         query
     }
 
@@ -1032,8 +1043,8 @@ pub(super) trait QueryExt<DB> {
     /// Formats the table name.
     fn format_table_name<M: Schema>(&self) -> String;
 
-    /// Returns the escaped table name.
-    fn table_name_escaped<M: Schema>() -> String;
+    /// Escapes the table name.
+    fn escape_table_name(table_name: &str) -> String;
 
     /// Parses text search filter.
     fn parse_text_search(filter: &Map) -> Option<String>;

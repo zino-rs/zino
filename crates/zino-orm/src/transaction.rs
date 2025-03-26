@@ -135,6 +135,11 @@ where
 
         // Inserts the model
         let model_data = self.before_insert().await?;
+        let table_name = if let Some(table) = self.before_prepare().await? {
+            Query::escape_table_name(&table)
+        } else {
+            Query::escape_table_name(Self::table_name())
+        };
         let map = self.into_map();
         let columns = Self::columns();
 
@@ -153,7 +158,6 @@ where
             .collect::<Vec<_>>()
             .join(", ");
         let fields = fields.join(", ");
-        let table_name = Query::table_name_escaped::<Self>();
         let sql = format!("INSERT INTO {table_name} ({fields}) VALUES ({values});");
         let mut ctx = Self::before_scan(&sql).await?;
         ctx.set_query(sql);
@@ -184,7 +188,7 @@ where
             values.push(format!("({entries})"));
         }
 
-        let table_name = Query::table_name_escaped::<S>();
+        let table_name = Query::escape_table_name(S::table_name());
         let fields = S::fields().join(", ");
         let values = values.join(", ");
         let sql = format!("INSERT INTO {table_name} ({fields}) VALUES {values};");

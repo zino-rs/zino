@@ -54,6 +54,13 @@ pub trait ModelHooks: Model {
         Ok(())
     }
 
+    /// A hook running before preparing a query for the model.
+    /// It can be used to calculate a dynamic table name.
+    #[inline]
+    async fn before_prepare(&self) -> Result<Option<String>, Error> {
+        Ok(None)
+    }
+
     /// A hook running before scanning the table.
     #[inline]
     async fn before_scan(query: &str) -> Result<QueryContext, Error> {

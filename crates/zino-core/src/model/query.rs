@@ -323,6 +323,12 @@ impl Query {
         self.limit
     }
 
+    /// Returns a reference to the extra flags.
+    #[inline]
+    pub fn extra(&self) -> &Map {
+        &self.extra
+    }
+
     /// Returns `true` if the `flag` has been enabled.
     #[inline]
     pub fn enabled(&self, flag: &str) -> bool {

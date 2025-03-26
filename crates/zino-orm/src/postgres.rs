@@ -657,7 +657,10 @@ impl QueryExt<DatabaseDriver> for Query {
     }
 
     fn format_table_name<M: Schema>(&self) -> String {
-        let table_name = M::table_name();
+        let table_name = self
+            .extra()
+            .get_str("table_name")
+            .unwrap_or_else(|| M::table_name());
         let model_name = M::model_name();
         if table_name.contains('.') {
             let table_name = table_name
@@ -671,8 +674,7 @@ impl QueryExt<DatabaseDriver> for Query {
         }
     }
 
-    fn table_name_escaped<M: Schema>() -> String {
-        let table_name = M::table_name();
+    fn escape_table_name(table_name: &str) -> String {
         if table_name.contains('.') {
             table_name
                 .split('.')

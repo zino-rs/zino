@@ -186,7 +186,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         let table_name = Self::table_name();
-        let table_name_escaped = Query::table_name_escaped::<Self>();
+        let table_name_escaped = Query::escape_table_name(table_name);
         let columns = Self::columns();
         let mut definitions = columns
             .iter()
@@ -218,12 +218,13 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let connection_pool = Self::init_writer()?;
         let model_name = Self::model_name();
+
         let mut table_name = Self::table_name();
+        let table_name_escaped = Query::escape_table_name(table_name);
         if let Some((_, suffix)) = table_name.rsplit_once('.') {
             table_name = suffix;
         }
 
-        let table_name_escaped = Query::table_name_escaped::<Self>();
         let sql = if cfg!(any(
             feature = "orm-mariadb",
             feature = "orm-mysql",
@@ -328,12 +329,13 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let pool = Self::init_writer()?.pool();
         let columns = Self::columns();
+
         let mut table_name = Self::table_name();
+        let table_name_escaped = Query::escape_table_name(table_name);
         if let Some((_, suffix)) = table_name.rsplit_once('.') {
             table_name = suffix;
         }
 
-        let table_name_escaped = Query::table_name_escaped::<Self>();
         let mut rows = 0;
         if cfg!(any(
             feature = "orm-mariadb",
@@ -435,8 +437,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Prepares the SQL to insert the model into the table.
     async fn prepare_insert(self) -> Result<QueryContext, Error> {
+        let table_name = if let Some(table) = self.before_prepare().await? {
+            Query::escape_table_name(&table)
+        } else {
+            Query::escape_table_name(Self::table_name())
+        };
         let map = self.into_map();
-        let table_name = Query::table_name_escaped::<Self>();
         let columns = Self::columns();
 
         let mut fields = Vec::with_capacity(columns.len());
@@ -526,7 +532,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             values.push(format!("({entries})"));
         }
 
-        let table_name = Query::table_name_escaped::<Self>();
+        let table_name = Query::escape_table_name(Self::table_name());
         let fields = Self::fields()
             .iter()
             .map(|&field| Query::format_field(field))
@@ -569,7 +575,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             bail!("a list of columns should be nonempty");
         }
 
-        let table_name = Query::table_name_escaped::<Self>();
+        let table_name = Query::escape_table_name(Self::table_name());
         let fields = columns
             .iter()
             .map(|col| col.as_ref())
@@ -608,9 +614,13 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Prepares the SQL to update the model in the table.
     async fn prepare_update(self) -> Result<QueryContext, Error> {
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let table_name = Query::table_name_escaped::<Self>();
+        let table_name = if let Some(table) = self.before_prepare().await? {
+            Query::escape_table_name(&table)
+        } else {
+            Query::escape_table_name(Self::table_name())
+        };
         let primary_key = Query::escape_string(self.primary_key());
+        let primary_key_name = Self::PRIMARY_KEY_NAME;
         let map = self.into_map();
         let read_only_fields = Self::read_only_fields();
         let num_writable_fields = Self::fields().len() - read_only_fields.len();
@@ -666,9 +676,13 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         self,
         columns: &[C],
     ) -> Result<QueryContext, Error> {
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let table_name = Query::table_name_escaped::<Self>();
+        let table_name = if let Some(table) = self.before_prepare().await? {
+            Query::escape_table_name(&table)
+        } else {
+            Query::escape_table_name(Self::table_name())
+        };
         let primary_key = Query::escape_string(self.primary_key());
+        let primary_key_name = Self::PRIMARY_KEY_NAME;
         let map = self.into_map();
         let read_only_fields = Self::read_only_fields();
         let mut mutations = Vec::with_capacity(columns.len());
@@ -818,8 +832,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Prepares the SQL to update or insert the model into the table.
     async fn prepare_upsert(self) -> Result<QueryContext, Error> {
+        let table_name = if let Some(table) = self.before_prepare().await? {
+            Query::escape_table_name(&table)
+        } else {
+            Query::escape_table_name(Self::table_name())
+        };
         let map = self.into_map();
-        let table_name = Query::table_name_escaped::<Self>();
         let num_fields = Self::fields().len();
         let read_only_fields = Self::read_only_fields();
         let num_writable_fields = num_fields - read_only_fields.len();
@@ -904,7 +922,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Prepares the SQL to delete the model in the table.
     async fn prepare_delete() -> Result<QueryContext, Error> {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let table_name = Query::table_name_escaped::<Self>();
+        let table_name = Query::escape_table_name(Self::table_name());
         let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
             let type_annotation = Self::primary_key_column().type_annotation();
@@ -1047,7 +1065,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             bail!("a list of columns should be nonempty");
         }
 
-        let table_name = Query::table_name_escaped::<Self>();
+        let table_name = Query::escape_table_name(Self::table_name());
         let fields = columns
             .iter()
             .map(|col| col.as_ref())
@@ -1637,7 +1655,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Prepares the SQL to delete a model selected by the primary key in the table.
     async fn prepare_delete_by_id() -> Result<QueryContext, Error> {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let table_name = Query::table_name_escaped::<Self>();
+        let table_name = Query::escape_table_name(Self::table_name());
         let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
             let type_annotation = Self::primary_key_column().type_annotation();
@@ -1683,7 +1701,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Prepares the SQL to update a model selected by the primary key in the table.
     async fn prepare_update_by_id(mutation: &mut Mutation) -> Result<QueryContext, Error> {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let table_name = Query::table_name_escaped::<Self>();
+        let table_name = Query::escape_table_name(Self::table_name());
         let updates = mutation.format_updates::<Self>();
         let placeholder = Query::placeholder(1);
         let sql = if cfg!(any(
@@ -1740,7 +1758,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             let query_result = connection.execute_with(ctx.query(), &[primary_key]).await?;
             let optional_row = if query_result.rows_affected() == 1 {
                 let primary_key_name = Self::PRIMARY_KEY_NAME;
-                let table_name = Query::table_name_escaped::<Self>();
+                let table_name = Query::escape_table_name(Self::table_name());
                 let placeholder = Query::placeholder(1);
                 let sql =
                     format!("SELECT * FROM {table_name} WHERE {primary_key_name} = {placeholder};");

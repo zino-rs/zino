@@ -172,7 +172,7 @@ where
         T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
     {
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let table_name = Query::table_name_escaped::<Self>();
+        let table_name = Query::escape_table_name(Self::table_name());
         let projection = Query::format_field(column.as_ref());
         let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
