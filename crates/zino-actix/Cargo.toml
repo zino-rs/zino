@@ -1,7 +1,7 @@
 [package]
 name = "zino-actix"
 description = "Integrations with actix-web for zino."
-version = "0.7.0"
+version = "0.7.1"
 categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 documentation = "https://docs.rs/zino-actix"
@@ -16,7 +16,7 @@ license = { workspace = true }
 orm = ["zino-orm", "zino-orm/openapi"]
 
 [dependencies]
-actix-cors = "0.7.0"
+actix-cors = "0.7.1"
 actix-files = "0.6.6"
 futures = { workspace = true }
 tracing = { workspace = true }
@@ -26,7 +26,7 @@ zino-orm = { workspace = true, optional = true }
 zino-openapi = { workspace = true }
 
 [dependencies.actix-web]
-version = "4.9.0"
+version = "4.10.2"
 default-features = false
 features = ["compress-gzip"]
 

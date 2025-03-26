@@ -1,7 +1,7 @@
 [package]
 name = "zino-derive"
 description = "Derived traits for zino."
-version = "0.31.0"
+version = "0.31.1"
 readme = "README.md"
 documentation = "https://docs.rs/zino-derive"
 homepage = { workspace = true }
@@ -15,8 +15,8 @@ proc-macro = true
 
 [dependencies]
 proc-macro2 = "1.0.94"
-quote = "1.0.39"
-syn = "2.0.99"
+quote = "1.0.40"
+syn = "2.0.100"
 convert_case = { workspace = true }
 zino-core = { workspace = true }
 zino-orm = { workspace = true }

@@ -57,7 +57,7 @@ url = { workspace = true, optional = true }
 zino-core = { workspace = true }
 
 [dependencies.datafusion]
-version = "45.0.0"
+version = "46.0.1"
 optional = true
 
 [lints]
