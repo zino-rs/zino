@@ -31,7 +31,7 @@ mod window;
 pub use accessor::ModelAccessor;
 pub use aggregate::Aggregation;
 pub use column::EncodeColumn;
-pub use entity::Entity;
+pub use entity::{DerivedColumn, Entity, ModelColumn};
 pub use executor::Executor;
 pub use helper::ModelHelper;
 pub use join::JoinOn;

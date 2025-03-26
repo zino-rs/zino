@@ -62,6 +62,13 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             }
         }
 
+        impl zino_orm::ModelColumn<#name> for #model_column_type {
+            #[inline]
+            fn into_column_expr(self) -> String {
+                <#name as zino_orm::Entity>::format_column(&self)
+            }
+        }
+
         impl zino_orm::Entity for #name {
             type Column = #model_column_type;
             const PRIMARY_KEY: Self::Column = <#model_column_type>::#primary_key_variant;

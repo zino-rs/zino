@@ -640,6 +640,8 @@ impl QueryExt<DatabaseDriver> for Query {
                     if let Some((alias, expr)) = field.split_once(':') {
                         let alias = Self::format_field(alias.trim());
                         format!(r#"{expr} AS {alias}"#)
+                    } else if field.contains('"') {
+                        field.into()
                     } else if field.contains('.') {
                         field
                             .split('.')

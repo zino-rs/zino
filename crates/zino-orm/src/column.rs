@@ -7,7 +7,7 @@ use zino_core::{
     model::{Column, Query},
 };
 
-/// Encodes the column to be sent to the database.
+/// Encoding a column to be sent to the database.
 pub trait EncodeColumn<DB> {
     /// Returns the corresponding column type in the database.
     fn column_type(&self) -> &str;

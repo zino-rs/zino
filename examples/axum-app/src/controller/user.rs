@@ -48,9 +48,10 @@ pub async fn stats(req: Request) -> Result {
         .aggregate(Aggregation::Sum(LoginCount), Some("total_login"))
         .aggregate(Aggregation::Avg(LoginCount), None)
         .and_not_in(Status, ["Deleted", "Locked"])
-        .group_by(CurrentLoginIp)
+        .group_by(CurrentLoginIp, None)
+        .group_by(DerivedColumn::date(CurrentLoginAt), Some("login_date"))
         .having_ge(Aggregation::Avg(LoginCount), 10)
-        .order_desc("total_login")
+        .order_desc(DerivedColumn::alias("total_login"))
         .limit(10)
         .build();
     let items = User::aggregate::<Map>(&query).await.extract(&req)?;

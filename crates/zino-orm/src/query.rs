@@ -96,7 +96,7 @@
 //! [`TypeORM`]: https://typeorm.io/
 //! [`PostgREST`]: https://postgrest.org/
 
-use super::{Aggregation, EncodeColumn, Entity, IntoSqlValue, Schema, Window};
+use super::{Aggregation, EncodeColumn, Entity, IntoSqlValue, ModelColumn, Schema, Window};
 use regex::{Captures, Regex};
 use std::{borrow::Cow, fmt::Display, marker::PhantomData};
 use zino_core::{
@@ -179,22 +179,30 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a field corresponding to the column.
     #[inline]
-    pub fn field(mut self, col: E::Column) -> Self {
-        self.fields.push(E::format_column(&col));
+    pub fn field<C: ModelColumn<E>>(mut self, col: C) -> Self {
+        self.fields.push(col.into_column_expr());
         self
     }
 
     /// Adds the fields corresponding to the columns.
     #[inline]
-    pub fn fields<V: Into<Vec<E::Column>>>(mut self, cols: V) -> Self {
-        let mut fields = cols.into().iter().map(E::format_column).collect();
+    pub fn fields<C, V>(mut self, cols: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: Into<Vec<C>>,
+    {
+        let mut fields = cols
+            .into()
+            .into_iter()
+            .map(|col| col.into_column_expr())
+            .collect();
         self.fields.append(&mut fields);
         self
     }
 
     /// Adds a field with an alias for the column.
-    pub fn alias(mut self, col: E::Column, alias: &str) -> Self {
-        let col_name = E::format_column(&col);
+    pub fn alias<C: ModelColumn<E>>(mut self, col: C, alias: &str) -> Self {
+        let col_name = col.into_column_expr();
         let field = Query::format_field(&col_name);
         let field_alias = [alias, ":", &field].concat();
         self.fields.push(field_alias);
@@ -202,8 +210,8 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a field with an alias extracted from a JSON column.
-    pub fn json_extract(mut self, col: E::Column, path: &str, alias: &str) -> Self {
-        let col_name = E::format_column(&col);
+    pub fn json_extract<C: ModelColumn<E>>(mut self, col: C, path: &str, alias: &str) -> Self {
+        let col_name = col.into_column_expr();
         let field = Query::format_field(&col_name);
         let json_field = if cfg!(feature = "orm-postgres") {
             let path = path.strip_prefix("$.").unwrap_or(path).replace('.', ", ");
@@ -247,18 +255,23 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a `GROUP BY` column.
-    pub fn group_by(mut self, col: E::Column) -> Self {
-        let field = E::format_column(&col);
+    pub fn group_by<C: ModelColumn<E>>(mut self, col: C, alias: Option<&str>) -> Self {
+        let expr = col.into_column_expr();
+        let field = if let Some(alias) = alias {
+            [alias, ":", &expr].concat()
+        } else {
+            expr.clone()
+        };
         if !self.fields.contains(&field) {
-            self.fields.push(field.clone());
+            self.fields.push(field);
         }
-        self.group_by_fields.push(field);
+        self.group_by_fields.push(expr);
         self
     }
 
     /// Adds a `HAVING` condition using the value as a filter for the column.
     #[inline]
-    pub fn having_filter(mut self, aggregation: Aggregation<E>, value: impl IntoSqlValue) -> Self {
+    pub fn having_filter<V: IntoSqlValue>(mut self, aggregation: Aggregation<E>, value: V) -> Self {
         let condition = Map::from_entry(aggregation.expr(), value.into_sql_value());
         self.having_conditions.push(condition);
         self
@@ -266,43 +279,43 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a `HAVING` condition for equal parts.
     #[inline]
-    pub fn having_eq(self, aggregation: Aggregation<E>, value: impl IntoSqlValue) -> Self {
+    pub fn having_eq<V: IntoSqlValue>(self, aggregation: Aggregation<E>, value: V) -> Self {
         self.push_having_condition(aggregation, "$eq", value.into_sql_value())
     }
 
     /// Adds a `HAVING` condition for non-equal parts.
     #[inline]
-    pub fn having_ne(self, aggregation: Aggregation<E>, value: impl IntoSqlValue) -> Self {
+    pub fn having_ne<V: IntoSqlValue>(self, aggregation: Aggregation<E>, value: V) -> Self {
         self.push_having_condition(aggregation, "$ne", value.into_sql_value())
     }
 
     /// Adds a `HAVING` condition for the column less than a value.
     #[inline]
-    pub fn having_lt(self, aggregation: Aggregation<E>, value: impl IntoSqlValue) -> Self {
+    pub fn having_lt<V: IntoSqlValue>(self, aggregation: Aggregation<E>, value: V) -> Self {
         self.push_having_condition(aggregation, "$lt", value.into_sql_value())
     }
 
     /// Adds a `HAVING` condition for the column not greater than a value.
     #[inline]
-    pub fn having_le(self, aggregation: Aggregation<E>, value: impl IntoSqlValue) -> Self {
+    pub fn having_le<V: IntoSqlValue>(self, aggregation: Aggregation<E>, value: V) -> Self {
         self.push_having_condition(aggregation, "$le", value.into_sql_value())
     }
 
     /// Adds a `HAVING` condition for the column greater than a value.
     #[inline]
-    pub fn having_gt(self, aggregation: Aggregation<E>, value: impl IntoSqlValue) -> Self {
+    pub fn having_gt<V: IntoSqlValue>(self, aggregation: Aggregation<E>, value: V) -> Self {
         self.push_having_condition(aggregation, "$gt", value.into_sql_value())
     }
 
     /// Adds a `HAVING` condition for the column not less than a value.
     #[inline]
-    pub fn having_ge(self, aggregation: Aggregation<E>, value: impl IntoSqlValue) -> Self {
+    pub fn having_ge<V: IntoSqlValue>(self, aggregation: Aggregation<E>, value: V) -> Self {
         self.push_having_condition(aggregation, "$ge", value.into_sql_value())
     }
 
     /// Adds a logical `AND` condition for the primary key.
     #[inline]
-    pub fn primary_key(mut self, value: impl IntoSqlValue) -> Self {
+    pub fn primary_key<V: IntoSqlValue>(mut self, value: V) -> Self {
         let field = E::format_column(&E::PRIMARY_KEY);
         self.filters.upsert(field, value.into_sql_value());
         self
@@ -310,7 +323,7 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `AND` condition which selects random items by `rand() < value`.
     #[inline]
-    pub fn rand(mut self, value: impl IntoSqlValue) -> Self {
+    pub fn rand<V: IntoSqlValue>(mut self, value: V) -> Self {
         self.filters.upsert("$rand", value.into_sql_value());
         self
     }
@@ -347,21 +360,33 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `AND` condition using the value as a filter for the column.
     #[inline]
-    pub fn and_filter(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
-        let condition = Map::from_entry(E::format_column(&col), value.into_sql_value());
+    pub fn and_filter<C, V>(mut self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
+        let condition = Map::from_entry(col.into_column_expr(), value.into_sql_value());
         self.logical_and.push(condition);
         self
     }
 
     /// Adds a logical `AND` condition for equal parts.
     #[inline]
-    pub fn and_eq(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn and_eq<C, V>(self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
         self.push_logical_and(col, "$eq", value.into_sql_value())
     }
 
     /// Adds a logical `AND` condition for equal parts if the value is not null.
     #[inline]
-    pub fn and_eq_if_not_null(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn and_eq_if_not_null<C, V>(self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
         let value = value.into_sql_value();
         if !value.is_null() {
             self.push_logical_and(col, "$eq", value)
@@ -372,7 +397,11 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `AND` condition for equal parts if the value is not none.
     #[inline]
-    pub fn and_eq_if_some<T: IntoSqlValue>(self, col: E::Column, value: Option<T>) -> Self {
+    pub fn and_eq_if_some<C, T>(self, col: C, value: Option<T>) -> Self
+    where
+        C: ModelColumn<E>,
+        T: IntoSqlValue,
+    {
         if let Some(value) = value {
             self.push_logical_and(col, "$eq", value.into_sql_value())
         } else {
@@ -382,13 +411,21 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `AND` condition for non-equal parts.
     #[inline]
-    pub fn and_ne(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn and_ne<C, V>(self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
         self.push_logical_and(col, "$ne", value.into_sql_value())
     }
 
     /// Adds a logical `AND` condition for non-equal parts if the value is not null.
     #[inline]
-    pub fn and_ne_if_not_null(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn and_ne_if_not_null<C, V>(self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
         let value = value.into_sql_value();
         if !value.is_null() {
             self.push_logical_and(col, "$ne", value)
@@ -399,7 +436,11 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `AND` condition for non-equal parts if the value is not none.
     #[inline]
-    pub fn and_ne_if_some<T: IntoSqlValue>(self, col: E::Column, value: Option<T>) -> Self {
+    pub fn and_ne_if_some<C, T>(self, col: C, value: Option<T>) -> Self
+    where
+        C: ModelColumn<E>,
+        T: IntoSqlValue,
+    {
         if let Some(value) = value {
             self.push_logical_and(col, "$ne", value.into_sql_value())
         } else {
@@ -409,32 +450,49 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `AND` condition for the column less than a value.
     #[inline]
-    pub fn and_lt(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn and_lt<C, V>(self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
         self.push_logical_and(col, "$lt", value.into_sql_value())
     }
 
     /// Adds a logical `AND` condition for the column not greater than a value.
     #[inline]
-    pub fn and_le(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn and_le<C, V>(self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
         self.push_logical_and(col, "$le", value.into_sql_value())
     }
 
     /// Adds a logical `AND` condition for the column greater than a value.
     #[inline]
-    pub fn and_gt(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn and_gt<C, V>(self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
         self.push_logical_and(col, "$gt", value.into_sql_value())
     }
 
     /// Adds a logical `AND` condition for the column not less than a value.
     #[inline]
-    pub fn and_ge(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn and_ge<C, V>(self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
         self.push_logical_and(col, "$ge", value.into_sql_value())
     }
 
     /// Adds a logical `AND` condition for the column `IN` a list of values.
     #[inline]
-    pub fn and_in<T, V>(self, col: E::Column, values: V) -> Self
+    pub fn and_in<C, T, V>(self, col: C, values: V) -> Self
     where
+        C: ModelColumn<E>,
         T: IntoSqlValue,
         V: Into<Vec<T>>,
     {
@@ -443,8 +501,9 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `AND` condition for the column `NOT IN` a list of values.
     #[inline]
-    pub fn and_not_in<T, V>(self, col: E::Column, values: V) -> Self
+    pub fn and_not_in<C, T, V>(self, col: C, values: V) -> Self
     where
+        C: ModelColumn<E>,
         T: IntoSqlValue,
         V: Into<Vec<T>>,
     {
@@ -452,16 +511,17 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a logical `AND` condition for the columns `IN` a subquery.
-    pub fn and_in_subquery<C, M>(mut self, cols: C, subquery: QueryBuilder<M>) -> Self
+    pub fn and_in_subquery<C, V, M>(mut self, cols: V, subquery: QueryBuilder<M>) -> Self
     where
-        C: Into<Vec<E::Column>>,
+        C: ModelColumn<E>,
+        V: Into<Vec<C>>,
         M: Entity + Schema,
     {
         let cols = cols
             .into()
             .into_iter()
             .map(|col| {
-                let col_name = E::format_column(&col);
+                let col_name = col.into_column_expr();
                 Query::format_field(&col_name).into_owned()
             })
             .collect::<Vec<_>>()
@@ -473,16 +533,17 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a logical `AND` condition for the columns `NOT IN` a subquery.
-    pub fn and_not_in_subquery<C, M>(mut self, cols: C, subquery: QueryBuilder<M>) -> Self
+    pub fn and_not_in_subquery<C, V, M>(mut self, cols: V, subquery: QueryBuilder<M>) -> Self
     where
-        C: Into<Vec<E::Column>>,
+        C: ModelColumn<E>,
+        V: Into<Vec<C>>,
         M: Entity + Schema,
     {
         let cols = cols
             .into()
             .into_iter()
             .map(|col| {
-                let col_name = E::format_column(&col);
+                let col_name = col.into_column_expr();
                 Query::format_field(&col_name).into_owned()
             })
             .collect::<Vec<_>>()
@@ -494,8 +555,12 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a logical `AND` condition for the column in a range `[min, max)`.
-    pub fn and_in_range<T: IntoSqlValue>(mut self, col: E::Column, min: T, max: T) -> Self {
-        let field = E::format_column(&col);
+    pub fn and_in_range<C, T>(mut self, col: C, min: T, max: T) -> Self
+    where
+        C: ModelColumn<E>,
+        T: IntoSqlValue,
+    {
+        let field = col.into_column_expr();
         let mut condition = Map::new();
         condition.upsert("$ge", min.into_sql_value());
         condition.upsert("$lt", max.into_sql_value());
@@ -505,86 +570,91 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `AND` condition for the column `BETWEEN` two values.
     #[inline]
-    pub fn and_between<T: IntoSqlValue>(self, col: E::Column, min: T, max: T) -> Self {
+    pub fn and_between<C, T>(self, col: C, min: T, max: T) -> Self
+    where
+        C: ModelColumn<E>,
+        T: IntoSqlValue,
+    {
         self.push_logical_and(col, "$betw", [min, max].into_sql_value())
     }
 
     /// Adds a logical `AND` condition for the column `LIKE` a string value.
     #[inline]
-    pub fn and_like(self, col: E::Column, value: String) -> Self {
+    pub fn and_like<C: ModelColumn<E>>(self, col: C, value: String) -> Self {
         self.push_logical_and(col, "$like", value.into_sql_value())
     }
 
     /// Adds a logical `AND` condition for the column `ILIKE` a string value.
     #[inline]
-    pub fn and_ilike(self, col: E::Column, value: String) -> Self {
+    pub fn and_ilike<C: ModelColumn<E>>(self, col: C, value: String) -> Self {
         self.push_logical_and(col, "$ilike", value.into_sql_value())
     }
 
     /// Adds a logical `AND` condition for the column `RLIKE` a string value.
     #[inline]
-    pub fn and_rlike(self, col: E::Column, value: String) -> Self {
+    pub fn and_rlike<C: ModelColumn<E>>(self, col: C, value: String) -> Self {
         self.push_logical_and(col, "$rlike", value.into_sql_value())
     }
 
     /// Adds a logical `AND` condition for the column which contains a string value.
     #[inline]
-    pub fn and_contains(self, col: E::Column, value: &str) -> Self {
+    pub fn and_contains<C: ModelColumn<E>>(self, col: C, value: &str) -> Self {
         let value = ["%", value, "%"].concat();
         self.push_logical_and(col, "$like", value.into_sql_value())
     }
 
     /// Adds a logical `AND` condition for the column which starts with a string value.
     #[inline]
-    pub fn and_starts_with(self, col: E::Column, value: &str) -> Self {
+    pub fn and_starts_with<C: ModelColumn<E>>(self, col: C, value: &str) -> Self {
         let value = [value, "%"].concat();
         self.push_logical_and(col, "$like", value.into_sql_value())
     }
 
     /// Adds a logical `AND` condition for the column which ends with a string value.
     #[inline]
-    pub fn and_ends_with(self, col: E::Column, value: &str) -> Self {
+    pub fn and_ends_with<C: ModelColumn<E>>(self, col: C, value: &str) -> Self {
         let value = ["%", value].concat();
         self.push_logical_and(col, "$like", value.into_sql_value())
     }
 
     /// Adds a logical `AND` condition for the column which is null.
     #[inline]
-    pub fn and_null(self, col: E::Column) -> Self {
+    pub fn and_null<C: ModelColumn<E>>(self, col: C) -> Self {
         self.and_filter(col, JsonValue::Null)
     }
 
     /// Adds a logical `AND` condition for the column which is not null.
     #[inline]
-    pub fn and_not_null(self, col: E::Column) -> Self {
+    pub fn and_not_null<C: ModelColumn<E>>(self, col: C) -> Self {
         self.and_filter(col, "not_null")
     }
 
     /// Adds a logical `AND` condition for the column which is an empty string or a null.
     #[inline]
-    pub fn and_empty(self, col: E::Column) -> Self {
+    pub fn and_empty<C: ModelColumn<E>>(self, col: C) -> Self {
         self.and_filter(col, "empty")
     }
 
     /// Adds a logical `AND` condition for the column which is not an empty string or a null.
     #[inline]
-    pub fn and_nonempty(self, col: E::Column) -> Self {
+    pub fn and_nonempty<C: ModelColumn<E>>(self, col: C) -> Self {
         self.and_filter(col, "nonempty")
     }
 
     /// Adds a logical `AND` condition for the two ranges which overlaps with each other.
-    pub fn and_overlaps<T: IntoSqlValue>(
-        mut self,
-        cols: (E::Column, E::Column),
-        values: (T, T),
-    ) -> Self {
+    pub fn and_overlaps<L, R, T>(mut self, cols: (L, R), values: (T, T)) -> Self
+    where
+        L: ModelColumn<E>,
+        R: ModelColumn<E>,
+        T: IntoSqlValue,
+    {
         let mut condition = Map::new();
         condition.upsert(
-            E::format_column(&cols.0),
+            cols.0.into_column_expr(),
             Map::from_entry("$le", values.1.into_sql_value()),
         );
         condition.upsert(
-            E::format_column(&cols.1),
+            cols.1.into_column_expr(),
             Map::from_entry("$ge", values.0.into_sql_value()),
         );
         self.logical_and.push(condition);
@@ -623,21 +693,33 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `OR` condition using the value as a filter for the column.
     #[inline]
-    pub fn or_filter(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
-        let condition = Map::from_entry(E::format_column(&col), value.into_sql_value());
+    pub fn or_filter<C, V>(mut self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
+        let condition = Map::from_entry(col.into_column_expr(), value.into_sql_value());
         self.logical_or.push(condition);
         self
     }
 
     /// Adds a logical `OR` condition for equal parts.
     #[inline]
-    pub fn or_eq(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn or_eq<C, V>(self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
         self.push_logical_or(col, "$eq", value.into_sql_value())
     }
 
     /// Adds a logical `OR` condition for equal parts if the value is not null.
     #[inline]
-    pub fn or_eq_if_not_null(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn or_eq_if_not_null<C, V>(self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
         let value = value.into_sql_value();
         if !value.is_null() {
             self.push_logical_or(col, "$eq", value)
@@ -648,7 +730,11 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `OR` condition for equal parts if the value is not none.
     #[inline]
-    pub fn or_eq_if_some<T: IntoSqlValue>(self, col: E::Column, value: Option<T>) -> Self {
+    pub fn or_eq_if_some<C, T>(self, col: C, value: Option<T>) -> Self
+    where
+        C: ModelColumn<E>,
+        T: IntoSqlValue,
+    {
         if let Some(value) = value {
             self.push_logical_or(col, "$eq", value.into_sql_value())
         } else {
@@ -658,13 +744,21 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `OR` condition for non-equal parts.
     #[inline]
-    pub fn or_ne(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn or_ne<C, V>(self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
         self.push_logical_or(col, "$ne", value.into_sql_value())
     }
 
     /// Adds a logical `OR` condition for non-equal parts if the value is not none.
     #[inline]
-    pub fn or_ne_if_not_null(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn or_ne_if_not_null<C, V>(self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
         let value = value.into_sql_value();
         if !value.is_null() {
             self.push_logical_or(col, "$ne", value)
@@ -675,7 +769,11 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `OR` condition for non-equal parts if the value is not none.
     #[inline]
-    pub fn or_ne_if_some<T: IntoSqlValue>(self, col: E::Column, value: Option<T>) -> Self {
+    pub fn or_ne_if_some<C, T>(self, col: C, value: Option<T>) -> Self
+    where
+        C: ModelColumn<E>,
+        T: IntoSqlValue,
+    {
         if let Some(value) = value {
             self.push_logical_or(col, "$ne", value.into_sql_value())
         } else {
@@ -685,32 +783,49 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `OR` condition for the column less than a value.
     #[inline]
-    pub fn or_lt(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn or_lt<C, V>(self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
         self.push_logical_or(col, "$lt", value.into_sql_value())
     }
 
     /// Adds a logical `OR` condition for the column not greater than a value.
     #[inline]
-    pub fn or_le(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn or_le<C, V>(self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
         self.push_logical_or(col, "$le", value.into_sql_value())
     }
 
     /// Adds a logical `OR` condition for the column greater than a value.
     #[inline]
-    pub fn or_gt(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn or_gt<C, V>(self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
         self.push_logical_or(col, "$gt", value.into_sql_value())
     }
 
     /// Adds a logical `OR` condition for the column not less than a value.
     #[inline]
-    pub fn or_ge(self, col: E::Column, value: impl IntoSqlValue) -> Self {
+    pub fn or_ge<C, V>(self, col: C, value: V) -> Self
+    where
+        C: ModelColumn<E>,
+        V: IntoSqlValue,
+    {
         self.push_logical_or(col, "$ge", value.into_sql_value())
     }
 
     /// Adds a logical `OR` condition for the column `IN` a list of values.
     #[inline]
-    pub fn or_in<T, V>(self, col: E::Column, values: V) -> Self
+    pub fn or_in<C, T, V>(self, col: C, values: V) -> Self
     where
+        C: ModelColumn<E>,
         T: IntoSqlValue,
         V: Into<Vec<T>>,
     {
@@ -719,8 +834,9 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `OR` condition for the column `NOT IN` a list of values.
     #[inline]
-    pub fn or_not_in<T, V>(self, col: E::Column, values: V) -> Self
+    pub fn or_not_in<C, T, V>(self, col: C, values: V) -> Self
     where
+        C: ModelColumn<E>,
         T: IntoSqlValue,
         V: Into<Vec<T>>,
     {
@@ -728,16 +844,17 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a logical `OR` condition for the columns `IN` a subquery.
-    pub fn or_in_subquery<C, M>(mut self, cols: C, subquery: QueryBuilder<M>) -> Self
+    pub fn or_in_subquery<C, V, M>(mut self, cols: V, subquery: QueryBuilder<M>) -> Self
     where
-        C: Into<Vec<E::Column>>,
+        C: ModelColumn<E>,
+        V: Into<Vec<C>>,
         M: Entity + Schema,
     {
         let cols = cols
             .into()
             .into_iter()
             .map(|col| {
-                let col_name = E::format_column(&col);
+                let col_name = col.into_column_expr();
                 Query::format_field(&col_name).into_owned()
             })
             .collect::<Vec<_>>()
@@ -749,16 +866,17 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a logical `OR` condition for the columns `NOT IN` a subquery.
-    pub fn or_not_in_subquery<C, M>(mut self, cols: C, subquery: QueryBuilder<M>) -> Self
+    pub fn or_not_in_subquery<C, V, M>(mut self, cols: V, subquery: QueryBuilder<M>) -> Self
     where
-        C: Into<Vec<E::Column>>,
+        C: ModelColumn<E>,
+        V: Into<Vec<C>>,
         M: Entity + Schema,
     {
         let cols = cols
             .into()
             .into_iter()
             .map(|col| {
-                let col_name = E::format_column(&col);
+                let col_name = col.into_column_expr();
                 Query::format_field(&col_name).into_owned()
             })
             .collect::<Vec<_>>()
@@ -770,8 +888,12 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a logical `OR` condition for the column is in a range `[min, max)`.
-    pub fn or_in_range<T: IntoSqlValue>(mut self, col: E::Column, min: T, max: T) -> Self {
-        let field = E::format_column(&col);
+    pub fn or_in_range<C, T>(mut self, col: C, min: T, max: T) -> Self
+    where
+        C: ModelColumn<E>,
+        T: IntoSqlValue,
+    {
+        let field = col.into_column_expr();
         let mut condition = Map::new();
         condition.upsert("$ge", min.into_sql_value());
         condition.upsert("$lt", max.into_sql_value());
@@ -781,86 +903,91 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `OR` condition for the column `BETWEEN` two values.
     #[inline]
-    pub fn or_between<T: IntoSqlValue>(self, col: E::Column, min: T, max: T) -> Self {
+    pub fn or_between<C, T>(self, col: C, min: T, max: T) -> Self
+    where
+        C: ModelColumn<E>,
+        T: IntoSqlValue,
+    {
         self.push_logical_or(col, "$betw", [min, max].into_sql_value())
     }
 
     /// Adds a logical `OR` condition for the column `LIKE` a string value.
     #[inline]
-    pub fn or_like(self, col: E::Column, value: String) -> Self {
+    pub fn or_like<C: ModelColumn<E>>(self, col: C, value: String) -> Self {
         self.push_logical_or(col, "$like", value.into_sql_value())
     }
 
     /// Adds a logical `OR` condition for the column `ILIKE` a string value.
     #[inline]
-    pub fn or_ilike(self, col: E::Column, value: String) -> Self {
+    pub fn or_ilike<C: ModelColumn<E>>(self, col: C, value: String) -> Self {
         self.push_logical_or(col, "$ilike", value.into_sql_value())
     }
 
     /// Adds a logical `OR` condition for the column `RLIKE` a string value.
     #[inline]
-    pub fn or_rlike(self, col: E::Column, value: String) -> Self {
+    pub fn or_rlike<C: ModelColumn<E>>(self, col: C, value: String) -> Self {
         self.push_logical_or(col, "$rlike", value.into_sql_value())
     }
 
     /// Adds a logical `OR` condition for the column which contains a string value.
     #[inline]
-    pub fn or_contains(self, col: E::Column, value: &str) -> Self {
+    pub fn or_contains<C: ModelColumn<E>>(self, col: C, value: &str) -> Self {
         let value = ["%", value, "%"].concat();
         self.push_logical_or(col, "$like", value.into_sql_value())
     }
 
     /// Adds a logical `OR` condition for the column which starts with a string value.
     #[inline]
-    pub fn or_starts_with(self, col: E::Column, value: &str) -> Self {
+    pub fn or_starts_with<C: ModelColumn<E>>(self, col: C, value: &str) -> Self {
         let value = [value, "%"].concat();
         self.push_logical_or(col, "$like", value.into_sql_value())
     }
 
     /// Adds a logical `OR` condition for the column which ends with a string value.
     #[inline]
-    pub fn or_ends_with(self, col: E::Column, value: &str) -> Self {
+    pub fn or_ends_with<C: ModelColumn<E>>(self, col: C, value: &str) -> Self {
         let value = ["%", value].concat();
         self.push_logical_or(col, "$like", value.into_sql_value())
     }
 
     /// Adds a logical `OR` condition for the column which is null.
     #[inline]
-    pub fn or_null(self, col: E::Column) -> Self {
+    pub fn or_null<C: ModelColumn<E>>(self, col: C) -> Self {
         self.or_filter(col, JsonValue::Null)
     }
 
     /// Adds a logical `OR` condition for the column which is not null.
     #[inline]
-    pub fn or_not_null(self, col: E::Column) -> Self {
+    pub fn or_not_null<C: ModelColumn<E>>(self, col: C) -> Self {
         self.or_filter(col, "not_null")
     }
 
     /// Adds a logical `OR` condition for the column which is an empty string or a null.
     #[inline]
-    pub fn or_empty(self, col: E::Column) -> Self {
+    pub fn or_empty<C: ModelColumn<E>>(self, col: C) -> Self {
         self.or_filter(col, "empty")
     }
 
     /// Adds a logical `OR` condition for the column which is not an empty string or a null.
     #[inline]
-    pub fn or_nonempty(self, col: E::Column) -> Self {
+    pub fn or_nonempty<C: ModelColumn<E>>(self, col: C) -> Self {
         self.or_filter(col, "nonempty")
     }
 
     /// Adds a logical `OR` condition for the two ranges which overlaps with each other.
-    pub fn or_overlaps<T: IntoSqlValue>(
-        mut self,
-        cols: (E::Column, E::Column),
-        values: (T, T),
-    ) -> Self {
+    pub fn or_overlaps<L, R, T>(mut self, cols: (L, R), values: (T, T)) -> Self
+    where
+        L: ModelColumn<E>,
+        R: ModelColumn<E>,
+        T: IntoSqlValue,
+    {
         let mut condition = Map::new();
         condition.upsert(
-            E::format_column(&cols.0),
+            cols.0.into_column_expr(),
             Map::from_entry("$le", values.1.into_sql_value()),
         );
         condition.upsert(
-            E::format_column(&cols.1),
+            cols.1.into_column_expr(),
             Map::from_entry("$ge", values.0.into_sql_value()),
         );
         self.logical_or.push(condition);
@@ -869,21 +996,21 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a query order.
     #[inline]
-    pub fn order_by(mut self, col: impl ToString, descending: bool) -> Self {
+    pub fn order_by<C: ModelColumn<E>>(mut self, col: C, descending: bool) -> Self {
         self.sort_order
-            .push(QueryOrder::new(col.to_string(), descending));
+            .push(QueryOrder::new(col.into_column_expr(), descending));
         self
     }
 
     /// Adds a query order with an extra flag to indicate whether the nulls appear first or last.
     #[inline]
-    pub fn order_by_with_nulls(
+    pub fn order_by_with_nulls<C: ModelColumn<E>>(
         mut self,
-        col: impl ToString,
+        col: C,
         descending: bool,
         nulls_first: bool,
     ) -> Self {
-        let mut order = QueryOrder::new(col.to_string(), descending);
+        let mut order = QueryOrder::new(col.into_column_expr(), descending);
         if nulls_first {
             order.set_nulls_first();
         } else {
@@ -895,16 +1022,17 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a query order with an ascending order.
     #[inline]
-    pub fn order_asc(mut self, col: impl ToString) -> Self {
+    pub fn order_asc<C: ModelColumn<E>>(mut self, col: C) -> Self {
         self.sort_order
-            .push(QueryOrder::new(col.to_string(), false));
+            .push(QueryOrder::new(col.into_column_expr(), false));
         self
     }
 
     /// Adds a query order with an descending order.
     #[inline]
-    pub fn order_desc(mut self, col: impl ToString) -> Self {
-        self.sort_order.push(QueryOrder::new(col.to_string(), true));
+    pub fn order_desc<C: ModelColumn<E>>(mut self, col: C) -> Self {
+        self.sort_order
+            .push(QueryOrder::new(col.into_column_expr(), true));
         self
     }
 
@@ -965,18 +1093,28 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Pushes a logical `AND` condition for the column and expressions.
-    fn push_logical_and(mut self, col: E::Column, operator: &str, value: JsonValue) -> Self {
+    fn push_logical_and<C: ModelColumn<E>>(
+        mut self,
+        col: C,
+        operator: &str,
+        value: JsonValue,
+    ) -> Self {
         let condition = Map::from_entry(operator, value);
         self.logical_and
-            .push(Map::from_entry(E::format_column(&col), condition));
+            .push(Map::from_entry(col.into_column_expr(), condition));
         self
     }
 
     /// Pushes a logical `OR` condition for the column and expressions.
-    fn push_logical_or(mut self, col: E::Column, operator: &str, value: JsonValue) -> Self {
+    fn push_logical_or<C: ModelColumn<E>>(
+        mut self,
+        col: C,
+        operator: &str,
+        value: JsonValue,
+    ) -> Self {
         let condition = Map::from_entry(operator, value);
         self.logical_or
-            .push(Map::from_entry(E::format_column(&col), condition));
+            .push(Map::from_entry(col.into_column_expr(), condition));
         self
     }
 }
