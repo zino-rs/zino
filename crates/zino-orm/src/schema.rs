@@ -920,9 +920,13 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     }
 
     /// Prepares the SQL to delete the model in the table.
-    async fn prepare_delete() -> Result<QueryContext, Error> {
+    async fn prepare_delete(&self) -> Result<QueryContext, Error> {
+        let table_name = if let Some(table) = self.before_prepare().await? {
+            Query::escape_table_name(&table)
+        } else {
+            Query::escape_table_name(Self::table_name())
+        };
         let primary_key_name = Self::PRIMARY_KEY_NAME;
-        let table_name = Query::escape_table_name(Self::table_name());
         let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
             let type_annotation = Self::primary_key_column().type_annotation();
@@ -944,7 +948,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Deletes the model in the table.
     async fn delete(mut self) -> Result<QueryContext, Error> {
         let model_data = self.before_delete().await?;
-        let mut ctx = Self::prepare_delete().await?;
+        let mut ctx = self.prepare_delete().await?;
         if ctx.is_cancelled() {
             return Ok(ctx);
         }
