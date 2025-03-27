@@ -1,9 +1,12 @@
-use super::query::QueryExt;
+use super::{IntoSqlValue, query::QueryExt};
 use std::{
     fmt::{self, Display},
     marker::PhantomData,
 };
-use zino_core::model::{Model, Query};
+use zino_core::{
+    JsonValue,
+    model::{Model, Query},
+};
 
 /// An interface for the model entity.
 pub trait Entity: Model {
@@ -51,6 +54,34 @@ impl<E: Entity> DerivedColumn<E> {
         Self::new(alias.to_owned())
     }
 
+    /// Constructs an instance using `COALESCE` to provide a default value for the column.
+    pub fn coalesce<V: IntoSqlValue>(col: E::Column, value: V) -> Self {
+        let col_name = E::format_column(&col);
+        let field = Query::format_field(&col_name);
+        let expr = match value.into_sql_value() {
+            JsonValue::Null => format!("coalesce({field}, NULL)"),
+            JsonValue::Bool(b) => {
+                if b {
+                    format!("coalesce({field}, TRUE)")
+                } else {
+                    format!("coalesce({field}, FALSE)")
+                }
+            }
+            JsonValue::Number(n) => {
+                format!("coalesce({field}, {n})")
+            }
+            JsonValue::String(s) => {
+                let value = Query::escape_string(s);
+                format!("coalesce({field}, {value})")
+            }
+            value => {
+                let value = Query::escape_string(value);
+                format!("coalesce({field}, {value})")
+            }
+        };
+        Self::new(expr)
+    }
+
     /// Constructs an instance for extracting the year from a column.
     #[inline]
     pub fn year(col: E::Column) -> Self {
@@ -64,12 +95,64 @@ impl<E: Entity> DerivedColumn<E> {
         Self::new(expr)
     }
 
+    /// Constructs an instance for extracting the year-month from a column.
+    #[inline]
+    pub fn year_month(col: E::Column) -> Self {
+        let col_name = E::format_column(&col);
+        let field = Query::format_field(&col_name);
+        let expr = if cfg!(any(
+            feature = "orm-mariadb",
+            feature = "orm-mysql",
+            feature = "orm-tidb"
+        )) {
+            format!("date_format({field}, '%Y-%m')")
+        } else if cfg!(feature = "orm-postgres") {
+            format!("to_char({field}, 'YYYY-MM')")
+        } else {
+            format!("strftime('%Y-%m', {field})")
+        };
+        Self::new(expr)
+    }
+
     /// Constructs an instance for extracting the date from a column.
     #[inline]
     pub fn date(col: E::Column) -> Self {
         let col_name = E::format_column(&col);
         let field = Query::format_field(&col_name);
         Self::new(format!("date({field})"))
+    }
+
+    /// Constructs an instance for formating a date-time as `%Y-%m-%d %H:%M:%S`.
+    #[inline]
+    pub fn format_date_time(col: E::Column) -> Self {
+        let col_name = E::format_column(&col);
+        let field = Query::format_field(&col_name);
+        let expr = if cfg!(any(
+            feature = "orm-mariadb",
+            feature = "orm-mysql",
+            feature = "orm-tidb"
+        )) {
+            format!("date_format({field}, '%Y-%m-%d %H:%i:%s')")
+        } else if cfg!(feature = "orm-postgres") {
+            format!("to_char({field}, 'YYYY-MM-DD HH24:MI:SS')")
+        } else {
+            format!("strftime('%Y-%m-%d %H:%M:%S', {field})")
+        };
+        Self::new(expr)
+    }
+
+    /// Constructs an instance for extracting values from a JSON column.
+    #[inline]
+    pub fn json_extract(col: E::Column, path: &str) -> Self {
+        let col_name = E::format_column(&col);
+        let field = Query::format_field(&col_name);
+        let expr = if cfg!(feature = "orm-postgres") {
+            let path = path.strip_prefix("$.").unwrap_or(path).replace('.', ", ");
+            format!(r#"({field} #>> '{{{path}}}')"#)
+        } else {
+            format!(r#"json_unquote(json_extract({field}, '{path}'))"#)
+        };
+        Self::new(expr)
     }
 }
 

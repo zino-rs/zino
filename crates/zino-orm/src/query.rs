@@ -209,21 +209,6 @@ impl<E: Entity> QueryBuilder<E> {
         self
     }
 
-    /// Adds a field with an alias extracted from a JSON column.
-    pub fn json_extract<C: ModelColumn<E>>(mut self, col: C, path: &str, alias: &str) -> Self {
-        let col_name = col.into_column_expr();
-        let field = Query::format_field(&col_name);
-        let json_field = if cfg!(feature = "orm-postgres") {
-            let path = path.strip_prefix("$.").unwrap_or(path).replace('.', ", ");
-            format!(r#"({field} #>> '{{{path}}}')"#)
-        } else {
-            format!(r#"json_unquote(json_extract({field}, '{path}'))"#)
-        };
-        let field_alias = [alias, ":", &json_field].concat();
-        self.fields.push(field_alias);
-        self
-    }
-
     /// Adds a field with an optional alias for the aggregate function.
     pub fn aggregate(mut self, aggregation: Aggregation<E>, alias: Option<&str>) -> Self {
         let expr = aggregation.expr();
@@ -397,10 +382,10 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `AND` condition for equal parts if the value is not none.
     #[inline]
-    pub fn and_eq_if_some<C, T>(self, col: C, value: Option<T>) -> Self
+    pub fn and_eq_if_some<C, V>(self, col: C, value: Option<V>) -> Self
     where
         C: ModelColumn<E>,
-        T: IntoSqlValue,
+        V: IntoSqlValue,
     {
         if let Some(value) = value {
             self.push_logical_and(col, "$eq", value.into_sql_value())
@@ -436,10 +421,10 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `AND` condition for non-equal parts if the value is not none.
     #[inline]
-    pub fn and_ne_if_some<C, T>(self, col: C, value: Option<T>) -> Self
+    pub fn and_ne_if_some<C, V>(self, col: C, value: Option<V>) -> Self
     where
         C: ModelColumn<E>,
-        T: IntoSqlValue,
+        V: IntoSqlValue,
     {
         if let Some(value) = value {
             self.push_logical_and(col, "$ne", value.into_sql_value())
@@ -555,10 +540,10 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a logical `AND` condition for the column in a range `[min, max)`.
-    pub fn and_in_range<C, T>(mut self, col: C, min: T, max: T) -> Self
+    pub fn and_in_range<C, V>(mut self, col: C, min: V, max: V) -> Self
     where
         C: ModelColumn<E>,
-        T: IntoSqlValue,
+        V: IntoSqlValue,
     {
         let field = col.into_column_expr();
         let mut condition = Map::new();
@@ -570,10 +555,10 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `AND` condition for the column `BETWEEN` two values.
     #[inline]
-    pub fn and_between<C, T>(self, col: C, min: T, max: T) -> Self
+    pub fn and_between<C, V>(self, col: C, min: V, max: V) -> Self
     where
         C: ModelColumn<E>,
-        T: IntoSqlValue,
+        V: IntoSqlValue,
     {
         self.push_logical_and(col, "$betw", [min, max].into_sql_value())
     }
@@ -642,11 +627,11 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a logical `AND` condition for the two ranges which overlaps with each other.
-    pub fn and_overlaps<L, R, T>(mut self, cols: (L, R), values: (T, T)) -> Self
+    pub fn and_overlaps<L, R, V>(mut self, cols: (L, R), values: (V, V)) -> Self
     where
         L: ModelColumn<E>,
         R: ModelColumn<E>,
-        T: IntoSqlValue,
+        V: IntoSqlValue,
     {
         let mut condition = Map::new();
         condition.upsert(
@@ -730,10 +715,10 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `OR` condition for equal parts if the value is not none.
     #[inline]
-    pub fn or_eq_if_some<C, T>(self, col: C, value: Option<T>) -> Self
+    pub fn or_eq_if_some<C, V>(self, col: C, value: Option<V>) -> Self
     where
         C: ModelColumn<E>,
-        T: IntoSqlValue,
+        V: IntoSqlValue,
     {
         if let Some(value) = value {
             self.push_logical_or(col, "$eq", value.into_sql_value())
@@ -769,10 +754,10 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `OR` condition for non-equal parts if the value is not none.
     #[inline]
-    pub fn or_ne_if_some<C, T>(self, col: C, value: Option<T>) -> Self
+    pub fn or_ne_if_some<C, V>(self, col: C, value: Option<V>) -> Self
     where
         C: ModelColumn<E>,
-        T: IntoSqlValue,
+        V: IntoSqlValue,
     {
         if let Some(value) = value {
             self.push_logical_or(col, "$ne", value.into_sql_value())
@@ -888,10 +873,10 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a logical `OR` condition for the column is in a range `[min, max)`.
-    pub fn or_in_range<C, T>(mut self, col: C, min: T, max: T) -> Self
+    pub fn or_in_range<C, V>(mut self, col: C, min: V, max: V) -> Self
     where
         C: ModelColumn<E>,
-        T: IntoSqlValue,
+        V: IntoSqlValue,
     {
         let field = col.into_column_expr();
         let mut condition = Map::new();
@@ -903,10 +888,10 @@ impl<E: Entity> QueryBuilder<E> {
 
     /// Adds a logical `OR` condition for the column `BETWEEN` two values.
     #[inline]
-    pub fn or_between<C, T>(self, col: C, min: T, max: T) -> Self
+    pub fn or_between<C, V>(self, col: C, min: V, max: V) -> Self
     where
         C: ModelColumn<E>,
-        T: IntoSqlValue,
+        V: IntoSqlValue,
     {
         self.push_logical_or(col, "$betw", [min, max].into_sql_value())
     }
@@ -975,11 +960,11 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a logical `OR` condition for the two ranges which overlaps with each other.
-    pub fn or_overlaps<L, R, T>(mut self, cols: (L, R), values: (T, T)) -> Self
+    pub fn or_overlaps<L, R, V>(mut self, cols: (L, R), values: (V, V)) -> Self
     where
         L: ModelColumn<E>,
         R: ModelColumn<E>,
-        T: IntoSqlValue,
+        V: IntoSqlValue,
     {
         let mut condition = Map::new();
         condition.upsert(
@@ -1437,7 +1422,7 @@ pub(super) trait QueryExt<DB> {
         match value {
             JsonValue::Null => format!(r#"{field} IS NULL"#),
             JsonValue::Bool(b) => {
-                let value = if *b { "true" } else { "false" };
+                let value = if *b { "TRUE" } else { "FALSE" };
                 if cfg!(feature = "orm-postgres") {
                     format!(r#"({field})::boolean IS {value}"#)
                 } else {
