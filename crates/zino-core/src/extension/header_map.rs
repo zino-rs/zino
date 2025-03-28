@@ -32,22 +32,21 @@ pub trait HeaderMapExt {
     ///
     /// It is determined in the following priority:
     ///
-    /// 1. `Forwarded` header `for` key
-    /// 2. The first `X-Forwarded-For` header
-    /// 3. The first `X-Real-Ip` header
+    /// 1. The first `X-Forwarded-For` header
+    /// 2. The first `X-Real-Ip` header
+    /// 3. `Forwarded` header `for` key
     fn get_client_ip(&self) -> Option<IpAddr> {
-        self.get_str("forwarded")
-            .and_then(|s| {
-                s.split(';').find_map(|entry| {
-                    let parts = entry.split('=').collect::<Vec<_>>();
-                    (parts.len() == 2 && parts[0].eq_ignore_ascii_case("for")).then(|| parts[1])
+        self.get_str("x-forwarded-for")
+            .and_then(|s| s.split(',').next())
+            .or_else(|| self.get_str("x-real-ip"))
+            .or_else(|| {
+                self.get_str("forwarded").and_then(|s| {
+                    s.split(';').find_map(|entry| {
+                        let parts = entry.split('=').collect::<Vec<_>>();
+                        (parts.len() == 2 && parts[0].eq_ignore_ascii_case("for")).then(|| parts[1])
+                    })
                 })
             })
-            .or_else(|| {
-                self.get_str("x-forwarded-for")
-                    .and_then(|s| s.split(',').next())
-            })
-            .or_else(|| self.get_str("x-real-ip"))
             .and_then(|s| s.parse().ok())
     }
 

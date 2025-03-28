@@ -33,8 +33,8 @@ impl<S: ResponseCode> Responder for ActixResponse<S> {
         }
 
         let mut res = build_http_response(&mut response);
-        for (key, value) in response.finalize() {
-            if let Ok(header_name) = HeaderName::try_from(key.as_ref()) {
+        for (name, value) in response.finalize() {
+            if let Some(Ok(header_name)) = name.map(|name| HeaderName::try_from(name.as_str())) {
                 if let Ok(header_value) = HeaderValue::try_from(value) {
                     res.headers_mut().insert(header_name, header_value);
                 }
@@ -107,8 +107,8 @@ impl ResponseError for ActixRejection {
             res.headers_mut().insert(header_name, header_value);
         }
 
-        for (key, value) in response.headers() {
-            if let Ok(header_name) = HeaderName::try_from(key.as_ref()) {
+        for (name, value) in response.headers() {
+            if let Ok(header_name) = HeaderName::try_from(name.as_str()) {
                 if let Ok(header_value) = HeaderValue::try_from(value) {
                     res.headers_mut().insert(header_name, header_value);
                 }

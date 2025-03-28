@@ -13,6 +13,9 @@ pub mod timing;
 #[cfg(feature = "i18n")]
 pub mod i18n;
 
+#[cfg(feature = "inertia")]
+pub mod inertia;
+
 #[cfg(feature = "view")]
 pub mod view;
 

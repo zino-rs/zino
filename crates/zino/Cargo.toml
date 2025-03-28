@@ -17,6 +17,7 @@ features = [
     "auth",
     "axum",
     "i18n",
+    "inertia",
     "jwt",
     "opa",
     "orm",
@@ -34,6 +35,7 @@ dioxus-desktop = ["dioxus", "zino-dioxus/desktop"]
 debug = ["zino-core/debug", "zino-http?/debug", "zino-openapi?/debug"]
 default = ["logger"]
 i18n = ["dep:zino-http", "zino-http/i18n"]
+inertia = ["zino-http/inertia"]
 jwt = ["auth", "zino-auth/jwt", "zino-http?/jwt"]
 logger = ["zino-core/tracing-log", "zino-core/tracing-subscriber"]
 metrics = ["zino-core/metrics", "zino-http?/metrics", "zino-storage/metrics"]

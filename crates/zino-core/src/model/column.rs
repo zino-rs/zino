@@ -230,7 +230,7 @@ impl<'a> Column<'a> {
 
     /// Returns `true` if the column has a type of `DateTime`, `Date`, `Time`,
     /// or `String` with a format `date-time`, `date`, `time`.
-    pub fn is_datetime_type(&self) -> bool {
+    pub fn is_temporal_type(&self) -> bool {
         match self.type_name() {
             "DateTime" | "Date" | "Time" | "NaiveDateTime" | "NaiveDate" | "NaiveTime" => true,
             "String" => {

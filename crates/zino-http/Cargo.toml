@@ -17,6 +17,7 @@ features = [
     "auth",
     "cookie",
     "i18n",
+    "inertia",
     "jwt",
     "metrics",
     "view",
@@ -36,6 +37,7 @@ debug = [
     "zino-core/debug",
 ]
 i18n = ["dep:fluent", "dep:intl-memoizer", "dep:unic-langid"]
+inertia = []
 http02 = ["dep:http02"]
 jwt = ["dep:jwt-simple", "auth", "zino-auth/jwt"]
 metrics = ["dep:metrics", "zino-core/metrics"]

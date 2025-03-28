@@ -122,7 +122,7 @@ where
             .await
             .extract(&req)?;
         res.set_json_data(Self::data_item(model_snapshot));
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 
     async fn delete(req: Self::Request) -> Self::Result {
@@ -131,7 +131,7 @@ where
         model.delete().await.extract(&req)?;
 
         let res = Response::default().context(&req);
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 
     async fn update(mut req: Self::Request) -> Self::Result {
@@ -147,7 +147,7 @@ where
             let model_filters = model.next_version_filters();
             res.set_json_data(Self::data_item(model_filters));
         }
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 
     async fn view(req: Self::Request) -> Self::Result {
@@ -164,7 +164,7 @@ where
 
         let mut res = Response::default().context(&req);
         res.set_json_data(Self::data_item(model));
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 
     async fn list(req: Self::Request) -> Self::Result {
@@ -210,7 +210,7 @@ where
             }
         }
         res.set_json_data(data);
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 
     async fn fetch(mut req: Self::Request) -> Self::Result {
@@ -241,7 +241,7 @@ where
             }
         }
         res.set_json_data(data);
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 
     async fn soft_delete(req: Self::Request) -> Self::Result {
@@ -249,7 +249,7 @@ where
         Self::soft_delete_by_id(&id).await.extract(&req)?;
 
         let res = Response::default().context(&req);
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 
     async fn lock(req: Self::Request) -> Self::Result {
@@ -257,7 +257,7 @@ where
         Self::lock_by_id(&id).await.extract(&req)?;
 
         let res = Response::default().context(&req);
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 
     async fn archive(req: Self::Request) -> Self::Result {
@@ -265,7 +265,7 @@ where
         Self::archive_by_id(&id).await.extract(&req)?;
 
         let res = Response::default().context(&req);
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 
     async fn batch_insert(mut req: Self::Request) -> Self::Result {
@@ -308,13 +308,13 @@ where
         if !validations.is_empty() {
             let mut res = Response::bad_request();
             res.set_json_data(validations);
-            Ok(res.into())
+            Ok(res.emit(&req).into())
         } else {
             let ctx = Self::insert_many(models).await.extract(&req)?;
             let data = Map::from_entry("rows_affected", ctx.rows_affected());
             let mut res = Response::default().context(&req);
             res.set_json_data(data);
-            Ok(res.into())
+            Ok(res.emit(&req).into())
         }
     }
 
@@ -343,7 +343,7 @@ where
         let data = Map::from_entry("rows_affected", ctx.rows_affected());
         let mut res = Response::default().context(&req);
         res.set_json_data(data);
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 
     async fn batch_update(mut req: Self::Request) -> Self::Result {
@@ -365,7 +365,7 @@ where
 
         let mut res = Response::default().context(&req);
         res.set_json_data(Map::from_entry("rows_affected", rows_affected));
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 
     async fn import(mut req: Self::Request) -> Self::Result {
@@ -446,7 +446,7 @@ where
                 } else {
                     let mut res = Response::bad_request();
                     res.set_json_data(map);
-                    return Ok(res.into());
+                    return Ok(res.emit(&req).into());
                 }
             }
         }
@@ -460,7 +460,7 @@ where
             Map::from_entry("validations", validations)
         };
         res.set_json_data(data);
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 
     async fn export(req: Self::Request) -> Self::Result {
@@ -487,7 +487,7 @@ where
             "jsonlines" => res.set_jsonlines_response(models),
             _ => res.set_json_response(models),
         }
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 
     async fn tree(req: Self::Request) -> Self::Result {
@@ -547,14 +547,14 @@ where
         let mut data = Self::data_items(models);
         data.upsert("total_rows", total_rows);
         res.set_json_data(data);
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 
     async fn schema(req: Self::Request) -> Self::Result {
         let schema = serde_json::to_value(Self::schema()).extract(&req)?;
         let mut res = Response::default().context(&req);
         res.set_json_response(schema);
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 
     async fn definition(req: Self::Request) -> Self::Result {
@@ -599,7 +599,7 @@ where
 
         let mut res = Response::default().context(&req);
         res.set_json_response(data);
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 
     async fn mock(req: Self::Request) -> Self::Result {
@@ -627,6 +627,6 @@ where
 
         let data = Self::data_items(models);
         res.set_json_data(data);
-        Ok(res.into())
+        Ok(res.emit(&req).into())
     }
 }

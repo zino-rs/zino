@@ -51,8 +51,13 @@ pub use zino_orm::{
 pub use zino_core::application::Preferences;
 
 #[cfg(any(feature = "actix", feature = "axum", feature = "ntex"))]
+#[doc(no_inline)]
 pub use zino_http::{
     reject,
     request::RequestContext,
     response::{ExtractRejection, Rejection, StatusCode, WebHook},
 };
+
+#[cfg(feature = "inertia")]
+#[doc(no_inline)]
+pub use zino_http::inertia::InertiaPage;

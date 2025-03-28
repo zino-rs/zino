@@ -261,7 +261,7 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
             } else if value == "not_null" {
                 return format!(r#"{field} IS NOT NULL"#);
             } else if let Some((min_value, max_value)) =
-                value.split_once(',').filter(|_| self.is_datetime_type())
+                value.split_once(',').filter(|_| self.is_temporal_type())
             {
                 let min_value = self.format_value(min_value);
                 let max_value = self.format_value(max_value);

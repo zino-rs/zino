@@ -60,7 +60,9 @@ pub fn debug_routes() -> Vec<Router> {
     let mut routes = Vec::new();
 
     // Stats controller.
-    let router = Router::new().route("/stats", get(stats::index));
+    let router = Router::new()
+        .route("/stats", get(stats::index))
+        .route("/stats/app_state", get(stats::app_state));
     routes.push(router);
 
     // User schema controller.

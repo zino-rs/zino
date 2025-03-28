@@ -7,18 +7,21 @@ use crate::{
 };
 use bytes::Bytes;
 use etag::EntityTag;
+use http::{HeaderMap, HeaderName};
 use serde::Serialize;
-use smallvec::SmallVec;
 use std::{
     marker::PhantomData,
     mem,
     time::{Duration, Instant},
 };
 use zino_core::{
-    JsonValue, SharedString, Uuid, error::Error, extension::JsonValueExt, trace::TraceContext,
-    validation::Validation,
+    JsonValue, SharedString, Uuid, datetime::DateTime, error::Error, extension::JsonValueExt,
+    trace::TraceContext, validation::Validation,
 };
 use zino_storage::NamedFile;
+
+#[cfg(feature = "inertia")]
+use crate::inertia::InertiaPage;
 
 #[cfg(feature = "cookie")]
 use cookie::Cookie;
@@ -102,7 +105,7 @@ pub struct Response<S: ResponseCode> {
     server_timing: ServerTiming,
     /// Custom headers.
     #[serde(skip)]
-    headers: SmallVec<[(SharedString, String); 8]>,
+    headers: HeaderMap<String>,
     /// Phantom type of response code.
     #[serde(skip)]
     phantom: PhantomData<S>,
@@ -131,7 +134,7 @@ impl<S: ResponseCode> Response<S> {
             content_type: None,
             trace_context: None,
             server_timing: ServerTiming::new(),
-            headers: SmallVec::new(),
+            headers: HeaderMap::default(),
             phantom: PhantomData,
         };
         if success {
@@ -164,7 +167,7 @@ impl<S: ResponseCode> Response<S> {
             content_type: None,
             trace_context: None,
             server_timing: ServerTiming::new(),
-            headers: SmallVec::new(),
+            headers: HeaderMap::default(),
             phantom: PhantomData,
         };
         if success {
@@ -460,8 +463,9 @@ impl<S: ResponseCode> Response<S> {
 
     /// Inserts a custom header.
     #[inline]
-    pub fn insert_header(&mut self, name: impl Into<SharedString>, value: impl ToString) {
-        self.headers.push((name.into(), value.to_string()));
+    pub fn insert_header(&mut self, name: &'static str, value: impl ToString) {
+        self.headers
+            .insert(HeaderName::from_static(name), value.to_string());
     }
 
     /// Gets a custome header with the given name.
@@ -541,10 +545,16 @@ impl<S: ResponseCode> Response<S> {
         })
     }
 
-    /// Returns the custom headers.
+    /// Returns a reference to the custom headers.
     #[inline]
-    pub fn headers(&self) -> &[(SharedString, String)] {
+    pub fn headers(&self) -> &HeaderMap<String> {
         &self.headers
+    }
+
+    /// Returns a mutable reference to the custom headers.
+    #[inline]
+    pub fn headers_mut(&mut self) -> &mut HeaderMap<String> {
+        &mut self.headers
     }
 
     /// Returns the trace context in the form `(traceparent, tracestate)`.
@@ -656,8 +666,48 @@ impl<S: ResponseCode> Response<S> {
         self.set_bytes_data(Bytes::from(file));
     }
 
+    /// Sends an Inertia page to the client.
+    #[cfg(feature = "inertia")]
+    pub fn send_inertia_page(&mut self, mut page: InertiaPage) {
+        if page.version().is_empty() {
+            page.set_version(DateTime::current_timestamp().to_string());
+        }
+        self.insert_header("vary", "x-inertia");
+        self.insert_header("x-insertia", true);
+        if let Some(url) = page.redirect_url() {
+            self.insert_header("x-inertia-location", url);
+        } else {
+            self.set_json_response(page.into_json_response());
+        }
+    }
+
+    /// Emits the response for the request.
+    pub fn emit<Ctx: RequestContext>(mut self, ctx: &Ctx) -> Self {
+        if ctx
+            .get_header("prefer")
+            .is_some_and(|s| s.split(';').any(|p| p.trim() == "return=data-only"))
+        {
+            self.set_data_transformer(|data| Ok(serde_json::to_vec(&data)?.into()));
+        }
+        #[cfg(feature = "inertia")]
+        if self.get_header("x-inertia").is_none()
+            && ctx.get_header("x-inertia-partial-component").is_some()
+        {
+            match InertiaPage::partial_reload(ctx) {
+                Ok(mut page) => {
+                    if let JsonValue::Object(data) = &mut self.json_data {
+                        page.append_props(data);
+                    }
+                    self.send_inertia_page(page);
+                }
+                Err(err) => self.set_error_message(err),
+            }
+        }
+        self
+    }
+
     /// Consumes `self` and returns the custom headers.
-    pub fn finalize(mut self) -> impl Iterator<Item = (SharedString, String)> {
+    pub fn finalize(mut self) -> HeaderMap<String> {
         let request_id = self.request_id();
         if !request_id.is_nil() {
             self.insert_header("x-request-id", request_id.to_string());
@@ -670,8 +720,7 @@ impl<S: ResponseCode> Response<S> {
         let duration = self.response_time();
         self.record_server_timing("total", None, Some(duration));
         self.insert_header("server-timing", self.server_timing());
-
-        self.headers.into_iter()
+        self.headers
     }
 }
 
@@ -694,16 +743,46 @@ impl Response<StatusCode> {
         Response::new(StatusCode::BAD_REQUEST)
     }
 
+    /// Constructs a new response with status `401 Unauthorized`.
+    #[inline]
+    pub fn unauthorized() -> Self {
+        Response::new(StatusCode::UNAUTHORIZED)
+    }
+
+    /// Constructs a new response with status `403 Forbidden`.
+    #[inline]
+    pub fn forbidden() -> Self {
+        Response::new(StatusCode::FORBIDDEN)
+    }
+
     /// Constructs a new response with status `404 Not Found`.
     #[inline]
     pub fn not_found() -> Self {
         Response::new(StatusCode::NOT_FOUND)
     }
 
+    /// Constructs a new response with status `405 Method Not Allowed`.
+    #[inline]
+    pub fn method_not_allowed() -> Self {
+        Response::new(StatusCode::METHOD_NOT_ALLOWED)
+    }
+
+    /// Constructs a new response with status `409 Conflict`.
+    #[inline]
+    pub fn conflict() -> Self {
+        Response::new(StatusCode::CONFLICT)
+    }
+
     /// Constructs a new response with status `500 Internal Server Error`.
     #[inline]
     pub fn internal_server_error() -> Self {
         Response::new(StatusCode::INTERNAL_SERVER_ERROR)
+    }
+
+    /// Constructs a new response with status `503 Service Unavailable`.
+    #[inline]
+    pub fn service_unavailable() -> Self {
+        Response::new(StatusCode::SERVICE_UNAVAILABLE)
     }
 }
 

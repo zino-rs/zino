@@ -59,6 +59,7 @@ The following optional features are available:
 | `debug`       | Enables the features for ease of debugging.          | No       |
 | `dioxus`      | Enables the integration with [`dioxus`].             | No       |
 | `i18n`        | Enables the support for internationalization.        | No       |
+| `inertia`     | Enables the support for the Inertial protocol.       | No       |
 | `jwt`         | Enables the support for JSON Web Token.              | No       |
 | `logger`      | Enables the default logger.                          | Yes      |
 | `metrics`     | Enables the [`metrics`] exporter.                    | No       |

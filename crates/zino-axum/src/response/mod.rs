@@ -2,7 +2,7 @@ use axum::{
     body::Body,
     http::{
         StatusCode,
-        header::{self, HeaderName, HeaderValue},
+        header::{self, HeaderValue},
     },
     response::IntoResponse,
 };
@@ -59,8 +59,8 @@ pub(crate) fn build_http_response<S: ResponseCode>(
             .unwrap_or_default(),
     };
 
-    for (key, value) in response.finalize() {
-        if let Ok(header_name) = HeaderName::try_from(key.as_ref()) {
+    for (name, value) in response.finalize() {
+        if let Some(header_name) = name {
             if let Ok(header_value) = HeaderValue::try_from(value) {
                 res.headers_mut().insert(header_name, header_value);
             }

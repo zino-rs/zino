@@ -21,6 +21,7 @@ features = [
     "axum",
     "cookie",
     "i18n",
+    "inertia",
     "jwt",
     "orm",
     "view",

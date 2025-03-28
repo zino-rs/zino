@@ -130,7 +130,7 @@ impl MessageChannel {
         let source = event.source();
         let event_type = event.event_type();
         let event_session_id = event.session_id();
-        let subscribers = CHANNEL_SUBSCRIBERS.read();
+        let subscribers = CHANNEL_SUBSCRIBERS.read().to_owned();
         for (uid, subscriber) in subscribers.iter() {
             let emitter = subscriber.emitter();
             if uid != sender_id && !emitter.is_disconnected() {
