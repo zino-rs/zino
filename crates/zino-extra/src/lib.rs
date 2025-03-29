@@ -5,5 +5,3 @@
 
 #[cfg(feature = "cache")]
 pub mod cache;
-#[cfg(feature = "format")]
-pub mod format;

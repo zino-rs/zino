@@ -18,12 +18,9 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-all-formats = ["format", "format-pdf"]
 cache = ["dep:lru", "dep:parking_lot"]
 default = []
-format = []
-format-pdf = ["format", "dep:printpdf"]
-full = ["all-formats", "cache"]
+full = ["cache"]
 
 [dependencies]
 parking_lot = { workspace = true, optional = true }
@@ -31,10 +28,6 @@ zino-core = { workspace = true }
 
 [dependencies.lru]
 version = "0.13.0"
-optional = true
-
-[dependencies.printpdf]
-version = "0.8.2"
 optional = true
 
 [lints]

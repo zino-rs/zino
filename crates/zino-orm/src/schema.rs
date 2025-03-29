@@ -1375,27 +1375,31 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Ok(())
     }
 
-    /// Performs a join to another table to filter rows in the "joined" table,
+    /// Performs the joins on one or more tables to filter rows in the "joined" table,
     /// and decodes it as `Vec<T>`.
-    async fn lookup<M, T>(query: &Query, join_on: &JoinOn<Self, M>) -> Result<Vec<T>, Error>
+    async fn lookup<T>(query: &Query, joins: &[JoinOn]) -> Result<Vec<T>, Error>
     where
-        M: Schema,
         T: DecodeRow<DatabaseRow, Error = Error>,
     {
         Self::before_query(query).await?;
 
+        let join_conditions = joins
+            .iter()
+            .map(|join_on| {
+                let join_type = join_on.join_type().as_str();
+                let join_table = join_on.join_table();
+                let on_conditions = join_on.format_conditions();
+                format!("{join_type} {join_table} ON {on_conditions}")
+            })
+            .collect::<Vec<_>>()
+            .join(" ");
         let table_name = query.format_table_name::<Self>();
-        let other_table_name = query.format_table_name::<M>();
         let projection = query.format_table_fields::<Self>();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
         let pagination = query.format_pagination();
-        let join_type = join_on.join_type().as_str();
-        let on_conditions = join_on.format_conditions();
         let sql = format!(
-            "SELECT {projection} FROM {table_name} \
-                {join_type} {other_table_name} \
-                    ON {on_conditions} {filters} {sort} {pagination};"
+            "SELECT {projection} FROM {table_name} {join_conditions} {filters} {sort} {pagination};"
         );
         let mut ctx = Self::before_scan(&sql).await?;
         ctx.set_query(&sql);
@@ -1412,14 +1416,13 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         Ok(data)
     }
 
-    /// Performs a join to another table to filter rows in the "joined" table,
+    /// Performs the joins on one or more tables to filter rows in the "joined" table,
     /// and parses it as `Vec<T>`.
-    async fn lookup_as<M, T>(query: &Query, join_on: &JoinOn<Self, M>) -> Result<Vec<T>, Error>
-    where
-        M: Schema,
-        T: DeserializeOwned,
-    {
-        let mut data = Self::lookup::<M, Map>(query, join_on).await?;
+    async fn lookup_as<T: DeserializeOwned>(
+        query: &Query,
+        joins: &[JoinOn],
+    ) -> Result<Vec<T>, Error> {
+        let mut data = Self::lookup::<Map>(query, joins).await?;
         let translate_enabled = query.translate_enabled();
         for model in data.iter_mut() {
             translate_enabled.then(|| Self::translate_model(model));

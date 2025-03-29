@@ -1,15 +1,22 @@
+use crate::Cluster;
 use actix_web::{
     Error,
     body::MessageBody,
     dev::{ServiceRequest, ServiceResponse},
 };
+use std::sync::atomic::{AtomicBool, Ordering::Relaxed};
 use tracing::{Span, field::Empty};
 use tracing_actix_web::{RootSpanBuilder, TracingLogger};
-use zino_core::{Uuid, application::Application, trace::TraceContext};
+use zino_core::{Uuid, application::Application, extension::TomlTableExt, trace::TraceContext};
 
 /// Tracing middleware.
 #[inline]
 pub(crate) fn tracing_middleware() -> TracingLogger<CustomRootSpanBuilder> {
+    if let Some(config) = Cluster::shared_state().get_config("tracing") {
+        if config.get_bool("record-user-agent") == Some(true) {
+            RECORD_USER_AGENT.store(true, Relaxed);
+        }
+    }
     TracingLogger::new()
 }
 
@@ -36,7 +43,6 @@ impl RootSpanBuilder for CustomRootSpanBuilder {
 
         // Headers
         let headers = request.headers();
-        let user_agent = headers.get("user-agent").and_then(|v| v.to_str().ok());
         let traceparent = headers.get("traceparent").and_then(|v| v.to_str().ok());
         let tracestate = headers.get("tracestate").and_then(|v| v.to_str().ok());
         let trace_context = traceparent.and_then(TraceContext::from_traceparent);
@@ -44,6 +50,11 @@ impl RootSpanBuilder for CustomRootSpanBuilder {
             .and_then(|ctx| ctx.parent_id())
             .map(|parent_id| format!("{parent_id:x}"));
         let session_id = headers.get("session-id").and_then(|v| v.to_str().ok());
+        let user_agent = if RECORD_USER_AGENT.load(Relaxed) {
+            headers.get("user-agent").and_then(|v| v.to_str().ok())
+        } else {
+            None
+        };
 
         if method.is_safe() {
             tracing::info_span!(
@@ -152,3 +163,6 @@ impl RootSpanBuilder for CustomRootSpanBuilder {
         };
     }
 }
+
+/// A flag to enable recording the user agent.
+static RECORD_USER_AGENT: AtomicBool = AtomicBool::new(false);

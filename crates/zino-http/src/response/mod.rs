@@ -15,8 +15,8 @@ use std::{
     time::{Duration, Instant},
 };
 use zino_core::{
-    JsonValue, SharedString, Uuid, datetime::DateTime, error::Error, extension::JsonValueExt,
-    trace::TraceContext, validation::Validation,
+    JsonValue, SharedString, Uuid, error::Error, extension::JsonValueExt, trace::TraceContext,
+    validation::Validation,
 };
 use zino_storage::NamedFile;
 
@@ -670,7 +670,7 @@ impl<S: ResponseCode> Response<S> {
     #[cfg(feature = "inertia")]
     pub fn send_inertia_page(&mut self, mut page: InertiaPage) {
         if page.version().is_empty() {
-            page.set_version(DateTime::current_timestamp().to_string());
+            page.set_version(zino_core::datetime::DateTime::current_timestamp().to_string());
         }
         self.insert_header("vary", "x-inertia");
         self.insert_header("x-insertia", true);

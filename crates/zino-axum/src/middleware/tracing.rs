@@ -1,15 +1,22 @@
+use crate::Cluster;
 use axum::{
     body::{Body, Bytes},
     http::{HeaderMap, Request, Response},
 };
-use std::time::Duration;
+use std::{
+    sync::atomic::{AtomicBool, Ordering::Relaxed},
+    time::Duration,
+};
 use tower_http::{
     classify::{SharedClassifier, StatusInRangeAsFailures, StatusInRangeFailureClass},
     trace::TraceLayer,
 };
 use tracing::{Span, field::Empty};
 use zino_core::{
-    LazyLock, Uuid, application::Application, extension::HeaderMapExt, trace::TraceContext,
+    LazyLock, Uuid,
+    application::Application,
+    extension::{HeaderMapExt, TomlTableExt},
+    trace::TraceContext,
 };
 
 /// Type aliases.
@@ -31,6 +38,12 @@ type CustomTraceLayer = TraceLayer<
 
 /// Tracing middleware.
 pub(crate) static TRACING_MIDDLEWARE: LazyLock<CustomTraceLayer> = LazyLock::new(|| {
+    if let Some(config) = Cluster::shared_state().get_config("tracing") {
+        if config.get_bool("record-user-agent") == Some(true) {
+            RECORD_USER_AGENT.store(true, Relaxed);
+        }
+    }
+
     let classifier = StatusInRangeAsFailures::new_for_client_and_server_errors();
     TraceLayer::new(classifier.into_make_classifier())
         .make_span_with(custom_make_span as CustomMakeSpan)
@@ -41,8 +54,11 @@ pub(crate) static TRACING_MIDDLEWARE: LazyLock<CustomTraceLayer> = LazyLock::new
         .on_failure(custom_on_failure as CustomOnFailure)
 });
 
+/// A flag to enable recording the user agent.
+static RECORD_USER_AGENT: AtomicBool = AtomicBool::new(false);
+
 fn custom_make_span(request: &Request<Body>) -> Span {
-    let name = crate::Cluster::name();
+    let name = Cluster::name();
     let method = request.method();
 
     // URI
@@ -56,7 +72,11 @@ fn custom_make_span(request: &Request<Body>) -> Span {
     // Headers
     let headers = request.headers();
     let client_ip = headers.get_client_ip().map(|ip| ip.to_string());
-    let user_agent = headers.get_str("user-agent");
+    let user_agent = if RECORD_USER_AGENT.load(Relaxed) {
+        headers.get_str("user-agent")
+    } else {
+        None
+    };
 
     if method.is_safe() {
         tracing::info_span!(

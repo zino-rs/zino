@@ -3,7 +3,7 @@
 use crate::request::RequestContext;
 use zino_core::{Map, bail, error::Error, extension::JsonObjectExt};
 
-/// The page object for sharing data between the server and client.
+/// The Inertia page object for sharing data between the server and client.
 #[derive(Debug, Clone, Default)]
 pub struct InertiaPage {
     /// The name of the page component.
