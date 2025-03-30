@@ -4,8 +4,10 @@ use zino_core::model::Query;
 /// Variants for `JOIN` types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(super) enum JoinType {
-    /// The `INNER JOIN` type.
+    /// The default join type.
     #[default]
+    Default,
+    /// The `INNER JOIN` type.
     Inner,
     /// The `LEFT (OUTER) JOIN` type.
     Left,
@@ -22,6 +24,7 @@ impl JoinType {
     #[inline]
     pub(super) fn as_str(&self) -> &'static str {
         match self {
+            JoinType::Default => "JOIN",
             JoinType::Inner => "INNER JOIN",
             JoinType::Left => "LEFT JOIN",
             JoinType::Right => "RIGHT JOIN",
@@ -68,17 +71,17 @@ pub struct JoinOn {
 }
 
 impl JoinOn {
-    /// Creates a new instance.
+    /// Creates a new instance with the default join type.
     #[inline]
     pub fn new<M: Schema>() -> Self {
         Self {
-            join_type: JoinType::Inner,
+            join_type: JoinType::default(),
             join_table: Self::format_join_table::<M>(),
             conditions: Vec::new(),
         }
     }
 
-    /// Constructs an instance for the `INNER JOIN`.
+    /// Constructs an instance with the `INNER JOIN` type.
     #[inline]
     pub fn inner_join<M: Schema>() -> Self {
         Self {
@@ -88,7 +91,7 @@ impl JoinOn {
         }
     }
 
-    /// Constructs an instance for the `LEFT (OUTER) JOIN`.
+    /// Constructs an instance with the `LEFT (OUTER) JOIN` type.
     #[inline]
     pub fn left_join<M: Schema>() -> Self {
         Self {
@@ -98,7 +101,7 @@ impl JoinOn {
         }
     }
 
-    /// Constructs an instance for the `RIGHT (OUTER) JOIN`.
+    /// Constructs an instance with the `RIGHT (OUTER) JOIN` type.
     #[inline]
     pub fn right_join<M: Schema>() -> Self {
         Self {
@@ -108,7 +111,7 @@ impl JoinOn {
         }
     }
 
-    /// Constructs an instance for the `FULL (OUTER) JOIN`.
+    /// Constructs an instance with the `FULL (OUTER) JOIN` type.
     #[inline]
     pub fn full_join<M: Schema>() -> Self {
         Self {
@@ -118,7 +121,7 @@ impl JoinOn {
         }
     }
 
-    /// Constructs an instance for the `CROSS JOIN`.
+    /// Constructs an instance with the `CROSS JOIN` type.
     #[inline]
     pub fn cross_join<M: Schema>() -> Self {
         Self {

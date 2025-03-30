@@ -98,14 +98,14 @@ fn openapi_info(title: &str, version: &str) -> Info {
 fn default_paths() -> Paths {
     let mut paths_builder = PathsBuilder::new();
     for (path, item) in OPENAPI_PATHS.iter() {
-        paths_builder = paths_builder.path(path, item.clone());
+        paths_builder = paths_builder.path(path, item.to_owned());
     }
     paths_builder.build()
 }
 
 /// Returns the default OpenAPI components.
 fn default_components() -> Components {
-    let mut components = OPENAPI_COMPONENTS.get_or_init(Components::new).clone();
+    let mut components = OPENAPI_COMPONENTS.get_or_init(Components::new).to_owned();
 
     // Request ID
     let request_id_example = Uuid::now_v7();
@@ -226,19 +226,19 @@ fn default_components() -> Components {
 
 /// Returns the default OpenAPI tags.
 fn default_tags() -> Vec<Tag> {
-    OPENAPI_TAGS.get_or_init(Vec::new).clone()
+    OPENAPI_TAGS.get_or_init(Vec::new).to_owned()
 }
 
 /// Returns the default OpenAPI servers.
 fn default_servers() -> Vec<Server> {
     OPENAPI_SERVERS
         .get_or_init(|| vec![Server::new("/")])
-        .clone()
+        .to_owned()
 }
 
 /// Returns the default OpenAPI security requirements.
 fn default_securities() -> Vec<SecurityRequirement> {
-    OPENAPI_SECURITIES.get_or_init(Vec::new).clone()
+    OPENAPI_SECURITIES.get_or_init(Vec::new).to_owned()
 }
 
 /// Returns the default OpenAPI external docs.

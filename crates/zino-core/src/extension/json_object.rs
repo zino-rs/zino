@@ -646,7 +646,7 @@ impl JsonObjectExt for Map {
                         .collect::<Vec<_>>();
                     Some(vec)
                 }
-                JsonValue::Array(vec) => Some(vec.clone()),
+                JsonValue::Array(vec) => Some(vec.to_owned()),
                 _ => None,
             })
             .filter(|vec| !vec.is_empty())

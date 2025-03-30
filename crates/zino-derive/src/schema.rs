@@ -246,7 +246,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                         let primary_key = if primary_key_type == "Uuid" {
                             quote! { self.primary_key().to_string() }
                         } else {
-                            quote! { self.primary_key().clone() }
+                            quote! { self.primary_key().to_owned() }
                         };
                         primary_key_value = Some(primary_key);
                         primary_key_column = Some(column.clone());

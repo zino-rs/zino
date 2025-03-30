@@ -1,6 +1,7 @@
 use self::RejectionKind::*;
 use super::Response;
 use crate::request::{Context, RequestContext};
+use std::sync::Arc;
 use zino_core::{SharedString, error::Error, trace::TraceContext, validation::Validation, warn};
 
 /// A rejection response type.
@@ -9,7 +10,7 @@ pub struct Rejection {
     /// Rejection kind.
     kind: RejectionKind,
     /// Optional context.
-    context: Option<Context>,
+    context: Option<Arc<Context>>,
     /// Optional trace context.
     trace_context: Option<TraceContext>,
 }

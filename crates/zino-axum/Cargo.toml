@@ -26,7 +26,7 @@ zino-orm = { workspace = true, optional = true }
 zino-openapi = { workspace = true }
 
 [dependencies.axum]
-version = "0.8.1"
+version = "0.8.3"
 default-features = false
 features = [
     "http1",

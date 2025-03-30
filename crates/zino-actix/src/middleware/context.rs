@@ -5,6 +5,7 @@ use actix_web::{
 use std::{
     future::{Future, Ready, ready},
     pin::Pin,
+    sync::Arc,
 };
 use tracing::Span;
 use zino_http::request::RequestContext;
@@ -50,7 +51,7 @@ where
         let req = ServiceRequest::from(req);
         if let Some(ctx) = new_context {
             Span::current().record("context.request_id", ctx.request_id().to_string());
-            req.extensions_mut().insert(ctx);
+            req.extensions_mut().insert(Arc::new(ctx));
         }
 
         let fut = self.service.call(req);

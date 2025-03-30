@@ -274,7 +274,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 } else if type_name == "Map" {
                     quote! {
                         if let Some(object) = data.parse_object(#name) {
-                            self.#ident = object.clone();
+                            self.#ident = object.to_owned();
                         }
                     }
                 } else if parser::check_vec_type(&type_name) {

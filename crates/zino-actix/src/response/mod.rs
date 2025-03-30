@@ -28,7 +28,7 @@ impl<S: ResponseCode> Responder for ActixResponse<S> {
     fn respond_to(self, req: &HttpRequest) -> HttpResponse<Self::Body> {
         let mut response = self.0;
         if !response.has_context() {
-            let req = crate::Request::from(req.clone());
+            let req = crate::Request::from(req.to_owned());
             response = response.context(&req);
         }
 
@@ -80,7 +80,7 @@ impl ResponseError for ActixRejection {
     }
 
     fn error_response(&self) -> HttpResponse<BoxBody> {
-        let mut response = self.0.clone();
+        let mut response = self.0.to_owned();
         let mut res = build_http_response(&mut response);
         let request_id = response.request_id();
         if !request_id.is_nil() {

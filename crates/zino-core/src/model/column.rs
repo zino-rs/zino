@@ -515,14 +515,14 @@ impl<'a> Column<'a> {
             definition.upsert("pattern", value);
         }
         if let Some(value) = extra.get("default") {
-            definition.upsert("default", value.clone());
+            definition.upsert("default", value.to_owned());
         }
         if let Some(value) = extra.get("example") {
             if self.is_array_type() {
                 let values = value.parse_str_array();
                 definition.upsert("example", values);
             } else {
-                definition.upsert("example", value.clone());
+                definition.upsert("example", value.to_owned());
             }
         }
         if let Some(values) = extra.parse_enum_values("examples") {

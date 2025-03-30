@@ -134,7 +134,7 @@ impl<T: IntoSqlValue, const N: usize> IntoSqlValue for [T; N] {
 impl<T: Clone + IntoSqlValue> IntoSqlValue for &[T] {
     #[inline]
     fn into_sql_value(self) -> JsonValue {
-        JsonValue::Array(self.iter().map(|v| v.clone().into_sql_value()).collect())
+        JsonValue::Array(self.iter().map(|v| v.to_owned().into_sql_value()).collect())
     }
 }
 

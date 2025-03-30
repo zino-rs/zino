@@ -87,13 +87,13 @@ where
                         let mut address = Map::new();
                         for (key, value) in map {
                             if address_fields.contains(&key.as_str()) {
-                                address.upsert(key, value.clone());
+                                address.upsert(key, value.to_owned());
                             }
                         }
                         claims.upsert(key, address);
                     }
                 } else if standard_fields.contains(&key.as_str()) {
-                    claims.upsert(key, value.clone());
+                    claims.upsert(key, value.to_owned());
                 }
             }
         }

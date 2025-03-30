@@ -12,7 +12,7 @@ pub fn translate_model_entry(model: &mut Map, model_name: &str) {
                 let translated_field = [field, "_translated"].concat();
                 let translated_value = translation
                     .translate(value)
-                    .unwrap_or_else(|| value.clone());
+                    .unwrap_or_else(|| value.to_owned());
                 data.upsert(translated_field, translated_value);
             }
         }

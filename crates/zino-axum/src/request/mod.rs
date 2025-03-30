@@ -8,6 +8,7 @@ use std::{
     mem,
     net::{IpAddr, SocketAddr},
     ops::{Deref, DerefMut},
+    sync::Arc,
 };
 use zino_core::{error::Error, extension::HeaderMapExt, state::Data};
 use zino_http::request::{Context, RequestContext};
@@ -99,8 +100,8 @@ impl RequestContext for Extractor<Request> {
     }
 
     #[inline]
-    fn get_context(&self) -> Option<Context> {
-        self.extensions().get::<Context>().cloned()
+    fn get_context(&self) -> Option<Arc<Context>> {
+        self.extensions().get::<Arc<Context>>().cloned()
     }
 
     #[inline]

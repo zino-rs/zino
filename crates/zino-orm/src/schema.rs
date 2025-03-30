@@ -1208,11 +1208,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     if let JsonValue::Array(vec) = value {
                         for value in vec {
                             if !values.contains(value) {
-                                values.push(value.clone());
+                                values.push(value.to_owned());
                             }
                         }
                     } else if !values.contains(value) {
-                        values.push(value.clone());
+                        values.push(value.to_owned());
                     }
                 }
             }
@@ -1265,9 +1265,9 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                                 .iter()
                                 .find_map(|(k, v)| (key == k).then_some(v));
                             if let Some(value) = populated_value {
-                                value.clone().into()
+                                value.to_owned().into()
                             } else {
-                                key.clone()
+                                key.to_owned()
                             }
                         })
                         .collect::<Vec<_>>();
@@ -1278,7 +1278,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                         .find_map(|(k, v)| (key == k).then_some(v));
                     if let Some(value) = populated_value {
                         let populated_field = [field, "_populated"].concat();
-                        row.upsert(populated_field, value.clone());
+                        row.upsert(populated_field, value.to_owned());
                     }
                 }
             }
@@ -1302,11 +1302,11 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                 if let JsonValue::Array(vec) = value {
                     for value in vec {
                         if !values.contains(value) {
-                            values.push(value.clone());
+                            values.push(value.to_owned());
                         }
                     }
                 } else if !values.contains(value) {
-                    values.push(value.clone());
+                    values.push(value.to_owned());
                 }
             }
         }
@@ -1355,9 +1355,9 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                             .iter()
                             .find_map(|(k, v)| (key == k).then_some(v));
                         if let Some(value) = populated_value {
-                            value.clone().into()
+                            value.to_owned().into()
                         } else {
-                            key.clone()
+                            key.to_owned()
                         }
                     })
                     .collect::<Vec<_>>();
@@ -1368,7 +1368,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     .find_map(|(k, v)| (key == k).then_some(v));
                 if let Some(value) = populated_value {
                     let populated_field = [field, "_populated"].concat();
-                    data.upsert(populated_field, value.clone());
+                    data.upsert(populated_field, value.to_owned());
                 }
             }
         }

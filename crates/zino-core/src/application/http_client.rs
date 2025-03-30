@@ -109,11 +109,11 @@ pub(crate) fn request_builder(url: &str, options: Option<&Map>) -> Result<Reques
                     "json" => request_builder.json(map),
                     "multipart" => {
                         let mut form = Form::new();
-                        for (key, value) in map.clone() {
+                        for (key, value) in map {
                             if let JsonValue::String(value) = value {
-                                form = form.text(key, value);
+                                form = form.text(key.to_owned(), value.to_owned());
                             } else {
-                                form = form.text(key, value.to_string());
+                                form = form.text(key.to_owned(), value.to_string());
                             }
                         }
                         request_builder.multipart(form)
@@ -295,7 +295,7 @@ fn remove_credentials(url: &Url) -> Cow<'_, str> {
             .ok();
         url.to_string().into()
     } else {
-        url.as_ref().into()
+        url.as_str().into()
     }
 }
 

@@ -6,7 +6,7 @@ use crate::{
 };
 use multer::Multipart;
 use serde::de::DeserializeOwned;
-use std::{borrow::Cow, net::IpAddr, str::FromStr, time::Instant};
+use std::{borrow::Cow, net::IpAddr, str::FromStr, sync::Arc, time::Instant};
 use zino_channel::{CloudEvent, Subscription};
 use zino_core::{
     JsonValue, Map, SharedString, Uuid,
@@ -76,7 +76,7 @@ pub trait RequestContext {
     fn client_ip(&self) -> Option<IpAddr>;
 
     /// Gets the request context.
-    fn get_context(&self) -> Option<Context>;
+    fn get_context(&self) -> Option<Arc<Context>>;
 
     /// Gets the request scoped data.
     fn get_data<T: Clone + Send + Sync + 'static>(&self) -> Option<T>;

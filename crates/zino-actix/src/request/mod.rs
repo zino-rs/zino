@@ -10,6 +10,7 @@ use std::{
     future,
     net::IpAddr,
     ops::{Deref, DerefMut},
+    sync::Arc,
 };
 use zino_core::{error::Error, state::Data};
 use zino_http::request::{Context, RequestContext};
@@ -79,9 +80,9 @@ impl RequestContext for Extractor<HttpRequest> {
     }
 
     #[inline]
-    fn get_context(&self) -> Option<Context> {
+    fn get_context(&self) -> Option<Arc<Context>> {
         let extensions = self.extensions();
-        extensions.get::<Context>().cloned()
+        extensions.get::<Arc<Context>>().cloned()
     }
 
     #[inline]
@@ -140,6 +141,6 @@ impl FromRequest for Extractor<HttpRequest> {
 
     #[inline]
     fn from_request(req: &HttpRequest, payload: &mut Payload) -> Self::Future {
-        future::ready(Ok(Extractor(req.clone(), payload.take())))
+        future::ready(Ok(Extractor(req.to_owned(), payload.take())))
     }
 }

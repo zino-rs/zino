@@ -292,9 +292,9 @@ where
             }
             if validation.is_success() {
                 model.after_validation(&mut map).await.extract(&req)?;
-                if let Some(ref extension) = extension {
+                if let Some(extension) = extension.as_ref() {
                     model
-                        .after_extract(extension.clone())
+                        .after_extract(extension.to_owned())
                         .await
                         .map_err(|err| Rejection::from_error(err).context(&req))?;
                 }
@@ -421,9 +421,9 @@ where
             }
             if validation.is_success() {
                 model.after_validation(&mut map).await.extract(&req)?;
-                if let Some(ref extension) = extension {
+                if let Some(extension) = extension.as_ref() {
                     model
-                        .after_extract(extension.clone())
+                        .after_extract(extension.to_owned())
                         .await
                         .map_err(|err| Rejection::from_error(err).context(&req))?;
                 }

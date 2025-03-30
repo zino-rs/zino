@@ -12,6 +12,7 @@ use std::{
     convert::Infallible,
     net::IpAddr,
     ops::{Deref, DerefMut},
+    sync::Arc,
 };
 use zino_core::{error::Error, state::Data};
 use zino_http::{
@@ -78,9 +79,9 @@ impl RequestContext for Extractor<HttpRequest> {
     }
 
     #[inline]
-    fn get_context(&self) -> Option<Context> {
+    fn get_context(&self) -> Option<Arc<Context>> {
         let extensions = self.extensions();
-        extensions.get::<Context>().cloned()
+        extensions.get::<Arc<Context>>().cloned()
     }
 
     #[inline]
@@ -142,6 +143,6 @@ impl FromRequest<DefaultError> for Extractor<HttpRequest> {
 
     #[inline]
     async fn from_request(req: &HttpRequest, payload: &mut Payload) -> Result<Self, Self::Error> {
-        Ok(Extractor(req.clone(), payload.take()))
+        Ok(Extractor(req.to_owned(), payload.take()))
     }
 }

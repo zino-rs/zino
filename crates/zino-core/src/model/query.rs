@@ -108,7 +108,7 @@ impl Query {
                     }
                 }
                 "timestamp" | "nonce" | "signature" => {
-                    extra.upsert(key, value.clone());
+                    extra.upsert(key, value.to_owned());
                 }
                 _ => {
                     if let Some(value) = value.as_str().filter(|&s| s != "all") {
@@ -128,7 +128,7 @@ impl Query {
                             filters.upsert(key, value);
                         }
                     } else {
-                        filters.upsert(key, value.clone());
+                        filters.upsert(key, value.to_owned());
                     }
                 }
             }
