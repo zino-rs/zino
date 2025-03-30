@@ -7,7 +7,7 @@ rust-version = { workspace = true }
 publish = { workspace = true }
 
 [dependencies]
-ntex = { version = "2.12.2", default-features = false }
+ntex = { version = "2.12.4", default-features = false }
 serde = { workspace = true }
 tracing = { workspace = true }
 zino-core = { workspace = true, features = ["env-filter"] }

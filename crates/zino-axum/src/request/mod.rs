@@ -1,4 +1,5 @@
 use axum::{
+    body::Bytes,
     extract::{ConnectInfo, FromRequest, MatchedPath, OriginalUri, Request},
     http::{Method, Uri},
 };
@@ -117,10 +118,10 @@ impl RequestContext for Extractor<Request> {
     }
 
     #[inline]
-    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error> {
+    async fn read_body_bytes(&mut self) -> Result<Bytes, Error> {
         let body = mem::take(self.body_mut());
         let bytes = axum::body::to_bytes(body, usize::MAX).await?;
-        Ok(bytes.to_vec())
+        Ok(bytes)
     }
 }
 

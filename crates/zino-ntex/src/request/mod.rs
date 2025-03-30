@@ -1,7 +1,8 @@
 use crate::response::NtexRejection;
+use bytes::Bytes;
 use ntex::{
     http::{Method, Payload, Uri},
-    util::Bytes,
+    util,
     web::{
         FromRequest, HttpRequest, WebRequest,
         error::{DefaultError, ErrorRenderer},
@@ -97,10 +98,10 @@ impl RequestContext for Extractor<HttpRequest> {
     }
 
     #[inline]
-    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error> {
+    async fn read_body_bytes(&mut self) -> Result<Bytes, Error> {
         let bytes =
-            <Bytes as FromRequest<DefaultError>>::from_request(&self.0, &mut self.1).await?;
-        Ok(bytes.to_vec())
+            <util::Bytes as FromRequest<DefaultError>>::from_request(&self.0, &mut self.1).await?;
+        Ok(bytes.to_vec().into())
     }
 }
 

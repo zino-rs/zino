@@ -1,7 +1,7 @@
 [package]
 name = "zino-storage"
 description = "Files and storage services for zino."
-version = "0.5.1"
+version = "0.6.0"
 categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"

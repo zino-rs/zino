@@ -98,11 +98,11 @@ impl RequestContext for Extractor<HttpRequest> {
     }
 
     #[inline]
-    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error> {
+    async fn read_body_bytes(&mut self) -> Result<Bytes, Error> {
         let bytes = Bytes::from_request(&self.0, &mut self.1)
             .await
             .map_err(Error::from_error)?;
-        Ok(bytes.to_vec())
+        Ok(bytes)
     }
 }
 

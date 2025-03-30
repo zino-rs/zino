@@ -4,6 +4,7 @@ use crate::{
     helper,
     response::{Rejection, Response, ResponseCode},
 };
+use bytes::Bytes;
 use multer::Multipart;
 use serde::de::DeserializeOwned;
 use std::{borrow::Cow, net::IpAddr, str::FromStr, sync::Arc, time::Instant};
@@ -85,8 +86,8 @@ pub trait RequestContext {
     /// if an item of this type was already stored.
     fn set_data<T: Clone + Send + Sync + 'static>(&mut self, value: T) -> Option<T>;
 
-    /// Reads the entire request body into a byte buffer.
-    async fn read_body_bytes(&mut self) -> Result<Vec<u8>, Error>;
+    /// Reads the entire request body into `Bytes`.
+    async fn read_body_bytes(&mut self) -> Result<Bytes, Error>;
 
     /// Returns the request path segments.
     #[inline]
