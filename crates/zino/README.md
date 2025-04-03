@@ -35,7 +35,7 @@ edition = "2024"
 rust-version = "1.85"
 
 [dependencies]
-zino = { version = "0.33", features = ["axum"] }
+zino = { version = "0.34", features = ["axum"] }
 ```
 
 ```rust,ignore
@@ -59,7 +59,7 @@ The following optional features are available:
 | `debug`       | Enables the features for ease of debugging.          | No       |
 | `dioxus`      | Enables the integration with [`dioxus`].             | No       |
 | `i18n`        | Enables the support for internationalization.        | No       |
-| `inertia`     | Enables the support for the Inertial protocol.       | No       |
+| `inertia`     | Enables the support for the Inertia protocol.        | No       |
 | `jwt`         | Enables the support for JSON Web Token.              | No       |
 | `logger`      | Enables the default logger.                          | Yes      |
 | `metrics`     | Enables the [`metrics`] exporter.                    | No       |

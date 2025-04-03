@@ -157,7 +157,7 @@ pub fn FileTree(props: FileTreeProps) -> Element {
     rsx! {
         div {
             key: "{tree_id}-{current_dir_name}",
-            class: "{props.class}",
+            class: props.class,
             cursor: "pointer",
             div {
                 onclick: move |_event| {

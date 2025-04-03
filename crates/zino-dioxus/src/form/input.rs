@@ -1,9 +1,12 @@
 use crate::class::Class;
 use dioxus::prelude::*;
+use std::mem;
 use zino_core::SharedString;
 
 /// The text input and its variations.
 pub fn Input(props: InputProps) -> Element {
+    let mut composing = use_signal(|| false);
+    let mut cached_value = use_signal(String::new);
     rsx! {
        input {
             class: "{props.class}",
@@ -27,14 +30,28 @@ pub fn Input(props: InputProps) -> Element {
                 }
             },
             oninput: move |event| {
-                if let Some(handler) = props.on_input.as_ref() {
-                    handler.call(event.value());
+                cached_value.set(event.value());
+                if !composing() {
+                    if let Some(handler) = props.on_input.as_ref() {
+                        handler.call(mem::take(&mut cached_value.write()));
+                    }
                 }
             },
             onkeydown: move |event| {
                 if let Some(handler) = props.on_keydown.as_ref() {
                     event.stop_propagation();
-                    handler.call(event);
+                    if !composing() {
+                        handler.call(event);
+                    }
+                }
+            },
+            oncompositionstart: move |_event| {
+                composing.set(true);
+            },
+            oncompositionend: move |_event| {
+                composing.set(false);
+                if let Some(handler) = props.on_input.as_ref() {
+                    handler.call(mem::take(&mut cached_value.write()));
                 }
             },
             ..props.attributes,

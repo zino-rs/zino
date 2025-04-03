@@ -20,7 +20,7 @@ The following optional features are available:
 | `cookie`             | Enables the support for cookies.                       | No       |
 | `debug`              | Enables the features for ease of debugging.            | No       |
 | `i18n`               | Enables the support for internationalization.          | No       |
-| `inertia`            | Enables the support for the Inertial protocol.         | No       |
+| `inertia`            | Enables the support for the Inertia protocol.          | No       |
 | `jwt`                | Enables the support for JSON Web Token.                | No       |
 | `metrics`            | Enables the [`metrics`] exporter.                      | No       |
 | `view`               | Enables the HTML template rendering.                   | No       |

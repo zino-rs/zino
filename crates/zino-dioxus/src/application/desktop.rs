@@ -2,7 +2,7 @@ use dioxus::{
     desktop::{
         Config, WindowBuilder,
         WindowCloseBehaviour::*,
-        muda::Menu,
+        muda::{self, AboutMetadata, Menu},
         tao::window::{Fullscreen, Icon, Theme},
     },
     prelude::*,
@@ -20,7 +20,6 @@ use zino_core::{
 };
 
 /// A webview-based desktop renderer for the Dioxus VirtualDom.
-#[derive(Default)]
 pub struct Desktop<R> {
     /// Custom plugins.
     custom_plugins: Vec<Plugin>,
@@ -28,6 +27,8 @@ pub struct Desktop<R> {
     custom_root: Option<fn() -> Element>,
     /// Custom menu bar.
     custom_menu: Option<Menu>,
+    /// A flag to disable the right-click context menu.
+    disable_context_menu: bool,
     /// Phantom type of Dioxus router.
     phantom: PhantomData<R>,
 }
@@ -53,8 +54,15 @@ where
 
     /// Sets a custom menu bar.
     #[inline]
-    pub fn with_menu(mut self, menu: Menu) -> Self {
-        self.custom_menu = Some(menu);
+    pub fn with_menu(mut self, menu: Option<Menu>) -> Self {
+        self.custom_menu = menu;
+        self
+    }
+
+    /// Disables the right-click context menu.
+    #[inline]
+    pub fn disable_context_menu(mut self) -> Self {
+        self.disable_context_menu = true;
         self
     }
 
@@ -94,6 +102,51 @@ where
             format!("http://dioxus.{url}").parse().map_err(Error::from)
         } else {
             Err(Error::new(format!("invalid resource URL: {url}")))
+        }
+    }
+
+    /// Returns the application metadata for the about dialog.
+    pub fn about_metadata() -> AboutMetadata {
+        let name = Self::name();
+        let version = Self::version();
+        let config = Self::config();
+        let copyright = config.get_str("copyright").map(|s| s.to_owned());
+        let license = config.get_str("license").map(|s| s.to_owned());
+        let website = config.get_str("website").map(|s| s.to_owned());
+        let icon = config.get_table("desktop").and_then(|config| {
+            let icon = config.get_str("icon").unwrap_or("public/favicon.ico");
+            let icon_file = Self::parse_path(icon);
+            ImageReader::open(&icon_file)
+                .ok()
+                .and_then(|rdr| rdr.decode().ok())
+                .and_then(|image| {
+                    let width = image.width();
+                    let height = image.height();
+                    let bytes = image.into_bytes();
+                    muda::Icon::from_rgba(bytes, width, height).ok()
+                })
+        });
+        AboutMetadata {
+            name: name.to_owned().into(),
+            version: version.to_owned().into(),
+            copyright,
+            license,
+            website,
+            icon,
+            ..AboutMetadata::default()
+        }
+    }
+}
+
+impl<R> Default for Desktop<R> {
+    #[inline]
+    fn default() -> Self {
+        Self {
+            custom_plugins: Vec::new(),
+            custom_root: None,
+            custom_menu: None,
+            disable_context_menu: !cfg!(debug_assertions),
+            phantom: PhantomData,
         }
     }
 }
@@ -157,6 +210,7 @@ where
         let app_state = Self::shared_state();
 
         // Window configuration
+        let mut disable_menu = false;
         let mut window_title = app_name;
         let mut app_window = WindowBuilder::new()
             .with_title(app_name)
@@ -166,6 +220,13 @@ where
             if let Some(title) = config.get_str("title") {
                 app_window = app_window.with_title(title);
                 window_title = title;
+            }
+            if let Some(value) = config.get("disable-menu") {
+                if value.as_bool().is_some_and(|b| b) {
+                    disable_menu = true;
+                } else if value.as_str().is_some_and(|s| s == "auto") {
+                    disable_menu = !cfg!(target_os = "macos");
+                }
             }
             if config.get_bool("fullscreen").is_some_and(|b| b) {
                 app_window = app_window.with_fullscreen(Some(Fullscreen::Borderless(None)));
@@ -222,11 +283,11 @@ where
         }
 
         // Desktop configuration
-        let in_debug = cfg!(debug_assertions);
         let mut desktop_config = Config::new()
             .with_window(app_window)
-            .with_disable_context_menu(!in_debug)
-            .with_menu(self.custom_menu);
+            .with_disable_context_menu(self.disable_context_menu)
+            .with_disable_drag_drop_handler(cfg!(target_os = "windows"))
+            .with_menu(if disable_menu { None } else { self.custom_menu });
         if let Some(config) = app_state.get_config("desktop") {
             let mut custom_heads = Vec::new();
             custom_heads.push(r#"<meta charset="UTF-8">"#.to_owned());

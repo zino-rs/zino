@@ -19,7 +19,8 @@ pub fn Button(props: ButtonProps) -> Element {
             class: if props.inverted { "is-inverted" },
             class: if props.rounded { "is-rounded" },
             title: (!title.is_empty()).then(|| title.into_owned()),
-            disabled: "{props.disabled}",
+            disabled: props.disabled,
+            r#type: "button",
             onclick: move |event| {
                 if let Some(handler) = props.on_click.as_ref() {
                     event.stop_propagation();
