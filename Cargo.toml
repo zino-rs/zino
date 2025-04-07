@@ -53,7 +53,7 @@ regex = "1.11.1"
 rust_decimal = "1.37.1"
 serde_qs = "0.14.0"
 sm3 = "0.4.2"
-smallvec = "1.14.0"
+smallvec = "1.15.0"
 tracing = "0.1.41"
 url = "2.5.4"
 
@@ -99,7 +99,7 @@ features = [
 ]
 
 [workspace.dependencies.tokio]
-version = "1.44.1"
+version = "1.44.2"
 features = [
     "macros",
     "net",

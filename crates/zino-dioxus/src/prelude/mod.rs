@@ -11,8 +11,8 @@ pub use crate::{
     icon::{Icon, IconText, SvgIcon},
     layout::{Columns, Container, FluidContainer, MainContainer},
     navigation::{
-        Dropdown, Navbar, NavbarBrand, NavbarCenter, NavbarDropdown, NavbarEnd, NavbarItem,
-        NavbarLink, NavbarMenu, NavbarStart, Pagination, Sidebar,
+        ContextMenu, Dropdown, Navbar, NavbarBrand, NavbarCenter, NavbarDropdown, NavbarEnd,
+        NavbarItem, NavbarLink, NavbarMenu, NavbarStart, Pagination, Sidebar,
     },
     theme::Theme,
     typography::{Card, FixedWidthSpan, Tag, Tags, TuiEditor},

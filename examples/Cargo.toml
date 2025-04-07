@@ -18,7 +18,7 @@ publish = false
 tracing = "0.1.41"
 
 [workspace.dependencies.serde]
-version = "1.0.218"
+version = "1.0.219"
 features = ["derive"]
 
 [workspace.dependencies.zino]
@@ -39,7 +39,7 @@ version = "0.32.0"
 
 [workspace.dependencies.zino-dioxus]
 path = "../crates/zino-dioxus"
-version = "0.15.1"
+version = "0.15.2"
 
 [workspace.dependencies.zino-model]
 path = "../crates/zino-model"

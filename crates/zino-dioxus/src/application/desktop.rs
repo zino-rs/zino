@@ -25,10 +25,10 @@ pub struct Desktop<R> {
     custom_plugins: Vec<Plugin>,
     /// Custom root element.
     custom_root: Option<fn() -> Element>,
-    /// Custom menu bar.
+    /// Custom menubar.
     custom_menu: Option<Menu>,
-    /// A flag to disable the right-click context menu.
-    disable_context_menu: bool,
+    /// A flag to enable the right-click context menu.
+    enable_context_menu: bool,
     /// Phantom type of Dioxus router.
     phantom: PhantomData<R>,
 }
@@ -59,10 +59,10 @@ where
         self
     }
 
-    /// Disables the right-click context menu.
+    /// Enables the right-click context menu.
     #[inline]
-    pub fn disable_context_menu(mut self) -> Self {
-        self.disable_context_menu = true;
+    pub fn enable_context_menu(mut self) -> Self {
+        self.enable_context_menu = true;
         self
     }
 
@@ -145,7 +145,7 @@ impl<R> Default for Desktop<R> {
             custom_plugins: Vec::new(),
             custom_root: None,
             custom_menu: None,
-            disable_context_menu: !cfg!(debug_assertions),
+            enable_context_menu: cfg!(debug_assertions),
             phantom: PhantomData,
         }
     }
@@ -285,7 +285,7 @@ where
         // Desktop configuration
         let mut desktop_config = Config::new()
             .with_window(app_window)
-            .with_disable_context_menu(self.disable_context_menu)
+            .with_disable_context_menu(!self.enable_context_menu)
             .with_disable_drag_drop_handler(cfg!(target_os = "windows"))
             .with_menu(if disable_menu { None } else { self.custom_menu });
         if let Some(config) = app_state.get_config("desktop") {

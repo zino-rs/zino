@@ -32,7 +32,6 @@
 //! | `redis`       | Redis services.                          | `accessor-redis`      |
 //! | `s3`          | AWS S3 alike services.                   | `accessor-s3`         |
 //! | `sled`        | Sled services.                           | `accessor-sled`       |
-//! | `supabase`    | Supabase services.                       | `accessor-supabase`   |
 //! | `webdav`      | WebDAV services.                         | `accessor-webdav`     |
 //! | `webhdfs`     | WebHDFS services.                        | `accessor-webhdfs`    |
 //!
@@ -537,23 +536,6 @@ impl GlobalAccessor {
                 }
                 if let Some(tree) = config.get_str("tree") {
                     builder = builder.tree(tree);
-                }
-                Operator::new(builder)?.finish()
-            }
-            #[cfg(feature = "accessor-supabase")]
-            "supabase" => {
-                let mut builder = services::Supabase::default();
-                if let Some(root) = config.get_str("root") {
-                    builder = builder.root(root);
-                }
-                if let Some(bucket) = config.get_str("bucket") {
-                    builder = builder.bucket(bucket);
-                }
-                if let Some(endpoint) = config.get_str("endpoint") {
-                    builder = builder.endpoint(endpoint);
-                }
-                if let Some(key) = config.get_str("key") {
-                    builder = builder.key(key);
                 }
                 Operator::new(builder)?.finish()
             }

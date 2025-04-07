@@ -172,11 +172,11 @@ version = "0.21.1"
 optional = true
 
 [dependencies.sentry]
-version = "0.36.0"
+version = "0.37.0"
 optional = true
 
 [dependencies.sentry-tracing]
-version = "0.36.0"
+version = "0.37.0"
 optional = true
 
 [dependencies.sm4]

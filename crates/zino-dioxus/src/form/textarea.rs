@@ -9,6 +9,7 @@ pub fn Textarea(props: TextareaProps) -> Element {
     let mut cached_value = use_signal(String::new);
     rsx! {
         textarea {
+            id: if let Some(id) = props.id { "{id}" },
             class: "{props.class}",
             class: if !props.color.is_empty() { "is-{props.color}" },
             class: if !props.size.is_empty() { "is-{props.size}" },
@@ -61,6 +62,9 @@ pub fn Textarea(props: TextareaProps) -> Element {
 /// The [`Textarea`] properties struct for the configuration of the component.
 #[derive(Clone, PartialEq, Props)]
 pub struct TextareaProps {
+    /// An optional ID.
+    #[props(into, default)]
+    pub id: Option<String>,
     /// The class attribute for the component.
     #[props(into, default = "textarea")]
     pub class: Class,

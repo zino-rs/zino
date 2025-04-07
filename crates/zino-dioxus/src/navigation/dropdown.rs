@@ -8,13 +8,16 @@ pub fn Dropdown(props: DropdownProps) -> Element {
     rsx! {
         div {
             class: "{props.class}",
+            class: if props.active { "is-active" },
             class: if props.hoverable { "is-hoverable" },
             class: if props.dropup { "is-up" },
             class: if props.align == "right" { "is-right" },
-            div {
-                class: props.trigger_class,
-                title: if !title.is_empty() { "{title}" },
-                { props.trigger }
+            if let Some(trigger) = props.trigger {
+                div {
+                    class: props.trigger_class,
+                    title: if !title.is_empty() { "{title}" },
+                    { trigger }
+                }
             }
             div {
                 class: props.menu_class,
@@ -44,6 +47,9 @@ pub struct DropdownProps {
     /// A class to apply to the menu content.
     #[props(into, default = "dropdown-content")]
     pub content_class: Class,
+    /// A flag to indicate whether the dropdown will show up all the time.
+    #[props(default)]
+    pub active: bool,
     /// A flag to indicate whether the dropdown will show up when hovering.
     #[props(default)]
     pub hoverable: bool,
@@ -57,7 +63,7 @@ pub struct DropdownProps {
     #[props(into, default)]
     pub title: SharedString,
     /// The trigger button to be rendered.
-    pub trigger: Element,
+    pub trigger: Option<Element>,
     /// The menu items to be rendered.
     #[props(into)]
     pub items: Vec<Element>,
