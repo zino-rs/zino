@@ -42,11 +42,11 @@ impl JoinType {
 /// use zino_core::Map;
 /// use zino_orm::{JoinOn, QueryBuilder, Schema};
 ///
-/// let query = QueryBuilder::<Task>::new()
+/// let query = QueryBuilder::new()
 ///     .fields([TaskColumn::Id, TaskColumn::Name, TaskColumn::ProjectId])
 ///     .and_eq(TaskColumn::Status, "Completed")
 ///     .and(
-///         QueryBuilder::<Project>::new()
+///         QueryBuilder::new()
 ///             .alias(ProjectColumn::Name, "project_name")
 ///             .fields([ProjectColumn::StartDate, ProjectColumn::EndDate])
 ///             .and_overlaps(

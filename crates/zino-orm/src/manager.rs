@@ -89,7 +89,11 @@ impl PoolManager for ConnectionPool<DatabasePool> {
                 })
             })
             .connect_lazy_with(connect_options);
-        Self::new(name, database, pool)
+        let connection_pool = Self::new(name, database, pool);
+        if config.get_bool("auto-migration").is_some_and(|b| !b) {
+            connection_pool.disable_auto_migration();
+        }
+        connection_pool
     }
 
     async fn check_availability(&self) -> bool {

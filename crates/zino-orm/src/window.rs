@@ -48,7 +48,7 @@ enum WindownFunction<E: Entity> {
 /// use zino_orm::{QueryBuilder, Schema, Window};
 ///
 /// let rank_window = Window::rank(CurrentLoginIp).order_desc(LoginCount);
-/// let query = QueryBuilder::<User>::new()
+/// let query = QueryBuilder::new()
 ///     .fields([Id, Name, CurrentLoginIp, LoginCount])
 ///     .window(rank_window, Some("login_count_rank"))
 ///     .and_not_in(Status, ["Deleted", "Locked"])

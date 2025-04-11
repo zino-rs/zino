@@ -112,12 +112,12 @@ use zino_core::{
 /// use crate::model::{User, UserColumn};
 /// use zino_core::orm::{QueryBuilder, Schema};
 ///
-/// let query = QueryBuilder::<User>::new()
+/// let query = QueryBuilder::new()
 ///     .and_not_in(UserColumn::Status, ["Deleted", "Locked"])
-///     .or(QueryBuilder::<User>::new()
+///     .or(QueryBuilder::new()
 ///         .and_eq(UserColumn::Roles, "worker")
 ///         .and_eq(UserColumn::Visibility, "Public"))
-///     .or(QueryBuilder::<User>::new()
+///     .or(QueryBuilder::new()
 ///         .and_in(UserColumn::Roles, ["admin", "auditor"])
 ///         .and_ne(UserColumn::Visibility, "Public"))
 ///     .order_desc(UserColumn::UpdatedAt)

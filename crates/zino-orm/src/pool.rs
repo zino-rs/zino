@@ -14,6 +14,8 @@ pub struct ConnectionPool<P = DatabasePool> {
     available: AtomicBool,
     /// Missed count.
     missed_count: AtomicUsize,
+    /// Auto migration.
+    auto_migration: AtomicBool,
 }
 
 impl<P> ConnectionPool<P> {
@@ -26,6 +28,7 @@ impl<P> ConnectionPool<P> {
             pool,
             available: AtomicBool::new(true),
             missed_count: AtomicUsize::new(0),
+            auto_migration: AtomicBool::new(true),
         }
     }
 
@@ -36,6 +39,7 @@ impl<P> ConnectionPool<P> {
     }
 
     /// Stores the value into the availability of the connection pool.
+    #[inline]
     pub fn store_availability(&self, available: bool) {
         self.available.store(available, Relaxed);
         if available {
@@ -43,6 +47,12 @@ impl<P> ConnectionPool<P> {
         } else {
             self.increment_missed_count();
         }
+    }
+
+    /// Disables auto migration.
+    #[inline]
+    pub fn disable_auto_migration(&self) {
+        self.auto_migration.store(false, Relaxed);
     }
 
     /// Returns the number of missed count.
@@ -68,6 +78,12 @@ impl<P> ConnectionPool<P> {
     pub fn is_retryable(&self) -> bool {
         let missed_count = self.missed_count();
         missed_count > 2 && missed_count.is_power_of_two()
+    }
+
+    /// Returns `true` if the connection pool enables auto migration.
+    #[inline]
+    pub fn auto_migration(&self) -> bool {
+        self.auto_migration.load(Relaxed)
     }
 
     /// Returns the name.

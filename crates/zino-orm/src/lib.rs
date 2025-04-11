@@ -168,6 +168,7 @@ impl GlobalPool {
 static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
     let config = State::shared().config();
     let mut database_type = DRIVER_NAME;
+    let mut disable_auto_migration = false;
     if let Some(database) = config.get_table("database") {
         if let Some(driver) = database.get_str("type") {
             database_type = driver;
@@ -181,7 +182,7 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
             MAX_ROWS.store(max_rows, Relaxed);
         }
         if let Some(auto_migration) = database.get_bool("auto-migration") {
-            AUTO_MIGRATION.store(auto_migration, Relaxed);
+            disable_auto_migration = !auto_migration;
         }
         if let Some(debug_only) = database.get_bool("debug-only") {
             DEBUG_ONLY.store(debug_only, Relaxed);
@@ -198,7 +199,13 @@ static SHARED_CONNECTION_POOLS: LazyLock<ConnectionPools> = LazyLock::new(|| {
     let pools = databases
         .iter()
         .filter_map(|v| v.as_table())
-        .map(ConnectionPool::with_config)
+        .map(|config| {
+            let connection_pool = ConnectionPool::with_config(config);
+            if disable_auto_migration {
+                connection_pool.disable_auto_migration();
+            }
+            connection_pool
+        })
         .collect();
     let driver = DRIVER_NAME;
     if database_type == driver {
@@ -243,9 +250,6 @@ static TIME_ZONE: OnceLock<&'static str> = OnceLock::new();
 
 /// Max number of returning rows.
 static MAX_ROWS: AtomicUsize = AtomicUsize::new(10000);
-
-/// Auto migration.
-static AUTO_MIGRATION: AtomicBool = AtomicBool::new(true);
 
 /// Debug-only mode.
 static DEBUG_ONLY: AtomicBool = AtomicBool::new(false);

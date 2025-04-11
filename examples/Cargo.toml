@@ -35,7 +35,7 @@ version = "0.34.0"
 
 [workspace.dependencies.zino-derive]
 path = "../crates/zino-derive"
-version = "0.32.0"
+version = "0.32.1"
 
 [workspace.dependencies.zino-dioxus]
 path = "../crates/zino-dioxus"
@@ -43,11 +43,11 @@ version = "0.15.2"
 
 [workspace.dependencies.zino-model]
 path = "../crates/zino-model"
-version = "0.32.0"
+version = "0.32.1"
 
 [workspace.dependencies.zino-orm]
 path = "../crates/zino-orm"
-version = "0.6.0"
+version = "0.6.1"
 
 [profile.release]
 lto = "thin"

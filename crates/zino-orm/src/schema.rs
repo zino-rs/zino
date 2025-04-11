@@ -179,7 +179,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Creates a database table for the model.
     async fn create_table() -> Result<(), Error> {
-        if !super::AUTO_MIGRATION.load(Relaxed) {
+        let connection_pool = Self::init_writer()?;
+        if !connection_pool.auto_migration() {
             return Ok(());
         }
         Self::before_create_table().await?;
@@ -201,7 +202,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
         let definitions = definitions.join(",\n  ");
         let sql = format!("CREATE TABLE IF NOT EXISTS {table_name_escaped} (\n  {definitions}\n);");
-        let pool = Self::init_writer()?.pool();
+        let pool = connection_pool.pool();
         if let Err(err) = pool.execute(&sql).await {
             tracing::error!(table_name, "fail to execute `{sql}`");
             return Err(err);
@@ -212,12 +213,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Synchronizes the table schema for the model.
     async fn synchronize_schema() -> Result<(), Error> {
-        if !super::AUTO_MIGRATION.load(Relaxed) {
+        let connection_pool = Self::init_writer()?;
+        if !connection_pool.auto_migration() {
             return Ok(());
         }
-
-        let connection_pool = Self::init_writer()?;
-        let model_name = Self::model_name();
 
         let mut table_name = Self::table_name();
         let table_name_escaped = Query::escape_table_name(table_name);
@@ -257,6 +256,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             data.push(Map::decode_row(&row)?);
         }
 
+        let model_name = Self::model_name();
         let primary_key_name = Self::PRIMARY_KEY_NAME;
         for col in Self::columns() {
             let column_type = col.column_type();
@@ -323,12 +323,10 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Creates indexes for the model.
     async fn create_indexes() -> Result<u64, Error> {
-        if !super::AUTO_MIGRATION.load(Relaxed) {
+        let connection_pool = Self::init_writer()?;
+        if !connection_pool.auto_migration() {
             return Ok(0);
         }
-
-        let pool = Self::init_writer()?.pool();
-        let columns = Self::columns();
 
         let mut table_name = Self::table_name();
         let table_name_escaped = Query::escape_table_name(table_name);
@@ -336,6 +334,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             table_name = suffix;
         }
 
+        let pool = connection_pool.pool();
+        let columns = Self::columns();
         let mut rows = 0;
         if cfg!(any(
             feature = "orm-mariadb",

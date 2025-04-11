@@ -14,15 +14,20 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let mut model_column_mappings = Vec::new();
     for field in parser::parse_struct_fields(input.data) {
         if let Some(ident) = field.ident {
-            let name = ident.to_string().trim_start_matches("r#").to_owned();
+            let mut name = ident.to_string().trim_start_matches("r#").to_owned();
             let variant = format_ident!("{}", name.to_case(Case::Pascal));
             'inner: for attr in field.attrs.iter() {
                 let arguments = parser::parse_schema_attr(attr);
-                for (key, _value) in arguments.into_iter() {
+                for (key, value) in arguments.into_iter() {
                     match key.as_str() {
                         "ignore" => break 'inner,
                         "primary_key" => {
                             primary_key_name.clone_from(&name);
+                        }
+                        "column_name" => {
+                            if let Some(value) = value {
+                                name = value;
+                            }
                         }
                         _ => (),
                     }

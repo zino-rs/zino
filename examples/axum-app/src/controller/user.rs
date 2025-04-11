@@ -43,7 +43,7 @@ pub async fn view(req: Request) -> Result {
 }
 
 pub async fn stats(req: Request) -> Result {
-    let query = QueryBuilder::<User>::new()
+    let query = QueryBuilder::new()
         .aggregate(Aggregation::Count(Id, false), Some("num_users"))
         .aggregate(Aggregation::Sum(LoginCount), Some("total_login"))
         .aggregate(Aggregation::Avg(LoginCount), None)

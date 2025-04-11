@@ -29,20 +29,20 @@ use sqlx::Acquire;
 /// let total_price = order.total_price();
 /// let order_ctx = order.prepare_insert()?;
 ///
-/// let stock_query = QueryBuilder::<Stock>::new()
+/// let stock_query = QueryBuilder::new()
 ///     .and_eq(StockColumn::ProductId, product_id)
 ///     .and_ge(StockColumn::Quantity, quantity)
 ///     .build();
-/// let mut stock_mutation = MutationBuilder::<Stock>::new()
+/// let mut stock_mutation = MutationBuilder::new()
 ///     .inc(StockColumn::Quantity, -quantity)
 ///     .build();
 /// let stock_ctx = Stock::prepare_update_one(&stock_query, &mut stock_mutation).await?;
 ///
-/// let account_query = QueryBuilder::<Account>::new()
+/// let account_query = QueryBuilder::new()
 ///     .and_eq(AccountColumn::UserId, user_id)
 ///     .and_ge(AccountColumn::Balance, total_price)
 ///     .build();
-/// let mut account_mutation = MutationBuilder::<Account>::new()
+/// let mut account_mutation = MutationBuilder::new()
 ///     .inc(AccountColumn::Balance, -total_price)
 ///     .build();
 /// let account_ctx = Account::prepare_update_one(&account_query, &mut account_mutation).await?;

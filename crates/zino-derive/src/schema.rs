@@ -72,12 +72,11 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let mut write_only_fields = Vec::new();
     if let Data::Struct(data) = input.data {
         if let Fields::Named(fields) = data.fields {
-            for field in fields.named.into_iter() {
+            'outer: for field in fields.named.into_iter() {
                 let mut type_name = parser::get_type_name(&field.ty);
                 if let Some(ident) = field.ident {
                     let name = ident.to_string().trim_start_matches("r#").to_owned();
                     let mut column_name = name.clone();
-                    let mut ignore = false;
                     let mut not_null = false;
                     let mut column_type = None;
                     let mut default_value = None;
@@ -85,7 +84,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                     let mut reference = None;
                     let mut comment = None;
                     let mut extra_attributes = Vec::new();
-                    'inner: for attr in field.attrs.iter() {
+                    for attr in field.attrs.iter() {
                         let arguments = parser::parse_schema_attr(attr);
                         for (key, value) in arguments.into_iter() {
                             let key = key.as_str();
@@ -109,10 +108,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 });
                             }
                             match key {
-                                "ignore" => {
-                                    ignore = true;
-                                    break 'inner;
-                                }
+                                "ignore" => continue 'outer,
                                 "type_name" => {
                                     if let Some(value) = value {
                                         type_name = value;
@@ -176,9 +172,6 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 _ => (),
                             }
                         }
-                    }
-                    if ignore {
-                        continue;
                     }
                     if primary_key_name == name {
                         primary_key_type.clone_from(&type_name);

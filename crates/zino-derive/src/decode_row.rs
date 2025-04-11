@@ -23,22 +23,23 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
 
     // Parsing field attributes
     let mut decode_model_fields = Vec::new();
-    for field in parser::parse_struct_fields(input.data) {
+    'outer: for field in parser::parse_struct_fields(input.data) {
         let type_name = parser::get_type_name(&field.ty);
         if let Some(ident) = field.ident {
-            let name = ident.to_string();
-            let mut ignore = false;
-            'inner: for attr in field.attrs.iter() {
+            let mut name = ident.to_string().trim_start_matches("r#").to_owned();
+            for attr in field.attrs.iter() {
                 let arguments = parser::parse_schema_attr(attr);
-                for (key, _value) in arguments.iter() {
-                    if key == "ignore" || key == "write_only" {
-                        ignore = true;
-                        break 'inner;
+                for (key, value) in arguments.into_iter() {
+                    match key.as_str() {
+                        "ignore" | "write_only" => continue 'outer,
+                        "column_name" => {
+                            if let Some(value) = value {
+                                name = value;
+                            }
+                        }
+                        _ => (),
                     }
                 }
-            }
-            if ignore {
-                continue;
             }
             if type_name == "Uuid" {
                 decode_model_fields.push(quote! {

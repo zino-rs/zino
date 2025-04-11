@@ -15,11 +15,11 @@ use zino_core::{
 /// use crate::model::{User, UserColumn};
 /// use zino_orm::{MutationBuilder, QueryBuilder, Schema};
 ///
-/// let query = QueryBuilder::<User>::new()
+/// let query = QueryBuilder::new()
 ///     .primary_key("01936dc6-e48c-7d22-8e69-b29f85682fac")
 ///     .and_not_in(UserColumn::Status, ["Deleted", "Locked"])
 ///     .build();
-/// let mut mutation = MutationBuilder::<User>::new()
+/// let mut mutation = MutationBuilder::new()
 ///     .set(UserColumn::Status, "Active")
 ///     .set_now(UserColumn::UpdatedAt)
 ///     .inc_one(UserColumn::Version)

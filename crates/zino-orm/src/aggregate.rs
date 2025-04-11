@@ -10,7 +10,7 @@ use zino_core::model::Query;
 /// use zino_core::Map;
 /// use zino_orm::{Aggregation, QueryBuilder, Schema};
 ///
-/// let query = QueryBuilder::<Task>::new()
+/// let query = QueryBuilder::new()
 ///     .aggregate(Aggregation::Count(TaskColumn::Id, false), Some("num_tasks"))
 ///     .aggregate(Aggregation::Sum(TaskColumn::Manhours), Some("total_manhours"))
 ///     .aggregate(Aggregation::Avg(TaskColumn::Manhours), Some("average_manhours"))

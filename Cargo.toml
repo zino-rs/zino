@@ -149,11 +149,11 @@ version = "0.5.0"
 
 [workspace.dependencies.zino-orm]
 path = "crates/zino-orm"
-version = "0.6.0"
+version = "0.6.1"
 
 [workspace.dependencies.zino-storage]
 path = "crates/zino-storage"
-version = "0.6.0"
+version = "0.6.1"
 
 [workspace.lints.rust]
 missing_docs = "warn"

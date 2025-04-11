@@ -12,3 +12,6 @@ Derives the [`DecodeRow`](zino_orm::DecodeRow) trait.
 
 - **`#[schema(write_only)]`**: The `write_only` annotation is used to indicate that
   the column is write-only and therefore does not need to be decoded.
+
+- **`#[schema(column_name = "name")]`**: All column names are assumed to be in **snake-case**.
+  You can override it by specifying the `column_name` attribute.
