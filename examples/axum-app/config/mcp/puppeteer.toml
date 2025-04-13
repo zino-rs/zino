@@ -1,0 +1,41 @@
+# Reference: https://github.com/modelcontextprotocol/servers/tree/main/src/puppeteer
+
+name = "Puppeteer MCP server"
+version = "0.6.2"
+
+[[resources]]
+uri = "console://logs"
+name = "Browser console logs"
+mime_type = "text/plain"
+
+[[resources]]
+uri_template = "screenshot://{name}"
+name = "Screenshot: {name}"
+mime_type = "image/png"
+
+[[tools]]
+name = "puppeteer_navigate"
+description = "Navigate to a URL"
+
+[tools.input]
+required = ["url"]
+url = { type = "string", description = "URL to navigate to" }
+launch_options = { type = "object", description = """
+PuppeteerJS LaunchOptions. Default null. \
+If changed and not null, browser restarts. \
+Example: { headless: true, args: ['--no-sandbox'] }""" }
+allow_dangerous = { type = "boolean", default = false, description = """
+Allow dangerous LaunchOptions that reduce security. \
+When false, dangerous args like --no-sandbox will throw errors. \
+Default false.""" }
+
+[[tools]]
+name = "puppeteer_screenshot"
+description = "Take a screenshot of the current page or a specific element"
+
+[tools.input]
+required = ["name"]
+name = { type = "string", description = "Name for the screenshot" }
+selector = { type = "string", description = "CSS selector for element to screenshot" }
+width = { type = "number", default = 800, description = "Width in pixels (default: 800)" }
+height = { type = "number", default = 600, description = "Height in pixels (default: 600)" }

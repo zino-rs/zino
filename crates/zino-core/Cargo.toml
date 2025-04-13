@@ -159,12 +159,12 @@ version = "0.5.0"
 optional = true
 
 [dependencies.reqwest-middleware]
-version = "0.4.1"
+version = "0.4.2"
 optional = true
 features = ["json", "multipart"]
 
 [dependencies.reqwest-tracing]
-version = "0.5.6"
+version = "0.5.7"
 optional = true
 
 [dependencies.rust-ini]

@@ -1,11 +1,10 @@
 use super::{
     ConnectionPool, DatabaseRow, DecodeRow, EncodeColumn, Entity, Executor, GlobalPool,
-    IntoSqlValue, JoinOn, ModelHelper, QueryBuilder, column::ColumnExt, mutation::MutationExt,
-    query::QueryExt,
+    IntoSqlValue, JoinOn, ModelHelper, PrimaryKey, QueryBuilder, column::ColumnExt,
+    mutation::MutationExt, query::QueryExt,
 };
 use serde::de::DeserializeOwned;
-use sqlx::Acquire;
-use std::{fmt::Display, sync::atomic::Ordering::Relaxed};
+use std::sync::atomic::Ordering::Relaxed;
 use zino_core::{
     JsonValue, Map, bail,
     error::Error,
@@ -19,7 +18,7 @@ use zino_core::{
 /// This trait can be derived by `zino_derive::Schema`.
 pub trait Schema: 'static + Send + Sync + ModelHooks {
     /// Primary key.
-    type PrimaryKey: Default + Display + PartialEq;
+    type PrimaryKey: PrimaryKey;
 
     /// Primary key name.
     const PRIMARY_KEY_NAME: &'static str = "id";
@@ -1760,6 +1759,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             feature = "orm-mysql",
             feature = "orm-tidb"
         )) {
+            use sqlx::Acquire;
+
             let mut transaction = pool.begin().await?;
             let connection = transaction.acquire().await?;
             let query_result = connection.execute_with(ctx.query(), &[primary_key]).await?;

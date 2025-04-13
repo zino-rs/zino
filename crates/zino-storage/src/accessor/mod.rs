@@ -35,24 +35,6 @@
 //! | `webdav`      | WebDAV services.                         | `accessor-webdav`     |
 //! | `webhdfs`     | WebHDFS services.                        | `accessor-webhdfs`    |
 //!
-//! # Examples
-//!
-//! ```rust
-//! use zino_storage::GlobalAccessor;
-//! use zino_core::{error::Error, file::NamedFile};
-//!
-//! async fn upload_file(file: NamedFile) -> Result<(), Error> {
-//!     let Some(operator) = GlobalAccessor::get("aliyun") else {
-//!         bail!("Aliyun OSS accessor is not available");
-//!     };
-//!     let Some(file_name) = file.file_name() else {
-//!         bail!("file name should be specified");
-//!     };
-//!     let oss_path = format!("examples/{file_name}");
-//!     operator.write(&oss_path, file).await?;
-//!     Ok(())
-//! }
-//! ```
 
 use opendal::{
     Error,
@@ -65,6 +47,25 @@ use toml::Table;
 use zino_core::{LazyLock, application::StaticRecord, extension::TomlTableExt, state::State};
 
 /// Global storage accessor built on the top of [`opendal`](https://crates.io/crates/opendal).
+///
+/// # Examples
+///
+/// ```rust
+/// use zino_storage::GlobalAccessor;
+/// use zino_core::{bail, error::Error, file::NamedFile};
+///
+/// async fn upload_file(file: NamedFile) -> Result<(), Error> {
+///     let Some(operator) = GlobalAccessor::get("aliyun") else {
+///         bail!("Aliyun OSS accessor is not available");
+///     };
+///     let Some(file_name) = file.file_name() else {
+///         bail!("file name should be specified");
+///     };
+///     let oss_path = format!("examples/{file_name}");
+///     operator.write(&oss_path, file).await?;
+///     Ok(())
+/// }
+/// ```
 #[derive(Debug, Clone, Copy, Default)]
 pub struct GlobalAccessor;
 

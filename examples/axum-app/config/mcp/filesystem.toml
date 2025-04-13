@@ -1,0 +1,32 @@
+# Reference: https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem
+
+name = "Filesystem MCP Server"
+version = "0.6.2"
+
+[[resources]]
+uri = "file://system"
+name = "File system operations"
+
+[[tools]]
+name = "read_file"
+description = "Read the complete contents of a file from the file system."
+
+[tools.input]
+path.type = "string"
+
+[[tools]]
+name = "write_file"
+description = "Create a new file or completely overwrite an existing file with new content."
+
+[tools.input]
+path.type = "string"
+content.type = "string"
+
+[[tools]]
+name = "edit_file"
+description = "Make line-based edits to a text file."
+
+[tools.input]
+path.type = "string"
+edits = { type = "array", items = "object", old_text.type = "string", new_text.type = "string" }
+dry_run = { type = "boolean", default = false }

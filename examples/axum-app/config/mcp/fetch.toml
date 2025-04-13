@@ -1,0 +1,24 @@
+# Reference: https://github.com/modelcontextprotocol/servers/blob/main/src/fetch/src/mcp_server_fetch
+
+name = "MCP Fetch Server"
+version = "0.6.3"
+
+[[tools]]
+name = "fetch"
+description = "Fetches a URL from the internet and optionally extracts its contents as markdown."
+
+[tools.input]
+required = ["url"]
+url = { type = "string", description = "URL to fetch" }
+max_length = { type = "integer", default = 5000, description = "Maximum number of characters to return" }
+start_index = { type = "integer", default = 0, description = "Start content from this character index" }
+raw = { type = "boolean", default = false, description = "Get raw content without markdown conversion" }
+
+[[prompts]]
+name = "fetch"
+description = "Fetch a URL and extract its contents as markdown"
+
+[[prompts.arguments]]
+name = "url"
+description = "URL to fetch"
+required = true

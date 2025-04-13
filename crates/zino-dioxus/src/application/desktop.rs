@@ -178,7 +178,7 @@ where
             .global_queue_interval(61)
             .enable_all()
             .build()
-            .expect("fail to build Tokio runtime for `DioxusDesktop`");
+            .expect("fail to build Tokio runtime for Dioxus desktop");
         let app_env = Self::env();
         runtime.block_on(async {
             Self::load().await;
