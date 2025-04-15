@@ -14,9 +14,9 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     // Parsing struct attributes
     let mut auto_coalesce = false;
     for attr in input.attrs.iter() {
-        for (key, value) in parser::parse_schema_attr(attr).into_iter() {
-            if key == "auto_coalesce" && value.is_some_and(|v| v == "false") {
-                auto_coalesce = false;
+        for (key, _value) in parser::parse_schema_attr(attr).into_iter() {
+            if key == "auto_coalesce" {
+                auto_coalesce = true;
             }
         }
     }
@@ -26,17 +26,12 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     'outer: for field in parser::parse_struct_fields(input.data) {
         let type_name = parser::get_type_name(&field.ty);
         if let Some(ident) = field.ident {
-            let mut name = ident.to_string().trim_start_matches("r#").to_owned();
+            let name = ident.to_string().trim_start_matches("r#").to_owned();
             for attr in field.attrs.iter() {
                 let arguments = parser::parse_schema_attr(attr);
-                for (key, value) in arguments.into_iter() {
+                for (key, _value) in arguments.into_iter() {
                     match key.as_str() {
                         "ignore" | "write_only" => continue 'outer,
-                        "column_name" => {
-                            if let Some(value) = value {
-                                name = value;
-                            }
-                        }
                         _ => (),
                     }
                 }

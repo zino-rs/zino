@@ -137,7 +137,7 @@ version = "0.6.0"
 
 [workspace.dependencies.zino-derive]
 path = "crates/zino-derive"
-version = "0.32.0"
+version = "0.32.2"
 
 [workspace.dependencies.zino-http]
 path = "crates/zino-http"
