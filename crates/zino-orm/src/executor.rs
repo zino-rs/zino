@@ -86,7 +86,16 @@ macro_rules! impl_sqlx_executor {
 
             let mut stream = sqlx::query(sql).fetch(self);
             let mut max_rows = super::MAX_ROWS.load(Relaxed);
-            let mut rows = Vec::with_capacity(stream.size_hint().0.min(max_rows));
+            let estimated_rows = stream.size_hint().0;
+            if cfg!(debug_assertions) && estimated_rows > max_rows {
+                tracing::warn!(
+                    "estimated number of rows {} exceeds the maximum row limit {}",
+                    estimated_rows,
+                    max_rows,
+                );
+            }
+
+            let mut rows = Vec::with_capacity(estimated_rows.min(max_rows));
             while let Some(result) = stream.next().await {
                 match result {
                     Ok(row) if max_rows > 0 => {
@@ -120,7 +129,16 @@ macro_rules! impl_sqlx_executor {
 
             let mut stream = query.fetch(self);
             let mut max_rows = super::MAX_ROWS.load(Relaxed);
-            let mut rows = Vec::with_capacity(stream.size_hint().0.min(max_rows));
+            let estimated_rows = stream.size_hint().0;
+            if cfg!(debug_assertions) && estimated_rows > max_rows {
+                tracing::warn!(
+                    "estimated number of rows {} exceeds the maximum row limit {}",
+                    estimated_rows,
+                    max_rows,
+                );
+            }
+
+            let mut rows = Vec::with_capacity(estimated_rows.min(max_rows));
             while let Some(result) = stream.next().await {
                 match result {
                     Ok(row) if max_rows > 0 => {

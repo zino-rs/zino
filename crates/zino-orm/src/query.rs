@@ -495,6 +495,40 @@ impl<E: Entity> QueryBuilder<E> {
         self.push_logical_and(col, "$nin", values.into().into_sql_value())
     }
 
+    /// Adds a logical `AND` condition for the column `IN` a list of values
+    /// if the list is nonempty.
+    #[inline]
+    pub fn and_in_if_nonempty<C, T, V>(self, col: C, values: V) -> Self
+    where
+        C: ModelColumn<E>,
+        T: IntoSqlValue,
+        V: Into<Vec<T>>,
+    {
+        let values = values.into();
+        if values.is_empty() {
+            self
+        } else {
+            self.push_logical_and(col, "$in", values.into_sql_value())
+        }
+    }
+
+    /// Adds a logical `AND` condition for the column `NOT IN` a list of values
+    /// if the list is nonempty.
+    #[inline]
+    pub fn and_not_in_if_nonempty<C, T, V>(self, col: C, values: V) -> Self
+    where
+        C: ModelColumn<E>,
+        T: IntoSqlValue,
+        V: Into<Vec<T>>,
+    {
+        let values = values.into();
+        if values.is_empty() {
+            self
+        } else {
+            self.push_logical_and(col, "$nin", values.into_sql_value())
+        }
+    }
+
     /// Adds a logical `AND` condition for the columns `IN` a subquery.
     pub fn and_in_subquery<C, V, M>(mut self, cols: V, subquery: QueryBuilder<M>) -> Self
     where
@@ -826,6 +860,40 @@ impl<E: Entity> QueryBuilder<E> {
         V: Into<Vec<T>>,
     {
         self.push_logical_or(col, "$nin", values.into().into_sql_value())
+    }
+
+    /// Adds a logical `OR` condition for the column `IN` a list of values
+    /// if the list is nonempty.
+    #[inline]
+    pub fn or_in_if_nonempty<C, T, V>(self, col: C, values: V) -> Self
+    where
+        C: ModelColumn<E>,
+        T: IntoSqlValue,
+        V: Into<Vec<T>>,
+    {
+        let values = values.into();
+        if values.is_empty() {
+            self
+        } else {
+            self.push_logical_or(col, "$in", values.into_sql_value())
+        }
+    }
+
+    /// Adds a logical `OR` condition for the column `NOT IN` a list of values
+    /// if the list is nonempty.
+    #[inline]
+    pub fn or_not_in_if_nonempty<C, T, V>(self, col: C, values: V) -> Self
+    where
+        C: ModelColumn<E>,
+        T: IntoSqlValue,
+        V: Into<Vec<T>>,
+    {
+        let values = values.into();
+        if values.is_empty() {
+            self
+        } else {
+            self.push_logical_or(col, "$nin", values.into_sql_value())
+        }
     }
 
     /// Adds a logical `OR` condition for the columns `IN` a subquery.

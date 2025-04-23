@@ -85,6 +85,15 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         [Self::namespace_prefix(), Self::MODEL_NAME].concat().leak()
     }
 
+    /// Returns the primary key name.
+    #[inline]
+    fn primary_key_name() -> &'static str {
+        Self::primary_key_column()
+            .extra()
+            .get_str("column_name")
+            .unwrap_or(Self::PRIMARY_KEY_NAME)
+    }
+
     /// Returns the primary key as a JSON value.
     #[inline]
     fn primary_key_value(&self) -> JsonValue {
@@ -184,7 +193,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         }
         Self::before_create_table().await?;
 
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_name = Self::primary_key_name();
         let table_name = Self::table_name();
         let table_name_escaped = Query::escape_table_name(table_name);
         let columns = Self::columns();
@@ -256,7 +265,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         }
 
         let model_name = Self::model_name();
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_name = Self::primary_key_name();
         for col in Self::columns() {
             let column_type = col.column_type();
             let column_name = col
@@ -461,7 +470,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             .join(", ");
         let fields = fields.join(", ");
         let sql = if cfg!(feature = "orm-postgres") {
-            let primary_key_name = Self::PRIMARY_KEY_NAME;
+            let primary_key_name = Self::primary_key_name();
             format!(
                 "INSERT INTO {table_name} ({fields}) VALUES ({values}) \
                     RETURNING {primary_key_name};"
@@ -619,7 +628,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             Query::escape_table_name(Self::table_name())
         };
         let primary_key = Query::escape_string(self.primary_key());
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_name = Self::primary_key_name();
         let map = self.into_map();
         let read_only_fields = Self::read_only_fields();
         let num_writable_fields = Self::fields().len() - read_only_fields.len();
@@ -681,7 +690,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             Query::escape_table_name(Self::table_name())
         };
         let primary_key = Query::escape_string(self.primary_key());
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_name = Self::primary_key_name();
         let map = self.into_map();
         let read_only_fields = Self::read_only_fields();
         let mut mutations = Vec::with_capacity(columns.len());
@@ -740,7 +749,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     ) -> Result<QueryContext, Error> {
         Self::before_mutation(query, mutation).await?;
 
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_name = Self::primary_key_name();
         let table_name = query.format_table_name::<Self>();
         let filters = query.format_filters::<Self>();
         let updates = mutation.format_updates::<Self>();
@@ -867,7 +876,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
                     ON DUPLICATE KEY UPDATE {mutations};"
             )
         } else {
-            let primary_key_name = Self::PRIMARY_KEY_NAME;
+            let primary_key_name = Self::primary_key_name();
 
             // Both PostgreQL and SQLite (3.35+) support this syntax.
             format!(
@@ -925,7 +934,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         } else {
             Query::escape_table_name(Self::table_name())
         };
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_name = Self::primary_key_name();
         let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
             let type_annotation = Self::primary_key_column().type_annotation();
@@ -975,7 +984,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     async fn prepare_delete_one(query: &Query) -> Result<QueryContext, Error> {
         Self::before_query(query).await?;
 
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_name = Self::primary_key_name();
         let table_name = query.format_table_name::<Self>();
         let filters = query.format_filters::<Self>();
         let sort = query.format_sort();
@@ -1024,7 +1033,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let sort = query.format_sort();
         let pagination = query.format_pagination();
         let sql = if cfg!(feature = "orm-postgres") {
-            let primary_key_name = Self::PRIMARY_KEY_NAME;
+            let primary_key_name = Self::primary_key_name();
             format!(
                 "DELETE FROM {table_name} WHERE {primary_key_name} IN \
                     (SELECT {primary_key_name} FROM {table_name} {filters} {sort} {pagination});"
@@ -1199,7 +1208,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     ) -> Result<u64, Error> {
         Self::before_query(query).await?;
 
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_name = Self::primary_key_name();
         let mut values = Vec::new();
         for row in data.iter() {
             for col in columns {
@@ -1294,7 +1303,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     ) -> Result<(), Error> {
         Self::before_query(query).await?;
 
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_name = Self::primary_key_name();
         let mut values = Vec::new();
         for col in columns {
             if let Some(value) = data.get(col.as_ref()) {
@@ -1660,7 +1669,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Prepares the SQL to delete a model selected by the primary key in the table.
     async fn prepare_delete_by_id() -> Result<QueryContext, Error> {
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_name = Self::primary_key_name();
         let table_name = Query::escape_table_name(Self::table_name());
         let placeholder = Query::placeholder(1);
         let sql = if cfg!(feature = "orm-postgres") {
@@ -1706,7 +1715,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Prepares the SQL to update a model selected by the primary key in the table.
     async fn prepare_update_by_id(mutation: &mut Mutation) -> Result<QueryContext, Error> {
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_name = Self::primary_key_name();
         let table_name = Query::escape_table_name(Self::table_name());
         let updates = mutation.format_updates::<Self>();
         let placeholder = Query::placeholder(1);
@@ -1765,7 +1774,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             let connection = transaction.acquire().await?;
             let query_result = connection.execute_with(ctx.query(), &[primary_key]).await?;
             let optional_row = if query_result.rows_affected() == 1 {
-                let primary_key_name = Self::PRIMARY_KEY_NAME;
+                let primary_key_name = Self::primary_key_name();
                 let table_name = Query::escape_table_name(Self::table_name());
                 let placeholder = Query::placeholder(1);
                 let sql =
@@ -1798,7 +1807,8 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     where
         T: DecodeRow<DatabaseRow, Error = Error>,
     {
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        dbg!(Self::primary_key_column());
+        let primary_key_name = Self::primary_key_name();
         let query = Self::default_query();
         let table_name = query.format_table_name::<Self>();
         let projection = query.format_projection();
@@ -1835,7 +1845,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Finds a model selected by the primary key in the table, and parses it as `Self`.
     async fn try_get_model(primary_key: &Self::PrimaryKey) -> Result<Self, Error> {
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_name = Self::primary_key_name();
         let query = Self::default_query();
         let table_name = query.format_table_name::<Self>();
         let projection = query.format_projection();
@@ -1892,7 +1902,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
             return Ok(Vec::new());
         }
 
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_name = Self::primary_key_name();
         let mut query = Query::default();
         query.allow_fields(&[primary_key_name]);
         query.add_filter("$rand", 0.05);
@@ -1922,7 +1932,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
 
     /// Filters the values of the primary key.
     async fn filter<T: IntoSqlValue>(primary_key_values: Vec<T>) -> Result<Vec<JsonValue>, Error> {
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_name = Self::primary_key_name();
         let limit = primary_key_values.len();
         let mut query = Query::default();
         query.allow_fields(&[primary_key_name]);
@@ -1948,7 +1958,7 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         C: AsRef<str>,
         T: IntoSqlValue,
     {
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_name = Self::primary_key_name();
         let mut query = Query::default();
         let mut fields = Vec::with_capacity(columns.len() + 1);
         fields.push(primary_key_name.to_owned());

@@ -51,10 +51,19 @@ where
         ctx.set_query(&sql);
 
         let pool = Self::acquire_reader().await?.pool();
-        let mut rows = sqlx::query(&sql).fetch(pool);
-        let mut data = Vec::new();
+        let mut stream = sqlx::query(&sql).fetch(pool);
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        while let Some(row) = rows.try_next().await? {
+        let estimated_rows = stream.size_hint().0;
+        if cfg!(debug_assertions) && estimated_rows > max_rows {
+            tracing::warn!(
+                "estimated number of rows {} exceeds the maximum row limit {}",
+                estimated_rows,
+                max_rows,
+            );
+        }
+
+        let mut data = Vec::with_capacity(estimated_rows.min(max_rows));
+        while let Some(row) = stream.try_next().await? {
             if max_rows > 0 {
                 data.push(row.try_get_unchecked(0)?);
                 max_rows -= 1;
@@ -89,10 +98,19 @@ where
         ctx.set_query(&sql);
 
         let pool = Self::acquire_reader().await?.pool();
-        let mut rows = sqlx::query(&sql).fetch(pool);
-        let mut data = Vec::new();
+        let mut stream = sqlx::query(&sql).fetch(pool);
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        while let Some(row) = rows.try_next().await? {
+        let estimated_rows = stream.size_hint().0;
+        if cfg!(debug_assertions) && estimated_rows > max_rows {
+            tracing::warn!(
+                "estimated number of rows {} exceeds the maximum row limit {}",
+                estimated_rows,
+                max_rows,
+            );
+        }
+
+        let mut data = Vec::with_capacity(estimated_rows.min(max_rows));
+        while let Some(row) = stream.try_next().await? {
             if max_rows > 0 {
                 data.push(row.try_get_unchecked(0)?);
                 max_rows -= 1;
@@ -147,10 +165,19 @@ where
         }
 
         let pool = Self::acquire_reader().await?.pool();
-        let mut rows = query.fetch(pool);
-        let mut data = Vec::new();
+        let mut stream = query.fetch(pool);
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        while let Some(row) = rows.try_next().await? {
+        let estimated_rows = stream.size_hint().0;
+        if cfg!(debug_assertions) && estimated_rows > max_rows {
+            tracing::warn!(
+                "estimated number of rows {} exceeds the maximum row limit {}",
+                estimated_rows,
+                max_rows,
+            );
+        }
+
+        let mut data = Vec::with_capacity(estimated_rows.min(max_rows));
+        while let Some(row) = stream.try_next().await? {
             if max_rows > 0 {
                 data.push(row.try_get_unchecked(0)?);
                 max_rows -= 1;
@@ -171,7 +198,7 @@ where
         C: AsRef<str>,
         T: Send + Unpin + Type<DatabaseDriver> + for<'r> Decode<'r, DatabaseDriver>,
     {
-        let primary_key_name = Self::PRIMARY_KEY_NAME;
+        let primary_key_name = Self::primary_key_name();
         let table_name = Query::escape_table_name(Self::table_name());
         let projection = Query::format_field(column.as_ref());
         let placeholder = Query::placeholder(1);
@@ -238,10 +265,19 @@ where
         ctx.set_query(&sql);
 
         let pool = Self::acquire_reader().await?.pool();
-        let mut rows = sqlx::query(&sql).fetch(pool);
-        let mut data = Vec::new();
+        let mut stream = sqlx::query(&sql).fetch(pool);
         let mut max_rows = super::MAX_ROWS.load(Relaxed);
-        while let Some(row) = rows.try_next().await? {
+        let estimated_rows = stream.size_hint().0;
+        if cfg!(debug_assertions) && estimated_rows > max_rows {
+            tracing::warn!(
+                "estimated number of rows {} exceeds the maximum row limit {}",
+                estimated_rows,
+                max_rows,
+            );
+        }
+
+        let mut data = Vec::with_capacity(estimated_rows.min(max_rows));
+        while let Some(row) = stream.try_next().await? {
             if max_rows > 0 {
                 data.push(row.try_get_unchecked(0)?);
                 max_rows -= 1;
