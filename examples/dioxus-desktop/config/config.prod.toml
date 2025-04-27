@@ -5,6 +5,7 @@ version = "0.2.0"
 
 [window]
 title = "DataCube"
+theme = "Dark"
 transparent = false
 
 [desktop]
