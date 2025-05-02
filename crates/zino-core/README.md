@@ -21,6 +21,7 @@ The following optional features are available:
 | `dotenv`             | Enables the configuration loader for a `.env` file.    | No       |
 | `env-filter`         | Enables the `env-filter` for [`tracing-subscriber`].   | No       |
 | `http-client`        | Enables the HTTP client via [`reqwest`].               | No       |
+| `i18n`               | Enables the support for internationalization.          | No       |
 | `locale`             | Enables the support for locale related utilities.      | No       |
 | `metrics`            | Enables the [`metrics`] exporter.                      | No       |
 | `preferences`        | Enables the support for application preferences.       | No       |

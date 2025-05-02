@@ -38,11 +38,11 @@ use zino_auth::JwtClaims;
 use std::time::Duration;
 
 #[cfg(feature = "i18n")]
-use crate::i18n;
-#[cfg(feature = "i18n")]
 use fluent::FluentArgs;
 #[cfg(feature = "i18n")]
 use unic_langid::LanguageIdentifier;
+#[cfg(feature = "i18n")]
+use zino_core::i18n::Intl;
 
 mod context;
 
@@ -137,12 +137,14 @@ pub trait RequestContext {
                 return ctx;
             }
 
-            let supported_locales = i18n::SUPPORTED_LOCALES.as_slice();
-            let locale = self
+            if let Some(locale) = self
                 .get_header("accept-language")
-                .and_then(|languages| helper::select_language(languages, supported_locales))
-                .unwrap_or(&i18n::DEFAULT_LOCALE);
-            ctx.set_locale(locale);
+                .and_then(Intl::select_language)
+            {
+                ctx.set_locale(locale);
+            } else {
+                ctx.set_locale(Intl::default_locale());
+            }
         }
         ctx
     }
@@ -793,10 +795,10 @@ pub trait RequestContext {
     #[cfg(feature = "i18n")]
     fn translate(&self, message: &str, args: Option<FluentArgs>) -> Result<SharedString, Error> {
         if let Some(locale) = self.locale() {
-            i18n::translate(&locale, message, args)
+            Intl::translate(&locale, message, args)
         } else {
-            let default_locale = i18n::DEFAULT_LOCALE.parse()?;
-            i18n::translate(&default_locale, message, args)
+            let default_locale = Intl::default_locale().parse()?;
+            Intl::translate(&default_locale, message, args)
         }
     }
 

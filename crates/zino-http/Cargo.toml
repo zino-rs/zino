@@ -36,7 +36,7 @@ debug = [
     "toml/preserve_order",
     "zino-core/debug",
 ]
-i18n = ["dep:fluent", "dep:intl-memoizer", "dep:unic-langid"]
+i18n = ["dep:fluent", "dep:unic-langid", "zino-core/i18n"]
 inertia = []
 http02 = ["dep:http02"]
 jwt = ["dep:jwt-simple", "auth", "zino-auth/jwt"]

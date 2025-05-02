@@ -27,10 +27,6 @@ pub use zino_auth::{
     AccessKeyId, AuthorizationProvider, SecretAccessKey, SecurityToken, UserSession,
 };
 
-#[cfg(feature = "i18n")]
-#[doc(no_inline)]
-pub use zino_http::fluent_args;
-
 #[cfg(feature = "jwt")]
 #[doc(no_inline)]
 pub use zino_auth::JwtClaims;
@@ -39,12 +35,9 @@ pub use zino_auth::JwtClaims;
 #[doc(no_inline)]
 pub use zino_auth::RegoEngine;
 
-#[cfg(feature = "orm")]
+#[cfg(feature = "i18n")]
 #[doc(no_inline)]
-pub use zino_orm::{
-    Aggregation, DerivedColumn, Entity, IntoSqlValue, JoinOn, ModelAccessor, ModelHelper,
-    MutationBuilder, QueryBuilder, ScalarQuery, Schema, Transaction, Window,
-};
+pub use zino_core::fluent_args;
 
 #[cfg(feature = "preferences")]
 #[doc(no_inline)]
@@ -61,3 +54,10 @@ pub use zino_http::{
 #[cfg(feature = "inertia")]
 #[doc(no_inline)]
 pub use zino_http::inertia::InertiaPage;
+
+#[cfg(feature = "orm")]
+#[doc(no_inline)]
+pub use zino_orm::{
+    Aggregation, DerivedColumn, Entity, IntoSqlValue, JoinOn, ModelAccessor, ModelHelper,
+    MutationBuilder, QueryBuilder, ScalarQuery, Schema, Transaction, Window,
+};

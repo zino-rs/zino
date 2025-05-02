@@ -19,6 +19,13 @@ pub mod state;
 pub mod trace;
 pub mod validation;
 
+#[cfg(feature = "i18n")]
+pub mod i18n;
+
+#[cfg(feature = "i18n")]
+#[doc(no_inline)]
+pub use fluent::fluent_args;
+
 #[doc(no_inline)]
 pub use serde_json::json;
 

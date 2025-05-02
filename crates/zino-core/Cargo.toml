@@ -52,12 +52,14 @@ full = [
     "dotenv",
     "env-filter",
     "http-client",
+    "i18n",
     "preferences",
     "metrics",
     "sqlx",
     "tracing-log",
 ]
 http-client = ["dep:reqwest-middleware", "dep:reqwest-tracing", "reqwest"]
+i18n = ["dep:fluent", "dep:intl-memoizer", "dep:unic-langid"]
 locale = ["random_word"]
 locale-en = ["locale", "random_word/en"]
 locale-es = ["locale", "random_word/es"]
@@ -103,7 +105,7 @@ dirs = "6.0.0"
 faster-hex = "0.10.0"
 hkdf = "0.12.4"
 sha1 = "0.10.6"
-sha2 = "0.10.8"
+sha2 = "0.10.9"
 ahash = { workspace = true }
 apache-avro = { workspace = true }
 cfg-if = { workspace = true }
@@ -146,6 +148,14 @@ optional = true
 
 [dependencies.dotenvy]
 version = "0.15.7"
+optional = true
+
+[dependencies.fluent]
+version = "0.16.1"
+optional = true
+
+[dependencies.intl-memoizer]
+version = "0.5.2"
 optional = true
 
 [dependencies.metrics-exporter-prometheus]
@@ -206,6 +216,10 @@ features = [
     "local-time",
     "parking_lot",
 ]
+
+[dependencies.unic-langid]
+version = "0.9.5"
+optional = true
 
 [lints]
 workspace = true

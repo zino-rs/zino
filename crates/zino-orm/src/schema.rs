@@ -1807,7 +1807,6 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
     where
         T: DecodeRow<DatabaseRow, Error = Error>,
     {
-        dbg!(Self::primary_key_column());
         let primary_key_name = Self::primary_key_name();
         let query = Self::default_query();
         let table_name = query.format_table_name::<Self>();
