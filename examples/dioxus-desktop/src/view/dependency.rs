@@ -108,11 +108,9 @@ fn DependencyListing(dep: Map) -> Element {
             td {
                 img {
                     class: "mr-1",
-                    src: "https://img.shields.io/crates/d/{name}?label=all"
+                    src: "https://img.shields.io/crates/d/{name}?label=all",
                 }
-                img {
-                    src: "https://img.shields.io/crates/dr/{name}?label=recent"
-                }
+                img { src: "https://img.shields.io/crates/dr/{name}?label=recent" }
             }
         }
     }

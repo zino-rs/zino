@@ -54,8 +54,6 @@ pub fn Wrapper() -> Element {
                 }
             }
         }
-        MainContainer {
-            Outlet::<Route> {}
-        }
+        MainContainer { Outlet::<Route> {} }
     }
 }

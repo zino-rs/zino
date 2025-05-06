@@ -100,7 +100,7 @@ fn StargazerListTable(num_stargazers: usize) -> Element {
                     current_page: current_page(),
                     on_change: move |page| {
                         current_page.set(page);
-                    }
+                    },
                 }
             }
         }
@@ -139,16 +139,14 @@ fn StargazerItem(index: usize, stargazer: Map) -> Element {
             }
             td {
                 figure {
-                   class: "image is-24x24",
-                   img { src: avatar_url },
+                    class: "image is-24x24",
+                    img { src: avatar_url }
                 }
             }
             td {
                 a {
                     href: "https://github.com/{name}?tab=followers",
-                    img {
-                        src: "https://img.shields.io/github/followers/{name}?label=&style=social"
-                    }
+                    img { src: "https://img.shields.io/github/followers/{name}?label=&style=social" }
                 }
             }
             td {

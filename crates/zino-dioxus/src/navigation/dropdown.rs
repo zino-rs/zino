@@ -12,10 +12,28 @@ pub fn Dropdown(props: DropdownProps) -> Element {
             class: if props.hoverable { "is-hoverable" },
             class: if props.dropup { "is-up" },
             class: if props.align == "right" { "is-right" },
+            onmouseenter: move |event| {
+                if let Some(handler) = props.on_mouse_enter.as_ref() {
+                    handler.call(event);
+                }
+            },
+            onmouseleave: move |event| {
+                if let Some(handler) = props.on_mouse_leave.as_ref() {
+                    handler.call(event);
+                }
+            },
             if let Some(trigger) = props.trigger {
                 div {
                     class: props.trigger_class,
                     title: if !title.is_empty() { "{title}" },
+                    onclick: move |event| {
+                        if props.hoverable {
+                            event.stop_propagation();
+                        }
+                        if let Some(handler) = props.on_trigger.as_ref() {
+                            handler.call(event);
+                        }
+                    },
                     { trigger }
                 }
             }
@@ -23,6 +41,14 @@ pub fn Dropdown(props: DropdownProps) -> Element {
                 class: props.menu_class,
                 div {
                     class: props.content_class,
+                    onclick: move |event| {
+                        if props.hoverable {
+                            event.stop_propagation();
+                        }
+                        if let Some(handler) = props.on_action.as_ref() {
+                            handler.call(event);
+                        }
+                    },
                     for item in props.items.iter() {
                         { item }
                     }
@@ -67,4 +93,12 @@ pub struct DropdownProps {
     /// The menu items to be rendered.
     #[props(into)]
     pub items: Vec<Element>,
+    /// An event handler to be called when the mouse enters the element.
+    pub on_mouse_enter: Option<EventHandler<MouseEvent>>,
+    /// An event handler to be called when the mouse leaves the element.
+    pub on_mouse_leave: Option<EventHandler<MouseEvent>>,
+    /// An event handler to be called when the trigger button is clicked.
+    pub on_trigger: Option<EventHandler<MouseEvent>>,
+    /// An event handler to be called when the menu action is clicked.
+    pub on_action: Option<EventHandler<MouseEvent>>,
 }
