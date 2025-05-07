@@ -48,7 +48,7 @@ metrics = "0.24.2"
 mime_guess = "2.0.5"
 parking_lot = "0.12.3"
 percent-encoding = "2.3.1"
-rand = "0.9.0"
+rand = "0.9.1"
 regex = "1.11.1"
 rust_decimal = "1.37.1"
 serde_qs = "0.15.0"
@@ -99,7 +99,7 @@ features = [
 ]
 
 [workspace.dependencies.tokio]
-version = "1.44.2"
+version = "1.45.0"
 features = [
     "macros",
     "net",
@@ -125,35 +125,35 @@ features = [
 
 [workspace.dependencies.zino-auth]
 path = "crates/zino-auth"
-version = "0.6.1"
+version = "0.7.0"
 
 [workspace.dependencies.zino-core]
 path = "crates/zino-core"
-version = "0.34.1"
+version = "0.35.0"
 
 [workspace.dependencies.zino-channel]
 path = "crates/zino-channel"
-version = "0.6.1"
+version = "0.7.0"
 
 [workspace.dependencies.zino-derive]
 path = "crates/zino-derive"
-version = "0.32.3"
+version = "0.33.0"
 
 [workspace.dependencies.zino-http]
 path = "crates/zino-http"
-version = "0.6.1"
+version = "0.7.0"
 
 [workspace.dependencies.zino-openapi]
 path = "crates/zino-openapi"
-version = "0.5.1"
+version = "0.6.0"
 
 [workspace.dependencies.zino-orm]
 path = "crates/zino-orm"
-version = "0.6.2"
+version = "0.7.0"
 
 [workspace.dependencies.zino-storage]
 path = "crates/zino-storage"
-version = "0.6.1"
+version = "0.7.0"
 
 [workspace.lints.rust]
 missing_docs = "warn"

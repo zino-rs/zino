@@ -124,7 +124,7 @@ pub trait RequestContext {
 
         // Generate new context.
         let mut ctx = Context::new(request_id);
-        ctx.set_instance(self.request_path());
+        ctx.set_instance(self.request_path().to_owned());
         ctx.set_trace_id(trace_id);
         ctx.set_session_id(session_id);
 
@@ -133,8 +133,10 @@ pub trait RequestContext {
         {
             #[cfg(feature = "cookie")]
             if let Some(cookie) = self.get_cookie("locale") {
-                ctx.set_locale(cookie.value());
-                return ctx;
+                if let Ok(locale) = cookie.value().parse() {
+                    ctx.set_locale(locale);
+                    return ctx;
+                }
             }
 
             if let Some(locale) = self
@@ -143,7 +145,7 @@ pub trait RequestContext {
             {
                 ctx.set_locale(locale);
             } else {
-                ctx.set_locale(Intl::default_locale());
+                ctx.set_locale(Intl::default_locale().to_owned());
             }
         }
         ctx
@@ -795,10 +797,9 @@ pub trait RequestContext {
     #[cfg(feature = "i18n")]
     fn translate(&self, message: &str, args: Option<FluentArgs>) -> Result<SharedString, Error> {
         if let Some(locale) = self.locale() {
-            Intl::translate(&locale, message, args)
+            Intl::translate_with(message, args, &locale)
         } else {
-            let default_locale = Intl::default_locale().parse()?;
-            Intl::translate(&default_locale, message, args)
+            Intl::translate(message, args)
         }
     }
 

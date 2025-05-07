@@ -66,7 +66,9 @@ impl RauthyClient {
             if let Err(err) = rauthy_client::init().await {
                 tracing::error!("fail to initialize the Rauthy client: {err}");
             }
-            if let Err(err) = OidcProvider::setup_from_config(rauthy_config, redirect_uri).await {
+            if let Err(err) =
+                OidcProvider::setup_from_config(rauthy_config, redirect_uri.to_owned()).await
+            {
                 tracing::error!("fail to setup the OIDC provider: {err}");
             }
             Ok(())

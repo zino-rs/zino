@@ -38,8 +38,8 @@ impl Context {
 
     /// Sets the instance.
     #[inline]
-    pub fn set_instance(&mut self, instance: impl ToString) {
-        self.instance = instance.to_string();
+    pub fn set_instance(&mut self, instance: String) {
+        self.instance = instance;
     }
 
     /// Sets the trace ID.
@@ -57,11 +57,8 @@ impl Context {
     /// Sets the locale.
     #[cfg(feature = "i18n")]
     #[inline]
-    pub fn set_locale(&mut self, locale: &str) {
-        match locale.parse() {
-            Ok(locale) => self.locale = Some(locale),
-            Err(err) => tracing::error!("{err}: `{locale}`"),
-        }
+    pub fn set_locale(&mut self, locale: LanguageIdentifier) {
+        self.locale = Some(locale);
     }
 
     /// Returns the start time.

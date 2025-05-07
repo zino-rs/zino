@@ -19,14 +19,15 @@ use unic_langid::LanguageIdentifier;
 pub struct Intl;
 
 impl Intl {
-    /// Returns the default locale.
+    /// Returns the default locale, which can also be specified by
+    /// the environment variable `ZINO_APP_LOCALE`.
     #[inline]
-    pub fn default_locale() -> &'static str {
+    pub fn default_locale() -> &'static LanguageIdentifier {
         &DEFAULT_LOCALE
     }
 
     /// Selects a language from the supported locales.
-    pub fn select_language(accepted_languages: &str) -> Option<&str> {
+    pub fn select_language(accepted_languages: &str) -> Option<LanguageIdentifier> {
         let mut languages = accepted_languages
             .split(',')
             .filter_map(|s| {
@@ -43,14 +44,25 @@ impl Intl {
             })
             .collect::<Vec<_>>();
         languages.sort_by(|a, b| b.1.total_cmp(&a.1));
-        languages.first().map(|&(language, _)| language)
+        languages.first().and_then(|&(language, _)| {
+            language
+                .parse()
+                .inspect_err(|err| tracing::error!("invalid locale: {err}"))
+                .ok()
+        })
     }
 
-    /// Translates the localization message.
-    pub fn translate(
-        locale: &LanguageIdentifier,
+    /// Translates the localization message with the default locale.
+    #[inline]
+    pub fn translate(message: &str, args: Option<FluentArgs<'_>>) -> Result<SharedString, Error> {
+        Self::translate_with(message, args, Self::default_locale())
+    }
+
+    /// Translates the localization message with a specific locale.
+    pub fn translate_with(
         message: &str,
         args: Option<FluentArgs<'_>>,
+        locale: &LanguageIdentifier,
     ) -> Result<SharedString, Error> {
         let bundle = LOCALIZATION
             .iter()
@@ -148,12 +160,20 @@ static DEFAULT_BUNDLE: LazyLock<Option<&'static Translation>> = LazyLock::new(||
 });
 
 /// Default locale.
-static DEFAULT_LOCALE: LazyLock<&'static str> = LazyLock::new(|| {
-    if let Some(i18n) = State::shared().get_config("i18n") {
-        i18n.get_str("default-locale").unwrap_or("en-US")
+static DEFAULT_LOCALE: LazyLock<LanguageIdentifier> = LazyLock::new(|| {
+    if let Ok(locale) = std::env::var("ZINO_APP_LOCALE") {
+        return locale
+            .parse()
+            .expect("invalid environment variable for the default application locale");
+    }
+    let locale = if let Some(config) = State::shared().get_config("i18n") {
+        config.get_str("default-locale").unwrap_or("en-US")
     } else {
         "en-US"
-    }
+    };
+    locale
+        .parse()
+        .expect("invalid value for the default locale")
 });
 
 /// Supported locales.
