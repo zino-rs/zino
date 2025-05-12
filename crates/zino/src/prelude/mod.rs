@@ -4,7 +4,7 @@
 
 #[doc(no_inline)]
 pub use zino_core::{
-    BoxFuture, Decimal, LazyLock, Map, Record, Uuid,
+    BoxFuture, Decimal, LazyLock, Map, Record, SharedString, Uuid,
     application::{Application, Plugin},
     bail,
     datetime::{Date, DateTime, Time},
@@ -37,7 +37,7 @@ pub use zino_auth::RegoEngine;
 
 #[cfg(feature = "i18n")]
 #[doc(no_inline)]
-pub use zino_core::fluent_args;
+pub use zino_core::{fluent_args, i18n::Intl};
 
 #[cfg(feature = "preferences")]
 #[doc(no_inline)]

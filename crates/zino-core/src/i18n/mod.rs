@@ -3,16 +3,44 @@
 use crate::{
     LazyLock, SharedString,
     application::{Agent, Application},
-    bail,
-    error::Error,
     extension::TomlTableExt,
     state::State,
-    warn,
 };
-use fluent::{FluentArgs, FluentResource, bundle::FluentBundle};
+use fluent::{FluentArgs, FluentError, FluentResource, bundle::FluentBundle};
 use intl_memoizer::concurrent::IntlLangMemoizer;
-use std::{fs, io::ErrorKind};
+use std::{fmt, fs, io::ErrorKind};
 use unic_langid::LanguageIdentifier;
+
+/// An error which can be returned when fomrating localization messages.
+#[derive(Debug)]
+pub enum IntlError {
+    /// An error for no localization bundle.
+    NoBundle,
+    /// An error for no localization message.
+    NoMessage(String),
+    /// An error for no localization message attribute.
+    NoMessageAttribute(String, String),
+    /// An error which can occur while formatting a message.
+    Format(fmt::Error),
+    /// Errors for Fluent runtime system.
+    Fluent(Vec<FluentError>),
+}
+
+impl fmt::Display for IntlError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            IntlError::NoBundle => write!(f, "localization bundle does not exits"),
+            IntlError::NoMessage(message) => write!(f, "no localization message `{message}`"),
+            IntlError::NoMessageAttribute(message, attr) => {
+                write!(f, "no localization message attribute `{message}.{attr}`")
+            }
+            IntlError::Format(err) => write!(f, "format error: {err}"),
+            IntlError::Fluent(_errors) => write!(f, "errors occurred for Fluent runtime system"),
+        }
+    }
+}
+
+impl std::error::Error for IntlError {}
 
 /// A namespace for internationalization formatters.
 #[derive(Debug, Clone, Copy)]
@@ -24,6 +52,14 @@ impl Intl {
     #[inline]
     pub fn default_locale() -> &'static LanguageIdentifier {
         &DEFAULT_LOCALE
+    }
+
+    /// Returns `true` if the locale is supported.
+    #[inline]
+    pub fn supports(locale: &str) -> bool {
+        SUPPORTED_LOCALES
+            .iter()
+            .any(|&lang| locale.eq_ignore_ascii_case(lang))
     }
 
     /// Selects a language from the supported locales.
@@ -54,7 +90,10 @@ impl Intl {
 
     /// Translates the localization message with the default locale.
     #[inline]
-    pub fn translate(message: &str, args: Option<FluentArgs<'_>>) -> Result<SharedString, Error> {
+    pub fn translate(
+        message: &str,
+        args: Option<FluentArgs<'_>>,
+    ) -> Result<SharedString, IntlError> {
         Self::translate_with(message, args, Self::default_locale())
     }
 
@@ -63,7 +102,7 @@ impl Intl {
         message: &str,
         args: Option<FluentArgs<'_>>,
         locale: &LanguageIdentifier,
-    ) -> Result<SharedString, Error> {
+    ) -> Result<SharedString, IntlError> {
         let bundle = LOCALIZATION
             .iter()
             .find_map(|(lang_id, bundle)| (lang_id == locale).then_some(bundle))
@@ -74,33 +113,37 @@ impl Intl {
                     .find_map(|(lang_id, bundle)| (lang_id.language == lang).then_some(bundle))
             })
             .or(*DEFAULT_BUNDLE)
-            .ok_or_else(|| warn!("localization bundle does not exits"))?;
-        let pattern = bundle
-            .get_message(message)
-            .ok_or_else(|| warn!("fail to get the localization message for `{}`", message))?
-            .value()
-            .ok_or_else(|| {
-                warn!(
-                    "fail to retrieve an option of the pattern for `{}`",
-                    message
-                )
-            })?;
+            .ok_or_else(|| IntlError::NoBundle)?;
+        let pattern = if let Some((message, attr)) = message.split_once('.') {
+            bundle
+                .get_message(message)
+                .and_then(|m| m.get_attribute(attr))
+                .ok_or_else(|| IntlError::NoMessageAttribute(message.to_owned(), attr.to_owned()))?
+                .value()
+        } else {
+            bundle
+                .get_message(message)
+                .and_then(|m| m.value())
+                .ok_or_else(|| IntlError::NoMessage(message.to_owned()))?
+        };
 
         let mut errors = vec![];
         if let Some(args) = args {
             let mut value = String::new();
-            bundle.write_pattern(&mut value, pattern, Some(&args), &mut errors)?;
+            bundle
+                .write_pattern(&mut value, pattern, Some(&args), &mut errors)
+                .map_err(IntlError::Format)?;
             if errors.is_empty() {
                 Ok(value.into())
             } else {
-                bail!("{:?}", errors);
+                Err(IntlError::Fluent(errors))
             }
         } else {
             let value = bundle.format_pattern(pattern, None, &mut errors);
             if errors.is_empty() {
                 Ok(value)
             } else {
-                bail!("{:?}", errors);
+                Err(IntlError::Fluent(errors))
             }
         }
     }

@@ -42,7 +42,7 @@ use fluent::FluentArgs;
 #[cfg(feature = "i18n")]
 use unic_langid::LanguageIdentifier;
 #[cfg(feature = "i18n")]
-use zino_core::i18n::Intl;
+use zino_core::i18n::{Intl, IntlError};
 
 mod context;
 
@@ -795,7 +795,11 @@ pub trait RequestContext {
 
     /// Translates the localization message.
     #[cfg(feature = "i18n")]
-    fn translate(&self, message: &str, args: Option<FluentArgs>) -> Result<SharedString, Error> {
+    fn translate(
+        &self,
+        message: &str,
+        args: Option<FluentArgs>,
+    ) -> Result<SharedString, IntlError> {
         if let Some(locale) = self.locale() {
             Intl::translate_with(message, args, &locale)
         } else {
