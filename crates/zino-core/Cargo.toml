@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.35.0"
+version = "0.35.1"
 categories = ["asynchronous", "network-programming", "web-programming::http-server"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
@@ -186,11 +186,11 @@ version = "0.21.1"
 optional = true
 
 [dependencies.sentry]
-version = "0.37.0"
+version = "0.38.1"
 optional = true
 
 [dependencies.sentry-tracing]
-version = "0.37.0"
+version = "0.38.1"
 optional = true
 
 [dependencies.sm4]
@@ -218,7 +218,7 @@ features = [
 ]
 
 [dependencies.unic-langid]
-version = "0.9.5"
+version = "0.9.6"
 optional = true
 
 [lints]
