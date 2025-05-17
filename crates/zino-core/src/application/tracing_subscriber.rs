@@ -164,7 +164,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let sentry_layer = sentry_tracing::layer()
         .enable_span_attributes()
         .event_filter(|md| match *md.level() {
-            Level::ERROR => EventFilter::Exception,
+            Level::ERROR => EventFilter::Event,
             Level::WARN | Level::INFO => EventFilter::Breadcrumb,
             _ => EventFilter::Ignore,
         });

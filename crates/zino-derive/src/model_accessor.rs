@@ -464,8 +464,9 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                         }
                         "minimum" => {
                             if let Some(value) = value.and_then(|s| s.parse::<i64>().ok()) {
+                                let field_type_ident = format_ident!("{}", type_name);
                                 field_constraints.push(quote! {
-                                    let minimum = #value;
+                                    let minimum = #value as #field_type_ident;
                                     if self.#ident < minimum {
                                         let message = format!("should be not less than {minimum}");
                                         validation.record(#name, message);
@@ -475,8 +476,9 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                         }
                         "maximum" => {
                             if let Some(value) = value.and_then(|s| s.parse::<i64>().ok()) {
+                                let field_type_ident = format_ident!("{}", type_name);
                                 field_constraints.push(quote! {
-                                    let maximum = #value;
+                                    let maximum = #value as #field_type_ident;
                                     if self.#ident > maximum {
                                         let message = format!("should be not greater than {maximum}");
                                         validation.record(#name, message);

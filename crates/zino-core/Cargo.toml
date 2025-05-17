@@ -55,8 +55,10 @@ full = [
     "i18n",
     "preferences",
     "metrics",
+    "sentry",
     "sqlx",
     "tracing-log",
+    "tracing-subscriber",
 ]
 http-client = ["dep:reqwest-middleware", "dep:reqwest-tracing", "reqwest"]
 i18n = ["dep:fluent", "dep:intl-memoizer", "dep:unic-langid"]

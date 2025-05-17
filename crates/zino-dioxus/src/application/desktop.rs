@@ -4,6 +4,8 @@ use dioxus::{
         WindowCloseBehaviour::*,
         muda::{self, AboutMetadata, Menu},
         tao::window::{Fullscreen, Icon, Theme},
+        use_asset_handler,
+        wry::http::Response,
     },
     prelude::*,
 };
@@ -42,6 +44,13 @@ where
     #[inline]
     fn app_root() -> Element {
         Self::config_webview();
+        use_asset_handler("public", |req, res| {
+            let path = req.uri().path().trim_start_matches('/');
+            let Ok(bytes) = fs::read(Self::parse_path(path)) else {
+                return;
+            };
+            res.respond(Response::new(bytes));
+        });
         rsx! { Router::<R> {} }
     }
 
