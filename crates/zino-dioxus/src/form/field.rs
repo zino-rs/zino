@@ -3,7 +3,68 @@ use dioxus::prelude::*;
 use zino_core::SharedString;
 
 /// A container for the form field with a label.
-pub fn FormFieldContainer(props: FormFieldContainerProps) -> Element {
+pub fn FieldContainer(props: FieldContainerProps) -> Element {
+    let required_mark = props.required_mark;
+    rsx! {
+        div {
+            class: props.class,
+            label {
+                class: props.label_class,
+                { props.label }
+                if !required_mark.is_empty() {
+                    span {
+                        class: props.mark_class,
+                        { required_mark }
+                    }
+                }
+            }
+            div {
+                class: props.control_class,
+                { props.children }
+            }
+            if let Some(help_text) = props.help_text {
+                p {
+                    class: props.help_class,
+                    { help_text }
+                }
+            }
+        }
+    }
+}
+
+/// The [`FieldContainer`] properties struct for the configuration of the component.
+#[derive(Clone, PartialEq, Props)]
+pub struct FieldContainerProps {
+    /// The class attribute for the component.
+    #[props(into, default = "field")]
+    pub class: Class,
+    /// A class to apply to the `label` element.
+    #[props(into, default = "label")]
+    pub label_class: Class,
+    /// A class to apply custom styles.
+    #[props(into, default = "control")]
+    pub control_class: Class,
+    /// A class to apply to the required mark.
+    #[props(into, default = "has-text-danger")]
+    pub mark_class: Class,
+    /// A class to apply to the help text.
+    #[props(into, default = "help")]
+    pub help_class: Class,
+    /// The label content.
+    #[props(into)]
+    pub label: SharedString,
+    /// The required mark.
+    #[props(into, default)]
+    pub required_mark: SharedString,
+    /// The optional help text.
+    pub help_text: Option<Element>,
+    /// The children to render within the component.
+    children: Element,
+}
+
+/// A horizontal container for the form field with a label.
+pub fn HorizontalFieldContainer(props: HorizontalFieldContainerProps) -> Element {
+    let required_mark = props.required_mark;
     rsx! {
         div {
             class: props.class,
@@ -12,6 +73,12 @@ pub fn FormFieldContainer(props: FormFieldContainerProps) -> Element {
                 label {
                     class: props.label_class,
                     { props.label }
+                    if !required_mark.is_empty() {
+                        span {
+                            class: props.mark_class,
+                            { required_mark }
+                        }
+                    }
                 }
             }
             div {
@@ -22,9 +89,9 @@ pub fn FormFieldContainer(props: FormFieldContainerProps) -> Element {
     }
 }
 
-/// The [`FormFieldContainer`] properties struct for the configuration of the component.
+/// The [`HorizontalFieldContainer`] properties struct for the configuration of the component.
 #[derive(Clone, PartialEq, Props)]
-pub struct FormFieldContainerProps {
+pub struct HorizontalFieldContainerProps {
     /// The class attribute for the component.
     #[props(into, default = "field is-horizontal")]
     pub class: Class,
@@ -37,9 +104,15 @@ pub struct FormFieldContainerProps {
     /// A class to apply to the `label` element.
     #[props(into, default = "label")]
     pub label_class: Class,
+    /// A class to apply to the required mark.
+    #[props(into, default = "has-text-danger")]
+    pub mark_class: Class,
     /// The label content.
     #[props(into)]
     pub label: SharedString,
+    /// The required mark.
+    #[props(into, default)]
+    pub required_mark: SharedString,
     /// The children to render within the component.
     children: Element,
 }
@@ -54,6 +127,12 @@ pub fn FormField(props: FormFieldProps) -> Element {
                 class: if props.expanded { "is-expanded" },
                 { props.children }
             }
+            if let Some(help_text) = props.help_text {
+                p {
+                    class: props.help_class,
+                    { help_text }
+                }
+            }
         }
     }
 }
@@ -67,9 +146,14 @@ pub struct FormFieldProps {
     /// A class to apply custom styles.
     #[props(into, default = "control")]
     pub control_class: Class,
+    /// A class to apply to the help text.
+    #[props(into, default = "help")]
+    pub help_class: Class,
     /// A flag to determine whether the control is expanded or not.
     #[props(default)]
     pub expanded: bool,
+    /// The optional help text.
+    pub help_text: Option<Element>,
     /// The children to render within the component.
     children: Element,
 }

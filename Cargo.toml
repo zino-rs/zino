@@ -89,7 +89,7 @@ version = "1.0.140"
 features = ["raw_value"]
 
 [workspace.dependencies.sqlx]
-version = "0.8.5"
+version = "0.8.6"
 default-features = false
 features = [
     "chrono",
@@ -129,7 +129,7 @@ version = "0.7.0"
 
 [workspace.dependencies.zino-core]
 path = "crates/zino-core"
-version = "0.35.1"
+version = "0.35.2"
 
 [workspace.dependencies.zino-channel]
 path = "crates/zino-channel"

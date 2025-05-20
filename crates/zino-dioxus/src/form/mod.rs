@@ -18,8 +18,8 @@ mod clipboard;
 pub use button::{Button, ButtonProps, Buttons, ButtonsProps};
 pub use checkbox::{Checkbox, CheckboxProps};
 pub use field::{
-    FormAddons, FormAddonsProps, FormField, FormFieldContainer, FormFieldContainerProps,
-    FormFieldProps, FormGroup, FormGroupProps,
+    FieldContainer, FieldContainerProps, FormAddons, FormAddonsProps, FormField, FormFieldProps,
+    FormGroup, FormGroupProps, HorizontalFieldContainer, HorizontalFieldContainerProps,
 };
 pub use file::{FileTree, FileTreeProps, FileUpload, FileUploadProps};
 pub use input::{Input, InputProps};

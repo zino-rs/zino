@@ -5,8 +5,9 @@ pub use crate::{
     extension::FormDataExt,
     feedback::{Message, ModalCard, ModalData, Notification, OperationResult},
     form::{
-        Button, Buttons, Checkbox, DataEntry, DataSelect, FileTree, FileUpload, FormAddons,
-        FormField, FormFieldContainer, FormGroup, Input, Progress, Radio, Textarea,
+        Button, Buttons, Checkbox, DataEntry, DataSelect, FieldContainer, FileTree, FileUpload,
+        FormAddons, FormField, FormGroup, HorizontalFieldContainer, Input, Progress, Radio,
+        Textarea,
     },
     icon::{Icon, IconText, SvgIcon},
     layout::{Columns, Container, FluidContainer, MainContainer},
