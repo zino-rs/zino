@@ -113,6 +113,7 @@ apache-avro = { workspace = true }
 cfg-if = { workspace = true }
 chrono = { workspace = true }
 convert_case = { workspace = true }
+fluent = { workspace = true, optional = true }
 hmac = { workspace = true }
 http = { workspace = true }
 metrics = { workspace = true, optional = true }
@@ -150,10 +151,6 @@ optional = true
 
 [dependencies.dotenvy]
 version = "0.15.7"
-optional = true
-
-[dependencies.fluent]
-version = "0.16.1"
 optional = true
 
 [dependencies.intl-memoizer]

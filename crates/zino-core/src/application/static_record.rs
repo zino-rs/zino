@@ -1,5 +1,7 @@
+use std::vec::IntoIter;
+
 /// A static record type.
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct StaticRecord<T> {
     /// Inner container.
     inner: Vec<(&'static str, T)>,
@@ -43,7 +45,7 @@ impl<T> StaticRecord<T> {
 
 impl<T> IntoIterator for StaticRecord<T> {
     type Item = (&'static str, T);
-    type IntoIter = std::vec::IntoIter<Self::Item>;
+    type IntoIter = IntoIter<Self::Item>;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {

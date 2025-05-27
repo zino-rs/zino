@@ -5,7 +5,7 @@
 #[doc(no_inline)]
 pub use zino_core::{
     BoxFuture, Decimal, LazyLock, Map, Record, SharedString, Uuid,
-    application::{Application, Plugin},
+    application::{Application, Plugin, StaticRecord},
     bail,
     datetime::{Date, DateTime, Time},
     error::Error,

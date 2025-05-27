@@ -51,6 +51,7 @@ bytes = { workspace = true }
 cfg-if = { workspace = true }
 convert_case = { workspace = true, optional = true }
 etag = { workspace = true }
+fluent = { workspace = true, optional = true }
 futures = { workspace = true }
 http = { workspace = true }
 jwt-simple = { workspace = true, optional = true }
@@ -74,10 +75,6 @@ zino-storage = { workspace = true, features = ["http-client"] }
 
 [dependencies.cookie]
 version = "0.18.1"
-optional = true
-
-[dependencies.fluent]
-version = "0.16.1"
 optional = true
 
 [dependencies.http02]
