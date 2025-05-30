@@ -19,7 +19,7 @@ use sqlx::Acquire;
 ///
 /// ```rust,ignore
 /// use crate::model::{Account, AccountColumn, Order, Stock, StockColumn};
-/// use zino_orm::{MutationBuilder, QueryBuilder, Schema, Transaction};
+/// use zino_orm::{Executor, MutationBuilder, QueryBuilder, Schema, Transaction};
 ///
 /// let user_id = "0193d8e6-2970-7b52-bc06-80a981212aa9";
 /// let product_id = "0193c06d-bee6-7070-a5e7-9659161bddb5";
@@ -27,13 +27,13 @@ use sqlx::Acquire;
 /// let order = Order::from_customer(user_id, product_id);
 /// let quantity = order.quantity();
 /// let total_price = order.total_price();
-/// let order_ctx = order.prepare_insert()?;
+/// let order_ctx = order.prepare_insert().await?;
 ///
 /// let stock_query = QueryBuilder::new()
 ///     .and_eq(StockColumn::ProductId, product_id)
 ///     .and_ge(StockColumn::Quantity, quantity)
 ///     .build();
-/// let mut stock_mutation = MutationBuilder::new()
+/// let mut stock_mutation = MutationBuilder::<Stock>::new()
 ///     .inc(StockColumn::Quantity, -quantity)
 ///     .build();
 /// let stock_ctx = Stock::prepare_update_one(&stock_query, &mut stock_mutation).await?;
@@ -42,16 +42,15 @@ use sqlx::Acquire;
 ///     .and_eq(AccountColumn::UserId, user_id)
 ///     .and_ge(AccountColumn::Balance, total_price)
 ///     .build();
-/// let mut account_mutation = MutationBuilder::new()
+/// let mut account_mutation = MutationBuilder::<Account>::new()
 ///     .inc(AccountColumn::Balance, -total_price)
 ///     .build();
 /// let account_ctx = Account::prepare_update_one(&account_query, &mut account_mutation).await?;
 ///
 /// Order::transaction(move |tx| Box::pin(async move {
-///      let connection = tx.acquire().await?;
-///      connection.execute(order_ctx.query()).await?;
-///      connection.execute(stock_ctx.query()).await?;
-///      connection.execute(account_ctx.query()).await?;
+///      tx.execute(order_ctx.query()).await?;
+///      tx.execute(stock_ctx.query()).await?;
+///      tx.execute(account_ctx.query()).await?;
 ///      Ok(())
 /// })).await?;
 /// ```
