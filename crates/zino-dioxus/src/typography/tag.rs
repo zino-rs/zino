@@ -4,6 +4,7 @@ use zino_core::SharedString;
 
 /// A small tag label in different colors and sizes.
 pub fn Tag(props: TagProps) -> Element {
+    let title = props.title;
     rsx! {
         button {
             class: "{props.class}",
@@ -12,6 +13,7 @@ pub fn Tag(props: TagProps) -> Element {
             class: if !props.size.is_empty() { "is-{props.size}" },
             class: if props.hoverable { "is-hoverable" },
             class: if props.rounded { "is-rounded" },
+            title: (!title.is_empty()).then(|| title.into_owned()),
             onclick: move |event| {
                 if let Some(handler) = props.on_click.as_ref() {
                     handler.call(event);
@@ -44,6 +46,9 @@ pub struct TagProps {
     /// A flag to determine whether the tag is rounded or not.
     #[props(default)]
     pub rounded: bool,
+    /// A title for the tag.
+    #[props(into, default)]
+    pub title: SharedString,
     /// An event handler to be called when the tag is clicked.
     pub on_click: Option<EventHandler<MouseEvent>>,
     /// The children to render within the component.

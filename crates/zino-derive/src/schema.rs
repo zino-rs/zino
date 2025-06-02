@@ -66,6 +66,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let mut primary_key_name = String::from("id");
     let mut primary_key_value = None;
     let mut primary_key_column = None;
+    let mut equality_field = None;
     let mut columns = Vec::new();
     let mut column_fields = Vec::new();
     let mut read_only_fields = Vec::new();
@@ -244,6 +245,9 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                         primary_key_value = Some(primary_key);
                         primary_key_column = Some(column.clone());
                     }
+                    if name == "version" || (name == "updated_at" && equality_field.is_none()) {
+                        equality_field = Some(name);
+                    }
                     columns.push(column);
                     column_fields.push(quote! { #column_name });
                 }
@@ -270,6 +274,17 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let num_write_only_fields = write_only_fields.len();
     let quote_table_name = parser::quote_option_string(table_name);
     let quote_model_comment = parser::quote_option_string(model_comment);
+    let quote_equality = if let Some(field) = equality_field {
+        let schema_equality = format_ident!("{}", field);
+        quote! {
+            self.#schema_primary_key == other.#schema_primary_key
+                && self.#schema_equality == other.#schema_equality
+        }
+    } else {
+        quote! {
+            self.#schema_primary_key == other.#schema_primary_key
+        }
+    };
     quote! {
         use zino_core::{
             error::Error as ZinoError,
@@ -466,7 +481,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
         impl PartialEq for #name {
             #[inline]
             fn eq(&self, other: &Self) -> bool {
-                self.#schema_primary_key == other.#schema_primary_key
+                #quote_equality
             }
         }
 
