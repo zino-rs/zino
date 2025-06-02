@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.35.3"
+version = "0.36.0"
 categories = ["asynchronous", "network-programming", "web-programming::http-server"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
@@ -130,11 +130,12 @@ smallvec = { workspace = true }
 sqlx = { workspace = true, optional = true }
 toml = { workspace = true }
 tracing = { workspace = true }
+unic-langid = { workspace = true, optional = true }
 url = { workspace = true }
 uuid = { workspace = true }
 
 [dependencies.apalis]
-version = "0.7.1"
+version = "0.7.2"
 optional = true
 
 [dependencies.argon2]
@@ -154,7 +155,7 @@ version = "0.15.7"
 optional = true
 
 [dependencies.intl-memoizer]
-version = "0.5.2"
+version = "0.5.3"
 optional = true
 
 [dependencies.metrics-exporter-prometheus]
@@ -215,10 +216,6 @@ features = [
     "local-time",
     "parking_lot",
 ]
-
-[dependencies.unic-langid]
-version = "0.9.6"
-optional = true
 
 [lints]
 workspace = true
