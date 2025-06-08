@@ -2,7 +2,7 @@
 name = "zino-orm"
 description = "ORM for zino."
 version = "0.8.0"
-categories = ["asynchronous", "network-programming", "web-programming"]
+categories = ["asynchronous", "database", "web-programming"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
 documentation = "https://docs.rs/zino-orm"

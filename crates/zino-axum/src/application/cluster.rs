@@ -119,12 +119,16 @@ impl Application for Cluster {
                 );
 
                 // Server config
+                let mut auto_routing = true;
                 let mut public_dir = "public";
                 let mut public_route_prefix = "/public";
                 let mut body_limit = 128 * 1024 * 1024; // 128MB
                 let mut request_timeout = Duration::from_secs(60); // 60 seconds
                 let mut keep_alive_timeout = 75; // 75 seconds
                 if let Some(config) = app_state.get_config("server") {
+                    if let Some(auto) = config.get_bool("auto-routing") {
+                        auto_routing = auto;
+                    }
                     if let Some(dir) = config.get_str("page-dir") {
                         public_dir = dir;
                         public_route_prefix = "/page";
@@ -150,12 +154,24 @@ impl Application for Cluster {
                 let not_found_file = public_dir.join("404.html");
                 if public_dir.exists() {
                     let index_file = public_dir.join("index.html");
-                    let favicon_file = public_dir.join("favicon.ico");
                     if index_file.exists() {
                         app = app.route_service("/", ServeFile::new(index_file));
                     }
-                    if favicon_file.exists() {
-                        app = app.route_service("/favicon.ico", ServeFile::new(favicon_file));
+                    if auto_routing {
+                        if let Ok(entries) = fs::read_dir(&public_dir) {
+                            for entry in entries {
+                                if let Some(entry) = entry
+                                    .ok()
+                                    .filter(|dir| dir.file_type().is_ok_and(|ty| ty.is_file()))
+                                {
+                                    if let Some(file_name) = entry.file_name().to_str() {
+                                        let route_path = ["/", file_name].concat();
+                                        let serve_file = ServeFile::new(entry.path());
+                                        app = app.route_service(&route_path, serve_file);
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     let not_found_file = public_dir.join("404.html");

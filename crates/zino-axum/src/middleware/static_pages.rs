@@ -9,9 +9,9 @@ pub(crate) async fn serve_static_pages(mut req: Request<Body>, next: Next) -> Re
     if let Some((_, name)) = path.rsplit_once('/') {
         if !(name.contains('.') || name.is_empty()) {
             let mut path_and_query = if name == "page" {
-                format!("{path}/index.html")
+                [path, "/index.html"].concat()
             } else {
-                format!("{path}.html")
+                [path, ".html"].concat()
             };
             if let Some(query) = uri.query() {
                 path_and_query.push('?');

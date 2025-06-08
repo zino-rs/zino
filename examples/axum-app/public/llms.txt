@@ -1,0 +1,7 @@
+# axum-app
+
+> An example for axum integration.
+
+## Docs
+
+- [API documentation](/rapidoc): The OpenAPI documentation.
