@@ -677,6 +677,14 @@ impl From<DateTime> for JsonValue {
     }
 }
 
+#[cfg(feature = "i18n")]
+impl<'a> From<DateTime> for fluent::FluentValue<'a> {
+    #[inline]
+    fn from(dt: DateTime) -> Self {
+        fluent::FluentValue::String(dt.to_string().into())
+    }
+}
+
 impl FromStr for DateTime {
     type Err = ParseError;
 

@@ -54,7 +54,7 @@ regex = "1.11.1"
 rust_decimal = "1.37.1"
 serde_qs = "0.15.0"
 sm3 = "0.4.2"
-smallvec = "1.15.0"
+smallvec = "1.15.1"
 tracing = "0.1.41"
 unic-langid = "0.9.6"
 url = "2.5.4"
@@ -112,7 +112,7 @@ features = [
 ]
 
 [workspace.dependencies.toml]
-version = "0.8.22"
+version = "0.8.23"
 default-features = false
 features = ["parse"]
 
