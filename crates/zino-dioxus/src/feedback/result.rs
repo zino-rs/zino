@@ -1,5 +1,6 @@
 use crate::class::Class;
 use dioxus::prelude::*;
+use std::time::Duration;
 use zino_core::SharedString;
 
 /// Global messages as feedback in response to user operations.
@@ -8,14 +9,25 @@ where
     T: Clone + PartialEq + 'static,
     E: Clone + PartialEq + 'static,
 {
-    if !props.visible {
+    let mut visible = props.visible;
+    let mut future = props.future;
+    if visible() {
+        future.resume();
+    } else {
+        future.pause();
         return rsx! {};
     }
-    match props.future {
+
+    let duration = Duration::from_millis(props.duration);
+    match future() {
         Some(Ok(data)) => {
-            if let Some(handler) = props.on_success.as_ref() {
-                handler.call(data);
-            }
+            spawn(async move {
+                tokio::time::sleep(duration).await;
+                visible.set(false);
+                if let Some(handler) = props.on_success.as_ref() {
+                    handler.call(data);
+                }
+            });
             rsx! {
                 div {
                     class: "{props.class} is-success",
@@ -31,6 +43,7 @@ where
                                 r#type: "button",
                                 class: props.close_class,
                                 onclick: move |_event| {
+                                    visible.set(false);
                                     if let Some(handler) = props.on_close.as_ref() {
                                         handler.call(false);
                                     }
@@ -40,15 +53,19 @@ where
                     }
                     div {
                         class: "message-body",
-                        "{props.success}"
+                        { props.success }
                     }
                 }
             }
         }
         Some(Err(err)) => {
-            if let Some(handler) = props.on_error.as_ref() {
-                handler.call(err);
-            }
+            spawn(async move {
+                tokio::time::sleep(duration).await;
+                visible.set(false);
+                if let Some(handler) = props.on_error.as_ref() {
+                    handler.call(err);
+                }
+            });
             rsx! {
                 div {
                     class: "{props.class} is-danger",
@@ -64,6 +81,7 @@ where
                                 r#type: "button",
                                 class: props.close_class,
                                 onclick: move |_event| {
+                                    visible.set(false);
                                     if let Some(handler) = props.on_close.as_ref() {
                                         handler.call(false);
                                     }
@@ -73,7 +91,7 @@ where
                     }
                     div {
                         class: "message-body",
-                        span { "{props.error}" }
+                        span { { props.error } }
                     }
                 }
             }
@@ -100,6 +118,7 @@ where
                                     r#type: "button",
                                     class: props.close_class,
                                     onclick: move |_event| {
+                                        visible.set(false);
                                         if let Some(handler) = props.on_close.as_ref() {
                                             handler.call(false);
                                         }
@@ -127,13 +146,13 @@ pub struct OperationResultProps<T: Clone + PartialEq + 'static, E: Clone + Parti
     /// A class to apply to the `close` button element.
     #[props(into, default = "delete")]
     pub close_class: Class,
-    /// A future value which represents the result of user operations.
-    pub future: Option<Result<T, E>>,
-    /// An event handler to be called when the `close` button is clicked.
-    pub on_close: Option<EventHandler<bool>>,
     /// A flag to determine whether the message is visible or not.
-    #[props(default)]
-    pub visible: bool,
+    pub visible: Signal<bool>,
+    /// A future value which represents the result of user operations.
+    pub future: Resource<Result<T, E>>,
+    /// A duration in milliseconds.
+    #[props(default = 1500)]
+    pub duration: u64,
     /// The title in the message header.
     #[props(into, default)]
     pub title: SharedString,
@@ -152,4 +171,6 @@ pub struct OperationResultProps<T: Clone + PartialEq + 'static, E: Clone + Parti
     pub on_success: Option<EventHandler<T>>,
     /// An event handler to be called when the future value is rejected.
     pub on_error: Option<EventHandler<E>>,
+    /// An event handler to be called when the `close` button is clicked.
+    pub on_close: Option<EventHandler<bool>>,
 }

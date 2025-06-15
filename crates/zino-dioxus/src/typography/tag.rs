@@ -6,13 +6,13 @@ use zino_core::SharedString;
 pub fn Tag(props: TagProps) -> Element {
     let title = props.title;
     rsx! {
-        button {
+        span {
             class: "{props.class}",
             class: if !props.color.is_empty() { "is-{props.color}" },
             class: if !props.theme.is_empty() { "is-{props.theme}" },
             class: if !props.size.is_empty() { "is-{props.size}" },
-            class: if props.hoverable { "is-hoverable" },
             class: if props.rounded { "is-rounded" },
+            class: if props.hoverable || props.on_click.is_some() { "is-hoverable" },
             title: (!title.is_empty()).then(|| title.into_owned()),
             onclick: move |event| {
                 if let Some(handler) = props.on_click.as_ref() {
@@ -40,12 +40,12 @@ pub struct TagProps {
     /// The size of the tag: `normal` | `medium` | `large`.
     #[props(into, default)]
     pub size: SharedString,
-    /// A flag to determine whether the tag is hoverable or not.
-    #[props(default)]
-    pub hoverable: bool,
     /// A flag to determine whether the tag is rounded or not.
     #[props(default)]
     pub rounded: bool,
+    /// A flag to determine whether the tag is hoverable or not.
+    #[props(default)]
+    pub hoverable: bool,
     /// A title for the tag.
     #[props(into, default)]
     pub title: SharedString,

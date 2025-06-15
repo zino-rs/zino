@@ -4,6 +4,7 @@ use zino_core::SharedString;
 
 /// A classic modal with a header and a body.
 pub fn ModalCard(props: ModalCardProps) -> Element {
+    let mut visible = props.visible;
     let size = props.size.as_ref();
     let width = match size {
         "small" => "25rem",
@@ -20,7 +21,7 @@ pub fn ModalCard(props: ModalCardProps) -> Element {
     rsx! {
         div {
             class: "{props.class}",
-            class: if props.visible { "{props.active_class}" },
+            class: if visible() { "{props.active_class}" },
             style: "--bulma-modal-content-width:{width}",
             div { class: "modal-background" }
             div {
@@ -35,6 +36,7 @@ pub fn ModalCard(props: ModalCardProps) -> Element {
                         r#type: "button",
                         class: props.close_class,
                         onclick: move |event| {
+                            visible.set(false);
                             if let Some(handler) = props.on_close.as_ref() {
                                 handler.call(event);
                             }
@@ -65,17 +67,16 @@ pub struct ModalCardProps {
     /// A class to apply to the `close` button element.
     #[props(into, default = "delete")]
     pub close_class: Class,
-    /// An event handler to be called when the `close` button is clicked.
-    pub on_close: Option<EventHandler<MouseEvent>>,
     /// A flag to determine whether the modal is visible or not.
-    #[props(default)]
-    pub visible: bool,
+    pub visible: Signal<bool>,
     /// The size of the modal: `small` | `normal` | `medium` | `large`.
     #[props(into, default)]
     pub size: SharedString,
     /// The title in the modal header.
     #[props(into)]
     pub title: SharedString,
+    /// An event handler to be called when the `close` button is clicked.
+    pub on_close: Option<EventHandler<MouseEvent>>,
     /// The modal body to render within the component.
     children: Element,
 }
