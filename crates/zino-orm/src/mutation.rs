@@ -56,6 +56,18 @@ impl<E: Entity> MutationBuilder<E> {
         }
     }
 
+    /// Update the values for partial columns.
+    #[inline]
+    pub fn update_partial(mut self, cols: &[E::Column], mut data: Map) -> Self {
+        for col in cols {
+            let field = col.as_ref();
+            if let Some(value) = data.remove(field) {
+                self.updates.upsert(field, value);
+            }
+        }
+        self
+    }
+
     /// Sets the value of a column.
     #[inline]
     pub fn set(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {

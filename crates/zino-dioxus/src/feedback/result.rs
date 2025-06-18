@@ -10,23 +10,19 @@ where
     E: Clone + PartialEq + 'static,
 {
     let mut visible = props.visible;
-    let mut future = props.future;
-    if visible() {
-        future.resume();
-    } else {
-        future.pause();
+    if !visible() {
         return rsx! {};
     }
 
     let duration = Duration::from_millis(props.duration);
-    match future() {
+    match (props.future)() {
         Some(Ok(data)) => {
             spawn(async move {
                 tokio::time::sleep(duration).await;
-                visible.set(false);
                 if let Some(handler) = props.on_success.as_ref() {
                     handler.call(data);
                 }
+                visible.set(false);
             });
             rsx! {
                 div {
@@ -43,10 +39,10 @@ where
                                 r#type: "button",
                                 class: props.close_class,
                                 onclick: move |_event| {
-                                    visible.set(false);
                                     if let Some(handler) = props.on_close.as_ref() {
                                         handler.call(false);
                                     }
+                                    visible.set(false);
                                 }
                             }
                         }
@@ -61,10 +57,10 @@ where
         Some(Err(err)) => {
             spawn(async move {
                 tokio::time::sleep(duration).await;
-                visible.set(false);
                 if let Some(handler) = props.on_error.as_ref() {
                     handler.call(err);
                 }
+                visible.set(false);
             });
             rsx! {
                 div {
@@ -81,10 +77,10 @@ where
                                 r#type: "button",
                                 class: props.close_class,
                                 onclick: move |_event| {
-                                    visible.set(false);
                                     if let Some(handler) = props.on_close.as_ref() {
                                         handler.call(false);
                                     }
+                                    visible.set(false);
                                 }
                             }
                         }
@@ -118,10 +114,10 @@ where
                                     r#type: "button",
                                     class: props.close_class,
                                     onclick: move |_event| {
-                                        visible.set(false);
                                         if let Some(handler) = props.on_close.as_ref() {
                                             handler.call(false);
                                         }
+                                        visible.set(false);
                                     }
                                 }
                             }
