@@ -25,7 +25,7 @@ version = "1.6.0"
 features = ["http1", "server"]
 
 [dependencies.hyper-util]
-version = "0.1.13"
+version = "0.1.14"
 features = ["http1", "tokio"]
 
 [dependencies.phf]

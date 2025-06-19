@@ -8,10 +8,14 @@ use syn::DeriveInput;
 pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     // Model name
     let name = input.ident;
+    let model_name = name.to_string();
+    let model_column_type = format_ident!("{}Column", name);
 
     let mut primary_key_name = String::from("id");
     let mut model_column_variants = Vec::new();
     let mut model_column_mappings = Vec::new();
+    let mut editable_columns = Vec::new();
+    let mut generated_columns = Vec::new();
     for field in parser::parse_struct_fields(input.data) {
         if let Some(ident) = field.ident {
             let mut name = ident.to_string().trim_start_matches("r#").to_owned();
@@ -29,6 +33,16 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                                 name = value;
                             }
                         }
+                        "editable" => {
+                            editable_columns.push(quote! {
+                                #model_column_type::#variant
+                            });
+                        }
+                        "generated" => {
+                            generated_columns.push(quote! {
+                                #model_column_type::#variant
+                            });
+                        }
                         _ => (),
                     }
                 }
@@ -42,8 +56,12 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
         }
     }
 
-    let model_column_type = format_ident!("{}Column", name);
+    let model_name_upper_snake = model_name.to_case(Case::UpperSnake);
     let primary_key_variant = format_ident!("{}", primary_key_name.to_case(Case::Pascal));
+    let entity_editable_columns = format_ident!("{}_EDITABLE_COLUMNS", model_name_upper_snake);
+    let entity_generated_columns = format_ident!("{}_GENERATED_COLUMNS", model_name_upper_snake);
+    let num_editable_columns = editable_columns.len();
+    let num_generated_columns = generated_columns.len();
     quote! {
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         pub enum #model_column_type {
@@ -76,7 +94,20 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
 
         impl zino_orm::Entity for #name {
             type Column = #model_column_type;
-            const PRIMARY_KEY: Self::Column = <#model_column_type>::#primary_key_variant;
+            const PRIMARY_KEY: Self::Column = #model_column_type::#primary_key_variant;
+
+            #[inline]
+            fn editable_columns() -> &'static [Self::Column] {
+                #entity_editable_columns.as_slice()
+            }
+
+            #[inline]
+            fn generated_columns() -> &'static [Self::Column] {
+                #entity_generated_columns.as_slice()
+            }
         }
+
+        static #entity_editable_columns: [#model_column_type; #num_editable_columns] = [#(#editable_columns),*];
+        static #entity_generated_columns: [#model_column_type; #num_generated_columns] = [#(#generated_columns),*];
     }
 }

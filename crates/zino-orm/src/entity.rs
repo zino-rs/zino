@@ -16,6 +16,12 @@ pub trait Entity: Model {
     /// The primary key column.
     const PRIMARY_KEY: Self::Column;
 
+    /// Returns a reference to the editable columns.
+    fn editable_columns() -> &'static [Self::Column];
+
+    /// Returns a reference to the generated columns.
+    fn generated_columns() -> &'static [Self::Column];
+
     /// Formats the column name.
     #[inline]
     fn format_column(col: &Self::Column) -> String {

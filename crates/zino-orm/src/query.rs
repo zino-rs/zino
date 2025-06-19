@@ -201,19 +201,27 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a field with an alias for the column.
-    pub fn alias<C: ModelColumn<E>>(mut self, col: C, alias: &str) -> Self {
+    pub fn alias<C, F>(mut self, col: C, alias: F) -> Self
+    where
+        C: ModelColumn<E>,
+        F: AsRef<str>,
+    {
         let col_name = col.into_column_expr();
         let field = Query::format_field(&col_name);
-        let field_alias = [alias, ":", &field].concat();
+        let field_alias = [alias.as_ref(), ":", &field].concat();
         self.fields.push(field_alias);
         self
     }
 
     /// Adds a field with an optional alias for the aggregate function.
-    pub fn aggregate(mut self, aggregation: Aggregation<E>, alias: Option<&str>) -> Self {
+    pub fn aggregate<F: AsRef<str>>(
+        mut self,
+        aggregation: Aggregation<E>,
+        alias: Option<F>,
+    ) -> Self {
         let expr = aggregation.expr();
         let field_alias = if let Some(alias) = alias {
-            [alias, ":", &expr].concat()
+            [alias.as_ref(), ":", &expr].concat()
         } else {
             let mut field_alias = aggregation.default_alias();
             field_alias.push(':');
@@ -225,10 +233,10 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a field with an optional alias for the window function.
-    pub fn window(mut self, window: Window<E>, alias: Option<&str>) -> Self {
+    pub fn window<F: AsRef<str>>(mut self, window: Window<E>, alias: Option<F>) -> Self {
         let expr = window.expr();
         let field_alias = if let Some(alias) = alias {
-            [alias, ":", &expr].concat()
+            [alias.as_ref(), ":", &expr].concat()
         } else {
             let mut field_alias = window.default_alias();
             field_alias.push(':');
@@ -240,10 +248,14 @@ impl<E: Entity> QueryBuilder<E> {
     }
 
     /// Adds a `GROUP BY` column.
-    pub fn group_by<C: ModelColumn<E>>(mut self, col: C, alias: Option<&str>) -> Self {
+    pub fn group_by<C, F>(mut self, col: C, alias: Option<F>) -> Self
+    where
+        C: ModelColumn<E>,
+        F: AsRef<str>,
+    {
         let expr = col.into_column_expr();
         let field = if let Some(alias) = alias {
-            [alias, ":", &expr].concat()
+            [alias.as_ref(), ":", &expr].concat()
         } else {
             expr.clone()
         };

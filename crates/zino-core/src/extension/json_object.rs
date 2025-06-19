@@ -242,14 +242,20 @@ pub trait JsonObjectExt {
     /// otherwise `None` is returned.
     fn upsert(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) -> Option<JsonValue>;
 
-    /// Copies values from the populated data corresponding to the key into `self`.
-    fn clone_from_populated(&mut self, key: &str, fields: &[&str]);
+    /// Clones values from the populated data corresponding to the key into `self`.
+    fn clone_from_populated<K: AsRef<str>>(&mut self, key: &str, fields: &[K]);
 
     /// Extracts values from the populated data corresponding to the key and moves them to `self`.
-    fn extract_from_populated(&mut self, key: &str, fields: &[&str]);
+    fn extract_from_populated<K: AsRef<str>>(&mut self, key: &str, fields: &[K]);
+
+    /// Clones the entries corresponding to the keys.
+    fn clone_entries<K: AsRef<str>>(&mut self, keys: &[K]) -> Self;
+
+    /// Extracts the entries corresponding to the keys.
+    fn extract_entries<K: AsRef<str>>(&mut self, keys: &[K]) -> Self;
 
     /// Removes all the entries for the keys.
-    fn remove_all(&mut self, keys: &[&str]);
+    fn remove_entries<K: AsRef<str>>(&mut self, keys: &[K]);
 
     /// Renames all the keys to the specific case.
     fn rename_keys(&mut self, case: Case);
@@ -754,34 +760,64 @@ impl JsonObjectExt for Map {
         self.insert(key.into(), value.into())
     }
 
-    fn clone_from_populated(&mut self, key: &str, fields: &[&str]) {
+    fn clone_from_populated<K: AsRef<str>>(&mut self, key: &str, fields: &[K]) {
         let mut object = Map::new();
         if let Some(map) = self.get_populated(key) {
-            for &field in fields {
-                object.upsert(field, map.get(field).cloned());
+            for field in fields {
+                let field = field.as_ref();
+                if let Some(value) = map.get(field) {
+                    object.insert(field.to_owned(), value.to_owned());
+                }
             }
         }
         self.append(&mut object);
     }
 
-    fn extract_from_populated(&mut self, key: &str, fields: &[&str]) {
+    fn extract_from_populated<K: AsRef<str>>(&mut self, key: &str, fields: &[K]) {
         let mut object = Map::new();
         let populated_field = [key, "_populated"].concat();
         if let Some(&mut ref mut map) = self
             .get_mut(&populated_field)
             .and_then(|v| v.as_object_mut())
         {
-            for &field in fields {
-                object.upsert(field, map.remove(field));
+            for field in fields {
+                let field = field.as_ref();
+                if let Some(value) = map.remove(field) {
+                    object.insert(field.to_owned(), value);
+                }
             }
         }
         self.append(&mut object);
     }
 
     #[inline]
-    fn remove_all(&mut self, keys: &[&str]) {
-        for &key in keys {
-            self.remove(key);
+    fn clone_entries<K: AsRef<str>>(&mut self, keys: &[K]) -> Self {
+        let mut map = Map::new();
+        for key in keys {
+            let field = key.as_ref();
+            if let Some(value) = self.get(field) {
+                map.insert(field.to_owned(), value.to_owned());
+            }
+        }
+        map
+    }
+
+    #[inline]
+    fn extract_entries<K: AsRef<str>>(&mut self, keys: &[K]) -> Self {
+        let mut map = Map::new();
+        for key in keys {
+            let field = key.as_ref();
+            if let Some(value) = self.remove(field) {
+                map.insert(field.to_owned(), value);
+            }
+        }
+        map
+    }
+
+    #[inline]
+    fn remove_entries<K: AsRef<str>>(&mut self, keys: &[K]) {
+        for key in keys {
+            self.remove(key.as_ref());
         }
     }
 

@@ -69,7 +69,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             async fn after_populate(model: &mut zino_core::Map) -> Result<(), zino_core::error::Error> {
                 use zino_core::extension::JsonObjectExt;
 
-                model.remove_all(&[#(#protected_fields),*]);
+                model.remove_entries(&[#(#protected_fields),*]);
                 Ok(())
             }
         });

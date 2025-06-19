@@ -57,6 +57,30 @@ impl<E: Entity> MutationBuilder<E> {
     }
 
     /// Update the values for partial columns.
+    ///
+    /// # Examples
+    /// ```rust,ignore
+    /// use crate::model::{Project, ProjectColumn, Task, TaskColumn};
+    /// use zino_orm::{Aggregation, MutationBuilder, QueryBuilder, Schema};
+    ///
+    /// let project_id = task.project_id();
+    /// let query = QueryBuilder::new()
+    ///     .aggregate(Aggregation::Count(TaskColumn::Id, false), Some(ProjectColumn::NumTasks))
+    ///     .aggregate(Aggregation::Sum(TaskColumn::Manhours), Some(ProjectColumn::TotalManhours))
+    ///     .and_eq(TaskColumn::ProjectId, project_id)
+    ///     .build();
+    /// if let Some(data) = Task::find_one(&query).await? {
+    ///    let query = QueryBuilder::<Project>::new()
+    ///        .primary_key(project_id)
+    ///        .build();
+    ///    let mut mutation = MutationBuilder::<Project>::new()
+    ///        .update_partial(Project::generated_columns(), data)
+    ///        .set_now(ProjectColumn::UpdatedAt)
+    ///        .inc_one(ProjectColumn::Version)
+    ///        .build();
+    ///     Project::update_one(&query, &mut mutation).await?;
+    /// }
+    /// ```
     #[inline]
     pub fn update_partial(mut self, cols: &[E::Column], mut data: Map) -> Self {
         for col in cols {

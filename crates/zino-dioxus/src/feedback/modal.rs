@@ -5,10 +5,6 @@ use zino_core::SharedString;
 /// A classic modal with a header and a body.
 pub fn ModalCard(props: ModalCardProps) -> Element {
     let mut visible = props.visible;
-    if !visible() {
-        return rsx! {};
-    }
-
     let size = props.size.as_ref();
     let width = match size {
         "small" => "25rem",
@@ -24,7 +20,8 @@ pub fn ModalCard(props: ModalCardProps) -> Element {
     };
     rsx! {
         div {
-            class: "{props.class} {props.active_class}",
+            class: "{props.class}",
+            class: if visible() { "{props.active_class}" },
             style: "--bulma-modal-content-width:{width}",
             div { class: "modal-background" }
             div {
