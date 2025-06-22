@@ -15,7 +15,7 @@ use zino_core::model::Query;
 ///     .aggregate(Aggregation::Sum(TaskColumn::Manhours), Some("total_manhours"))
 ///     .aggregate(Aggregation::Avg(TaskColumn::Manhours), Some("average_manhours"))
 ///     .and_eq(TaskColumn::Status, "Completed")
-///     .group_by(TaskColumn::ProjectId, None)
+///     .group_by(TaskColumn::ProjectId, Some("project_id"))
 ///     .having_ge(Aggregation::Avg(TaskColumn::Manhours), 50)
 ///     .order_desc("total_manhours")
 ///     .limit(10)

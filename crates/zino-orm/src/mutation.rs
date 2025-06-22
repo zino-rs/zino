@@ -83,6 +83,9 @@ impl<E: Entity> MutationBuilder<E> {
     /// ```
     #[inline]
     pub fn update_partial(mut self, cols: &[E::Column], mut data: Map) -> Self {
+        if cfg!(debug_assertions) && cols.is_empty() {
+            tracing::warn!("no columns to be updated");
+        }
         for col in cols {
             let field = col.as_ref();
             if let Some(value) = data.remove(field) {
