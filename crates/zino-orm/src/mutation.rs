@@ -69,12 +69,12 @@ impl<E: Entity> MutationBuilder<E> {
     ///     .aggregate(Aggregation::Sum(TaskColumn::Manhours), Some(ProjectColumn::TotalManhours))
     ///     .and_eq(TaskColumn::ProjectId, project_id)
     ///     .build();
-    /// if let Some(data) = Task::find_one(&query).await? {
+    /// if let Some(stats_data) = Task::find_one(&query).await? {
     ///    let query = QueryBuilder::<Project>::new()
     ///        .primary_key(project_id)
     ///        .build();
     ///    let mut mutation = MutationBuilder::<Project>::new()
-    ///        .update_partial(Project::generated_columns(), data)
+    ///        .update_partial(Project::generated_columns(), stats_data)
     ///        .set_now(ProjectColumn::UpdatedAt)
     ///        .inc_one(ProjectColumn::Version)
     ///        .build();

@@ -2,7 +2,7 @@ use self::Aggregation::*;
 use super::{Entity, query::QueryExt};
 use zino_core::model::Query;
 
-/// SQL aggregate functions.
+/// SQL aggregate expressions.
 ///
 /// # Examples
 /// ```rust,ignore

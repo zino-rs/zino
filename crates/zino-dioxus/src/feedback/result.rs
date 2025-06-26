@@ -19,10 +19,10 @@ where
         Some(Ok(data)) => {
             spawn(async move {
                 tokio::time::sleep(duration).await;
+                visible.set(false);
                 if let Some(handler) = props.on_success.as_ref() {
                     handler.call(data);
                 }
-                visible.set(false);
             });
             rsx! {
                 div {
@@ -39,10 +39,10 @@ where
                                 r#type: "button",
                                 class: props.close_class,
                                 onclick: move |_event| {
+                                    visible.set(false);
                                     if let Some(handler) = props.on_close.as_ref() {
                                         handler.call(false);
                                     }
-                                    visible.set(false);
                                 }
                             }
                         }
@@ -57,10 +57,10 @@ where
         Some(Err(err)) => {
             spawn(async move {
                 tokio::time::sleep(duration).await;
+                visible.set(false);
                 if let Some(handler) = props.on_error.as_ref() {
                     handler.call(err);
                 }
-                visible.set(false);
             });
             rsx! {
                 div {
@@ -77,10 +77,10 @@ where
                                 r#type: "button",
                                 class: props.close_class,
                                 onclick: move |_event| {
+                                    visible.set(false);
                                     if let Some(handler) = props.on_close.as_ref() {
                                         handler.call(false);
                                     }
-                                    visible.set(false);
                                 }
                             }
                         }
@@ -114,10 +114,10 @@ where
                                     r#type: "button",
                                     class: props.close_class,
                                     onclick: move |_event| {
+                                        visible.set(false);
                                         if let Some(handler) = props.on_close.as_ref() {
                                             handler.call(false);
                                         }
-                                        visible.set(false);
                                     }
                                 }
                             }

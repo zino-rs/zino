@@ -1,4 +1,4 @@
-use super::{IntoSqlValue, query::QueryExt};
+use super::{Aggregation, IntoSqlValue, query::QueryExt};
 use std::{
     fmt::{self, Display},
     marker::PhantomData,
@@ -61,10 +61,23 @@ impl<E: Entity> DerivedColumn<E> {
     }
 
     /// Constructs an instance using `COALESCE` to provide a default value for the column.
+    #[inline]
     pub fn coalesce<V: IntoSqlValue>(col: E::Column, value: V) -> Self {
         let col_name = E::format_column(&col);
         let field = Query::format_field(&col_name);
-        let expr = match value.into_sql_value() {
+        Self::coalesce_field(&field, value.into_sql_value())
+    }
+
+    /// Constructs an instance using `COALESCE` to provide a default value for the aggregation.
+    #[inline]
+    pub fn coalesce_aggregation<V: IntoSqlValue>(aggregation: Aggregation<E>, value: V) -> Self {
+        let field = aggregation.expr();
+        Self::coalesce_field(&field, value.into_sql_value())
+    }
+
+    /// Constructs an instance using `COALESCE` to provide a default value for the field.
+    fn coalesce_field(field: &str, value: JsonValue) -> Self {
+        let expr = match value {
             JsonValue::Null => format!("coalesce({field}, NULL)"),
             JsonValue::Bool(b) => {
                 if b {

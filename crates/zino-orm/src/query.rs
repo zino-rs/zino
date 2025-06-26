@@ -213,7 +213,7 @@ impl<E: Entity> QueryBuilder<E> {
         self
     }
 
-    /// Adds a field with an optional alias for the aggregate function.
+    /// Adds a field with an optional alias for the aggregate expression.
     pub fn aggregate<F: AsRef<str>>(
         mut self,
         aggregation: Aggregation<E>,
