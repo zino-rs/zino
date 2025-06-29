@@ -67,7 +67,7 @@ impl Class {
     /// Returns `true` if a given class has been added.
     #[inline]
     pub fn contains(&self, class: &str) -> bool {
-        self.classes.iter().any(|&s| s == class)
+        self.classes.contains(&class)
     }
 
     /// Returns `true` if the class list is empty.

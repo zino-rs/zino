@@ -3,7 +3,7 @@ pub(crate) fn parse_str_array(s: &str, separator: char) -> Vec<&str> {
     let mut str_array = Vec::new();
     let mut chars_stack = Vec::new();
     let mut last_index = 0;
-    for (i, c) in s.chars().enumerate() {
+    for (i, c) in s.char_indices() {
         match c {
             '(' | '[' | '{' => {
                 chars_stack.push(c);

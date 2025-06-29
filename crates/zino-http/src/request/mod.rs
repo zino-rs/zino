@@ -412,7 +412,7 @@ pub trait RequestContext {
     }
 
     /// Parses the request body as a multipart, which is commonly used with file uploads.
-    async fn parse_multipart(&mut self) -> Result<Multipart, Rejection> {
+    async fn parse_multipart(&mut self) -> Result<Multipart<'_>, Rejection> {
         let Some(content_type) = self.get_header("content-type") else {
             return Err(Rejection::from_validation_entry(
                 "content_type",

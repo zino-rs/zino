@@ -9,7 +9,7 @@ use crate::{
 use fluent::{FluentArgs, FluentError, FluentResource, bundle::FluentBundle};
 use intl_memoizer::concurrent::IntlLangMemoizer;
 use std::{fmt, fs, io::ErrorKind};
-use unic_langid::LanguageIdentifier;
+use unic_langid::{LanguageIdentifier, LanguageIdentifierError};
 
 /// An error which can be returned when fomrating localization messages.
 #[derive(Debug)]
@@ -54,12 +54,19 @@ impl Intl {
         &DEFAULT_LOCALE
     }
 
+    /// Parses the locale as a `LanguageIdentifier` with no script and variants.
+    #[inline]
+    pub fn parse_locale(locale: &str) -> Result<LanguageIdentifier, LanguageIdentifierError> {
+        let mut langid = locale.parse::<LanguageIdentifier>()?;
+        langid.script = None;
+        langid.clear_variants();
+        Ok(langid)
+    }
+
     /// Returns `true` if the locale is supported.
     #[inline]
-    pub fn supports(locale: &str) -> bool {
-        SUPPORTED_LOCALES
-            .iter()
-            .any(|&lang| locale.eq_ignore_ascii_case(lang))
+    pub fn supports(locale: &LanguageIdentifier) -> bool {
+        SUPPORTED_LOCALES.iter().any(|&lang| locale == lang)
     }
 
     /// Selects a language from the supported locales.
@@ -67,25 +74,26 @@ impl Intl {
         let mut languages = accepted_languages
             .split(',')
             .filter_map(|s| {
-                let (language, quality) = if let Some((language, quality)) = s.split_once(';') {
+                let (locale, quality) = if let Some((locale, quality)) = s.split_once(';') {
                     let quality = quality.trim().strip_prefix("q=")?.parse::<f32>().ok()?;
-                    (language.trim(), quality)
+                    (locale.trim(), quality)
                 } else {
                     (s.trim(), 1.0)
                 };
-                SUPPORTED_LOCALES.iter().find_map(|&locale| {
-                    (locale.eq_ignore_ascii_case(language) || locale.starts_with(language))
-                        .then_some((locale, quality))
+                SUPPORTED_LOCALES.iter().find_map(|&lang| {
+                    Self::parse_locale(locale)
+                        .ok()
+                        .filter(|langid| langid == lang)
+                        .map(|langid| (langid, quality))
                 })
             })
             .collect::<Vec<_>>();
         languages.sort_by(|a, b| b.1.total_cmp(&a.1));
-        languages.first().and_then(|&(language, _)| {
-            language
-                .parse()
-                .inspect_err(|err| tracing::error!("invalid locale: {err}"))
-                .ok()
-        })
+        if languages.is_empty() {
+            None
+        } else {
+            Some(languages.swap_remove(0).0)
+        }
     }
 
     /// Translates the localization message with the default locale.
@@ -214,18 +222,18 @@ static DEFAULT_LOCALE: LazyLock<LanguageIdentifier> = LazyLock::new(|| {
     } else {
         "en-US"
     };
-    locale
-        .parse()
-        .expect("invalid value for the default locale")
+    let mut langid = locale
+        .parse::<LanguageIdentifier>()
+        .expect("invalid value for the default locale");
+    langid.script = None;
+    langid.clear_variants();
+    langid
 });
 
 /// Supported locales.
-static SUPPORTED_LOCALES: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
+static SUPPORTED_LOCALES: LazyLock<Vec<&'static LanguageIdentifier>> = LazyLock::new(|| {
     LOCALIZATION
         .iter()
-        .map(|(key, _)| {
-            let language: &'static str = key.to_string().leak();
-            language
-        })
+        .map(|(langid, _)| langid)
         .collect::<Vec<_>>()
 });

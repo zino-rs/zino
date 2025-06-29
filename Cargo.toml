@@ -131,7 +131,7 @@ version = "0.9.0"
 
 [workspace.dependencies.zino-core]
 path = "crates/zino-core"
-version = "0.37.0"
+version = "0.37.1"
 
 [workspace.dependencies.zino-channel]
 path = "crates/zino-channel"
