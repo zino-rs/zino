@@ -159,7 +159,7 @@ version = "0.5.3"
 optional = true
 
 [dependencies.metrics-exporter-prometheus]
-version = "0.17.0"
+version = "0.17.2"
 optional = true
 default-features = false
 features = ["http-listener"]
@@ -182,15 +182,15 @@ version = "0.5.8"
 optional = true
 
 [dependencies.rust-ini]
-version = "0.21.1"
+version = "0.21.2"
 optional = true
 
 [dependencies.sentry]
-version = "0.40.0"
+version = "0.41.0"
 optional = true
 
 [dependencies.sentry-tracing]
-version = "0.40.0"
+version = "0.41.0"
 optional = true
 
 [dependencies.sm4]

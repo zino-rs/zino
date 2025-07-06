@@ -463,14 +463,14 @@ static SHARED_APP_STATE: LazyLock<State<Map>> = LazyLock::new(|| {
         .map(|s| s.to_owned())
         .unwrap_or_else(|| {
             env::var("CARGO_PKG_NAME")
-                .expect("fail to get the environment variable `CARGO_PKG_NAME`")
+                .expect("fail to get the application name from config or environment variable")
         });
     let app_version = config
         .get_str("version")
         .map(|s| s.to_owned())
         .unwrap_or_else(|| {
             env::var("CARGO_PKG_VERSION")
-                .expect("fail to get the environment variable `CARGO_PKG_VERSION`")
+                .expect("fail to get the application version from config or environment variable")
         });
 
     let mut data = Map::new();

@@ -13,7 +13,7 @@ rust-version = { workspace = true }
 license = { workspace = true }
 
 [dependencies]
-async-openai = "0.28.3"
+async-openai = "0.29.0"
 futures = { workspace = true }
 toml = { workspace = true }
 tracing = { workspace = true }
