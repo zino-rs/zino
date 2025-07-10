@@ -82,14 +82,14 @@ impl GlobalCache {
 
     /// Marks the key as the most recently used one.
     #[inline]
-    pub fn promote(key: &str) {
+    pub fn promote(key: &str) -> bool {
         let mut cache = GLOBAL_CACHE.write();
         cache.promote(key)
     }
 
     /// Marks the key as the least recently used one.
     #[inline]
-    pub fn demote(key: &str) {
+    pub fn demote(key: &str) -> bool {
         let mut cache = GLOBAL_CACHE.write();
         cache.demote(key)
     }
