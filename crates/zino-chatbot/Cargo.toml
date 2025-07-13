@@ -1,7 +1,7 @@
 [package]
 name = "zino-chatbot"
 description = "Unified access to chatbot services for zino."
-version = "0.9.0"
+version = "0.9.1"
 categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
