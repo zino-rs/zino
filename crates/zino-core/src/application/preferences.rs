@@ -27,7 +27,9 @@ impl Preferences {
     /// Returns `true` if it contains a nonempty value for the key in a specific section.
     #[inline]
     pub fn contains(&self, section: &str, key: &str) -> bool {
-        self.content.get_from(Some(section), key).is_some_and(|s| !s.is_empty())
+        self.content
+            .get_from(Some(section), key)
+            .is_some_and(|s| !s.is_empty())
     }
 
     /// Extracts a value for the key in a specific section.

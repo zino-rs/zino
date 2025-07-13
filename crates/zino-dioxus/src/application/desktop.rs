@@ -46,7 +46,12 @@ where
         Self::config_webview();
         use_asset_handler("public", |req, res| {
             let path = req.uri().path().trim_start_matches('/');
-            let Ok(bytes) = fs::read(Self::parse_path(path)) else {
+            let local_path = if let Some((dir_name, file_path)) = path.split_once('/') {
+                Self::shared_dir(dir_name).join(file_path)
+            } else {
+                Self::parse_path(path)
+            };
+            let Ok(bytes) = fs::read(local_path) else {
                 return;
             };
             res.respond(Response::new(bytes));

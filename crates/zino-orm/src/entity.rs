@@ -107,7 +107,7 @@ impl<E: Entity> DerivedColumn<E> {
         let col_name = E::format_column(&col);
         let field = Query::format_field(&col_name);
         let expr = if cfg!(feature = "orm-sqlite") {
-            format!("strftime('%Y', {field})")
+            format!("strftime('%Y', {field}, 'localtime')")
         } else {
             format!("year({field})")
         };
@@ -128,7 +128,7 @@ impl<E: Entity> DerivedColumn<E> {
         } else if cfg!(feature = "orm-postgres") {
             format!("to_char({field}, 'YYYY-MM')")
         } else {
-            format!("strftime('%Y-%m', {field})")
+            format!("strftime('%Y-%m', {field}, 'localtime')")
         };
         Self::new(expr)
     }
@@ -138,7 +138,12 @@ impl<E: Entity> DerivedColumn<E> {
     pub fn date(col: E::Column) -> Self {
         let col_name = E::format_column(&col);
         let field = Query::format_field(&col_name);
-        Self::new(format!("date({field})"))
+        let expr = if cfg!(feature = "orm-sqlite") {
+            format!("strftime('%Y-%m-%d', {field}, 'localtime')")
+        } else {
+            format!("date({field})")
+        };
+        Self::new(expr)
     }
 
     /// Constructs an instance for formating a date-time as `%Y-%m-%d %H:%M:%S`.
@@ -155,7 +160,7 @@ impl<E: Entity> DerivedColumn<E> {
         } else if cfg!(feature = "orm-postgres") {
             format!("to_char({field}, 'YYYY-MM-DD HH24:MI:SS')")
         } else {
-            format!("strftime('%Y-%m-%d %H:%M:%S', {field})")
+            format!("strftime('%Y-%m-%d %H:%M:%S', {field}, 'localtime')")
         };
         Self::new(expr)
     }
