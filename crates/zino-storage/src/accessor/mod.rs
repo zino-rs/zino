@@ -331,9 +331,6 @@ impl GlobalAccessor {
                 if let Some(time_to_idle) = config.get_duration("time-to-idle") {
                     builder = builder.time_to_idle(time_to_idle);
                 }
-                if let Some(segments) = config.get_usize("segments") {
-                    builder = builder.segments(segments);
-                }
                 Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-mysql")]

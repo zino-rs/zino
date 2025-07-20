@@ -99,7 +99,7 @@ tracing = { workspace = true }
 zino-core = { workspace = true, features = ["http-client"] }
 
 [dependencies.opendal]
-version = "0.53.3"
+version = "0.54.0"
 optional = true
 default-features = false
 features = ["layers-tracing"]

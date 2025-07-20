@@ -46,6 +46,13 @@ where
         Self::config_webview();
         use_asset_handler("public", |req, res| {
             let path = req.uri().path().trim_start_matches('/');
+            let Ok(bytes) = fs::read(Self::parse_path(path)) else {
+                return;
+            };
+            res.respond(Response::new(bytes));
+        });
+        use_asset_handler("plugins", |req, res| {
+            let path = req.uri().path().trim_start_matches('/');
             let local_path = if let Some((dir_name, file_path)) = path.split_once('/') {
                 Self::shared_dir(dir_name).join(file_path)
             } else {
@@ -285,7 +292,7 @@ where
                 app_window = app_window.with_visible_on_all_workspaces(visible);
             }
             if let Some(theme) = config.get_str("theme") {
-                let (theme, background_color) = if theme == "Dark" {
+                let (theme, background_color) = if theme.eq_ignore_ascii_case("Dark") {
                     (Theme::Dark, (0, 0, 0, 255))
                 } else {
                     (Theme::Light, (255, 255, 255, 255))
