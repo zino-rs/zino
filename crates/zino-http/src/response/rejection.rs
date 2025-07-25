@@ -12,7 +12,7 @@ pub struct Rejection {
     /// Optional context.
     context: Option<Arc<Context>>,
     /// Optional trace context.
-    trace_context: Option<TraceContext>,
+    trace_context: Option<Arc<TraceContext>>,
 }
 
 /// Rejection kind.
@@ -158,7 +158,7 @@ impl Rejection {
     #[inline]
     pub fn context<T: RequestContext + ?Sized>(mut self, ctx: &T) -> Self {
         self.context = ctx.get_context();
-        self.trace_context = Some(ctx.new_trace_context());
+        self.trace_context = Some(Arc::new(ctx.new_trace_context()));
         self
     }
 
@@ -229,7 +229,7 @@ macro_rules! impl_from_rejection {
                     res.set_start_time(ctx.start_time());
                     res.set_request_id(ctx.request_id());
                 }
-                res.set_trace_context(rejection.trace_context);
+                res.set_trace_context(rejection.trace_context.and_then(Arc::into_inner));
                 res
             }
         }

@@ -22,6 +22,7 @@ pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -
             select {
                 name: props.name.into_owned(),
                 required: required,
+                disabled: props.disabled,
                 onmounted: move |_event| {
                     if let Some(handler) = props.on_select.as_ref() {
                         if let Some(entry) = selected_option.as_ref() {
@@ -77,6 +78,9 @@ pub struct DataSelectProps<T: Clone + PartialEq + 'static> {
     /// A flag to determine whether the control is required or not.
     #[props(default)]
     pub required: bool,
+    /// A flag to determine whether the control is disabled or not.
+    #[props(default)]
+    pub disabled: bool,
     /// The label text for the empty value.
     #[props(into, default)]
     pub empty: SharedString,

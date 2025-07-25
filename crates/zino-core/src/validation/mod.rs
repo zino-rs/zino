@@ -1,6 +1,5 @@
 //! Generic validator and common validation rules.
 use crate::{Map, SharedString, error::Error, extension::JsonObjectExt};
-use smallvec::SmallVec;
 use std::fmt;
 
 mod validator;
@@ -26,7 +25,7 @@ pub use validator::RegexValidator;
 /// A record of validation results.
 #[derive(Debug, Default)]
 pub struct Validation {
-    failed_entries: SmallVec<[(SharedString, Error); 4]>,
+    failed_entries: Vec<(SharedString, Error)>,
 }
 
 impl Validation {
@@ -34,17 +33,15 @@ impl Validation {
     #[inline]
     pub fn new() -> Self {
         Self {
-            failed_entries: SmallVec::new(),
+            failed_entries: Vec::new(),
         }
     }
 
     /// Creates a new instance with the entry.
     #[inline]
     pub fn from_entry(key: impl Into<SharedString>, err: impl Into<Error>) -> Self {
-        let mut entries = SmallVec::new();
-        entries.push((key.into(), err.into()));
         Self {
-            failed_entries: entries,
+            failed_entries: vec![(key.into(), err.into())],
         }
     }
 
