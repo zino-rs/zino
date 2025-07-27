@@ -1,7 +1,7 @@
 [package]
 name = "zino-model"
 description = "Domain models for zino."
-version = "0.35.1"
+version = "0.36.0"
 categories = ["web-programming", "database"]
 keywords = ["web", "model", "orm", "schema"]
 readme = "README.md"
@@ -42,7 +42,7 @@ zino-derive = { workspace = true }
 zino-orm = { workspace = true }
 
 [dependencies.strum]
-version = "0.27.1"
+version = "0.27.2"
 features = ["derive"]
 
 [lints.rust]
