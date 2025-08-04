@@ -90,8 +90,11 @@ where
     /// Configures the WebView.
     pub fn config_webview() {
         let app_state = Self::shared_state();
+        let desktop_context = dioxus::desktop::window();
+        if let Err(err) = desktop_context.webview.clear_all_browsing_data() {
+            tracing::error!("fail to clear all browsing data: {err}");
+        }
         if let Some(config) = app_state.get_config("webview") {
-            let desktop_context = dioxus::desktop::window();
             if let Some(zoom) = config.get_f64("zoom") {
                 if let Err(err) = desktop_context.webview.zoom(zoom) {
                     tracing::error!("fail to set the webview zoom level: {err}");
