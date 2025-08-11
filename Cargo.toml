@@ -112,7 +112,7 @@ features = [
 ]
 
 [workspace.dependencies.toml]
-version = "0.9.4"
+version = "0.9.5"
 default-features = false
 features = ["parse", "serde"]
 

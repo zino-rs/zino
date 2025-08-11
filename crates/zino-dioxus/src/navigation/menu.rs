@@ -1,12 +1,14 @@
 /// A pop-up menu for quick access to relevant commands.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ContextMenu {
-    /// A flag to indicate whether the context menu is visible or not.
-    visible: bool,
+    /// The menu ID.
+    menu_id: String,
     /// The x-coordinate of the context menu.
     position_x: f64,
     /// The y-coordinate of the context menu.
     position_y: f64,
+    /// A flag to indicate whether the context menu is visible or not.
+    visible: bool,
 }
 
 impl ContextMenu {
@@ -28,6 +30,12 @@ impl ContextMenu {
         self.visible = false;
     }
 
+    /// Sets the menu ID.
+    #[inline]
+    pub fn set_menu_id(&mut self, menu_id: String) {
+        self.menu_id = menu_id;
+    }
+
     /// Sets the position of the context menu.
     #[inline]
     pub fn set_position(&mut self, x: f64, y: f64) {
@@ -35,10 +43,10 @@ impl ContextMenu {
         self.position_y = y;
     }
 
-    /// Returns `true` if the context menu is visible.
+    /// Returns the menu ID.
     #[inline]
-    pub fn is_visible(&self) -> bool {
-        self.visible
+    pub fn menu_id(&self) -> &str {
+        &self.menu_id
     }
 
     /// Returns the x-coordinate of the context menu.
@@ -51,5 +59,11 @@ impl ContextMenu {
     #[inline]
     pub fn position_y(&self) -> f64 {
         self.position_y
+    }
+
+    /// Returns `true` if the context menu is visible.
+    #[inline]
+    pub fn is_visible(&self) -> bool {
+        self.visible
     }
 }
