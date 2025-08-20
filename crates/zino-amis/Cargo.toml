@@ -21,7 +21,7 @@ tracing = { workspace = true }
 zino-core = { workspace = true, features = ["tracing-subscriber"] }
 
 [dependencies.hyper]
-version = "1.6.0"
+version = "1.7.0"
 features = ["http1", "server"]
 
 [dependencies.hyper-util]

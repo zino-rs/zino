@@ -38,7 +38,7 @@ license = "MIT"
 ahash = "0.8.12"
 apache-avro = "0.19.0"
 bytes = "1.10.1"
-cfg-if = "1.0.1"
+cfg-if = "1.0.3"
 convert_case = "0.8.0"
 etag = "4.0.0"
 fluent = "0.17.0"
@@ -73,7 +73,7 @@ version = "3.1.0"
 features = ["json"]
 
 [workspace.dependencies.reqwest]
-version = "0.12.22"
+version = "0.12.23"
 default-features = false
 features = [
     "blocking",
@@ -87,7 +87,7 @@ version = "1.0.219"
 features = ["derive"]
 
 [workspace.dependencies.serde_json]
-version = "1.0.142"
+version = "1.0.143"
 features = ["raw_value"]
 
 [workspace.dependencies.sqlx]
@@ -117,7 +117,7 @@ default-features = false
 features = ["parse", "serde"]
 
 [workspace.dependencies.uuid]
-version = "1.17.0"
+version = "1.18.0"
 features = [
     "fast-rng",
     "serde",

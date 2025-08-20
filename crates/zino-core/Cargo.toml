@@ -135,7 +135,7 @@ url = { workspace = true }
 uuid = { workspace = true }
 
 [dependencies.apalis]
-version = "0.7.2"
+version = "0.7.3"
 optional = true
 
 [dependencies.argon2]
@@ -182,7 +182,7 @@ version = "0.5.8"
 optional = true
 
 [dependencies.rust-ini]
-version = "0.21.2"
+version = "0.21.1"
 optional = true
 
 [dependencies.sentry]
