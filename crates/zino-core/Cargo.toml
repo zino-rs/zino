@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.38.0"
+version = "0.38.1"
 categories = ["asynchronous", "network-programming", "web-programming::http-server"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
@@ -24,6 +24,7 @@ all-locales = [
     "locale-en",
     "locale-es",
     "locale-fr",
+    "locale-ja",
     "locale-ru",
     "locale-zh",
 ]
@@ -63,10 +64,11 @@ full = [
 http-client = ["dep:reqwest-middleware", "dep:reqwest-tracing", "reqwest"]
 i18n = ["dep:fluent", "dep:intl-memoizer", "dep:unic-langid"]
 locale = ["random_word"]
+locale-de = ["locale", "random_word/de"]
 locale-en = ["locale", "random_word/en"]
 locale-es = ["locale", "random_word/es"]
-locale-de = ["locale", "random_word/de"]
 locale-fr = ["locale", "random_word/fr"]
+locale-ja = ["locale", "random_word/ja"]
 locale-ru = ["locale", "random_word/ru"]
 locale-zh = ["locale", "random_word/zh"]
 metrics = ["dep:metrics", "dep:metrics-exporter-prometheus", "apalis?/prometheus"]
@@ -169,7 +171,7 @@ version = "0.3.7"
 optional = true
 
 [dependencies.random_word]
-version = "0.5.0"
+version = "0.5.1"
 optional = true
 
 [dependencies.reqwest-middleware]

@@ -7,6 +7,6 @@ rust-version = { workspace = true }
 publish = { workspace = true }
 
 [dependencies]
-phf = "0.12.1"
+phf = "0.13.1"
 zino-amis = { workspace = true }
 zino-core = { workspace = true }

@@ -1,7 +1,7 @@
 [package]
 name = "zino"
 description = "Next-generation framework for composable applications in Rust."
-version = "0.38.0"
+version = "0.38.1"
 categories = ["asynchronous", "network-programming", "web-programming::http-server"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
@@ -62,22 +62,22 @@ zino-storage = { workspace = true }
 
 [dependencies.zino-actix]
 path = "../zino-actix"
-version = "0.12.0"
+version = "0.12.1"
 optional = true
 
 [dependencies.zino-axum]
 path = "../zino-axum"
-version = "0.12.0"
+version = "0.12.1"
 optional = true
 
 [dependencies.zino-dioxus]
 path = "../zino-dioxus"
-version = "0.19.1"
+version = "0.19.2"
 optional = true
 
 [dependencies.zino-ntex]
 path = "../zino-ntex"
-version = "0.12.0"
+version = "0.12.1"
 optional = true
 
 [lints]

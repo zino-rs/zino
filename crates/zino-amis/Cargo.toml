@@ -1,7 +1,7 @@
 [package]
 name = "zino-amis"
 description = "UI generator for amis."
-version = "0.10.0"
+version = "0.10.1"
 categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
@@ -29,7 +29,7 @@ version = "0.1.16"
 features = ["http1", "tokio"]
 
 [dependencies.phf]
-version = "0.12.1"
+version = "0.13.1"
 features = ["macros"]
 
 [lints]

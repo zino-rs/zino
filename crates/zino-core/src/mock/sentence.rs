@@ -12,6 +12,23 @@ pub(crate) fn gen_random_sentence(locale: &str, min_length: usize, max_length: u
     let mut length = rng.random_range(min_length..=max_length);
     let mut sentence = String::with_capacity(min_length);
     match locale {
+        #[cfg(feature = "locale-de")]
+        "de" | "de-DE" => {
+            while length > 0 {
+                let word = random_word::get(Lang::De);
+                let word_length = word.len();
+                if let Some(remainder_length) = length.checked_sub(word_length) {
+                    sentence.push_str(word);
+                    sentence.push(' ');
+                    length = remainder_length.saturating_sub(1);
+                } else {
+                    if sentence.len() <= min_length {
+                        sentence.push_str(word);
+                    }
+                    break;
+                }
+            }
+        }
         #[cfg(feature = "locale-en")]
         "en" | "en-US" => {
             while length > 0 {
@@ -46,10 +63,10 @@ pub(crate) fn gen_random_sentence(locale: &str, min_length: usize, max_length: u
                 }
             }
         }
-        #[cfg(feature = "locale-de")]
-        "de" | "de-DE" => {
+        #[cfg(feature = "locale-fr")]
+        "fr" | "fr-FR" => {
             while length > 0 {
-                let word = random_word::get(Lang::De);
+                let word = random_word::get(Lang::Fr);
                 let word_length = word.len();
                 if let Some(remainder_length) = length.checked_sub(word_length) {
                     sentence.push_str(word);
@@ -63,10 +80,10 @@ pub(crate) fn gen_random_sentence(locale: &str, min_length: usize, max_length: u
                 }
             }
         }
-        #[cfg(feature = "locale-fr")]
-        "fr" | "fr-FR" => {
+        #[cfg(feature = "locale-ja")]
+        "ja" | "ja-JP" => {
             while length > 0 {
-                let word = random_word::get(Lang::Fr);
+                let word = random_word::get(Lang::Ja);
                 let word_length = word.len();
                 if let Some(remainder_length) = length.checked_sub(word_length) {
                     sentence.push_str(word);
