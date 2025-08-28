@@ -360,7 +360,7 @@ fn join_path(dir: &Path, path: &str) -> PathBuf {
     if path.starts_with('/') {
         path.into()
     } else if let Some(path) = path.strip_prefix("~/") {
-        if let Some(home_dir) = dirs::home_dir() {
+        if let Some(home_dir) = env::home_dir() {
             join_path_components(home_dir, path)
         } else {
             join_path_components(dir.to_path_buf(), path)

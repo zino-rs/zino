@@ -44,13 +44,13 @@ pub async fn view(req: Request) -> Result {
 
 pub async fn stats(req: Request) -> Result {
     let query = QueryBuilder::new()
-        .aggregate(Aggregation::Count(Id, false), Some("num_users"))
-        .aggregate(Aggregation::Sum(LoginCount), Some("total_login"))
-        .aggregate(Aggregation::Avg(LoginCount), Some("avg_login_count"))
+        .aggregate(Aggregation::Count(Id, false), "num_users")
+        .aggregate(Aggregation::Sum(LoginCount), "total_login")
+        .aggregate(Aggregation::Avg(LoginCount), "avg_login_count")
         .and_not_in(Status, ["Deleted", "Locked"])
         .and_ge(DerivedColumn::year(CreatedAt), Date::today().year())
-        .group_by(CurrentLoginIp, Some("login_ip"))
-        .group_by(DerivedColumn::date(CurrentLoginAt), Some("login_date"))
+        .group_by(CurrentLoginIp, "login_ip")
+        .group_by(DerivedColumn::date(CurrentLoginAt), "login_date")
         .having_ge(Aggregation::Avg(LoginCount), 10)
         .order_desc(DerivedColumn::alias("total_login"))
         .limit(10)

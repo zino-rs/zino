@@ -213,52 +213,30 @@ impl<E: Entity> QueryBuilder<E> {
         self
     }
 
-    /// Adds a field with an optional alias for the aggregate expression.
-    pub fn aggregate<F: AsRef<str>>(
-        mut self,
-        aggregation: Aggregation<E>,
-        alias: Option<F>,
-    ) -> Self {
+    /// Adds a field with an alias for the aggregate expression.
+    pub fn aggregate<F: AsRef<str>>(mut self, aggregation: Aggregation<E>, alias: F) -> Self {
         let expr = aggregation.expr();
-        let field_alias = if let Some(alias) = alias {
-            [alias.as_ref(), ":", &expr].concat()
-        } else {
-            let mut field_alias = aggregation.default_alias();
-            field_alias.push(':');
-            field_alias.push_str(&expr);
-            field_alias
-        };
-        self.fields.push(field_alias);
+        let field = [alias.as_ref(), ":", &expr].concat();
+        self.fields.push(field);
         self
     }
 
-    /// Adds a field with an optional alias for the window function.
-    pub fn window<F: AsRef<str>>(mut self, window: Window<E>, alias: Option<F>) -> Self {
+    /// Adds a field with an alias for the window function.
+    pub fn window<F: AsRef<str>>(mut self, window: Window<E>, alias: F) -> Self {
         let expr = window.expr();
-        let field_alias = if let Some(alias) = alias {
-            [alias.as_ref(), ":", &expr].concat()
-        } else {
-            let mut field_alias = window.default_alias();
-            field_alias.push(':');
-            field_alias.push_str(&expr);
-            field_alias
-        };
-        self.fields.push(field_alias);
+        let field = [alias.as_ref(), ":", &expr].concat();
+        self.fields.push(field);
         self
     }
 
     /// Adds a `GROUP BY` column.
-    pub fn group_by<C, F>(mut self, col: C, alias: Option<F>) -> Self
+    pub fn group_by<C, F>(mut self, col: C, alias: F) -> Self
     where
         C: ModelColumn<E>,
         F: AsRef<str>,
     {
         let expr = col.into_column_expr();
-        let field = if let Some(alias) = alias {
-            [alias.as_ref(), ":", &expr].concat()
-        } else {
-            expr.clone()
-        };
+        let field = [alias.as_ref(), ":", &expr].concat();
         if !self.fields.contains(&field) {
             self.fields.push(field);
         }

@@ -23,7 +23,7 @@ pub fn every_20s(ctx: &mut JobContext) {
     }
 }
 
-pub fn every_hour(ctx: &mut JobContext) -> BoxFuture {
+pub fn every_hour(ctx: &mut JobContext) -> BoxFuture<'_> {
     if let Some(job_data) = ctx.get_data_mut::<Map>() {
         let counter = job_data
             .get("counter")

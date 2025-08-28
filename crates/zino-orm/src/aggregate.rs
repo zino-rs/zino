@@ -11,11 +11,11 @@ use zino_core::model::Query;
 /// use zino_orm::{Aggregation, QueryBuilder, Schema};
 ///
 /// let query = QueryBuilder::new()
-///     .aggregate(Aggregation::Count(TaskColumn::Id, false), Some("num_tasks"))
-///     .aggregate(Aggregation::Sum(TaskColumn::Manhours), Some("total_manhours"))
-///     .aggregate(Aggregation::Avg(TaskColumn::Manhours), Some("average_manhours"))
+///     .aggregate(Aggregation::Count(TaskColumn::Id, false), "num_tasks")
+///     .aggregate(Aggregation::Sum(TaskColumn::Manhours), "total_manhours")
+///     .aggregate(Aggregation::Avg(TaskColumn::Manhours), "average_manhours")
 ///     .and_eq(TaskColumn::Status, "Completed")
-///     .group_by(TaskColumn::ProjectId, Some("project_id"))
+///     .group_by(TaskColumn::ProjectId, "project_id")
 ///     .having_ge(Aggregation::Avg(TaskColumn::Manhours), 50)
 ///     .order_desc("total_manhours")
 ///     .limit(10)
@@ -46,29 +46,6 @@ pub enum Aggregation<E: Entity> {
 }
 
 impl<E: Entity> Aggregation<E> {
-    /// Returns a default alias for the aggregation.
-    pub(super) fn default_alias(&self) -> String {
-        match self {
-            Count(col, distinct) => {
-                if *distinct {
-                    [col.as_ref(), "_distinct"].concat()
-                } else {
-                    [col.as_ref(), "_count"].concat()
-                }
-            }
-            Sum(col) => [col.as_ref(), "_sum"].concat(),
-            Avg(col) => [col.as_ref(), "_avg"].concat(),
-            Min(col) => [col.as_ref(), "_min"].concat(),
-            Max(col) => [col.as_ref(), "_max"].concat(),
-            Stddev(col) => [col.as_ref(), "_stddev"].concat(),
-            Variance(col) => [col.as_ref(), "_variance"].concat(),
-            JsonArrayagg(col) => [col.as_ref(), "_arrayagg"].concat(),
-            JsonObjectagg(key_col, val_col) => {
-                [key_col.as_ref(), "_", val_col.as_ref(), "_objectagg"].concat()
-            }
-        }
-    }
-
     /// Returns the SQL expression.
     pub(super) fn expr(&self) -> String {
         match self {

@@ -50,7 +50,7 @@ enum WindownFunction<E: Entity> {
 /// let rank_window = Window::rank(CurrentLoginIp).order_desc(LoginCount);
 /// let query = QueryBuilder::new()
 ///     .fields([Id, Name, CurrentLoginIp, LoginCount])
-///     .window(rank_window, Some("login_count_rank"))
+///     .window(rank_window, "login_count_rank")
 ///     .and_not_in(Status, ["Deleted", "Locked"])
 ///     .order_desc(UpdatedAt)
 ///     .limit(10)
@@ -247,28 +247,6 @@ impl<E: Entity> Window<E> {
     pub fn order_desc(mut self, col: E::Column) -> Self {
         self.order = Some((col, true));
         self
-    }
-
-    /// Returns a default alias for the window function.
-    pub(super) fn default_alias(&self) -> String {
-        match &self.function {
-            Count(col) => [col.as_ref(), "_sum"].concat(),
-            Sum(col) => [col.as_ref(), "_sum"].concat(),
-            Avg(col) => [col.as_ref(), "_avg"].concat(),
-            Min(col) => [col.as_ref(), "_min"].concat(),
-            Max(col) => [col.as_ref(), "_max"].concat(),
-            RowNumber => "row_number".to_owned(),
-            Rank => "rank".to_owned(),
-            DenseRank => "dense_rank".to_owned(),
-            PercentRank => "percent_rank".to_owned(),
-            CumeDist => "cume_dist".to_owned(),
-            Ntile(_) => "ntile".to_owned(),
-            Lag(col, _) => [col.as_ref(), "_prev"].concat(),
-            Lead(col, _) => [col.as_ref(), "_next"].concat(),
-            FirstValue(col) => [col.as_ref(), "_first"].concat(),
-            LastValue(col) => [col.as_ref(), "_last"].concat(),
-            NthValue(col, _) => [col.as_ref(), "_nth"].concat(),
-        }
     }
 
     /// Returns the SQL expression.
