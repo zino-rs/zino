@@ -48,10 +48,10 @@ use sqlx::Acquire;
 /// let account_ctx = Account::prepare_update_one(&account_query, &mut account_mutation).await?;
 ///
 /// Order::transaction(move |tx| Box::pin(async move {
-///      tx.execute(order_ctx.query()).await?;
-///      tx.execute(stock_ctx.query()).await?;
-///      tx.execute(account_ctx.query()).await?;
-///      Ok(())
+///     tx.execute(order_ctx.query()).await?;
+///     tx.execute(stock_ctx.query()).await?;
+///     tx.execute(account_ctx.query()).await?;
+///     Ok(())
 /// })).await?;
 /// ```
 pub trait Transaction<K, Tx>: Schema<PrimaryKey = K>

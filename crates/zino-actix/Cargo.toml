@@ -1,7 +1,7 @@
 [package]
 name = "zino-actix"
 description = "Integrations with actix-web for zino."
-version = "0.12.1"
+version = "0.13.0"
 categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 documentation = "https://docs.rs/zino-actix"
@@ -17,7 +17,7 @@ orm = ["zino-orm", "zino-orm/openapi"]
 
 [dependencies]
 actix-cors = "0.7.1"
-actix-files = "0.6.6"
+actix-files = "0.6.7"
 futures = { workspace = true }
 tracing = { workspace = true }
 zino-core = { workspace = true, features = ["runtime-tokio"] }

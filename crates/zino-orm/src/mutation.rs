@@ -65,19 +65,19 @@ impl<E: Entity> MutationBuilder<E> {
     ///
     /// let project_id = task.project_id();
     /// let query = QueryBuilder::new()
-    ///     .aggregate(Aggregation::Count(TaskColumn::Id, false), Some(ProjectColumn::NumTasks))
-    ///     .aggregate(Aggregation::Sum(TaskColumn::Manhours), Some(ProjectColumn::TotalManhours))
+    ///     .aggregate(Aggregation::Count(TaskColumn::Id, false), ProjectColumn::NumTasks)
+    ///     .aggregate(Aggregation::Sum(TaskColumn::Manhours), ProjectColumn::TotalManhours)
     ///     .and_eq(TaskColumn::ProjectId, project_id)
     ///     .build();
     /// if let Some(stats_data) = Task::find_one(&query).await? {
-    ///    let query = QueryBuilder::<Project>::new()
-    ///        .primary_key(project_id)
-    ///        .build();
-    ///    let mut mutation = MutationBuilder::<Project>::new()
-    ///        .update_partial(Project::generated_columns(), stats_data)
-    ///        .set_now(ProjectColumn::UpdatedAt)
-    ///        .inc_one(ProjectColumn::Version)
-    ///        .build();
+    ///     let query = QueryBuilder::<Project>::new()
+    ///         .primary_key(project_id)
+    ///         .build();
+    ///     let mut mutation = MutationBuilder::<Project>::new()
+    ///         .update_partial(Project::generated_columns(), stats_data)
+    ///         .set_now(ProjectColumn::UpdatedAt)
+    ///         .inc_one(ProjectColumn::Version)
+    ///         .build();
     ///     Project::update_one(&query, &mut mutation).await?;
     /// }
     /// ```
