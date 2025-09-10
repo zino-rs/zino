@@ -4,5 +4,6 @@
 
 
 pub mod video_generation;
+pub mod memory_base;
 
 
