@@ -349,21 +349,21 @@ pub(crate) enum ToolType {
 }
 
 impl ToolType {
-    pub fn name(&self) -> String {
+    pub(crate) fn name(&self) -> String {
         match self {
             ToolType::Simple(tool) => tool.name(),
             ToolType::Embedding(tool) => tool.name(),
         }
     }
 
-    pub async fn definition(&self, prompt: String) -> ToolDefinition {
+    pub(crate) async fn definition(&self, prompt: String) -> ToolDefinition {
         match self {
             ToolType::Simple(tool) => tool.definition(prompt).await,
             ToolType::Embedding(tool) => tool.definition(prompt).await,
         }
     }
 
-    pub async fn call(&self, args: String) -> Result<String, ToolError> {
+    pub(crate) async fn call(&self, args: String) -> Result<String, ToolError> {
         match self {
             ToolType::Simple(tool) => tool.call(args).await,
             ToolType::Embedding(tool) => tool.call(args).await,

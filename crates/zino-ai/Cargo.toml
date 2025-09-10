@@ -24,5 +24,10 @@ thiserror = "2.0.16"
 tokio.workspace = true
 tracing.workspace = true
 
+
+[features]
+mcp = []
+derive = []
+rayon = []
 [lints]
 workspace = true

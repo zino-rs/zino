@@ -196,7 +196,7 @@ impl<T: Clone> IntoIterator for OneOrMany<T> {
     }
 }
 
-struct IterMut<'a, T> {
+pub struct IterMut<'a, T> {
     first: Option<&'a mut T>,
     rest: std::slice::IterMut<'a, T>,
 }
