@@ -35,9 +35,9 @@ pub enum VideoGenerationError {
     Timeout(String),
 }
 
-/// 通用视频生成模型trait
+/// Generic trait for video generation models
 pub trait VideoGenerationModel: Clone + Send + Sync {
-    /// 执行视频生成请求
+    /// Execute video generation request
     fn video_generation(
         &self,
         request: VideoGenerationRequest,
@@ -49,7 +49,7 @@ pub trait VideoGenerationModel: Clone + Send + Sync {
     }
 }
 
-/// 动态分发trait
+/// Dynamic dispatch trait
 pub trait VideoGenerationModelDyn: Send + Sync {
     fn video_generation(
         &self,
@@ -126,7 +126,7 @@ impl<M: VideoGenerationModel> VideoGenerationRequestBuilder<M> {
         }
     }
 
-    /// 
+    ///
     pub async fn send(self) -> Result<VideoGenerationResponse, VideoGenerationError> {
         let model = self.model.clone();
         model.video_generation(self.build()).await
