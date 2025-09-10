@@ -1,8 +1,8 @@
-use crate::client::video_generation::VideoGenerationModelHandle;
+//use crate::client::video_generation::VideoGenerationModelHandle;
 use futures::future::BoxFuture;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::sync::Arc;
+//use std::sync::Arc;
 use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum VideoGenerationError {
@@ -56,9 +56,9 @@ pub trait VideoGenerationModelDyn: Send + Sync {
         request: VideoGenerationRequest,
     ) -> BoxFuture<'_, Result<VideoGenerationResponse, VideoGenerationError>>;
 
-    fn video_generation_request(
-        &self,
-    ) -> VideoGenerationRequestBuilder<VideoGenerationModelHandle<'_>>;
+    // fn video_generation_request(
+    //     &self,
+    // ) -> VideoGenerationRequestBuilder<VideoGenerationModelHandle<'_>>;
 }
 
 impl<T: VideoGenerationModel> VideoGenerationModelDyn for T {
@@ -75,13 +75,13 @@ impl<T: VideoGenerationModel> VideoGenerationModelDyn for T {
         })
     }
 
-    fn video_generation_request(
-        &self,
-    ) -> VideoGenerationRequestBuilder<VideoGenerationModelHandle<'_>> {
-        VideoGenerationRequestBuilder::new(VideoGenerationModelHandle {
-            inner: Arc::new(self.clone()),
-        })
-    }
+    // fn video_generation_request(
+    //     &self,
+    // ) -> VideoGenerationRequestBuilder<VideoGenerationModelHandle<'_>> {
+    //     VideoGenerationRequestBuilder::new(VideoGenerationModelHandle {
+    //         inner: Arc::new(self.clone()),
+    //     })
+    // }
 }
 
 /// 通用视频生成请求结构体 - 最小集合
@@ -113,20 +113,20 @@ impl<M: VideoGenerationModel> VideoGenerationRequestBuilder<M> {
         }
     }
 
-    /// 设置自定义参数（直接使用JSON值）
+    /// set custom parameters as serde_json::Value
     pub fn custom_params(mut self, params: Value) -> Self {
         self.custom_params = Some(params);
         self
     }
 
-    /// 构建请求
+    /// build video generation request
     pub fn build(self) -> VideoGenerationRequest {
         VideoGenerationRequest {
             custom_params: self.custom_params,
         }
     }
 
-    /// 发送请求
+    /// 
     pub async fn send(self) -> Result<VideoGenerationResponse, VideoGenerationError> {
         let model = self.model.clone();
         model.video_generation(self.build()).await
