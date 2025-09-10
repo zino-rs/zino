@@ -84,14 +84,14 @@ impl<T: VideoGenerationModel> VideoGenerationModelDyn for T {
     // }
 }
 
-/// 通用视频生成请求结构体 - 最小集合
+/// create video generation request with custom parameters
 #[derive(Debug, Serialize, Clone)]
 pub struct VideoGenerationRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub custom_params: Option<Value>,
 }
 
-/// 通用视频生成响应结构体 - 常见字段
+/// generic video generation response
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VideoGenerationResponse {
     pub task_id: Option<String>,
@@ -99,7 +99,7 @@ pub struct VideoGenerationResponse {
     pub video_url: Option<Vec<String>>,
 }
 
-/// 通用视频生成请求构建器 - 最小版本
+/// generic video generation request builder
 pub struct VideoGenerationRequestBuilder<M: VideoGenerationModel> {
     model: M,
     custom_params: Option<Value>,
