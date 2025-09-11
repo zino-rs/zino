@@ -6,3 +6,4 @@ pub mod completions;
 pub mod memory_base;
 pub mod provider;
 pub mod video_generation;
+pub mod client;
