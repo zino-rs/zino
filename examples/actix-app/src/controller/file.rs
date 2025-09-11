@@ -48,7 +48,7 @@ pub async fn decrypt(req: Request) -> Result {
     let secret_key = SecretAccessKey::new(&access_key_id);
     let security_token = req.parse_security_token(secret_key.as_ref())?;
     if security_token.is_expired() {
-        reject!(req, forbidden, "the security token has expired");
+        reject!(req, forbidden, "security token has expired");
     }
 
     let Some(file_name) = query.get_str("file_name") else {

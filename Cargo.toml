@@ -60,7 +60,7 @@ unic-langid = "0.9.6"
 url = "2.5.7"
 
 [workspace.dependencies.chrono]
-version = "0.4.41"
+version = "0.4.42"
 features = ["serde"]
 
 [workspace.dependencies.jwt-simple]
