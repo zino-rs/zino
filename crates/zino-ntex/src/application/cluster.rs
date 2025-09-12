@@ -57,25 +57,23 @@ impl Application for Cluster {
             Self::load().await;
             app_env.load_plugins(self.custom_plugins).await;
         });
-        if scheduler.is_ready() {
-            // It should be fixed by pasing `System::current()` from `block_on`.
-            // https://github.com/ntex-rs/ntex/issues/335#issuecomment-2071498572
-            System::new("scheduler")
-                .system()
-                .arbiter()
-                .spawn(Box::pin(async move {
-                    loop {
-                        scheduler.tick().await;
-
-                        // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
-                        if let Some(duration) = scheduler.time_till_next_job() {
-                            time::sleep(duration).await;
-                        }
-                    }
-                }));
-        }
-
         System::new("main").block_on(async {
+            if scheduler.is_ready() {
+                // Fixed: Move scheduler startup inside main block_on to ensure correct runtime context
+                // https://github.com/ntex-rs/ntex/issues/335#issuecomment-2071498572
+                System::current()
+                    .arbiter()
+                    .spawn(Box::pin(async move {
+                        loop {
+                            scheduler.tick().await;
+
+                            // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
+                            if let Some(duration) = scheduler.time_till_next_job() {
+                                time::sleep(duration).await;
+                            }
+                        }
+                    }));
+            }
             let default_routes = self.default_routes.leak() as &'static [_];
             let tagged_routes = self.tagged_routes.leak() as &'static [_];
             let app_state = Self::shared_state();
