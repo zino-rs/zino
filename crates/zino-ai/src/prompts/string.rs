@@ -1,5 +1,7 @@
+use super::*;
+use std::future::ready;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
-use crate::completions::{Content, Message, Role};
 pub struct StringPromptTemplate {
     template: String,
     input_variables: Vec<String>,
@@ -22,7 +24,11 @@ impl StringPromptTemplate {
         }
     }
     
-    pub fn from_template(template: &str, format: TemplateFormat) -> Self {
+    pub fn from_template(template: &str) -> Self {
+        Self::new(template.to_string(), TemplateFormat::FString)
+    }
+    
+    pub fn from_template_with_format(template: &str, format: TemplateFormat) -> Self {
         Self::new(template.to_string(), format)
     }
     
@@ -72,9 +78,8 @@ impl BasePromptTemplate for StringPromptTemplate {
         Ok(PromptValue::String(formatted))
     }
     
-    async fn format_async(&self, input: &HashMap<String, String>) -> Result<Self::Output, TemplateError> {
-        // 异步版本，可以在这里添加异步处理逻辑
-        self.format(input)
+    fn format_async(&self, input: &HashMap<String, String>) -> Pin<Box<dyn Future<Output = Result<Self::Output, TemplateError>> + Send + '_>> {
+        Box::pin(ready(self.format(input)))
     }
     
     fn get_input_variables(&self) -> Vec<String> {

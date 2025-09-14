@@ -1,3 +1,6 @@
+use super::*;
+use std::future::ready;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FewShotPromptTemplate {
     examples: Vec<HashMap<String, String>>,
@@ -68,9 +71,8 @@ impl BasePromptTemplate for FewShotPromptTemplate {
         Ok(PromptValue::String(result))
     }
     
-    async fn format_async(&self, input: &HashMap<String, String>) -> Result<Self::Output, TemplateError> {
-        // 异步版本
-        self.format(input)
+    fn format_async(&self, input: &HashMap<String, String>) -> Pin<Box<dyn Future<Output = Result<Self::Output, TemplateError>> + Send + '_>> {
+        Box::pin(ready(self.format(input)))
     }
     
     fn get_input_variables(&self) -> Vec<String> {
