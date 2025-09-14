@@ -1,9 +1,6 @@
-use futures::StreamExt;
-use reqwest::{self, ClientBuilder, Url};
-use serde::{self, Deserialize, Serialize};
-use serde_json::Value;
+use reqwest::{self};
+use serde::{self, Deserialize};
 use std::fmt::Debug;
-use tracing::field::debug;
 
 const ZHIPU_BASE_URL: &str = "https://open.bigmodel.cn";
 

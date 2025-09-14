@@ -1,4 +1,4 @@
-use crate::client::{CompletionClient, ProviderClient};
+use crate::client::ProviderClient;
 pub const MINIMAX_TEXT_01: &str = "MiniMax-Text-01";
 
 const MINIMAX_API_BASE_URL: &str = "https://api.minimaxi.com";
@@ -75,5 +75,3 @@ impl ProviderClient for Client {
         Self::new(&input)
     }
 }
-
-

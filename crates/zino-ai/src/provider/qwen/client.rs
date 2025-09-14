@@ -1,7 +1,6 @@
 //! Qwen API Client
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use crate::client::ProviderClient;
+use serde::{Deserialize, Serialize};
 // ================================================================
 // Main Qwen Client
 // ================================================================
@@ -58,7 +57,6 @@ impl Client {
         self.http_client.get(url).bearer_auth(&self.api_key)
     }
 
-
     // pub fn agent(&self, model: &str) -> AgentBuilder<CompletionModel> {
     //     AgentBuilder::new(self.completion_model(model))
     // }
@@ -86,10 +84,8 @@ impl ProviderClient for Client {
     {
         let api_key = input;
         Self::new(&api_key)
-
     }
 }
-
 
 #[derive(Debug, Deserialize)]
 pub struct ApiErrorResponse {
