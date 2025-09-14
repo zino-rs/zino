@@ -345,50 +345,13 @@ impl WorkflowExecutor {
             .filter_map(|(from, to)| if to == node_id { Some(from) } else { None })
             .collect();
         
-        // 调试信息
-        if node_id == "large" || node_id == "small" {
-            println!("🔍 读取节点 {} 的输入数据:", node_id);
-            println!("   前置节点: {:?}", predecessors);
-        }
-        
-        // 如果有前置节点，从前置节点的输出通道读取数据
         if !predecessors.is_empty() {
-            // 检查是否是分支节点的直接后继节点
             for predecessor in &predecessors {
                 if self.is_branch_node(predecessor) {
-                    // 如果是分支节点的直接后继节点，需要智能选择数据源
-                    // 获取分支节点的所有输入前置节点
                     let branch_input_predecessors: Vec<&String> = self.graph.edges.iter()
                         .filter_map(|(from, to)| if to == *predecessor { Some(from) } else { None })
                         .collect();
                     
-                    // 对于某些特殊节点，我们需要读取更早的数据源
-                    // 例如：success/error 节点通常需要处理原始数据，而不是验证结果
-                    if node_id == "success" || node_id == "error" {
-                        // 对于 success/error 节点，尝试找到更早的数据源
-                        for branch_input_predecessor in &branch_input_predecessors {
-                            // 如果前置节点是验证节点，继续向前查找
-                            if *branch_input_predecessor == "validate" {
-                                let validate_predecessors: Vec<&String> = self.graph.edges.iter()
-                                    .filter_map(|(from, to)| if to == *branch_input_predecessor { Some(from) } else { None })
-                                    .collect();
-                                
-                                for validate_predecessor in &validate_predecessors {
-                                    if self.state.completed_nodes.contains(*validate_predecessor) {
-                                        let output_channel = format!("{}_output", validate_predecessor);
-                                        if let Some(channel) = self.state.get_channel(&output_channel) {
-                                            if let Some(value) = channel.read() {
-                                                if node_id == "success" || node_id == "error" {
-                                                    println!("   从分支节点 {} 的输入节点 {} 读取数据: {:?}", predecessor, validate_predecessor, value);
-                                                }
-                                                return Ok(value.clone());
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
                     
                     // 优先读取已完成的前置节点的数据
                     for branch_input_predecessor in &branch_input_predecessors {
@@ -396,8 +359,27 @@ impl WorkflowExecutor {
                             let output_channel = format!("{}_output", branch_input_predecessor);
                             if let Some(channel) = self.state.get_channel(&output_channel) {
                                 if let Some(value) = channel.read() {
-                                    if node_id == "large" || node_id == "small" || node_id == "success" || node_id == "error" {
-                                        println!("   从分支节点 {} 的输入节点 {} 读取数据: {:?}", predecessor, branch_input_predecessor, value);
+                                    // 如果当前节点是结果节点（通常以 success/error/result 结尾），
+                                    // 且分支输入是布尔类型（通常是验证结果），则尝试查找更早的数据源
+                                    if (node_id.contains("success") || node_id.contains("error") || node_id.contains("result")) 
+                                        && matches!(value, StateValue::Boolean(_)) {
+                                        // 尝试查找更早的数据源
+                                        let earlier_predecessors: Vec<&String> = self.graph.edges.iter()
+                                            .filter_map(|(from, to)| if to == *branch_input_predecessor { Some(from) } else { None })
+                                            .collect();
+                                        
+                                        for earlier_predecessor in &earlier_predecessors {
+                                            if self.state.completed_nodes.contains(*earlier_predecessor) {
+                                                let earlier_output_channel = format!("{}_output", earlier_predecessor);
+                                                if let Some(earlier_channel) = self.state.get_channel(&earlier_output_channel) {
+                                                    if let Some(earlier_value) = earlier_channel.read() {
+                                                        if !matches!(earlier_value, StateValue::Boolean(_)) {
+                                                            return Ok(earlier_value.clone());
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                     return Ok(value.clone());
                                 }
@@ -411,9 +393,6 @@ impl WorkflowExecutor {
                         if let Some(channel) = self.state.get_channel(&output_channel) {
                             if let Some(value) = channel.read() {
                                 if !matches!(value, StateValue::Null) {
-                                    if node_id == "large" || node_id == "small" || node_id == "success" || node_id == "error" {
-                                        println!("   从分支节点 {} 的输入节点 {} 读取数据: {:?}", predecessor, branch_input_predecessor, value);
-                                    }
                                     return Ok(value.clone());
                                 }
                             }
@@ -428,9 +407,6 @@ impl WorkflowExecutor {
                     let output_channel = format!("{}_output", predecessor);
                     if let Some(channel) = self.state.get_channel(&output_channel) {
                         if let Some(value) = channel.read() {
-                            if node_id == "large" || node_id == "small" {
-                                println!("   从已完成的前置节点 {} 读取数据: {:?}", predecessor, value);
-                            }
                             return Ok(value.clone());
                         }
                     }
