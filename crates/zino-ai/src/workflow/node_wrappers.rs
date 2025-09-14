@@ -1,12 +1,12 @@
-use std::sync::Arc;
-use std::future::Future;
 use async_trait::async_trait;
+use std::future::Future;
+use std::sync::Arc;
 
 use super::{
-    error::{WorkflowResult, WorkflowError},
-    state::StateValue,
     config::{NodeConfig, NodeParamTypes},
-    traits::{StateNode, NodeContext, ChannelWriter, Runtime},
+    error::{WorkflowError, WorkflowResult},
+    state::StateValue,
+    traits::{ChannelWriter, NodeContext, Runtime, StateNode},
 };
 
 /// 简单函数节点包装器（只有 state 参数）
@@ -31,14 +31,18 @@ impl<F> StateNode for FunctionNodeWrapper<F>
 where
     F: Fn(StateValue) -> WorkflowResult<StateValue> + Send + Sync,
 {
-    async fn execute(&self, state: StateValue, _context: &NodeContext) -> WorkflowResult<StateValue> {
+    async fn execute(
+        &self,
+        state: StateValue,
+        _context: &NodeContext,
+    ) -> WorkflowResult<StateValue> {
         (self.func)(state)
     }
-    
+
     fn get_name(&self) -> &str {
         &self.name
     }
-    
+
     fn get_supported_params(&self) -> NodeParamTypes {
         self.param_types.clone()
     }
@@ -67,14 +71,18 @@ where
     F: Fn(StateValue) -> Fut + Send + Sync,
     Fut: Future<Output = WorkflowResult<StateValue>> + Send,
 {
-    async fn execute(&self, state: StateValue, _context: &NodeContext) -> WorkflowResult<StateValue> {
+    async fn execute(
+        &self,
+        state: StateValue,
+        _context: &NodeContext,
+    ) -> WorkflowResult<StateValue> {
         (self.func)(state).await
     }
-    
+
     fn get_name(&self) -> &str {
         &self.name
     }
-    
+
     fn get_supported_params(&self) -> NodeParamTypes {
         self.param_types.clone()
     }
@@ -97,16 +105,22 @@ impl<F> StateNode for ConfigFunctionNodeWrapper<F>
 where
     F: Fn(StateValue, &NodeConfig) -> WorkflowResult<StateValue> + Send + Sync,
 {
-    async fn execute(&self, state: StateValue, context: &NodeContext) -> WorkflowResult<StateValue> {
-        let config = context.config.as_ref()
+    async fn execute(
+        &self,
+        state: StateValue,
+        context: &NodeContext,
+    ) -> WorkflowResult<StateValue> {
+        let config = context
+            .config
+            .as_ref()
             .ok_or_else(|| WorkflowError::ConfigError("Config not available".to_string()))?;
         (self.func)(state, config)
     }
-    
+
     fn get_name(&self) -> &str {
         &self.name
     }
-    
+
     fn get_supported_params(&self) -> NodeParamTypes {
         NodeParamTypes {
             needs_config: true,
@@ -135,19 +149,27 @@ where
     F: Fn(StateValue, &NodeConfig, Arc<dyn ChannelWriter>) -> Fut + Send + Sync,
     Fut: Future<Output = WorkflowResult<StateValue>> + Send,
 {
-    async fn execute(&self, state: StateValue, context: &NodeContext) -> WorkflowResult<StateValue> {
-        let config = context.config.as_ref()
+    async fn execute(
+        &self,
+        state: StateValue,
+        context: &NodeContext,
+    ) -> WorkflowResult<StateValue> {
+        let config = context
+            .config
+            .as_ref()
             .ok_or_else(|| WorkflowError::ConfigError("Config not available".to_string()))?;
-        let writer = context.writer.as_ref()
+        let writer = context
+            .writer
+            .as_ref()
             .ok_or_else(|| WorkflowError::ConfigError("Writer not available".to_string()))?
             .clone();
         (self.func)(state, config, writer).await
     }
-    
+
     fn get_name(&self) -> &str {
         &self.name
     }
-    
+
     fn get_supported_params(&self) -> NodeParamTypes {
         NodeParamTypes {
             needs_config: true,
@@ -176,17 +198,23 @@ where
     F: Fn(StateValue, Arc<dyn Runtime>) -> Fut + Send + Sync,
     Fut: Future<Output = WorkflowResult<StateValue>> + Send,
 {
-    async fn execute(&self, state: StateValue, context: &NodeContext) -> WorkflowResult<StateValue> {
-        let runtime = context.runtime.as_ref()
+    async fn execute(
+        &self,
+        state: StateValue,
+        context: &NodeContext,
+    ) -> WorkflowResult<StateValue> {
+        let runtime = context
+            .runtime
+            .as_ref()
             .ok_or_else(|| WorkflowError::ConfigError("Runtime not available".to_string()))?
             .clone();
         (self.func)(state, runtime).await
     }
-    
+
     fn get_name(&self) -> &str {
         &self.name
     }
-    
+
     fn get_supported_params(&self) -> NodeParamTypes {
         NodeParamTypes {
             needs_config: false,
@@ -212,9 +240,16 @@ impl<F> BranchFunctionWrapper<F> {
 #[async_trait]
 impl<F> crate::workflow::traits::BranchPath for BranchFunctionWrapper<F>
 where
-    F: Fn(StateValue) -> crate::workflow::error::WorkflowResult<crate::workflow::traits::BranchResult> + Send + Sync,
+    F: Fn(
+            StateValue,
+        ) -> crate::workflow::error::WorkflowResult<crate::workflow::traits::BranchResult>
+        + Send
+        + Sync,
 {
-    async fn route(&self, state: StateValue) -> WorkflowResult<crate::workflow::traits::BranchResult> {
+    async fn route(
+        &self,
+        state: StateValue,
+    ) -> WorkflowResult<crate::workflow::traits::BranchResult> {
         (self.func)(state)
     }
 }

@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// 状态值类型
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -20,7 +20,7 @@ impl StateValue {
             _ => None,
         }
     }
-    
+
     pub fn as_number(&self) -> Option<f64> {
         match self {
             StateValue::Number(n) => Some(*n),
@@ -28,21 +28,21 @@ impl StateValue {
             _ => None,
         }
     }
-    
+
     pub fn as_boolean(&self) -> Option<bool> {
         match self {
             StateValue::Boolean(b) => Some(*b),
             _ => None,
         }
     }
-    
+
     pub fn as_object(&self) -> Option<&HashMap<String, StateValue>> {
         match self {
             StateValue::Object(obj) => Some(obj),
             _ => None,
         }
     }
-    
+
     pub fn as_array(&self) -> Option<&Vec<StateValue>> {
         match self {
             StateValue::Array(arr) => Some(arr),
@@ -66,15 +66,15 @@ impl Channel {
     pub fn new_last_value(value: StateValue) -> Self {
         Channel::LastValue(value)
     }
-    
+
     pub fn new_topic() -> Self {
         Channel::Topic(Vec::new())
     }
-    
+
     pub fn new_ephemeral(value: StateValue) -> Self {
         Channel::Ephemeral(value)
     }
-    
+
     pub fn read(&self) -> Option<&StateValue> {
         match self {
             Channel::LastValue(v) => Some(v),
@@ -82,7 +82,7 @@ impl Channel {
             Channel::Ephemeral(v) => Some(v),
         }
     }
-    
+
     pub fn write(&mut self, value: StateValue) {
         match self {
             Channel::LastValue(v) => *v = value,
@@ -90,7 +90,7 @@ impl Channel {
             Channel::Ephemeral(v) => *v = value,
         }
     }
-    
+
     pub fn is_empty(&self) -> bool {
         match self {
             Channel::LastValue(v) => matches!(v, StateValue::Null),
@@ -127,21 +127,27 @@ impl WorkflowState {
             pending_tasks: Vec::new(),
         }
     }
-    
+
     pub fn get_channel(&self, name: &str) -> Option<&Channel> {
         self.channels.get(name)
     }
-    
+
     pub fn get_channel_mut(&mut self, name: &str) -> Option<&mut Channel> {
         self.channels.get_mut(name)
     }
-    
-    pub fn write_to_channel(&mut self, name: &str, value: StateValue) -> crate::workflow::error::WorkflowResult<()> {
+
+    pub fn write_to_channel(
+        &mut self,
+        name: &str,
+        value: StateValue,
+    ) -> crate::workflow::error::WorkflowResult<()> {
         if let Some(channel) = self.channels.get_mut(name) {
             channel.write(value);
             Ok(())
         } else {
-            Err(crate::workflow::error::WorkflowError::ChannelNotFound(name.to_string()))
+            Err(crate::workflow::error::WorkflowError::ChannelNotFound(
+                name.to_string(),
+            ))
         }
     }
 }

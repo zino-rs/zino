@@ -1,11 +1,11 @@
+use async_trait::async_trait;
 use std::collections::HashMap;
 use std::sync::Arc;
-use async_trait::async_trait;
 
 use super::{
+    config::{NodeConfig, NodeParamTypes},
     error::WorkflowResult,
     state::StateValue,
-    config::{NodeConfig, NodeParamTypes},
 };
 
 /// 通道写入器 trait
@@ -35,11 +35,12 @@ pub trait Runtime: Send + Sync {
 #[async_trait]
 pub trait StateNode: Send + Sync {
     /// 执行节点，支持动态参数注入
-    async fn execute(&self, state: StateValue, context: &NodeContext) -> WorkflowResult<StateValue>;
-    
+    async fn execute(&self, state: StateValue, context: &NodeContext)
+    -> WorkflowResult<StateValue>;
+
     /// 获取节点名称
     fn get_name(&self) -> &str;
-    
+
     /// 获取支持的参数类型（用于类型检查）
     fn get_supported_params(&self) -> NodeParamTypes;
 }
@@ -90,22 +91,22 @@ impl NodeContext {
             runtime: None,
         }
     }
-    
+
     pub fn with_config(mut self, config: NodeConfig) -> Self {
         self.config = Some(config);
         self
     }
-    
+
     pub fn with_writer(mut self, writer: Arc<dyn ChannelWriter>) -> Self {
         self.writer = Some(writer);
         self
     }
-    
+
     pub fn with_store(mut self, store: Arc<dyn NodeStore>) -> Self {
         self.store = Some(store);
         self
     }
-    
+
     pub fn with_runtime(mut self, runtime: Arc<dyn Runtime>) -> Self {
         self.runtime = Some(runtime);
         self
