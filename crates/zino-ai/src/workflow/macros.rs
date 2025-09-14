@@ -13,6 +13,12 @@ use super::{
 /// 宏：简化节点创建
 #[macro_export]
 macro_rules! node {
+    // 最简单的模式：字符串 + 函数名
+    ($name:expr, $func:ident) => {
+        Arc::new(FunctionNodeWrapper::new($name.to_string(), $func))
+    };
+    
+    // 闭包模式
     ($name:expr, |$state:ident| $body:expr) => {
         Arc::new(FunctionNodeWrapper::new($name.to_string(), |$state| $body))
     };

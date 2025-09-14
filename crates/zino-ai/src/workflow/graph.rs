@@ -6,7 +6,12 @@ use super::{
     state::{StateValue, Channel},
     config::{RetryPolicy, CachePolicy},
     traits::{StateNode, BranchPath},
+    node_wrappers::FunctionNodeWrapper,
 };
+
+/// 工作流常量节点名称
+pub const START_NODE: &str = "__start__";
+pub const END_NODE: &str = "__end__";
 
 /// 节点规格
 #[derive(Clone)]
@@ -110,6 +115,7 @@ impl BranchSpec {
 
 /// 状态图
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct StateGraph {
     /// 节点映射
     pub nodes: HashMap<String, StateNodeSpec>,
@@ -135,7 +141,7 @@ pub struct StateGraph {
 
 impl StateGraph {
     pub fn new(state_schema: String) -> Self {
-        Self {
+        let mut graph = Self {
             nodes: HashMap::new(),
             edges: HashSet::new(),
             branches: HashMap::new(),
@@ -146,7 +152,33 @@ impl StateGraph {
             context_schema: None,
             input_schema: "State".to_string(),
             output_schema: "State".to_string(),
-        }
+        };
+        
+        // 自动添加开始和结束节点
+        graph.add_start_end_nodes();
+        graph
+    }
+    
+    /// 添加开始和结束节点
+    fn add_start_end_nodes(&mut self) {
+        // 添加开始节点 - 只是传递输入数据
+        let start_node = StateNodeSpec::new(
+            Arc::new(FunctionNodeWrapper::new(
+                START_NODE.to_string(),
+                |input| Ok(input) // 直接传递输入
+            ))
+        );
+        
+        // 添加结束节点 - 收集最终结果
+        let end_node = StateNodeSpec::new(
+            Arc::new(FunctionNodeWrapper::new(
+                END_NODE.to_string(),
+                |input| Ok(input) // 直接传递输入作为最终结果
+            ))
+        );
+        
+        self.nodes.insert(START_NODE.to_string(), start_node);
+        self.nodes.insert(END_NODE.to_string(), end_node);
     }
     
     /// 添加节点
@@ -182,18 +214,30 @@ impl StateGraph {
     
     /// 设置入口点
     pub fn set_entry_point(&mut self, node: String) -> &mut Self {
-        self.add_edge("__start__".to_string(), node);
+        self.add_edge(START_NODE.to_string(), node);
         self
     }
     
     /// 设置结束点
     pub fn set_finish_point(&mut self, node: String) -> &mut Self {
-        self.add_edge(node, "__end__".to_string());
+        self.add_edge(node, END_NODE.to_string());
         self
     }
     
     /// 编译图
+    /// 自动创建节点输出通道
+    pub fn auto_create_output_channels(&mut self) {
+        for node_id in self.nodes.keys() {
+            let output_channel = format!("{}_output", node_id);
+            if !self.channels.contains_key(&output_channel) {
+                self.channels.insert(output_channel, Channel::new_last_value(StateValue::Null));
+            }
+        }
+    }
+    
     pub fn compile(mut self) -> WorkflowResult<CompiledStateGraph> {
+        // 自动创建所有节点的输出通道
+        self.auto_create_output_channels();
         self.compiled = true;
         CompiledStateGraph::new(self)
     }
@@ -207,9 +251,7 @@ pub struct CompiledStateGraph {
 
 impl CompiledStateGraph {
     pub fn new(graph: StateGraph) -> WorkflowResult<Self> {
-        let channels = graph.channels.clone();
-        let nodes = graph.nodes.clone();
-        let executor = crate::workflow::executor::WorkflowExecutor::new(nodes, channels, 100)?;
+        let executor = crate::workflow::executor::WorkflowExecutor::new(graph.clone(), 100)?;
         
         Ok(Self { graph, executor })
     }
