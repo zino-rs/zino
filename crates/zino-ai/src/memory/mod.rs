@@ -1,3 +1,9 @@
+//! Memory management system for AI conversations
+//!
+//! This module provides various memory implementations for storing and managing
+//! conversation history in AI applications. It includes different memory types
+//! optimized for different use cases and constraints.
+
 pub mod buffer;
 pub mod config;
 pub mod error;
@@ -7,7 +13,7 @@ pub mod token_buffer;
 pub mod tokenizer;
 pub mod window;
 
-// 重新导出主要类型
+// Re-export main types
 pub use crate::completions::messages::{Content, Message, Role};
 pub use buffer::BufferMemory;
 pub use config::{MemoryConfig, MemoryType};
@@ -15,41 +21,44 @@ pub use error::{MemoryError, MemoryResult};
 pub use manager::MemoryManager;
 pub use message::TimestampedMessage;
 pub use token_buffer::TokenBufferMemory;
-pub use tokenizer::{Tokenizer, SimpleTokenizer, CharTokenizer, FixedTokenizer};
+pub use tokenizer::{CharTokenizer, FixedTokenizer, SimpleTokenizer, Tokenizer};
 pub use window::WindowMemory;
 
-/// 记忆系统的基础 trait
+/// Base trait for memory systems
+///
+/// This trait defines the interface that all memory implementations must follow.
+/// It provides methods for storing, retrieving, and managing conversation history.
 pub trait Memory: Send + Sync {
-    /// 添加消息到记忆
+    /// Add a message to memory
     fn add_message(&self, message: Message) -> MemoryResult<()>;
-    
-    /// 获取所有消息
+
+    /// Get all messages from memory
     fn get_messages(&self) -> MemoryResult<Vec<Message>>;
-    
-    /// 清空记忆
+
+    /// Clear all messages from memory
     fn clear(&self) -> MemoryResult<()>;
-    
-    /// 获取记忆大小
+
+    /// Get the number of messages in memory
     fn size(&self) -> MemoryResult<usize>;
-    
-    /// 获取最后 N 条消息
+
+    /// Get the last N messages from memory
     fn get_last_messages(&self, n: usize) -> MemoryResult<Vec<Message>>;
-    
-    /// 获取记忆类型名称
+
+    /// Get the memory type name
     fn memory_type(&self) -> &'static str;
-    
-    /// 获取消息迭代器，避免克隆
+
+    /// Get an iterator over all messages, avoiding cloning
     fn iter_messages(&self) -> MemoryResult<Box<dyn Iterator<Item = Message> + '_>>;
-    
-    /// 获取最后N条消息的迭代器
+
+    /// Get an iterator over the last N messages
     fn iter_last_messages(&self, n: usize) -> MemoryResult<Box<dyn Iterator<Item = Message> + '_>>;
-    
-    /// 检查记忆是否为空
+
+    /// Check if memory is empty
     fn is_empty(&self) -> MemoryResult<bool> {
         Ok(self.size()? == 0)
     }
-    
-    /// 获取记忆统计信息
+
+    /// Get memory statistics
     fn get_stats(&self) -> MemoryResult<MemoryStats> {
         let messages = self.get_messages()?;
         let mut user_count = 0;
@@ -74,23 +83,28 @@ pub trait Memory: Send + Sync {
     }
 }
 
-/// 记忆统计信息
+/// Memory statistics information
 #[derive(Debug, Clone)]
 pub struct MemoryStats {
+    /// Total number of messages
     pub total_messages: usize,
+    /// Number of user messages
     pub user_messages: usize,
+    /// Number of assistant messages
     pub assistant_messages: usize,
+    /// Number of system messages
     pub system_messages: usize,
+    /// Type of memory implementation
     pub memory_type: String,
 }
 
 impl MemoryStats {
-    /// 获取对话轮数（用户消息数）
+    /// Get the number of conversation turns (user messages)
     pub fn get_conversation_turns(&self) -> usize {
         self.user_messages
     }
 
-    /// 获取消息分布比例
+    /// Get message distribution ratios (user, assistant, system)
     pub fn get_message_distribution(&self) -> (f64, f64, f64) {
         if self.total_messages == 0 {
             return (0.0, 0.0, 0.0);
@@ -103,4 +117,3 @@ impl MemoryStats {
         (user_ratio, assistant_ratio, system_ratio)
     }
 }
-

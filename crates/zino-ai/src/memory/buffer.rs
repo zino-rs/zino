@@ -1,22 +1,31 @@
+//! Buffer memory implementation
+//!
+//! This module provides a simple buffer-based memory that stores all conversation
+//! history without any size limits or automatic cleanup.
+
 use super::{Memory, MemoryResult, TimestampedMessage};
 use crate::completions::messages::{Content, Message, Role};
 use std::collections::VecDeque;
 use std::sync::{Arc, RwLock};
 
-/// 基础缓冲区记忆 - 存储所有对话历史
+/// Basic buffer memory - stores all conversation history
+///
+/// This memory type keeps all messages in memory without any size constraints.
+/// It's suitable for short conversations or when you need to preserve all history.
 #[derive(Debug)]
 pub struct BufferMemory {
     messages: Arc<RwLock<VecDeque<TimestampedMessage>>>,
 }
 
 impl BufferMemory {
+    /// Create a new buffer memory instance
     pub fn new() -> Self {
         Self {
             messages: Arc::new(RwLock::new(VecDeque::new())),
         }
     }
 
-    /// 添加用户和助手的对话对
+    /// Add a conversation pair (user input and assistant output)
     pub fn add_conversation(&self, user_input: String, assistant_output: String) {
         self.add_message(Message {
             role: Role::User,
@@ -28,7 +37,7 @@ impl BufferMemory {
         });
     }
 
-    /// 获取格式化的对话历史
+    /// Get formatted conversation history as a string
     pub fn get_formatted_history(&self) -> MemoryResult<String> {
         let messages = self.get_messages()?;
         let mut formatted = String::new();
@@ -125,4 +134,3 @@ impl Default for BufferMemory {
         Self::new()
     }
 }
-

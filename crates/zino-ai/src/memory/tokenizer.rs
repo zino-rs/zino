@@ -1,41 +1,48 @@
+//! Tokenizer implementations for memory system
+//!
+//! This module provides various tokenizer implementations for counting and processing
+//! tokens in text messages for memory management.
+
 use crate::memory::error::MemoryResult;
 
-/// Token计算器trait
+/// Tokenizer trait for counting and processing tokens
 pub trait Tokenizer: Send + Sync + std::fmt::Debug {
-    /// 计算文本的token数量
+    /// Count the number of tokens in text
     fn count_tokens(&self, text: &str) -> MemoryResult<usize>;
-    
-    /// 将文本编码为token IDs
+
+    /// Encode text to token IDs
     fn encode(&self, text: &str) -> MemoryResult<Vec<u32>>;
-    
-    /// 将token IDs解码为文本
+
+    /// Decode token IDs to text
     fn decode(&self, tokens: &[u32]) -> MemoryResult<String>;
-    
-    /// 获取tokenizer名称
+
+    /// Get tokenizer name
     fn name(&self) -> &'static str;
 }
 
-/// 简单的空格分词器（用于测试和简单场景）
+/// Simple whitespace-based tokenizer (for testing and simple scenarios)
 #[derive(Debug, Clone)]
 pub struct SimpleTokenizer {
-    /// 是否考虑标点符号
+    /// Whether to consider punctuation as separate tokens
     consider_punctuation: bool,
 }
 
 impl SimpleTokenizer {
+    /// Create a new simple tokenizer
     pub fn new() -> Self {
         Self {
             consider_punctuation: false,
         }
     }
-    
+
+    /// Create a simple tokenizer that considers punctuation
     pub fn with_punctuation() -> Self {
         Self {
             consider_punctuation: true,
         }
     }
-    
-    /// 简单的token计数，考虑标点符号
+
+    /// Simple token counting, considering punctuation
     fn count_tokens_simple(&self, text: &str) -> usize {
         if self.consider_punctuation {
             // 按空格和标点符号分词
@@ -59,7 +66,7 @@ impl Tokenizer for SimpleTokenizer {
     fn count_tokens(&self, text: &str) -> MemoryResult<usize> {
         Ok(self.count_tokens_simple(text))
     }
-    
+
     fn encode(&self, text: &str) -> MemoryResult<Vec<u32>> {
         // 简单的hash编码，实际应用中应该使用真正的tokenizer
         let tokens = text
@@ -69,7 +76,7 @@ impl Tokenizer for SimpleTokenizer {
             .collect();
         Ok(tokens)
     }
-    
+
     fn decode(&self, tokens: &[u32]) -> MemoryResult<String> {
         // 简单的解码，实际应用中应该使用真正的tokenizer
         let text = tokens
@@ -78,26 +85,30 @@ impl Tokenizer for SimpleTokenizer {
             .collect();
         Ok(text)
     }
-    
+
     fn name(&self) -> &'static str {
         "SimpleTokenizer"
     }
 }
 
-/// 基于字符的tokenizer（更准确的token计数）
+/// Character-based tokenizer (more accurate token counting)
 #[derive(Debug, Clone)]
 pub struct CharTokenizer {
-    /// 每个字符的token权重
+    /// Token weight per character
     char_weight: f64,
 }
 
 impl CharTokenizer {
+    /// Create a new character tokenizer with default weight
     pub fn new() -> Self {
-        Self { char_weight: 0.25 } // 平均每个字符0.25个token
+        Self { char_weight: 0.25 } // Average 0.25 tokens per character
     }
-    
+
+    /// Create a character tokenizer with custom weight
     pub fn with_char_weight(weight: f64) -> Self {
-        Self { char_weight: weight }
+        Self {
+            char_weight: weight,
+        }
     }
 }
 
@@ -113,11 +124,11 @@ impl Tokenizer for CharTokenizer {
         let token_count = (char_count as f64 * self.char_weight).ceil() as usize;
         Ok(token_count.max(1)) // 至少1个token
     }
-    
+
     fn encode(&self, text: &str) -> MemoryResult<Vec<u32>> {
         Ok(text.chars().map(|c| c as u32).collect())
     }
-    
+
     fn decode(&self, tokens: &[u32]) -> MemoryResult<String> {
         let text = tokens
             .iter()
@@ -125,19 +136,20 @@ impl Tokenizer for CharTokenizer {
             .collect();
         Ok(text)
     }
-    
+
     fn name(&self) -> &'static str {
         "CharTokenizer"
     }
 }
 
-/// 固定tokenizer（用于测试）
+/// Fixed tokenizer (for testing purposes)
 #[derive(Debug, Clone)]
 pub struct FixedTokenizer {
     fixed_count: usize,
 }
 
 impl FixedTokenizer {
+    /// Create a fixed tokenizer that always returns the same token count
     pub fn new(fixed_count: usize) -> Self {
         Self { fixed_count }
     }
@@ -147,11 +159,11 @@ impl Tokenizer for FixedTokenizer {
     fn count_tokens(&self, _text: &str) -> MemoryResult<usize> {
         Ok(self.fixed_count)
     }
-    
+
     fn encode(&self, text: &str) -> MemoryResult<Vec<u32>> {
         Ok(text.bytes().map(|b| b as u32).collect())
     }
-    
+
     fn decode(&self, tokens: &[u32]) -> MemoryResult<String> {
         let text = tokens
             .iter()
@@ -159,9 +171,8 @@ impl Tokenizer for FixedTokenizer {
             .collect();
         Ok(text)
     }
-    
+
     fn name(&self) -> &'static str {
         "FixedTokenizer"
     }
 }
-

@@ -1,9 +1,17 @@
-use super::{Memory, MemoryResult, TimestampedMessage, Tokenizer, SimpleTokenizer};
+//! Token buffer memory implementation
+//!
+//! This module provides a memory implementation that limits the total number of tokens
+//! stored, automatically removing older messages when the token limit is exceeded.
+
+use super::{Memory, MemoryResult, SimpleTokenizer, TimestampedMessage, Tokenizer};
 use crate::completions::messages::{Content, Message};
 use std::collections::VecDeque;
 use std::sync::{Arc, RwLock};
 
-/// 基于 token 计数的记忆 - 限制总 token 数量
+/// Token-based memory - limits total token count
+///
+/// This memory type automatically manages message storage based on token count,
+/// removing older messages when the token limit is exceeded.
 #[derive(Debug)]
 pub struct TokenBufferMemory {
     messages: Arc<RwLock<VecDeque<TimestampedMessage>>>,
@@ -12,6 +20,7 @@ pub struct TokenBufferMemory {
 }
 
 impl TokenBufferMemory {
+    /// Create a new token buffer memory with default tokenizer
     pub fn new(max_tokens: usize) -> Self {
         Self {
             messages: Arc::new(RwLock::new(VecDeque::new())),
@@ -20,6 +29,7 @@ impl TokenBufferMemory {
         }
     }
 
+    /// Create a new token buffer memory with custom tokenizer
     pub fn with_tokenizer(max_tokens: usize, tokenizer: Box<dyn Tokenizer>) -> Self {
         Self {
             messages: Arc::new(RwLock::new(VecDeque::new())),
@@ -38,7 +48,15 @@ impl TokenBufferMemory {
         let messages = self.messages.read().map_err(|e| {
             super::MemoryError::LockPoisoned(format!("Failed to acquire read lock: {}", e))
         })?;
-        
+
+        self.calculate_tokens_with_messages(&messages)
+    }
+
+    /// 计算给定消息列表的token数量（不需要获取锁）
+    fn calculate_tokens_with_messages(
+        &self,
+        messages: &std::collections::VecDeque<TimestampedMessage>,
+    ) -> MemoryResult<usize> {
         let mut total = 0;
         for tm in messages.iter() {
             match &tm.message.content {
@@ -66,7 +84,7 @@ impl TokenBufferMemory {
         let mut messages = self.messages.write().map_err(|e| {
             super::MemoryError::LockPoisoned(format!("Failed to acquire write lock: {}", e))
         })?;
-        
+
         while self.total_tokens()? > self.max_tokens && !messages.is_empty() {
             messages.pop_front();
         }
@@ -96,11 +114,14 @@ impl Memory for TokenBufferMemory {
         let mut messages = self.messages.write().map_err(|e| {
             super::MemoryError::LockPoisoned(format!("Failed to acquire write lock: {}", e))
         })?;
-        
+
         messages.push_back(TimestampedMessage::new(message));
 
         // 移除旧消息直到 token 数量在限制内
-        while self.total_tokens()? > self.max_tokens && !messages.is_empty() {
+        // 直接在写锁内计算token数量，避免死锁
+        while self.calculate_tokens_with_messages(&messages)? > self.max_tokens
+            && !messages.is_empty()
+        {
             messages.pop_front();
         }
         Ok(())
@@ -156,4 +177,3 @@ impl Memory for TokenBufferMemory {
         Ok(Box::new(messages.into_iter()))
     }
 }
-

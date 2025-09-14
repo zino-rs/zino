@@ -1,23 +1,27 @@
+//! Memory system error types
+//!
+//! This module defines error types used throughout the memory system.
+
 use std::fmt;
 
-/// 记忆系统错误类型
+/// Memory system error types
 #[derive(Debug, Clone)]
 pub enum MemoryError {
-    /// 内存锁被污染
+    /// Memory lock was poisoned
     LockPoisoned(String),
-    /// Token限制超出
+    /// Token limit exceeded
     TokenLimitExceeded { current: usize, max: usize },
-    /// 消息数量限制超出
+    /// Message count limit exceeded
     MessageLimitExceeded { current: usize, max: usize },
-    /// 序列化错误
+    /// Serialization error
     Serialization(String),
-    /// 反序列化错误
+    /// Deserialization error
     Deserialization(String),
-    /// 配置错误
+    /// Configuration error
     Configuration(String),
-    /// 存储错误
+    /// Storage error
     Storage(String),
-    /// 其他错误
+    /// Other error
     Other(String),
 }
 
@@ -48,18 +52,49 @@ impl From<serde_json::Error> for MemoryError {
     }
 }
 
-impl From<std::sync::PoisonError<std::sync::RwLockReadGuard<'_, std::collections::VecDeque<crate::memory::TimestampedMessage>>>> for MemoryError {
-    fn from(err: std::sync::PoisonError<std::sync::RwLockReadGuard<'_, std::collections::VecDeque<crate::memory::TimestampedMessage>>>) -> Self {
+impl
+    From<
+        std::sync::PoisonError<
+            std::sync::RwLockReadGuard<
+                '_,
+                std::collections::VecDeque<crate::memory::TimestampedMessage>,
+            >,
+        >,
+    > for MemoryError
+{
+    fn from(
+        err: std::sync::PoisonError<
+            std::sync::RwLockReadGuard<
+                '_,
+                std::collections::VecDeque<crate::memory::TimestampedMessage>,
+            >,
+        >,
+    ) -> Self {
         MemoryError::LockPoisoned(err.to_string())
     }
 }
 
-impl From<std::sync::PoisonError<std::sync::RwLockWriteGuard<'_, std::collections::VecDeque<crate::memory::TimestampedMessage>>>> for MemoryError {
-    fn from(err: std::sync::PoisonError<std::sync::RwLockWriteGuard<'_, std::collections::VecDeque<crate::memory::TimestampedMessage>>>) -> Self {
+impl
+    From<
+        std::sync::PoisonError<
+            std::sync::RwLockWriteGuard<
+                '_,
+                std::collections::VecDeque<crate::memory::TimestampedMessage>,
+            >,
+        >,
+    > for MemoryError
+{
+    fn from(
+        err: std::sync::PoisonError<
+            std::sync::RwLockWriteGuard<
+                '_,
+                std::collections::VecDeque<crate::memory::TimestampedMessage>,
+            >,
+        >,
+    ) -> Self {
         MemoryError::LockPoisoned(err.to_string())
     }
 }
 
-/// 记忆系统结果类型
+/// Memory system result type
 pub type MemoryResult<T> = Result<T, MemoryError>;
-

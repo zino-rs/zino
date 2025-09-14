@@ -1,28 +1,32 @@
+//! Memory configuration and types
+//!
+//! This module defines configuration structures and memory types for the memory system.
+
 use crate::memory::error::{MemoryError, MemoryResult};
-use crate::memory::tokenizer::{Tokenizer, SimpleTokenizer};
+use crate::memory::tokenizer::{SimpleTokenizer, Tokenizer};
 use std::time::Duration;
 
-/// 记忆系统配置
+/// Memory system configuration
 #[derive(Debug)]
 pub struct MemoryConfig {
-    /// 最大token数量（None表示无限制）
+    /// Maximum number of tokens (None means unlimited)
     pub max_tokens: Option<usize>,
-    /// 最大消息数量（None表示无限制）
+    /// Maximum number of messages (None means unlimited)
     pub max_messages: Option<usize>,
-    /// 是否启用自动保存
+    /// Whether to enable auto-save
     pub auto_save: bool,
-    /// 自动保存间隔
+    /// Auto-save interval
     pub save_interval: Duration,
-    /// Tokenizer实例
+    /// Tokenizer instance
     pub tokenizer: Box<dyn Tokenizer>,
-    /// 是否启用压缩
+    /// Whether to enable compression
     pub enable_compression: bool,
-    /// 是否启用统计
+    /// Whether to enable statistics
     pub enable_stats: bool,
 }
 
 impl MemoryConfig {
-    /// 创建默认配置
+    /// Create default configuration
     pub fn default() -> Self {
         Self {
             max_tokens: None,
@@ -34,112 +38,112 @@ impl MemoryConfig {
             enable_stats: true,
         }
     }
-    
-    /// 创建缓冲区记忆配置
+
+    /// Create buffer memory configuration
     pub fn buffer() -> Self {
         Self::default()
     }
-    
-    /// 创建窗口记忆配置
+
+    /// Create window memory configuration
     pub fn window(max_messages: usize) -> Self {
         Self {
             max_messages: Some(max_messages),
             ..Self::default()
         }
     }
-    
-    /// 创建token缓冲区记忆配置
+
+    /// Create token buffer memory configuration
     pub fn token_buffer(max_tokens: usize) -> Self {
         Self {
             max_tokens: Some(max_tokens),
             ..Self::default()
         }
     }
-    
-    /// 设置最大token数量
+
+    /// Set maximum token count
     pub fn with_max_tokens(mut self, max_tokens: usize) -> Self {
         self.max_tokens = Some(max_tokens);
         self
     }
-    
-    /// 设置最大消息数量
+
+    /// Set maximum message count
     pub fn with_max_messages(mut self, max_messages: usize) -> Self {
         self.max_messages = Some(max_messages);
         self
     }
-    
-    /// 设置tokenizer
+
+    /// Set tokenizer
     pub fn with_tokenizer<T: Tokenizer + 'static>(mut self, tokenizer: T) -> Self {
         self.tokenizer = Box::new(tokenizer);
         self
     }
-    
-    /// 启用自动保存
+
+    /// Enable auto-save
     pub fn with_auto_save(mut self, interval: Duration) -> Self {
         self.auto_save = true;
         self.save_interval = interval;
         self
     }
-    
-    /// 启用压缩
+
+    /// Enable compression
     pub fn with_compression(mut self) -> Self {
         self.enable_compression = true;
         self
     }
-    
-    /// 禁用统计
+
+    /// Disable statistics
     pub fn without_stats(mut self) -> Self {
         self.enable_stats = false;
         self
     }
-    
-    /// 验证配置
+
+    /// Validate configuration
     pub fn validate(&self) -> MemoryResult<()> {
         if let Some(max_tokens) = self.max_tokens {
             if max_tokens == 0 {
                 return Err(MemoryError::Configuration(
-                    "max_tokens cannot be zero".to_string()
+                    "max_tokens cannot be zero".to_string(),
                 ));
             }
         }
-        
+
         if let Some(max_messages) = self.max_messages {
             if max_messages == 0 {
                 return Err(MemoryError::Configuration(
-                    "max_messages cannot be zero".to_string()
+                    "max_messages cannot be zero".to_string(),
                 ));
             }
         }
-        
+
         if self.auto_save && self.save_interval.is_zero() {
             return Err(MemoryError::Configuration(
-                "save_interval cannot be zero when auto_save is enabled".to_string()
+                "save_interval cannot be zero when auto_save is enabled".to_string(),
             ));
         }
-        
+
         Ok(())
     }
-    
-    /// 获取配置摘要
+
+    /// Get configuration summary
     pub fn summary(&self) -> String {
         let mut parts = Vec::new();
-        
+
         if let Some(max_tokens) = self.max_tokens {
             parts.push(format!("max_tokens={}", max_tokens));
         }
-        
+
         if let Some(max_messages) = self.max_messages {
             parts.push(format!("max_messages={}", max_messages));
         }
-        
+
         if self.auto_save {
             parts.push(format!("auto_save={}s", self.save_interval.as_secs()));
         }
-        
+
         parts.push(format!("tokenizer={}", self.tokenizer.name()));
         parts.push(format!("compression={}", self.enable_compression));
         parts.push(format!("stats={}", self.enable_stats));
-        
+
         parts.join(", ")
     }
 }
@@ -150,16 +154,19 @@ impl Default for MemoryConfig {
     }
 }
 
-/// 记忆类型枚举（用于向后兼容）
+/// Memory type enumeration (for backward compatibility)
 #[derive(Debug, Clone)]
 pub enum MemoryType {
+    /// Buffer memory - stores all messages
     Buffer,
+    /// Window memory - stores only the last N messages
     Window(usize),
+    /// Token buffer memory - stores messages up to a token limit
     TokenBuffer(usize),
 }
 
 impl MemoryType {
-    /// 转换为配置
+    /// Convert to configuration
     pub fn to_config(&self) -> MemoryConfig {
         match self {
             MemoryType::Buffer => MemoryConfig::buffer(),
@@ -168,4 +175,3 @@ impl MemoryType {
         }
     }
 }
-

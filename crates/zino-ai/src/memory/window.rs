@@ -1,9 +1,17 @@
+//! Window memory implementation
+//!
+//! This module provides a sliding window memory that keeps only the most recent N messages,
+//! automatically removing older messages when the limit is exceeded.
+
 use super::{Memory, MemoryResult, TimestampedMessage};
 use crate::completions::messages::{Content, Message, Role};
 use std::collections::VecDeque;
 use std::sync::{Arc, RwLock};
 
-/// 滑动窗口记忆 - 只保留最近的 N 条消息
+/// Sliding window memory - keeps only the most recent N messages
+///
+/// This memory type maintains a fixed-size window of the most recent messages,
+/// automatically removing older messages when new ones are added.
 #[derive(Debug)]
 pub struct WindowMemory {
     messages: Arc<RwLock<VecDeque<TimestampedMessage>>>,
@@ -11,6 +19,7 @@ pub struct WindowMemory {
 }
 
 impl WindowMemory {
+    /// Create a new window memory with specified maximum size
     pub fn new(max_size: usize) -> Self {
         Self {
             messages: Arc::new(RwLock::new(VecDeque::new())),
@@ -18,7 +27,7 @@ impl WindowMemory {
         }
     }
 
-    /// 添加用户和助手的对话对
+    /// Add a conversation pair (user input and assistant output)
     pub fn add_conversation(&self, user_input: String, assistant_output: String) {
         self.add_message(Message {
             role: Role::User,
@@ -43,7 +52,7 @@ impl WindowMemory {
         let mut messages = self.messages.write().map_err(|e| {
             super::MemoryError::LockPoisoned(format!("Failed to acquire write lock: {}", e))
         })?;
-        
+
         while messages.len() > self.max_size {
             messages.pop_front();
         }
@@ -72,7 +81,7 @@ impl Memory for WindowMemory {
         let mut messages = self.messages.write().map_err(|e| {
             super::MemoryError::LockPoisoned(format!("Failed to acquire write lock: {}", e))
         })?;
-        
+
         messages.push_back(TimestampedMessage::new(message));
 
         // 保持窗口大小
@@ -132,4 +141,3 @@ impl Memory for WindowMemory {
         Ok(Box::new(messages.into_iter()))
     }
 }
-
