@@ -17,7 +17,7 @@ orm = ["zino-orm", "zino-orm/openapi"]
 
 [dependencies]
 actix-cors = "0.7.1"
-actix-files = "0.6.7"
+actix-files = "0.6.8"
 futures = { workspace = true }
 tracing = { workspace = true }
 zino-core = { workspace = true, features = ["runtime-tokio"] }

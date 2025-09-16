@@ -19,7 +19,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = []
-desktop = ["dioxus/desktop"]
+desktop = ["dep:image", "dioxus/desktop"]
 clipboard = ["dioxus-sdk/clipboard"]
 markdown = ["dep:comrak"]
 
@@ -40,7 +40,7 @@ zino-core = { workspace = true, features = ["runtime-tokio"] }
 zino-storage = { workspace = true }
 
 [dependencies.comrak]
-version = "0.41.0"
+version = "0.41.1"
 optional = true
 default-features = false
 features = ["shortcodes", "syntect"]
@@ -55,6 +55,7 @@ optional = true
 
 [dependencies.image]
 version = "0.25.8"
+optional = true
 default-features = false
 features = [
     "gif",

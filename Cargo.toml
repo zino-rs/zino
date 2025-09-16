@@ -51,7 +51,7 @@ parking_lot = "0.12.4"
 percent-encoding = "2.3.2"
 rand = "0.9.2"
 regex = "1.11.2"
-rust_decimal = "1.37.2"
+rust_decimal = "1.38.0"
 serde_qs = "0.15.0"
 sm3 = "0.4.2"
 smallvec = "1.15.1"
@@ -83,11 +83,11 @@ features = [
 ]
 
 [workspace.dependencies.serde]
-version = "1.0.219"
+version = "1.0.224"
 features = ["derive"]
 
 [workspace.dependencies.serde_json]
-version = "1.0.143"
+version = "1.0.145"
 features = ["raw_value"]
 
 [workspace.dependencies.sqlx]
