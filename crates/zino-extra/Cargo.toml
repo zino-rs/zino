@@ -18,13 +18,13 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
-cache = ["dep:lru", "dep:parking_lot"]
+cache = ["dep:lru", "dep:parking_lot", "dep:zino-core"]
 default = []
 full = ["cache"]
 
 [dependencies]
 parking_lot = { workspace = true, optional = true }
-zino-core = { workspace = true }
+zino-core = { workspace = true, optional = true }
 
 [dependencies.lru]
 version = "0.16.0"
