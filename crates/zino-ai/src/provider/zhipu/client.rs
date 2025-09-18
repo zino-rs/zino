@@ -62,7 +62,6 @@ impl Client {
 
         self.http_client.get(url).bearer_auth(&self.api_key)
     }
-
 }
 
 #[derive(Debug, Deserialize)]
