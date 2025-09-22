@@ -20,7 +20,7 @@ impl<T> OneOrMany<T> {
     pub fn one(item: T) -> Self {
         OneOrMany::One(item)
     }
-    
+
     pub fn many(items: Vec<T>) -> Result<Self, &'static str> {
         if items.is_empty() {
             Err("Cannot create OneOrMany::Many from empty vector")
@@ -48,13 +48,14 @@ pub enum RawStreamingChoice<R: Clone> {
 
 /// Simple streaming response (compatible with existing code)
 pub struct StreamingCompletionResponse<R: Clone> {
-    pub stream: Box<dyn Stream<Item = Result<RawStreamingChoice<R>, CompletionError>> + Send + Unpin>,
+    pub stream:
+        Box<dyn Stream<Item = Result<RawStreamingChoice<R>, CompletionError>> + Send + Unpin>,
 }
 
 impl<R: Clone> StreamingCompletionResponse<R> {
-    pub fn new<S>(stream: S) -> Self 
-    where 
-        S: Stream<Item = Result<RawStreamingChoice<R>, CompletionError>> + Send + Unpin + 'static
+    pub fn new<S>(stream: S) -> Self
+    where
+        S: Stream<Item = Result<RawStreamingChoice<R>, CompletionError>> + Send + Unpin + 'static,
     {
         Self {
             stream: Box::new(stream),
@@ -64,7 +65,7 @@ impl<R: Clone> StreamingCompletionResponse<R> {
     /// Collect all text from the stream
     pub async fn collect_text(&mut self) -> Result<String, CompletionError> {
         let mut text = String::new();
-        
+
         while let Some(chunk) = self.stream.next().await {
             match chunk? {
                 RawStreamingChoice::Message(t) => text.push_str(&t),
@@ -74,7 +75,7 @@ impl<R: Clone> StreamingCompletionResponse<R> {
                 RawStreamingChoice::FinalResponse(_) => break,
             }
         }
-        
+
         Ok(text)
     }
 }

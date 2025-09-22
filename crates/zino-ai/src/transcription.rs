@@ -245,7 +245,9 @@ impl<M: TranscriptionModel> TranscriptionRequestBuilder<M> {
             Some(params) => {
                 // Merge the two JSON values
                 let mut merged = params.clone();
-                if let (Some(merged_obj), Some(additional_obj)) = (merged.as_object_mut(), additional_params.as_object()) {
+                if let (Some(merged_obj), Some(additional_obj)) =
+                    (merged.as_object_mut(), additional_params.as_object())
+                {
                     for (key, value) in additional_obj {
                         merged_obj.insert(key.clone(), value.clone());
                     }

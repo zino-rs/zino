@@ -1,8 +1,8 @@
 ///create a audio_generation trait and component
 use crate::client::audio_generation::AudioGenerationModelHandle;
 use futures::future::BoxFuture;
-use serde_json::Value;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use thiserror::Error;
 
 //Decalaration of the AudioGeneration Error enum
