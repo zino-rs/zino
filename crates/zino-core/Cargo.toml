@@ -96,9 +96,9 @@ tracing-log = ["dep:tracing-log", "tracing-subscriber/tracing-log"]
 tracing-subscriber = ["dep:tracing-appender", "dep:tracing-subscriber"]
 validator = []
 validator-credit-card = ["validator", "dep:card-validate"]
-validator-email = ["validator"]
+validator-email = ["validator", "dep:regex"]
 validator-phone-number = ["validator", "dep:phonenumber"]
-validator-regex = ["validator"]
+validator-regex = ["validator", "dep:regex"]
 
 [dependencies]
 aes-gcm-siv = "0.11.1"
@@ -120,7 +120,7 @@ http = { workspace = true }
 metrics = { workspace = true, optional = true }
 parking_lot = { workspace = true }
 rand = { workspace = true }
-regex = { workspace = true }
+regex = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
 rust_decimal = { workspace = true }
 serde = { workspace = true }

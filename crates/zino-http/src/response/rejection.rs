@@ -270,6 +270,24 @@ impl<T, E: Into<Error>> ExtractRejection<T> for Result<Option<T>, E> {
 }
 
 /// Returns early with a [`Rejection`].
+///
+/// # Examples
+///
+/// ```rust,ignore
+/// let validation = user.check_constraints().await.extract(&req)?;
+/// if !validation.is_success() {
+///     reject!(req, validation);
+/// }
+///
+/// let security_token = req.parse_security_token(secret_key.as_ref())?;
+/// if security_token.is_expired() {
+///     reject!(req, forbidden, "security token has expired");
+/// }
+///
+/// let Some(file_name) = query.get_str("file_name") else {
+///     reject!(req, "file_name", "it should be specified");
+/// };
+/// ```
 #[macro_export]
 macro_rules! reject {
     ($ctx:ident, $validation:expr $(,)?) => {{
