@@ -43,6 +43,30 @@ impl Content {
     }
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum AssistantContent {
+    Text(String),
+    ToolCall {
+        id: String,
+        name: String,
+        arguments: serde_json::Value,
+    },
+}
+
+impl AssistantContent {
+    pub fn text(text: &str) -> Self {
+        Self::Text(text.to_string())
+    }
+
+    pub fn tool_call(id: &str, name: &str, arguments: serde_json::Value) -> Self {
+        Self::ToolCall {
+            id: id.to_string(),
+            name: name.to_string(),
+            arguments,
+        }
+    }
+}
+
 impl Message {
     /// 创建新的消息实例
     pub fn new(role: Role, content: Content) -> Self {

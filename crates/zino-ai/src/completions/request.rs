@@ -1,6 +1,8 @@
 use super::messages::Message;
+use crate::streaming::StreamingCompletionResponse;
 use std::ops::{Add, AddAssign};
 use thiserror::Error;
+// use futures::StreamExt;  // Commented out as it's unused
 
 // Errors
 #[derive(Debug, Error)]
@@ -50,28 +52,28 @@ pub trait CompletionModel: Clone + Send + Sync {
     fn completion(
         &self,
         request: CompletionRequest,
-    ) -> impl std::future::Future<
-        Output = Result<CompletionResponse<Self::Response>, CompletionError>,
-    > + Send;
-
-    // fn stream(
-    //     &self,
-    //     request: CompletionRequest,
-    // ) -> impl std::future::Future<
-    //     Output = Result<StreamingCompletionResponse<Self::StreamingResponse>, CompletionError>,
-    // > + Send;
+    ) -> impl std::future::Future<Output = Result<serde_json::Value, CompletionError>> + Send;
 
     /// Generates a completion request builder for the given `prompt`.
     fn completion_request(&self, prompt: impl Into<Message>) -> CompletionRequestBuilder<Self> {
         CompletionRequestBuilder::new(self.clone(), prompt)
     }
+
+    /// Streams a completion response for the given completion request.
+    fn stream(
+        &self,
+        request: CompletionRequest,
+    ) -> impl std::future::Future<
+        Output = Result<StreamingCompletionResponse<Self::StreamingResponse>, CompletionError>,
+    > + Send;
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct CompletionRequest {
     // message is required
-    messages: Vec<Message>,
+    pub messages: Vec<Message>,
     // user can optionally provide other parameters according to different providers
-    additional_kwargs: Option<serde_json::Value>,
+    pub additional_kwargs: Option<serde_json::Value>,
 }
 
 /// Struct representing the token usage for a completion request.
@@ -211,4 +213,11 @@ impl<M: CompletionModel> CompletionRequestBuilder<M> {
     //     let model = self.model.clone();
     //     model.stream(self.build()).await
     // }
+}
+
+//Define a general CompletionResponse for all providers
+pub struct CompletionResult {
+    pub choice: Vec<Message>,
+    pub usage: Usage,
+    pub raw_response: serde_json::Value,
 }
