@@ -74,6 +74,7 @@ impl Application for Cluster {
                         }
                     }));
             }
+
             let default_routes = self.default_routes.leak() as &'static [_];
             let tagged_routes = self.tagged_routes.leak() as &'static [_];
             let app_state = Self::shared_state();

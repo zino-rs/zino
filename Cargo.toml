@@ -83,7 +83,7 @@ features = [
 ]
 
 [workspace.dependencies.serde]
-version = "1.0.224"
+version = "1.0.226"
 features = ["derive"]
 
 [workspace.dependencies.serde_json]
@@ -112,7 +112,7 @@ features = [
 ]
 
 [workspace.dependencies.toml]
-version = "0.9.5"
+version = "0.9.7"
 default-features = false
 features = ["parse", "serde"]
 

@@ -17,7 +17,7 @@ pub trait ChannelWriter: Send + Sync {
     async fn write_multiple(&self, writes: HashMap<String, StateValue>) -> WorkflowResult<()>;
 }
 
-/// 节点存储 trait
+/// An interface for node store.
 #[async_trait]
 pub trait NodeStore: Send + Sync {
     /// get a value from the store
