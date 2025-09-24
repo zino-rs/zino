@@ -1,21 +1,24 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// Node settings.
+/// Configuration settings for workflow nodes.
+///
+/// `NodeConfig` provides configuration options for individual nodes,
+/// including retry policies, timeouts, and metadata.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NodeConfig {
-    /// Maximum retry attempts.
+    /// Maximum number of retry attempts for failed operations.
     pub max_retries: u32,
-    /// Timeout in milliseconds.
+    /// Timeout duration in milliseconds.
     pub timeout_ms: u64,
-    /// Tags associated with the node.
+    /// Tags associated with the node for categorization.
     pub tags: Vec<String>,
-    /// Metadata for the node.
+    /// Additional metadata for the node.
     pub metadata: HashMap<String, serde_json::Value>,
 }
 
 impl NodeConfig {
-    /// Creates a new NodeConfig.
+    /// Creates a new NodeConfig with the given parameters.
     pub fn new(
         max_retries: u32,
         timeout_ms: u64,
@@ -37,57 +40,66 @@ impl Default for NodeConfig {
     }
 }
 
-/// Retry policy.
+/// Retry policy for handling failed operations.
+///
+/// `RetryPolicy` defines how failed operations should be retried,
+/// supporting both fixed delay and exponential backoff strategies.
 #[derive(Debug, Clone)]
 pub enum RetryPolicy {
-    /// Fixed delay retry.
+    /// Fixed delay retry with constant delay between attempts.
     FixedDelay {
-        /// Delay in milliseconds.
+        /// Delay in milliseconds between retry attempts.
         delay_ms: u64,
-        /// Maximum retry attempts.
+        /// Maximum number of retry attempts.
         max_retries: u32,
     },
-    /// Exponential backoff retry.
+    /// Exponential backoff retry with increasing delay between attempts.
     ExponentialBackoff {
-        /// Initial delay in milliseconds.
+        /// Initial delay in milliseconds for the first retry.
         initial_delay_ms: u64,
-        /// Maximum delay in milliseconds.
+        /// Maximum delay in milliseconds (caps the exponential growth).
         max_delay_ms: u64,
-        /// Maximum retry attempts.
+        /// Maximum number of retry attempts.
         max_retries: u32,
     },
 }
 
-/// Cache policy.
+/// Cache policy for storing and retrieving cached results.
+///
+/// `CachePolicy` defines how cached results should be stored and retrieved,
+/// supporting both input hash-based and time-based caching strategies.
 #[derive(Debug, Clone)]
 pub enum CachePolicy {
-    /// Input hash based cache.
+    /// Input hash based cache that uses input hash as the cache key.
     InputHash {
-        /// Time to live in seconds.
+        /// Time to live in seconds for cached results.
         ttl_seconds: u64,
     },
-    /// Time based cache.
+    /// Time based cache that uses time-based expiration.
     TimeBased {
-        /// Time to live in seconds.
+        /// Time to live in seconds for cached results.
         ttl_seconds: u64,
     },
 }
 
-/// Supported node parameter types.
+/// Parameter types supported by workflow nodes.
+///
+/// `NodeParamTypes` indicates what types of parameters a node requires
+/// during execution, enabling type checking and validation.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NodeParamTypes {
-    /// Whether the node needs configuration.
+    /// Whether the node needs configuration parameters.
     pub needs_config: bool,
-    /// Whether the node needs a writer.
+    /// Whether the node needs a channel writer.
     pub needs_writer: bool,
-    /// Whether the node needs a store.
+    /// Whether the node needs a persistent store.
     pub needs_store: bool,
-    /// Whether the node needs a runtime.
+    /// Whether the node needs runtime context.
     pub needs_runtime: bool,
 }
 
 impl NodeParamTypes {
-    /// Creates a new NodeParamTypes.
+    /// Creates a new NodeParamTypes with the specified parameter requirements.
     pub fn new(
         needs_config: bool,
         needs_writer: bool,

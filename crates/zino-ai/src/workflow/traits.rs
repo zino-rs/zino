@@ -8,80 +8,107 @@ use super::{
     state::StateValue,
 };
 
-/// channel writer trait
+/// Trait for writing values to workflow channels.
+///
+/// `ChannelWriter` provides an abstraction for writing state values to channels,
+/// supporting both single and batch operations.
 #[async_trait]
 pub trait ChannelWriter: Send + Sync {
-    /// write a value to a channel
+    /// Writes a value to a specific channel.
     async fn write(&self, channel_name: &str, value: StateValue) -> WorkflowResult<()>;
-    /// write multiple values to channels
+
+    /// Writes multiple values to different channels in a single operation.
     async fn write_multiple(&self, writes: HashMap<String, StateValue>) -> WorkflowResult<()>;
 }
 
-/// An interface for node store.
+/// Trait for persistent storage of workflow state values.
+///
+/// `NodeStore` provides an abstraction for storing and retrieving state values
+/// that need to persist across workflow executions or be shared between nodes.
 #[async_trait]
 pub trait NodeStore: Send + Sync {
-    /// get a value from the store
+    /// Retrieves a value from the store by key.
     async fn get(&self, key: &str) -> WorkflowResult<Option<StateValue>>;
-    /// set a value in the store
+
+    /// Stores a value in the store with the given key.
     async fn set(&self, key: String, value: StateValue) -> WorkflowResult<()>;
-    /// delete a value from the store
+
+    /// Deletes a value from the store by key.
     async fn delete(&self, key: &str) -> WorkflowResult<()>;
 }
 
-/// context runtime trait
+/// Trait for runtime context management in workflows.
+///
+/// `Runtime` provides access to execution context and configuration
+/// that can be shared across workflow nodes.
 #[async_trait]
 pub trait Runtime: Send + Sync {
-    /// get the current context
+    /// Gets the current execution context.
     async fn get_context(&self) -> WorkflowResult<HashMap<String, StateValue>>;
-    /// set the current context
+
+    /// Sets the current execution context.
     async fn set_context(&self, context: HashMap<String, StateValue>) -> WorkflowResult<()>;
 
-    /// get the current config
+    /// Gets the current node configuration.
     async fn get_config(&self) -> WorkflowResult<NodeConfig>;
 }
 
-/// state node trait
+/// Trait for implementing workflow nodes.
+///
+/// `StateNode` represents a single processing unit in a workflow that
+/// transforms input state into output state.
 #[async_trait]
 pub trait StateNode: Send + Sync {
-    /// execute the node with dynamic parameter injection
+    /// Executes the node with the given input state and context.
     async fn execute(&self, state: StateValue, context: &NodeContext)
     -> WorkflowResult<StateValue>;
 
-    /// get the node name
+    /// Gets the name of this node.
     fn get_name(&self) -> &str;
 
-    /// get the supported parameter types (for type checking)
+    /// Gets the parameter types supported by this node.
+    ///
+    /// This is used for type checking and validation during workflow construction.
     fn get_supported_params(&self) -> NodeParamTypes;
 }
 
-/// branch path trait
+/// Trait for implementing conditional routing in workflows.
+///
+/// `BranchPath` represents a decision point in a workflow that determines
+/// which node(s) to execute next based on the current state.
 #[async_trait]
 pub trait BranchPath: Send + Sync {
-    /// route the state to the next branch
+    /// Routes the state to the next branch(es) in the workflow.
     async fn route(&self, state: StateValue) -> WorkflowResult<BranchResult>;
 }
 
-/// branch result
+/// Represents the result of a branch routing decision.
+///
+/// `BranchResult` indicates which node(s) should be executed next
+/// and optionally provides modified state for the next execution.
 #[derive(Debug, Clone)]
 pub enum BranchResult {
-    /// single target
+    /// Route to a single target node.
     Single(String),
-    /// multiple targets
+    /// Route to multiple target nodes.
     Multiple(Vec<String>),
-    /// send to a specific node
+    /// Route to a specific node with modified state.
     Send(String, StateValue),
 }
 
-/// node execution context
+/// Execution context for workflow nodes.
+///
+/// `NodeContext` provides access to configuration, services, and runtime
+/// information that nodes need during execution.
 #[derive(Clone)]
 pub struct NodeContext {
-    /// node configuration
+    /// Node configuration settings.
     pub config: Option<NodeConfig>,
-    /// channel writer
+    /// Channel writer for inter-node communication.
     pub writer: Option<Arc<dyn ChannelWriter>>,
-    /// node store
+    /// Persistent storage for state values.
     pub store: Option<Arc<dyn NodeStore>>,
-    /// runtime
+    /// Runtime context and configuration access.
     pub runtime: Option<Arc<dyn Runtime>>,
 }
 
@@ -97,7 +124,7 @@ impl std::fmt::Debug for NodeContext {
 }
 
 impl NodeContext {
-    /// create a new NodeContext
+    /// Creates a new empty NodeContext.
     pub fn new() -> Self {
         Self {
             config: None,
@@ -106,27 +133,32 @@ impl NodeContext {
             runtime: None,
         }
     }
-    /// builder pattern methods
+
+    /// Sets the node configuration.
     pub fn with_config(mut self, config: NodeConfig) -> Self {
         self.config = Some(config);
         self
     }
-    /// with_writer sets the channel writer
+
+    /// Sets the channel writer.
     pub fn with_writer(mut self, writer: Arc<dyn ChannelWriter>) -> Self {
         self.writer = Some(writer);
         self
     }
-    /// with_store sets the node store
+
+    /// Sets the node store.
     pub fn with_store(mut self, store: Arc<dyn NodeStore>) -> Self {
         self.store = Some(store);
         self
     }
-    /// with_runtime sets the runtime
+
+    /// Sets the runtime.
     pub fn with_runtime(mut self, runtime: Arc<dyn Runtime>) -> Self {
         self.runtime = Some(runtime);
         self
     }
 }
+
 impl Default for NodeContext {
     fn default() -> Self {
         Self::new()

@@ -9,7 +9,10 @@ use super::{
     traits::{ChannelWriter, NodeContext, Runtime, StateNode},
 };
 
-/// simple function node wrapper
+/// Wrapper for simple function-based workflow nodes.
+///
+/// `FunctionNodeWrapper` adapts a simple function into a workflow node,
+/// providing a convenient way to create nodes from existing functions.
 pub struct FunctionNodeWrapper<F> {
     name: String,
     func: F,
@@ -17,7 +20,7 @@ pub struct FunctionNodeWrapper<F> {
 }
 
 impl<F> FunctionNodeWrapper<F> {
-    /// create a new FunctionNodeWrapper
+    /// Creates a new FunctionNodeWrapper with the given name and function.
     pub fn new(name: String, func: F) -> Self {
         Self {
             name,
@@ -49,7 +52,10 @@ where
     }
 }
 
-/// Async function node wrapper
+/// Wrapper for async function-based workflow nodes.
+///
+/// `AsyncFunctionNodeWrapper` adapts an async function into a workflow node,
+/// enabling asynchronous processing within workflows.
 pub struct AsyncFunctionNodeWrapper<F> {
     name: String,
     func: F,
@@ -57,7 +63,7 @@ pub struct AsyncFunctionNodeWrapper<F> {
 }
 
 impl<F> AsyncFunctionNodeWrapper<F> {
-    /// create a new AsyncFunctionNodeWrapper
+    /// Creates a new AsyncFunctionNodeWrapper with the given name and async function.
     pub fn new(name: String, func: F) -> Self {
         Self {
             name,
@@ -90,14 +96,17 @@ where
     }
 }
 
-/// Config function node wrapper
+/// Wrapper for configuration-aware workflow nodes.
+///
+/// `ConfigFunctionNodeWrapper` adapts a function that needs configuration
+/// into a workflow node, providing access to node configuration during execution.
 pub struct ConfigFunctionNodeWrapper<F> {
     name: String,
     func: F,
 }
 
 impl<F> ConfigFunctionNodeWrapper<F> {
-    /// create a new ConfigFunctionNodeWrapper
+    /// Creates a new ConfigFunctionNodeWrapper with the given name and function.
     pub fn new(name: String, func: F) -> Self {
         Self { name, func }
     }
@@ -134,14 +143,17 @@ where
     }
 }
 
-/// A config and writer async function node wrapper
+/// Wrapper for async configuration and writer-aware workflow nodes.
+///
+/// `ConfigWriterAsyncFunctionNodeWrapper` adapts an async function that needs
+/// both configuration and channel writer access into a workflow node.
 pub struct ConfigWriterAsyncFunctionNodeWrapper<F> {
     name: String,
     func: F,
 }
 
 impl<F> ConfigWriterAsyncFunctionNodeWrapper<F> {
-    /// create a new ConfigWriterAsyncFunctionNodeWrapper
+    /// Creates a new ConfigWriterAsyncFunctionNodeWrapper with the given name and function.
     pub fn new(name: String, func: F) -> Self {
         Self { name, func }
     }
@@ -184,14 +196,17 @@ where
     }
 }
 
-/// A runtime function node wrapper
+/// Wrapper for runtime-aware workflow nodes.
+///
+/// `RuntimeFunctionNodeWrapper` adapts an async function that needs
+/// runtime context access into a workflow node.
 pub struct RuntimeFunctionNodeWrapper<F> {
     name: String,
     func: F,
 }
 
 impl<F> RuntimeFunctionNodeWrapper<F> {
-    /// create a new RuntimeFunctionNodeWrapper
+    /// Creates a new RuntimeFunctionNodeWrapper with the given name and function.
     pub fn new(name: String, func: F) -> Self {
         Self { name, func }
     }
@@ -230,7 +245,10 @@ where
     }
 }
 
-/// branch wrapper
+/// Wrapper for branch function-based workflow nodes.
+///
+/// `BranchFunctionWrapper` adapts a function that performs conditional routing
+/// into a workflow node, enabling decision-making within workflows.
 pub struct BranchFunctionWrapper<F> {
     #[allow(dead_code)]
     name: String,
@@ -238,7 +256,7 @@ pub struct BranchFunctionWrapper<F> {
 }
 
 impl<F> BranchFunctionWrapper<F> {
-    /// create a new BranchFunctionWrapper
+    /// Creates a new BranchFunctionWrapper with the given name and function.
     pub fn new(name: String, func: F) -> Self {
         Self { name, func }
     }
