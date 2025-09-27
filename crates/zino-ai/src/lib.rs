@@ -3,3 +3,5 @@
 #![doc(html_logo_url = "https://zino.cc/assets/zino-logo.svg")]
 
 pub mod workflow;
+
+pub mod completions;

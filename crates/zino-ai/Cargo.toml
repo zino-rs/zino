@@ -14,6 +14,8 @@ license = { workspace = true }
 
 [dependencies]
 async-trait = "0.1.89"
+futures.workspace = true
+reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror = "2.0.16"
