@@ -3,25 +3,16 @@ use crate::{
     middleware,
     model::Tag,
 };
-use ntex::web::{ServiceConfig, get, post, scope};
+use ntex::web::{get, post, scope, ServiceConfig};
 use zino::{DefaultController, RouterConfigure};
 use zino_model::User;
 
 pub fn routes() -> Vec<RouterConfigure> {
-    vec![
-        auth_router as RouterConfigure,
-        file_router as RouterConfigure,
-        user_router as RouterConfigure,
-        tag_router as RouterConfigure,
-    ]
+    vec![auth_router, file_router, user_router, tag_router]
 }
 
 pub fn debug_routes() -> Vec<RouterConfigure> {
-    vec![
-        stats_router as RouterConfigure,
-        user_debug_router as RouterConfigure,
-        tag_debug_router as RouterConfigure,
-    ]
+    vec![stats_router, user_debug_router, tag_debug_router]
 }
 
 fn auth_router(cfg: &mut ServiceConfig) {
