@@ -61,18 +61,16 @@ impl Application for Cluster {
             if scheduler.is_ready() {
                 // Fixed: Move scheduler startup inside main block_on to ensure correct runtime context
                 // https://github.com/ntex-rs/ntex/issues/335#issuecomment-2071498572
-                System::current()
-                    .arbiter()
-                    .spawn(Box::pin(async move {
-                        loop {
-                            scheduler.tick().await;
+                System::current().arbiter().spawn(Box::pin(async move {
+                    loop {
+                        scheduler.tick().await;
 
-                            // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
-                            if let Some(duration) = scheduler.time_till_next_job() {
-                                time::sleep(duration).await;
-                            }
+                        // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
+                        if let Some(duration) = scheduler.time_till_next_job() {
+                            time::sleep(duration).await;
                         }
-                    }));
+                    }
+                }));
             }
 
             let default_routes = self.default_routes.leak() as &'static [_];
