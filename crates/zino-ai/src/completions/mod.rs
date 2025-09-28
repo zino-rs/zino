@@ -17,8 +17,13 @@ pub mod streaming;
 /// Re-export commonly used content types.
 pub use content::Content;
 
+pub use messages::{Message, ToolCall};
+
 /// Re-export request and response types for completion operations.
-pub use requests::{CompletionRequest, CompletionResponse};
+pub use requests::{
+    CompletionError, CompletionModel, CompletionRequest, CompletionRequestBuilder,
+    CompletionResponse,
+};
 
 /// Re-export streaming types for real-time completion handling.
 pub use streaming::{RawStreamingChoice, StreamingCompletionResponse};
