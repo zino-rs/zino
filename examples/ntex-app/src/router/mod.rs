@@ -3,7 +3,7 @@ use crate::{
     middleware,
     model::Tag,
 };
-use ntex::web::{get, post, scope, ServiceConfig};
+use ntex::web::{ServiceConfig, get, post, scope};
 use zino::{DefaultController, RouterConfigure};
 use zino_model::User;
 

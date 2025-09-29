@@ -3,7 +3,7 @@ use crate::{
     middleware,
     model::Tag,
 };
-use actix_web::web::{get, post, scope, ServiceConfig};
+use actix_web::web::{ServiceConfig, get, post, scope};
 use zino::{DefaultController, RouterConfigure};
 use zino_model::User;
 

@@ -83,7 +83,7 @@ features = [
 ]
 
 [workspace.dependencies.serde]
-version = "1.0.226"
+version = "1.0.227"
 features = ["derive"]
 
 [workspace.dependencies.serde_json]

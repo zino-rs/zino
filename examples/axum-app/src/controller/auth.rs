@@ -3,6 +3,7 @@ use zino::{Request, Response, Result, prelude::*};
 use zino_model::user::JwtAuthService;
 
 pub async fn login(mut req: Request) -> Result {
+    let current_time = DateTime::now();
     let body: Map = req.parse_body().await?;
     let (user_id, mut data) = User::generate_token(body).await.extract(&req)?;
 
@@ -15,7 +16,7 @@ pub async fn login(mut req: Request) -> Result {
         .set_if_not_null(LastLoginIp, last_login_ip)
         .set_if_some(LastLoginAt, last_login_at)
         .set_if_some(CurrentLoginIp, req.client_ip())
-        .set_now(CurrentLoginAt)
+        .set(CurrentLoginAt, current_time)
         .inc_one(LoginCount)
         .set_now(UpdatedAt)
         .inc_one(Version)

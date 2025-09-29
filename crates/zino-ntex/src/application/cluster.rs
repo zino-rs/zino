@@ -58,9 +58,9 @@ impl Application for Cluster {
             app_env.load_plugins(self.custom_plugins).await;
         });
         System::new("main").block_on(async {
+            // Fixed: Move scheduler startup inside main block_on to ensure correct runtime context
+            // https://github.com/ntex-rs/ntex/issues/335#issuecomment-2071498572
             if scheduler.is_ready() {
-                // Fixed: Move scheduler startup inside main block_on to ensure correct runtime context
-                // https://github.com/ntex-rs/ntex/issues/335#issuecomment-2071498572
                 System::current().arbiter().spawn(Box::pin(async move {
                     loop {
                         scheduler.tick().await;
