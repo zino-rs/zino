@@ -9,3 +9,5 @@ pub mod completions;
 pub mod providers;
 
 pub mod prompts;
+
+pub mod memory;
