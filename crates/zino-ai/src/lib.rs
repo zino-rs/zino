@@ -7,3 +7,5 @@ pub mod workflow;
 pub mod completions;
 
 pub mod providers;
+
+pub mod prompts;
