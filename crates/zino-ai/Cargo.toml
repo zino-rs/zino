@@ -17,6 +17,7 @@ async-stream = "0.3.6"
 async-trait = "0.1.89"
 bytes.workspace = true
 futures.workspace = true
+minijinja = "2.12.0"
 reqwest = { workspace = true, features = ["stream", "rustls-tls"] }
 serde.workspace = true
 serde_json.workspace = true
