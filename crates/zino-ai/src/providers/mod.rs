@@ -9,3 +9,9 @@ pub mod baidu;
 
 /// MiniMax AI model provider implementation.
 pub mod minimax;
+
+/// Zhipu AI model provider implementation.
+pub mod zhipu;
+
+/// Qwen AI model provider implementation.
+pub mod qwen;
