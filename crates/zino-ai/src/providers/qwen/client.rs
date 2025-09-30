@@ -110,6 +110,7 @@ pub struct ApiErrorResponse {
 /// API response wrapper for Qwen.
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
+#[allow(dead_code)]
 pub(crate) enum ApiResponse<T> {
     /// Successful response with data.
     Ok(T),
