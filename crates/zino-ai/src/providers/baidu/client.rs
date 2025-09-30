@@ -161,6 +161,7 @@ pub struct ApiErrorResponse {
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
+#[allow(dead_code)]
 /// API response wrapper for Baidu.
 pub(crate) enum ApiResponse<T> {
     /// Successful response with data.
