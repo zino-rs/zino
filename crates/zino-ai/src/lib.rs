@@ -11,3 +11,5 @@ pub mod providers;
 pub mod prompts;
 
 pub mod memory;
+
+pub mod embeddings;
