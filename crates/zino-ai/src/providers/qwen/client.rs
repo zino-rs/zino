@@ -108,8 +108,12 @@ pub struct ApiErrorResponse {
 }
 
 /// API response wrapper for Qwen.
+///
+/// This enum is used internally for parsing API responses
+/// and may be used in future implementations.
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
+#[allow(dead_code)]
 pub(crate) enum ApiResponse<T> {
     /// Successful response with data.
     Ok(T),
