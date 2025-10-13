@@ -12,4 +12,6 @@ pub mod prompts;
 
 pub mod memory;
 
+pub mod tool;
+
 pub mod embeddings;
