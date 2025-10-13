@@ -27,7 +27,7 @@ parking_lot = { workspace = true, optional = true }
 zino-core = { workspace = true, optional = true }
 
 [dependencies.lru]
-version = "0.16.0"
+version = "0.16.1"
 optional = true
 
 [lints]

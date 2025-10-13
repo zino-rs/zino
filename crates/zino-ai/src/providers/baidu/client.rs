@@ -163,6 +163,9 @@ pub struct ApiErrorResponse {
 #[serde(untagged)]
 #[allow(dead_code)]
 /// API response wrapper for Baidu.
+///
+/// This enum is used internally for parsing API responses
+/// and may be used in future implementations.
 pub(crate) enum ApiResponse<T> {
     /// Successful response with data.
     Ok(T),
