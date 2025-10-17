@@ -60,8 +60,6 @@ impl EmbeddingModel {
     /// # Arguments
     /// * `url` - The API endpoint URL for the embedding service
     /// * `api_key` - The API key for authentication
-    ///
-    /// ```
     pub fn new(url: String, api_key: String) -> Self {
         Self { url, api_key }
     }
