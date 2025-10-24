@@ -1,6 +1,6 @@
 use crate::class::Class;
 use comrak::{
-    Options, Plugins,
+    options::{Options, Plugins},
     plugins::syntect::{SyntectAdapter, SyntectAdapterBuilder},
 };
 use dioxus::prelude::*;
@@ -25,7 +25,6 @@ pub fn Markdown(props: MarkdownProps) -> Element {
     options.parse.relaxed_autolinks = true;
     options.render.full_info_string = true;
     options.render.escape = true;
-    options.render.ignore_setext = true;
     options.render.ignore_empty_links = true;
 
     let text = props.content.as_ref();
