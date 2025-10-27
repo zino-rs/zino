@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: Install 1.85
         uses: dtolnay/rust-toolchain@v1
         with:
@@ -29,3 +29,14 @@ jobs:
         run: cargo build --features axum,full --verbose
       - name: Run tests
         run: cargo test --verbose
+  doc:
+      name: Documentation
+      runs-on: ubuntu-latest
+      env:
+        RUSTDOCFLAGS: -Dwarnings
+
+      steps:
+        - uses: actions/checkout@v5
+        - uses: dtolnay/rust-toolchain@nightly
+        - uses: dtolnay/install@cargo-docs-rs
+        - run: cargo docs-rs
