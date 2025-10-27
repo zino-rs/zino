@@ -1,7 +1,7 @@
 [package]
 name = "zino-extra"
 description = "Extra utilities for zino."
-version = "0.15.0"
+version = "0.15.1"
 categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
@@ -27,7 +27,7 @@ parking_lot = { workspace = true, optional = true }
 zino-core = { workspace = true, optional = true }
 
 [dependencies.lru]
-version = "0.16.1"
+version = "0.16.2"
 optional = true
 
 [lints]
