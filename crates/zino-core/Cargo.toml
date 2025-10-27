@@ -1,7 +1,7 @@
 [package]
 name = "zino-core"
 description = "Core types and traits for zino."
-version = "0.39.1"
+version = "0.39.2"
 categories = ["asynchronous", "network-programming", "web-programming::http-server"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
