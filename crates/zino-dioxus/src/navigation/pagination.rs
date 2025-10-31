@@ -32,7 +32,7 @@ pub fn Pagination(props: PaginationProps) -> Element {
                     }
                     span {
                         class: "ml-1",
-                        { props.prev_text }
+                        { props.prev_text.into_owned() }
                     }
                 }
             }
@@ -183,7 +183,7 @@ pub fn Pagination(props: PaginationProps) -> Element {
                 } else {
                     span {
                         class: "mr-1",
-                        { props.next_text }
+                        { props.next_text.into_owned() }
                     }
                     SvgIcon {
                         shape: FaArrowRight,

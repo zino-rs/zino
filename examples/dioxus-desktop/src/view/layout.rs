@@ -1,7 +1,7 @@
 use crate::router::Route;
 use dioxus::prelude::*;
 use dioxus_free_icons::icons::{bs_icons::*, fa_brands_icons::FaRust, fa_solid_icons::FaCubes};
-use dioxus_router::prelude::*;
+use dioxus_router::Outlet;
 use zino_dioxus::prelude::*;
 
 pub fn Wrapper() -> Element {

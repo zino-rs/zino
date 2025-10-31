@@ -1,7 +1,6 @@
 use dioxus::{
     desktop::{
         Config, WindowBuilder,
-        WindowCloseBehaviour::*,
         muda::{self, AboutMetadata, Menu},
         tao::window::{Fullscreen, Icon, Theme},
         use_asset_handler,
@@ -389,14 +388,6 @@ where
             }
             if let Some(name) = config.get_str("root-name") {
                 desktop_config = desktop_config.with_root_name(name);
-            }
-            if let Some(behaviour) = config.get_str("close-behaviour") {
-                let behaviour = match behaviour {
-                    "CloseWindow" => CloseWindow,
-                    "LastWindowHides" => LastWindowHides,
-                    _ => LastWindowExitsApp,
-                };
-                desktop_config = desktop_config.with_close_behaviour(behaviour);
             }
         }
 

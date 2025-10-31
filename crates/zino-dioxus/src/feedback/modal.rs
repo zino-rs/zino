@@ -30,7 +30,7 @@ pub fn ModalCard(props: ModalCardProps) -> Element {
                     class: "modal-card-head",
                     div {
                         class: "modal-card-title {props.title_class}",
-                        { props.title }
+                        { props.title.into_owned() }
                     }
                     button {
                         r#type: "button",

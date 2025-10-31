@@ -10,11 +10,11 @@ pub fn FieldContainer(props: FieldContainerProps) -> Element {
             class: props.class,
             label {
                 class: props.label_class,
-                { props.label }
+                { props.label.into_owned() }
                 if !required_mark.is_empty() {
                     span {
                         class: props.mark_class,
-                        { required_mark }
+                        { required_mark.into_owned() }
                     }
                 }
             }
@@ -72,11 +72,11 @@ pub fn HorizontalFieldContainer(props: HorizontalFieldContainerProps) -> Element
                 class: props.field_label_class,
                 label {
                     class: props.label_class,
-                    { props.label }
+                    { props.label.into_owned() }
                     if !required_mark.is_empty() {
                         span {
                             class: props.mark_class,
-                            { required_mark }
+                            { required_mark.into_owned() }
                         }
                     }
                 }

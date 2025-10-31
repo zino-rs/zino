@@ -1,6 +1,6 @@
 //! CSS classes for components.
 
-use dioxus_core::{AttributeValue, prelude::*};
+use dioxus_core::{AttributeValue, IntoAttributeValue};
 use smallvec::SmallVec;
 use std::{borrow::Cow, fmt};
 

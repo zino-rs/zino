@@ -24,11 +24,9 @@ clipboard = ["dioxus-sdk/clipboard"]
 markdown = ["dep:comrak"]
 
 [dependencies]
-dioxus = "0.6.3"
-dioxus-core = "0.6.3"
-dioxus-hooks = "0.6.2"
-dioxus-html = "0.6.3"
-dioxus-router = "0.6.3"
+dioxus = "0.7.0"
+dioxus-core = "0.7.0"
+dioxus-router = "0.7.0"
 chrono = { workspace = true }
 rust_decimal = { workspace = true }
 smallvec = { workspace = true }
@@ -46,7 +44,7 @@ default-features = false
 features = ["shortcodes", "syntect"]
 
 [dependencies.dioxus-free-icons]
-version = "0.9.0"
+version = "0.10.0"
 features = ["bootstrap", "font-awesome-solid"]
 
 [dependencies.dioxus-sdk]

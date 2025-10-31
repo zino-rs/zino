@@ -13,7 +13,7 @@ pub fn Message(props: MessageProps) -> Element {
             if !props.title.is_empty() {
                 div {
                     class: "message-header",
-                    span { { props.title } }
+                    span { { props.title.into_owned() } }
                     button {
                         r#type: "button",
                         class: props.close_class,

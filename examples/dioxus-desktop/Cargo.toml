@@ -7,15 +7,15 @@ rust-version = { workspace = true }
 publish = { workspace = true }
 
 [dependencies]
-dioxus = "0.6.3"
-dioxus-router = "0.6.3"
+dioxus = "0.7.0"
+dioxus-router = "0.7.0"
 tracing = { workspace = true }
 zino = { workspace = true, features = ["dioxus-desktop"] }
 zino-core = { workspace = true, features = ["env-filter", "http-client", "tls-native"] }
 zino-dioxus = { workspace = true }
 
 [dependencies.dioxus-free-icons]
-version = "0.9.0"
+version = "0.10.0"
 features = [
     "bootstrap",
     "font-awesome-brands",

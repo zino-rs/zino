@@ -38,10 +38,10 @@ pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -
                         }
                     }
                 },
-                if !required && !props.empty.as_ref().is_empty() {
+                if !required && !props.empty.is_empty() {
                     option {
                         value: "null",
-                        { props.empty }
+                        { props.empty.into_owned() }
                     }
                 }
                 for entry in options {
@@ -49,7 +49,7 @@ pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -
                         key: "{entry.key()}",
                         value: entry.value().into_owned(),
                         selected: selected_key.as_ref().is_some_and(|key| &entry.key() == key),
-                        { entry.label() }
+                        { entry.label().into_owned() }
                     }
                 }
             }

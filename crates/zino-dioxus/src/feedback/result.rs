@@ -34,7 +34,7 @@ where
                     if !props.title.is_empty() {
                         div {
                             class: "message-header",
-                            span { { props.title } }
+                            span { { props.title.into_owned() } }
                             button {
                                 r#type: "button",
                                 class: props.close_class,
@@ -49,7 +49,7 @@ where
                     }
                     div {
                         class: "message-body",
-                        { props.success }
+                        { props.success.into_owned() }
                     }
                 }
             }
@@ -72,7 +72,7 @@ where
                     if !props.title.is_empty() {
                         div {
                             class: "message-header",
-                            span { { props.title } }
+                            span { { props.title.into_owned() } }
                             button {
                                 r#type: "button",
                                 class: props.close_class,
@@ -87,7 +87,7 @@ where
                     }
                     div {
                         class: "message-body",
-                        span { { props.error } }
+                        span { { props.error.into_owned() } }
                     }
                 }
             }
@@ -109,7 +109,7 @@ where
                         if !props.title.is_empty() {
                             div {
                                 class: "message-header",
-                                span { { props.title } }
+                                span { { props.title.into_owned() } }
                                 button {
                                     r#type: "button",
                                     class: props.close_class,
@@ -124,7 +124,7 @@ where
                         }
                         div {
                             class: "message-body",
-                            span { { props.loading } }
+                            span { { props.loading.into_owned() } }
                         }
                     }
                 }

@@ -1,10 +1,7 @@
 use crate::{class::Class, icon::SvgIcon};
 use dioxus::prelude::*;
 use dioxus_free_icons::icons::{bs_icons::*, fa_solid_icons::FaUpload};
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::{fs, path::PathBuf};
 use zino_core::SharedString;
 use zino_storage::NamedFile;
 
@@ -26,27 +23,25 @@ pub fn FileUpload(props: FileUploadProps) -> Element {
                     r#type: "file",
                     onchange: move |event| async move {
                         if let Some(handler) = props.on_change.as_ref() {
-                            if let Some(file_engine) = event.files() {
-                                let mut files = Vec::new();
-                                file_names.write().clear();
-                                for file in file_engine.files() {
-                                    if let Some(bytes) = file_engine.read_file(&file).await {
-                                        let file_path = Path::new(&file);
-                                        if let Some(file_name) = file_path
-                                            .file_name()
-                                            .map(|f| f.to_string_lossy())
-                                        {
-                                            let mut file = NamedFile::new(file_name);
-                                            if let Some(file_name) = file.file_name() {
-                                                file_names.write().push(file_name.to_owned());
-                                            }
-                                            file.set_bytes(bytes);
-                                            files.push(file);
+                            let mut files = Vec::new();
+                            file_names.write().clear();
+                            for file in event.files() {
+                                if let Ok(bytes) = file.read_bytes().await {
+                                    let file_path = PathBuf::from(file.name());
+                                    if let Some(file_name) = file_path
+                                        .file_name()
+                                        .map(|f| f.to_string_lossy())
+                                    {
+                                        let mut file = NamedFile::new(file_name);
+                                        if let Some(file_name) = file.file_name() {
+                                            file_names.write().push(file_name.to_owned());
                                         }
+                                        file.set_bytes(bytes);
+                                        files.push(file);
                                     }
                                 }
-                                handler.call(files);
                             }
+                            handler.call(files);
                         }
                     },
                     ..props.attributes,
@@ -66,7 +61,7 @@ pub fn FileUpload(props: FileUploadProps) -> Element {
                     }
                     span {
                         class: props.label_class,
-                        { props.label }
+                        { props.label.into_owned() }
                     }
                 }
                 if let Some(children) = props.children {
