@@ -2,7 +2,6 @@ use crate::view::{
     dependency::DependencyList, layout::Wrapper, overview::Overview, stargazer::StargazerList,
 };
 use dioxus::prelude::*;
-use dioxus_router::Routable;
 
 #[derive(Clone, PartialEq, Eq, Routable)]
 #[rustfmt::skip]

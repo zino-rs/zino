@@ -1,5 +1,5 @@
 #![allow(non_snake_case)]
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![windows_subsystem = "windows"]
 
 mod domain;
 mod extension;

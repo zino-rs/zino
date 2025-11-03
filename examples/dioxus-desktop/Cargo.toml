@@ -1,5 +1,5 @@
 [package]
-name = "dioxus-desktop"
+name = "dioxus-app"
 description = "An example for Dioxus desktop integration."
 version = "0.12.0"
 edition = { workspace = true }
@@ -7,12 +7,14 @@ rust-version = { workspace = true }
 publish = { workspace = true }
 
 [dependencies]
-dioxus = "0.7.0"
-dioxus-router = "0.7.0"
 tracing = { workspace = true }
 zino = { workspace = true, features = ["dioxus-desktop"] }
 zino-core = { workspace = true, features = ["env-filter", "http-client", "tls-native"] }
 zino-dioxus = { workspace = true }
+
+[dependencies.dioxus]
+version = "0.7.0"
+features = ["desktop"]
 
 [dependencies.dioxus-free-icons]
 version = "0.10.0"

@@ -8,7 +8,6 @@ use dioxus::{
     },
     prelude::*,
 };
-use dioxus_router::{components::Router, routable::Routable};
 use image::{ImageReader, error::ImageError};
 use std::{fmt::Display, fs, marker::PhantomData, path::Path, str::FromStr, time::Duration};
 use tokio::runtime::Builder;

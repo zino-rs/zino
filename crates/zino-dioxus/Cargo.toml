@@ -19,14 +19,13 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = []
-desktop = ["dep:image", "dioxus/desktop"]
+desktop = ["dep:image", "dioxus/desktop", "dioxus/router"]
 clipboard = ["dioxus-sdk/clipboard"]
 markdown = ["dep:comrak"]
 
 [dependencies]
 dioxus = "0.7.0"
 dioxus-core = "0.7.0"
-dioxus-router = "0.7.0"
 chrono = { workspace = true }
 rust_decimal = { workspace = true }
 smallvec = { workspace = true }
@@ -38,7 +37,7 @@ zino-core = { workspace = true, features = ["runtime-tokio"] }
 zino-storage = { workspace = true }
 
 [dependencies.comrak]
-version = "0.45.0"
+version = "0.47.0"
 optional = true
 default-features = false
 features = ["shortcodes", "syntect"]

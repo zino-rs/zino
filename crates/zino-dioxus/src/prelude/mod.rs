@@ -27,6 +27,3 @@ pub use crate::application::Desktop;
 
 #[cfg(feature = "markdown")]
 pub use crate::typography::Markdown;
-
-#[doc(no_inline)]
-pub use dioxus_router::components::Router;

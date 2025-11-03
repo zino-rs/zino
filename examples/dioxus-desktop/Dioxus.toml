@@ -1,6 +1,5 @@
 [application]
 name = "DataCube"
-default_platform = "desktop"
 out_dir = "dist"
 
 [web.app]

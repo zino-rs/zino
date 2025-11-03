@@ -6,6 +6,8 @@ which emphasizes **simplicity**, **extensibility** and **productivity**.
 [![Crates.io](https://img.shields.io/crates/v/zino)][zino]
 [![Documentation](https://shields.io/docsrs/zino)][zino-docs]
 [![License](https://img.shields.io/crates/l/zino)][license]
+[![GitCode](https://gitcode.com/zino-rs/zino/star/badge.svg)][gitcode]
+[![Gitee](https://gitee.com/photino/zino/badge/star.svg)][gitee]
 
 ## Highlights
 
@@ -150,3 +152,5 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [`ntex-app`]: https://github.com/zino-rs/zino/tree/main/examples/ntex-app
 [license]: https://github.com/zino-rs/zino/blob/main/LICENSE
 [zino-issue]: https://github.com/zino-rs/zino/issues/new
+[gitcode]: https://gitcode.com/zino-rs/zino
+[gitee]: https://gitee.com/photino/zino
