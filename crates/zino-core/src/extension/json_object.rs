@@ -249,7 +249,7 @@ pub trait JsonObjectExt {
     fn extract_from_populated<K: AsRef<str>>(&mut self, key: &str, fields: &[K]);
 
     /// Clones the entries corresponding to the keys.
-    fn clone_entries<K: AsRef<str>>(&mut self, keys: &[K]) -> Self;
+    fn clone_entries<K: AsRef<str>>(&self, keys: &[K]) -> Self;
 
     /// Extracts the entries corresponding to the keys.
     fn extract_entries<K: AsRef<str>>(&mut self, keys: &[K]) -> Self;
@@ -791,7 +791,7 @@ impl JsonObjectExt for Map {
     }
 
     #[inline]
-    fn clone_entries<K: AsRef<str>>(&mut self, keys: &[K]) -> Self {
+    fn clone_entries<K: AsRef<str>>(&self, keys: &[K]) -> Self {
         let mut map = Map::new();
         for key in keys {
             let field = key.as_ref();

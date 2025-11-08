@@ -12,9 +12,6 @@ mod radio;
 mod select;
 mod textarea;
 
-#[cfg(feature = "clipboard")]
-mod clipboard;
-
 pub use button::{Button, ButtonProps, Buttons, ButtonsProps};
 pub use checkbox::{Checkbox, CheckboxProps};
 pub use field::{
@@ -27,9 +24,6 @@ pub use progress::{Progress, ProgressProps};
 pub use radio::{Radio, RadioProps};
 pub use select::{DataSelect, DataSelectProps};
 pub use textarea::{Textarea, TextareaProps};
-
-#[cfg(feature = "clipboard")]
-pub use clipboard::{CopyToClipboard, CopyToClipboardProps};
 
 /// An interface for the data entries.
 pub trait DataEntry {

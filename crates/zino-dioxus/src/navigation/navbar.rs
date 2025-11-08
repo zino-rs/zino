@@ -1,6 +1,8 @@
 use crate::{class::Class, extension::VNodeExt};
-use dioxus::prelude::*;
-use dioxus_router::{components::Link, navigation::NavigationTarget};
+use dioxus::{
+    prelude::*,
+    router::{components::Link, navigation::NavigationTarget},
+};
 
 /// A responsive navigation header.
 pub fn Navbar(props: NavbarProps) -> Element {

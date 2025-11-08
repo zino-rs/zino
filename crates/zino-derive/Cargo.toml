@@ -15,8 +15,8 @@ proc-macro = true
 
 [dependencies]
 proc-macro2 = "1.0.103"
-quote = "1.0.41"
-syn = "2.0.108"
+quote = "1.0.42"
+syn = "2.0.109"
 convert_case = { workspace = true }
 zino-core = { workspace = true }
 zino-orm = { workspace = true }

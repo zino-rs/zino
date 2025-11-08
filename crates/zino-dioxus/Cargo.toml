@@ -19,13 +19,11 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = []
-desktop = ["dep:image", "dioxus/desktop", "dioxus/router"]
-clipboard = ["dioxus-sdk/clipboard"]
+desktop = ["dep:image", "dioxus/desktop"]
 markdown = ["dep:comrak"]
 
 [dependencies]
-dioxus = "0.7.0"
-dioxus-core = "0.7.0"
+dioxus-core = "0.7.1"
 chrono = { workspace = true }
 rust_decimal = { workspace = true }
 smallvec = { workspace = true }
@@ -42,13 +40,13 @@ optional = true
 default-features = false
 features = ["shortcodes", "syntect"]
 
+[dependencies.dioxus]
+version = "0.7.1"
+features = ["router"]
+
 [dependencies.dioxus-free-icons]
 version = "0.10.0"
 features = ["bootstrap", "font-awesome-solid"]
-
-[dependencies.dioxus-sdk]
-version = "0.6.0"
-optional = true
 
 [dependencies.image]
 version = "0.25.8"

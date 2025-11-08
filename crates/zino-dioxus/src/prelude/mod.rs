@@ -19,9 +19,6 @@ pub use crate::{
     typography::{Card, FixedWidthSpan, Tag, Tags, TuiEditor},
 };
 
-#[cfg(feature = "clipboard")]
-pub use crate::form::CopyToClipboard;
-
 #[cfg(feature = "desktop")]
 pub use crate::application::Desktop;
 
