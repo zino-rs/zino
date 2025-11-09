@@ -127,35 +127,35 @@ features = [
 
 [workspace.dependencies.zino-auth]
 path = "crates/zino-auth"
-version = "0.11.2"
+version = "0.12.0"
 
 [workspace.dependencies.zino-core]
 path = "crates/zino-core"
-version = "0.39.2"
+version = "0.40.0"
 
 [workspace.dependencies.zino-channel]
 path = "crates/zino-channel"
-version = "0.11.2"
+version = "0.12.0"
 
 [workspace.dependencies.zino-derive]
 path = "crates/zino-derive"
-version = "0.37.2"
+version = "0.38.0"
 
 [workspace.dependencies.zino-http]
 path = "crates/zino-http"
-version = "0.11.2"
+version = "0.12.0"
 
 [workspace.dependencies.zino-openapi]
 path = "crates/zino-openapi"
-version = "0.10.2"
+version = "0.11.0"
 
 [workspace.dependencies.zino-orm]
 path = "crates/zino-orm"
-version = "0.11.2"
+version = "0.12.0"
 
 [workspace.dependencies.zino-storage]
 path = "crates/zino-storage"
-version = "0.11.2"
+version = "0.12.0"
 
 [workspace.lints.rust]
 missing_docs = "warn"

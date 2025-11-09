@@ -1,7 +1,7 @@
 [package]
 name = "zino-ntex"
 description = "Integrations with ntex for zino."
-version = "0.13.2"
+version = "0.14.0"
 categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"

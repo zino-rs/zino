@@ -1,11 +1,10 @@
 use crate::{
     controller::{auth, file, stats, user},
     middleware,
-    model::Tag,
+    model::{Tag, User},
 };
 use ntex::web::{ServiceConfig, get, post, scope};
 use zino::{DefaultController, RouterConfigure};
-use zino_model::User;
 
 pub fn routes() -> Vec<RouterConfigure> {
     vec![auth_router, file_router, user_router, tag_router]

@@ -1,7 +1,7 @@
 [package]
 name = "zino-model"
 description = "Domain models for zino."
-version = "0.37.2"
+version = "0.38.0"
 categories = ["web-programming", "database"]
 keywords = ["web", "model", "orm", "schema"]
 readme = "README.md"

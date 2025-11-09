@@ -1,5 +1,5 @@
+use crate::model::User;
 use zino::prelude::*;
-use zino_model::User;
 
 pub fn every_15s(ctx: &mut JobContext) {
     if let Some(job_data) = ctx.get_data_mut::<Map>() {
