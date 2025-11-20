@@ -1,7 +1,7 @@
 [package]
 name = "zino-axum"
 description = "Integrations with axum for zino."
-version = "0.14.0"
+version = "0.14.1"
 categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
@@ -26,7 +26,7 @@ zino-orm = { workspace = true, optional = true }
 zino-openapi = { workspace = true }
 
 [dependencies.axum]
-version = "0.8.6"
+version = "0.8.7"
 default-features = false
 features = [
     "http1",

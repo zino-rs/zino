@@ -1,7 +1,7 @@
 [package]
 name = "zino-amis"
 description = "UI generator for amis."
-version = "0.12.0"
+version = "0.12.1"
 categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
@@ -21,7 +21,7 @@ tracing = { workspace = true }
 zino-core = { workspace = true, features = ["tracing-subscriber"] }
 
 [dependencies.hyper]
-version = "1.7.0"
+version = "1.8.1"
 features = ["http1", "server"]
 
 [dependencies.hyper-util]
