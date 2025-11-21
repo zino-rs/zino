@@ -15,8 +15,8 @@ use std::{
     time::{Duration, Instant},
 };
 use zino_core::{
-    JsonValue, SharedString, Uuid, error::Error, extension::JsonValueExt, trace::TraceContext,
-    validation::Validation,
+    JsonValue, SharedString, Uuid, application::ApplicationCode, error::Error,
+    extension::JsonValueExt, trace::TraceContext, validation::Validation,
 };
 use zino_storage::NamedFile;
 
@@ -46,6 +46,42 @@ pub type StatusCode = http::StatusCode;
 pub type DataTransformer = fn(data: &JsonValue) -> Result<Bytes, Error>;
 
 /// An HTTP response.
+///
+/// ```rust,ignore
+/// use zino_core::{application::ApplicationCode, error::Error, SharedString};
+/// use zino_http::Response;
+///
+/// #[derive(Debug, Clone, Copy, Default, PartialEq)]
+/// #[repr(i32)]
+/// pub enum AppCode {
+///     #[default]
+///     Success = 20000,
+///     InvalidInput = 40000,
+///     InternalError = 50000,
+/// }
+///
+/// impl ApplicationCode for AppCode {
+///     #[inline]
+///     fn code(&self) -> i32 {
+///         *self as i32
+///     }
+///
+///     #[inline]
+///     fn message(&self) -> SharedString {
+///         match self {
+///             AppCode::Success => "success".into(),
+///             AppCode::InvalidInput => "invalid input".into(),
+///             AppCode::InternalError => "internal error".into(),
+///         }
+///     }
+/// }
+///
+/// async fn send_success_response() -> Result<Response, Error> {
+///     let mut res = Response::default();
+///     res.set_app_code(AppCode::Success);
+///     Ok(res)
+/// }
+/// ```
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub struct Response<S: ResponseCode> {
@@ -59,14 +95,10 @@ pub struct Response<S: ResponseCode> {
     /// Status code.
     #[serde(rename = "status")]
     status_code: u16,
-    /// Error code.
-    #[serde(rename = "error")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    error_code: Option<S::ErrorCode>,
-    /// Business code.
+    /// Application code.
     #[serde(rename = "code")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    business_code: Option<S::BusinessCode>,
+    app_code: Option<i32>,
     /// A human-readable explanation specific to this occurrence of the problem.
     #[serde(skip_serializing_if = "Option::is_none")]
     detail: Option<SharedString>,
@@ -120,8 +152,7 @@ impl<S: ResponseCode> Response<S> {
             type_uri: code.type_uri(),
             title: code.title(),
             status_code: code.status_code(),
-            error_code: code.error_code(),
-            business_code: code.business_code(),
+            app_code: None,
             detail: None,
             instance: None,
             success,
@@ -153,8 +184,7 @@ impl<S: ResponseCode> Response<S> {
             type_uri: code.type_uri(),
             title: code.title(),
             status_code: code.status_code(),
-            error_code: code.error_code(),
-            business_code: code.business_code(),
+            app_code: None,
             detail: None,
             instance: (!success).then(|| ctx.instance().into()),
             success,
@@ -232,8 +262,6 @@ impl<S: ResponseCode> Response<S> {
         self.type_uri = code.type_uri();
         self.title = code.title();
         self.status_code = code.status_code();
-        self.error_code = code.error_code();
-        self.business_code = code.business_code();
         self.success = success;
         if success {
             self.detail = None;
@@ -250,16 +278,11 @@ impl<S: ResponseCode> Response<S> {
         self.status_code = status_code.into();
     }
 
-    /// Sets the error code.
+    /// Sets the application code.
     #[inline]
-    pub fn set_error_code(&mut self, error_code: impl Into<S::ErrorCode>) {
-        self.error_code = Some(error_code.into());
-    }
-
-    /// Sets the bussiness code.
-    #[inline]
-    pub fn set_business_code(&mut self, business_code: impl Into<S::BusinessCode>) {
-        self.business_code = Some(business_code.into());
+    pub fn set_app_code<C: ApplicationCode>(&mut self, app_code: &C) {
+        self.app_code = Some(app_code.code());
+        self.set_message(app_code.message());
     }
 
     /// Sets a URI reference that identifies the specific occurrence of the problem.
@@ -482,16 +505,10 @@ impl<S: ResponseCode> Response<S> {
         self.status_code
     }
 
-    /// Returns the error code.
+    /// Returns the optional application code.
     #[inline]
-    pub fn error_code(&self) -> Option<&S::ErrorCode> {
-        self.error_code.as_ref()
-    }
-
-    /// Returns the business code.
-    #[inline]
-    pub fn business_code(&self) -> Option<&S::BusinessCode> {
-        self.business_code.as_ref()
+    pub fn app_code(&self) -> Option<i32> {
+        self.app_code
     }
 
     /// Returns `true` if the response is successful or `false` otherwise.

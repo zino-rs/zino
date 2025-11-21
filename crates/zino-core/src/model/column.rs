@@ -219,12 +219,19 @@ impl<'a> Column<'a> {
     /// Returns `true` if the column is an array type.
     ///
     /// Only supports `Vec<Uuid>` | `Vec<String>` | `Vec<i64>` | `Vec<u64>`
-    /// | `Vec<i32>` | `Vec<u32>`.
+    /// | `Vec<i32>` | `Vec<u32>` | `Vec<f64>` | `Vec<f32>`.
     #[inline]
     pub fn is_array_type(&self) -> bool {
         matches!(
             self.type_name(),
-            "Vec<Uuid>" | "Vec<String>" | "Vec<i64>" | "Vec<u64>" | "Vec<i32>" | "Vec<u32>"
+            "Vec<Uuid>"
+                | "Vec<String>"
+                | "Vec<i64>"
+                | "Vec<u64>"
+                | "Vec<i32>"
+                | "Vec<u32>"
+                | "Vec<f64>"
+                | "Vec<f32>"
         )
     }
 
@@ -278,6 +285,14 @@ impl<'a> Column<'a> {
             }),
             "Vec<i32>" | "Vec<u32>" => Schema::Array(ArraySchema {
                 items: Box::new(Schema::Int),
+                attributes: BTreeMap::new(),
+            }),
+            "Vec<f64>" => Schema::Array(ArraySchema {
+                items: Box::new(Schema::Double),
+                attributes: BTreeMap::new(),
+            }),
+            "Vec<f32>" => Schema::Array(ArraySchema {
+                items: Box::new(Schema::Float),
                 attributes: BTreeMap::new(),
             }),
             "Option<String>" => {
@@ -472,6 +487,20 @@ impl<'a> Column<'a> {
                 definition.upsert("type", "array");
                 definition.upsert("items", items);
             }
+            "Vec<f64>" => {
+                let mut items = Map::new();
+                items.upsert("type", "number");
+                items.upsert("format", "double");
+                definition.upsert("type", "array");
+                definition.upsert("items", items);
+            }
+            "Vec<f32>" => {
+                let mut items = Map::new();
+                items.upsert("type", "number");
+                items.upsert("format", "float");
+                definition.upsert("type", "array");
+                definition.upsert("items", items);
+            }
             "Map" => {
                 definition.upsert("type", "object");
             }
@@ -655,6 +684,8 @@ impl<'a> Column<'a> {
             "Vec<i64>" => self.mock_integer_array::<i64>().into(),
             "Vec<u32>" => self.mock_integer_array::<u32>().into(),
             "Vec<u64>" => self.mock_integer_array::<u64>().into(),
+            "Vec<f32>" => self.mock_float_array::<f32>().into(),
+            "Vec<f64>" => self.mock_float_array::<f64>().into(),
             "Vec<String>" => self.mock_string_array().into(),
             _ => JsonValue::Null,
         }
@@ -721,6 +752,23 @@ impl<'a> Column<'a> {
             let num_items = rng.random_range(min_items..=max_items);
             (0..num_items).map(|_| self.mock_integer::<T>()).collect()
         }
+    }
+
+    /// Generates a float array for the column.
+    fn mock_float_array<T>(&self) -> Vec<JsonValue>
+    where
+        StandardUniform: Distribution<T>,
+        T: Into<JsonValue>,
+    {
+        let extra = self.extra();
+        let mut rng = rand::rng();
+        let mut min_items = extra.get_usize("min_items").unwrap_or(0);
+        if self.has_attribute("nonempty") {
+            min_items = min_items.max(1);
+        }
+        let max_items = extra.get_usize("max_items").unwrap_or(8);
+        let num_items = rng.random_range(min_items..=max_items);
+        (0..num_items).map(|_| random::<T>().into()).collect()
     }
 
     /// Generates a string array for the column.

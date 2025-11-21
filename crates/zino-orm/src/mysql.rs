@@ -50,7 +50,7 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
             }
             "Vec<u8>" => "BLOB",
             "Vec<String>" | "Vec<Uuid>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>"
-            | "Map" => "JSON",
+            | "Vec<f64>" | "Vec<f32>" | "Map" => "JSON",
             _ => "TEXT",
         }
     }
@@ -148,7 +148,8 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
             #[cfg(feature = "orm-mariadb")]
             "Uuid" | "Option<Uuid>" => format!("'{value}'").into(),
             "Vec<u8>" => format!("'{value}'").into(),
-            "Vec<String>" | "Vec<Uuid>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>" => {
+            "Vec<String>" | "Vec<Uuid>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>"
+            | "Vec<f64>" | "Vec<f32>" => {
                 if value.contains(',') {
                     let values = value
                         .split(',')
@@ -394,7 +395,8 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
                     format!(r#"{field} = {value}"#)
                 }
             }
-            "Vec<String>" | "Vec<Uuid>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>" => {
+            "Vec<String>" | "Vec<Uuid>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>"
+            | "Vec<f64>" | "Vec<f32>" => {
                 if let Some(value) = value.as_str() {
                     if value == "nonempty" {
                         format!(r#"json_length({field}) > 0"#)

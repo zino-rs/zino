@@ -47,6 +47,8 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
             "Vec<Uuid>" => "UUID[]",
             "Vec<u64>" | "Vec<i64>" => "BIGINT[]",
             "Vec<u32>" | "Vec<i32>" => "INT[]",
+            "Vec<f64>" => "DOUBLE PRECISION[]",
+            "Vec<f32>" => "REAL[]",
             "Map" => "JSONB",
             _ => "TEXT",
         }
@@ -146,7 +148,8 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
             },
             "Uuid" | "Option<Uuid>" => format!("'{value}'::uuid").into(),
             "Vec<u8>" => format!(r"'\x{value}'").into(),
-            "Vec<Uuid>" | "Vec<String>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>" => {
+            "Vec<Uuid>" | "Vec<String>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>"
+            | "Vec<f64>" | "Vec<f32>" => {
                 let column_type = self.column_type();
                 if value.contains(',') {
                     let values = value
@@ -404,7 +407,8 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
                     format!(r#"{field} = {value}"#)
                 }
             }
-            "Vec<Uuid>" | "Vec<String>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>" => {
+            "Vec<Uuid>" | "Vec<String>" | "Vec<u64>" | "Vec<i64>" | "Vec<u32>" | "Vec<i32>"
+            | "Vec<f64>" | "Vec<f32>" => {
                 if let Some(value) = value.as_str() {
                     if value == "nonempty" {
                         format!(r#"array_length({field}, 1) > 0"#)
@@ -480,6 +484,8 @@ impl DecodeRow<DatabaseRow> for Map {
                     "BYTEA" => decode_raw::<Vec<u8>>(field, raw_value)?.into(),
                     "INT4[]" => decode_raw::<Vec<i32>>(field, raw_value)?.into(),
                     "INT8[]" => decode_raw::<Vec<i64>>(field, raw_value)?.into(),
+                    "FLOAT4[]" => decode_raw::<Vec<f32>>(field, raw_value)?.into(),
+                    "FLOAT8[]" => decode_raw::<Vec<f64>>(field, raw_value)?.into(),
                     "TEXT[]" => decode_raw::<Vec<String>>(field, raw_value)?.into(),
                     "UUID[]" => {
                         let values = decode_raw::<Vec<Uuid>>(field, raw_value)?;
@@ -539,6 +545,16 @@ impl DecodeRow<DatabaseRow> for Record {
                     "INT8[]" => {
                         let values = decode_raw::<Vec<i64>>(field, raw_value)?;
                         let vec = values.into_iter().map(AvroValue::Long).collect();
+                        AvroValue::Array(vec)
+                    }
+                    "FLOAT4[]" => {
+                        let values = decode_raw::<Vec<f32>>(field, raw_value)?;
+                        let vec = values.into_iter().map(AvroValue::Float).collect();
+                        AvroValue::Array(vec)
+                    }
+                    "FLOAT8[]" => {
+                        let values = decode_raw::<Vec<f64>>(field, raw_value)?;
+                        let vec = values.into_iter().map(AvroValue::Double).collect();
                         AvroValue::Array(vec)
                     }
                     "TEXT[]" => {

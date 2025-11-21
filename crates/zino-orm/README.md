@@ -45,6 +45,8 @@ The following optional features are available:
 | `Vec<u8>`                     | BLOB               | BYTEA                 | BLOB            |
 | `Vec<i32>`, `Vec<u32>`        | JSON               | INT[]                 | TEXT            |
 | `Vec<i64>`, `Vec<u64>`        | JSON               | BIGINT[]              | TEXT            |
+| `Vec<f32>`                    | JSON               | REAL[]                | TEXT            |
+| `Vec<f64>`                    | JSON               | DOUBLE PRECISION[]    | TEXT            |
 | `Vec<String>`                 | JSON               | TEXT[]                | TEXT            |
 | `Vec<UUID>`                   | JSON               | UUID[]                | TEXT            |
 | `Map`                         | JSON               | JSONB                 | TEXT            |

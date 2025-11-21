@@ -51,6 +51,7 @@ use std::{
 use toml::value::Table;
 
 mod agent;
+mod app_code;
 mod app_type;
 mod plugin;
 mod secret_key;
@@ -81,6 +82,7 @@ pub use preferences::Preferences;
 use crate::{error::Error, extension::HeaderMapExt, trace::TraceContext};
 
 pub use agent::Agent;
+pub use app_code::ApplicationCode;
 pub use app_type::AppType;
 pub use plugin::Plugin;
 pub use server_tag::ServerTag;
