@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use zino_core::SharedString;
 
 /// Trait for response code.
-/// See [Problem Details for HTTP APIs](https://tools.ietf.org/html/rfc7807).
+/// See [Problem Details for HTTP APIs](https://tools.ietf.org/html/rfc9457).
 pub trait ResponseCode {
     /// 200 Ok.
     const OK: Self;

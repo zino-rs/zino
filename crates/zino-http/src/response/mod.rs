@@ -1,4 +1,42 @@
 //! Constructing responses and rejections.
+//!
+//! # Examples
+//!
+//! ```rust
+//! use zino_core::{application::ApplicationCode, error::Error, SharedString};
+//! use zino_http::response::{Response, StatusCode};
+//!
+//! #[derive(Debug, Clone, Copy, Default, PartialEq)]
+//! #[repr(i32)]
+//! pub enum AppCode {
+//!     #[default]
+//!     Success = 20000,
+//!     InvalidInput = 40001,
+//!     InternalError = 50000,
+//! }
+//!
+//! impl ApplicationCode for AppCode {
+//!     #[inline]
+//!     fn code(&self) -> i32 {
+//!         *self as i32
+//!     }
+//!
+//!     #[inline]
+//!     fn message(&self) -> SharedString {
+//!         match self {
+//!             AppCode::Success => "success".into(),
+//!             AppCode::InvalidInput => "invalid input".into(),
+//!             AppCode::InternalError => "internal error".into(),
+//!         }
+//!     }
+//! }
+//!
+//! async fn send_success_response() -> Result<Response<StatusCode>, Error> {
+//!     let mut res = Response::default();
+//!     res.set_app_code(&AppCode::Success);
+//!     Ok(res)
+//! }
+//! ```
 
 use crate::{
     helper,
@@ -46,42 +84,6 @@ pub type StatusCode = http::StatusCode;
 pub type DataTransformer = fn(data: &JsonValue) -> Result<Bytes, Error>;
 
 /// An HTTP response.
-///
-/// ```rust,ignore
-/// use zino_core::{application::ApplicationCode, error::Error, SharedString};
-/// use zino_http::Response;
-///
-/// #[derive(Debug, Clone, Copy, Default, PartialEq)]
-/// #[repr(i32)]
-/// pub enum AppCode {
-///     #[default]
-///     Success = 20000,
-///     InvalidInput = 40000,
-///     InternalError = 50000,
-/// }
-///
-/// impl ApplicationCode for AppCode {
-///     #[inline]
-///     fn code(&self) -> i32 {
-///         *self as i32
-///     }
-///
-///     #[inline]
-///     fn message(&self) -> SharedString {
-///         match self {
-///             AppCode::Success => "success".into(),
-///             AppCode::InvalidInput => "invalid input".into(),
-///             AppCode::InternalError => "internal error".into(),
-///         }
-///     }
-/// }
-///
-/// async fn send_success_response() -> Result<Response, Error> {
-///     let mut res = Response::default();
-///     res.set_app_code(AppCode::Success);
-///     Ok(res)
-/// }
-/// ```
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub struct Response<S: ResponseCode> {
@@ -243,11 +245,8 @@ impl<S: ResponseCode> Response<S> {
                 self.type_uri = code.type_uri();
                 self.title = code.title();
                 self.status_code = code.status_code();
-                self.error_code = code.error_code();
-                self.business_code = code.business_code();
                 self.success = false;
                 self.detail = Some(err.to_string().into());
-                self.message = None;
                 self.json_data = JsonValue::Null;
                 self.bytes_data = Bytes::new();
             }
@@ -282,7 +281,7 @@ impl<S: ResponseCode> Response<S> {
     #[inline]
     pub fn set_app_code<C: ApplicationCode>(&mut self, app_code: &C) {
         self.app_code = Some(app_code.code());
-        self.set_message(app_code.message());
+        self.message = Some(app_code.message());
     }
 
     /// Sets a URI reference that identifies the specific occurrence of the problem.
