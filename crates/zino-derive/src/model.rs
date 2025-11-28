@@ -231,7 +231,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 let setter = if type_name == "String" {
                     if is_inherent {
                         let name_snake = name
-                            .with_boundaries(&[Boundary::LowerUpper])
+                            .set_boundaries(&[Boundary::LowerUpper])
                             .to_case(Case::Snake);
                         let parser_ident = format_ident!("parse_{}", name_snake);
                         quote! {
@@ -288,7 +288,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                     }
                 } else if let Some(type_generics) = parser::parse_option_type(&type_name) {
                     let type_generics_snake = type_generics
-                        .with_boundaries(&[Boundary::LowerUpper])
+                        .set_boundaries(&[Boundary::LowerUpper])
                         .to_case(Case::Snake);
                     let parser_ident = format_ident!("parse_{}", type_generics_snake);
                     quote! {
@@ -308,7 +308,7 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                     }
                 } else {
                     let type_name_snake = type_name
-                        .with_boundaries(&[Boundary::LowerUpper])
+                        .set_boundaries(&[Boundary::LowerUpper])
                         .to_case(Case::Snake);
                     let parser_ident = format_ident!("parse_{}", type_name_snake);
                     quote! {

@@ -15,7 +15,7 @@ rust-version = "1.85"
 publish = false
 
 [workspace.dependencies]
-tracing = "0.1.41"
+tracing = "0.1.43"
 
 [workspace.dependencies.serde]
 version = "1.0.228"
