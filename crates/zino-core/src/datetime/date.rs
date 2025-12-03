@@ -193,7 +193,7 @@ impl Date {
                     28
                 }
             }
-            _ => panic!("invalid month: {month}"),
+            _ => unreachable!("invalid month: {month}"),
         }
     }
 

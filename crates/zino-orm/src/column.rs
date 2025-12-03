@@ -123,6 +123,15 @@ impl ColumnExt for Column<'_> {
         } else if self.is_not_null() {
             definition += " NOT NULL";
         }
+        if cfg!(any(
+            feature = "orm-mariadb",
+            feature = "orm-mysql",
+            feature = "orm-tidb"
+        )) {
+            if let Some(comment) = self.comment() {
+                definition = format!("{definition} COMMENT '{comment}'");
+            }
+        }
         definition
     }
 

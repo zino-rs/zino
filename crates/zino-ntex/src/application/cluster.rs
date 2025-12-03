@@ -32,8 +32,8 @@ impl Application for Cluster {
     const APP_TYPE: AppType = AppType::Server;
 
     #[inline]
-    fn register(mut self, routes: Self::Routes) -> Self {
-        self.default_routes = routes;
+    fn register(mut self, mut routes: Self::Routes) -> Self {
+        self.default_routes.append(&mut routes);
         self
     }
 
