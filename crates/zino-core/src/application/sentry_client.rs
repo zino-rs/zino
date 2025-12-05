@@ -80,12 +80,6 @@ pub(super) fn init<APP: Application + ?Sized>() {
                 SessionMode::Request
             };
         }
-        if let Some(extra_border_frames) = config.get_str_array("extra-border-frames") {
-            client_options.extra_border_frames = extra_border_frames;
-        }
-        if let Some(trim_backtraces) = config.get_bool("trim-backtraces") {
-            client_options.trim_backtraces = trim_backtraces;
-        }
         if let Some(user_agent) = config.get_str("user-agent") {
             client_options.user_agent = user_agent.into();
         }

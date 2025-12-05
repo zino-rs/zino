@@ -112,6 +112,7 @@ pub struct FileUploadProps {
     #[props(extends = input)]
     attributes: Vec<Attribute>,
     /// The children to render within the component.
+    #[props(into)]
     children: Option<Element>,
 }
 

@@ -64,7 +64,6 @@ fn main() {
 | [`zino-derive`] | Derived traits.                   | [![Crates.io](https://img.shields.io/crates/v/zino-derive)][zino-derive] | [![Documentation](https://shields.io/docsrs/zino-derive)][zino-derive-docs] |
 | [`zino-model`]  | Domain models.                    | [![Crates.io](https://img.shields.io/crates/v/zino-model)][zino-model] | [![Documentation](https://shields.io/docsrs/zino-model)][zino-model-docs] |
 | [`zino-connector`] | Connector to data sources.     | [![Crates.io](https://img.shields.io/crates/v/zino-connector)][zino-connector] | [![Documentation](https://shields.io/docsrs/zino-connector)][zino-connector-docs] |
-| [`zino-chatbot`] | Chatbot services.                | [![Crates.io](https://img.shields.io/crates/v/zino-chatbot)][zino-chatbot] | [![Documentation](https://shields.io/docsrs/zino-chatbot)][zino-chatbot-docs] |
 | [`zino-extra`]  | Extra utilities.                  | [![Crates.io](https://img.shields.io/crates/v/zino-extra)][zino-extra] | [![Documentation](https://shields.io/docsrs/zino-extra)][zino-extra-docs] |
 | [`zino-actix`]  | Integrations with actix-web.      | [![Crates.io](https://img.shields.io/crates/v/zino-actix)][zino-actix] | [![Documentation](https://shields.io/docsrs/zino-actix)][zino-actix-docs] |
 | [`zino-axum`]   | Integrations with axum.           | [![Crates.io](https://img.shields.io/crates/v/zino-axum)][zino-axum] | [![Documentation](https://shields.io/docsrs/zino-axum)][zino-axum-docs] |
@@ -91,7 +90,6 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [`zino-orm`]: https://github.com/zino-rs/zino/tree/main/crates/zino-orm
 [`zino-model`]: https://github.com/zino-rs/zino/tree/main/crates/zino-model
 [`zino-connector`]: https://github.com/zino-rs/zino/tree/main/crates/zino-connector
-[`zino-chatbot`]: https://github.com/zino-rs/zino/tree/main/crates/zino-chatbot
 [`zino-extra`]: https://github.com/zino-rs/zino/tree/main/crates/zino-extra
 [`zino-actix`]: https://github.com/zino-rs/zino/tree/main/crates/zino-actix
 [`zino-axum`]: https://github.com/zino-rs/zino/tree/main/crates/zino-axum
