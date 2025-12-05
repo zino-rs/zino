@@ -128,10 +128,7 @@ impl Application for Cluster {
                     if let Some(auto) = config.get_bool("auto-routing") {
                         auto_routing = auto;
                     }
-                    if let Some(dir) = config.get_str("page-dir") {
-                        public_dir = dir;
-                        public_route_prefix = "/page";
-                    } else if let Some(dir) = config.get_str("public-dir") {
+                    if let Some(dir) = config.get_str("public-dir") {
                         public_dir = dir;
                     }
                     if let Some(route_prefix) = config.get_str("public-route-prefix") {
@@ -177,11 +174,10 @@ impl Application for Cluster {
                     let serve_dir = ServeDir::new(public_dir)
                         .precompressed_gzip()
                         .precompressed_br()
-                        .append_index_html_on_directories(true)
                         .not_found_service(ServeFile::new(&not_found_file));
                     let mut serve_dir_route =
                         Router::new().nest_service(public_route_prefix, serve_dir);
-                    if public_route_prefix.ends_with("/page") {
+                    if auto_routing {
                         serve_dir_route =
                             serve_dir_route.layer(from_fn(middleware::serve_static_pages));
                     }

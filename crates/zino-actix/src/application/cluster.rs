@@ -109,10 +109,7 @@ impl Application for Cluster {
                 let mut body_limit = 128 * 1024 * 1024; // 128MB
                 let mut request_timeout = Duration::from_secs(60); // 60 seconds
                 if let Some(config) = app_state.get_config("server") {
-                    if let Some(dir) = config.get_str("page-dir") {
-                        public_dir = dir;
-                        public_route_prefix = "/page";
-                    } else if let Some(dir) = config.get_str("public-dir") {
+                    if let Some(dir) = config.get_str("public-dir") {
                         public_dir = dir;
                     }
                     if let Some(route_prefix) = config.get_str("public-route-prefix") {
