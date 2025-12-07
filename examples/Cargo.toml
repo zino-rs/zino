@@ -23,31 +23,31 @@ features = ["derive"]
 
 [workspace.dependencies.zino]
 path = "../crates/zino"
-version = "0.40.1"
+version = "0.41.0"
 
 [workspace.dependencies.zino-amis]
 path = "../crates/zino-amis"
-version = "0.12.1"
+version = "0.13.0"
 
 [workspace.dependencies.zino-core]
 path = "../crates/zino-core"
-version = "0.40.1"
+version = "0.41.0"
 
 [workspace.dependencies.zino-derive]
 path = "../crates/zino-derive"
-version = "0.38.1"
+version = "0.39.0"
 
 [workspace.dependencies.zino-dioxus]
 path = "../crates/zino-dioxus"
-version = "0.21.1"
+version = "0.22.0"
 
 [workspace.dependencies.zino-model]
 path = "../crates/zino-model"
-version = "0.38.1"
+version = "0.39.0"
 
 [workspace.dependencies.zino-orm]
 path = "../crates/zino-orm"
-version = "0.12.1"
+version = "0.13.0"
 
 [profile.release]
 lto = "thin"
