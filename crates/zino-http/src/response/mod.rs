@@ -225,10 +225,8 @@ impl<S: ResponseCode> Response<S> {
     pub fn render<T: Serialize>(mut self, template_name: &str, data: T) -> Self {
         let result = serde_json::to_value(data)
             .map_err(|err| err.into())
-            .and_then(|mut value| {
-                if let Some(data) = value.as_object_mut() {
-                    let mut map = zino_core::Map::new();
-                    map.append(data);
+            .and_then(|value| {
+                if let JsonValue::Object(map) = value {
                     crate::view::render(template_name, map)
                 } else {
                     Err(zino_core::warn!("invalid template data"))
@@ -689,7 +687,7 @@ impl<S: ResponseCode> Response<S> {
             page.set_version(zino_core::datetime::DateTime::current_timestamp().to_string());
         }
         self.insert_header("vary", "x-inertia");
-        self.insert_header("x-insertia", true);
+        self.insert_header("x-inertia", true);
         if let Some(url) = page.redirect_url() {
             self.insert_header("x-inertia-location", url);
         } else {
@@ -751,6 +749,30 @@ impl Response<StatusCode> {
     #[inline]
     pub fn created() -> Self {
         Response::new(StatusCode::CREATED)
+    }
+
+    /// Constructs a new response with status `303 See Other`.
+    #[inline]
+    pub fn redirect(uri: &str) -> Self {
+        let mut res = Response::new(StatusCode::SEE_OTHER);
+        res.insert_header("location", uri);
+        res
+    }
+
+    /// Constructs a new response with status `307 Temporary Redirect`.
+    #[inline]
+    pub fn temporary_redirect(uri: &str) -> Self {
+        let mut res = Response::new(StatusCode::TEMPORARY_REDIRECT);
+        res.insert_header("location", uri);
+        res
+    }
+
+    /// Constructs a new response with status `308 Permanent Redirect`.
+    #[inline]
+    pub fn permanent_redirect(uri: &str) -> Self {
+        let mut res = Response::new(StatusCode::PERMANENT_REDIRECT);
+        res.insert_header("location", uri);
+        res
     }
 
     /// Constructs a new response with status `400 Bad Request`.

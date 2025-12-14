@@ -161,7 +161,7 @@ version = "0.5.3"
 optional = true
 
 [dependencies.metrics-exporter-prometheus]
-version = "0.18.0"
+version = "0.18.1"
 optional = true
 default-features = false
 features = ["http-listener"]

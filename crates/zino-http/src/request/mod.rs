@@ -644,6 +644,19 @@ pub trait RequestContext {
             token = authorization
                 .strip_prefix("Bearer ")
                 .unwrap_or(authorization);
+        } else if cfg!(feature = "cookie") {
+            let value = self.get_header("cookie").and_then(|s| {
+                s.split(';').find_map(|cookie| {
+                    if let Some((key, value)) = cookie.split_once('=') {
+                        (key == "access_token").then_some(value)
+                    } else {
+                        None
+                    }
+                })
+            });
+            if let Some(access_token) = value {
+                token = access_token;
+            }
         }
         if token.is_empty() {
             let mut validation = Validation::new();
