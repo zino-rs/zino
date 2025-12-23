@@ -11,7 +11,7 @@ members = [
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 publish = false
 
 [workspace.dependencies]
