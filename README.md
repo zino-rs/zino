@@ -23,7 +23,7 @@ which emphasizes **simplicity**, **extensibility** and **productivity**.
 ## Getting started
 
 You can start with the example [`actix-app`], [`axum-app`], [`dioxus-desktop`] or [`ntex-app`].
-It requires **Rust 1.85+** to build the project.
+It requires **Rust 1.88+** to build the project.
 
 ```shell
 cd examples/axum-app
@@ -36,7 +36,7 @@ Here is the simplest application to run a server:
 name = "zino-app"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 
 [dependencies]
 zino = { version = "0.41", features = ["axum"] }

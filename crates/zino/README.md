@@ -32,7 +32,7 @@ Here is the simplest application to run a server:
 name = "zino-app"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.88"
 
 [dependencies]
 zino = { version = "0.41", features = ["axum"] }
