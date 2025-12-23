@@ -15,7 +15,7 @@ rust-version = "1.85"
 publish = false
 
 [workspace.dependencies]
-tracing = "0.1.43"
+tracing = "0.1.44"
 
 [workspace.dependencies.serde]
 version = "1.0.228"
@@ -23,31 +23,31 @@ features = ["derive"]
 
 [workspace.dependencies.zino]
 path = "../crates/zino"
-version = "0.41.0"
+version = "0.41.1"
 
 [workspace.dependencies.zino-amis]
 path = "../crates/zino-amis"
-version = "0.13.0"
+version = "0.13.1"
 
 [workspace.dependencies.zino-core]
 path = "../crates/zino-core"
-version = "0.41.0"
+version = "0.41.1"
 
 [workspace.dependencies.zino-derive]
 path = "../crates/zino-derive"
-version = "0.39.0"
+version = "0.39.1"
 
 [workspace.dependencies.zino-dioxus]
 path = "../crates/zino-dioxus"
-version = "0.22.0"
+version = "0.22.1"
 
 [workspace.dependencies.zino-model]
 path = "../crates/zino-model"
-version = "0.39.0"
+version = "0.39.1"
 
 [workspace.dependencies.zino-orm]
 path = "../crates/zino-orm"
-version = "0.13.0"
+version = "0.13.1"
 
 [profile.release]
 lto = "thin"
