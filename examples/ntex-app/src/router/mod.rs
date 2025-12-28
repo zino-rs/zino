@@ -15,10 +15,10 @@ pub fn debug_routes() -> Vec<RouterConfigure> {
 }
 
 fn auth_router(cfg: &mut ServiceConfig) {
-    cfg.route("/auth/login", post().to(auth::login));
+    cfg.route("/auth/login", post().to(auth::login))
+        .route("/refresh", get().to(auth::refresh));
     cfg.service(
         scope("/auth")
-            .route("/refresh", get().to(auth::refresh))
             .route("/logout", post().to(auth::logout))
             .wrap(middleware::UserSessionInitializer),
     );

@@ -12,10 +12,10 @@ pub fn create_initial_account(_ctx: &mut JobContext) -> BoxFuture<'_> {
             data.upsert("roles", "admin");
             data.upsert("account", "admin");
             data.upsert("password", "admin");
-            if admin.read_map(&data).is_success() {
-                if let Err(err) = admin.insert().await {
-                    tracing::error!("fail to create initial account: {err}");
-                }
+            if admin.read_map(&data).is_success()
+                && let Err(err) = admin.insert().await
+            {
+                tracing::error!("fail to create initial account: {err}");
             }
         }
     })

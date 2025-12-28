@@ -15,6 +15,7 @@ password = { type = "string", format = "password", description = "User password"
 path = "/auth/refresh"
 method = "GET"
 summary = "Refreshes the access token"
+securities = []
 
 [[endpoints]]
 path = "/auth/logout"

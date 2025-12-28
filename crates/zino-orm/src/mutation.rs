@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 use zino_core::{
     JsonValue, Map,
     datetime::DateTime,
-    extension::JsonObjectExt,
+    extension::{JsonObjectExt, JsonValueExt},
     model::{Mutation, Query},
 };
 
@@ -107,6 +107,16 @@ impl<E: Entity> MutationBuilder<E> {
     pub fn set_if_not_null(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
         let value = value.into_sql_value();
         if !value.is_null() {
+            self.updates.upsert(col.as_ref(), value);
+        }
+        self
+    }
+
+    /// Sets the value of a column if the value is not empty or null.
+    #[inline]
+    pub fn set_if_nonempty(mut self, col: E::Column, value: impl IntoSqlValue) -> Self {
+        let value = value.into_sql_value();
+        if !value.is_ignorable() {
             self.updates.upsert(col.as_ref(), value);
         }
         self

@@ -35,10 +35,10 @@ pub fn every_hour(ctx: &mut JobContext) -> BoxFuture<'_> {
     Box::pin(async {
         let query = Query::default();
         let columns = [("*", true), ("roles", true)];
-        if let Ok(mut map) = User::count_many(&query, &columns).await {
-            if let Some(job_data) = ctx.get_data_mut::<Map>() {
-                job_data.append(&mut map);
-            }
+        if let Ok(mut map) = User::count_many(&query, &columns).await
+            && let Some(job_data) = ctx.get_data_mut::<Map>()
+        {
+            job_data.append(&mut map);
         }
     })
 }

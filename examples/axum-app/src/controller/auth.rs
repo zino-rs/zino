@@ -2,7 +2,6 @@ use crate::model::{User, UserColumn::*};
 use zino::{Request, Response, Result, prelude::*};
 
 pub async fn login(mut req: Request) -> Result {
-    let current_time = DateTime::now();
     let credentials = req.parse_body::<BasicCredentials>().await?;
     let query = QueryBuilder::new()
         .and_eq(Account, credentials.username())
@@ -20,10 +19,10 @@ pub async fn login(mut req: Request) -> Result {
 
     let mut mutation = MutationBuilder::<User>::new()
         .set(Status, "Active")
-        .set(LastLoginIp, user.current_login_ip())
         .set(LastLoginAt, user.current_login_at())
+        .set_if_nonempty(LastLoginIp, user.current_login_ip())
         .set_if_some(CurrentLoginIp, req.client_ip())
-        .set(CurrentLoginAt, current_time)
+        .set_now(CurrentLoginAt)
         .inc_one(LoginCount)
         .set_now(UpdatedAt)
         .inc_one(Version)
