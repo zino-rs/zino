@@ -4,16 +4,19 @@ use jwt_simple::{
     common::VerificationOptions,
 };
 use serde::{Serialize, de::DeserializeOwned};
-use std::time::Duration;
+use std::{error, str::FromStr, time::Duration};
 use zino_core::{
     JsonValue, LazyLock, Map,
     application::{Agent, Application},
-    crypto,
+    bail, crypto,
     datetime::DateTime,
     error::Error,
     extension::{JsonObjectExt, TomlTableExt},
     state::State,
 };
+
+#[cfg(feature = "cookie")]
+use cookie::{Cookie, SameSite};
 
 /// JWT Claims.
 #[derive(Debug, Clone)]
@@ -45,7 +48,7 @@ impl<T: Default + Serialize + DeserializeOwned> JwtClaims<T> {
         Self::constructor(subject.to_string(), T::default(), max_age)
     }
 
-    /// Generates an access token signed with the shared secret access key.
+    /// Generates a refresh token signed with the shared secret access key.
     pub fn refresh_token(&self) -> Result<String, Error> {
         let mut claims = Claims::create((*DEFAULT_REFRESH_INTERVAL).into());
         claims.invalid_before = self
@@ -62,6 +65,20 @@ impl<T: Default + Serialize + DeserializeOwned> JwtClaims<T> {
     #[inline]
     pub fn access_token(self) -> Result<String, Error> {
         self.sign_with(JwtClaims::shared_key())
+    }
+
+    /// Generates a cookie for the access token signed with the shared secret access key.
+    #[cfg(feature = "cookie")]
+    pub fn access_token_cookie(self) -> Result<Cookie<'static>, Error> {
+        let max_age = self.expires_in().try_into()?;
+        let access_token = self.access_token()?;
+        let cookie_builder = Cookie::build(("access_token", access_token))
+            .http_only(true)
+            .secure(true)
+            .path("/")
+            .same_site(SameSite::Lax)
+            .max_age(max_age);
+        Ok(cookie_builder.build())
     }
 
     /// Generates a signature with the secret access key.
@@ -162,12 +179,54 @@ impl JwtClaims<Map> {
         self.0.custom.upsert(key.into(), value.into());
     }
 
+    /// Parses the JWT claims as an access token and returns its subject as an instance of `T`.
+    pub fn parse_access_token<T>(&self) -> Result<T, Error>
+    where
+        T: FromStr,
+        <T as FromStr>::Err: error::Error,
+    {
+        let Some(subject) = self.subject() else {
+            bail!("JWT claims should have a subject");
+        };
+        subject.parse().map_err(Error::from_error)
+    }
+
+    /// Parses the JWT claims as a refresh token and returns its subject as an instance of `T`.
+    pub fn parse_refresh_token<T>(&self) -> Result<T, Error>
+    where
+        T: FromStr,
+        <T as FromStr>::Err: error::Error,
+    {
+        if !self.data().is_empty() {
+            bail!("refresh token should not contain custom data");
+        }
+        let Some(subject) = self.subject() else {
+            bail!("JWT claims should have a subject");
+        };
+        subject.parse().map_err(Error::from_error)
+    }
+
     /// Returns the Bearer auth as a JSON object.
     pub fn bearer_auth(self) -> Result<Map, Error> {
+        let expires_in = self.expires_in().as_secs();
+        let access_token = self.access_token()?;
         let mut data = Map::new();
+        data.upsert("access_token", access_token);
+        data.upsert("expires_in", expires_in);
         data.upsert("token_type", "Bearer");
-        data.upsert("expires_in", self.expires_in().as_secs());
-        data.upsert("access_token", self.access_token()?);
+        Ok(data)
+    }
+
+    /// Returns the Bearer auth with an additional refresh token as a JSON object.
+    pub fn refreshable_bearer_auth(self) -> Result<Map, Error> {
+        let refresh_token = self.refresh_token()?;
+        let expires_in = self.expires_in().as_secs();
+        let access_token = self.access_token()?;
+        let mut data = Map::new();
+        data.upsert("access_token", access_token);
+        data.upsert("expires_in", expires_in);
+        data.upsert("refresh_token", refresh_token);
+        data.upsert("token_type", "Bearer");
         Ok(data)
     }
 }

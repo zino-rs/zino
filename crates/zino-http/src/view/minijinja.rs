@@ -10,7 +10,12 @@ use zino_core::{
 
 /// Renders a template with the given data using [`minijinja`](https://crates.io/crates/minijinja).
 pub fn render(template_name: &str, data: Map) -> Result<String, Error> {
-    let template = SHARED_VIEW_ENGINE.get_template(template_name)?;
+    let template = if template_name.contains('.') {
+        SHARED_VIEW_ENGINE.get_template(template_name)?
+    } else {
+        let name = [template_name, ".jinja"].concat();
+        SHARED_VIEW_ENGINE.get_template(&name)?
+    };
     template.render(data).map_err(Error::from)
 }
 
@@ -24,9 +29,11 @@ static SHARED_VIEW_ENGINE: LazyLock<Environment> = LazyLock::new(|| {
         }
     }
 
-    let mut view_engine = Environment::new();
     let app_env = app_state.env();
     let template_dir = Agent::parse_path(template_dir);
+    let mut view_engine = Environment::new();
+    view_engine.set_trim_blocks(true);
+    view_engine.set_lstrip_blocks(true);
     view_engine.set_debug(app_env.is_dev());
     view_engine.set_loader(minijinja::path_loader(template_dir));
     view_engine.add_global("APP_ENV", app_env.as_str());

@@ -10,9 +10,13 @@ use zino_core::{
 /// Renders a template with the given data using [`tera`](https://crates.io/crates/tera).
 pub fn render(template_name: &str, data: Map) -> Result<String, Error> {
     let context = Context::from_value(data.into())?;
-    SHARED_VIEW_ENGINE
-        .render(template_name, &context)
-        .map_err(Error::from)
+    let content = if template_name.contains('.') {
+        SHARED_VIEW_ENGINE.render(template_name, &context)
+    } else {
+        let name = [template_name, ".tera"].concat();
+        SHARED_VIEW_ENGINE.render(template_name, &context)?
+    };
+    Ok(content)
 }
 
 /// Shared view engine.

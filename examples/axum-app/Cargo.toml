@@ -12,7 +12,6 @@ serde = { workspace = true }
 tracing = { workspace = true }
 zino-core = { workspace = true, features = ["env-filter", "validator-email"] }
 zino-derive = { workspace = true }
-zino-model = { workspace = true }
 zino-orm = { workspace = true, features = ["orm-mysql"] }
 
 [dependencies.zino]

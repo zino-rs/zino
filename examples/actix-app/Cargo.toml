@@ -12,7 +12,6 @@ serde = { workspace = true }
 tracing = { workspace = true }
 zino-core = { workspace = true, features = ["env-filter"] }
 zino-derive = { workspace = true }
-zino-model = { workspace = true }
 zino-orm = { workspace = true, features = ["orm-postgres"] }
 
 [dependencies.zino]

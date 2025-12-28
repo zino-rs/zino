@@ -41,10 +41,6 @@ version = "0.39.1"
 path = "../crates/zino-dioxus"
 version = "0.22.1"
 
-[workspace.dependencies.zino-model]
-path = "../crates/zino-model"
-version = "0.39.1"
-
 [workspace.dependencies.zino-orm]
 path = "../crates/zino-orm"
 version = "0.13.1"

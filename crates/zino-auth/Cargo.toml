@@ -23,6 +23,7 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
+cookie = ["dep:cookie"]
 crypto-sm = ["dep:sm3", "zino-core/crypto-sm"]
 jwt = ["dep:jwt-simple"]
 oidc = ["dep:rauthy-client"]
@@ -41,6 +42,10 @@ sm3 = { workspace = true, optional = true }
 toml = { workspace = true }
 tracing = { workspace = true }
 zino-core = { workspace = true }
+
+[dependencies.cookie]
+version = "0.18.1"
+optional = true
 
 [dependencies.rauthy-client]
 version = "0.11.0"

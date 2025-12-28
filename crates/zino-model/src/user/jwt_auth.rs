@@ -184,11 +184,11 @@ where
     /// Refreshes the access token.
     async fn refresh_token(claims: &JwtClaims) -> Result<Map, Error> {
         if !claims.data().is_empty() {
-            bail!("401 Unauthorized: JWT token is not a refresh token");
+            bail!("401 Unauthorized: refresh token should not contain custom data");
         }
 
         let Some(user_id) = claims.subject() else {
-            bail!("401 Unauthorized: JWT token does not have a subject");
+            bail!("401 Unauthorized: JWT claims should have a subject");
         };
 
         let mut query = Query::default();

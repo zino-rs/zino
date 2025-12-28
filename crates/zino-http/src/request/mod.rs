@@ -660,7 +660,7 @@ pub trait RequestContext {
         }
         if token.is_empty() {
             let mut validation = Validation::new();
-            validation.record(param, "JWT token is absent");
+            validation.record(param, "JWT should be nonempty");
             return Err(Rejection::bad_request(validation).context(self));
         }
 

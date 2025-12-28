@@ -7,6 +7,7 @@
 mod access_key;
 mod authentication;
 mod authorization_provider;
+mod basic_credentials;
 mod client_credentials;
 mod security_token;
 mod session_id;
@@ -15,6 +16,7 @@ mod user_session;
 pub use access_key::{AccessKeyId, SecretAccessKey};
 pub use authentication::Authentication;
 pub use authorization_provider::AuthorizationProvider;
+pub use basic_credentials::BasicCredentials;
 pub use client_credentials::ClientCredentials;
 pub use security_token::{ParseSecurityTokenError, SecurityToken};
 pub use session_id::{ParseSessionIdError, SessionId};

@@ -24,7 +24,8 @@ pub use zino_storage::NamedFile;
 #[cfg(feature = "auth")]
 #[doc(no_inline)]
 pub use zino_auth::{
-    AccessKeyId, AuthorizationProvider, SecretAccessKey, SecurityToken, UserSession,
+    AccessKeyId, AuthorizationProvider, BasicCredentials, SecretAccessKey, SecurityToken,
+    UserSession,
 };
 
 #[cfg(feature = "jwt")]

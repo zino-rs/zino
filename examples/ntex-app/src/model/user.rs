@@ -2,7 +2,6 @@ use super::Tag;
 use serde::{Deserialize, Serialize};
 use zino::prelude::*;
 use zino_derive::{DecodeRow, Entity, Model, ModelAccessor, ModelHooks, Schema};
-use zino_model::user::JwtAuthService;
 
 /// The `user` model.
 #[derive(
@@ -96,7 +95,24 @@ pub struct User {
     version: u64,
 }
 
-impl JwtAuthService<Uuid> for User {
-    const LOGIN_AT_FIELD: Option<&'static str> = Some("current_login_at");
-    const LOGIN_IP_FIELD: Option<&'static str> = Some("current_login_ip");
+impl User {
+    #[inline]
+    pub fn verify(&self, password: &str) -> bool {
+        matches!(Self::verify_password(password, &self.password), Ok(true))
+    }
+
+    #[inline]
+    pub fn roles(&self) -> &[String] {
+        &self.roles
+    }
+
+    #[inline]
+    pub fn current_login_at(&self) -> DateTime {
+        self.current_login_at
+    }
+
+    #[inline]
+    pub fn current_login_ip(&self) -> &str {
+        &self.current_login_ip
+    }
 }
