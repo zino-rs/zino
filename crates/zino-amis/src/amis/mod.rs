@@ -30,14 +30,14 @@ fn generate_schemas(
         let entry = entry?;
         let path = entry.path();
         if path.is_dir() {
-            if path.join("page.toml").exists() {
-                if let Some(dir_name) = path.file_name().and_then(|s| s.to_str()) {
-                    let output_name = match route_name {
-                        Some(name) => [name, dir_name].join("_"),
-                        None => dir_name.to_owned(),
-                    };
-                    generate_schemas(&path, output_dir, Some(&output_name))?;
-                }
+            if path.join("page.toml").exists()
+                && let Some(dir_name) = path.file_name().and_then(|s| s.to_str())
+            {
+                let output_name = match route_name {
+                    Some(name) => [name, dir_name].join("_"),
+                    None => dir_name.to_owned(),
+                };
+                generate_schemas(&path, output_dir, Some(&output_name))?;
             }
         } else {
             let config = read_config_file(&path);

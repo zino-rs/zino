@@ -32,10 +32,10 @@ impl<S: ResponseCode> Responder for NtexResponse<S> {
 
         let mut res = build_http_response(&mut response);
         for (name, value) in response.finalize() {
-            if let Some(Ok(header_name)) = name.map(|name| HeaderName::try_from(name.as_str())) {
-                if let Ok(header_value) = HeaderValue::try_from(value) {
-                    res.headers_mut().insert(header_name, header_value);
-                }
+            if let Some(Ok(header_name)) = name.map(|name| HeaderName::try_from(name.as_str()))
+                && let Ok(header_value) = HeaderValue::try_from(value)
+            {
+                res.headers_mut().insert(header_name, header_value);
             }
         }
 
@@ -72,11 +72,11 @@ impl ResponseError for NtexRejection {
         let mut response = self.0.to_owned();
         let mut res = build_http_response(&mut response);
         let request_id = response.request_id();
-        if !request_id.is_nil() {
-            if let Ok(header_value) = HeaderValue::try_from(request_id.to_string()) {
-                let header_name = HeaderName::from_static("x-request-id");
-                res.headers_mut().insert(header_name, header_value);
-            }
+        if !request_id.is_nil()
+            && let Ok(header_value) = HeaderValue::try_from(request_id.to_string())
+        {
+            let header_name = HeaderName::from_static("x-request-id");
+            res.headers_mut().insert(header_name, header_value);
         }
 
         let (traceparent, tracestate) = response.trace_context();
@@ -97,10 +97,10 @@ impl ResponseError for NtexRejection {
         }
 
         for (name, value) in response.headers() {
-            if let Ok(header_name) = HeaderName::try_from(name.as_str()) {
-                if let Ok(header_value) = HeaderValue::try_from(value) {
-                    res.headers_mut().insert(header_name, header_value);
-                }
+            if let Ok(header_name) = HeaderName::try_from(name.as_str())
+                && let Ok(header_value) = HeaderValue::try_from(value)
+            {
+                res.headers_mut().insert(header_name, header_value);
             }
         }
 

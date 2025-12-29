@@ -40,7 +40,7 @@ pub async fn login(mut req: Request) -> Result {
 pub async fn refresh(req: Request) -> Result {
     let user_id = req
         .parse_jwt_claims(JwtClaims::shared_key())?
-        .parse_refresh_token::<Uuid>()
+        .parse_refresh_token::<i64>()
         .extract(&req)?;
     let query = QueryBuilder::new()
         .field(Roles)

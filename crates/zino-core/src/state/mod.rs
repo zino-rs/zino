@@ -311,12 +311,11 @@ impl State {
     /// Decrypts the password in the config.
     pub fn decrypt_password(config: &Table) -> Option<Cow<'_, str>> {
         let password = config.get_str("password")?;
-        if let Ok(data) = base64::decode(password) {
-            if let Some(key) = application::SECRET_KEY.get() {
-                if let Ok(plaintext) = crypto::decrypt(&data, key) {
-                    return Some(String::from_utf8_lossy(&plaintext).into_owned().into());
-                }
-            }
+        if let Ok(data) = base64::decode(password)
+            && let Some(key) = application::SECRET_KEY.get()
+            && let Ok(plaintext) = crypto::decrypt(&data, key)
+        {
+            return Some(String::from_utf8_lossy(&plaintext).into_owned().into());
         }
         if let Some(encrypted_password) = Self::encrypt_password(config).as_deref() {
             let num_chars = password.len() / 4;

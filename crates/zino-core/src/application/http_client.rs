@@ -128,10 +128,10 @@ pub(crate) fn request_builder(url: &str, options: Option<&Map>) -> Result<Reques
     }
     if let Some(map) = options.get_object("headers") {
         for (key, value) in map {
-            if let Ok(header_name) = HeaderName::try_from(key) {
-                if let Some(header_value) = value.as_str().and_then(|s| s.parse().ok()) {
-                    headers.insert(header_name, header_value);
-                }
+            if let Ok(header_name) = HeaderName::try_from(key)
+                && let Some(header_value) = value.as_str().and_then(|s| s.parse().ok())
+            {
+                headers.insert(header_name, header_value);
             }
         }
     }

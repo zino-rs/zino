@@ -311,8 +311,9 @@ pub async fn send_compatible_streaming_request(
                                 let delta = &choice.delta;
 
                                 // Handle tool calls
-                                if let Some(tool_calls) = &delta.tool_calls {
-                                    if !tool_calls.is_empty() {
+                                if let Some(tool_calls) = &delta.tool_calls
+                                    && !tool_calls.is_empty()
+                                {
                                         for tool_call in tool_calls {
                                         let function = tool_call.function.clone();
 
@@ -350,7 +351,6 @@ pub async fn send_compatible_streaming_request(
                                             }
                                         }
                                     }
-                                }
                                 }
 
                                 // Handle text content - support both content and reasoning_content

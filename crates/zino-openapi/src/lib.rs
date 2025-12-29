@@ -291,10 +291,10 @@ fn parse_openapi_metadata(file: DirEntry, mut builder: ComponentsBuilder) -> Com
         })
         .parse::<Table>()
         .expect("fail to parse the OpenAPI metadata file as a TOML table");
-    if let Some(Value::Table(info)) = config.remove("info") {
-        if OPENAPI_INFO.set(info).is_err() {
-            panic!("fail to set OpenAPI info");
-        }
+    if let Some(Value::Table(info)) = config.remove("info")
+        && OPENAPI_INFO.set(info).is_err()
+    {
+        panic!("fail to set OpenAPI info");
     }
     if let Some(servers) = config.get_array("servers") {
         let servers = servers

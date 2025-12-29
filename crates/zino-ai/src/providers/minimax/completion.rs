@@ -329,25 +329,21 @@ pub async fn send_compatible_streaming_request(
                     // Extract content from the response
                     if let Some(choices) = json_data.get("choices").and_then(|c| c.as_array()) {
                         for choice in choices {
-                            if let Some(delta) = choice.get("delta") {
-                                // Handle content
-                                if let Some(content) = delta.get("content").and_then(|c| c.as_str()) {
-                                    if !content.is_empty() {
-                                        yield Ok(RawStreamingChoice::Message(content.to_string()));
-                                    }
-                                }
+                            if let Some(delta) = choice.get("delta")
+                                && let Some(content) = delta.get("content").and_then(|c| c.as_str())
+                                && !content.is_empty()
+                            {
+                                yield Ok(RawStreamingChoice::Message(content.to_string()));
                             }
                         }
                     }
 
                     // Handle usage information (only in the last chunk when include_usage=true)
-                    if let Some(usage) = json_data.get("usage") {
-                        // Check if usage is not null (null means no usage info in this chunk)
-                        if !usage.is_null() {
-                            if let Ok(usage_data) = serde_json::from_value::<Usage>(usage.clone()) {
-                                final_usage = Some(usage_data);
-                            }
-                        }
+                    if let Some(usage) = json_data.get("usage")
+                        && !usage.is_null()
+                        && let Ok(usage_data) = serde_json::from_value::<Usage>(usage.clone())
+                    {
+                        final_usage = Some(usage_data);
                     }
                 }
             }

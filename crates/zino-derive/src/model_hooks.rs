@@ -13,19 +13,19 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let mut field_case = None;
     for attr in input.attrs.iter() {
         for (key, value) in parser::parse_schema_attr(attr).into_iter() {
-            if let Some(value) = value {
-                if key == "rename_all" {
-                    field_case = match value.as_str() {
-                        "lowercase" => Some("Lower"),
-                        "UPPERCASE" => Some("Upper"),
-                        "PascalCase" => Some("Pascal"),
-                        "camelCase" => Some("Camel"),
-                        "snake_case" => Some("Snake"),
-                        "SCREAMING_SNAKE_CASE" => Some("Constant"),
-                        "kebab-case" => Some("Kebab"),
-                        "SCREAMING-KEBAB-CASE" => Some("Cobol"),
-                        _ => None,
-                    }
+            if key == "rename_all"
+                && let Some(value) = value
+            {
+                field_case = match value.as_str() {
+                    "lowercase" => Some("Lower"),
+                    "UPPERCASE" => Some("Upper"),
+                    "PascalCase" => Some("Pascal"),
+                    "camelCase" => Some("Camel"),
+                    "snake_case" => Some("Snake"),
+                    "SCREAMING_SNAKE_CASE" => Some("Constant"),
+                    "kebab-case" => Some("Kebab"),
+                    "SCREAMING-KEBAB-CASE" => Some("Cobol"),
+                    _ => None,
                 }
             }
         }

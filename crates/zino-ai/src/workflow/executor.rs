@@ -623,12 +623,11 @@ impl WorkflowExecutor {
                     // If no completed predecessor nodes, try to read from the first predecessor with data.
                     for branch_input_predecessor in &branch_input_predecessors {
                         let output_channel = format!("{}_output", branch_input_predecessor);
-                        if let Some(channel) = self.state.get_channel(&output_channel) {
-                            if let Some(value) = channel.read() {
-                                if !matches!(value, StateValue::Null) {
-                                    return Ok(value.clone());
-                                }
-                            }
+                        if let Some(channel) = self.state.get_channel(&output_channel)
+                            && let Some(value) = channel.read()
+                            && !matches!(value, StateValue::Null)
+                        {
+                            return Ok(value.clone());
                         }
                     }
                 }
@@ -638,10 +637,10 @@ impl WorkflowExecutor {
             for predecessor in &predecessors {
                 if self.state.completed_nodes.contains(*predecessor) {
                     let output_channel = format!("{}_output", predecessor);
-                    if let Some(channel) = self.state.get_channel(&output_channel) {
-                        if let Some(value) = channel.read() {
-                            return Ok(value.clone());
-                        }
+                    if let Some(channel) = self.state.get_channel(&output_channel)
+                        && let Some(value) = channel.read()
+                    {
+                        return Ok(value.clone());
                     }
                 }
             }
@@ -649,10 +648,10 @@ impl WorkflowExecutor {
             // If no completed predecessor nodes, try to read from the first predecessor's output.
             if let Some(first_predecessor) = predecessors.first() {
                 let output_channel = format!("{}_output", first_predecessor);
-                if let Some(channel) = self.state.get_channel(&output_channel) {
-                    if let Some(value) = channel.read() {
-                        return Ok(value.clone());
-                    }
+                if let Some(channel) = self.state.get_channel(&output_channel)
+                    && let Some(value) = channel.read()
+                {
+                    return Ok(value.clone());
                 }
             }
         }
@@ -664,10 +663,10 @@ impl WorkflowExecutor {
                 continue;
             }
 
-            if let Some(value) = channel.read() {
-                if !matches!(value, StateValue::Null) {
-                    return Ok(value.clone());
-                }
+            if let Some(value) = channel.read()
+                && !matches!(value, StateValue::Null)
+            {
+                return Ok(value.clone());
             }
         }
 
@@ -749,22 +748,20 @@ impl WorkflowExecutor {
 
         // Prioritize collecting final results from end node's output channel.
         let end_output_channel = format!("{}_output", crate::workflow::graph::END_NODE);
-        if let Some(channel) = self.state.get_channel(&end_output_channel) {
-            if let Some(value) = channel.read() {
-                if !matches!(value, StateValue::Null) {
-                    outputs.insert("final_result".to_string(), value.clone());
-                }
-            }
+        if let Some(channel) = self.state.get_channel(&end_output_channel)
+            && let Some(value) = channel.read()
+            && !matches!(value, StateValue::Null)
+        {
+            outputs.insert("final_result".to_string(), value.clone());
         }
 
         // Collect all other non-null channel values.
         for (name, channel) in &self.state.channels {
-            if name != &end_output_channel {
-                if let Some(value) = channel.read() {
-                    if !matches!(value, StateValue::Null) {
-                        outputs.insert(name.clone(), value.clone());
-                    }
-                }
+            if name != &end_output_channel
+                && let Some(value) = channel.read()
+                && !matches!(value, StateValue::Null)
+            {
+                outputs.insert(name.clone(), value.clone());
             }
         }
 

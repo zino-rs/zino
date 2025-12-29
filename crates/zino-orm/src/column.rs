@@ -127,10 +127,9 @@ impl ColumnExt for Column<'_> {
             feature = "orm-mariadb",
             feature = "orm-mysql",
             feature = "orm-tidb"
-        )) {
-            if let Some(comment) = self.comment() {
-                definition = format!("{definition} COMMENT '{comment}'");
-            }
+        )) && let Some(comment) = self.comment()
+        {
+            definition = format!("{definition} COMMENT '{comment}'");
         }
         definition
     }

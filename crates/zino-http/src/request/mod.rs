@@ -823,10 +823,10 @@ pub trait RequestContext {
     /// Constructs a new subscription instance.
     fn subscription(&self) -> Subscription {
         let mut subscription = self.parse_query::<Subscription>().unwrap_or_default();
-        if subscription.session_id().is_none() {
-            if let Some(session_id) = self.session_id() {
-                subscription.set_session_id(Some(session_id));
-            }
+        if subscription.session_id().is_none()
+            && let Some(session_id) = self.session_id()
+        {
+            subscription.set_session_id(Some(session_id));
         }
         subscription
     }

@@ -24,11 +24,10 @@ pub fn DataSelect<T: DataEntry + Clone + PartialEq>(props: DataSelectProps<T>) -
                 required: required,
                 disabled: props.disabled,
                 onmounted: move |_event| {
-                    if let Some(handler) = props.on_select.as_ref() {
-                        if let Some(entry) = selected_option.as_ref() {
+                    if let Some(handler) = props.on_select.as_ref()
+                        && let Some(entry) = selected_option.as_ref() {
                             handler.call(entry.clone());
                         }
-                    }
                 },
                 onchange: move |event| {
                     if let Some(handler) = props.on_select.as_ref() {

@@ -38,10 +38,10 @@ type CustomTraceLayer = TraceLayer<
 
 /// Tracing middleware.
 pub(crate) static TRACING_MIDDLEWARE: LazyLock<CustomTraceLayer> = LazyLock::new(|| {
-    if let Some(config) = Cluster::shared_state().get_config("tracing") {
-        if config.get_bool("record-user-agent") == Some(true) {
-            RECORD_USER_AGENT.store(true, Relaxed);
-        }
+    if let Some(config) = Cluster::shared_state().get_config("tracing")
+        && config.get_bool("record-user-agent") == Some(true)
+    {
+        RECORD_USER_AGENT.store(true, Relaxed);
     }
 
     let classifier = StatusInRangeAsFailures::new_for_client_and_server_errors();

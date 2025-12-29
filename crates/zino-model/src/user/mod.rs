@@ -143,10 +143,10 @@ impl Model for User {
                 Err(err) => validation.record_fail("password", err),
             }
         }
-        if let Some(roles) = data.parse_str_array("roles") {
-            if let Err(err) = self.set_roles(roles) {
-                validation.record_fail("roles", err);
-            }
+        if let Some(roles) = data.parse_str_array("roles")
+            && let Err(err) = self.set_roles(roles)
+        {
+            validation.record_fail("roles", err);
         }
         if self.roles.is_empty() && !validation.contains_key("roles") {
             validation.record("roles", "should be nonempty");

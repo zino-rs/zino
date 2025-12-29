@@ -197,14 +197,14 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
                                     format!(r#"({field} BETWEEN {min_value} AND {max_value})"#);
                                 conditions.push(condition);
                             }
-                        } else if let Some(values) = value.parse_str_array() {
-                            if let [min_value, max_value] = values.as_slice() {
-                                let min_value = self.format_value(min_value);
-                                let max_value = self.format_value(max_value);
-                                let condition =
-                                    format!(r#"({field} BETWEEN {min_value} AND {max_value})"#);
-                                conditions.push(condition);
-                            }
+                        } else if let Some(values) = value.parse_str_array()
+                            && let [min_value, max_value] = values.as_slice()
+                        {
+                            let min_value = self.format_value(min_value);
+                            let max_value = self.format_value(max_value);
+                            let condition =
+                                format!(r#"({field} BETWEEN {min_value} AND {max_value})"#);
+                            conditions.push(condition);
                         }
                     } else if operator == "ILIKE" {
                         let value = self.encode_value(Some(value));

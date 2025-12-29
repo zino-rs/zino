@@ -1,3 +1,4 @@
+use self::ParseSessionIdError::*;
 use hmac::digest::{Digest, FixedOutput, HashMarker, Update};
 use serde::{Deserialize, Serialize};
 use std::{error, fmt};
@@ -135,50 +136,49 @@ impl SessionId {
 
     /// Parses the `SessionId`.
     pub fn parse(s: &str) -> Result<SessionId, ParseSessionIdError> {
-        use ParseSessionIdError::*;
-        if let Some(s) = s.strip_prefix("SID:ANON:") {
-            if let Some((realm, s)) = s.split_once(':') {
-                if let Some((identifier, s)) = s.split_once('-') {
-                    if let Some((thread, count)) = s.split_once(':') {
-                        return u8::from_str_radix(thread, 16)
-                            .map_err(|err| ParseThreadError(err.into()))
-                            .and_then(|thread| {
-                                u8::from_str_radix(count, 16)
-                                    .map_err(|err| ParseCountError(err.into()))
-                                    .map(|count| Self {
-                                        realm: realm.to_owned().into(),
-                                        identifier: identifier.to_owned(),
-                                        thread,
-                                        count,
-                                    })
-                            });
-                    } else {
-                        return u8::from_str_radix(s, 16)
-                            .map_err(|err| ParseThreadError(err.into()))
-                            .map(|thread| Self {
-                                realm: realm.to_owned().into(),
-                                identifier: identifier.to_owned(),
-                                thread,
-                                count: 0,
-                            });
-                    }
-                } else if let Some((identifier, count)) = s.split_once(':') {
-                    return u8::from_str_radix(count, 16)
-                        .map_err(|err| ParseCountError(err.into()))
-                        .map(|count| Self {
-                            realm: realm.to_owned().into(),
-                            identifier: identifier.to_owned(),
-                            thread: 0,
-                            count,
+        if let Some(s) = s.strip_prefix("SID:ANON:")
+            && let Some((realm, s)) = s.split_once(':')
+        {
+            if let Some((identifier, s)) = s.split_once('-') {
+                if let Some((thread, count)) = s.split_once(':') {
+                    return u8::from_str_radix(thread, 16)
+                        .map_err(|err| ParseThreadError(err.into()))
+                        .and_then(|thread| {
+                            u8::from_str_radix(count, 16)
+                                .map_err(|err| ParseCountError(err.into()))
+                                .map(|count| Self {
+                                    realm: realm.to_owned().into(),
+                                    identifier: identifier.to_owned(),
+                                    thread,
+                                    count,
+                                })
                         });
                 } else {
-                    return Ok(Self {
-                        realm: realm.to_owned().into(),
-                        identifier: s.to_owned(),
-                        thread: 0,
-                        count: 0,
-                    });
+                    return u8::from_str_radix(s, 16)
+                        .map_err(|err| ParseThreadError(err.into()))
+                        .map(|thread| Self {
+                            realm: realm.to_owned().into(),
+                            identifier: identifier.to_owned(),
+                            thread,
+                            count: 0,
+                        });
                 }
+            } else if let Some((identifier, count)) = s.split_once(':') {
+                return u8::from_str_radix(count, 16)
+                    .map_err(|err| ParseCountError(err.into()))
+                    .map(|count| Self {
+                        realm: realm.to_owned().into(),
+                        identifier: identifier.to_owned(),
+                        thread: 0,
+                        count,
+                    });
+            } else {
+                return Ok(Self {
+                    realm: realm.to_owned().into(),
+                    identifier: s.to_owned(),
+                    thread: 0,
+                    count: 0,
+                });
             }
         }
         Err(InvalidFormat)
@@ -218,7 +218,6 @@ pub enum ParseSessionIdError {
 
 impl fmt::Display for ParseSessionIdError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use ParseSessionIdError::*;
         match self {
             ParseThreadError(err) => write!(f, "fail to parse thread: {err}"),
             ParseCountError(err) => write!(f, "fail to parse count: {err}"),

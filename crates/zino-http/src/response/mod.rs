@@ -668,13 +668,11 @@ impl<S: ResponseCode> Response<S> {
             displayed_inline = helper::displayed_inline(content_type);
             self.set_content_type(content_type.to_string());
         }
-        if !displayed_inline {
-            if let Some(file_name) = file.file_name() {
-                self.insert_header(
-                    "content-disposition",
-                    format!(r#"attachment; filename="{file_name}""#),
-                );
-            }
+        if !displayed_inline && let Some(file_name) = file.file_name() {
+            self.insert_header(
+                "content-disposition",
+                format!(r#"attachment; filename="{file_name}""#),
+            );
         }
         self.insert_header("etag", file.etag());
         self.set_bytes_data(Bytes::from(file));

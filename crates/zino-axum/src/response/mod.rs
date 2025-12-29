@@ -60,10 +60,10 @@ pub(crate) fn build_http_response<S: ResponseCode>(
     };
 
     for (name, value) in response.finalize() {
-        if let Some(header_name) = name {
-            if let Ok(header_value) = HeaderValue::try_from(value) {
-                res.headers_mut().insert(header_name, header_value);
-            }
+        if let Some(header_name) = name
+            && let Ok(header_value) = HeaderValue::try_from(value)
+        {
+            res.headers_mut().insert(header_name, header_value);
         }
     }
 

@@ -143,20 +143,20 @@ impl Query {
     fn parse_logical_query(expr: &str) -> Vec<Map> {
         let mut filters = Vec::new();
         for expr in expr.trim_end_matches(')').split(',') {
-            if let Some((key, expr)) = expr.split_once('.') {
-                if let Some((operator, value)) = expr.split_once('.') {
-                    let value = if value.starts_with('$') {
-                        if let Some((operator, expr)) = value.split_once('(') {
-                            Map::from_entry(operator, Self::parse_logical_query(expr)).into()
-                        } else {
-                            JsonValue::from(value)
-                        }
+            if let Some((key, expr)) = expr.split_once('.')
+                && let Some((operator, value)) = expr.split_once('.')
+            {
+                let value = if value.starts_with('$') {
+                    if let Some((operator, expr)) = value.split_once('(') {
+                        Map::from_entry(operator, Self::parse_logical_query(expr)).into()
                     } else {
                         JsonValue::from(value)
-                    };
-                    let filter = Map::from_entry(key, Map::from_entry(operator, value));
-                    filters.push(filter);
-                }
+                    }
+                } else {
+                    JsonValue::from(value)
+                };
+                let filter = Map::from_entry(key, Map::from_entry(operator, value));
+                filters.push(filter);
             }
         }
         filters

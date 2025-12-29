@@ -138,14 +138,13 @@ pub fn FileTree(props: FileTreeProps) -> Element {
                 let path = entry.path();
                 if metadata.is_dir() {
                     folders.push(path);
-                } else if metadata.is_file() {
-                    if let Some(name) = path
+                } else if metadata.is_file()
+                    && let Some(name) = path
                         .file_name()
                         .and_then(|name| name.to_str())
                         .map(|s| s.to_owned())
-                    {
-                        files.push((name, path));
-                    }
+                {
+                    files.push((name, path));
                 }
             }
         }

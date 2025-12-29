@@ -58,21 +58,21 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                 for (key, value) in arguments.into_iter() {
                     match key.as_str() {
                         "constructor" => {
-                            if let Some(value) = value {
-                                if let Some((cons_name, cons_fn)) = value.split_once("::") {
-                                    let cons_name_ident = format_ident!("{}", cons_name);
-                                    let cons_fn_ident = format_ident!("{}", cons_fn);
-                                    let constructor = if type_name == "String" {
-                                        quote! {
-                                            model.#ident = <#cons_name_ident>::#cons_fn_ident().to_string();
-                                        }
-                                    } else {
-                                        quote! {
-                                            model.#ident = <#cons_name_ident>::#cons_fn_ident().into();
-                                        }
-                                    };
-                                    field_constructors.push(constructor);
-                                }
+                            if let Some(value) = value
+                                && let Some((cons_name, cons_fn)) = value.split_once("::")
+                            {
+                                let cons_name_ident = format_ident!("{}", cons_name);
+                                let cons_fn_ident = format_ident!("{}", cons_fn);
+                                let constructor = if type_name == "String" {
+                                    quote! {
+                                        model.#ident = <#cons_name_ident>::#cons_fn_ident().to_string();
+                                    }
+                                } else {
+                                    quote! {
+                                        model.#ident = <#cons_name_ident>::#cons_fn_ident().into();
+                                    }
+                                };
+                                field_constructors.push(constructor);
                             }
                         }
                         "composable" => {

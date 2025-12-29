@@ -128,11 +128,11 @@ pub trait Application {
 
         // Initializes the directories to ensure that they are ready for use
         for path in SHARED_DIRS.values() {
-            if !path.exists() {
-                if let Err(err) = fs::create_dir_all(path) {
-                    let path = path.display();
-                    tracing::error!("fail to create the directory {path}: {err}");
-                }
+            if !path.exists()
+                && let Err(err) = fs::create_dir_all(path)
+            {
+                let path = path.display();
+                tracing::error!("fail to create the directory {path}: {err}");
             }
         }
 
@@ -411,15 +411,16 @@ static PROJECT_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
         .filter(|var| !var.is_empty())
         .map(PathBuf::from)
         .unwrap_or_else(|| {
-            if cfg!(not(debug_assertions)) && cfg!(target_os = "macos") {
-                if let Ok(mut path) = env::current_exe() {
+            if cfg!(not(debug_assertions))
+                && cfg!(target_os = "macos")
+                && let Ok(mut path) = env::current_exe()
+            {
+                path.pop();
+                if path.ends_with("Contents/MacOS") {
                     path.pop();
-                    if path.ends_with("Contents/MacOS") {
-                        path.pop();
-                        path.push("Resources");
-                        if path.exists() && path.is_dir() {
-                            return path;
-                        }
+                    path.push("Resources");
+                    if path.exists() && path.is_dir() {
+                        return path;
                     }
                 }
             }

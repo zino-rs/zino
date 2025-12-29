@@ -255,10 +255,10 @@ impl NamedFile {
         fn inner(file: &mut NamedFile, key: &[u8]) -> Result<(), Error> {
             let suffix = ".encrypted";
             let bytes = crypto::encrypt(file.as_ref(), key)?;
-            if let Some(ref mut file_name) = file.file_name {
-                if !file_name.ends_with(suffix) {
-                    file_name.push_str(suffix);
-                }
+            if let Some(ref mut file_name) = file.file_name
+                && !file_name.ends_with(suffix)
+            {
+                file_name.push_str(suffix);
             }
             file.bytes = bytes.into();
             Ok(())
@@ -271,10 +271,10 @@ impl NamedFile {
         fn inner(file: &mut NamedFile, key: &[u8]) -> Result<(), Error> {
             let suffix = ".encrypted";
             let bytes = crypto::decrypt(file.as_ref(), key)?;
-            if let Some(ref mut file_name) = file.file_name {
-                if file_name.ends_with(suffix) {
-                    file_name.truncate(file_name.len() - suffix.len());
-                }
+            if let Some(ref mut file_name) = file.file_name
+                && file_name.ends_with(suffix)
+            {
+                file_name.truncate(file_name.len() - suffix.len());
             }
             file.bytes = bytes.into();
             Ok(())
@@ -420,10 +420,10 @@ impl NamedFile {
             }
         }
         if let Some(mut file) = extracted_file {
-            if let Some(Ok(chunk_size)) = extra.parse_u64("chunk_size") {
-                if file.file_size() != chunk_size {
-                    return Err(multer::Error::IncompleteStream);
-                }
+            if let Some(Ok(chunk_size)) = extra.parse_u64("chunk_size")
+                && file.file_size() != chunk_size
+            {
+                return Err(multer::Error::IncompleteStream);
             }
             if let Some(checksum) = extra.get_str("checksum") {
                 let integrity = format!("{:x}", file.checksum());

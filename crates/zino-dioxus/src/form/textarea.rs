@@ -31,11 +31,10 @@ pub fn Textarea(props: TextareaProps) -> Element {
             },
             oninput: move |event| {
                 cached_value.set(event.value());
-                if !composing() {
-                    if let Some(handler) = props.on_input.as_ref() {
+                if !composing()
+                    && let Some(handler) = props.on_input.as_ref() {
                         handler.call(mem::take(&mut cached_value.write()));
                     }
-                }
             },
             onkeydown: move |event| {
                 if let Some(handler) = props.on_keydown.as_ref() {

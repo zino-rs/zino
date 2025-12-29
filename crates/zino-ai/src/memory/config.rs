@@ -99,20 +99,20 @@ impl MemoryConfig {
 
     /// Validate configuration
     pub fn validate(&self) -> MemoryResult<()> {
-        if let Some(max_tokens) = self.max_tokens {
-            if max_tokens == 0 {
-                return Err(MemoryError::Configuration(
-                    "max_tokens cannot be zero".to_string(),
-                ));
-            }
+        if let Some(max_tokens) = self.max_tokens
+            && max_tokens == 0
+        {
+            return Err(MemoryError::Configuration(
+                "max_tokens cannot be zero".to_string(),
+            ));
         }
 
-        if let Some(max_messages) = self.max_messages {
-            if max_messages == 0 {
-                return Err(MemoryError::Configuration(
-                    "max_messages cannot be zero".to_string(),
-                ));
-            }
+        if let Some(max_messages) = self.max_messages
+            && max_messages == 0
+        {
+            return Err(MemoryError::Configuration(
+                "max_messages cannot be zero".to_string(),
+            ));
         }
 
         if self.auto_save && self.save_interval.is_zero() {

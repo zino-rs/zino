@@ -7,14 +7,14 @@ pub fn translate_model_entry(model: &mut Map, model_name: &str) {
     let mut data = Map::new();
     let model_name_prefix = [model_name, "."].concat();
     for (key, translation) in MODEL_TRANSLATIONS.iter() {
-        if let Some(field) = key.strip_prefix(&model_name_prefix) {
-            if let Some(value) = model.get(field) {
-                let translated_field = [field, "_translated"].concat();
-                let translated_value = translation
-                    .translate(value)
-                    .unwrap_or_else(|| value.to_owned());
-                data.upsert(translated_field, translated_value);
-            }
+        if let Some(field) = key.strip_prefix(&model_name_prefix)
+            && let Some(value) = model.get(field)
+        {
+            let translated_field = [field, "_translated"].concat();
+            let translated_value = translation
+                .translate(value)
+                .unwrap_or_else(|| value.to_owned());
+            data.upsert(translated_field, translated_value);
         }
     }
     model.append(&mut data);

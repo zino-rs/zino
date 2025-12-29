@@ -258,10 +258,10 @@ impl Authentication {
         {
             validation.record("date", "untrusted date");
         }
-        if let Some(expires) = self.expires {
-            if current > expires {
-                validation.record("expires", "valid period has expired");
-            }
+        if let Some(expires) = self.expires
+            && current > expires
+        {
+            validation.record("expires", "valid period has expired");
         }
 
         let signature = self.signature();

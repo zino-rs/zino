@@ -16,30 +16,30 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
         for (key, value) in parser::parse_schema_attr(attr).into_iter() {
             if key == "auto_rename" {
                 auto_rename = true;
-            } else if key == "unique_on" {
-                if let Some(value) = value {
-                    let mut fields = Vec::new();
-                    let column_values = value
-                        .trim_start_matches('(')
-                        .trim_end_matches(')')
-                        .split(',')
-                        .map(|s| {
-                            let field = s.trim();
-                            let field_ident = format_ident!("{}", field);
-                            fields.push(field);
-                            quote! {
-                                (#field, self.#field_ident.to_string())
-                            }
-                        })
-                        .collect::<Vec<_>>();
-                    let composite_field = fields.join("_");
-                    composite_constraints.push(quote! {
-                        let columns = vec![#(#column_values),*];
-                        if !self.is_unique_on(columns).await? {
-                            validation.record(#composite_field, "composite values should be unique");
+            } else if key == "unique_on"
+                && let Some(value) = value
+            {
+                let mut fields = Vec::new();
+                let column_values = value
+                    .trim_start_matches('(')
+                    .trim_end_matches(')')
+                    .split(',')
+                    .map(|s| {
+                        let field = s.trim();
+                        let field_ident = format_ident!("{}", field);
+                        fields.push(field);
+                        quote! {
+                            (#field, self.#field_ident.to_string())
                         }
-                    });
-                }
+                    })
+                    .collect::<Vec<_>>();
+                let composite_field = fields.join("_");
+                composite_constraints.push(quote! {
+                    let columns = vec![#(#column_values),*];
+                    if !self.is_unique_on(columns).await? {
+                        validation.record(#composite_field, "composite values should be unique");
+                    }
+                });
             }
         }
     }
@@ -423,29 +423,29 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                             }
                         }
                         "max_items" => {
-                            if let Some(length) = value.and_then(|s| s.parse::<usize>().ok()) {
-                                if parser::check_vec_type(type_name) {
-                                    field_constraints.push(quote! {
-                                        let length = #length;
-                                        if self.#ident.len() > length {
-                                            let message = format!("length should be at most {length}");
-                                            validation.record(#name, message);
-                                        }
-                                    });
-                                }
+                            if let Some(length) = value.and_then(|s| s.parse::<usize>().ok())
+                                && parser::check_vec_type(type_name)
+                            {
+                                field_constraints.push(quote! {
+                                    let length = #length;
+                                    if self.#ident.len() > length {
+                                        let message = format!("length should be at most {length}");
+                                        validation.record(#name, message);
+                                    }
+                                });
                             }
                         }
                         "min_items" => {
-                            if let Some(length) = value.and_then(|s| s.parse::<usize>().ok()) {
-                                if parser::check_vec_type(type_name) {
-                                    field_constraints.push(quote! {
-                                        let length = #length;
-                                        if self.#ident.len() < length {
-                                            let message = format!("length should be at least {length}");
-                                            validation.record(#name, message);
-                                        }
-                                    });
-                                }
+                            if let Some(length) = value.and_then(|s| s.parse::<usize>().ok())
+                                && parser::check_vec_type(type_name)
+                            {
+                                field_constraints.push(quote! {
+                                    let length = #length;
+                                    if self.#ident.len() < length {
+                                        let message = format!("length should be at least {length}");
+                                        validation.record(#name, message);
+                                    }
+                                });
                             }
                         }
                         "unique_items" => {

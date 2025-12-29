@@ -153,19 +153,16 @@ impl Application for Cluster {
                     if index_file.exists() {
                         app = app.route_service("/", ServeFile::new(index_file));
                     }
-                    if auto_routing {
-                        if let Ok(entries) = fs::read_dir(&public_dir) {
-                            for entry in entries {
-                                if let Some(entry) = entry
-                                    .ok()
-                                    .filter(|dir| dir.file_type().is_ok_and(|ty| ty.is_file()))
-                                {
-                                    if let Some(file_name) = entry.file_name().to_str() {
-                                        let route_path = ["/", file_name].concat();
-                                        let serve_file = ServeFile::new(entry.path());
-                                        app = app.route_service(&route_path, serve_file);
-                                    }
-                                }
+                    if auto_routing && let Ok(entries) = fs::read_dir(&public_dir) {
+                        for entry in entries {
+                            if let Some(entry) = entry
+                                .ok()
+                                .filter(|dir| dir.file_type().is_ok_and(|ty| ty.is_file()))
+                                && let Some(file_name) = entry.file_name().to_str()
+                            {
+                                let route_path = ["/", file_name].concat();
+                                let serve_file = ServeFile::new(entry.path());
+                                app = app.route_service(&route_path, serve_file);
                             }
                         }
                     }

@@ -696,12 +696,12 @@ pub trait Schema: 'static + Send + Sync + ModelHooks {
         let mut mutations = Vec::with_capacity(columns.len());
         for col in columns {
             let field = col.as_ref();
-            if !read_only_fields.contains(&field) {
-                if let Some(col) = Self::columns().iter().find(|col| col.name() == field) {
-                    let value = col.encode_value(map.get(field));
-                    let field = Query::format_field(field);
-                    mutations.push(format!("{field} = {value}"));
-                }
+            if !read_only_fields.contains(&field)
+                && let Some(col) = Self::columns().iter().find(|col| col.name() == field)
+            {
+                let value = col.encode_value(map.get(field));
+                let field = Query::format_field(field);
+                mutations.push(format!("{field} = {value}"));
             }
         }
 

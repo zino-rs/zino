@@ -234,13 +234,13 @@ impl MutationExt<DatabaseDriver> for Mutation {
                 "$inc" => {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
-                            if permissive || fields.contains(key) {
-                                if let Some(col) = M::get_writable_column(key) {
-                                    let key = Query::format_field(key);
-                                    let value = col.encode_value(Some(value));
-                                    let mutation = format!(r#"{key} = {value} + {key}"#);
-                                    mutations.push(mutation);
-                                }
+                            if (permissive || fields.contains(key))
+                                && let Some(col) = M::get_writable_column(key)
+                            {
+                                let key = Query::format_field(key);
+                                let value = col.encode_value(Some(value));
+                                let mutation = format!(r#"{key} = {value} + {key}"#);
+                                mutations.push(mutation);
                             }
                         }
                     }
@@ -248,13 +248,13 @@ impl MutationExt<DatabaseDriver> for Mutation {
                 "$mul" => {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
-                            if permissive || fields.contains(key) {
-                                if let Some(col) = M::get_writable_column(key) {
-                                    let key = Query::format_field(key);
-                                    let value = col.encode_value(Some(value));
-                                    let mutation = format!(r#"{key} = {value} * {key}"#);
-                                    mutations.push(mutation);
-                                }
+                            if (permissive || fields.contains(key))
+                                && let Some(col) = M::get_writable_column(key)
+                            {
+                                let key = Query::format_field(key);
+                                let value = col.encode_value(Some(value));
+                                let mutation = format!(r#"{key} = {value} * {key}"#);
+                                mutations.push(mutation);
                             }
                         }
                     }
@@ -262,17 +262,17 @@ impl MutationExt<DatabaseDriver> for Mutation {
                 "$min" => {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
-                            if permissive || fields.contains(key) {
-                                if let Some(col) = M::get_writable_column(key) {
-                                    let key = Query::format_field(key);
-                                    let value = col.encode_value(Some(value));
-                                    let mutation = if cfg!(feature = "orm-sqlite") {
-                                        format!(r#"{key} = MIN({value}, {key})"#)
-                                    } else {
-                                        format!(r#"{key} = LEAST({value}, {key})"#)
-                                    };
-                                    mutations.push(mutation);
-                                }
+                            if (permissive || fields.contains(key))
+                                && let Some(col) = M::get_writable_column(key)
+                            {
+                                let key = Query::format_field(key);
+                                let value = col.encode_value(Some(value));
+                                let mutation = if cfg!(feature = "orm-sqlite") {
+                                    format!(r#"{key} = MIN({value}, {key})"#)
+                                } else {
+                                    format!(r#"{key} = LEAST({value}, {key})"#)
+                                };
+                                mutations.push(mutation);
                             }
                         }
                     }
@@ -280,35 +280,35 @@ impl MutationExt<DatabaseDriver> for Mutation {
                 "$max" => {
                     if let Some(update) = value.as_object() {
                         for (key, value) in update.iter() {
-                            if permissive || fields.contains(key) {
-                                if let Some(col) = M::get_writable_column(key) {
-                                    let key = Query::format_field(key);
-                                    let value = col.encode_value(Some(value));
-                                    let mutation = if cfg!(feature = "orm-sqlite") {
-                                        format!(r#"{key} = MAX({value}, {key})"#)
-                                    } else {
-                                        format!(r#"{key} = GREATEST({value}, {key})"#)
-                                    };
-                                    mutations.push(mutation);
-                                }
+                            if (permissive || fields.contains(key))
+                                && let Some(col) = M::get_writable_column(key)
+                            {
+                                let key = Query::format_field(key);
+                                let value = col.encode_value(Some(value));
+                                let mutation = if cfg!(feature = "orm-sqlite") {
+                                    format!(r#"{key} = MAX({value}, {key})"#)
+                                } else {
+                                    format!(r#"{key} = GREATEST({value}, {key})"#)
+                                };
+                                mutations.push(mutation);
                             }
                         }
                     }
                 }
                 _ => {
-                    if permissive || fields.contains(key) {
-                        if let Some(col) = M::get_writable_column(key) {
-                            let key = Query::format_field(key);
-                            let mutation = if let Some(subquery) =
-                                value.as_object().and_then(|m| m.get_str("$subquery"))
-                            {
-                                format!(r#"{key} = {subquery}"#)
-                            } else {
-                                let value = col.encode_value(Some(value));
-                                format!(r#"{key} = {value}"#)
-                            };
-                            mutations.push(mutation);
-                        }
+                    if (permissive || fields.contains(key))
+                        && let Some(col) = M::get_writable_column(key)
+                    {
+                        let key = Query::format_field(key);
+                        let mutation = if let Some(subquery) =
+                            value.as_object().and_then(|m| m.get_str("$subquery"))
+                        {
+                            format!(r#"{key} = {subquery}"#)
+                        } else {
+                            let value = col.encode_value(Some(value));
+                            format!(r#"{key} = {value}"#)
+                        };
+                        mutations.push(mutation);
                     }
                 }
             }

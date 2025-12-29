@@ -105,10 +105,10 @@ impl Application for Amis {
             // Generate amis schemas.
             let config_dir = Self::config_dir().join("amis");
             let output_dir = Self::parse_path(amis_dir);
-            if !output_dir.exists() {
-                if let Err(err) = fs::create_dir(&output_dir) {
-                    tracing::error!("fail to create amis output dir: {err}");
-                }
+            if !output_dir.exists()
+                && let Err(err) = fs::create_dir(&output_dir)
+            {
+                tracing::error!("fail to create amis output dir: {err}");
             }
             if let Err(err) = crate::amis::compile(&config_dir, &output_dir) {
                 tracing::error!("fail to generate amis schemas: {err}");

@@ -12,10 +12,10 @@ use zino_core::{Uuid, application::Application, extension::TomlTableExt, trace::
 /// Tracing middleware.
 #[inline]
 pub(crate) fn tracing_middleware() -> TracingLogger<CustomRootSpanBuilder> {
-    if let Some(config) = Cluster::shared_state().get_config("tracing") {
-        if config.get_bool("record-user-agent") == Some(true) {
-            RECORD_USER_AGENT.store(true, Relaxed);
-        }
+    if let Some(config) = Cluster::shared_state().get_config("tracing")
+        && config.get_bool("record-user-agent") == Some(true)
+    {
+        RECORD_USER_AGENT.store(true, Relaxed);
     }
     TracingLogger::new()
 }

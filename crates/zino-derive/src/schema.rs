@@ -71,186 +71,185 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let mut column_fields = Vec::new();
     let mut read_only_fields = Vec::new();
     let mut write_only_fields = Vec::new();
-    if let Data::Struct(data) = input.data {
-        if let Fields::Named(fields) = data.fields {
-            'outer: for field in fields.named.into_iter() {
-                let mut type_name = parser::get_type_name(&field.ty);
-                if let Some(ident) = field.ident {
-                    let name = ident.to_string().trim_start_matches("r#").to_owned();
-                    let mut column_name = name.clone();
-                    let mut not_null = false;
-                    let mut column_type = None;
-                    let mut default_value = None;
-                    let mut index_type = None;
-                    let mut reference = None;
-                    let mut comment = None;
-                    let mut extra_attributes = Vec::new();
-                    for attr in field.attrs.iter() {
-                        let arguments = parser::parse_schema_attr(attr);
-                        for (key, value) in arguments.into_iter() {
-                            let key = key.as_str();
-                            if !SPECIAL_ATTRIBUTES.contains(&key) {
-                                let attribute_setter = if let Some(value) = value.as_ref() {
-                                    if let Ok(value) = value.parse::<i64>() {
-                                        quote! { column.set_extra_attribute(#key, #value); }
-                                    } else if let Ok(value) = value.parse::<bool>() {
-                                        quote! { column.set_extra_attribute(#key, #value); }
-                                    } else {
-                                        quote! { column.set_extra_attribute(#key, #value); }
-                                    }
+    if let Data::Struct(data) = input.data
+        && let Fields::Named(fields) = data.fields
+    {
+        'outer: for field in fields.named.into_iter() {
+            let mut type_name = parser::get_type_name(&field.ty);
+            if let Some(ident) = field.ident {
+                let name = ident.to_string().trim_start_matches("r#").to_owned();
+                let mut column_name = name.clone();
+                let mut not_null = false;
+                let mut column_type = None;
+                let mut default_value = None;
+                let mut index_type = None;
+                let mut reference = None;
+                let mut comment = None;
+                let mut extra_attributes = Vec::new();
+                for attr in field.attrs.iter() {
+                    let arguments = parser::parse_schema_attr(attr);
+                    for (key, value) in arguments.into_iter() {
+                        let key = key.as_str();
+                        if !SPECIAL_ATTRIBUTES.contains(&key) {
+                            let attribute_setter = if let Some(value) = value.as_ref() {
+                                if let Ok(value) = value.parse::<i64>() {
+                                    quote! { column.set_extra_attribute(#key, #value); }
+                                } else if let Ok(value) = value.parse::<bool>() {
+                                    quote! { column.set_extra_attribute(#key, #value); }
                                 } else {
-                                    quote! { column.set_extra_attribute(#key, true); }
-                                };
-                                extra_attributes.push(attribute_setter);
+                                    quote! { column.set_extra_attribute(#key, #value); }
+                                }
+                            } else {
+                                quote! { column.set_extra_attribute(#key, true); }
+                            };
+                            extra_attributes.push(attribute_setter);
+                        }
+                        if RESERVED_FIELDS.contains(&name.as_str()) {
+                            extra_attributes.push(quote! {
+                                column.set_extra_attribute("reserved", true);
+                            });
+                        }
+                        match key {
+                            "ignore" => continue 'outer,
+                            "type_name" => {
+                                if let Some(value) = value {
+                                    type_name = value;
+                                }
                             }
-                            if RESERVED_FIELDS.contains(&name.as_str()) {
+                            "column_name" => {
+                                if let Some(value) = value {
+                                    let table_alias = model_name.to_case(Case::Snake);
+                                    column_name = format!("{column_name}:{table_alias}.{value}");
+                                }
+                            }
+                            "column_type" => {
+                                column_type = value;
+                            }
+                            "length" if type_name == "String" => {
+                                if let Some(value) = value {
+                                    column_type = Some(format!("CHAR({value})"));
+                                }
+                            }
+                            "max_length" if type_name == "String" => {
+                                if let Some(value) = value {
+                                    column_type = Some(format!("VARCHAR({value})"));
+                                }
+                            }
+                            "not_null" => {
+                                not_null = true;
+                            }
+                            "default_value" => {
+                                default_value = value;
+                            }
+                            "auto_increment" => {
+                                default_value = Some("auto_increment".to_owned());
+                            }
+                            "auto_random" => {
+                                default_value = Some("auto_random".to_owned());
+                            }
+                            "index_type" => {
+                                index_type = value;
+                            }
+                            "reference" => {
+                                reference = value;
+                            }
+                            "comment" => {
+                                comment = value;
+                            }
+                            "primary_key" => {
+                                primary_key_name.clone_from(&name);
+                            }
+                            "read_only" => {
+                                read_only_fields.push(quote! { #name });
+                            }
+                            "write_only" => {
+                                write_only_fields.push(quote! { #name });
+                            }
+                            "constructor" | "validator" => {
                                 extra_attributes.push(quote! {
-                                    column.set_extra_attribute("reserved", true);
+                                    column.set_extra_attribute(#key, true);
                                 });
                             }
-                            match key {
-                                "ignore" => continue 'outer,
-                                "type_name" => {
-                                    if let Some(value) = value {
-                                        type_name = value;
-                                    }
-                                }
-                                "column_name" => {
-                                    if let Some(value) = value {
-                                        let table_alias = model_name.to_case(Case::Snake);
-                                        column_name =
-                                            format!("{column_name}:{table_alias}.{value}");
-                                    }
-                                }
-                                "column_type" => {
-                                    column_type = value;
-                                }
-                                "length" if type_name == "String" => {
-                                    if let Some(value) = value {
-                                        column_type = Some(format!("CHAR({value})"));
-                                    }
-                                }
-                                "max_length" if type_name == "String" => {
-                                    if let Some(value) = value {
-                                        column_type = Some(format!("VARCHAR({value})"));
-                                    }
-                                }
-                                "not_null" => {
-                                    not_null = true;
-                                }
-                                "default_value" => {
-                                    default_value = value;
-                                }
-                                "auto_increment" => {
-                                    default_value = Some("auto_increment".to_owned());
-                                }
-                                "auto_random" => {
-                                    default_value = Some("auto_random".to_owned());
-                                }
-                                "index_type" => {
-                                    index_type = value;
-                                }
-                                "reference" => {
-                                    reference = value;
-                                }
-                                "comment" => {
-                                    comment = value;
-                                }
-                                "primary_key" => {
-                                    primary_key_name.clone_from(&name);
-                                }
-                                "read_only" => {
-                                    read_only_fields.push(quote! { #name });
-                                }
-                                "write_only" => {
-                                    write_only_fields.push(quote! { #name });
-                                }
-                                "constructor" | "validator" => {
-                                    extra_attributes.push(quote! {
-                                        column.set_extra_attribute(#key, true);
-                                    });
-                                }
-                                _ => (),
-                            }
+                            _ => (),
                         }
                     }
-                    if primary_key_name == name {
-                        primary_key_type.clone_from(&type_name);
-                        not_null = true;
-                        extra_attributes.push(quote! {
-                            column.set_extra_attribute("primary_key", true);
-                        });
-                    } else if parser::check_option_type(&type_name) {
-                        not_null = false;
-                    } else if INTEGER_TYPES.contains(&type_name.as_str()) {
-                        default_value = default_value.or_else(|| Some("0".to_owned()));
-                    } else if let Some(value) = column_type {
-                        extra_attributes.push(quote! {
-                            column.set_extra_attribute("column_type", #value);
-                        });
-                    }
-                    let quote_value = if let Some(value) = default_value {
-                        if let Some((type_name, type_fn)) = value.split_once("::") {
-                            let type_name_ident = format_ident!("{}", type_name);
-                            let type_fn_ident = format_ident!("{}", type_fn);
-                            extra_attributes.push(quote! {
-                                let value = <#type_name_ident>::#type_fn_ident();
-                                column.set_extra_attribute("default", value);
-                            });
-                            quote! { Some(<#type_name_ident>::#type_fn_ident().into()) }
-                        } else {
-                            extra_attributes.push(quote! {
-                                column.set_extra_attribute("default", #value);
-                            });
-                            quote! { Some(#value) }
-                        }
-                    } else {
-                        quote! { None }
-                    };
-                    let quote_index = parser::quote_option_string(index_type);
-                    let quote_reference = if let Some(ref model_name) = reference {
-                        let model_ident = format_ident!("{}", model_name);
-                        quote! {{
-                            let table_name = <#model_ident>::table_name();
-                            let column_name = <#model_ident>::PRIMARY_KEY_NAME;
-                            Some(zino_core::model::Reference::new(table_name, column_name))
-                        }}
-                    } else {
-                        quote! { None }
-                    };
-                    let quote_comment = parser::quote_option_string(comment);
-                    let column = quote! {{
-                        let mut column = zino_core::model::Column::new(#name, #type_name, #not_null);
-                        if let Some(default_value) = #quote_value {
-                            column.set_default_value(default_value);
-                        }
-                        if let Some(index_type) = #quote_index {
-                            column.set_index_type(index_type);
-                        }
-                        if let Some(reference) = #quote_reference {
-                            column.set_reference(reference);
-                        }
-                        if let Some(comment) = #quote_comment {
-                            column.set_comment(comment);
-                        }
-                        #(#extra_attributes)*
-                        column
-                    }};
-                    if primary_key_name == name {
-                        let primary_key = if primary_key_type == "Uuid" {
-                            quote! { self.primary_key().to_string() }
-                        } else {
-                            quote! { self.primary_key().to_owned() }
-                        };
-                        primary_key_value = Some(primary_key);
-                        primary_key_column = Some(column.clone());
-                    }
-                    if name == "version" || (name == "updated_at" && equality_field.is_none()) {
-                        equality_field = Some(name);
-                    }
-                    columns.push(column);
-                    column_fields.push(quote! { #column_name });
                 }
+                if primary_key_name == name {
+                    primary_key_type.clone_from(&type_name);
+                    not_null = true;
+                    extra_attributes.push(quote! {
+                        column.set_extra_attribute("primary_key", true);
+                    });
+                } else if parser::check_option_type(&type_name) {
+                    not_null = false;
+                } else if INTEGER_TYPES.contains(&type_name.as_str()) {
+                    default_value = default_value.or_else(|| Some("0".to_owned()));
+                } else if let Some(value) = column_type {
+                    extra_attributes.push(quote! {
+                        column.set_extra_attribute("column_type", #value);
+                    });
+                }
+                let quote_value = if let Some(value) = default_value {
+                    if let Some((type_name, type_fn)) = value.split_once("::") {
+                        let type_name_ident = format_ident!("{}", type_name);
+                        let type_fn_ident = format_ident!("{}", type_fn);
+                        extra_attributes.push(quote! {
+                            let value = <#type_name_ident>::#type_fn_ident();
+                            column.set_extra_attribute("default", value);
+                        });
+                        quote! { Some(<#type_name_ident>::#type_fn_ident().into()) }
+                    } else {
+                        extra_attributes.push(quote! {
+                            column.set_extra_attribute("default", #value);
+                        });
+                        quote! { Some(#value) }
+                    }
+                } else {
+                    quote! { None }
+                };
+                let quote_index = parser::quote_option_string(index_type);
+                let quote_reference = if let Some(ref model_name) = reference {
+                    let model_ident = format_ident!("{}", model_name);
+                    quote! {{
+                        let table_name = <#model_ident>::table_name();
+                        let column_name = <#model_ident>::PRIMARY_KEY_NAME;
+                        Some(zino_core::model::Reference::new(table_name, column_name))
+                    }}
+                } else {
+                    quote! { None }
+                };
+                let quote_comment = parser::quote_option_string(comment);
+                let column = quote! {{
+                    let mut column = zino_core::model::Column::new(#name, #type_name, #not_null);
+                    if let Some(default_value) = #quote_value {
+                        column.set_default_value(default_value);
+                    }
+                    if let Some(index_type) = #quote_index {
+                        column.set_index_type(index_type);
+                    }
+                    if let Some(reference) = #quote_reference {
+                        column.set_reference(reference);
+                    }
+                    if let Some(comment) = #quote_comment {
+                        column.set_comment(comment);
+                    }
+                    #(#extra_attributes)*
+                    column
+                }};
+                if primary_key_name == name {
+                    let primary_key = if primary_key_type == "Uuid" {
+                        quote! { self.primary_key().to_string() }
+                    } else {
+                        quote! { self.primary_key().to_owned() }
+                    };
+                    primary_key_value = Some(primary_key);
+                    primary_key_column = Some(column.clone());
+                }
+                if name == "version" || (name == "updated_at" && equality_field.is_none()) {
+                    equality_field = Some(name);
+                }
+                columns.push(column);
+                column_fields.push(quote! { #column_name });
             }
         }
     }

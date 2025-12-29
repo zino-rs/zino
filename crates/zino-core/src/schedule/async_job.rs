@@ -250,10 +250,10 @@ impl AsyncJobScheduler {
                 }
                 for event in job.schedule.after(&now).take(1) {
                     let interval = event - now;
-                    if let Ok(interval) = interval.to_std() {
-                        if duration.is_zero() || interval < duration {
-                            duration = interval;
-                        }
+                    if let Ok(interval) = interval.to_std()
+                        && (duration.is_zero() || interval < duration)
+                    {
+                        duration = interval;
                     }
                 }
             }

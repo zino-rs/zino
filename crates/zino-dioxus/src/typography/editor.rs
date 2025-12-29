@@ -30,13 +30,13 @@ pub fn TuiEditor(props: TuiEditorProps) -> Element {
                 dioxus.send(value);
                 "#,
             );
-            if let Ok(JsonValue::String(s)) = eval.recv().await {
-                if markdown() != s {
-                    if let Some(handler) = props.on_change.as_ref() {
-                        handler.call(s.clone());
-                    }
-                    markdown.set(s);
+            if let Ok(JsonValue::String(s)) = eval.recv().await
+                && markdown() != s
+            {
+                if let Some(handler) = props.on_change.as_ref() {
+                    handler.call(s.clone());
                 }
+                markdown.set(s);
             }
             // Sleep for 100 milliseconds to avoid blocking the thread.
             tokio::time::sleep(Duration::from_millis(100)).await;
