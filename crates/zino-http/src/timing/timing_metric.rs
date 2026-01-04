@@ -51,7 +51,7 @@ impl fmt::Display for TimingMetric {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let name = self.name();
         if let Some(duration) = self.duration() {
-            let mut buffer = ryu::Buffer::new();
+            let mut buffer = zmij::Buffer::new();
             let millis = (duration.as_micros() as f64) / 1000.0;
             let duration_millis = buffer.format_finite(millis);
             if let Some(description) = self.description() {

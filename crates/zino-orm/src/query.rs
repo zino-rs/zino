@@ -1093,6 +1093,13 @@ impl<E: Entity> QueryBuilder<E> {
         self
     }
 
+    /// Enables the model translation.
+    #[inline]
+    pub fn translate(mut self) -> Self {
+        self.extra.upsert("translate", true);
+        self
+    }
+
     /// Builds the model query.
     pub fn build(mut self) -> Query {
         let mut filters = self.filters;

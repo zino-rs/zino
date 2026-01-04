@@ -72,13 +72,14 @@ impl<T: Default + Serialize + DeserializeOwned> JwtClaims<T> {
     pub fn access_token_cookie(self) -> Result<Cookie<'static>, Error> {
         let max_age = self.expires_in().try_into()?;
         let access_token = self.access_token()?;
-        let cookie_builder = Cookie::build(("access_token", access_token))
+        let cookie = Cookie::build(("access_token", access_token))
+            .path("/")
             .http_only(true)
             .secure(true)
-            .path("/")
             .same_site(SameSite::Lax)
-            .max_age(max_age);
-        Ok(cookie_builder.build())
+            .max_age(max_age)
+            .build();
+        Ok(cookie)
     }
 
     /// Generates a signature with the secret access key.

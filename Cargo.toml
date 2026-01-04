@@ -85,7 +85,7 @@ version = "1.0.228"
 features = ["derive"]
 
 [workspace.dependencies.serde_json]
-version = "1.0.146"
+version = "1.0.148"
 features = ["raw_value"]
 
 [workspace.dependencies.sqlx]
@@ -99,7 +99,7 @@ features = [
 ]
 
 [workspace.dependencies.tokio]
-version = "1.48.0"
+version = "1.49.0"
 features = [
     "macros",
     "net",

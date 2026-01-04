@@ -62,7 +62,7 @@ use zino_storage::NamedFile;
 use crate::inertia::InertiaPage;
 
 #[cfg(feature = "cookie")]
-use cookie::Cookie;
+use cookie::{Cookie, SameSite};
 
 mod rejection;
 mod response_code;
@@ -459,6 +459,20 @@ impl<S: ResponseCode> Response<S> {
     #[cfg(feature = "cookie")]
     #[inline]
     pub fn set_cookie(&mut self, cookie: &Cookie<'_>) {
+        self.insert_header("set-cookie", cookie.to_string());
+    }
+
+    /// Clears a cookie for the given name.
+    #[cfg(feature = "cookie")]
+    #[inline]
+    pub fn clear_cookie(&mut self, name: impl Into<SharedString>) {
+        let cookie = Cookie::build((name, ""))
+            .path("/")
+            .http_only(true)
+            .secure(true)
+            .same_site(SameSite::Lax)
+            .removal()
+            .build();
         self.insert_header("set-cookie", cookie.to_string());
     }
 

@@ -46,7 +46,7 @@ view-minijinja = ["view", "dep:minijinja"]
 view-tera = ["view", "dep:tera"]
 
 [dependencies]
-ryu = "1.0.21"
+zmij = "1.0.10"
 bytes = { workspace = true }
 cfg-if = { workspace = true }
 convert_case = { workspace = true, optional = true }
