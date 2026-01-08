@@ -55,7 +55,7 @@ sm3 = "0.4.2"
 smallvec = "1.15.1"
 tracing = "0.1.44"
 unic-langid = "0.9.6"
-url = "2.5.7"
+url = "2.5.8"
 
 [workspace.dependencies.chrono]
 version = "0.4.42"
@@ -71,7 +71,7 @@ version = "3.1.0"
 features = ["json"]
 
 [workspace.dependencies.reqwest]
-version = "0.12.28"
+version = "0.13.1"
 default-features = false
 features = [
     "blocking",
@@ -85,7 +85,7 @@ version = "1.0.228"
 features = ["derive"]
 
 [workspace.dependencies.serde_json]
-version = "1.0.148"
+version = "1.0.149"
 features = ["raw_value"]
 
 [workspace.dependencies.sqlx]
