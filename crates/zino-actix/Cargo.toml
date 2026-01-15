@@ -32,7 +32,7 @@ default-features = false
 features = ["compress-gzip"]
 
 [dependencies.tracing-actix-web]
-version = "0.7.20"
+version = "0.7.21"
 features = ["opentelemetry_0_31", "uuid_v7"]
 
 [dependencies.utoipa-rapidoc]
