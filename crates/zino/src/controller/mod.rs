@@ -529,18 +529,9 @@ where
         let total_rows = children.len();
         for model in models.iter_mut() {
             let model_id = model.get(primary_key_name);
-
-            // Should use `extract_if` when it is stabilized.
-            let mut model_children = Vec::new();
-            let mut index = 0;
-            while index < children.len() {
-                if children[index].get("parent_id") == model_id {
-                    let child = children.remove(index);
-                    model_children.push(child);
-                } else {
-                    index += 1;
-                }
-            }
+            let model_children = children
+                .extract_if(.., |d| d.get("parent_id") == model_id)
+                .collect::<Vec<_>>();
             model.upsert("children", model_children);
         }
 
