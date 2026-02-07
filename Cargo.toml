@@ -165,6 +165,6 @@ print_stdout = "warn"
 unwrap_used = "warn"
 
 [profile.release]
-lto = "thin"
 codegen-units = 1
+lto = "thin"
 strip = true
