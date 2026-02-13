@@ -1,0 +1,17 @@
+[package]
+name = "zino-ai"
+description = "LLM services for zino."
+version = "0.0.2"
+categories = ["asynchronous", "network-programming", "web-programming"]
+keywords = ["http", "web", "framework"]
+readme = "README.md"
+homepage = { workspace = true }
+repository = { workspace = true }
+edition = { workspace = true }
+rust-version = { workspace = true }
+license = { workspace = true }
+
+[dependencies]
+
+[lints]
+workspace = true
