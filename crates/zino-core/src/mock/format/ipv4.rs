@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::RngExt;
 use std::net::Ipv4Addr;
 
 /// Generates a random IPv4 address.

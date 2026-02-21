@@ -3,7 +3,7 @@ use aes_gcm_siv::{
     Aes256GcmSiv, KeyInit, Nonce,
     aead::{Aead, generic_array::GenericArray},
 };
-use rand::Rng;
+use rand::RngExt;
 
 /// Size of the `Key`.
 const KEY_SIZE: usize = 32;

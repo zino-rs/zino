@@ -2,7 +2,7 @@ use hmac::{
     Hmac, Mac,
     digest::{FixedOutput, KeyInit, MacMarker, Update},
 };
-use rand::{Rng, distr::Alphanumeric};
+use rand::{RngExt, distr::Alphanumeric};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, fmt, iter};
 use zino_core::{

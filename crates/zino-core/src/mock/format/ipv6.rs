@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::RngExt;
 use std::net::Ipv6Addr;
 
 /// Generates a random IPv6 address.

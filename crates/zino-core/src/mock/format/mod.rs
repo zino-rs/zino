@@ -1,5 +1,5 @@
 use rand::{
-    Rng,
+    RngExt,
     distr::{Alphanumeric, SampleString},
 };
 

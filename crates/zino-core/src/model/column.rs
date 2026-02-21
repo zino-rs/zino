@@ -9,7 +9,7 @@ use apache_avro::schema::{
     ArraySchema, MapSchema, Name, RecordField, RecordFieldOrder, Schema, UnionSchema,
 };
 use rand::{
-    Rng,
+    RngExt,
     distr::{Alphanumeric, Distribution, SampleString, StandardUniform},
     random,
     seq::IndexedRandom,
@@ -743,10 +743,7 @@ impl<'a> Column<'a> {
         if let Some(values) = extra.parse_enum_values("enum_values") {
             let max_items = extra.get_usize("max_items").unwrap_or(values.len());
             let num_items = rng.random_range(min_items..=max_items);
-            values
-                .choose_multiple(&mut rng, num_items)
-                .cloned()
-                .collect()
+            values.sample(&mut rng, num_items).cloned().collect()
         } else {
             let max_items = extra.get_usize("max_items").unwrap_or(8);
             let num_items = rng.random_range(min_items..=max_items);
@@ -782,10 +779,7 @@ impl<'a> Column<'a> {
         if let Some(values) = extra.parse_enum_values("enum_values") {
             let max_items = extra.get_usize("max_items").unwrap_or(values.len());
             let num_items = rng.random_range(min_items..=max_items);
-            values
-                .choose_multiple(&mut rng, num_items)
-                .cloned()
-                .collect()
+            values.sample(&mut rng, num_items).cloned().collect()
         } else {
             let max_items = extra.get_usize("max_items").unwrap_or(8);
             let num_items = rng.random_range(min_items..=max_items);

@@ -1,4 +1,4 @@
-use rand::{Rng, seq::IndexedRandom};
+use rand::{RngExt, seq::IndexedRandom};
 
 /// Country codes for a mocked phone number.
 const COUNTRY_CODES: [&str; 3] = ["+1", "+49", "+86"];
