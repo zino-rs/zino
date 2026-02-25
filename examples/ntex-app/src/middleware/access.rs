@@ -1,4 +1,5 @@
 use ntex::{
+    SharedCfg,
     service::{Middleware, Service, ServiceCtx},
     web::{Error, ErrorRenderer, WebRequest, WebResponse},
 };
@@ -11,10 +12,10 @@ pub struct UserSessionMiddleware<S> {
     service: S,
 }
 
-impl<S> Middleware<S> for UserSessionInitializer {
+impl<S> Middleware<S, SharedCfg> for UserSessionInitializer {
     type Service = UserSessionMiddleware<S>;
 
-    fn create(&self, service: S) -> Self::Service {
+    fn create(&self, service: S, _cfg: SharedCfg) -> Self::Service {
         UserSessionMiddleware { service }
     }
 }

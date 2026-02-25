@@ -41,7 +41,7 @@ cfg-if = "1.0.4"
 convert_case = "0.11.0"
 etag = "4.0.0"
 fluent = "0.17.0"
-futures = "0.3.31"
+futures = "0.3.32"
 hmac = "0.12.1"
 http = "1.4.0"
 metrics = "0.24.3"
@@ -59,7 +59,7 @@ unic-langid = "0.9.6"
 url = "2.5.8"
 
 [workspace.dependencies.chrono]
-version = "0.4.43"
+version = "0.4.44"
 features = ["serde"]
 
 [workspace.dependencies.jwt-simple]
@@ -126,35 +126,35 @@ features = [
 
 [workspace.dependencies.zino-auth]
 path = "crates/zino-auth"
-version = "0.14.0"
+version = "0.14.1"
 
 [workspace.dependencies.zino-core]
 path = "crates/zino-core"
-version = "0.42.0"
+version = "0.42.1"
 
 [workspace.dependencies.zino-channel]
 path = "crates/zino-channel"
-version = "0.14.0"
+version = "0.14.1"
 
 [workspace.dependencies.zino-derive]
 path = "crates/zino-derive"
-version = "0.40.0"
+version = "0.40.1"
 
 [workspace.dependencies.zino-http]
 path = "crates/zino-http"
-version = "0.14.0"
+version = "0.14.1"
 
 [workspace.dependencies.zino-openapi]
 path = "crates/zino-openapi"
-version = "0.13.0"
+version = "0.13.1"
 
 [workspace.dependencies.zino-orm]
 path = "crates/zino-orm"
-version = "0.14.0"
+version = "0.14.1"
 
 [workspace.dependencies.zino-storage]
 path = "crates/zino-storage"
-version = "0.14.0"
+version = "0.14.1"
 
 [workspace.lints.rust]
 missing_docs = "warn"

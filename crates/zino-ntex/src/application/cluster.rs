@@ -1,7 +1,7 @@
 use crate::RouterConfigure;
 use ntex::{
-    rt::System,
-    time::{self, Seconds},
+    rt::{self, DefaultRuntime, System},
+    time,
     web::{
         self, App, HttpServer,
         middleware::Compress,
@@ -51,17 +51,17 @@ impl Application for Cluster {
 
     fn run_with<T: AsyncScheduler + Send + 'static>(self, mut scheduler: T) {
         let app_env = Self::env();
-        System::new("prelude").block_on(async {
+        System::new("prelude", DefaultRuntime).block_on(async {
             #[cfg(feature = "orm")]
             zino_orm::GlobalPool::connect_all().await;
             Self::load().await;
             app_env.load_plugins(self.custom_plugins).await;
         });
-        System::new("main").block_on(async {
+        System::new("main", DefaultRuntime).block_on(async {
             // Fixed: Move scheduler startup inside main block_on to ensure correct runtime context
             // https://github.com/ntex-rs/ntex/issues/335#issuecomment-2071498572
             if scheduler.is_ready() {
-                System::current().arbiter().spawn(Box::pin(async move {
+                rt::spawn(Box::pin(async move {
                     loop {
                         scheduler.tick().await;
 
@@ -97,7 +97,6 @@ impl Application for Cluster {
                 let mut backlog = 2048; // Maximum number of pending connections
                 let mut max_connections = 25000; // Maximum number of concurrent connections
                 let mut body_limit = 128 * 1024 * 1024; // 128MB
-                let mut request_timeout = 60; // 60 seconds
                 if let Some(config) = app_state.get_config("server") {
                     if let Some(dir) = config.get_str("public-dir") {
                         public_dir = dir;
@@ -114,16 +113,10 @@ impl Application for Cluster {
                     if let Some(limit) = config.get_usize("body-limit") {
                         body_limit = limit;
                     }
-                    if let Some(timeout) = config
-                        .get_duration("request-timeout")
-                        .and_then(|d| d.as_secs().try_into().ok())
-                    {
-                        request_timeout = timeout;
-                    }
                 }
 
                 let public_dir = Self::parse_path(public_dir);
-                HttpServer::new(move || {
+                HttpServer::new(async move || {
                     let mut app = App::new();
                     if public_dir.exists() {
                         let index_file = public_dir.join("index.html");
@@ -161,14 +154,13 @@ impl Application for Cluster {
                     app.state(FormConfig::default().limit(body_limit))
                         .state(JsonConfig::default().limit(body_limit))
                         .state(PayloadConfig::default().limit(body_limit))
-                        .wrap(Compress::default())
+                        .middleware(Compress::default())
                 })
                 .stop_runtime()
                 .disable_signals()
                 .server_hostname(app_domain)
                 .backlog(backlog)
                 .maxconn(max_connections)
-                .client_timeout(Seconds(request_timeout))
                 .bind(addr)
                 .unwrap_or_else(|err| panic!("fail to create an HTTP server: {err}"))
                 .run()

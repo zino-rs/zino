@@ -20,7 +20,7 @@ fn auth_router(cfg: &mut ServiceConfig) {
     cfg.service(
         scope("/auth")
             .route("/logout", post().to(auth::logout))
-            .wrap(middleware::UserSessionInitializer),
+            .middleware(middleware::UserSessionInitializer),
     );
 }
 
@@ -29,7 +29,7 @@ fn file_router(cfg: &mut ServiceConfig) {
         scope("/file")
             .route("/upload", post().to(file::upload))
             .route("/decrypt", get().to(file::decrypt))
-            .wrap(middleware::UserSessionInitializer),
+            .middleware(middleware::UserSessionInitializer),
     );
 }
 
