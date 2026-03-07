@@ -9,6 +9,7 @@ use crate::{
 use chrono::NaiveDateTime;
 use convert_case::{Case, Casing};
 use rust_decimal::Decimal;
+use serde_json::map::Entry;
 use std::{
     borrow::Cow,
     mem,
@@ -241,6 +242,9 @@ pub trait JsonObjectExt {
     /// If the map did have this key present, the value is updated and the old value is returned,
     /// otherwise `None` is returned.
     fn upsert(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) -> Option<JsonValue>;
+
+    /// Inserts a key-value pair into the map if the entry is vacant.
+    fn insert_if_vacant(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) -> bool;
 
     /// Clones values from the populated data corresponding to the key into `self`.
     fn clone_from_populated<K: AsRef<str>>(&mut self, key: &str, fields: &[K]);
@@ -758,6 +762,18 @@ impl JsonObjectExt for Map {
     #[inline]
     fn upsert(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) -> Option<JsonValue> {
         self.insert(key.into(), value.into())
+    }
+
+    /// Inserts a key-value pair into the dictionary if the entry is vacant.
+    #[inline]
+    fn insert_if_vacant(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) -> bool {
+        let key = key.into();
+        if let Entry::Vacant(entry) = self.entry(key) {
+            entry.insert(value.into());
+            true
+        } else {
+            false
+        }
     }
 
     fn clone_from_populated<K: AsRef<str>>(&mut self, key: &str, fields: &[K]) {
