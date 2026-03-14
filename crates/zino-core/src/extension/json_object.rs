@@ -764,7 +764,6 @@ impl JsonObjectExt for Map {
         self.insert(key.into(), value.into())
     }
 
-    /// Inserts a key-value pair into the dictionary if the entry is vacant.
     #[inline]
     fn insert_if_vacant(&mut self, key: impl Into<String>, value: impl Into<JsonValue>) -> bool {
         let key = key.into();
