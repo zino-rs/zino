@@ -49,7 +49,7 @@ version = "0.10.0"
 features = ["bootstrap", "font-awesome-solid"]
 
 [dependencies.image]
-version = "0.25.9"
+version = "0.25.10"
 optional = true
 default-features = false
 features = [

@@ -1,7 +1,7 @@
 use hkdf::Hkdf;
 use sm3::{Digest, Sm3};
 
-/// Key derivation with HKFD-HMAC-SM3
+/// Derives a key with HKFD-HMAC-SM3.
 pub fn derive_key(info: &str, prk: &[u8]) -> [u8; 64] {
     let info = format!("{info};CHECKSUM:SM3;HKDF:HMAC-SM3");
     let mut okm = [0; 64];
@@ -12,7 +12,7 @@ pub fn derive_key(info: &str, prk: &[u8]) -> [u8; 64] {
     okm
 }
 
-/// SM3 digest
+/// Digests the data with SM3.
 #[inline]
 pub fn digest(data: &[u8]) -> [u8; 32] {
     let mut hasher = Sm3::new();
