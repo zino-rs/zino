@@ -1,6 +1,6 @@
 use crate::{bail, error::Error};
 use ctr::Ctr64LE;
-use rand::Rng;
+use rand::RngExt;
 use sm4::{
     Sm4,
     cipher::{KeyIvInit, StreamCipher},

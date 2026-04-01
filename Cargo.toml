@@ -42,7 +42,7 @@ convert_case = "0.11.0"
 etag = "4.0.0"
 fluent = "0.17.0"
 futures = "0.3.32"
-hmac = "0.12.1"
+hmac = "0.13.0"
 http = "1.4.0"
 metrics = "0.24.3"
 mime_guess = "2.0.5"
@@ -50,9 +50,9 @@ parking_lot = "0.12.5"
 percent-encoding = "2.3.2"
 rand = "0.10.0"
 regex = "1.12.3"
-rust_decimal = "1.40.0"
+rust_decimal = "1.41.0"
 serde_qs = "1.1.0"
-sm3 = "0.4.2"
+sm3 = "0.5.0"
 smallvec = "1.15.1"
 tracing = "0.1.44"
 unic-langid = "0.9.6"
@@ -111,7 +111,7 @@ features = [
 ]
 
 [workspace.dependencies.toml]
-version = "1.1.0"
+version = "1.1.1"
 default-features = false
 features = ["parse", "serde"]
 

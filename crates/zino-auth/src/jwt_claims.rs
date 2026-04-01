@@ -321,7 +321,7 @@ static SECRET_KEY: LazyLock<JwtHmacKey> = LazyLock::new(|| {
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "crypto-sm")] {
-        use hmac::{Hmac, Mac};
+        use hmac::{Hmac, KeyInit, Mac};
         use jwt_simple::{algorithms::HMACKey, common::KeyMetadata};
         use sm3::Sm3;
 
@@ -388,10 +388,10 @@ cfg_if::cfg_if! {
                 Ok(())
             }
 
-            fn authentication_tag(&self, authenticated: &str) -> Vec<u8> {
+            fn authentication_tag(&self, authenticated: &[u8]) -> Vec<u8> {
                 let mut mac = Hmac::<Sm3>::new_from_slice(self.key().as_ref())
                     .expect("HMAC can take key of any size");
-                mac.update(authenticated.as_bytes());
+                mac.update(authenticated);
                 mac.finalize().into_bytes().to_vec()
             }
         }
