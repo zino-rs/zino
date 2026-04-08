@@ -51,7 +51,7 @@ percent-encoding = "2.3.2"
 rand = "0.10.0"
 regex = "1.12.3"
 rust_decimal = "1.41.0"
-serde_qs = "1.1.0"
+serde_qs = "1.1.1"
 sm3 = "0.5.0"
 smallvec = "1.15.1"
 tracing = "0.1.44"
@@ -100,7 +100,7 @@ features = [
 ]
 
 [workspace.dependencies.tokio]
-version = "1.50.0"
+version = "1.51.0"
 features = [
     "macros",
     "net",
@@ -111,7 +111,7 @@ features = [
 ]
 
 [workspace.dependencies.toml]
-version = "1.1.1"
+version = "1.1.2"
 default-features = false
 features = ["parse", "serde"]
 

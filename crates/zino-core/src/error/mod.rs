@@ -166,6 +166,13 @@ impl fmt::Display for Error {
     }
 }
 
+impl From<Error> for anyhow::Error {
+    #[inline]
+    fn from(err: Error) -> Self {
+        Self::msg(err.to_string())
+    }
+}
+
 /// Emits a `tracing::Event` at the warn level and returns early with an [`Error`].
 #[macro_export]
 macro_rules! bail {

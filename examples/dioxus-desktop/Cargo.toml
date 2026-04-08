@@ -13,7 +13,7 @@ zino-core = { workspace = true, features = ["env-filter", "http-client", "tls-na
 zino-dioxus = { workspace = true }
 
 [dependencies.dioxus]
-version = "0.7.4"
+version = "0.7.5"
 features = ["desktop"]
 
 [dependencies.dioxus-free-icons]

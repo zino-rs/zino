@@ -196,6 +196,7 @@ impl JobScheduler {
     }
 
     /// Adds a job to the scheduler and returns the job ID.
+    #[inline]
     pub fn add(&mut self, job: Job) -> Uuid {
         let job_id = job.context().job_id();
         self.jobs.push(job);
@@ -263,7 +264,6 @@ impl JobScheduler {
 
     /// Increments time for the scheduler and executes any pending jobs.
     /// It is recommended to sleep for at least 500 milliseconds between invocations of this method.
-    #[inline]
     pub fn tick(&mut self) {
         let mut fused_jobs = Vec::new();
         for job in &mut self.jobs {
@@ -279,7 +279,8 @@ impl JobScheduler {
         }
     }
 
-    /// Executes all the job manually.
+    /// Executes all the jobs manually.
+    #[inline]
     pub fn execute(&mut self) {
         for job in &mut self.jobs {
             job.execute();

@@ -196,6 +196,7 @@ impl AsyncJobScheduler {
     }
 
     /// Adds an async job to the scheduler and returns the job ID.
+    #[inline]
     pub fn add(&mut self, job: AsyncJob) -> Uuid {
         let job_id = job.context().job_id();
         self.jobs.push(job);
@@ -263,7 +264,6 @@ impl AsyncJobScheduler {
 
     /// Increments time for the scheduler and executes any pending jobs asynchronously.
     /// It is recommended to sleep for at least 500 milliseconds between invocations of this method.
-    #[inline]
     pub async fn tick(&mut self) {
         let mut fused_jobs = Vec::new();
         for job in &mut self.jobs {
@@ -279,7 +279,8 @@ impl AsyncJobScheduler {
         }
     }
 
-    /// Executes all the job manually.
+    /// Executes all the jobs manually.
+    #[inline]
     pub async fn execute(&mut self) {
         for job in &mut self.jobs {
             job.execute().await;

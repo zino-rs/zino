@@ -88,7 +88,7 @@ http-client = ["dep:reqwest", "zino-core/http-client"]
 metrics = ["opendal?/layers-metrics", "zino-core/metrics"]
 
 [dependencies]
-md-5 = "0.10.6"
+md-5 = "0.11.0"
 bytes = { workspace = true }
 etag = { workspace = true }
 mime_guess = { workspace = true }
