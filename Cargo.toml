@@ -48,7 +48,7 @@ metrics = "0.24.3"
 mime_guess = "2.0.5"
 parking_lot = "0.12.5"
 percent-encoding = "2.3.2"
-rand = "0.10.0"
+rand = "0.10.1"
 regex = "1.12.3"
 rust_decimal = "1.41.0"
 serde_qs = "1.1.1"
@@ -100,7 +100,7 @@ features = [
 ]
 
 [workspace.dependencies.tokio]
-version = "1.51.0"
+version = "1.52.0"
 features = [
     "macros",
     "net",

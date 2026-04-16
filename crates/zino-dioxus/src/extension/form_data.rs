@@ -1,7 +1,7 @@
 use dioxus::events::{FormData, FormValue};
 use std::time::Duration;
 use zino_core::{
-    Decimal, Map, Uuid,
+    Decimal, JsonValue, Map, Uuid,
     datetime::{self, Date, DateTime, Time},
     extension::JsonObjectExt,
     model::Model,
@@ -92,7 +92,16 @@ impl FormDataExt for FormData {
         let mut map = Map::with_capacity(values.len());
         for (key, value) in values.into_iter() {
             if let FormValue::Text(text) = value {
-                map.upsert(key, text);
+                if let Some(value) = map.remove(&key) {
+                    if let JsonValue::Array(mut vec) = value {
+                        vec.push(text.into());
+                        map.upsert(key, vec);
+                    } else {
+                        map.upsert(key, vec![value, text.into()]);
+                    }
+                } else {
+                    map.upsert(key, text);
+                }
             }
         }
         map
