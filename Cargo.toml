@@ -100,7 +100,7 @@ features = [
 ]
 
 [workspace.dependencies.tokio]
-version = "1.52.0"
+version = "1.52.1"
 features = [
     "macros",
     "net",
@@ -116,7 +116,7 @@ default-features = false
 features = ["parse", "serde"]
 
 [workspace.dependencies.uuid]
-version = "1.23.0"
+version = "1.23.1"
 features = [
     "fast-rng",
     "serde",

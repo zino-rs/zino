@@ -4,7 +4,7 @@ use dioxus::{
         muda::{self, AboutMetadata, Menu},
         tao::window::{Fullscreen, Icon, Theme},
         use_asset_handler,
-        wry::http::Response,
+        wry::http::{HeaderValue, Response},
     },
     prelude::*,
 };
@@ -39,15 +39,21 @@ where
     <R as FromStr>::Err: Display,
 {
     /// Renders the app root.
-    #[inline]
     fn app_root() -> Element {
         Self::config_webview();
         use_asset_handler("public", |req, res| {
             let path = req.uri().path().trim_start_matches('/');
-            let Ok(bytes) = fs::read(Self::parse_path(path)) else {
+            let local_path = Self::parse_path(path);
+            let Ok(bytes) = fs::read(&local_path) else {
                 return;
             };
-            res.respond(Response::new(bytes));
+            let mut response = Response::new(bytes);
+            if let Some(mime_type) = mime_guess::from_path(&local_path).first()
+                && let Ok(content_type) = HeaderValue::from_str(mime_type.essence_str())
+            {
+                response.headers_mut().append("content-type", content_type);
+            }
+            res.respond(response);
         });
         use_asset_handler("plugins", |req, res| {
             let path = req.uri().path().trim_start_matches('/');
@@ -56,10 +62,16 @@ where
             } else {
                 Self::parse_path(path)
             };
-            let Ok(bytes) = fs::read(local_path) else {
+            let Ok(bytes) = fs::read(&local_path) else {
                 return;
             };
-            res.respond(Response::new(bytes));
+            let mut response = Response::new(bytes);
+            if let Some(mime_type) = mime_guess::from_path(&local_path).first()
+                && let Ok(content_type) = HeaderValue::from_str(mime_type.essence_str())
+            {
+                response.headers_mut().append("content-type", content_type);
+            }
+            res.respond(response);
         });
         rsx! { Router::<R> {} }
     }
@@ -106,7 +118,7 @@ where
     /// Formats a local path as the Dioxus href.
     pub fn format_local_path(path: &Path) -> String {
         let path = path.to_string_lossy();
-        if cfg!(target_os = "windows") && !path.is_empty() {
+        if cfg!(target_os = "windows") && !path.starts_with('/') {
             format!("http://dioxus.{}", path.replace('\\', "/"))
         } else {
             path.into_owned()

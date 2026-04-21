@@ -25,6 +25,7 @@ markdown = ["dep:comrak"]
 [dependencies]
 dioxus-core = "0.7.4"
 chrono = { workspace = true }
+mime_guess = { workspace = true }
 rust_decimal = { workspace = true }
 smallvec = { workspace = true }
 tokio = { workspace = true }
