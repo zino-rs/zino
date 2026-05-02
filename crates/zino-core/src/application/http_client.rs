@@ -266,20 +266,12 @@ impl ReqwestOtelSpanBackend for RequestTiming {
                 tracing::info!("finished HTTP request");
             }
             Err(err) => {
-                if let reqwest_middleware::Error::Reqwest(err) = err {
-                    if let Some(status_code) = err.status() {
-                        span.record("http.response.status_code", status_code.as_u16());
-                        if status_code.is_server_error() {
-                            span.record("otel.status_code", "OK");
-                        } else {
-                            span.record("otel.status_code", "ERROR");
-                        }
-                    } else {
-                        span.record("otel.status_code", "ERROR");
-                    }
-                } else {
-                    span.record("otel.status_code", "ERROR");
+                if let reqwest_middleware::Error::Reqwest(err) = err
+                    && let Some(status_code) = err.status()
+                {
+                    span.record("http.response.status_code", status_code.as_u16());
                 }
+                span.record("otel.status_code", "ERROR");
                 tracing::error!("{err}");
             }
         }

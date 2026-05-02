@@ -74,7 +74,7 @@ impl SecurityToken {
         let signature = crypto::decrypt(&authorization, key)
             .map_err(|_| DecodeError(warn!("fail to decrypt authorization")))?;
         let signature_str = String::from_utf8_lossy(&signature);
-        if let Some((access_key_id, timestamp)) = signature_str.split_once(':') {
+        if let Some((access_key_id, timestamp)) = signature_str.rsplit_once(':') {
             let timestamp = timestamp
                 .parse::<i64>()
                 .map_err(|err| ParseExpiresError(err.into()))?;

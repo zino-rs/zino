@@ -120,7 +120,7 @@ where
         let account = body
             .get_str("account")
             .ok_or_else(|| warn!("401 Unauthorized: user `account` should be specified"))?;
-        let passowrd = body
+        let password = body
             .get_str("password")
             .ok_or_else(|| warn!("401 Unauthorized: user `password` should be specified"))?;
         let mut query = Query::default();
@@ -147,7 +147,7 @@ where
         let encrypted_password = user
             .get_str(Self::PASSWORD_FIELD)
             .ok_or_else(|| warn!("404 Not Found: user password is absent"))?;
-        if Self::verify_password(passowrd, encrypted_password)
+        if Self::verify_password(password, encrypted_password)
             .map_err(|_| warn!("401 Unauthorized: invalid user account or password"))?
         {
             // Cann't use `get_str` because the primary key may be an integer

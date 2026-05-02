@@ -258,7 +258,7 @@ impl JobScheduler {
                     }
                 }
             }
-            duration
+            duration.max(DEFAULT_TICK_INTERVAL)
         }
     }
 

@@ -258,7 +258,7 @@ impl AsyncJobScheduler {
                     }
                 }
             }
-            duration
+            duration.max(DEFAULT_TICK_INTERVAL)
         }
     }
 

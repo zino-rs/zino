@@ -133,7 +133,7 @@ static SHARED_REGO_ENGINE: LazyLock<RegoEngine> = LazyLock::new(|| {
                         .add_policy(file_name, opa_policy)
                         .unwrap_or_else(|err| {
                             let opa_file = opa_file.display();
-                            panic!("fail to read the policy file `{opa_file}`: {err}");
+                            panic!("fail to parse the policy file `{opa_file}`: {err}");
                         });
                 } else {
                     let opa_data = fs::read_to_string(&opa_file).unwrap_or_else(|err| {

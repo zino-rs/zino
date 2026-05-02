@@ -199,8 +199,9 @@ pub trait RequestContext {
     #[cfg(feature = "cookie")]
     fn get_cookie(&self, name: &str) -> Option<Cookie<'_>> {
         self.get_header("cookie")?.split(';').find_map(|cookie| {
-            if let Some((key, value)) = cookie.split_once('=') {
-                (key == name).then(|| Cookie::new(key, value))
+            if let Some((key, value)) = cookie.trim().split_once('=') {
+                let key = key.trim();
+                (key == name).then(|| Cookie::new(key, value.trim()))
             } else {
                 None
             }
@@ -674,8 +675,10 @@ pub trait RequestContext {
         match key.verify_token(token, Some(options)) {
             Ok(claims) => Ok(claims.into()),
             Err(err) => {
-                let message = format!("401 Unauthorized: {err}");
-                Err(Rejection::with_message(message).context(self))
+                let rejection =
+                    Rejection::with_message("401 Unauthorized: invalid or expired token");
+                tracing::warn!("JWT verification failed: {err}");
+                Err(rejection.context(self))
             }
         }
     }

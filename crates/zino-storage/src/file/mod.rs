@@ -227,6 +227,13 @@ impl NamedFile {
     /// a `.{chunk_number}.part` suffix will be adjoined to the path.
     pub fn write(&self, path: impl AsRef<Path>) -> Result<(), io::Error> {
         fn inner(file: &NamedFile, path: &Path) -> Result<(), io::Error> {
+            if path.is_dir() {
+                return Err(io::Error::new(
+                    ErrorKind::IsADirectory,
+                    "path should be a file",
+                ));
+            }
+
             let bytes = file.as_ref();
             if let Some(chunk_number) = file.chunk_number() {
                 let chunk_path = path.join(format!(".{chunk_number}.part"));

@@ -7,7 +7,13 @@ pub(super) fn init<APP: Application + ?Sized>() {
     let config = APP::config();
     let checksum: [u8; 32] = config
         .get_str("checksum")
-        .and_then(|checksum| checksum.as_bytes().try_into().ok())
+        .and_then(|checksum| {
+            checksum
+                .as_bytes()
+                .try_into()
+                .inspect_err(|err| tracing::warn!("invalid checkum: {err}"))
+                .ok()
+        })
         .unwrap_or_else(|| {
             let secret = config
                 .get_str("secret")
