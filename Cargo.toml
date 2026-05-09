@@ -44,13 +44,13 @@ fluent = "0.17.0"
 futures = "0.3.32"
 hmac = "0.13.0"
 http = "1.4.0"
-metrics = "0.24.3"
+metrics = "0.24.5"
 mime_guess = "2.0.5"
 parking_lot = "0.12.5"
 percent-encoding = "2.3.2"
 rand = "0.10.1"
 regex = "1.12.3"
-rust_decimal = "1.41.0"
+rust_decimal = "1.42.0"
 serde_qs = "1.1.1"
 sm3 = "0.5.0"
 smallvec = "1.15.1"
@@ -63,7 +63,7 @@ version = "0.4.44"
 features = ["serde"]
 
 [workspace.dependencies.jwt-simple]
-version = "0.12.14"
+version = "0.12.15"
 default-features = false
 features = ["pure-rust"]
 
@@ -72,7 +72,7 @@ version = "3.1.0"
 features = ["json"]
 
 [workspace.dependencies.reqwest]
-version = "0.13.2"
+version = "0.13.3"
 default-features = false
 features = [
     "blocking",
@@ -100,7 +100,7 @@ features = [
 ]
 
 [workspace.dependencies.tokio]
-version = "1.52.1"
+version = "1.52.3"
 features = [
     "macros",
     "net",

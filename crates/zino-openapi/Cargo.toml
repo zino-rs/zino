@@ -28,7 +28,7 @@ tracing = { workspace = true }
 zino-core = { workspace = true }
 
 [dependencies.utoipa]
-version = "5.4.0"
+version = "5.5.0"
 features = [
     "non_strict_integers",
     "ulid",

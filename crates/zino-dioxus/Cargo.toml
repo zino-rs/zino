@@ -23,7 +23,7 @@ desktop = ["dep:image", "dioxus/desktop"]
 markdown = ["dep:comrak"]
 
 [dependencies]
-dioxus-core = "0.7.6"
+dioxus-core = "0.7.9"
 chrono = { workspace = true }
 mime_guess = { workspace = true }
 rust_decimal = { workspace = true }
@@ -42,7 +42,7 @@ default-features = false
 features = ["shortcodes", "syntect"]
 
 [dependencies.dioxus]
-version = "0.7.6"
+version = "0.7.9"
 features = ["router"]
 
 [dependencies.dioxus-free-icons]
