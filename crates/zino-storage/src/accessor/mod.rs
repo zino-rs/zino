@@ -573,7 +573,7 @@ impl GlobalAccessor {
             }
             _ => return Err(Error::new(Unsupported, "scheme is unsupported")),
         };
-        let op = operator.layer(RetryLayer::new()).layer(TracingLayer);
+        let op = operator.layer(RetryLayer::new()).layer(TracingLayer::new());
         #[cfg(feature = "metrics")]
         let op = op.layer(opendal::layers::MetricsLayer::default());
         Ok(op)

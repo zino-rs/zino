@@ -154,7 +154,7 @@ version = "0.15.1"
 
 [workspace.dependencies.zino-storage]
 path = "crates/zino-storage"
-version = "0.15.1"
+version = "0.15.2"
 
 [workspace.lints.rust]
 missing_docs = "warn"

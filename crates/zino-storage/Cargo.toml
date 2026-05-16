@@ -1,7 +1,7 @@
 [package]
 name = "zino-storage"
 description = "Files and storage services for zino."
-version = "0.15.1"
+version = "0.15.2"
 categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
@@ -102,7 +102,11 @@ zino-core = { workspace = true, features = ["http-client"] }
 version = "0.56.0"
 optional = true
 default-features = false
-features = ["layers-tracing"]
+features = [
+    "layers-retry",
+    "layers-tracing",
+    "reqwest-rustls-tls",
+]
 
 [lints]
 workspace = true
