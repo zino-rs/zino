@@ -30,7 +30,7 @@ members = [
 homepage = "https://github.com/zino-rs/zino"
 repository = "https://github.com/zino-rs/zino"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.90"
 license = "MIT"
 
 [workspace.dependencies]
