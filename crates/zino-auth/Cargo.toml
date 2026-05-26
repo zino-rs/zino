@@ -48,11 +48,11 @@ version = "0.18.1"
 optional = true
 
 [dependencies.rauthy-client]
-version = "0.14.0"
+version = "0.14.2"
 optional = true
 
 [dependencies.regorus]
-version = "0.10.0"
+version = "0.10.1"
 optional = true
 default-features = false
 features = [

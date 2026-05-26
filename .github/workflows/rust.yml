@@ -15,12 +15,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-      - name: Install 1.88
+      - name: Install 1.90
         uses: dtolnay/rust-toolchain@v1
         with:
-          toolchain: 1.88
+          toolchain: 1.90
       - name: Set default toolchain
-        run: rustup default 1.88
+        run: rustup default 1.90
       - name: Update packages
         run: sudo apt-get update
       - name: Install libgtk

@@ -43,7 +43,7 @@ etag = "4.0.0"
 fluent = "0.17.0"
 futures = "0.3.32"
 hmac = "0.13.0"
-http = "1.4.0"
+http = "1.4.1"
 metrics = "0.24.6"
 mime_guess = "2.0.5"
 parking_lot = "0.12.5"
@@ -72,7 +72,7 @@ version = "3.1.0"
 features = ["json"]
 
 [workspace.dependencies.reqwest]
-version = "0.13.3"
+version = "0.13.4"
 default-features = false
 features = [
     "blocking",
@@ -86,7 +86,7 @@ version = "1.0.228"
 features = ["derive"]
 
 [workspace.dependencies.serde_json]
-version = "1.0.149"
+version = "1.0.150"
 features = ["raw_value"]
 
 [workspace.dependencies.sqlx]
