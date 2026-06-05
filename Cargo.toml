@@ -59,7 +59,7 @@ unic-langid = "0.9.6"
 url = "2.5.8"
 
 [workspace.dependencies.chrono]
-version = "0.4.44"
+version = "0.4.45"
 features = ["serde"]
 
 [workspace.dependencies.jwt-simple]
@@ -116,7 +116,7 @@ default-features = false
 features = ["parse", "serde"]
 
 [workspace.dependencies.uuid]
-version = "1.23.1"
+version = "1.23.2"
 features = [
     "fast-rng",
     "serde",

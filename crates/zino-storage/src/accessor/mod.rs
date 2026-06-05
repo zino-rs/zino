@@ -104,9 +104,6 @@ impl GlobalAccessor {
                 if let Some(sas_token) = config.get_str("sas-token") {
                     builder = builder.sas_token(sas_token);
                 }
-                if let Some(batch_max_operations) = config.get_usize("batch-max-operations") {
-                    builder = builder.batch_max_operations(batch_max_operations);
-                }
                 Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-azdls")]
@@ -413,9 +410,6 @@ impl GlobalAccessor {
                 if let Some(encryption_key_id) = config.get_str("server-side-encryption-key-id") {
                     builder = builder.server_side_encryption_key_id(encryption_key_id);
                 }
-                if let Some(delete_max_size) = config.get_usize("delete-max-size") {
-                    builder = builder.delete_max_size(delete_max_size);
-                }
                 Operator::new(builder)?.finish()
             }
             #[cfg(feature = "accessor-persy")]
@@ -517,9 +511,6 @@ impl GlobalAccessor {
                 }
                 if let Some(external_id) = config.get_str("external-id") {
                     builder = builder.external_id(external_id);
-                }
-                if let Some(delete_max_size) = config.get_usize("delete-max-size") {
-                    builder = builder.delete_max_size(delete_max_size);
                 }
                 Operator::new(builder)?.finish()
             }
