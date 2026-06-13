@@ -6,7 +6,7 @@ use ntex::{
     },
     web::{HttpRequest, HttpResponse, Responder, WebResponseError},
 };
-use std::fmt;
+use std::{error, fmt};
 use zino_http::{
     response::{Rejection, Response, ResponseCode},
     timing::TimingMetric,
@@ -59,6 +59,8 @@ impl fmt::Display for NtexRejection {
         self.0.status_code().fmt(f)
     }
 }
+
+impl error::Error for NtexRejection {}
 
 impl From<Rejection> for NtexRejection {
     #[inline]
