@@ -1,6 +1,6 @@
 use super::{DatabaseDriver, DatabaseRow, DecodeRow, EncodeColumn, Schema, query::QueryExt};
 use chrono::NaiveDateTime;
-use std::borrow::Cow;
+use std::{borrow::Cow, fmt::Display};
 use zino_core::{
     AvroValue, JsonValue, Map, Record, SharedString, Uuid,
     datetime::{Date, DateTime, Time},
