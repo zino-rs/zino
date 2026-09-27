@@ -103,7 +103,7 @@ pub(crate) fn request_builder(url: &str, options: Option<&Map>) -> Result<Reques
                     .header(header::CONTENT_TYPE, "text/plain");
             }
             JsonValue::Object(map) => {
-                let data_type = options.get_str("data_type").unwrap_or_default();
+                let data_type = options.get_str("data_type").unwrap_or("json");
                 request_builder = match data_type {
                     "form" => request_builder.form(map),
                     "json" => request_builder.json(map),

@@ -6,7 +6,6 @@ categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
 documentation = "https://docs.rs/zino-axum"
-homepage = { workspace = true }
 repository = { workspace = true }
 edition = { workspace = true }
 rust-version = { workspace = true }
@@ -53,7 +52,7 @@ features = [
 ]
 
 [dependencies.utoipa-rapidoc]
-version = "6.0.0"
+version = "7.0.0"
 features = ["axum"]
 
 [lints]

@@ -6,7 +6,6 @@ categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
 documentation = "https://docs.rs/zino-storage"
-homepage = { workspace = true }
 repository = { workspace = true }
 edition = { workspace = true }
 rust-version = { workspace = true }
@@ -99,7 +98,7 @@ tracing = { workspace = true }
 zino-core = { workspace = true, features = ["http-client"] }
 
 [dependencies.opendal]
-version = "0.59.2"
+version = "0.59.3"
 optional = true
 default-features = false
 features = [

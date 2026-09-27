@@ -266,10 +266,10 @@ pub(super) fn parse_schema(config: &Table) -> Schema {
                 },
                 TomlValue::Boolean(value) => match key.as_str() {
                     "write_only" => {
-                        object_builder = object_builder.write_only(Some(*value));
+                        object_builder = object_builder.write_only(*value);
                     }
                     "read_only" => {
-                        object_builder = object_builder.read_only(Some(*value));
+                        object_builder = object_builder.read_only(*value);
                     }
                     "deprecated" => {
                         let deprecated = if *value {
@@ -699,6 +699,7 @@ pub(super) fn parse_security_scheme(config: &Table) -> SecurityScheme {
         }
         _ => SecurityScheme::MutualTls {
             description: config.get_str("description").map(|s| s.to_owned()),
+            deprecated: None,
             extensions: None,
         },
     }

@@ -4,7 +4,6 @@ description = "Derived traits for zino."
 version = "0.42.0"
 readme = "README.md"
 documentation = "https://docs.rs/zino-derive"
-homepage = { workspace = true }
 repository = { workspace = true }
 edition = { workspace = true }
 rust-version = { workspace = true }

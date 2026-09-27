@@ -6,7 +6,6 @@ categories = ["asynchronous", "network-programming", "web-programming::http-serv
 keywords = ["http", "web", "framework"]
 readme = "README.md"
 documentation = "https://docs.rs/zino-core"
-homepage = { workspace = true }
 repository = { workspace = true }
 edition = { workspace = true }
 rust-version = { workspace = true }
@@ -107,7 +106,7 @@ argon2 = "0.6.0"
 base64 = "0.23.1"
 cron = "0.17.0"
 csv = "1.4.0"
-faster-hex = "0.10.0"
+faster-hex = "1.0.0"
 hkdf = "0.13.0"
 sha1 = "0.11.0"
 sha2 = "0.11.0"

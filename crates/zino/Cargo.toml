@@ -6,7 +6,6 @@ categories = ["asynchronous", "network-programming", "web-programming::http-serv
 keywords = ["http", "web", "framework"]
 readme = "README.md"
 documentation = "https://docs.rs/zino"
-homepage = { workspace = true }
 repository = { workspace = true }
 edition = { workspace = true }
 rust-version = { workspace = true }

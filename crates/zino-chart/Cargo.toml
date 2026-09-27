@@ -6,7 +6,6 @@ categories = ["visualization"]
 keywords = ["plotting", "visualization"]
 readme = "README.md"
 documentation = "https://docs.rs/zino-chart"
-homepage = { workspace = true }
 repository = { workspace = true }
 edition = { workspace = true }
 rust-version = { workspace = true }

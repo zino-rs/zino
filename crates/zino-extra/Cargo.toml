@@ -6,7 +6,6 @@ categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
 documentation = "https://docs.rs/zino-extra"
-homepage = { workspace = true }
 repository = { workspace = true }
 edition = { workspace = true }
 rust-version = { workspace = true }
@@ -27,7 +26,7 @@ parking_lot = { workspace = true, optional = true }
 zino-core = { workspace = true, optional = true }
 
 [dependencies.lru]
-version = "0.18.4"
+version = "0.18.5"
 optional = true
 
 [lints]

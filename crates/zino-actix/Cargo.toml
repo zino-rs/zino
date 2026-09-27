@@ -6,7 +6,6 @@ categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 documentation = "https://docs.rs/zino-actix"
 readme = "README.md"
-homepage = { workspace = true }
 repository = { workspace = true }
 edition = { workspace = true }
 rust-version = { workspace = true }
@@ -18,7 +17,7 @@ orm = ["zino-orm", "zino-orm/openapi"]
 [dependencies]
 actix-cors = "0.7.2"
 actix-files = "0.7.0"
-actix-http = "3.13.6"
+actix-http = "3.13.12"
 futures = { workspace = true }
 tracing = { workspace = true }
 zino-core = { workspace = true, features = ["runtime-tokio"] }
@@ -32,11 +31,11 @@ default-features = false
 features = ["compress-gzip"]
 
 [dependencies.tracing-actix-web]
-version = "0.7.22"
+version = "0.7.25"
 features = ["opentelemetry_0_32", "uuid_v7"]
 
 [dependencies.utoipa-rapidoc]
-version = "6.0.0"
+version = "7.0.0"
 features = ["actix-web"]
 
 [lints]
