@@ -1423,7 +1423,7 @@ pub(super) trait QueryExt<DB> {
     fn format_query_filter<M: Schema>(key: &str, value: &JsonValue) -> String {
         let json_field = key.split_once('.').and_then(|(key, path)| {
             M::get_column(key)
-                .filter(|col| col.type_name() == "Map")
+                .filter(|col| col.type_name() == "Map" && !path.contains('\''))
                 .map(|col| {
                     let key = [M::model_name(), ".", col.name()].concat();
                     let field = Self::format_field(&key);

@@ -244,7 +244,7 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
                             let condition = format!(r#"array_length({field}, 1) = {length}"#);
                             conditions.push(condition);
                         }
-                    } else {
+                    } else if !operator.contains(' ') {
                         let value = self.encode_value(Some(value));
                         let condition = format!(r#"{field} {operator} {value}"#);
                         conditions.push(condition);
@@ -290,7 +290,11 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
                     if value == "nonzero" {
                         format!(r#"{field} <> 0"#)
                     } else if value.contains(',') {
-                        let value = value.split(',').collect::<Vec<_>>().join(",");
+                        let value = value
+                            .split(',')
+                            .filter(|s| !s.trim().contains(' '))
+                            .collect::<Vec<_>>()
+                            .join(",");
                         format!(r#"{field} IN ({value})"#)
                     } else {
                         let value = self.format_value(value);

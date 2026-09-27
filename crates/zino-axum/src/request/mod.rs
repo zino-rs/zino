@@ -9,7 +9,10 @@ use std::{
     mem,
     net::{IpAddr, SocketAddr},
     ops::{Deref, DerefMut},
-    sync::Arc,
+    sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering::Relaxed},
+    },
 };
 use zino_core::{error::Error, extension::HeaderMapExt, state::Data};
 use zino_http::request::{Context, RequestContext};
@@ -120,7 +123,8 @@ impl RequestContext for Extractor<Request> {
     #[inline]
     async fn read_body_bytes(&mut self) -> Result<Bytes, Error> {
         let body = mem::take(self.body_mut());
-        let bytes = axum::body::to_bytes(body, usize::MAX).await?;
+        let limit = BODY_LIMIT.load(Relaxed);
+        let bytes = axum::body::to_bytes(body, limit).await?;
         Ok(bytes)
     }
 }
@@ -133,3 +137,6 @@ impl FromRequest<()> for Extractor<Request> {
         Ok(Extractor(req))
     }
 }
+
+/// Default: 128MB
+pub(crate) static BODY_LIMIT: AtomicUsize = AtomicUsize::new(128 * 1024 * 1024);

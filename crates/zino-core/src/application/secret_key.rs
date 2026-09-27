@@ -15,14 +15,15 @@ pub(super) fn init<APP: Application + ?Sized>() {
                 .ok()
         })
         .unwrap_or_else(|| {
-            let secret = config
-                .get_str("secret")
-                .map(|s| s.to_owned())
-                .unwrap_or_else(|| {
-                    tracing::warn!("auto-generated `secret` is used for deriving a secret key");
-                    format!("{}@{}", APP::name(), APP::version())
-                });
-            crypto::digest(secret.as_bytes())
+            if let Some(secret) = config.get_str("secret") {
+                crypto::digest(secret.as_bytes())
+            } else if APP::env().is_dev() {
+                let secret = format!("{}@{}", APP::name(), APP::version());
+                tracing::warn!("auto-generated `secret` is used for deriving a secret key");
+                crypto::digest(secret.as_bytes())
+            } else {
+                panic!("`secret` should be specified");
+            }
         });
 
     let info = config.get_str("info").unwrap_or("ZINO:APPLICATION");

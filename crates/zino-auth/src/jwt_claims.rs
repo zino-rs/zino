@@ -314,11 +314,14 @@ static SECRET_KEY: LazyLock<JwtHmacKey> = LazyLock::new(|| {
                 .ok()
         })
         .unwrap_or_else(|| {
-            let secret = config.get_str("secret").unwrap_or_else(|| {
+            if let Some(secret) = config.get_str("secret") {
+                crypto::digest(secret.as_bytes())
+            } else if Agent::env().is_dev() {
                 tracing::warn!("auto-generated `secret` is used for deriving a secret key");
-                Agent::name()
-            });
-            crypto::digest(secret.as_bytes())
+                crypto::digest(Agent::name().as_bytes())
+            } else {
+                panic!("`secret` should be specified");
+            }
         });
     let info = config.get_str("info").unwrap_or("ZINO:JWT");
     let secret_key = crypto::derive_key(info, &checksum);

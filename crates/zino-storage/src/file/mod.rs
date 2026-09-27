@@ -394,7 +394,10 @@ impl NamedFile {
     /// Attempts to create an instance from a field in a multipart stream.
     pub async fn try_from_multipart_field(field: Field<'_>) -> Result<Self, multer::Error> {
         let field_name = field.name().map(|s| s.to_owned());
-        let file_name = field.file_name().map(|s| s.to_owned());
+        let file_name = field
+            .file_name()
+            .and_then(|s| Path::new(s).file_name())
+            .map(|s| s.to_string_lossy().into_owned());
         let content_type = field.content_type().cloned().or_else(|| {
             file_name
                 .as_ref()

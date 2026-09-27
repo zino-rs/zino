@@ -116,7 +116,7 @@ pub struct Response<S: ResponseCode> {
     #[serde(skip)]
     start_time: Instant,
     /// Request ID.
-    #[serde(skip_serializing_if = "Uuid::is_nil")]
+    #[serde(skip)]
     request_id: Uuid,
     /// JSON data.
     #[serde(rename = "data")]
@@ -624,19 +624,10 @@ impl<S: ResponseCode> Response<S> {
         }
 
         let content_type = self.content_type();
-        let (bytes, etag_opt) = if crate::helper::check_json_content_type(content_type) {
-            let (capacity, etag_opt) = if has_json_data {
-                let data = serde_json::to_vec(&self.json_data)?;
-                let etag = EntityTag::from_data(&data);
-                (data.len() + 128, Some(etag))
-            } else {
-                (128, None)
-            };
-            let mut bytes = Vec::with_capacity(capacity);
-            serde_json::to_writer(&mut bytes, &self)?;
-            (bytes, etag_opt)
+        let bytes = if crate::helper::check_json_content_type(content_type) {
+            serde_json::to_vec(&self)?
         } else if has_json_data {
-            let bytes = if content_type.starts_with("text/csv") {
+            if content_type.starts_with("text/csv") {
                 self.json_data.to_csv(Vec::new())?
             } else if content_type.starts_with("application/jsonlines") {
                 self.json_data.to_jsonlines(Vec::new())?
@@ -647,12 +638,11 @@ impl<S: ResponseCode> Response<S> {
                     self.json_data.to_string()
                 };
                 text.into_bytes()
-            };
-            (bytes, None)
+            }
         } else {
-            (Vec::new(), None)
+            Vec::new()
         };
-        let etag = etag_opt.unwrap_or_else(|| EntityTag::from_data(&bytes));
+        let etag = EntityTag::from_data(&bytes);
         self.insert_header("x-etag", etag);
         Ok(bytes.into())
     }

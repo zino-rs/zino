@@ -71,7 +71,7 @@ impl Intl {
 
     /// Selects a language from the supported locales.
     pub fn select_language(accepted_languages: &str) -> Option<LanguageIdentifier> {
-        let mut languages = accepted_languages
+        accepted_languages
             .split(',')
             .filter_map(|s| {
                 let (locale, quality) = if let Some((locale, quality)) = s.split_once(';') {
@@ -87,13 +87,9 @@ impl Intl {
                         .map(|langid| (langid, quality))
                 })
             })
-            .collect::<Vec<_>>();
-        languages.sort_by(|a, b| b.1.total_cmp(&a.1));
-        if languages.is_empty() {
-            None
-        } else {
-            Some(languages.swap_remove(0).0)
-        }
+            .enumerate()
+            .max_by(|(i, a), (j, b)| a.1.total_cmp(&b.1).then_with(|| j.cmp(i)))
+            .map(|(_, a)| a.0)
     }
 
     /// Translates the localization message with the default locale.
