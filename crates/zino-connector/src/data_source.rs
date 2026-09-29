@@ -126,7 +126,7 @@ impl DataSource {
 
 impl Connector for DataSource {
     fn try_new_data_source(config: &Table) -> Result<DataSource, Error> {
-        let source_type = config.get_str("type").unwrap_or("unkown");
+        let source_type = config.get_str("type").unwrap_or("unknown");
         let protocol = match source_type {
             "arrow" => "arrow",
             "http" | "rest" | "graphql" => "http",

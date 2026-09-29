@@ -322,7 +322,7 @@ impl State {
             let masked_password = helper::mask_text(password, num_chars, num_chars);
             tracing::warn!(
                 encrypted_password,
-                "raw password `{masked_password}` should be encypted"
+                "raw password `{masked_password}` should be encrypted"
             );
         }
         Some(password.into())

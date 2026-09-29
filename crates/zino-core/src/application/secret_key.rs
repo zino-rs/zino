@@ -17,12 +17,10 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .unwrap_or_else(|| {
             if let Some(secret) = config.get_str("secret") {
                 crypto::digest(secret.as_bytes())
-            } else if APP::env().is_dev() {
+            } else {
                 let secret = format!("{}@{}", APP::name(), APP::version());
                 tracing::warn!("auto-generated `secret` is used for deriving a secret key");
                 crypto::digest(secret.as_bytes())
-            } else {
-                panic!("`secret` should be specified");
             }
         });
 

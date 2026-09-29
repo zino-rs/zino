@@ -572,7 +572,7 @@ fn parse_request_body(config: &Table) -> RequestBody {
 
 /// Parses the security scheme.
 pub(super) fn parse_security_scheme(config: &Table) -> SecurityScheme {
-    let schema_type = config.get_str("type").unwrap_or("unkown");
+    let schema_type = config.get_str("type").unwrap_or("unknown");
     match schema_type {
         "oauth2" => {
             let mut flows = Vec::new();

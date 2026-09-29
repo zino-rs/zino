@@ -1,9 +1,7 @@
 use super::Schema;
 use std::fmt::Display;
 use zino_core::{
-    LazyLock, Map,
-    application::{Agent, Application},
-    crypto,
+    LazyLock, Map, crypto,
     encoding::base64,
     error::Error,
     extension::{JsonObjectExt, TomlTableExt},
@@ -86,12 +84,10 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
         .unwrap_or_else(|| {
             if let Some(secret) = config.get_str("secret") {
                 crypto::digest(secret.as_bytes())
-            } else if Agent::env().is_dev() {
+            } else {
                 let secret = format!("{}{}", *super::TABLE_PREFIX, super::DRIVER_NAME);
                 tracing::warn!("auto-generated `secret` is used for deriving a secret key");
                 crypto::digest(secret.as_bytes())
-            } else {
-                panic!("`secret` should be specified");
             }
         });
     let info = config.get_str("info").unwrap_or("ZINO:ORM");

@@ -100,7 +100,7 @@ static SHARED_DATA_SOURCE_CONNECTORS: LazyLock<StaticRecord<DataSource>> = LazyL
     let mut data_sources = StaticRecord::new();
     if let Some(connectors) = State::shared().config().get_array("connector") {
         for connector in connectors.iter().filter_map(|v| v.as_table()) {
-            let data_source_type = connector.get_str("type").unwrap_or("unkown");
+            let data_source_type = connector.get_str("type").unwrap_or("unknown");
             let name = connector.get_str("name").unwrap_or(data_source_type);
             let data_source = DataSource::try_new_data_source(connector)
                 .unwrap_or_else(|err| panic!("fail to connect data source `{name}`: {err}"));

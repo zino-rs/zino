@@ -199,11 +199,9 @@ static SECRET_KEY: LazyLock<[u8; 64]> = LazyLock::new(|| {
         .unwrap_or_else(|| {
             if let Some(secret) = config.get_str("secret") {
                 crypto::digest(secret.as_bytes())
-            } else if Agent::env().is_dev() {
+            } else {
                 tracing::warn!("auto-generated `secret` is used for deriving a secret key");
                 crypto::digest(Agent::name().as_bytes())
-            } else {
-                panic!("`secret` should be specified");
             }
         });
     let info = config.get_str("info").unwrap_or("ZINO:ACCESS-KEY");

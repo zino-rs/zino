@@ -588,7 +588,7 @@ static SHARED_STORAGE_ACCESSORS: LazyLock<StaticRecord<Operator>> = LazyLock::ne
     let mut operators = StaticRecord::new();
     if let Some(accessors) = State::shared().config().get_array("accessor") {
         for accessor in accessors.iter().filter_map(|v| v.as_table()) {
-            let scheme = accessor.get_str("scheme").unwrap_or("unkown");
+            let scheme = accessor.get_str("scheme").unwrap_or("unknown");
             let name = accessor.get_str("name").unwrap_or(scheme);
             let operator = GlobalAccessor::try_new_operator(scheme, accessor)
                 .unwrap_or_else(|err| panic!("fail to build `{scheme}` operator: {err}"));
@@ -603,7 +603,7 @@ static SHARED_STORAGE_CONFIGS: LazyLock<StaticRecord<&Table>> = LazyLock::new(||
     let mut configs = StaticRecord::new();
     if let Some(accessors) = State::shared().config().get_array("accessor") {
         for accessor in accessors.iter().filter_map(|v| v.as_table()) {
-            let scheme = accessor.get_str("scheme").unwrap_or("unkown");
+            let scheme = accessor.get_str("scheme").unwrap_or("unknown");
             let name = accessor.get_str("name").unwrap_or(scheme);
             configs.add(name, accessor);
         }
