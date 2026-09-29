@@ -34,7 +34,6 @@ impl Application for Amis {
         self
     }
 
-    #[inline]
     fn run_with<T: AsyncScheduler + Send + 'static>(self, mut scheduler: T) {
         let runtime = Builder::new_multi_thread()
             .thread_keep_alive(Duration::from_secs(60))
@@ -42,7 +41,7 @@ impl Application for Amis {
             .global_queue_interval(61)
             .enable_all()
             .build()
-            .expect("fail to build Tokio runtime for `DesktopUi` generator");
+            .expect("fail to build Tokio runtime for amis UI generator");
         runtime.block_on(async {
             Self::load().await;
         });

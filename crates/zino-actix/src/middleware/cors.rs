@@ -1,44 +1,27 @@
 use actix_cors::Cors;
-use actix_web::http::{Method, header::HeaderName};
 use zino_core::{application::Application, extension::TomlTableExt};
 
 /// CORS middleware.
 pub(crate) fn cors_middleware() -> Cors {
-    if let Some(cors) = crate::Cluster::config().get_table("cors") {
-        let allow_methods = cors
-            .get_array("allow-methods")
-            .map(|values| {
-                values
-                    .iter()
-                    .filter_map(|v| v.as_str().and_then(|s| s.parse::<Method>().ok()))
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_default();
-        let allow_headers = cors
-            .get_array("allow-headers")
-            .map(|values| {
-                values
-                    .iter()
-                    .filter_map(|v| v.as_str().and_then(|s| s.parse::<HeaderName>().ok()))
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_default();
-        let expose_headers = cors
-            .get_array("expose-headers")
-            .map(|values| {
-                values
-                    .iter()
-                    .filter_map(|v| v.as_str().and_then(|s| s.parse::<HeaderName>().ok()))
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_default();
-        let max_age = cors.get_usize("max-age").unwrap_or(60 * 60);
-        Cors::default()
-            .allow_any_origin()
-            .allowed_methods(allow_methods)
-            .allowed_headers(allow_headers)
-            .expose_headers(expose_headers)
-            .max_age(max_age)
+    if let Some(config) = crate::Cluster::config().get_table("cors") {
+        let max_age = config.get_usize("max-age").unwrap_or(60 * 60);
+        let mut cors = Cors::default().max_age(max_age);
+        if let Some(origin) = config.get_str("allow-origin") {
+            cors = cors.allowed_origin(origin);
+        }
+        if let Some(methods) = config.get_str_array("allow-methods") {
+            cors = cors.allowed_methods(methods);
+        }
+        if let Some(headers) = config.get_str_array("allow-headers") {
+            cors = cors.allowed_headers(headers);
+        }
+        if let Some(headers) = config.get_str_array("expose-headers") {
+            cors = cors.expose_headers(headers);
+        }
+        if config.get_bool("allow-credentials") == Some(true) {
+            cors = cors.supports_credentials();
+        }
+        cors
     } else {
         Cors::permissive()
     }

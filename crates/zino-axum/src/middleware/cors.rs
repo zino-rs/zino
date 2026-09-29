@@ -4,9 +4,9 @@ use zino_core::{LazyLock, application::Application, extension::TomlTableExt};
 
 /// CORS middleware.
 pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {
-    if let Some(cors) = crate::Cluster::config().get_table("cors") {
-        let allow_credentials = cors.get_bool("allow-credentials").unwrap_or(false);
-        let allow_origin = cors
+    if let Some(config) = crate::Cluster::config().get_table("cors") {
+        let allow_credentials = config.get_bool("allow-credentials").unwrap_or(false);
+        let allow_origin = config
             .get_array("allow-origin")
             .map(|values| {
                 let origins = values
@@ -16,7 +16,7 @@ pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {
                 AllowOrigin::list(origins)
             })
             .unwrap_or_else(AllowOrigin::mirror_request);
-        let allow_methods = cors
+        let allow_methods = config
             .get_array("allow-methods")
             .map(|values| {
                 let methods = values
@@ -26,7 +26,7 @@ pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {
                 AllowMethods::list(methods)
             })
             .unwrap_or_else(AllowMethods::mirror_request);
-        let allow_headers = cors
+        let allow_headers = config
             .get_array("allow-headers")
             .map(|values| {
                 let header_names = values
@@ -36,7 +36,7 @@ pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {
                 AllowHeaders::list(header_names)
             })
             .unwrap_or_else(AllowHeaders::mirror_request);
-        let expose_headers = cors
+        let expose_headers = config
             .get_array("expose-headers")
             .map(|values| {
                 let header_names = values
@@ -46,7 +46,7 @@ pub(crate) static CORS_MIDDLEWARE: LazyLock<CorsLayer> = LazyLock::new(|| {
                 ExposeHeaders::list(header_names)
             })
             .unwrap_or_else(ExposeHeaders::any);
-        let max_age = cors
+        let max_age = config
             .get_duration("max-age")
             .unwrap_or_else(|| Duration::from_secs(60 * 60));
         CorsLayer::new()

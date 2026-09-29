@@ -57,12 +57,13 @@ impl Default for TraceState {
 
 impl fmt::Display for TraceState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let output = self
-            .states
-            .iter()
-            .map(|(key, value)| format!("{key}={value}"))
-            .collect::<Vec<_>>()
-            .join(",");
-        write!(f, "{output}")
+        let mut iter = self.states.iter();
+        if let Some((key, value)) = iter.next() {
+            write!(f, "{key}={value}")?;
+        }
+        for (key, value) in iter {
+            write!(f, ",{key}={value}")?;
+        }
+        Ok(())
     }
 }
