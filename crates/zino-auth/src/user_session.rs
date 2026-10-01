@@ -160,39 +160,30 @@ impl<U, T> UserSession<U, String, T> {
     }
 
     /// Returns `true` if the user has a role of `admin`.
+    #[inline]
     pub fn is_admin(&self) -> bool {
-        let role = "admin";
-        let role_prefix = format!("{role}:");
-        for r in &self.roles {
-            if r == role || r.starts_with(&role_prefix) {
-                return true;
-            }
-        }
-        false
+        self.roles.iter().any(|r| {
+            r.strip_prefix("admin")
+                .is_some_and(|s| s.is_empty() || s.starts_with(':'))
+        })
     }
 
     /// Returns `true` if the user has a role of `worker`.
+    #[inline]
     pub fn is_worker(&self) -> bool {
-        let role = "worker";
-        let role_prefix = format!("{role}:");
-        for r in &self.roles {
-            if r == role || r.starts_with(&role_prefix) {
-                return true;
-            }
-        }
-        false
+        self.roles.iter().any(|r| {
+            r.strip_prefix("worker")
+                .is_some_and(|s| s.is_empty() || s.starts_with(':'))
+        })
     }
 
     /// Returns `true` if the user has a role of `auditor`.
+    #[inline]
     pub fn is_auditor(&self) -> bool {
-        let role = "auditor";
-        let role_prefix = format!("{role}:");
-        for r in &self.roles {
-            if r == role || r.starts_with(&role_prefix) {
-                return true;
-            }
-        }
-        false
+        self.roles.iter().any(|r| {
+            r.strip_prefix("auditor")
+                .is_some_and(|s| s.is_empty() || s.starts_with(':'))
+        })
     }
 
     /// Returns `true` if the user has one of the roles: `superuser`, `user`,
@@ -241,22 +232,14 @@ impl<U, T> UserSession<U, String, T> {
     }
 
     /// Returns `true` if the user has any of the specific `roles`.
+    #[inline]
     pub fn has_any_roles(&self, roles: &[&str]) -> bool {
-        for role in roles {
-            if self.has_role(role) {
-                return true;
-            }
-        }
-        false
+        roles.iter().any(|r| self.has_role(r))
     }
 
     /// Returns `true` if the user has all of the specific `roles`.
+    #[inline]
     pub fn has_all_roles(&self, roles: &[&str]) -> bool {
-        for role in roles {
-            if !self.has_role(role) {
-                return false;
-            }
-        }
-        true
+        roles.iter().all(|r| self.has_role(r))
     }
 }

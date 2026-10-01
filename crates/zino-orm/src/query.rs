@@ -1171,7 +1171,6 @@ impl<E: Entity> QueryBuilder<E> {
 
 impl<E: Entity + Schema> QueryBuilder<E> {
     /// Builds a subquery SQL expression.
-    #[inline]
     pub fn build_subquery(self) -> String {
         let query = self.build();
         let table_name = query.format_table_name::<E>();

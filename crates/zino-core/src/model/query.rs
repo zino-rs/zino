@@ -111,23 +111,7 @@ impl Query {
                     extra.upsert(key, value.to_owned());
                 }
                 _ => {
-                    if let Some(value) = value.as_str().filter(|&s| s != "all") {
-                        if key.starts_with('$') {
-                            if let Some(expr) = value.strip_prefix('(') {
-                                filters.upsert(key, Self::parse_logical_query(expr));
-                            } else {
-                                filters.upsert(key, value);
-                            }
-                        } else if value.starts_with('$') {
-                            if let Some((operator, value)) = value.split_once('.') {
-                                filters.upsert(key, Map::from_entry(operator, value));
-                            } else {
-                                filters.upsert(key, value);
-                            }
-                        } else {
-                            filters.upsert(key, value);
-                        }
-                    } else {
+                    if !key.starts_with('$') {
                         filters.upsert(key, value.to_owned());
                     }
                 }
@@ -137,29 +121,6 @@ impl Query {
             self.offset = self.limit * current_page.saturating_sub(1);
         }
         validation
-    }
-
-    /// Parses the query expression with logical operators.
-    fn parse_logical_query(expr: &str) -> Vec<Map> {
-        let mut filters = Vec::new();
-        for expr in expr.trim_end_matches(')').split(',') {
-            if let Some((key, expr)) = expr.split_once('.')
-                && let Some((operator, value)) = expr.split_once('.')
-            {
-                let value = if value.starts_with('$') {
-                    if let Some((operator, expr)) = value.split_once('(') {
-                        Map::from_entry(operator, Self::parse_logical_query(expr)).into()
-                    } else {
-                        JsonValue::from(value)
-                    }
-                } else {
-                    JsonValue::from(value)
-                };
-                let filter = Map::from_entry(key, Map::from_entry(operator, value));
-                filters.push(filter);
-            }
-        }
-        filters
     }
 
     /// Sets the fields.
