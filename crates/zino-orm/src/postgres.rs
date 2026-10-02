@@ -130,19 +130,19 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
                 "epoch" => "'epoch'".into(),
                 "now" => "now()".into(),
                 "today" => "date_trunc('day', now())".into(),
-                "tomorrow" => "date_trunc('day', now()) + '1 day'::INTERVAL".into(),
-                "yesterday" => "date_trunc('day', now()) - '1 day'::INTERVAL".into(),
+                "tomorrow" => "date_trunc('day', now()) + '1 day'::interval".into(),
+                "yesterday" => "date_trunc('day', now()) - '1 day'::interval".into(),
                 _ => Query::escape_string(value).into(),
             },
             "Date" | "NaiveDate" => match value {
-                "epoch" => "'epoch'".into(),
-                "today" => "curdate()".into(),
-                "tomorrow" => "curdate() + INTERVAL 1 DAY".into(),
-                "yesterday" => "curdate() - INTERVAL 1 DAY".into(),
+                "epoch" => "'epoch':date".into(),
+                "today" => "'today'::date".into(),
+                "tomorrow" => "'tomorrow'::date".into(),
+                "yesterday" => "'yesterday'::date".into(),
                 _ => Query::escape_string(value).into(),
             },
             "Time" | "NaiveTime" => match value {
-                "now" => "curtime()".into(),
+                "now" => "now()::time".into(),
                 "midnight" => "'allballs'".into(),
                 _ => Query::escape_string(value).into(),
             },
@@ -712,10 +712,12 @@ impl QueryExt<DatabaseDriver> for Query {
         let fields = filter.parse_str_array("$fields")?;
         filter.parse_string("$search").map(|search| {
             let text = fields.join(" || ' ' || ");
-            let lang = filter
+            let language = filter
                 .parse_string("$language")
                 .unwrap_or_else(|| "english".into());
-            format!("to_tsvector('{lang}', {text}) @@ websearch_to_tsquery('{lang}', '{search}')")
+            let key = Query::escape_string(language);
+            let value = Query::escape_string(&search);
+            format!("to_tsvector(key, {text}) @@ websearch_to_tsquery(key, {value})")
         })
     }
 }

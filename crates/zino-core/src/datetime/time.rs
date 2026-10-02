@@ -52,8 +52,10 @@ impl Time {
 
     /// Returns the number of non-leap microseconds past the last midnight.
     #[inline]
-    pub fn num_micros_from_midnight(&self) -> u32 {
-        self.0.num_seconds_from_midnight() * 1_000_000 + self.0.nanosecond() / 1000
+    pub fn num_micros_from_midnight(&self) -> u64 {
+        let seconds: u64 = self.0.num_seconds_from_midnight().into();
+        let nanosecond: u64 = self.0.nanosecond().into();
+        seconds * 1_000_000 + nanosecond / 1000
     }
 
     /// Formats the time with the specified format string.
@@ -175,8 +177,8 @@ impl From<Time> for NaiveTime {
 impl From<Time> for AvroValue {
     #[inline]
     fn from(t: Time) -> Self {
-        let micros = t.num_micros_from_midnight();
-        AvroValue::TimeMicros(micros.into())
+        let micros = t.num_micros_from_midnight().try_into().unwrap_or(i64::MAX);
+        AvroValue::TimeMicros(micros)
     }
 }
 

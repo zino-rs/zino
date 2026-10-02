@@ -252,7 +252,7 @@ impl Date {
         let date_opt = if month == 12 {
             NaiveDate::from_ymd_opt(year + 1, 1, 1)
         } else {
-            NaiveDate::from_ymd_opt(year, month, 1)
+            NaiveDate::from_ymd_opt(year, month + 1, 1)
         };
         Self(date_opt.unwrap_or_default())
     }

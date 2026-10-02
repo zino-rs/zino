@@ -82,19 +82,31 @@ impl TraceContext {
 
     /// Constructs an instance from the `traceparent` header value.
     pub fn from_traceparent(traceparent: &str) -> Option<Self> {
+        let parts = traceparent.split('-').collect::<Vec<_>>();
+        if parts.len() != 4 {
+            return None;
+        }
+
         let span_id = Span::current()
             .id()
             .map(|id| id.into_u64())
             .unwrap_or_else(rand::random);
-        let parts = traceparent.split('-').collect::<Vec<_>>();
-        (parts.len() == 4).then_some(Self {
-            span_id,
-            version: u8::from_str_radix(parts[0], 16).ok()?,
-            trace_id: u128::from_str_radix(parts[1], 16).ok()?,
-            parent_id: Some(u64::from_str_radix(parts[2], 16).ok()?),
-            trace_flags: u8::from_str_radix(parts[3], 16).ok()?,
-            trace_state: TraceState::new(),
-        })
+        if let Ok(version) = u8::from_str_radix(parts[0], 16)
+            && let Ok(trace_id) = u128::from_str_radix(parts[1], 16)
+            && let Ok(parent_id) = u64::from_str_radix(parts[2], 16)
+            && let Ok(trace_flags) = u8::from_str_radix(parts[3], 16)
+        {
+            Some(Self {
+                span_id,
+                version,
+                trace_id,
+                parent_id: Some(parent_id),
+                trace_flags,
+                trace_state: TraceState::new(),
+            })
+        } else {
+            None
+        }
     }
 
     /// Constructs an instance from the `traceparent` and `tracestate` header values.

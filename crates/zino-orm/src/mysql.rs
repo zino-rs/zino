@@ -720,8 +720,8 @@ impl QueryExt<DatabaseDriver> for Query {
         let fields = filter.parse_str_array("$fields")?;
         filter.parse_string("$search").map(|search| {
             let fields = fields.join(", ");
-            let search = Query::escape_string(search.as_ref());
-            format!("match({fields}) against({search})")
+            let value = Query::escape_string(&search);
+            format!("match({fields}) against({value})")
         })
     }
 

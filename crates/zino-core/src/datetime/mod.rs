@@ -422,7 +422,7 @@ impl DateTime {
     pub fn end_of_current_year(&self) -> Self {
         let year = self.year();
         let dt = NaiveDate::from_ymd_opt(year, 12, 31)
-            .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
+            .and_then(|date| date.and_hms_nano_opt(23, 59, 59, 999_999_999))
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
         Self(LocalDateTime::from_naive_utc_and_offset(
@@ -450,7 +450,7 @@ impl DateTime {
         let month = 3 * self.quarter();
         let day = Date::days_in_month(year, month);
         let dt = NaiveDate::from_ymd_opt(year, month, day)
-            .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
+            .and_then(|date| date.and_hms_nano_opt(23, 59, 59, 999_999_999))
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
         Self(LocalDateTime::from_naive_utc_and_offset(
@@ -478,7 +478,7 @@ impl DateTime {
         let month = self.month();
         let day = self.days_in_current_month();
         let dt = NaiveDate::from_ymd_opt(year, month, day)
-            .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
+            .and_then(|date| date.and_hms_nano_opt(23, 59, 59, 999_999_999))
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
         Self(LocalDateTime::from_naive_utc_and_offset(
@@ -502,7 +502,7 @@ impl DateTime {
     pub fn end_of_current_day(&self) -> Self {
         let date = self.0.date_naive();
         let dt = date
-            .and_hms_milli_opt(23, 59, 59, 1_000)
+            .and_hms_nano_opt(23, 59, 59, 999_999_999)
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
         Self(LocalDateTime::from_naive_utc_and_offset(
@@ -526,7 +526,7 @@ impl DateTime {
     pub fn end_of_year(year: i32) -> Self {
         let dt = NaiveDate::from_ymd_opt(year + 1, 1, 1)
             .and_then(|date| date.pred_opt())
-            .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
+            .and_then(|date| date.and_hms_nano_opt(23, 59, 59, 999_999_999))
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
         Self(LocalDateTime::from_naive_utc_and_offset(
@@ -548,9 +548,14 @@ impl DateTime {
 
     /// Returns the end of the month.
     pub fn end_of_month(year: i32, month: u32) -> Self {
-        let dt = NaiveDate::from_ymd_opt(year, month + 1, 1)
+        let (year, month) = if month == 12 {
+            (year + 1, 1)
+        } else {
+            (year, month + 1)
+        };
+        let dt = NaiveDate::from_ymd_opt(year, month, 1)
             .and_then(|date| date.pred_opt())
-            .and_then(|date| date.and_hms_milli_opt(23, 59, 59, 1_000))
+            .and_then(|date| date.and_hms_nano_opt(23, 59, 59, 999_999_999))
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
         Self(LocalDateTime::from_naive_utc_and_offset(
@@ -574,7 +579,7 @@ impl DateTime {
     pub fn end_of_day(year: i32, month: u32, day: u32) -> Self {
         let date = NaiveDate::from_ymd_opt(year, month, day).unwrap_or_default();
         let dt = date
-            .and_hms_milli_opt(23, 59, 59, 1_000)
+            .and_hms_nano_opt(23, 59, 59, 999_999_999)
             .unwrap_or_default();
         let offset = Local.offset_from_utc_datetime(&dt);
         Self(LocalDateTime::from_naive_utc_and_offset(
@@ -800,7 +805,7 @@ mod tests {
         assert_eq!("2023-11-30", start_day.format_date());
         assert_eq!("00:00:00", start_day.format_time());
         assert_eq!("2023-11-30", end_day.format_date());
-        assert_eq!("23:59:60", end_day.format_time());
+        assert_eq!("23:59:59", end_day.format_time());
 
         let date = "2023-11-30".parse::<Date>().unwrap();
         let datetime = DateTime::from(date);
