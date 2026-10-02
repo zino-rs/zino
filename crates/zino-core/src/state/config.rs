@@ -2,24 +2,6 @@ use crate::error::Error;
 use std::path::Path;
 use toml::value::Table;
 
-/// Fetches the config from a URL.
-#[cfg(feature = "http-client")]
-pub(super) fn fetch_config_url(config_url: &str, env: &str) -> Result<Table, Error> {
-    let res = reqwest::blocking::get(config_url)?;
-    let config_table = if res
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .is_some_and(|s| s.starts_with("application/json"))
-    {
-        res.json()?
-    } else {
-        res.text()?.parse()?
-    };
-    tracing::info!(env, "fetch the config `{config_url}`");
-    Ok(config_table)
-}
-
 /// Reads the config from a local file.
 pub(super) fn read_config_file(config_file: &Path, env: &str) -> Result<Table, Error> {
     let data = std::fs::read_to_string(config_file)?;

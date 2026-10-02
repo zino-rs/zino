@@ -1,4 +1,4 @@
-use crate::{AxumResponse, Extractor, middleware, request::BODY_LIMIT};
+use crate::{AxumResponse, Extractor, middleware};
 use axum::{
     BoxError, Router,
     error_handling::HandleErrorLayer,
@@ -6,10 +6,7 @@ use axum::{
     http::{HeaderName, HeaderValue, StatusCode},
     middleware::from_fn,
 };
-use std::{
-    any::Any, borrow::Cow, convert::Infallible, fs, net::SocketAddr,
-    sync::atomic::Ordering::Relaxed, time::Duration,
-};
+use std::{any::Any, borrow::Cow, convert::Infallible, fs, net::SocketAddr, time::Duration};
 use tokio::{net::TcpListener, runtime::Builder, signal};
 use tower::{
     ServiceBuilder,
@@ -93,9 +90,7 @@ impl Application for Cluster {
                         scheduler.tick().await;
 
                         // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
-                        if let Some(duration) = scheduler.time_till_next_job() {
-                            tokio::time::sleep(duration).await;
-                        }
+                        tokio::time::sleep(scheduler.time_till_next_job()).await;
                     }
                 });
             }
@@ -124,7 +119,7 @@ impl Application for Cluster {
                 let mut auto_routing = true;
                 let mut public_dir = "public";
                 let mut public_route_prefix = "/public";
-                let mut body_limit = BODY_LIMIT.load(Relaxed);
+                let mut body_limit = 128 * 1024 * 1024; // 128MB
                 let mut request_timeout = Duration::from_secs(60); // 60 seconds
                 let mut keep_alive_timeout = 75; // 75 seconds
                 if let Some(config) = app_state.get_config("server") {
@@ -139,7 +134,6 @@ impl Application for Cluster {
                     }
                     if let Some(limit) = config.get_usize("body-limit") {
                         body_limit = limit;
-                        BODY_LIMIT.store(limit, Relaxed);
                     }
                     if let Some(timeout) = config.get_duration("request-timeout") {
                         request_timeout = timeout;

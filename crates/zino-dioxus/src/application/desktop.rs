@@ -45,7 +45,7 @@ where
             let path = req.uri().path().trim_start_matches('/');
             let local_path = Self::parse_path(path);
             if !local_path.starts_with(Self::project_dir()) {
-                return None;
+                return;
             }
 
             let Ok(bytes) = fs::read(&local_path) else {

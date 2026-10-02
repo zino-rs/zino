@@ -9,12 +9,14 @@ use std::{
     mem,
     net::{IpAddr, SocketAddr},
     ops::{Deref, DerefMut},
-    sync::{
-        Arc,
-        atomic::{AtomicUsize, Ordering::Relaxed},
-    },
+    sync::{Arc, LazyLock},
 };
-use zino_core::{error::Error, extension::HeaderMapExt, state::Data};
+use zino_core::{
+    application::{Agent, Application},
+    error::Error,
+    extension::{HeaderMapExt, TomlTableExt},
+    state::Data,
+};
 use zino_http::request::{Context, RequestContext};
 
 /// An HTTP request extractor.
@@ -123,8 +125,7 @@ impl RequestContext for Extractor<Request> {
     #[inline]
     async fn read_body_bytes(&mut self) -> Result<Bytes, Error> {
         let body = mem::take(self.body_mut());
-        let limit = BODY_LIMIT.load(Relaxed);
-        let bytes = axum::body::to_bytes(body, limit).await?;
+        let bytes = axum::body::to_bytes(body, *BODY_LIMIT).await?;
         Ok(bytes)
     }
 }
@@ -139,4 +140,9 @@ impl FromRequest<()> for Extractor<Request> {
 }
 
 /// Default: 128MB
-pub(crate) static BODY_LIMIT: AtomicUsize = AtomicUsize::new(128 * 1024 * 1024);
+pub(crate) static BODY_LIMIT: LazyLock<usize> = LazyLock::new(|| {
+    Agent::config()
+        .get_table("server")
+        .and_then(|config| config.get_usize("body-limit"))
+        .unwrap_or(128 * 1024 * 1024)
+});

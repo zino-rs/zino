@@ -73,9 +73,7 @@ impl Application for Cluster {
                         scheduler.tick().await;
 
                         // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
-                        if let Some(duration) = scheduler.time_till_next_job() {
-                            rt::time::sleep(duration).await;
-                        }
+                        rt::time::sleep(scheduler.time_till_next_job()).await;
                     }
                 });
             }
@@ -147,7 +145,6 @@ impl Application for Cluster {
                         }
 
                         let mut static_files = Files::new(public_route_prefix, public_dir.clone())
-                            .show_files_listing()
                             .index_file("index.html")
                             .prefer_utf8(true);
                         let not_found_file = public_dir.join("404.html");

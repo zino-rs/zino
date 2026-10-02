@@ -58,9 +58,7 @@ impl Application for Amis {
                         scheduler.tick().await;
 
                         // Cannot use `std::thread::sleep` because it blocks the Tokio runtime.
-                        if let Some(duration) = scheduler.time_till_next_job() {
-                            tokio::time::sleep(duration).await;
-                        }
+                        tokio::time::sleep(scheduler.time_till_next_job()).await;
                     }
                 });
             }

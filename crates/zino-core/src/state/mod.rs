@@ -108,39 +108,22 @@ impl<T> State<T> {
     ///
     /// It supports the `json` or `toml` format of configuration source data,
     /// which can be specified by the environment variable `ZINO_APP_CONFIG_FORMAT`.
-    /// By default, it reads the config from a local file. If `ZINO_APP_CONFIG_URL` is set,
-    /// it will fetch the config from the URL instead.
     pub fn load_config(&mut self) {
         let env = self.env.as_str();
-        let mut config_table = if let Ok(config_url) = std::env::var("ZINO_APP_CONFIG_URL") {
-            #[cfg(feature = "http-client")]
-            {
-                config::fetch_config_url(&config_url, env).unwrap_or_else(|err| {
-                    tracing::error!("fail to fetch the config url `{config_url}`: {err}");
-                    Table::new()
-                })
-            }
-            #[cfg(not(feature = "http-client"))]
-            {
-                tracing::error!("cannot fetch the config url `{config_url}`");
+        let format = std::env::var("ZINO_APP_CONFIG_FORMAT")
+            .map(|s| s.to_ascii_lowercase())
+            .unwrap_or_else(|_| "toml".to_owned());
+        let config_dir = Agent::config_dir();
+        let mut config_table = if config_dir.exists() {
+            let config_file = format!("config.{env}.{format}");
+            let config_file_path = config_dir.join(&config_file);
+            config::read_config_file(&config_file_path, env).unwrap_or_else(|err| {
+                tracing::error!("fail to read the config file `{config_file}`: {err}");
                 Table::new()
-            }
+            })
         } else {
-            let format = std::env::var("ZINO_APP_CONFIG_FORMAT")
-                .map(|s| s.to_ascii_lowercase())
-                .unwrap_or_else(|_| "toml".to_owned());
-            let config_dir = Agent::config_dir();
-            if config_dir.exists() {
-                let config_file = format!("config.{env}.{format}");
-                let config_file_path = config_dir.join(&config_file);
-                config::read_config_file(&config_file_path, env).unwrap_or_else(|err| {
-                    tracing::error!("fail to read the config file `{config_file}`: {err}");
-                    Table::new()
-                })
-            } else {
-                tracing::warn!("no config file found in `{}`", config_dir.display());
-                Table::new()
-            }
+            tracing::warn!("no config file found in `{}`", config_dir.display());
+            Table::new()
         };
 
         // Merges the environment variables for the config table.

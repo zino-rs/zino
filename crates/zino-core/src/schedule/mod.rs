@@ -16,7 +16,7 @@ pub trait Scheduler {
     fn is_ready(&self) -> bool;
 
     /// Returns the duration till the next job is supposed to run.
-    fn time_till_next_job(&self) -> Option<Duration>;
+    fn time_till_next_job(&self) -> Duration;
 
     /// Increments time for the scheduler and executes any pending jobs.
     fn tick(&mut self);
@@ -31,7 +31,7 @@ pub trait AsyncScheduler {
     fn is_blocking(&self) -> bool;
 
     /// Returns the duration till the next job is supposed to run.
-    fn time_till_next_job(&self) -> Option<Duration>;
+    fn time_till_next_job(&self) -> Duration;
 
     /// Increments time for the scheduler and executes any pending jobs asynchronously.
     fn tick(&mut self) -> impl Future<Output = ()> + Send;
@@ -53,8 +53,8 @@ impl AsyncScheduler for apalis::prelude::Monitor {
     }
 
     #[inline]
-    fn time_till_next_job(&self) -> Option<Duration> {
-        None
+    fn time_till_next_job(&self) -> Duration {
+        DEFAULT_TICK_INTERVAL
     }
 
     #[inline]

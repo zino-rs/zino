@@ -53,8 +53,8 @@ use std::{
     time::{Duration, Instant},
 };
 use zino_core::{
-    JsonValue, SharedString, Uuid, application::ApplicationCode, error::Error,
-    extension::JsonValueExt, trace::TraceContext, validation::Validation,
+    JsonValue, SharedString, Uuid, application::ApplicationCode, error::Error, trace::TraceContext,
+    validation::Validation,
 };
 use zino_storage::NamedFile;
 
@@ -364,11 +364,9 @@ impl<S: ResponseCode> Response<S> {
     /// Currently, we have built-in support for the following values:
     ///
     /// - `application/json`
-    /// - `application/jsonlines`
     /// - `application/octet-stream`
     /// - `application/problem+json`
     /// - `application/x-www-form-urlencoded`
-    /// - `text/csv`
     /// - `text/html`
     /// - `text/plain`
     #[inline]
@@ -397,28 +395,6 @@ impl<S: ResponseCode> Response<S> {
         fn inner<S: ResponseCode>(res: &mut Response<S>, data: JsonValue) {
             res.set_json_data(data);
             res.set_data_transformer(|data| Ok(serde_json::to_vec(&data)?.into()));
-        }
-        inner::<S>(self, data.into())
-    }
-
-    /// Sets the JSON Lines data as the response body.
-    #[inline]
-    pub fn set_jsonlines_response(&mut self, data: impl Into<JsonValue>) {
-        fn inner<S: ResponseCode>(res: &mut Response<S>, data: JsonValue) {
-            res.set_json_data(data);
-            res.set_content_type("application/jsonlines; charset=utf-8");
-            res.set_data_transformer(|data| Ok(data.to_jsonlines(Vec::new())?.into()));
-        }
-        inner::<S>(self, data.into())
-    }
-
-    /// Sets the CSV data as the response body.
-    #[inline]
-    pub fn set_csv_response(&mut self, data: impl Into<JsonValue>) {
-        fn inner<S: ResponseCode>(res: &mut Response<S>, data: JsonValue) {
-            res.set_json_data(data);
-            res.set_content_type("text/csv; charset=utf-8");
-            res.set_data_transformer(|data| Ok(data.to_csv(Vec::new())?.into()));
         }
         inner::<S>(self, data.into())
     }
@@ -627,18 +603,12 @@ impl<S: ResponseCode> Response<S> {
         let bytes = if crate::helper::check_json_content_type(content_type) {
             serde_json::to_vec(&self)?
         } else if has_json_data {
-            if content_type.starts_with("text/csv") {
-                self.json_data.to_csv(Vec::new())?
-            } else if content_type.starts_with("application/jsonlines") {
-                self.json_data.to_jsonlines(Vec::new())?
+            let text = if let JsonValue::String(s) = &mut self.json_data {
+                mem::take(s)
             } else {
-                let text = if let JsonValue::String(s) = &mut self.json_data {
-                    mem::take(s)
-                } else {
-                    self.json_data.to_string()
-                };
-                text.into_bytes()
-            }
+                self.json_data.to_string()
+            };
+            text.into_bytes()
         } else {
             Vec::new()
         };

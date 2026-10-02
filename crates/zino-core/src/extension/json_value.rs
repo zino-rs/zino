@@ -1,15 +1,12 @@
 use crate::{
     Decimal, JsonValue, Map, Uuid,
     datetime::{self, Date, DateTime, Time},
-    extension::JsonObjectExt,
     helper,
 };
 use chrono::NaiveDateTime;
-use csv::{ByteRecord, Writer};
 use serde::de::DeserializeOwned;
 use std::{
     borrow::Cow,
-    io::{self, ErrorKind},
     num::{ParseFloatError, ParseIntError},
     str::{FromStr, ParseBoolError},
     time::Duration,
@@ -166,12 +163,6 @@ pub trait JsonValueExt {
 
     /// Returns a unquoted String of JSON.
     fn to_string_unquoted(&self) -> String;
-
-    /// Attempts to convert the JSON value to the CSV bytes.
-    fn to_csv(&self, buffer: Vec<u8>) -> Result<Vec<u8>, csv::Error>;
-
-    /// Attempts to convert the JSON value to the JSON Lines bytes.
-    fn to_jsonlines(&self, buffer: Vec<u8>) -> Result<Vec<u8>, serde_json::Error>;
 
     /// Attempts to deserialize the JSON value as an instance of type `T`.
     fn deserialize<T: DeserializeOwned>(self) -> Result<T, serde_json::Error>;
@@ -459,75 +450,6 @@ impl JsonValueExt for JsonValue {
         self.as_str()
             .map(|s| s.to_owned())
             .unwrap_or_else(|| self.to_string())
-    }
-
-    fn to_csv(&self, buffer: Vec<u8>) -> Result<Vec<u8>, csv::Error> {
-        match &self {
-            JsonValue::Array(vec) => {
-                let mut wtr = Writer::from_writer(buffer);
-                let mut headers = Vec::new();
-                if let Some(JsonValue::Object(map)) = vec.first() {
-                    for key in map.keys() {
-                        headers.push(key.to_owned());
-                    }
-                }
-                wtr.write_record(&headers)?;
-
-                let num_fields = headers.len();
-                let buffer_size = num_fields * 8;
-                for value in vec {
-                    if let JsonValue::Object(map) = value {
-                        let mut record = ByteRecord::with_capacity(buffer_size, num_fields);
-                        for field in headers.iter() {
-                            let value = map.parse_string(field).unwrap_or("".into());
-                            record.push_field(value.as_ref().as_bytes());
-                        }
-                        wtr.write_byte_record(&record)?;
-                    }
-                }
-                wtr.flush()?;
-                wtr.into_inner().map_err(|err| err.into_error().into())
-            }
-            JsonValue::Object(map) => {
-                let mut wtr = Writer::from_writer(buffer);
-                let mut headers = Vec::new();
-                for key in map.keys() {
-                    headers.push(key.to_owned());
-                }
-                wtr.write_record(&headers)?;
-
-                let num_fields = headers.len();
-                let buffer_size = num_fields * 8;
-                let mut record = ByteRecord::with_capacity(buffer_size, num_fields);
-                for field in headers.iter() {
-                    let value = map.parse_string(field).unwrap_or("".into());
-                    record.push_field(value.as_ref().as_bytes());
-                }
-                wtr.write_byte_record(&record)?;
-                wtr.flush()?;
-                wtr.into_inner().map_err(|err| err.into_error().into())
-            }
-            _ => Err(io::Error::new(ErrorKind::InvalidData, "invalid JSON value for CSV").into()),
-        }
-    }
-
-    fn to_jsonlines(&self, mut buffer: Vec<u8>) -> Result<Vec<u8>, serde_json::Error> {
-        match &self {
-            JsonValue::Array(vec) => {
-                for value in vec {
-                    let mut jsonline = serde_json::to_vec(&value)?;
-                    buffer.append(&mut jsonline);
-                    buffer.push(b'\n');
-                }
-                Ok(buffer)
-            }
-            _ => {
-                let mut jsonline = serde_json::to_vec(&self)?;
-                buffer.append(&mut jsonline);
-                buffer.push(b'\n');
-                Ok(buffer)
-            }
-        }
     }
 
     #[inline]

@@ -86,7 +86,7 @@
 //! | `$nin`     | `NOT IN`            | `NOT IN`         | `NOT IN`              |
 //! | `$betw`    | `BETWEEN AND`       | `BETWEEN AND`    | `BETWEEN AND`         |
 //! | `$like`    | `LIKE`              | `LIKE`           | `LIKE`                |
-//! | `$ilike`   | `ILIKE`             | `ILIKE`          | `LOWER() LIKE`        |
+//! | `$ilike`   | `LIKE`              | `ILIKE`          | `LOWER() LIKE`        |
 //! | `$rlike`   | `RLIKE`             | `~*`             | `REGEXP`              |
 //! | `$is`      | `IS`                | `IS`             | `IS`                  |
 //! | `$size`    | `json_length()`     | `array_length()` | `json_array_length()` |

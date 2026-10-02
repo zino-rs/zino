@@ -446,13 +446,7 @@ where
                 .await
                 .extract(&req)?;
         }
-
-        let format = req.get_query("format").unwrap_or("json");
-        match format {
-            "csv" => res.set_csv_response(models),
-            "jsonlines" => res.set_jsonlines_response(models),
-            _ => res.set_json_response(models),
-        }
+        res.set_json_response(models);
         Ok(res.emit(&req).into())
     }
 

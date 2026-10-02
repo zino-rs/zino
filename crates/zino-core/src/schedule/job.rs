@@ -295,8 +295,8 @@ impl Scheduler for JobScheduler {
     }
 
     #[inline]
-    fn time_till_next_job(&self) -> Option<Duration> {
-        Some(self.time_till_next_job())
+    fn time_till_next_job(&self) -> Duration {
+        self.time_till_next_job()
     }
 
     #[inline]

@@ -187,7 +187,7 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
                         "$nin" => "NOT IN",
                         "$betw" => "BETWEEN",
                         "$like" => "LIKE",
-                        "$ilike" => "ILIKE",
+                        "$ilike" => "LIKE",
                         "$rlike" => "RLIKE",
                         "$is" => "IS",
                         "$size" => "json_length",

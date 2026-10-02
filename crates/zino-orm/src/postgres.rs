@@ -715,9 +715,9 @@ impl QueryExt<DatabaseDriver> for Query {
             let language = filter
                 .parse_string("$language")
                 .unwrap_or_else(|| "english".into());
-            let key = Query::escape_string(language);
+            let key = Query::escape_string(&language);
             let value = Query::escape_string(&search);
-            format!("to_tsvector(key, {text}) @@ websearch_to_tsquery(key, {value})")
+            format!("to_tsvector({key}, {text}) @@ websearch_to_tsquery({key}, {value})")
         })
     }
 }
