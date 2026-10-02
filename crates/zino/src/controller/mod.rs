@@ -58,7 +58,7 @@ pub trait DefaultController<K> {
     async fn mock(req: Self::Request) -> Self::Result;
 }
 
-#[cfg(any(feature = "actix", feature = "axum", feature = "ntex"))]
+#[cfg(any(feature = "actix", feature = "axum"))]
 #[cfg(feature = "orm")]
 use zino_core::{
     JsonValue, Map,
@@ -67,18 +67,18 @@ use zino_core::{
     model::{ModelHooks, Mutation, Query},
 };
 
-#[cfg(any(feature = "actix", feature = "axum", feature = "ntex"))]
+#[cfg(any(feature = "actix", feature = "axum"))]
 #[cfg(feature = "orm")]
 use zino_http::{
     request::RequestContext,
     response::{ExtractRejection, Rejection, Response},
 };
 
-#[cfg(any(feature = "actix", feature = "axum", feature = "ntex"))]
+#[cfg(any(feature = "actix", feature = "axum"))]
 #[cfg(feature = "orm")]
 use zino_orm::{ModelAccessor, ModelHelper};
 
-#[cfg(any(feature = "actix", feature = "axum", feature = "ntex"))]
+#[cfg(any(feature = "actix", feature = "axum"))]
 #[cfg(feature = "orm")]
 impl<K, M> DefaultController<K> for M
 where

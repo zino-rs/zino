@@ -15,14 +15,12 @@ which emphasizes **simplicity**, **extensibility** and **productivity**.
 - ⚡ Embrace practical conventions to get the best performance.
 - 💎 Expressive ORM for MySQL, PostgreSQL and SQLite based on [`sqlx`].
 - ✨ Innovations on query population, field translation and model hooks.
-- 📅 Lightweight scheduler for sync and async cron jobs.
-- 💠 Unified access to storage services, data sources and LLMs.
 - 📊 Built-in support for [`tracing`], [`metrics`] and logging.
 - 💖 Full integrations with [`actix-web`], [`axum`], [`dioxus`] and more.
 
 ## Getting started
 
-You can start with the example [`actix-app`], [`axum-app`], [`dioxus-desktop`] or [`ntex-app`].
+You can start with the example [`actix-app`], [`axum-app`] or [`dioxus-desktop`].
 It requires **Rust 1.95+** to build the project.
 
 ```shell
@@ -62,15 +60,9 @@ fn main() {
 | [`zino-openapi`] | OpenAPI docs generator.          | [![Crates.io](https://img.shields.io/crates/v/zino-openapi)][zino-openapi] | [![Documentation](https://shields.io/docsrs/zino-openapi)][zino-openapi-docs] |
 | [`zino-orm`]    | Database schema and ORM.          | [![Crates.io](https://img.shields.io/crates/v/zino-orm)][zino-orm] | [![Documentation](https://shields.io/docsrs/zino-orm)][zino-orm-docs] |
 | [`zino-derive`] | Derived traits.                   | [![Crates.io](https://img.shields.io/crates/v/zino-derive)][zino-derive] | [![Documentation](https://shields.io/docsrs/zino-derive)][zino-derive-docs] |
-| [`zino-model`]  | Domain models.                    | [![Crates.io](https://img.shields.io/crates/v/zino-model)][zino-model] | [![Documentation](https://shields.io/docsrs/zino-model)][zino-model-docs] |
-| [`zino-connector`] | Connector to data sources.     | [![Crates.io](https://img.shields.io/crates/v/zino-connector)][zino-connector] | [![Documentation](https://shields.io/docsrs/zino-connector)][zino-connector-docs] |
-| [`zino-extra`]  | Extra utilities.                  | [![Crates.io](https://img.shields.io/crates/v/zino-extra)][zino-extra] | [![Documentation](https://shields.io/docsrs/zino-extra)][zino-extra-docs] |
 | [`zino-actix`]  | Integrations with actix-web.      | [![Crates.io](https://img.shields.io/crates/v/zino-actix)][zino-actix] | [![Documentation](https://shields.io/docsrs/zino-actix)][zino-actix-docs] |
 | [`zino-axum`]   | Integrations with axum.           | [![Crates.io](https://img.shields.io/crates/v/zino-axum)][zino-axum] | [![Documentation](https://shields.io/docsrs/zino-axum)][zino-axum-docs] |
-| [`zino-ntex`]   | Integrations with ntex.           | [![Crates.io](https://img.shields.io/crates/v/zino-ntex)][zino-ntex] | [![Documentation](https://shields.io/docsrs/zino-ntex)][zino-ntex-docs] |
 | [`zino-dioxus`] | Dioxus components.                | [![Crates.io](https://img.shields.io/crates/v/zino-dioxus)][zino-dioxus] | [![Documentation](https://shields.io/docsrs/zino-dioxus)][zino-dioxus-docs] |
-| [`zino-amis`]   | UI generator for amis.            | [![Crates.io](https://img.shields.io/crates/v/zino-amis)][zino-amis] | [![Documentation](https://shields.io/docsrs/zino-amis)][zino-amis-docs] |
-| [`zino-cli`]    | CLI tools.                        | [![Crates.io](https://img.shields.io/crates/v/zino-cli)][zino-cli] | [![Documentation](https://shields.io/docsrs/zino-cli)][zino-cli-docs] |
 
 ## License
 
@@ -88,15 +80,9 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [`zino-openapi`]: https://github.com/zino-rs/zino/tree/main/crates/zino-openapi
 [`zino-derive`]: https://github.com/zino-rs/zino/tree/main/crates/zino-derive
 [`zino-orm`]: https://github.com/zino-rs/zino/tree/main/crates/zino-orm
-[`zino-model`]: https://github.com/zino-rs/zino/tree/main/crates/zino-model
-[`zino-connector`]: https://github.com/zino-rs/zino/tree/main/crates/zino-connector
-[`zino-extra`]: https://github.com/zino-rs/zino/tree/main/crates/zino-extra
 [`zino-actix`]: https://github.com/zino-rs/zino/tree/main/crates/zino-actix
 [`zino-axum`]: https://github.com/zino-rs/zino/tree/main/crates/zino-axum
-[`zino-ntex`]: https://github.com/zino-rs/zino/tree/main/crates/zino-ntex
 [`zino-dioxus`]: https://github.com/zino-rs/zino/tree/main/crates/zino-dioxus
-[`zino-amis`]: https://github.com/zino-rs/zino/tree/main/crates/zino-amis
-[`zino-cli`]: https://github.com/zino-rs/zino-cli
 [zino]: https://crates.io/crates/zino
 [zino-docs]: https://docs.rs/zino
 [zino-core]: https://crates.io/crates/zino-core
@@ -115,36 +101,20 @@ If you have any problems or ideas, please don't hesitate to [open an issue][zino
 [zino-orm-docs]: https://docs.rs/zino-orm
 [zino-derive]: https://crates.io/crates/zino-derive
 [zino-derive-docs]: https://docs.rs/zino-derive
-[zino-model]: https://crates.io/crates/zino-model
-[zino-model-docs]: https://docs.rs/zino-model
-[zino-connector]: https://crates.io/crates/zino-connector
-[zino-connector-docs]: https://docs.rs/zino-connector
-[zino-chatbot]: https://crates.io/crates/zino-chatbot
-[zino-chatbot-docs]: https://docs.rs/zino-chatbot
-[zino-extra]: https://crates.io/crates/zino-extra
-[zino-extra-docs]: https://docs.rs/zino-extra
 [zino-actix]: https://crates.io/crates/zino-actix
 [zino-actix-docs]: https://docs.rs/zino-actix
 [zino-axum]: https://crates.io/crates/zino-axum
 [zino-axum-docs]: https://docs.rs/zino-axum
-[zino-ntex]: https://crates.io/crates/zino-ntex
-[zino-ntex-docs]: https://docs.rs/zino-ntex
 [zino-dioxus]: https://crates.io/crates/zino-dioxus
 [zino-dioxus-docs]: https://docs.rs/zino-dioxus
-[zino-amis]: https://crates.io/crates/zino-amis
-[zino-amis-docs]: https://docs.rs/zino-amis
-[zino-cli]: https://crates.io/crates/zino-cli
-[zino-cli-docs]: https://docs.rs/zino-cli
 [`sqlx`]: https://crates.io/crates/sqlx
 [`tracing`]: https://crates.io/crates/tracing
 [`metrics`]: https://crates.io/crates/metrics
 [`actix-web`]: https://crates.io/crates/actix-web
 [`axum`]: https://crates.io/crates/axum
 [`dioxus`]: https://crates.io/crates/dioxus
-[`ntex`]: https://crates.io/crates/ntex
 [`actix-app`]: https://github.com/zino-rs/zino/tree/main/examples/actix-app
 [`axum-app`]: https://github.com/zino-rs/zino/tree/main/examples/axum-app
 [`dioxus-desktop`]: https://github.com/zino-rs/zino/tree/main/examples/dioxus-desktop
-[`ntex-app`]: https://github.com/zino-rs/zino/tree/main/examples/ntex-app
 [license]: https://github.com/zino-rs/zino/blob/main/LICENSE
 [zino-issue]: https://github.com/zino-rs/zino/issues/new

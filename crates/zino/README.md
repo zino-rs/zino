@@ -18,13 +18,12 @@ which emphasizes **simplicity**, **extensibility** and **productivity**.
 - 💎 Expressive ORM for MySQL, PostgreSQL and SQLite based on [`sqlx`].
 - ✨ Innovations on query population, field translation and model hooks.
 - 📅 Lightweight scheduler for sync and async cron jobs.
-- 💠 Unified access to storage services, data sources and LLMs.
 - 📊 Built-in support for [`tracing`], [`metrics`] and logging.
 - 💖 Full integrations with [`actix-web`], [`axum`], [`dioxus`] and more.
 
 ## Getting started
 
-You can start with the example [`actix-app`], [`axum-app`], [`dioxus-desktop`] or [`ntex-app`].
+You can start with the example [`actix-app`], [`axum-app`] or [`dioxus-desktop`].
 
 Here is the simplest application to run a server:
 ```toml
@@ -63,7 +62,6 @@ The following optional features are available:
 | `jwt`         | Enables the support for JSON Web Token.              | No       |
 | `logger`      | Enables the default logger.                          | Yes      |
 | `metrics`     | Enables the [`metrics`] exporter.                    | No       |
-| `ntex`        | Enables the integration with [`ntex`].               | No       |
 | `opa`         | Enables the support for OPA via [`regorus`].         | No       |
 | `orm`         | Enables the ORM for MySQL, PostgreSQL or **SQLite**. | No       |
 | `preferences` | Enables the support for application preferences.     | No       |
@@ -77,8 +75,6 @@ The following optional features are available:
 [`actix-web`]: https://crates.io/crates/actix-web
 [`axum`]: https://crates.io/crates/axum
 [`dioxus`]: https://crates.io/crates/dioxus
-[`ntex`]: https://crates.io/crates/ntex
 [`actix-app`]: https://github.com/zino-rs/zino/tree/main/examples/actix-app
 [`axum-app`]: https://github.com/zino-rs/zino/tree/main/examples/axum-app
 [`dioxus-desktop`]: https://github.com/zino-rs/zino/tree/main/examples/dioxus-desktop
-[`ntex-app`]: https://github.com/zino-rs/zino/tree/main/examples/ntex-app

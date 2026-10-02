@@ -2,11 +2,9 @@
 resolver = "2"
 members = [
     "actix-app",
-    "amis-app",
     "axum-app",
     "dioxus-desktop",
     "minimal-app",
-    "ntex-app",
 ]
 
 [workspace.package]
@@ -24,10 +22,6 @@ features = ["derive"]
 [workspace.dependencies.zino]
 path = "../crates/zino"
 version = "0.45.0"
-
-[workspace.dependencies.zino-amis]
-path = "../crates/zino-amis"
-version = "0.17.0"
 
 [workspace.dependencies.zino-core]
 path = "../crates/zino-core"

@@ -1,8 +1,0 @@
-# --env=prod
-
-name = "amis-app"
-version = "0.1.0"
-
-[main]
-host = "127.0.0.1"
-port = 6080

@@ -44,7 +44,7 @@ pub use zino_core::{fluent_args, i18n::Intl};
 #[doc(no_inline)]
 pub use zino_core::application::Preferences;
 
-#[cfg(any(feature = "actix", feature = "axum", feature = "ntex"))]
+#[cfg(any(feature = "actix", feature = "axum"))]
 #[doc(no_inline)]
 pub use zino_http::{
     reject,

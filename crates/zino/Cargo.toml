@@ -38,13 +38,11 @@ inertia = ["zino-http/inertia"]
 jwt = ["auth", "zino-auth/jwt", "zino-http?/jwt"]
 logger = ["zino-core/tracing-log", "zino-core/tracing-subscriber"]
 metrics = ["zino-core/metrics", "zino-http?/metrics", "zino-storage/metrics"]
-ntex = ["dep:zino-http", "dep:zino-ntex", "dep:zino-openapi"]
 opa = ["auth", "zino-auth/opa"]
 orm = [
     "zino-orm",
     "zino-actix?/orm",
     "zino-axum?/orm",
-    "zino-ntex?/orm",
 ]
 preferences = ["zino-core/preferences"]
 view = ["zino-http/view"]
@@ -72,11 +70,6 @@ optional = true
 [dependencies.zino-dioxus]
 path = "../zino-dioxus"
 version = "0.26.0"
-optional = true
-
-[dependencies.zino-ntex]
-path = "../zino-ntex"
-version = "0.19.0"
 optional = true
 
 [lints]

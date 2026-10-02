@@ -6,20 +6,20 @@ pub fn Overview() -> Element {
     let core_crates = [
         ("zino", "Framework integrations"),
         ("zino-core", "Core types and traits"),
+        ("zino-orm", "Database schema and ORM"),
         ("zino-derive", "Derived traits"),
-        ("zino-model", "Domain models"),
     ];
-    let server_crates = [
-        ("zino-server", "A HTTP server"),
-        ("zino-router", "A flexible router"),
-        ("zino-middleware", "Middlewares"),
-        ("zino-rpc", "RPC support"),
+    let feature_crates = [
+        ("zino-auth", "Authentication and authorization"),
+        ("zino-channel", "Cloud events and subscriptions"),
+        ("zino-storage", "Files and storage services"),
+        ("zino-http", "Requests and responses"),
     ];
     let extra_crates = [
-        ("zino-extra", "Extra utilities"),
+        ("zino-openapi", "OpenAPI docs generator"),
+        ("zino-axum", "Integrations with axum"),
+        ("zino-actix", "Integrations with actix-web"),
         ("zino-dioxus", "Dioxus components"),
-        ("zino-amis", "UI generator for amis"),
-        ("zino-cli", "CLI tools"),
     ];
     rsx! {
         div {
@@ -155,7 +155,7 @@ pub fn Overview() -> Element {
         }
         div {
             class: "columns is-6",
-            for d in server_crates {
+            for d in feature_crates {
                 CrateListing { name: d.0, description: d.1 }
             }
         }

@@ -17,9 +17,6 @@ cfg_if::cfg_if! {
     } else if #[cfg(feature = "axum")] {
         #[doc(no_inline)]
         pub use zino_axum::{Cluster, Request, Response, Result};
-    } else if #[cfg(feature = "ntex")] {
-        #[doc(no_inline)]
-        pub use zino_ntex::{Cluster, Request, Response, Result, RouterConfigure};
     }
 }
 
