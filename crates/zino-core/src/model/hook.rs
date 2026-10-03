@@ -226,7 +226,7 @@ pub trait ModelHooks: Model {
         if ctx.is_success() {
             tracing::warn!(query, query_id, "a model was deleted from the table");
         } else {
-            tracing::error!(query, query_id, "fail to detele a model from the table");
+            tracing::error!(query, query_id, "fail to delete a model from the table");
         }
         #[cfg(feature = "metrics")]
         ctx.emit_metrics("delete");

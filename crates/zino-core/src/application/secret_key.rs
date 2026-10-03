@@ -11,7 +11,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
             checksum
                 .as_bytes()
                 .try_into()
-                .inspect_err(|err| tracing::warn!("invalid checkum: {err}"))
+                .inspect_err(|err| tracing::warn!("invalid checksum: {err}"))
                 .ok()
         })
         .unwrap_or_else(|| {

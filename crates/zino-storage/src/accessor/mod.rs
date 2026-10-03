@@ -367,7 +367,7 @@ impl GlobalAccessor {
                 if let Some(access_key_id) = config.get_str("access-key-id") {
                     builder = builder.access_key_id(access_key_id);
                 }
-                if let Some(secret_access_key) = config.get_str("secret_access_key") {
+                if let Some(secret_access_key) = config.get_str("secret-access-key") {
                     builder = builder.secret_access_key(secret_access_key);
                 }
                 Operator::new(builder)?

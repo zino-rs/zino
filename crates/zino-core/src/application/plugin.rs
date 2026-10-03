@@ -102,7 +102,7 @@ impl Plugin {
         self.dependencies.as_slice()
     }
 
-    /// Returns `ture` if the running environment is enabled.
+    /// Returns `true` if the running environment is enabled.
     #[inline]
     pub fn enabled(&self, env: &Env) -> bool {
         let environments = &self.environments;

@@ -30,7 +30,6 @@ impl std::error::Error for InvalidHost {}
 impl Validator<str> for HostValidator {
     type Error = InvalidHost;
 
-    #[inline]
     fn validate(&self, data: &str) -> Result<(), Self::Error> {
         if let Some((hostname, port)) = data.rsplit_once(':') {
             if let Err(err) = port.parse::<u16>() {

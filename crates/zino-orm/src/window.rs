@@ -1,11 +1,11 @@
-use self::WindownFunction::*;
+use self::WindowFunction::*;
 use super::{Entity, query::QueryExt};
 use zino_core::model::Query;
 
-/// A windown function.
+/// A window function.
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
-enum WindownFunction<E: Entity> {
+enum WindowFunction<E: Entity> {
     /// The `COUNT` function.
     Count(E::Column),
     /// The `SUM` function.
@@ -18,11 +18,11 @@ enum WindownFunction<E: Entity> {
     Max(E::Column),
     /// The `ROW_NUMBER` function.
     RowNumber,
-    /// The `RNAK` function.
+    /// The `RANK` function.
     Rank,
-    /// The `DENSE_RNAK` function.
+    /// The `DENSE_RANK` function.
     DenseRank,
-    /// The `PERCENT_RNAK` function.
+    /// The `PERCENT_RANK` function.
     PercentRank,
     /// The `CUME_DIST` function.
     CumeDist,
@@ -60,7 +60,7 @@ enum WindownFunction<E: Entity> {
 #[derive(Debug, Clone, Copy)]
 pub struct Window<E: Entity> {
     /// The window function.
-    function: WindownFunction<E>,
+    function: WindowFunction<E>,
     /// `PARTITION BY` a column.
     partition: E::Column,
     /// An optional `ORDER BY`.

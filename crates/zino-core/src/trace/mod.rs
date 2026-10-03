@@ -1,4 +1,4 @@
-//! HTTP headers for trace coontext.
+//! HTTP headers for trace context.
 
 mod trace_context;
 mod trace_state;

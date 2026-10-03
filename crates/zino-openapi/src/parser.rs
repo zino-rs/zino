@@ -230,6 +230,21 @@ pub(super) fn parse_schema(config: &Table) -> Schema {
                     }
                 },
                 TomlValue::Integer(value) => match key.as_str() {
+                    "multiple_of" => {
+                        object_builder = object_builder.multiple_of(Some(*value));
+                    }
+                    "maximum" => {
+                        object_builder = object_builder.maximum(Some(*value));
+                    }
+                    "minimum" => {
+                        object_builder = object_builder.minimum(Some(*value));
+                    }
+                    "exclusive_maximum" => {
+                        object_builder = object_builder.exclusive_maximum(Some(*value));
+                    }
+                    "exclusive_minimum" => {
+                        object_builder = object_builder.exclusive_minimum(Some(*value));
+                    }
                     "max_length" => {
                         object_builder = object_builder.max_length(usize::try_from(*value).ok());
                     }
@@ -292,9 +307,8 @@ pub(super) fn parse_schema(config: &Table) -> Schema {
                         object_builder = object_builder.enum_values(Some(values));
                     }
                     "examples" => {
-                        for example in vec.iter() {
-                            object_builder = object_builder.examples(Some(example.to_json_value()));
-                        }
+                        let examples = vec.iter().map(|v| v.to_json_value());
+                        object_builder = object_builder.examples(examples);
                     }
                     _ => (),
                 },
