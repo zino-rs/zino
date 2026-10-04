@@ -1,7 +1,7 @@
 [package]
 name = "zino-auth"
 description = "Authentication and authorization for zino."
-version = "0.17.0"
+version = "0.18.0"
 categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
@@ -47,7 +47,7 @@ version = "0.18.2"
 optional = true
 
 [dependencies.rauthy-client]
-version = "0.14.2"
+version = "0.15.1"
 optional = true
 
 [dependencies.regorus]

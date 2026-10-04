@@ -9,7 +9,7 @@ members = [
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.90"
+rust-version = "1.95"
 publish = false
 
 [workspace.dependencies]
@@ -21,23 +21,23 @@ features = ["derive"]
 
 [workspace.dependencies.zino]
 path = "../crates/zino"
-version = "0.45.0"
+version = "0.46.0"
 
 [workspace.dependencies.zino-core]
 path = "../crates/zino-core"
-version = "0.45.0"
+version = "0.46.0"
 
 [workspace.dependencies.zino-derive]
 path = "../crates/zino-derive"
-version = "0.43.0"
+version = "0.44.0"
 
 [workspace.dependencies.zino-dioxus]
 path = "../crates/zino-dioxus"
-version = "0.26.0"
+version = "0.27.0"
 
 [workspace.dependencies.zino-orm]
 path = "../crates/zino-orm"
-version = "0.17.0"
+version = "0.18.0"
 
 [profile.release]
 lto = "thin"

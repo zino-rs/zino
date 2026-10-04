@@ -83,7 +83,7 @@ features = [
 ]
 
 [workspace.dependencies.tokio]
-version = "1.53.1"
+version = "1.53.2"
 features = [
     "macros",
     "net",
@@ -99,7 +99,7 @@ default-features = false
 features = ["parse", "serde"]
 
 [workspace.dependencies.uuid]
-version = "1.26.1"
+version = "1.27.0"
 features = [
     "fast-rng",
     "serde",
@@ -109,35 +109,35 @@ features = [
 
 [workspace.dependencies.zino-auth]
 path = "crates/zino-auth"
-version = "0.17.0"
+version = "0.18.0"
 
 [workspace.dependencies.zino-core]
 path = "crates/zino-core"
-version = "0.45.0"
+version = "0.46.0"
 
 [workspace.dependencies.zino-channel]
 path = "crates/zino-channel"
-version = "0.17.0"
+version = "0.18.0"
 
 [workspace.dependencies.zino-derive]
 path = "crates/zino-derive"
-version = "0.43.0"
+version = "0.44.0"
 
 [workspace.dependencies.zino-http]
 path = "crates/zino-http"
-version = "0.17.0"
+version = "0.18.0"
 
 [workspace.dependencies.zino-openapi]
 path = "crates/zino-openapi"
-version = "0.16.0"
+version = "0.17.0"
 
 [workspace.dependencies.zino-orm]
 path = "crates/zino-orm"
-version = "0.17.0"
+version = "0.18.0"
 
 [workspace.dependencies.zino-storage]
 path = "crates/zino-storage"
-version = "0.17.0"
+version = "0.18.0"
 
 [workspace.lints.rust]
 missing_docs = "warn"

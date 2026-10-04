@@ -175,7 +175,7 @@ impl From<Time> for NaiveTime {
 }
 
 #[cfg(feature = "avro")]
-impl From<DateTime> for apache_avro::types::Value {
+impl From<Time> for apache_avro::types::Value {
     #[inline]
     fn from(t: Time) -> Self {
         let micros = t.num_micros_from_midnight().try_into().unwrap_or(i64::MAX);
