@@ -15,6 +15,7 @@ The following optional features are available:
 | Name                 | Description                                            | Default? |
 |----------------------|--------------------------------------------------------|----------|
 | `apalis`             | Enables the support for [`apalis`].                    | No       |
+| `avro`               | Enables the support for [`apache-avro`].               | No       |
 | `cookie`             | Enables the support for cookies.                       | No       |
 | `crypto-sm`          | Enables China's Standards of Encryption Algorithms.    | No       |
 | `debug`              | Enables the features for ease of debugging.            | No       |
@@ -36,6 +37,7 @@ The following optional features are available:
 
 [`zino`]: https://github.com/zino-rs/zino
 [`apalis`]: https://crates.io/crates/apalis
+[`apache-avro`]: https://crates.io/crates/apache-avro
 [`tracing-subscriber`]: https://crates.io/crates/tracing-subscriber
 [`reqwest`]: https://crates.io/crates/reqwest
 [`metrics`]: https://crates.io/crates/metrics

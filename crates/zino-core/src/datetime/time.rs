@@ -1,4 +1,4 @@
-use crate::{AvroValue, JsonValue, error::Error};
+use crate::{JsonValue, error::Error};
 use chrono::{Local, NaiveTime, Timelike, format::ParseError};
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
@@ -174,11 +174,12 @@ impl From<Time> for NaiveTime {
     }
 }
 
-impl From<Time> for AvroValue {
+#[cfg(feature = "avro")]
+impl From<DateTime> for apache_avro::types::Value {
     #[inline]
     fn from(t: Time) -> Self {
         let micros = t.num_micros_from_midnight().try_into().unwrap_or(i64::MAX);
-        AvroValue::TimeMicros(micros)
+        apache_avro::types::Value::TimeMicros(micros)
     }
 }
 

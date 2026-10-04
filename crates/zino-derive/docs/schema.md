@@ -14,9 +14,6 @@ Derives the [`Schema`](zino_orm::Schema) trait.
   the corresponding table in the database. The default table name is obtained by
   a concatenation of the database namespace and the model name.
 
-- **`#[schema(comment = "doc")]`**: The `comment` attribute specifies
-  the documentation of the model. The value will be used in the Avro schema.
-
 # Attributes on struct fields
 
 - **`#[schema(ignore)]`**: The `ignore` annotation is used to skip a particular field

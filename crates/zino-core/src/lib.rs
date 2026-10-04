@@ -35,12 +35,6 @@ pub type JsonValue = serde_json::Value;
 /// A JSON key-value type.
 pub type Map = serde_json::Map<String, JsonValue>;
 
-/// An Avro value.
-pub type AvroValue = apache_avro::types::Value;
-
-/// A schema-less Avro record value.
-pub type Record = Vec<(String, AvroValue)>;
-
 /// A TOML value.
 pub type TomlValue = toml::Value;
 

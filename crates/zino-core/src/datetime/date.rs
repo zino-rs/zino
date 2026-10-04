@@ -1,4 +1,4 @@
-use crate::{AvroValue, JsonValue, error::Error};
+use crate::{JsonValue, error::Error};
 use chrono::{Datelike, Days, Local, Months, NaiveDate, Weekday, format::ParseError};
 use serde::{Deserialize, Serialize, Serializer};
 use std::{
@@ -361,10 +361,11 @@ impl From<Date> for NaiveDate {
     }
 }
 
-impl From<Date> for AvroValue {
+#[cfg(feature = "avro")]
+impl From<Date> for apache_avro::types::Value {
     #[inline]
     fn from(d: Date) -> Self {
-        AvroValue::Date(d.num_days_from_epoch())
+        apache_avro::types::Value::Date(d.num_days_from_epoch())
     }
 }
 

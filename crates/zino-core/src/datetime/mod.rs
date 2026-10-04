@@ -1,6 +1,6 @@
 //! ISO 8601 combined date and time with local time zone.
 
-use crate::{AvroValue, JsonValue};
+use crate::JsonValue;
 use chrono::{
     Datelike, Days, Local, Months, NaiveDate, NaiveDateTime, NaiveTime, SecondsFormat, TimeZone,
     Timelike, Utc, Weekday, format::ParseError,
@@ -668,10 +668,11 @@ impl From<DateTime> for LocalDateTime {
     }
 }
 
-impl From<DateTime> for AvroValue {
+#[cfg(feature = "avro")]
+impl From<DateTime> for apache_avro::types::Value {
     #[inline]
     fn from(dt: DateTime) -> Self {
-        AvroValue::String(dt.to_string())
+        apache_avro::types::Value::String(dt.to_string())
     }
 }
 

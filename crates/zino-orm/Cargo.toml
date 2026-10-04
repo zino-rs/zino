@@ -13,6 +13,7 @@ license = { workspace = true }
 
 [features]
 default = ["orm-sqlx"]
+avro = ["dep:apache-avro", "zino-core/avro"]
 openapi = ["zino-openapi"]
 orm = ["orm-sqlx"]
 orm-mariadb = ["orm-sqlx", "sqlx/mysql"]
@@ -23,7 +24,7 @@ orm-sqlx = ["sqlx", "sqlx/sqlite", "zino-core/sqlx"]
 orm-tidb = ["orm-sqlx", "sqlx/mysql"]
 
 [dependencies]
-apache-avro = { workspace = true }
+apache-avro = { workspace = true, optional = true }
 cfg-if = { workspace = true }
 chrono = { workspace = true }
 convert_case = { workspace = true }

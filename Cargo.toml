@@ -23,7 +23,7 @@ license = "MIT"
 
 [workspace.dependencies]
 ahash = "0.8.12"
-apache-avro = "0.21.0"
+apache-avro = "0.22.0"
 bytes = "1.12.1"
 cfg-if = "1.0.5"
 convert_case = "0.12.0"

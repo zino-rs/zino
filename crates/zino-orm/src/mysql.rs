@@ -2,7 +2,7 @@ use super::{DatabaseDriver, DatabaseRow, DecodeRow, EncodeColumn, Schema, query:
 use chrono::NaiveDateTime;
 use std::{borrow::Cow, fmt::Display};
 use zino_core::{
-    AvroValue, JsonValue, Map, Record, SharedString, Uuid,
+    JsonValue, Map, SharedString, Uuid,
     datetime::{Date, DateTime, Time},
     error::Error,
     extension::{JsonObjectExt, JsonValueExt},
@@ -514,19 +514,19 @@ impl DecodeRow<DatabaseRow> for Map {
     }
 }
 
-#[cfg(feature = "orm-sqlx")]
-impl DecodeRow<DatabaseRow> for Record {
+#[cfg(all(feature = "orm-sqlx", feature = "avro"))]
+impl DecodeRow<DatabaseRow> for super::Record {
     type Error = Error;
 
     fn decode_row(row: &DatabaseRow) -> Result<Self, Self::Error> {
         let columns = row.columns();
-        let mut record = Record::with_capacity(columns.len());
+        let mut record = super::Record::with_capacity(columns.len());
         for col in columns {
             let field = col.name();
             let index = col.ordinal();
             let raw_value = row.try_get_raw(index)?;
             let value = if raw_value.is_null() {
-                AvroValue::Null
+                apache_avro::types::Value::Null
             } else {
                 use super::decode::decode_raw;
                 match col.type_info().name() {

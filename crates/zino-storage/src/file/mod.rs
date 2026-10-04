@@ -43,6 +43,9 @@ pub struct NamedFile {
 }
 
 impl NamedFile {
+    /// Maximum number of chunks.
+    const MAX_CHUNKS: usize = 1024;
+
     /// Creates a new instance with the specific file name.
     pub fn new(file_name: impl Into<String>) -> Self {
         let file_name = file_name.into();
@@ -236,7 +239,7 @@ impl NamedFile {
 
             let bytes = file.as_ref();
             if let Some(chunk_number) = file.chunk_number() {
-                let chunk_path = path.join(format!(".{chunk_number}.part"));
+                let chunk_path = path.with_added_extension(format!(".{chunk_number}.part"));
                 fs::write(chunk_path, bytes)
             } else {
                 fs::write(path, bytes)
@@ -337,7 +340,7 @@ impl NamedFile {
             let file_name = path.file_name().map(|s| s.to_string_lossy().into_owned());
             let mut chunk_paths = Vec::with_capacity(total_chunks);
             for index in 0..total_chunks {
-                let chunk_path = path.join(format!(".{index}.part"));
+                let chunk_path = path.with_added_extension(format!(".{index}.part"));
                 if chunk_path.try_exists()? {
                     chunk_paths.push(chunk_path);
                 } else {
@@ -368,7 +371,12 @@ impl NamedFile {
                 extra: Map::new(),
             })
         }
-        inner(path.as_ref(), total_chunks)
+
+        if total_chunks > Self::MAX_CHUNKS {
+            Err(io::Error::other("too many chunks"))
+        } else {
+            inner(path.as_ref(), total_chunks)
+        }
     }
 
     /// Attempts to create an instance from reading a local file.

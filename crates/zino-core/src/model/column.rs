@@ -5,9 +5,6 @@ use crate::{
     extension::{JsonObjectExt, JsonValueExt},
     mock,
 };
-use apache_avro::schema::{
-    ArraySchema, MapSchema, Name, RecordField, RecordFieldOrder, Schema, UnionSchema,
-};
 use rand::{
     RngExt,
     distr::{Alphanumeric, Distribution, SampleString, StandardUniform},
@@ -15,7 +12,6 @@ use rand::{
     seq::IndexedRandom,
 };
 use serde::Serialize;
-use std::collections::BTreeMap;
 
 /// A model field with associated metadata.
 #[derive(Debug, Clone, Serialize)]
@@ -255,113 +251,6 @@ impl<'a> Column<'a> {
     #[inline]
     pub fn fuzzy_search(&self) -> bool {
         self.index_type() == Some("text") || self.has_attribute("fuzzy_search")
-    }
-
-    /// Returns the Avro schema.
-    pub fn schema(&self) -> Schema {
-        let type_name = self.type_name();
-        match type_name {
-            "bool" => Schema::Boolean,
-            "i32" | "u32" | "i16" | "u16" | "i8" | "u8" => Schema::Int,
-            "i64" | "u64" | "isize" | "usize" => Schema::Long,
-            "f32" => Schema::Float,
-            "f64" => Schema::Double,
-            "String" => Schema::String,
-            "Date" => Schema::Date,
-            "DateTime" => Schema::TimestampMicros,
-            "Uuid" => Schema::Uuid,
-            "Vec<u8>" => Schema::Bytes,
-            "Vec<String>" => Schema::Array(ArraySchema {
-                items: Box::new(Schema::String),
-                attributes: BTreeMap::new(),
-            }),
-            "Vec<Uuid>" => Schema::Array(ArraySchema {
-                items: Box::new(Schema::Uuid),
-                attributes: BTreeMap::new(),
-            }),
-            "Vec<i64>" | "Vec<u64>" => Schema::Array(ArraySchema {
-                items: Box::new(Schema::Long),
-                attributes: BTreeMap::new(),
-            }),
-            "Vec<i32>" | "Vec<u32>" => Schema::Array(ArraySchema {
-                items: Box::new(Schema::Int),
-                attributes: BTreeMap::new(),
-            }),
-            "Vec<f64>" => Schema::Array(ArraySchema {
-                items: Box::new(Schema::Double),
-                attributes: BTreeMap::new(),
-            }),
-            "Vec<f32>" => Schema::Array(ArraySchema {
-                items: Box::new(Schema::Float),
-                attributes: BTreeMap::new(),
-            }),
-            "Option<String>" => {
-                if let Ok(union_schema) = UnionSchema::new(vec![Schema::Null, Schema::String]) {
-                    Schema::Union(union_schema)
-                } else {
-                    Schema::String
-                }
-            }
-            "Option<Uuid>" => {
-                if let Ok(union_schema) = UnionSchema::new(vec![Schema::Null, Schema::Uuid]) {
-                    Schema::Union(union_schema)
-                } else {
-                    Schema::Uuid
-                }
-            }
-            "Option<i64>" | "Option<u64>" => {
-                if let Ok(union_schema) = UnionSchema::new(vec![Schema::Null, Schema::Long]) {
-                    Schema::Union(union_schema)
-                } else {
-                    Schema::Long
-                }
-            }
-            "Option<i32>" | "Option<u32>" => {
-                if let Ok(union_schema) = UnionSchema::new(vec![Schema::Null, Schema::Int]) {
-                    Schema::Union(union_schema)
-                } else {
-                    Schema::Int
-                }
-            }
-            "Map" => Schema::Map(MapSchema {
-                types: Box::new(Schema::Ref {
-                    name: Name {
-                        name: "Json".to_owned(),
-                        namespace: None,
-                    },
-                }),
-                attributes: BTreeMap::new(),
-            }),
-            _ => Schema::Ref {
-                name: Name {
-                    name: type_name.to_owned(),
-                    namespace: None,
-                },
-            },
-        }
-    }
-
-    /// Returns a field for the record Avro schema.
-    pub fn record_field(&self) -> RecordField {
-        let schema = self.schema();
-        let default_value = self.default_value().and_then(|s| match schema {
-            Schema::Boolean => s.parse::<bool>().ok().map(|b| b.into()),
-            Schema::Int => s.parse::<i32>().ok().map(|i| i.into()),
-            Schema::Long => s.parse::<i64>().ok().map(|i| i.into()),
-            Schema::Float => s.parse::<f32>().ok().map(|f| f.into()),
-            Schema::Double => s.parse::<f64>().ok().map(|f| f.into()),
-            _ => Some(s.into()),
-        });
-        RecordField {
-            name: self.name().to_owned(),
-            doc: self.comment().map(|s| s.to_owned()),
-            aliases: None,
-            default: default_value,
-            schema,
-            order: RecordFieldOrder::Ascending,
-            position: 0,
-            custom_attributes: BTreeMap::new(),
-        }
     }
 
     /// Returns the definition to be used in the OpenAPI schema object.

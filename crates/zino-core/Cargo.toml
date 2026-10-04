@@ -34,6 +34,7 @@ all-validators = [
     "validator-regex",
 ]
 apalis = ["dep:apalis"]
+avro = ["dep:apache-avro"]
 cookie = ["reqwest?/cookies"]
 crypto-sm = ["dep:ctr", "dep:sm3", "dep:sm4"]
 debug = [
@@ -48,6 +49,7 @@ full = [
     "all-locales",
     "all-validators",
     "apalis",
+    "avro",
     "cookie",
     "dotenv",
     "env-filter",
@@ -110,7 +112,7 @@ hkdf = "0.13.0"
 sha1 = "0.11.0"
 sha2 = "0.11.0"
 ahash = { workspace = true }
-apache-avro = { workspace = true }
+apache-avro = { workspace = true, optional = true }
 cfg-if = { workspace = true }
 chrono = { workspace = true }
 convert_case = { workspace = true }

@@ -61,13 +61,11 @@ fn stats_router(cfg: &mut ServiceConfig) {
 }
 
 fn user_debug_router(cfg: &mut ServiceConfig) {
-    cfg.route("/user/schema", get().to(User::schema))
-        .route("/user/definition", get().to(User::definition))
+    cfg.route("/user/definition", get().to(User::definition))
         .route("/user/mock", get().to(User::mock));
 }
 
 fn tag_debug_router(cfg: &mut ServiceConfig) {
-    cfg.route("/tag/schema", get().to(Tag::schema))
-        .route("/tag/definition", get().to(Tag::definition))
+    cfg.route("/tag/definition", get().to(Tag::definition))
         .route("/tag/mock", get().to(Tag::mock));
 }

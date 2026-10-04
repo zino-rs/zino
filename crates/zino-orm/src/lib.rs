@@ -47,6 +47,10 @@ pub use transaction::Transaction;
 pub use value::IntoSqlValue;
 pub use window::Window;
 
+/// A schema-less Avro record value.
+#[cfg(feature = "avro")]
+pub type Record = Vec<(String, apache_avro::types::Value)>;
+
 #[cfg(feature = "orm-sqlx")]
 mod decode;
 #[cfg(feature = "orm-sqlx")]

@@ -1,6 +1,6 @@
 use super::JsonValueExt;
 use crate::{
-    JsonValue, Map, Record, Uuid,
+    JsonValue, Map, Uuid,
     datetime::{self, Date, DateTime, Time},
     helper,
     model::Model,
@@ -272,9 +272,6 @@ pub trait JsonObjectExt {
 
     /// Serializes the map into a query string.
     fn to_query_string(&self) -> String;
-
-    /// Consumes `self` and constructs an Avro record value.
-    fn into_avro_record(self) -> Record;
 
     /// Creates a new instance with the entry.
     fn from_entry(key: impl Into<String>, value: impl Into<JsonValue>) -> Self;
@@ -861,14 +858,6 @@ impl JsonObjectExt for Map {
     #[inline]
     fn to_query_string(&self) -> String {
         serde_qs::to_string(&self).unwrap_or_default()
-    }
-
-    fn into_avro_record(self) -> Record {
-        let mut record = Record::with_capacity(self.len());
-        for (field, value) in self.into_iter() {
-            record.push((field, value.into()));
-        }
-        record
     }
 
     #[inline]

@@ -35,7 +35,6 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let mut reader_name = String::from("main");
     let mut writer_name = String::from("main");
     let mut table_name = None;
-    let mut model_comment = None;
     for attr in input.attrs.iter() {
         for (key, value) in parser::parse_schema_attr(attr).into_iter() {
             if let Some(value) = value {
@@ -51,9 +50,6 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
                     }
                     "table_name" => {
                         table_name = Some(value);
-                    }
-                    "comment" => {
-                        model_comment = Some(value);
                     }
                     _ => (),
                 }
@@ -267,12 +263,10 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     let schema_writer = format_ident!("{}_WRITER", model_name_upper_snake);
     let schema_table_name = format_ident!("{}_TABLE_NAME", model_name_upper_snake);
     let schema_model_namespace = format_ident!("{}_MODEL_NAMESPACE", model_name_upper_snake);
-    let avro_schema = format_ident!("{}_AVRO_SCHEMA", model_name_upper_snake);
     let num_columns = columns.len();
     let num_read_only_fields = read_only_fields.len();
     let num_write_only_fields = write_only_fields.len();
     let quote_table_name = parser::quote_option_string(table_name);
-    let quote_model_comment = parser::quote_option_string(model_comment);
     let quote_equality = if let Some(field) = equality_field {
         let schema_equality = format_ident!("{}", field);
         quote! {
@@ -287,34 +281,13 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
     quote! {
         use zino_core::{
             error::Error as ZinoError,
-            model::{schema, Column},
+            model::Column,
         };
         use zino_orm::{ConnectionPool, Schema};
 
         static #schema_fields: [&str; #num_columns] = [#(#column_fields),*];
         static #schema_read_only_fields: [&str; #num_read_only_fields] = [#(#read_only_fields),*];
         static #schema_write_only_fields: [&str; #num_write_only_fields] = [#(#write_only_fields),*];
-        static #avro_schema: zino_core::LazyLock<schema::Schema> = zino_core::LazyLock::new(|| {
-            let mut fields = #schema_columns.iter().enumerate()
-                .map(|(index, col)| {
-                    let mut field = col.record_field();
-                    field.position = index;
-                    field
-                })
-                .collect::<Vec<_>>();
-            let record_schema = schema::RecordSchema {
-                name: schema::Name {
-                    name: #model_name.to_owned(),
-                    namespace: Some(<#name>::model_namespace().to_owned()),
-                },
-                aliases: None,
-                doc: #quote_model_comment,
-                fields,
-                lookup: std::collections::BTreeMap::new(),
-                attributes: std::collections::BTreeMap::new(),
-            };
-            schema::Schema::Record(record_schema)
-        });
         static #schema_primary_key_column: zino_core::LazyLock<Column> =
             zino_core::LazyLock::new(|| #primary_key_column);
         static #schema_columns: zino_core::LazyLock<[Column; #num_columns]> =
@@ -345,11 +318,6 @@ pub(super) fn parse_token_stream(input: DeriveInput) -> TokenStream {
             #[inline]
             fn primary_key_column() -> &'static Column<'static> {
                 &#schema_primary_key_column
-            }
-
-            #[inline]
-            fn schema() -> &'static schema::Schema {
-                &#avro_schema
             }
 
             #[inline]

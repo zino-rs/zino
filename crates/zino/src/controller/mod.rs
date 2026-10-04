@@ -48,9 +48,6 @@ pub trait DefaultController<K> {
     /// Gets the tree hierarchy data.
     async fn tree(req: Self::Request) -> Self::Result;
 
-    /// Gets the Avro schema for the model.
-    async fn schema(req: Self::Request) -> Self::Result;
-
     /// Gets the model definition.
     async fn definition(req: Self::Request) -> Self::Result;
 
@@ -498,13 +495,6 @@ where
         let mut data = Self::data_items(models);
         data.upsert("total_rows", total_rows);
         res.set_json_data(data);
-        Ok(res.emit(&req).into())
-    }
-
-    async fn schema(req: Self::Request) -> Self::Result {
-        let schema = serde_json::to_value(Self::schema()).extract(&req)?;
-        let mut res = Response::default().context(&req);
-        res.set_json_response(schema);
         Ok(res.emit(&req).into())
     }
 
