@@ -26,8 +26,8 @@ pub struct User {
     name: String,
     #[schema(
         auto_initialized,
-        enum_values = "Active | Inactive | Locked | Deleted | Archived",
-        default_value = "Inactive",
+        enum_values = "active | inactive | locked | deleted | archived",
+        default_value = "inactive",
         index_type = "hash",
         comment = "User status"
     )]

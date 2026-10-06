@@ -49,7 +49,6 @@ method = "GET"
 summary = "Exports the user data"
 
 [endpoints.query]
-format = { type = "string", enum = ["csv", "json", "jsonlines"], default = "json", description = "File format" }
 roles = { type = "string", description = "User roles" }
 tags = { type = "string", description = "User tags" }
 
@@ -70,7 +69,7 @@ tags = { type = "array", items = { type = "string", format = "uuid" }, descripti
 [schemas.userInfo]
 type = "object"
 name = { type = "string", description = "User name" }
-status = { type = "string", enum = ["Active", "Inactive", "Locked", "Deleted"], description = "User status" }
+status = { type = "string", enum = ["active", "inactive", "locked", "deleted"], description = "User status" }
 roles = { type = "array", items = "string", description = "User roles" }
 tags = { type = "array", items = { type = "string", format = "uuid" }, description = "User tags" }
 
@@ -86,16 +85,16 @@ tags = { type = "array", items = { type = "string", format = "uuid" }, descripti
 
 [models.user.visibility]
 translations = [
-    ["Public", "🌐"],
-    ["Internal", "🔵"],
-    ["Proteched", "⛔"],
-    ["Private", "🔴"],
+    ["public", "🌐"],
+    ["internal", "🔵"],
+    ["proteched", "⛔"],
+    ["private", "🔴"],
 ]
 
 [models.user.status]
 translations = [
-    ["Active", "😄"],
-    ["Inactive", "😴"],
+    ["active", "😄"],
+    ["inactive", "😴"],
 ]
 
 [models.user.roles]

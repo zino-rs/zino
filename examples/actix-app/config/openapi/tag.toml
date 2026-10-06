@@ -43,14 +43,14 @@ description = "Tag ID"
 
 [models.tag.visibility]
 translations = [
-    ["Public", "🌐"],
-    ["Internal", "🔵"],
-    ["Proteched", "⛔"],
-    ["Private", "🔴"],
+    ["public", "🌐"],
+    ["internal", "🔵"],
+    ["proteched", "⛔"],
+    ["private", "🔴"],
 ]
 
 [models.tag.status]
 translations = [
-    ["Active", "😄"],
-    ["Inactive", "😴"],
+    ["active", "😄"],
+    ["inactive", "😴"],
 ]

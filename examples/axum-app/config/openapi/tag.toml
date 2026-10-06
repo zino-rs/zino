@@ -41,6 +41,6 @@ description = "Tag ID"
 
 [models.tag.status]
 translations = [
-    ["Active", "😄"],
-    ["Inactive", "😴"],
+    ["active", "😄"],
+    ["anactive", "😴"],
 ]

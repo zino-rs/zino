@@ -20,9 +20,7 @@ use utoipa::openapi::{
     info::{Contact, Info, License},
     path::{PathItem, Paths, PathsBuilder},
     response::ResponseBuilder,
-    schema::{
-        Components, ComponentsBuilder, KnownFormat, Object, ObjectBuilder, Ref, SchemaFormat, Type,
-    },
+    schema::{Components, ComponentsBuilder, Object, ObjectBuilder, Ref, Type},
     security::SecurityRequirement,
     server::Server,
     tag::Tag,
@@ -107,13 +105,6 @@ fn default_paths() -> Paths {
 fn default_components() -> Components {
     let mut components = OPENAPI_COMPONENTS.get_or_init(Components::new).to_owned();
 
-    // Request ID
-    let request_id_example = Uuid::now_v7();
-    let request_id_schema = ObjectBuilder::new()
-        .schema_type(Type::String)
-        .format(Some(SchemaFormat::KnownFormat(KnownFormat::Uuid)))
-        .build();
-
     // Default response
     let status_schema = ObjectBuilder::new()
         .schema_type(Type::Integer)
@@ -132,18 +123,15 @@ fn default_components() -> Components {
         .property("status", status_schema)
         .property("success", success_schema)
         .property("message", message_schema)
-        .property("request_id", request_id_schema.clone())
         .property("data", Object::new())
         .required("status")
         .required("success")
         .required("message")
-        .required("request_id")
         .build();
     let default_response_example = json!({
         "status": 200,
         "success": true,
         "message": "OK",
-        "request_id": request_id_example,
         "data": {},
     });
     let default_response_content = ContentBuilder::new()
@@ -191,13 +179,11 @@ fn default_components() -> Components {
         .property("title", title_schema)
         .property("detail", detail_schema)
         .property("instance", instance_schema)
-        .property("request_id", request_id_schema)
         .required("status")
         .required("success")
         .required("title")
         .required("detail")
         .required("instance")
-        .required("request_id")
         .build();
     let error_response_example = json!({
         "status": 404,
@@ -205,7 +191,6 @@ fn default_components() -> Components {
         "title": "NotFound",
         "detail": detail_example,
         "instance": instance_example,
-        "request_id": request_id_example,
     });
     let error_response_content = ContentBuilder::new()
         .schema(Some(Ref::from_schema_name("errorResponse")))

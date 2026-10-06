@@ -65,7 +65,6 @@ method = "GET"
 summary = "Exports the user data"
 
 [endpoints.query]
-format = { type = "string", enum = ["csv", "json", "jsonlines"], default = "json", description = "File format" }
 roles = { type = "string", description = "User roles" }
 tags = { type = "string", description = "User tags" }
 
@@ -75,8 +74,8 @@ description = "User ID"
 
 [models.user.status]
 translations = [
-    ["Active", "😄"],
-    ["Inactive", "😴"],
+    ["active", "😄"],
+    ["inactive", "😴"],
 ]
 
 [models.user.roles]

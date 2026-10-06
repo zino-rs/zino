@@ -47,7 +47,7 @@ pub async fn stats(req: Request) -> Result {
         .aggregate(Aggregation::Count(Id, false), "num_users")
         .aggregate(Aggregation::Sum(LoginCount), "total_login")
         .aggregate(Aggregation::Avg(LoginCount), "avg_login_count")
-        .and_not_in(Status, ["Deleted", "Locked"])
+        .and_not_in(Status, ["deleted", "locked"])
         .and_ge(DerivedColumn::year(CreatedAt), Date::today().year())
         .group_by(CurrentLoginIp, "login_ip")
         .group_by(DerivedColumn::date(CurrentLoginAt), "login_date")

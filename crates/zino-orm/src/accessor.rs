@@ -125,28 +125,28 @@ where
         self.visibility().eq_ignore_ascii_case(visibility)
     }
 
-    /// Returns `true` if the `visibility` is `Public`.
+    /// Returns `true` if the `visibility` is `public`.
     #[inline]
     fn is_public(&self) -> bool {
-        self.visibility().eq_ignore_ascii_case("Public")
+        self.visibility().eq_ignore_ascii_case("public")
     }
 
-    /// Returns `true` if the `visibility` is `Internal`.
+    /// Returns `true` if the `visibility` is `internal`.
     #[inline]
     fn is_internal(&self) -> bool {
-        self.visibility().eq_ignore_ascii_case("Internal")
+        self.visibility().eq_ignore_ascii_case("internal")
     }
 
-    /// Returns `true` if the `visibility` is `Protected`.
+    /// Returns `true` if the `visibility` is `protected`.
     #[inline]
     fn is_protected(&self) -> bool {
-        self.visibility().eq_ignore_ascii_case("Protected")
+        self.visibility().eq_ignore_ascii_case("protected")
     }
 
-    /// Returns `true` if the `visibility` is `Private`.
+    /// Returns `true` if the `visibility` is `private`.
     #[inline]
     fn is_private(&self) -> bool {
-        self.visibility().eq_ignore_ascii_case("Private")
+        self.visibility().eq_ignore_ascii_case("private")
     }
 
     /// Returns `true` if the model has the specific status.
@@ -155,34 +155,34 @@ where
         self.status().eq_ignore_ascii_case(status)
     }
 
-    /// Returns `true` if the `status` is `Active`.
+    /// Returns `true` if the `status` is `active`.
     #[inline]
     fn is_active(&self) -> bool {
-        self.status().eq_ignore_ascii_case("Active")
+        self.status().eq_ignore_ascii_case("active")
     }
 
-    /// Returns `true` if the `status` is `Inactive`.
+    /// Returns `true` if the `status` is `inactive`.
     #[inline]
     fn is_inactive(&self) -> bool {
-        self.status().eq_ignore_ascii_case("Inactive")
+        self.status().eq_ignore_ascii_case("inactive")
     }
 
-    /// Returns `true` if the `status` is `Locked`.
+    /// Returns `true` if the `status` is `locked`.
     #[inline]
     fn is_locked(&self) -> bool {
-        self.status().eq_ignore_ascii_case("Locked")
+        self.status().eq_ignore_ascii_case("locked")
     }
 
-    /// Returns `true` if the `status` is `Deleted`.
+    /// Returns `true` if the `status` is `deleted`.
     #[inline]
     fn is_deleted(&self) -> bool {
-        self.status().eq_ignore_ascii_case("Deleted")
+        self.status().eq_ignore_ascii_case("deleted")
     }
 
-    /// Returns `true` if the `status` is `Archived`.
+    /// Returns `true` if the `status` is `archived`.
     #[inline]
     fn is_archived(&self) -> bool {
-        self.status().eq_ignore_ascii_case("Archived")
+        self.status().eq_ignore_ascii_case("archived")
     }
 
     /// Returns `true` if the `description` is nonempty.

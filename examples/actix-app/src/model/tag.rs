@@ -23,7 +23,7 @@ pub struct Tag {
     id: Uuid,
     #[schema(not_null, comment = "Tag name")]
     name: String,
-    #[schema(default_value = "Active", index_type = "hash")]
+    #[schema(default_value = "active", index_type = "hash")]
     status: String,
     description: String,
 
