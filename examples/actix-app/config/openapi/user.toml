@@ -6,7 +6,7 @@ method = "POST"
 summary = "Creates a new user"
 
 [endpoints.body]
-schema = "newUser"
+schema = "new_user"
 
 [[endpoints]]
 path = "/user/{user_id}/delete"
@@ -19,7 +19,7 @@ method = "POST"
 summary = "Updates a user by ID"
 
 [endpoints.body]
-schema = "userInfo"
+schema = "user_info"
 
 [[endpoints]]
 path = "/user/{user_id}/view"
@@ -41,7 +41,7 @@ method = "POST"
 summary = "Imports the user data"
 
 [endpoints.body]
-schema = "userData"
+schema = "user_data"
 
 [[endpoints]]
 path = "/user/export"
@@ -52,12 +52,12 @@ summary = "Exports the user data"
 roles = { type = "string", description = "User roles" }
 tags = { type = "string", description = "User tags" }
 
-[schemas.userId]
+[schemas.user_id]
 type = "string"
 format = "uuid"
 description = "User ID"
 
-[schemas.newUser]
+[schemas.new_user]
 type = "object"
 required = ["name", "roles", "account", "password"]
 name = { type = "string", description = "User name" }
@@ -66,14 +66,14 @@ account = { type = "string", description = "User account" }
 password = { type = "string", format = "password", description = "User password" }
 tags = { type = "array", items = { type = "string", format = "uuid" }, description = "User tags" }
 
-[schemas.userInfo]
+[schemas.user_info]
 type = "object"
 name = { type = "string", description = "User name" }
 status = { type = "string", enum = ["active", "inactive", "locked", "deleted"], description = "User status" }
 roles = { type = "array", items = "string", description = "User roles" }
 tags = { type = "array", items = { type = "string", format = "uuid" }, description = "User tags" }
 
-[schemas.userData]
+[schemas.user_data]
 type = "array"
 items = "object"
 required = ["name", "roles", "account", "password"]

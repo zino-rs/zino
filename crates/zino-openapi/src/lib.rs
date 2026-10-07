@@ -315,6 +315,10 @@ fn parse_openapi_metadata(file: DirEntry, mut builder: ComponentsBuilder) -> Com
             panic!("fail to set OpenAPI external docs");
         }
     }
+    if let Some(extensions) = config.get_table("extensions") {
+        let extensions = parser::parse_extensions(extensions);
+        builder = builder.extensions(Some(extensions));
+    }
     builder
 }
 

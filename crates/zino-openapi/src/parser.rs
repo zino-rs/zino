@@ -4,6 +4,7 @@ use toml::Table;
 use utoipa::openapi::{
     Deprecated, RefOr, Required,
     content::{Content, ContentBuilder},
+    extensions::{Extensions, ExtensionsBuilder},
     external_docs::ExternalDocs,
     header::Header,
     path::{HttpMethod, Operation, OperationBuilder, Parameter, ParameterBuilder, ParameterIn},
@@ -135,6 +136,10 @@ pub(super) fn parse_operation(
     if let Some(body) = config.get_table("body") {
         let request_body = parse_request_body(body);
         operation_builder = operation_builder.request_body(Some(request_body));
+    }
+    if let Some(extensions) = config.get_table("extensions") {
+        let extensions = parse_extensions(extensions);
+        operation_builder = operation_builder.extensions(Some(extensions));
     }
     operation_builder.build()
 }
@@ -782,4 +787,14 @@ pub(super) fn parse_external_docs(config: &Table) -> ExternalDocs {
     } else {
         ExternalDocs::default()
     }
+}
+
+/// Parses the extensions.
+pub(super) fn parse_extensions(config: &Table) -> Extensions {
+    let mut extensions_builder = ExtensionsBuilder::new();
+    for (key, value) in config.iter() {
+        let key = key.to_case(Case::Kebab);
+        extensions_builder = extensions_builder.add(key, value.to_json_value());
+    }
+    extensions_builder.build()
 }

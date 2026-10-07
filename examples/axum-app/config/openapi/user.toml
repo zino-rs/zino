@@ -68,7 +68,7 @@ summary = "Exports the user data"
 roles = { type = "string", description = "User roles" }
 tags = { type = "string", description = "User tags" }
 
-[schemas.userId]
+[schemas.user_id]
 type = "integer"
 description = "User ID"
 
