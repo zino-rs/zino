@@ -1,7 +1,7 @@
 [package]
 name = "zino-storage"
 description = "Files and storage services for zino."
-version = "0.18.0"
+version = "0.18.1"
 categories = ["asynchronous", "network-programming", "web-programming"]
 keywords = ["http", "web", "framework"]
 readme = "README.md"
@@ -98,7 +98,7 @@ tracing = { workspace = true }
 zino-core = { workspace = true, features = ["http-client"] }
 
 [dependencies.opendal]
-version = "0.59.3"
+version = "0.59.4"
 optional = true
 default-features = false
 features = [
