@@ -344,7 +344,7 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
                     match length {
                         4 => format!(r#"date_format({field}, '%Y') = {value}"#),
                         7 => format!(r#"date_format({field}, '%Y-%m') = {value}"#),
-                        10 => format!(r#"date_format({field}, '%Y-%m-%d') = {value}"#),
+                        10 => format!(r#"date({field}) = {value}"#),
                         _ => format!(r#"{field} = {value}"#),
                     }
                 } else {

@@ -1,5 +1,5 @@
 use convert_case::{Case, Casing};
-use minijinja::Environment;
+use minijinja::{Environment, syntax::SyntaxConfig, value::Serde};
 use std::sync::LazyLock;
 use zino_core::{
     Map,
@@ -16,7 +16,7 @@ pub fn render(template_name: &str, data: Map) -> Result<String, Error> {
         let name = [template_name, ".jinja"].concat();
         SHARED_VIEW_ENGINE.get_template(&name)?
     };
-    template.render(data).map_err(Error::from)
+    template.render(Serde(data)).map_err(Error::from)
 }
 
 /// Shared view engine.
@@ -31,9 +31,13 @@ static SHARED_VIEW_ENGINE: LazyLock<Environment> = LazyLock::new(|| {
 
     let app_env = app_state.env();
     let template_dir = Agent::parse_path(template_dir);
+    let syntax = SyntaxConfig::builder()
+        .trim_blocks(true)
+        .lstrip_blocks(true)
+        .build()
+        .expect("fail to build the syntax");
     let mut view_engine = Environment::new();
-    view_engine.set_trim_blocks(true);
-    view_engine.set_lstrip_blocks(true);
+    view_engine.set_syntax(syntax);
     view_engine.set_debug(app_env.is_dev());
     view_engine.set_loader(minijinja::path_loader(template_dir));
     view_engine.add_global("APP_ENV", app_env.as_str());

@@ -126,16 +126,30 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
                     "NULL".into()
                 }
             }
-            "DateTime" | "NaiveDateTime" => match value {
-                "epoch" => "'epoch'".into(),
-                "now" => "now()".into(),
-                "today" => "date_trunc('day', now())".into(),
-                "tomorrow" => "date_trunc('day', now()) + '1 day'::interval".into(),
-                "yesterday" => "date_trunc('day', now()) - '1 day'::interval".into(),
+            "DateTime" => match value {
+                "epoch" => "'epoch'::timestamptz".into(),
+                "now" => "'now'::timestamptz".into(),
+                "today" => "'today'::timestamptz".into(),
+                "tomorrow" => "'tomorrow'::timestamptz".into(),
+                "yesterday" => "'yesterday'::timestamptz".into(),
+                _ => {
+                    if let Ok(dt) = value.parse::<DateTime>() {
+                        Query::escape_string(dt).into()
+                    } else {
+                        Query::escape_string(value).into()
+                    }
+                }
+            },
+            "NaiveDateTime" => match value {
+                "epoch" => "'epoch'::timestamp".into(),
+                "now" => "'now'::timestamp".into(),
+                "today" => "'today'::timestamp".into(),
+                "tomorrow" => "'tomorrow'::timestamp".into(),
+                "yesterday" => "'yesterday'::timestamp".into(),
                 _ => Query::escape_string(value).into(),
             },
             "Date" | "NaiveDate" => match value {
-                "epoch" => "'epoch':date".into(),
+                "epoch" => "'epoch'::date".into(),
                 "today" => "'today'::date".into(),
                 "tomorrow" => "'tomorrow'::date".into(),
                 "yesterday" => "'yesterday'::date".into(),
@@ -356,7 +370,7 @@ impl EncodeColumn<DatabaseDriver> for Column<'_> {
                     match length {
                         4 => format!(r#"to_char({field}, 'YYYY') = {value}"#),
                         7 => format!(r#"to_char({field}, 'YYYY-MM') = {value}"#),
-                        10 => format!(r#"to_char({field}, 'YYYY-MM-DD') = {value}"#),
+                        10 => format!(r#"date({field}) = {value}"#),
                         _ => format!(r#"{field} = {value}"#),
                     }
                 } else {
