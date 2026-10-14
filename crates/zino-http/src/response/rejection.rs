@@ -5,7 +5,7 @@ use std::sync::Arc;
 use zino_core::{SharedString, error::Error, trace::TraceContext, validation::Validation, warn};
 
 /// A rejection response type.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Rejection {
     /// Rejection kind.
     kind: RejectionKind,
@@ -16,7 +16,7 @@ pub struct Rejection {
 }
 
 /// Rejection kind.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[non_exhaustive]
 enum RejectionKind {
     /// 400 Bad Request

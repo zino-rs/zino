@@ -46,14 +46,8 @@ impl<S: ResponseCode> Responder for ActixResponse<S> {
 }
 
 /// An HTTP rejection response for `actix-web`.
-pub struct ActixRejection(Response<StatusCode>);
-
-impl fmt::Debug for ActixRejection {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_str(self.0.message().unwrap_or("OK"))
-    }
-}
+#[derive(Debug)]
+pub struct ActixRejection(Rejection);
 
 impl fmt::Display for ActixRejection {
     #[inline]
@@ -65,7 +59,7 @@ impl fmt::Display for ActixRejection {
 impl From<Rejection> for ActixRejection {
     #[inline]
     fn from(rejection: Rejection) -> Self {
-        Self(Response::from(rejection))
+        Self(rejection)
     }
 }
 
@@ -80,8 +74,8 @@ impl ResponseError for ActixRejection {
     }
 
     fn error_response(&self) -> HttpResponse<BoxBody> {
-        let mut response = self.0.to_owned();
-        let mut res = build_http_response(&mut response);
+        let mut response = self.0.to_owned().into();
+        let mut res = build_http_response::<StatusCode>(&mut response);
         let request_id = response.request_id();
         if !request_id.is_nil()
             && let Ok(header_value) = HeaderValue::try_from(request_id.to_string())

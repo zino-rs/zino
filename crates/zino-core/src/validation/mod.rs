@@ -23,7 +23,7 @@ pub use validator::PhoneNumberValidator;
 pub use validator::RegexValidator;
 
 /// A record of validation results.
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct Validation {
     failed_entries: Vec<(SharedString, Error)>,
 }
