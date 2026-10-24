@@ -169,7 +169,7 @@ pub fn FileTree(props: FileTreeProps) -> Element {
                         width: icon_size,
                     }
                 }
-                span { "{current_dir_name}" }
+                span { {current_dir_name} }
             }
             for path in folders {
                 FileTree {
@@ -190,7 +190,7 @@ pub fn FileTree(props: FileTreeProps) -> Element {
                             handler.call(path.clone());
                         }
                     },
-                    span { "{name}" }
+                    span { {name} }
                 }
             }
         }

@@ -69,7 +69,7 @@ version = "1.0.229"
 features = ["derive"]
 
 [workspace.dependencies.serde_json]
-version = "1.0.152"
+version = "1.0.154"
 features = ["raw_value"]
 
 [workspace.dependencies.sqlx]
@@ -83,7 +83,7 @@ features = [
 ]
 
 [workspace.dependencies.tokio]
-version = "1.53.2"
+version = "1.53.3"
 features = [
     "macros",
     "net",
@@ -118,10 +118,6 @@ version = "0.46.2"
 [workspace.dependencies.zino-channel]
 path = "crates/zino-channel"
 version = "0.18.2"
-
-[workspace.dependencies.zino-derive]
-path = "crates/zino-derive"
-version = "0.44.2"
 
 [workspace.dependencies.zino-http]
 path = "crates/zino-http"

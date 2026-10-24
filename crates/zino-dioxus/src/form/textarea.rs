@@ -9,12 +9,12 @@ pub fn Textarea(props: TextareaProps) -> Element {
     let mut cached_value = use_signal(String::new);
     rsx! {
         textarea {
-            id: if let Some(id) = props.id { "{id}" },
+            id: props.id,
             class: "{props.class}",
             class: if !props.color.is_empty() { "is-{props.color}" },
             class: if !props.size.is_empty() { "is-{props.size}" },
             class: if !props.state.is_empty() { "is-{props.state}" },
-            value: if let Some(value) = props.initial_value { "{value}" },
+            value: props.initial_value,
             onmounted: move |event| {
                 if props.auto_focus {
                     spawn(async move {

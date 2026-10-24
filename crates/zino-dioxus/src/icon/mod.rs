@@ -50,7 +50,7 @@ pub fn SvgIcon<T: IconShape + Clone + PartialEq + 'static>(props: SvgIconProps<T
     rsx! {
         span {
             class: props.class,
-            style: "{style}",
+            style,
             dioxus_free_icons::Icon {
                 icon: props.shape,
                 width: width,

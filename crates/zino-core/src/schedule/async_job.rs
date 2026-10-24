@@ -1,10 +1,10 @@
 //! Scheduler for sync and async cron jobs.
 
 use super::{AsyncScheduler, DEFAULT_TICK_INTERVAL, JobContext};
-use crate::{BoxFuture, Uuid, datetime::DateTime, extension::TomlTableExt};
+use crate::{BoxFuture, Uuid, datetime::DateTime, error::Error, extension::TomlTableExt};
 use chrono::Local;
 use cron::Schedule;
-use std::{io, str::FromStr, time::Duration};
+use std::{str::FromStr, time::Duration};
 use toml::Table;
 
 /// A function pointer of the async cron job.
@@ -310,7 +310,7 @@ impl AsyncScheduler for AsyncJobScheduler {
     }
 
     #[inline]
-    async fn run(self) -> io::Result<()> {
+    async fn run(self) -> Result<(), Error> {
         Ok(())
     }
 }

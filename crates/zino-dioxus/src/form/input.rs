@@ -13,7 +13,7 @@ pub fn Input(props: InputProps) -> Element {
             class: if !props.color.is_empty() { "is-{props.color}" },
             class: if !props.size.is_empty() { "is-{props.size}" },
             class: if !props.state.is_empty() { "is-{props.state}" },
-            value: if let Some(value) = props.initial_value { "{value}" },
+            value: props.initial_value,
             r#type: "text",
             onmounted: move |event| {
                 if props.auto_focus {

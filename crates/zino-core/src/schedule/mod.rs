@@ -1,6 +1,7 @@
 //! Scheduler for sync and async cron jobs.
 
-use std::{future::Future, io, time::Duration};
+use crate::error::Error;
+use std::{future::Future, time::Duration};
 
 mod async_job;
 mod context;
@@ -36,8 +37,8 @@ pub trait AsyncScheduler {
     /// Increments time for the scheduler and executes any pending jobs asynchronously.
     fn tick(&mut self) -> impl Future<Output = ()> + Send;
 
-    /// Runs the scheduler and returns an `std::io::Error` if failed.
-    fn run(self) -> impl Future<Output = io::Result<()>> + Send;
+    /// Runs the scheduler and returns an `Error` if failed.
+    fn run(self) -> impl Future<Output = Result<(), Error>> + Send;
 }
 
 #[cfg(feature = "apalis")]
@@ -61,8 +62,9 @@ impl AsyncScheduler for apalis::prelude::Monitor {
     async fn tick(&mut self) {}
 
     #[inline]
-    async fn run(self) -> io::Result<()> {
-        self.run().await
+    async fn run(self) -> Result<(), Error> {
+        self.run().await?;
+        Ok(())
     }
 }
 
