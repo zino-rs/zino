@@ -51,7 +51,7 @@ version = "0.15.1"
 optional = true
 
 [dependencies.regorus]
-version = "0.13.0"
+version = "0.14.1"
 optional = true
 default-features = false
 features = [

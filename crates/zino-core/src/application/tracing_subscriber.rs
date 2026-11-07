@@ -13,7 +13,7 @@ use tracing_subscriber::{
 };
 
 #[cfg(feature = "sentry")]
-use sentry_tracing::EventFilter;
+use tracing_subscriber::Layer;
 
 #[cfg(feature = "env-filter")]
 use tracing_subscriber::filter::EnvFilter;
@@ -161,13 +161,11 @@ pub(super) fn init<APP: Application + ?Sized>() {
         .parse(env_filter)
         .expect("fail to parse the env filter");
     #[cfg(feature = "sentry")]
-    let sentry_layer = sentry_tracing::layer()
+    let sentry_span_layer = sentry_tracing::SpanLayer::new().with_filter(level_filter);
+    #[cfg(feature = "sentry")]
+    let sentry_log_layer = sentry_tracing::LogLayer::new()
         .enable_span_attributes()
-        .event_filter(|md| match *md.level() {
-            Level::ERROR => EventFilter::Event,
-            Level::WARN | Level::INFO => EventFilter::Breadcrumb,
-            _ => EventFilter::Ignore,
-        });
+        .with_filter(level_filter);
 
     let subscriber = tracing_subscriber::registry();
     #[cfg(feature = "env-filter")]
@@ -175,7 +173,7 @@ pub(super) fn init<APP: Application + ?Sized>() {
     #[cfg(not(feature = "env-filter"))]
     let subscriber = subscriber.with(level_filter);
     #[cfg(feature = "sentry")]
-    let subscriber = subscriber.with(sentry_layer);
+    let subscriber = subscriber.with(sentry_span_layer).with(sentry_log_layer);
     match event_format {
         "compact" => {
             let compact_fmt_layer = fmt_layer.compact();
