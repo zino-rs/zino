@@ -17,7 +17,7 @@ orm = ["zino-orm", "zino-orm/openapi"]
 [dependencies]
 actix-cors = "0.7.2"
 actix-files = "0.7.4"
-actix-http = "3.20.3"
+actix-http = "3.21.0"
 futures = { workspace = true }
 tracing = { workspace = true }
 zino-core = { workspace = true, features = ["runtime-tokio"] }
@@ -26,13 +26,13 @@ zino-orm = { workspace = true, optional = true }
 zino-openapi = { workspace = true }
 
 [dependencies.actix-web]
-version = "4.18.2"
+version = "4.19.0"
 default-features = false
 features = ["compress-gzip"]
 
 [dependencies.tracing-actix-web]
-version = "0.7.25"
-features = ["opentelemetry_0_32", "uuid_v7"]
+version = "0.7.26"
+features = ["opentelemetry_0_33", "uuid_v7"]
 
 [dependencies.utoipa-rapidoc]
 version = "7.0.0"
