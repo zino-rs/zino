@@ -1,29 +1,34 @@
-use crate::{bail, error::Error};
-use ctr::Ctr64LE;
-use rand::RngExt;
-use sm4::{
-    Sm4,
-    cipher::{KeyIvInit, StreamCipher},
+use crate::{bail, error::Error, warn};
+use aes_gcm::{
+    AesGcm, Nonce,
+    aead::{Aead, KeyInit, consts::U12},
 };
+use rand::RngExt;
+use sm4::Sm4;
 
 /// Size of the `Key`.
 const KEY_SIZE: usize = 16;
 
 /// Size of the `Nonce` (Initial Vector).
-const NONCE_SIZE: usize = 16;
+const NONCE_SIZE: usize = 12;
+
+/// AES-GCM with a 128-bit key and 96-bit nonce.
+type Sm4Gcm = AesGcm<Sm4, U12>;
 
 /// Encrypts the plaintext using `SM4`.
 pub fn encrypt(plaintext: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
-    let mut rng = rand::rng();
-    let mut nonce = [0u8; NONCE_SIZE];
-    rng.fill(&mut nonce);
+    let cipher = Sm4Gcm::new_from_slice(&padded_key(key))?;
 
-    let mut buf = plaintext.to_vec();
-    let key = padded_key(key).into();
-    let iv = nonce.into();
-    Ctr64LE::<Sm4>::new(&key, &iv).apply_keystream(&mut buf);
-    buf.extend_from_slice(&nonce);
-    Ok(buf)
+    let mut rng = rand::rng();
+    let mut bytes = [0u8; NONCE_SIZE];
+    rng.fill(&mut bytes);
+
+    let nonce = Nonce::try_from(bytes.as_slice())?;
+    let mut ciphertext = cipher
+        .encrypt(&nonce, plaintext)
+        .map_err(|_| warn!("fail to encrypt the plaintext"))?;
+    ciphertext.extend_from_slice(&bytes);
+    Ok(ciphertext)
 }
 
 /// Decrypts the data as bytes using `SM4`.
@@ -32,14 +37,12 @@ pub fn decrypt(data: &[u8], key: &[u8]) -> Result<Vec<u8>, Error> {
         bail!("invalid data length");
     }
 
+    let cipher = Sm4Gcm::new_from_slice(&padded_key(key))?;
     let (ciphertext, bytes) = data.split_at(data.len() - NONCE_SIZE);
-    let nonce: [u8; NONCE_SIZE] = bytes.try_into()?;
-
-    let mut buf = ciphertext.to_vec();
-    let key = padded_key(key).into();
-    let iv = nonce.into();
-    Ctr64LE::<Sm4>::new(&key, &iv).apply_keystream(&mut buf);
-    Ok(buf)
+    let nonce = Nonce::try_from(bytes)?;
+    cipher
+        .decrypt(&nonce, ciphertext)
+        .map_err(|_| warn!("fail to decrypt the ciphertext"))
 }
 
 /// Gets the padded key.

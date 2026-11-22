@@ -36,7 +36,7 @@ all-validators = [
 apalis = ["dep:apalis"]
 avro = ["dep:apache-avro"]
 cookie = ["reqwest?/cookies"]
-crypto-sm = ["dep:ctr", "dep:sm3", "dep:sm4"]
+crypto-sm = ["dep:aes-gcm", "dep:sm3", "dep:sm4"]
 debug = [
     "serde_json/preserve_order",
     "serde_qs/indexmap",
@@ -107,7 +107,7 @@ anyhow = "1.0.104"
 argon2 = "0.6.0"
 base64 = "0.23.1"
 cron = "0.17.0"
-faster-hex = "1.0.0"
+faster-hex = "2.0.0"
 hkdf = "0.13.0"
 sha1 = "0.11.0"
 sha2 = "0.11.1"
@@ -137,16 +137,16 @@ unic-langid = { workspace = true, optional = true }
 url = { workspace = true }
 uuid = { workspace = true }
 
+[dependencies.aes-gcm]
+version = "0.11.1"
+optional = true
+
 [dependencies.apalis]
 version = "1.2.0"
 optional = true
 
 [dependencies.card-validate]
 version = "2.4.0"
-optional = true
-
-[dependencies.ctr]
-version = "0.10.1"
 optional = true
 
 [dependencies.dotenvy]
